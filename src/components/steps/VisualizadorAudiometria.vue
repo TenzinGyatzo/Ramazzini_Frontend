@@ -8,6 +8,7 @@ import { calcularEdad, calcularAntiguedad, convertirFechaISOaDDMMYYYY, formatDat
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { exportarGraficaAltaResolucion } from '@/helpers/exportChartImage';
 import GraficaAudiometria from '@/components/graficas/GraficaAudiometria.vue';
+import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -16,6 +17,7 @@ const steps = useStepsStore();
 
 // Referencia para la gráfica
 const refGraficaAudiometria = ref(null);
+const isHtmlDark = useHtmlDarkMode();
 
 // Ir a un paso específico
 const goToStep = (stepNumber) => {
@@ -254,6 +256,7 @@ const graficaAudiometriaOptions = computed(() => ({
       display: true,
       position: 'top',
       labels: {
+        color: isHtmlDark.value ? '#e2e8f0' : '#374151',
         usePointStyle: true,
         padding: 10,
         pointStyleWidth: 17,
@@ -265,10 +268,10 @@ const graficaAudiometriaOptions = computed(() => ({
     },
     tooltip: {
       enabled: true,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      backgroundColor: isHtmlDark.value ? 'rgba(15, 23, 42, 0.95)' : 'rgba(0, 0, 0, 0.7)',
       titleColor: '#ffffff',
       bodyColor: '#ffffff',
-      borderColor: '#374151',
+      borderColor: isHtmlDark.value ? '#64748b' : '#374151',
       borderWidth: 1,
       callbacks: {
         title: (context) => {
@@ -293,21 +296,21 @@ const graficaAudiometriaOptions = computed(() => ({
           size: 12,
           weight: '600'
         },
-        color: '#374151'
+        color: isHtmlDark.value ? '#e2e8f0' : '#374151'
       },
       grid: {
         display: true,
-        color: 'rgba(0, 0, 0, 0.2)',
+        color: isHtmlDark.value ? 'rgba(148, 163, 184, 0.35)' : 'rgba(0, 0, 0, 0.2)',
         drawTicks: false,
         lineWidth: 1
       },
       border: {
         display: true,
-        color: '#374151',
+        color: isHtmlDark.value ? '#94a3b8' : '#374151',
         width: 1.2
       },
       ticks: {
-        color: '#374151',
+        color: isHtmlDark.value ? '#e2e8f0' : '#374151',
         font: {
           size: 11,
         }
@@ -321,7 +324,7 @@ const graficaAudiometriaOptions = computed(() => ({
           size: 12,
           weight: '600'
         },
-        color: '#374151'
+        color: isHtmlDark.value ? '#e2e8f0' : '#374151'
       },
       min: -10,
       max: 110,
@@ -330,16 +333,16 @@ const graficaAudiometriaOptions = computed(() => ({
       offset: true,
       grid: {
         display: true,
-        color: 'rgba(0, 0, 0, 0.2)',
+        color: isHtmlDark.value ? 'rgba(148, 163, 184, 0.35)' : 'rgba(0, 0, 0, 0.2)',
         lineWidth: 1
       },
       border: {
         display: true,
-        color: '#374151',
+        color: isHtmlDark.value ? '#94a3b8' : '#374151',
         width: 1.2
       },
       ticks: {
-        color: '#374151',
+        color: isHtmlDark.value ? '#e2e8f0' : '#374151',
         font: {
           size: 11
         },
@@ -414,7 +417,7 @@ defineExpose({
 
 <template>
   <div
-    class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
+    class="visualizador-audiometria flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
     <div class="flex flex-wrap w-full gap-1 md:gap-4">
@@ -709,8 +712,64 @@ defineExpose({
   cursor: pointer;
 }
 
-.cursor-pointer:hover {
+.visualizador-audiometria div.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-audiometria div.cursor-pointer:hover {
   background-color: #f0f0f0;
-  /* Cambia el color según tu diseño */
+}
+
+.visualizador-audiometria p.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-audiometria p.cursor-pointer:hover {
+  background-color: #f0f0f0;
+}
+
+.visualizador-audiometria tbody tr.cursor-pointer,
+.visualizador-audiometria thead tr.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-audiometria tbody tr.cursor-pointer > td,
+.visualizador-audiometria tbody tr.cursor-pointer > th,
+.visualizador-audiometria thead tr.cursor-pointer > td,
+.visualizador-audiometria thead tr.cursor-pointer > th {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-audiometria tbody tr.cursor-pointer:hover,
+.visualizador-audiometria tbody tr.cursor-pointer:hover > td,
+.visualizador-audiometria tbody tr.cursor-pointer:hover > th,
+.visualizador-audiometria thead tr.cursor-pointer:hover,
+.visualizador-audiometria thead tr.cursor-pointer:hover > td,
+.visualizador-audiometria thead tr.cursor-pointer:hover > th {
+  background-color: #f0f0f0;
+}
+</style>
+
+<style>
+html.dark-mode .visualizador-audiometria div.cursor-pointer:hover,
+html.dark-mode .visualizador-audiometria p.cursor-pointer:hover {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .visualizador-audiometria tbody tr.cursor-pointer:hover,
+html.dark-mode .visualizador-audiometria tbody tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-audiometria tbody tr.cursor-pointer:hover > th,
+html.dark-mode .visualizador-audiometria thead tr.cursor-pointer:hover,
+html.dark-mode .visualizador-audiometria thead tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-audiometria thead tr.cursor-pointer:hover > th {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .visualizador-audiometria .bg-gray-50 {
+  background-color: #0f172a !important;
+}
+
+html.dark-mode .visualizador-audiometria .border-gray-200 {
+  border-color: #334155 !important;
 }
 </style>

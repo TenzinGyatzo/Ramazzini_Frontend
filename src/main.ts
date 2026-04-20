@@ -1,4 +1,9 @@
 import './assets/main.css'
+import './assets/dark-mode.css'
+
+import { applyAppTheme, readInitialDarkPreference } from '@/theme/appTheme'
+
+applyAppTheme(readInitialDarkPreference())
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

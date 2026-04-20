@@ -176,7 +176,7 @@ const closeModal = () => {
 </script>
 
 <template>
-  <div class="modal fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
+  <div class="modal modal-empresas fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
     <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
     </div>

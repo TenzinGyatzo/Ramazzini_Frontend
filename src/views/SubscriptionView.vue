@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, inject } from "vue";
 import { usePagosStore } from "@/stores/pagosStore";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
+import { useHtmlDarkMode } from "@/composables/useHtmlDarkMode";
 // import { useUserStore } from "@/stores/user";
 // import { useEmpresasStore } from "@/stores/empresas";
 import { useRouter } from "vue-router";
@@ -25,6 +26,7 @@ const suscripcionActual = ref({});
 const loading = ref(false);
 const router = useRouter();
 const mostrarModalPago = ref(false);
+const isHtmlDark = useHtmlDarkMode();
 
 // Planes disponibles
 const plans = [
@@ -284,7 +286,7 @@ const porcentajeHistorias = computed(() => {
 
 <template>
   <Transition appear mode="out-in" name="slide-up">
-  <div class="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 bg-gray-100 min-h-screen">
+  <div class="subscription-view max-w-6xl mx-auto p-4 sm:p-6 space-y-6 bg-gray-100 min-h-screen">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <h1 class="text-gray-800 text-2xl sm:text-3xl md:text-4xl font-semibold text-center sm:text-left">Elige tu Plan</h1>
       <button 
@@ -322,7 +324,7 @@ const porcentajeHistorias = computed(() => {
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       <!-- Comparación entre Plan Actual y Nuevo -->
-      <div class="bg-white p-5 sm:p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300 ease-in-out">
+      <div class="subscription-extras-card bg-white p-5 sm:p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300 ease-in-out">
         <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">Compara Planes</h2>
         <div class="overflow-x-auto -mx-2 sm:mx-0">
         <table class="w-full min-w-[420px] text-gray-700 border-collapse">
@@ -486,13 +488,26 @@ const porcentajeHistorias = computed(() => {
           <div>
             <label class="text-xs sm:text-sm md:text-base block mb-2 text-gray-600">Aumenta tus recursos ($360 por cada 25 historias clínicas)</label>
             <div class="flex items-center gap-2">
-              <button @click="extraHistories > 0 ? extraHistories -= 25 : null" class="w-9 h-9 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 flex items-center justify-center rounded transition-all duration-200">
+              <button @click="extraHistories > 0 ? extraHistories -= 25 : null" class="extras-step-btn w-9 h-9 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 flex items-center justify-center rounded transition-all duration-200">
                 <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                 </svg>
               </button>
-              <input type="number" v-model="extraHistories" @input="validateLimits" min="0" class="border rounded p-2 w-20 sm:w-24 text-center focus:ring-2 focus:ring-sky-500 text-sm">
-              <button @click="extraHistories < selectedPlan?.maxHistories ? extraHistories += 25 : null" class="w-9 h-9 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 flex items-center justify-center rounded transition-all duration-200">
+              <input
+                type="number"
+                v-model="extraHistories"
+                @input="validateLimits"
+                min="0"
+                class="extras-input border rounded p-2 w-20 sm:w-24 text-center focus:ring-2 focus:ring-sky-500 text-sm"
+                :style="isHtmlDark ? {
+                  backgroundColor: '#1e293b',
+                  color: '#e2e8f0',
+                  borderColor: '#475569',
+                  WebkitTextFillColor: '#e2e8f0',
+                  caretColor: '#e2e8f0'
+                } : {}"
+              >
+              <button @click="extraHistories < selectedPlan?.maxHistories ? extraHistories += 25 : null" class="extras-step-btn w-9 h-9 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 flex items-center justify-center rounded transition-all duration-200">
                 <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
@@ -551,7 +566,7 @@ const porcentajeHistorias = computed(() => {
       </div>
 
       <!-- Resumen y botón de acción -->
-      <div class="bg-gradient-to-r from-sky-50 to-cyan-50 border-2 border-sky-400 p-5 sm:p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300 ease-in-out">
+      <div class="subscription-plan-summary bg-gradient-to-r from-sky-50 to-cyan-50 border-2 border-sky-400 p-5 sm:p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300 ease-in-out">
         <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">Resumen del Plan</h2>
         <div v-if="selectedPlan" class="mb-4 space-y-2 text-sm sm:text-base text-gray-700">
           <p class="flex items-center gap-2">
@@ -672,5 +687,50 @@ const porcentajeHistorias = computed(() => {
   }
   .animate-fadeInScale {
     animation: fadeInScale 0.3s ease-out forwards;
+  }
+
+  html.dark-mode .subscription-extras-card {
+    background-color: #0f172a !important;
+    border: 1px solid #334155 !important;
+  }
+
+  html.dark-mode .subscription-extras-card .text-gray-700 {
+    color: #e2e8f0 !important;
+  }
+
+  html.dark-mode .subscription-extras-card .text-gray-600 {
+    color: #cbd5e1 !important;
+  }
+
+  html.dark-mode .subscription-extras-card .extras-step-btn {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #475569 !important;
+  }
+
+  html.dark-mode .subscription-extras-card .extras-step-btn:hover {
+    background-color: #475569 !important;
+    color: #f8fafc !important;
+  }
+
+  html.dark-mode .subscription-extras-card input.extras-input[type='number'] {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+    -webkit-text-fill-color: #e2e8f0 !important;
+    caret-color: #e2e8f0 !important;
+  }
+
+  html.dark-mode .subscription-plan-summary {
+    background-image: linear-gradient(to right, rgba(30, 58, 138, 0.24), rgba(6, 182, 212, 0.2)) !important;
+    border-color: #0284c7 !important;
+  }
+
+  html.dark-mode .subscription-plan-summary .text-gray-700 {
+    color: #e2e8f0 !important;
+  }
+
+  html.dark-mode .subscription-plan-summary .text-gray-500 {
+    color: #cbd5e1 !important;
   }
 </style>

@@ -118,7 +118,7 @@ onMounted(() => {
                                     <i class="fas fa-spinner fa-spin mr-1"></i>
                                     Contando...
                                 </span>
-                                <span v-else class="text-sm text-gray-600">
+                                <span v-else class="empresa-item-subtitle text-sm text-gray-600">
                                     {{ numeroTrabajadores || 0 }} {{ (numeroTrabajadores || 0) === 1 ? 'trabajador' : 'trabajadores' }}
                                 </span>
                             </div>

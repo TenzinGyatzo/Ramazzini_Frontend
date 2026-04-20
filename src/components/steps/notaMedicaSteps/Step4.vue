@@ -56,7 +56,7 @@ watch(exploracionFisica, (newValue) => {
         </div>
 
         <!-- Información adicional sobre cómo redactar -->
-        <div class="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="nota-medica-tip mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div class="flex items-start space-x-3">
                 <div class="flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

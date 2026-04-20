@@ -194,7 +194,7 @@ const testResumenMixto = async () => {
 </script>
 
 <template>
-  <div class="modal fixed top-0 left-0 z-20 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
+  <div class="modal modal-carga-masiva fixed top-0 left-0 z-20 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
     <!-- Fondo oscuro transparente -->
     <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
     </div>
@@ -291,14 +291,14 @@ const testResumenMixto = async () => {
         </div>
 
         <!-- Información adicional -->
-        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 class="font-medium text-blue-900 mb-2 flex items-center">
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200 carga-masiva-instrucciones">
+          <h4 class="font-medium text-blue-900 mb-2 flex items-center carga-masiva-instrucciones-titulo">
             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
             </svg>
             Instrucciones:
           </h4>
-          <ul class="text-sm text-blue-800 space-y-1">
+          <ul class="text-sm text-blue-800 space-y-1 carga-masiva-instrucciones-lista">
             <li>• Descarga la plantilla: incluye ejemplos ficticios que te guiarán en el llenado.</li>
             <li>• Sustituye los datos ficticios por la información real de tus trabajadores.</li>
             <li>• No elimines columnas, ni cambies los nombres de los encabezados.</li>
@@ -328,7 +328,7 @@ const testResumenMixto = async () => {
           <button
             @click="closeModal"
             :disabled="isImporting"
-            class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors carga-masiva-cancelar-btn"
           >
             Cancelar
           </button>
@@ -378,5 +378,31 @@ const testResumenMixto = async () => {
 
 .fade-slow-leave-active {
   transition-delay: 250ms;
+}
+</style>
+
+<style>
+html.dark-mode .modal-carga-masiva .carga-masiva-instrucciones {
+  background-color: rgba(30, 58, 138, 0.28) !important;
+  border-color: #3b82f6 !important;
+}
+
+html.dark-mode .modal-carga-masiva .carga-masiva-instrucciones-titulo {
+  color: #dbeafe !important;
+}
+
+html.dark-mode .modal-carga-masiva .carga-masiva-instrucciones-lista {
+  color: #bfdbfe !important;
+}
+
+html.dark-mode .modal-carga-masiva .carga-masiva-cancelar-btn {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #475569 !important;
+}
+
+html.dark-mode .modal-carga-masiva .carga-masiva-cancelar-btn:hover {
+  background-color: #475569 !important;
+  color: #f8fafc !important;
 }
 </style>

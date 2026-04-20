@@ -243,7 +243,7 @@ watch(resultadoCuestionarioPersonalizado, (newValue) => {
 </script>
 
 <template>
-    <div>
+    <div class="dark-mode-input-surface">
         <!-- Jerarquía Visual Mejorada -->
         <h1 class="text-2xl font-bold mb-4 text-gray-900">RESULTADO DE CUESTIONARIO</h1>
         <p class="text-lg font-medium mb-2 text-gray-800">¿Es recomendable realizar la espirometría?</p>

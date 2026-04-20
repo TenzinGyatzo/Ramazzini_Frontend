@@ -3417,7 +3417,7 @@ const tablaCintura = computed(() => {
                         <tr
                           v-for="[grupo, datos] in tablaGruposEtariosFiltrada"
                           :key="grupo"
-                          class="border-t hover:bg-gray-50 transition"
+                          class="border-t hover:bg-gray-200 transition"
                         >
                           <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">{{ grupo }}</td>
                           <td class="py-1 px-4 text-center text-blue-700 text-base sm:text-lg lg:text-xl">{{ datos.Masculino }}</td>
@@ -3759,7 +3759,7 @@ const tablaCintura = computed(() => {
                         <tr
                           v-for="[agente, cantidad, porcentaje] in tablaAgentesRiesgo"
                           :key="agente"
-                          class="border-t hover:bg-gray-50 transition"
+                          class="border-t hover:bg-gray-200 transition"
                         >
                           <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">
                             {{ etiquetasAgentesRiesgo[agente] || agente }}

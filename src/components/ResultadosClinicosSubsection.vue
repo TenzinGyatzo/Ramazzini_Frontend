@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4">
+  <div class="resultados-clinicos-subsection space-y-4">
     <div class="flex flex-col gap-1">
       <div class="flex items-center justify-between">
         <div>
@@ -137,8 +137,10 @@ import {
 } from '@/stores/resultadosClinicos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import ConfirmacionEliminar from '@/components/ConfirmacionEliminar.vue';
+import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 
 const toast: any = inject('toast');
+const isHtmlDark = useHtmlDarkMode();
 
 const props = defineProps<{
   results: ResultadoClinico[];
@@ -223,21 +225,23 @@ const getTipoIcon = (tipo?: string) => {
 };
 
 const getIconColor = (tipo?: string) => {
-  if (tipo === 'ESPIROMETRIA') return '#1d4ed8';
-  if (tipo === 'EKG') return '#dc2626';
-  if (tipo === 'TIPO_SANGRE') return '#991b1b';
-  if (tipo === 'RAYOS_X') return '#0f766e';
-  if (tipo === 'ANALISIS_LABORATORIO') return '#7c3aed';
-  return '#475569';
+  const dark = isHtmlDark.value;
+  if (tipo === 'ESPIROMETRIA') return dark ? '#93c5fd' : '#1d4ed8';
+  if (tipo === 'EKG') return dark ? '#fca5a5' : '#dc2626';
+  if (tipo === 'TIPO_SANGRE') return dark ? '#fecaca' : '#991b1b';
+  if (tipo === 'RAYOS_X') return dark ? '#5eead4' : '#0f766e';
+  if (tipo === 'ANALISIS_LABORATORIO') return dark ? '#ddd6fe' : '#7c3aed';
+  return dark ? '#cbd5e1' : '#475569';
 };
 
 const getIconBackground = (tipo?: string) => {
-  if (tipo === 'ESPIROMETRIA') return 'rgba(30,64,175,0.12)';
-  if (tipo === 'EKG') return 'rgba(220,38,38,0.12)';
-  if (tipo === 'TIPO_SANGRE') return 'rgba(153,27,27,0.12)';
-  if (tipo === 'RAYOS_X') return 'rgba(15,118,110,0.12)';
-  if (tipo === 'ANALISIS_LABORATORIO') return 'rgba(124,58,237,0.12)';
-  return 'rgba(71,85,105,0.08)';
+  const dark = isHtmlDark.value;
+  if (tipo === 'ESPIROMETRIA') return dark ? 'rgba(37,99,235,0.48)' : 'rgba(30,64,175,0.12)';
+  if (tipo === 'EKG') return dark ? 'rgba(220,38,38,0.45)' : 'rgba(220,38,38,0.12)';
+  if (tipo === 'TIPO_SANGRE') return dark ? 'rgba(185,28,28,0.5)' : 'rgba(153,27,27,0.12)';
+  if (tipo === 'RAYOS_X') return dark ? 'rgba(13,148,136,0.5)' : 'rgba(15,118,110,0.12)';
+  if (tipo === 'ANALISIS_LABORATORIO') return dark ? 'rgba(139,92,246,0.48)' : 'rgba(124,58,237,0.12)';
+  return dark ? 'rgba(148,163,184,0.35)' : 'rgba(71,85,105,0.08)';
 };
 
 const getAlteracionLabel = (resultado: ResultadoClinico) => {

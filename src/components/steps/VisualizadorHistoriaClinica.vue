@@ -64,7 +64,7 @@ const antecedentesLaborales = ref([
 
 <template>
   <div
-    class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
+    class="visualizador-historia-clinica flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa, Fecha y Motivo del Examen -->
     <div class="flex flex-wrap w-full gap-4">
@@ -545,8 +545,49 @@ const antecedentesLaborales = ref([
   cursor: pointer;
 }
 
-.cursor-pointer:hover {
+/* Tema claro: resaltar fila completa (fondo en celdas; el <tr> solo no basta en tablas). */
+.visualizador-historia-clinica div.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-historia-clinica div.cursor-pointer:hover {
   background-color: #f0f0f0;
-  /* Cambia el color según tu diseño */
+}
+
+.visualizador-historia-clinica tbody tr.cursor-pointer,
+.visualizador-historia-clinica thead tr.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-historia-clinica tbody tr.cursor-pointer > td,
+.visualizador-historia-clinica tbody tr.cursor-pointer > th,
+.visualizador-historia-clinica thead tr.cursor-pointer > td,
+.visualizador-historia-clinica thead tr.cursor-pointer > th {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-historia-clinica tbody tr.cursor-pointer:hover,
+.visualizador-historia-clinica tbody tr.cursor-pointer:hover > td,
+.visualizador-historia-clinica tbody tr.cursor-pointer:hover > th,
+.visualizador-historia-clinica thead tr.cursor-pointer:hover,
+.visualizador-historia-clinica thead tr.cursor-pointer:hover > td,
+.visualizador-historia-clinica thead tr.cursor-pointer:hover > th {
+  background-color: #f0f0f0;
+}
+</style>
+
+<style>
+/* Tema oscuro: mismo efecto hover, más visible y aplicado a celdas y bloques clicables. */
+html.dark-mode .visualizador-historia-clinica div.cursor-pointer:hover {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .visualizador-historia-clinica tbody tr.cursor-pointer:hover,
+html.dark-mode .visualizador-historia-clinica tbody tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-historia-clinica tbody tr.cursor-pointer:hover > th,
+html.dark-mode .visualizador-historia-clinica thead tr.cursor-pointer:hover,
+html.dark-mode .visualizador-historia-clinica thead tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-historia-clinica thead tr.cursor-pointer:hover > th {
+  background-color: #475569 !important;
 }
 </style>

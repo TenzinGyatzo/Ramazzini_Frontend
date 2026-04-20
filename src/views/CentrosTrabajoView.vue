@@ -222,7 +222,7 @@ onMounted(async () => {
                     <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
                       {{ empresas.currentEmpresa?.nombreComercial || 'Cargando empresa...' }}
                     </h1>
-                    <p v-if="empresas.currentEmpresa?.razonSocial" class="text-sm sm:text-base text-gray-600 mt-1 truncate">
+                    <p v-if="empresas.currentEmpresa?.razonSocial" class="empresa-item-subtitle text-sm sm:text-base text-gray-600 mt-1 truncate">
                       {{ empresas.currentEmpresa?.razonSocial }}
                     </p>
                     <p v-else class="text-sm sm:text-base text-gray-400 italic mt-1 truncate">
@@ -234,7 +234,7 @@ onMounted(async () => {
                         <i class="fas fa-spinner fa-spin mr-1"></i>
                         Contando trabajadores...
                       </span>
-                      <span v-else class="text-xs text-gray-500">
+                      <span v-else class="empresa-item-subtitle text-xs text-gray-500">
                         {{ totalTrabajadores || 0 }} {{ (totalTrabajadores || 0) === 1 ? 'trabajador' : 'trabajadores' }} {{ (totalTrabajadores || 0) === 1 ? 'registrado' : 'registrados' }}
                       </span>
                     </div>

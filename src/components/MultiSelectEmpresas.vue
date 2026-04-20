@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-2">
+  <div class="multiselect-empresas space-y-2">
     <label class="block text-sm font-medium text-gray-700">
       {{ label }}
     </label>
@@ -221,4 +221,89 @@ watch(() => props.items, (newItems) => {
   selectedItems.value = newItems.filter(item => props.selectedIds.includes(item._id));
 }, { immediate: true });
 </script>
+
+<style>
+html.dark-mode .multiselect-empresas label.text-gray-700,
+html.dark-mode .multiselect-empresas .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .multiselect-empresas .text-gray-600,
+html.dark-mode .multiselect-empresas .text-gray-500,
+html.dark-mode .multiselect-empresas .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .multiselect-empresas input[type='text'] {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .multiselect-empresas input[type='text']::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .multiselect-empresas .bg-white {
+  background-color: #0f172a !important;
+}
+
+html.dark-mode .multiselect-empresas .bg-gray-50 {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode .multiselect-empresas .border-gray-300,
+html.dark-mode .multiselect-empresas .border-gray-200,
+html.dark-mode .multiselect-empresas .border-gray-100 {
+  border-color: #334155 !important;
+}
+
+html.dark-mode .multiselect-empresas .hover\:bg-gray-50:hover {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .multiselect-empresas .bg-green-100 {
+  background-color: rgba(6, 78, 59, 0.45) !important;
+}
+
+html.dark-mode .multiselect-empresas .text-green-800 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .multiselect-empresas .bg-gray-100 {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .multiselect-empresas .bg-gradient-to-r.from-blue-100.to-blue-200 {
+  background-image: linear-gradient(to right, rgba(30, 58, 138, 0.4), rgba(29, 78, 216, 0.35)) !important;
+}
+
+html.dark-mode .multiselect-empresas .border-blue-300 {
+  border-color: #1d4ed8 !important;
+}
+
+html.dark-mode .multiselect-empresas .text-blue-800 {
+  color: #bfdbfe !important;
+}
+
+html.dark-mode .multiselect-empresas .bg-blue-50 {
+  background-color: rgba(30, 58, 138, 0.26) !important;
+}
+
+html.dark-mode .multiselect-empresas .hover\:bg-blue-100:hover {
+  background-color: rgba(29, 78, 216, 0.3) !important;
+}
+
+html.dark-mode .multiselect-empresas .border-blue-200 {
+  border-color: #1d4ed8 !important;
+}
+
+html.dark-mode .multiselect-empresas .text-blue-600 {
+  color: #93c5fd !important;
+}
+
+html.dark-mode .multiselect-empresas .hover\:text-red-800:hover {
+  color: #fca5a5 !important;
+}
+</style>
 

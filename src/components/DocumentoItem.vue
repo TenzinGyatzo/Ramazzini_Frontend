@@ -1592,7 +1592,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
     <!-- Items de documentos -->
     <div
-        class="group relative bg-white border rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer overflow-hidden"
+        class="documento-item group relative bg-white border rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer overflow-hidden"
         :class="{
             'hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50': !isDeletionMode,
             'hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50': isDeletionMode,
@@ -3084,7 +3084,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
     <Teleport to="body">
         <Transition name="modal-fade" appear>
             <div v-if="showPdfViewer"
-                class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
+                class="documento-item-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
                 @click.self="cerrarPdf">
             
             <!-- Header del visor -->
@@ -3146,7 +3146,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
     <Teleport to="body">
         <Transition name="modal-fade" appear>
             <div v-if="showImageViewer"
-                class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
+                class="documento-item-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
                 @click.self="cerrarImagen">
             
             <!-- Header del visor -->

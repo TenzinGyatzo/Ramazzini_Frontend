@@ -49,7 +49,7 @@ function removeRecomendacion(index) {
 </script>
 
 <template>
-  <div>
+  <div class="nota-medica-dark-inputs">
     <h2 class="font-bold mb-4 text-gray-800 leading-5">Recomendaciones:</h2>
     <div class="space-y-2">
       <div v-for="(item, index) in recomendaciones" :key="index" class="flex gap-2 items-center">

@@ -9,6 +9,11 @@ import { useEmpresasStore } from "@/stores/empresas";
 import { useRoute } from "vue-router";
 import { useRouter } from "vue-router";
 import TooltipInfo from "@/components/TooltipInfo.vue";
+import {
+  THEME_STORAGE_KEY,
+  applyAppTheme,
+  readInitialDarkPreference,
+} from "@/theme/appTheme";
 
 const user = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -24,17 +29,16 @@ const empresasCargadas = ref(false);
 // Dark mode state
 const isDarkMode = ref(false);
 
+function syncThemeFromEnvironment() {
+  isDarkMode.value = readInitialDarkPreference();
+  applyAppTheme(isDarkMode.value);
+}
+
 // Función para alternar dark mode
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value;
-  // Guardar en localStorage para persistencia
-  localStorage.setItem('darkMode', isDarkMode.value.toString());
-  // Aplicar clase al body
-  if (isDarkMode.value) {
-    document.body.classList.add('dark-mode');
-  } else {
-    document.body.classList.remove('dark-mode');
-  }
+  localStorage.setItem(THEME_STORAGE_KEY, isDarkMode.value.toString());
+  applyAppTheme(isDarkMode.value);
 };
 
 // Computed para el ícono del toggle
@@ -79,12 +83,7 @@ const closeNotificationEmpresas = () => {
 };
 
 onMounted(() => {
-  // Inicializar dark mode desde localStorage
-  const savedDarkMode = localStorage.getItem('darkMode');
-  if (savedDarkMode === 'true') {
-    isDarkMode.value = true;
-    document.body.classList.add('dark-mode');
-  }
+  syncThemeFromEnvironment();
 
   watch(
     () => user.user,
@@ -825,7 +824,7 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
     <!-- Botón del engrane mejorado -->
     <Transition name="delayed-appear">
       <button 
-        v-if="isVisible && ['inicio', 'add-user', 'remove-users', 'manage-permissions', 'manage-assignments', 'user-productivity', 'perfil-proveedor', 'medico-firmante', 'enfermera-firmante', 'subscription', 'suscripcion-activa', 'subscription-success', 'panel-administrador'].includes(route.name as string)"
+        v-if="isVisible"
         @click="toggleMenu"
         class="fixed top-6 right-6 p-4 bg-white text-gray-700 rounded-full hover:bg-gray-50 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl border border-gray-200 z-50 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-200"
         :aria-label="isMenuOpen ? 'Cerrar menú de configuración' : 'Abrir menú de configuración'"
@@ -854,7 +853,7 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
     <!-- Menú desplegable mejorado -->
     <Transition name="fade">
       <div 
-        v-if="isMenuOpen && ['inicio', 'add-user', 'remove-users', 'manage-permissions', 'manage-assignments', 'user-productivity', 'perfil-proveedor', 'medico-firmante', 'enfermera-firmante', 'subscription', 'suscripcion-activa', 'subscription-success', 'panel-administrador'].includes(route.name as string)"
+        v-if="isMenuOpen"
         ref="menuRef"
         class="fixed top-20 right-6 bg-white rounded-2xl shadow-2xl p-6 w-72 z-40 border border-gray-100 backdrop-blur-sm bg-white/95 overflow-visible">
 
@@ -1066,7 +1065,7 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
               </div>
             </a>
             <a @click="router.push({ name: 'manage-assignments' })" 
-               v-if="user.user?.role === 'Principal'"
+               v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador' "
                class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-purple-50 hover:to-purple-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-purple-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-users-gear text-purple-500 group-hover:text-purple-600 transition-colors duration-200"></i>
@@ -1105,7 +1104,7 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
           </div>
 
           <!-- Dark Mode Toggle -->
-          <div v-if="user.user?.role === 'Administrador'">
+          <div>
             <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
               <i class="fa-solid fa-palette mr-2 text-indigo-500"></i>
               Apariencia
@@ -1473,538 +1472,8 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
-/* Dark mode support - Estilos completos y mejorados */
-.dark-mode {
-  background-color: #0f172a !important;
-  color: #f8fafc !important;
-}
 
-/* Fondo principal del html, body y elementos base */
-.dark-mode html {
-  background-color: #0f172a !important;
-  min-height: 100vh !important;
-}
-
-.dark-mode body {
-  background-color: #0f172a !important;
-  color: #f8fafc !important;
-  min-height: 100vh !important;
-}
-
-.dark-mode main {
-  background-color: #0f172a !important;
-  min-height: 100vh !important;
-}
-
-/* Asegurar que el fondo de la página completa esté oscuro */
-.dark-mode #app {
-  background-color: #0f172a !important;
-  min-height: 100vh !important;
-}
-
-/* Fondos principales */
-.dark-mode .bg-white {
-  background-color: #1e293b !important;
-}
-
-.dark-mode .bg-gray-50 {
-  background-color: #1e293b !important;
-}
-
-.dark-mode .bg-gray-100 {
-  background-color: #334155 !important;
-}
-
-.dark-mode .bg-gray-200 {
-  background-color: #475569 !important;
-}
-
-/* Gradientes en dark mode */
-.dark-mode .bg-gradient-to-r.from-gray-50.to-gray-100 {
-  background: linear-gradient(to right, #1e293b, #334155) !important;
-}
-
-/* Asegurar que el h1 no tenga fondo en modo oscuro */
-.dark-mode h1.bg-gradient-to-r.from-slate-700.to-gray-600 {
-  background: none !important;
-  background-image: none !important;
-  -webkit-background-clip: unset !important;
-  background-clip: unset !important;
-  -webkit-text-fill-color: unset !important;
-  color: #cbd5e1 !important;
-}
-
-.dark-mode .bg-gradient-to-r.from-emerald-600.to-emerald-700 {
-  background: linear-gradient(to right, #059669, #047857) !important;
-}
-
-.dark-mode .bg-gradient-to-r.from-emerald-700.to-emerald-800 {
-  background: linear-gradient(to right, #047857, #065f46) !important;
-}
-
-.dark-mode .bg-gradient-to-r.from-blue-500.to-indigo-600 {
-  background: linear-gradient(to right, #3b82f6, #4f46e5) !important;
-}
-
-/* Textos en dark mode */
-.dark-mode .text-gray-700 {
-  color: #cbd5e1 !important;
-}
-
-.dark-mode .text-gray-600 {
-  color: #94a3b8 !important;
-}
-
-.dark-mode .text-gray-800 {
-  color: #e2e8f0 !important;
-}
-
-.dark-mode .text-gray-900 {
-  color: #f1f5f9 !important;
-}
-
-.dark-mode .text-slate-700 {
-  color: #cbd5e1 !important;
-}
-
-.dark-mode .text-gray-500 {
-  color: #94a3b8 !important;
-}
-
-.dark-mode .text-gray-400 {
-  color: #64748b !important;
-}
-
-.dark-mode .text-gray-300 {
-  color: #475569 !important;
-}
-
-/* Bordes en dark mode */
-.dark-mode .border-gray-200 {
-  border-color: #334155 !important;
-}
-
-.dark-mode .border-gray-300 {
-  border-color: #475569 !important;
-}
-
-.dark-mode .border-gray-100 {
-  border-color: #1e293b !important;
-}
-
-/* Hover states en dark mode */
-.dark-mode .hover\:bg-gray-50:hover {
-  background-color: #334155 !important;
-}
-
-.dark-mode .hover\:bg-gray-100:hover {
-  background-color: #475569 !important;
-}
-
-.dark-mode .hover\:from-gray-50:hover {
-  background: linear-gradient(to right, #334155, #475569) !important;
-}
-
-.dark-mode .hover\:to-gray-100:hover {
-  background: linear-gradient(to right, #334155, #475569) !important;
-}
-
-/* Estados específicos de hover para botones */
-.dark-mode .hover\:from-blue-50:hover {
-  background: linear-gradient(to right, #1e40af, #3730a3) !important;
-}
-
-.dark-mode .hover\:to-blue-100:hover {
-  background: linear-gradient(to right, #1e40af, #3730a3) !important;
-}
-
-.dark-mode .hover\:from-indigo-50:hover {
-  background: linear-gradient(to right, #3730a3, #4338ca) !important;
-}
-
-.dark-mode .hover\:to-indigo-100:hover {
-  background: linear-gradient(to right, #3730a3, #4338ca) !important;
-}
-
-.dark-mode .hover\:from-purple-50:hover {
-  background: linear-gradient(to right, #7c3aed, #8b5cf6) !important;
-}
-
-.dark-mode .hover\:to-purple-100:hover {
-  background: linear-gradient(to right, #7c3aed, #8b5cf6) !important;
-}
-
-.dark-mode .hover\:from-emerald-50:hover {
-  background: linear-gradient(to right, #047857, #065f46) !important;
-}
-
-.dark-mode .hover\:to-emerald-100:hover {
-  background: linear-gradient(to right, #047857, #065f46) !important;
-}
-
-.dark-mode .hover\:from-orange-50:hover {
-  background: linear-gradient(to right, #ea580c, #dc2626) !important;
-}
-
-.dark-mode .hover\:to-orange-100:hover {
-  background: linear-gradient(to right, #ea580c, #dc2626) !important;
-}
-
-.dark-mode .hover\:from-red-50:hover {
-  background: linear-gradient(to right, #dc2626, #b91c1c) !important;
-}
-
-.dark-mode .hover\:to-red-100:hover {
-  background: linear-gradient(to right, #dc2626, #b91c1c) !important;
-}
-
-.dark-mode .hover\:from-yellow-50:hover {
-  background: linear-gradient(to right, #d97706, #b45309) !important;
-}
-
-.dark-mode .hover\:to-yellow-100:hover {
-  background: linear-gradient(to right, #d97706, #b45309) !important;
-}
-
-/* Bordes de hover en dark mode */
-.dark-mode .hover\:border-blue-300:hover {
-  border-color: #60a5fa !important;
-}
-
-.dark-mode .hover\:border-indigo-300:hover {
-  border-color: #818cf8 !important;
-}
-
-.dark-mode .hover\:border-purple-300:hover {
-  border-color: #a78bfa !important;
-}
-
-.dark-mode .hover\:border-emerald-300:hover {
-  border-color: #34d399 !important;
-}
-
-.dark-mode .hover\:border-orange-300:hover {
-  border-color: #fdba74 !important;
-}
-
-.dark-mode .hover\:border-red-300:hover {
-  border-color: #fca5a5 !important;
-}
-
-.dark-mode .hover\:border-yellow-300:hover {
-  border-color: #fde047 !important;
-}
-
-/* Textos de hover en dark mode */
-.dark-mode .hover\:text-gray-900:hover {
-  color: #f8fafc !important;
-}
-
-.dark-mode .hover\:text-blue-800:hover {
-  color: #93c5fd !important;
-}
-
-.dark-mode .hover\:text-indigo-600:hover {
-  color: #a5b4fc !important;
-}
-
-.dark-mode .hover\:text-purple-600:hover {
-  color: #c4b5fd !important;
-}
-
-.dark-mode .hover\:text-emerald-600:hover {
-  color: #6ee7b7 !important;
-}
-
-.dark-mode .hover\:text-orange-600:hover {
-  color: #fdba74 !important;
-}
-
-.dark-mode .hover\:text-red-600:hover {
-  color: #fca5a5 !important;
-}
-
-.dark-mode .hover\:text-yellow-600:hover {
-  color: #fde047 !important;
-}
-
-/* Estados específicos para campos pendientes */
-.dark-mode .from-red-50 {
-  background: linear-gradient(to right, #7f1d1d, #991b1b) !important;
-}
-
-.dark-mode .to-red-100 {
-  background: linear-gradient(to right, #7f1d1d, #991b1b) !important;
-}
-
-.dark-mode .from-yellow-50 {
-  background: linear-gradient(to right, #92400e, #a16207) !important;
-}
-
-.dark-mode .to-yellow-100 {
-  background: linear-gradient(to right, #92400e, #a16207) !important;
-}
-
-.dark-mode .hover\:from-red-100:hover {
-  background: linear-gradient(to right, #991b1b, #b91c1c) !important;
-}
-
-.dark-mode .hover\:to-red-200:hover {
-  background: linear-gradient(to right, #991b1b, #b91c1c) !important;
-}
-
-.dark-mode .hover\:from-yellow-100:hover {
-  background: linear-gradient(to right, #a16207, #ca8a04) !important;
-}
-
-.dark-mode .hover\:to-yellow-200:hover {
-  background: linear-gradient(to right, #a16207, #ca8a04) !important;
-}
-
-.dark-mode .border-red-300 {
-  border-color: #fca5a5 !important;
-}
-
-.dark-mode .border-yellow-300 {
-  border-color: #fde047 !important;
-}
-
-.dark-mode .hover\:border-red-400:hover {
-  border-color: #f87171 !important;
-}
-
-.dark-mode .hover\:border-yellow-400:hover {
-  border-color: #facc15 !important;
-}
-
-/* Textos específicos para estados de error/advertencia */
-.dark-mode .text-red-700 {
-  color: #fca5a5 !important;
-}
-
-.dark-mode .text-yellow-700 {
-  color: #fde047 !important;
-}
-
-.dark-mode .hover\:text-red-800:hover {
-  color: #f87171 !important;
-}
-
-.dark-mode .hover\:text-yellow-800:hover {
-  color: #facc15 !important;
-}
-
-/* Sombras mejoradas para dark mode */
-.dark-mode .shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
-}
-
-.dark-mode .shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4) !important;
-}
-
-.dark-mode .shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
-}
-
-/* Drop shadows */
-.dark-mode .drop-shadow-lg {
-  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.4)) !important;
-}
-
-/* Backdrop blur */
-.dark-mode .backdrop-blur-sm {
-  backdrop-filter: blur(4px) !important;
-}
-
-.dark-mode .bg-white\/95 {
-  background-color: rgba(30, 41, 59, 0.95) !important;
-}
-
-/* Scrollbar personalizada para dark mode */
-.dark-mode ::-webkit-scrollbar-track {
-  background: #1e293b !important;
-}
-
-.dark-mode ::-webkit-scrollbar-thumb {
-  background: linear-gradient(45deg, #475569, #64748b) !important;
-  border: 2px solid #1e293b !important;
-}
-
-.dark-mode ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(45deg, #64748b, #94a3b8) !important;
-}
-
-/* Focus styles para dark mode */
-.dark-mode button:focus-visible,
-.dark-mode a:focus-visible {
-  outline: 2px solid #60a5fa !important;
-  outline-offset: 2px !important;
-}
-
-/* Estilos específicos para elementos de la interfaz */
-.dark-mode .text-5xl,
-.dark-mode .text-6xl,
-.dark-mode .text-7xl,
-.dark-mode .text-8xl,
-.dark-mode .text-9xl {
-  color: #e2e8f0 !important;
-}
-
-.dark-mode .text-2xl,
-.dark-mode .text-3xl,
-.dark-mode .text-4xl,
-.dark-mode .text-5xl {
-  color: #cbd5e1 !important;
-}
-
-/* Estilos para botones específicos */
-.dark-mode .border-2.border-gray-300 {
-  border-color: #475569 !important;
-}
-
-.dark-mode .hover\:bg-red-600:hover {
-  background-color: #dc2626 !important;
-}
-
-.dark-mode .hover\:text-gray-200:hover {
-  color: #e2e8f0 !important;
-}
-
-/* Estilos para notificaciones */
-.dark-mode .border-l-4.border-red-500 {
-  border-left-color: #ef4444 !important;
-}
-
-.dark-mode .border-l-4.border-blue-500 {
-  border-left-color: #3b82f6 !important;
-}
-
-/* Estilos para tooltips */
-.dark-mode .bg-black.bg-opacity-90 {
-  background-color: rgba(0, 0, 0, 0.9) !important;
-}
-
-.dark-mode .border.border-gray-700 {
-  border-color: #475569 !important;
-}
-
-.dark-mode .text-gray-300 {
-  color: #cbd5e1 !important;
-}
-
-/* Estilos para elementos de menú */
-.dark-mode .text-sm.font-semibold.text-gray-700 {
-  color: #cbd5e1 !important;
-}
-
-/* Estilos para iconos */
-.dark-mode .text-orange-500 {
-  color: #f97316 !important;
-}
-
-.dark-mode .text-blue-500 {
-  color: #3b82f6 !important;
-}
-
-.dark-mode .text-green-500 {
-  color: #22c55e !important;
-}
-
-.dark-mode .text-pink-500 {
-  color: #ec4899 !important;
-}
-
-.dark-mode .text-purple-500 {
-  color: #a855f7 !important;
-}
-
-.dark-mode .text-emerald-500 {
-  color: #10b981 !important;
-}
-
-.dark-mode .text-indigo-500 {
-  color: #6366f1 !important;
-}
-
-.dark-mode .text-red-500 {
-  color: #ef4444 !important;
-}
-
-.dark-mode .text-yellow-500 {
-  color: #eab308 !important;
-}
-
-/* Hover states para iconos */
-.dark-mode .group-hover\:text-orange-600:hover {
-  color: #ea580c !important;
-}
-
-.dark-mode .group-hover\:text-blue-600:hover {
-  color: #2563eb !important;
-}
-
-.dark-mode .group-hover\:text-green-600:hover {
-  color: #16a34a !important;
-}
-
-.dark-mode .group-hover\:text-pink-600:hover {
-  color: #db2777 !important;
-}
-
-.dark-mode .group-hover\:text-purple-600:hover {
-  color: #9333ea !important;
-}
-
-.dark-mode .group-hover\:text-emerald-600:hover {
-  color: #059669 !important;
-}
-
-.dark-mode .group-hover\:text-indigo-600:hover {
-  color: #4f46e5 !important;
-}
-
-.dark-mode .group-hover\:text-red-600:hover {
-  color: #dc2626 !important;
-}
-
-.dark-mode .group-hover\:text-yellow-600:hover {
-  color: #ca8a04 !important;
-}
-
-/* Estilos para elementos de texto específicos */
-.dark-mode .text-md,
-.dark-mode .text-lg {
-  color: #cbd5e1 !important;
-}
-
-/* Estilos para elementos de navegación */
-.dark-mode .cursor-pointer {
-  cursor: pointer;
-}
-
-.dark-mode .transform.hover\:scale-105:hover {
-  transform: scale(1.05) !important;
-}
-
-.dark-mode .transform.hover\:scale-110:hover {
-  transform: scale(1.1) !important;
-}
-
-/* Estilos para elementos de transición */
-.dark-mode .transition-all {
-  transition: all 0.3s ease !important;
-}
-
-.dark-mode .transition-transform {
-  transition: transform 0.3s ease !important;
-}
-
-.dark-mode .transition-colors {
-  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease !important;
-}
-
-/* Estilos específicos para el logo - transición suave en ambos modos */
+/* Transiciones del logo y botón de inicio (solo LayOut) */
 .logo-transition {
   transition: transform 0.3s ease !important;
 }
@@ -2013,7 +1482,6 @@ a:focus-visible {
   transform: scale(1.05) !important;
 }
 
-/* Estilos específicos para el botón "VER MIS CLIENTES" - transición suave en ambos modos */
 .button-transition {
   transition: all 0.3s ease !important;
 }
@@ -2022,141 +1490,4 @@ a:focus-visible {
   transform: scale(1.05) !important;
 }
 
-/* Estilos para elementos de posición */
-.dark-mode .fixed {
-  position: fixed;
-}
-
-.dark-mode .absolute {
-  position: absolute;
-}
-
-.dark-mode .relative {
-  position: relative;
-}
-
-/* Estilos para elementos de flexbox */
-.dark-mode .flex {
-  display: flex;
-}
-
-.dark-mode .flex-col {
-  flex-direction: column;
-}
-
-.dark-mode .items-center {
-  align-items: center;
-}
-
-.dark-mode .justify-center {
-  justify-content: center;
-}
-
-.dark-mode .gap-2 {
-  gap: 0.5rem;
-}
-
-.dark-mode .gap-3 {
-  gap: 0.75rem;
-}
-
-.dark-mode .gap-4 {
-  gap: 1rem;
-}
-
-/* Estilos para elementos de espaciado */
-.dark-mode .p-4 {
-  padding: 1rem;
-}
-
-.dark-mode .px-4 {
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-.dark-mode .py-3 {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
-}
-
-.dark-mode .py-2 {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-}
-
-.dark-mode .mb-3 {
-  margin-bottom: 0.75rem;
-}
-
-.dark-mode .mb-2 {
-  margin-bottom: 0.5rem;
-}
-
-.dark-mode .mt-2 {
-  margin-top: 0.5rem;
-}
-
-.dark-mode .mr-2 {
-  margin-right: 0.5rem;
-}
-
-/* Estilos para elementos de borde */
-.dark-mode .rounded-xl {
-  border-radius: 0.75rem;
-}
-
-.dark-mode .rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.dark-mode .rounded-full {
-  border-radius: 9999px;
-}
-
-.dark-mode .border {
-  border-width: 1px;
-}
-
-.dark-mode .border-2 {
-  border-width: 2px;
-}
-
-/* Estilos para elementos de tamaño */
-.dark-mode .w-full {
-  width: 100%;
-}
-
-.dark-mode .h-full {
-  height: 100%;
-}
-
-.dark-mode .max-w-sm {
-  max-width: 24rem;
-}
-
-.dark-mode .max-w-md {
-  max-width: 28rem;
-}
-
-/* Estilos para elementos de z-index */
-.dark-mode .z-50 {
-  z-index: 50;
-}
-
-.dark-mode .z-40 {
-  z-index: 40;
-}
-
-.dark-mode .z-30 {
-  z-index: 30;
-}
-
-.dark-mode .z-20 {
-  z-index: 20;
-}
-
-/* Transiciones suaves para el cambio de tema */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
 </style>

@@ -72,7 +72,7 @@ function textoMalestarFila(keyGrado) {
 
 <template>
   <div
-    class="flex flex-col gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
+    class="visualizador-cuestionario-prodromal-breve flex flex-col gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
   >
     <!-- Empresa y Fecha (paso 1) -->
     <div class="flex flex-wrap w-full gap-1 md:gap-4">
@@ -156,7 +156,7 @@ function textoMalestarFila(keyGrado) {
               <tr
                 v-for="(item, idx) in itemsPqB"
                 :key="item.keySi"
-                class="odd:bg-white even:bg-gray-50/80 cursor-pointer hover:bg-emerald-50/40 transition-colors border-b border-gray-200"
+                class="odd:bg-white even:bg-gray-50 cursor-pointer border-b border-gray-200"
                 :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === item.step }"
                 @click="irASiExiste(item.step)"
               >
@@ -238,5 +238,49 @@ function textoMalestarFila(keyGrado) {
 <style scoped>
 .cursor-pointer {
   cursor: pointer;
+}
+
+.visualizador-cuestionario-prodromal-breve div.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-cuestionario-prodromal-breve div.cursor-pointer:hover {
+  background-color: #f0f0f0;
+}
+
+.visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer,
+.visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer > td,
+.visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer > th,
+.visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer > td,
+.visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer > th {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer:hover,
+.visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer:hover > td,
+.visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer:hover > th,
+.visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer:hover,
+.visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer:hover > td,
+.visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer:hover > th {
+  background-color: #f0f0f0;
+}
+</style>
+
+<style>
+html.dark-mode .visualizador-cuestionario-prodromal-breve div.cursor-pointer:hover {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer:hover,
+html.dark-mode .visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-cuestionario-prodromal-breve tbody tr.cursor-pointer:hover > th,
+html.dark-mode .visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer:hover,
+html.dark-mode .visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-cuestionario-prodromal-breve thead tr.cursor-pointer:hover > th {
+  background-color: #475569 !important;
 }
 </style>

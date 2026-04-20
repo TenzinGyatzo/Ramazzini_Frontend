@@ -252,7 +252,7 @@ onBeforeRouteLeave((to, from, next) => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 max-w-7xl mx-auto">
+  <div class="manage-assignments-view p-4 sm:p-6 max-w-7xl mx-auto">
     <div class="mb-6">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-4">
         <div>
@@ -263,7 +263,7 @@ onBeforeRouteLeave((to, from, next) => {
         <!-- Indicador de cambios y botones de acción -->
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-end w-full lg:w-auto mt-4 sm:mt-0">
           <!-- Indicador de cambios sin guardar -->
-          <div v-if="hasUnsavedChanges" class="flex items-center justify-between sm:justify-center text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 text-xs sm:text-sm">
+          <div v-if="hasUnsavedChanges" class="assignments-unsaved-indicator flex items-center justify-between sm:justify-center text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 text-xs sm:text-sm">
             <i class="fas fa-exclamation-triangle mr-2"></i>
             <span class="font-medium">Cambios sin guardar</span>
           </div>
@@ -315,7 +315,7 @@ onBeforeRouteLeave((to, from, next) => {
       <AssignmentsSummary :usuarios="usuariosFiltrados" />
       
       <!-- Información adicional -->
-      <div class="mt-1 p-4 bg-white rounded-lg shadow-lg border border-gray-200 mb-6">
+      <div class="assignments-info-card mt-1 p-4 bg-white rounded-lg shadow-lg border border-gray-200 mb-6">
         <div class="flex items-start gap-3">
           <i class="fas fa-info-circle text-blue-600 mt-0.5"></i>
           <div>
@@ -334,7 +334,7 @@ onBeforeRouteLeave((to, from, next) => {
           v-for="usuario in usuariosFiltrados" 
           :key="usuario._id"
           :class="[
-            'bg-white rounded-xl shadow-lg border p-4 sm:p-6 hover:shadow-xl transition-all duration-300',
+            'assignment-user-card bg-white rounded-xl shadow-lg border p-4 sm:p-6 hover:shadow-xl transition-all duration-300',
             hasChangesForUser(usuario) ? 'border-amber-300 shadow-amber-100' : 'border-gray-200'
           ]"
         >
@@ -348,7 +348,7 @@ onBeforeRouteLeave((to, from, next) => {
               <div class="flex flex-wrap items-center gap-2">
                 <h3 class="font-semibold text-gray-900 text-base sm:text-lg">{{ usuario.username }}</h3>
                   <!-- Indicador de cambios para este usuario -->
-                  <span v-if="hasChangesForUser(usuario)" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                  <span v-if="hasChangesForUser(usuario)" class="assignment-modified-badge inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                     <i class="fas fa-pencil-alt mr-1"></i>
                     Modificado
                   </span>
@@ -415,7 +415,7 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
 
             <!-- Acceso completo habilitado -->
-            <div v-else class="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg p-3 sm:p-4">
+            <div v-else class="assignment-access-full-card bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg p-3 sm:p-4">
               <div class="flex items-start">
                 <div class="flex-shrink-0">
                   <i class="fas fa-globe text-emerald-600 text-base sm:text-lg"></i>
@@ -429,7 +429,7 @@ onBeforeRouteLeave((to, from, next) => {
                     No es necesario realizar asignaciones granulares.
                   </p>
 
-                  <div class="bg-amber-50 border border-amber-200 rounded-md p-3">
+                  <div class="assignment-warning-card bg-amber-50 border border-amber-200 rounded-md p-3">
                     <div class="flex items-center mb-2">
                       <i class="fas fa-exclamation-triangle text-amber-600 mr-2"></i>
                       <span class="text-xs sm:text-sm font-medium text-amber-800">Para asignación granular</span>
@@ -449,3 +449,35 @@ onBeforeRouteLeave((to, from, next) => {
     </div>
   </div>
 </template>
+
+<style>
+html.dark-mode .manage-assignments-view .assignments-unsaved-indicator {
+  color: #fcd34d !important;
+  background-color: rgba(146, 64, 14, 0.28) !important;
+  border-color: #b45309 !important;
+}
+
+html.dark-mode .manage-assignments-view .assignments-info-card {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html.dark-mode .manage-assignments-view .assignment-user-card {
+  background-color: #0f172a !important;
+}
+
+html.dark-mode .manage-assignments-view .assignment-modified-badge {
+  background-color: rgba(180, 83, 9, 0.28) !important;
+  color: #fcd34d !important;
+}
+
+html.dark-mode .manage-assignments-view .assignment-access-full-card {
+  background-image: linear-gradient(to right, rgba(6, 78, 59, 0.45), rgba(22, 101, 52, 0.4)) !important;
+  border-color: #047857 !important;
+}
+
+html.dark-mode .manage-assignments-view .assignment-warning-card {
+  background-color: rgba(146, 64, 14, 0.22) !important;
+  border-color: #b45309 !important;
+}
+</style>

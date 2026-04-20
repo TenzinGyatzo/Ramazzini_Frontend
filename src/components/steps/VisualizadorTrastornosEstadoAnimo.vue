@@ -154,7 +154,7 @@ const REGLA_TRIAJE_MDQ =
 
 <template>
   <div
-    class="flex flex-col gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
+    class="visualizador-trastornos-estado-animo flex flex-col gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
   >
     <!-- Empresa y Fecha (paso 1) -->
     <div class="flex flex-wrap w-full gap-1 md:gap-4">
@@ -241,7 +241,7 @@ const REGLA_TRIAJE_MDQ =
               <tr
                 v-for="(item, idx) in itemsP1Mdq"
                 :key="item.key"
-                class="odd:bg-white even:bg-gray-50/80 cursor-pointer hover:bg-emerald-50/40 transition-colors border-b border-gray-200"
+                class="odd:bg-white even:bg-gray-50 cursor-pointer border-b border-gray-200"
                 :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === item.step }"
                 @click="irASiExiste(item.step)"
               >
@@ -283,7 +283,7 @@ const REGLA_TRIAJE_MDQ =
       <div
         class="rounded border border-gray-200 overflow-hidden"
         :class="[
-          aplicaP2 ? 'cursor-pointer hover:bg-emerald-50/30' : 'bg-gray-50/80',
+          aplicaP2 ? 'cursor-pointer' : 'bg-gray-50',
           { 'ring-1 ring-inset ring-yellow-400': aplicaP2 && stepsStore.currentStep === stepP2 },
         ]"
         @click="aplicaP2 ? irASiExiste(stepP2) : null"
@@ -321,7 +321,7 @@ const REGLA_TRIAJE_MDQ =
 
       <!-- P3: opciones horizontales -->
       <div
-        class="rounded border border-gray-200 overflow-hidden cursor-pointer hover:bg-emerald-50/20 transition-colors"
+        class="rounded border border-gray-200 overflow-hidden cursor-pointer"
         :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === stepP3 }"
         @click="irASiExiste(stepP3)"
       >
@@ -352,7 +352,7 @@ const REGLA_TRIAJE_MDQ =
 
       <!-- P4 -->
       <div
-        class="rounded border border-gray-200 overflow-hidden cursor-pointer hover:bg-emerald-50/30 transition-colors"
+        class="rounded border border-gray-200 overflow-hidden cursor-pointer"
         :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === stepP4 }"
         @click="irASiExiste(stepP4)"
       >
@@ -390,7 +390,7 @@ const REGLA_TRIAJE_MDQ =
 
       <!-- P5 -->
       <div
-        class="rounded border border-gray-200 overflow-hidden cursor-pointer hover:bg-emerald-50/30 transition-colors"
+        class="rounded border border-gray-200 overflow-hidden cursor-pointer"
         :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === stepP5 }"
         @click="irASiExiste(stepP5)"
       >
@@ -461,5 +461,49 @@ const REGLA_TRIAJE_MDQ =
 <style scoped>
 .cursor-pointer {
   cursor: pointer;
+}
+
+.visualizador-trastornos-estado-animo div.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-trastornos-estado-animo div.cursor-pointer:hover {
+  background-color: #f0f0f0;
+}
+
+.visualizador-trastornos-estado-animo tbody tr.cursor-pointer,
+.visualizador-trastornos-estado-animo thead tr.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-trastornos-estado-animo tbody tr.cursor-pointer > td,
+.visualizador-trastornos-estado-animo tbody tr.cursor-pointer > th,
+.visualizador-trastornos-estado-animo thead tr.cursor-pointer > td,
+.visualizador-trastornos-estado-animo thead tr.cursor-pointer > th {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-trastornos-estado-animo tbody tr.cursor-pointer:hover,
+.visualizador-trastornos-estado-animo tbody tr.cursor-pointer:hover > td,
+.visualizador-trastornos-estado-animo tbody tr.cursor-pointer:hover > th,
+.visualizador-trastornos-estado-animo thead tr.cursor-pointer:hover,
+.visualizador-trastornos-estado-animo thead tr.cursor-pointer:hover > td,
+.visualizador-trastornos-estado-animo thead tr.cursor-pointer:hover > th {
+  background-color: #f0f0f0;
+}
+</style>
+
+<style>
+html.dark-mode .visualizador-trastornos-estado-animo div.cursor-pointer:hover {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .visualizador-trastornos-estado-animo tbody tr.cursor-pointer:hover,
+html.dark-mode .visualizador-trastornos-estado-animo tbody tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-trastornos-estado-animo tbody tr.cursor-pointer:hover > th,
+html.dark-mode .visualizador-trastornos-estado-animo thead tr.cursor-pointer:hover,
+html.dark-mode .visualizador-trastornos-estado-animo thead tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-trastornos-estado-animo thead tr.cursor-pointer:hover > th {
+  background-color: #475569 !important;
 }
 </style>

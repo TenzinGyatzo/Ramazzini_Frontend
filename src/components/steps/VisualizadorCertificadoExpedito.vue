@@ -62,7 +62,7 @@ function getGradoSaludFormateado(gradoSalud) {
 
 <template>
   <div
-    class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
+    class="visualizador-certificado-expedito flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
     <div class="flex flex-wrap w-full gap-1 md:gap-4">
@@ -240,5 +240,10 @@ function getGradoSaludFormateado(gradoSalud) {
 .cursor-pointer:hover {
   background-color: #f0f0f0;
   /* Cambia el color según tu diseño */
+}
+
+html.dark-mode .visualizador-certificado-expedito .cursor-pointer:hover {
+  background-color: #475569 !important;
+  color: #f8fafc !important;
 }
 </style>

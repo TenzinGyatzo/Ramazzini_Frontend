@@ -1,0 +1,2036 @@
+/**
+ * Tema oscuro global: clase `dark-mode` en document.documentElement.
+ * También se añade la clase `dark` de Tailwind en el mismo elemento.
+ * Preferir utilidades `dark:` en componentes nuevos.
+ */
+html.dark-mode {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  min-height: 100%;
+}
+
+/* Fondo principal del html, body y elementos base */
+html.dark-mode body {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  min-height: 100vh !important;
+}
+
+html.dark-mode main {
+  background-color: #0f172a !important;
+  min-height: 100vh !important;
+}
+
+/* Asegurar que el fondo de la página completa esté oscuro */
+html.dark-mode #app {
+  background-color: #0f172a !important;
+  min-height: 100vh !important;
+}
+
+/* Fondos principales */
+html.dark-mode .bg-white {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode .bg-gray-50 {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode .bg-gray-100 {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .bg-gray-200 {
+  background-color: #475569 !important;
+}
+
+/*
+ * Tailwind `odd:bg-*` / `even:bg-*` no incluyen la clase `.bg-white` / `.bg-gray-50`
+ * en el elemento, por lo que los remapeos anteriores no aplican y quedan fondos claros
+ * con texto heredado claro del html (p. ej. VisualizadorHistoriaClinica).
+ */
+html.dark-mode .odd\:bg-white:nth-child(odd) {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode .even\:bg-gray-50:nth-child(even) {
+  background-color: #0f172a !important;
+}
+
+html.dark-mode .odd\:bg-gray-50:nth-child(odd) {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode .even\:bg-white:nth-child(even) {
+  background-color: #0f172a !important;
+}
+
+/* Gradientes en dark mode */
+html.dark-mode .bg-gradient-to-r.from-gray-50.to-gray-100 {
+  background: linear-gradient(to right, #1e293b, #334155) !important;
+}
+
+/* Asegurar que el h1 no tenga fondo en modo oscuro */
+html.dark-mode h1.bg-gradient-to-r.from-slate-700.to-gray-600 {
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .bg-gradient-to-r.from-emerald-600.to-emerald-700 {
+  background: linear-gradient(to right, #059669, #047857) !important;
+}
+
+html.dark-mode .bg-gradient-to-r.from-emerald-700.to-emerald-800 {
+  background: linear-gradient(to right, #047857, #065f46) !important;
+}
+
+html.dark-mode .bg-gradient-to-r.from-blue-500.to-indigo-600 {
+  background: linear-gradient(to right, #3b82f6, #4f46e5) !important;
+}
+
+/* Textos en dark mode */
+html.dark-mode .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .text-gray-600 {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .text-gray-900 {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .text-gray-400 {
+  color: #64748b !important;
+}
+
+html.dark-mode .text-gray-300 {
+  color: #475569 !important;
+}
+
+/* Bordes en dark mode */
+html.dark-mode .border-gray-200 {
+  border-color: #334155 !important;
+}
+
+html.dark-mode .border-gray-300 {
+  border-color: #475569 !important;
+}
+
+html.dark-mode .border-gray-100 {
+  border-color: #1e293b !important;
+}
+
+/* Semaforizacion: interpretaciones (examen vista y pasos similares) */
+html.dark-mode .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+html.dark-mode .text-emerald-800 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .bg-yellow-50 {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+html.dark-mode .text-yellow-800 {
+  color: #fcd34d !important;
+}
+
+html.dark-mode .bg-orange-50 {
+  background-color: rgba(249, 115, 22, 0.22) !important;
+}
+
+html.dark-mode .text-orange-800 {
+  color: #fdba74 !important;
+}
+
+html.dark-mode .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+html.dark-mode .text-blue-800 {
+  color: #bfdbfe !important;
+}
+
+html.dark-mode .text-blue-700 {
+  color: #93c5fd !important;
+}
+
+html.dark-mode .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+html.dark-mode .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.16) !important;
+}
+
+html.dark-mode .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.22) !important;
+}
+
+html.dark-mode .bg-red-200 {
+  background-color: rgba(220, 38, 38, 0.28) !important;
+}
+
+html.dark-mode .bg-green-50 {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+html.dark-mode .text-green-800 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .text-red-800 {
+  color: #fca5a5 !important;
+}
+
+html.dark-mode .text-red-900 {
+  color: #fca5a5 !important;
+}
+
+html.dark-mode .text-red-950 {
+  color: #fecaca !important;
+}
+
+/* Hover states en dark mode */
+html.dark-mode .hover\:bg-gray-50:hover {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .hover\:bg-gray-100:hover {
+  background-color: #475569 !important;
+}
+
+/* Sin esto, `hover:bg-gray-200` conserva el gris claro de Tailwind y encandece filas/celdas en tablas (p. ej. Dashboard). Misma base que `hover:bg-gray-50`. Los visores de documentos siguen usando su override más específico. */
+html.dark-mode .hover\:bg-gray-200:hover {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .hover\:from-gray-50:hover {
+  background: linear-gradient(to right, #334155, #475569) !important;
+}
+
+html.dark-mode .hover\:to-gray-100:hover {
+  background: linear-gradient(to right, #334155, #475569) !important;
+}
+
+/* Estados específicos de hover para botones */
+html.dark-mode .hover\:from-blue-50:hover {
+  background: linear-gradient(to right, #1e40af, #3730a3) !important;
+}
+
+html.dark-mode .hover\:to-blue-100:hover {
+  background: linear-gradient(to right, #1e40af, #3730a3) !important;
+}
+
+html.dark-mode .hover\:from-indigo-50:hover {
+  background: linear-gradient(to right, #3730a3, #4338ca) !important;
+}
+
+html.dark-mode .hover\:to-indigo-100:hover {
+  background: linear-gradient(to right, #3730a3, #4338ca) !important;
+}
+
+html.dark-mode .hover\:from-purple-50:hover {
+  background: linear-gradient(to right, #7c3aed, #8b5cf6) !important;
+}
+
+html.dark-mode .hover\:to-purple-100:hover {
+  background: linear-gradient(to right, #7c3aed, #8b5cf6) !important;
+}
+
+html.dark-mode .hover\:from-emerald-50:hover {
+  background: linear-gradient(to right, #047857, #065f46) !important;
+}
+
+html.dark-mode .hover\:to-emerald-100:hover {
+  background: linear-gradient(to right, #047857, #065f46) !important;
+}
+
+html.dark-mode .hover\:from-orange-50:hover {
+  background: linear-gradient(to right, #ea580c, #dc2626) !important;
+}
+
+html.dark-mode .hover\:to-orange-100:hover {
+  background: linear-gradient(to right, #ea580c, #dc2626) !important;
+}
+
+html.dark-mode .hover\:from-red-50:hover {
+  background: linear-gradient(to right, #dc2626, #b91c1c) !important;
+}
+
+html.dark-mode .hover\:to-red-100:hover {
+  background: linear-gradient(to right, #dc2626, #b91c1c) !important;
+}
+
+html.dark-mode .hover\:from-yellow-50:hover {
+  background: linear-gradient(to right, #d97706, #b45309) !important;
+}
+
+html.dark-mode .hover\:to-yellow-100:hover {
+  background: linear-gradient(to right, #d97706, #b45309) !important;
+}
+
+/* Bordes de hover en dark mode */
+html.dark-mode .hover\:border-blue-300:hover {
+  border-color: #60a5fa !important;
+}
+
+html.dark-mode .hover\:border-indigo-300:hover {
+  border-color: #818cf8 !important;
+}
+
+html.dark-mode .hover\:border-purple-300:hover {
+  border-color: #a78bfa !important;
+}
+
+html.dark-mode .hover\:border-emerald-300:hover {
+  border-color: #34d399 !important;
+}
+
+html.dark-mode .hover\:border-orange-300:hover {
+  border-color: #fdba74 !important;
+}
+
+html.dark-mode .hover\:border-red-300:hover {
+  border-color: #fca5a5 !important;
+}
+
+html.dark-mode .hover\:border-yellow-300:hover {
+  border-color: #fde047 !important;
+}
+
+/* Textos de hover en dark mode */
+html.dark-mode .hover\:text-gray-900:hover {
+  color: #f8fafc !important;
+}
+
+html.dark-mode .hover\:text-blue-800:hover {
+  color: #93c5fd !important;
+}
+
+html.dark-mode .hover\:text-indigo-600:hover {
+  color: #a5b4fc !important;
+}
+
+html.dark-mode .hover\:text-purple-600:hover {
+  color: #c4b5fd !important;
+}
+
+html.dark-mode .hover\:text-emerald-600:hover {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .hover\:text-orange-600:hover {
+  color: #fdba74 !important;
+}
+
+html.dark-mode .hover\:text-red-600:hover {
+  color: #fca5a5 !important;
+}
+
+html.dark-mode .hover\:text-yellow-600:hover {
+  color: #fde047 !important;
+}
+
+/* Estados específicos para campos pendientes */
+html.dark-mode .from-red-50 {
+  background: linear-gradient(to right, #7f1d1d, #991b1b) !important;
+}
+
+html.dark-mode .to-red-100 {
+  background: linear-gradient(to right, #7f1d1d, #991b1b) !important;
+}
+
+html.dark-mode .from-yellow-50 {
+  background: linear-gradient(to right, #92400e, #a16207) !important;
+}
+
+html.dark-mode .to-yellow-100 {
+  background: linear-gradient(to right, #92400e, #a16207) !important;
+}
+
+html.dark-mode .hover\:from-red-100:hover {
+  background: linear-gradient(to right, #991b1b, #b91c1c) !important;
+}
+
+html.dark-mode .hover\:to-red-200:hover {
+  background: linear-gradient(to right, #991b1b, #b91c1c) !important;
+}
+
+html.dark-mode .hover\:from-yellow-100:hover {
+  background: linear-gradient(to right, #a16207, #ca8a04) !important;
+}
+
+html.dark-mode .hover\:to-yellow-200:hover {
+  background: linear-gradient(to right, #a16207, #ca8a04) !important;
+}
+
+html.dark-mode .border-red-300 {
+  border-color: #fca5a5 !important;
+}
+
+html.dark-mode .border-yellow-300 {
+  border-color: #fde047 !important;
+}
+
+html.dark-mode .hover\:border-red-400:hover {
+  border-color: #f87171 !important;
+}
+
+html.dark-mode .hover\:border-yellow-400:hover {
+  border-color: #facc15 !important;
+}
+
+/* Textos específicos para estados de error/advertencia */
+html.dark-mode .text-red-700 {
+  color: #fca5a5 !important;
+}
+
+html.dark-mode .text-yellow-700 {
+  color: #fde047 !important;
+}
+
+html.dark-mode .hover\:text-red-800:hover {
+  color: #f87171 !important;
+}
+
+html.dark-mode .hover\:text-yellow-800:hover {
+  color: #facc15 !important;
+}
+
+/* Sombras mejoradas para dark mode */
+html.dark-mode .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark-mode .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark-mode .shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Drop shadows */
+html.dark-mode .drop-shadow-lg {
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.4)) !important;
+}
+
+/* Backdrop blur */
+html.dark-mode .backdrop-blur-sm {
+  backdrop-filter: blur(4px) !important;
+}
+
+html.dark-mode .bg-white\/95 {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+}
+
+/* Scrollbar personalizada para dark mode */
+html.dark-mode ::-webkit-scrollbar-track {
+  background: #1e293b !important;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #475569, #64748b) !important;
+  border: 2px solid #1e293b !important;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #64748b, #94a3b8) !important;
+}
+
+/* Focus styles para dark mode */
+html.dark-mode button:focus-visible,
+html.dark-mode a:focus-visible {
+  outline: 2px solid #60a5fa !important;
+  outline-offset: 2px !important;
+}
+
+/* Estilos específicos para elementos de la interfaz */
+html.dark-mode .text-5xl,
+html.dark-mode .text-6xl,
+html.dark-mode .text-7xl,
+html.dark-mode .text-8xl,
+html.dark-mode .text-9xl {
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .text-2xl,
+html.dark-mode .text-3xl,
+html.dark-mode .text-4xl,
+html.dark-mode .text-5xl {
+  color: #cbd5e1 !important;
+}
+
+/* Estilos para botones específicos */
+html.dark-mode .border-2.border-gray-300 {
+  border-color: #475569 !important;
+}
+
+html.dark-mode .hover\:bg-red-600:hover {
+  background-color: #dc2626 !important;
+}
+
+html.dark-mode .hover\:text-gray-200:hover {
+  color: #e2e8f0 !important;
+}
+
+/* Estilos para notificaciones */
+html.dark-mode .border-l-4.border-red-500 {
+  border-left-color: #ef4444 !important;
+}
+
+html.dark-mode .border-l-4.border-blue-500 {
+  border-left-color: #3b82f6 !important;
+}
+
+/* Estilos para tooltips */
+html.dark-mode .bg-black.bg-opacity-90 {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+}
+
+html.dark-mode .border.border-gray-700 {
+  border-color: #475569 !important;
+}
+
+html.dark-mode .text-gray-300 {
+  color: #cbd5e1 !important;
+}
+
+/* Estilos para elementos de menú */
+html.dark-mode .text-sm.font-semibold.text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+/* Estilos para iconos */
+html.dark-mode .text-orange-500 {
+  color: #f97316 !important;
+}
+
+html.dark-mode .text-blue-500 {
+  color: #3b82f6 !important;
+}
+
+html.dark-mode .text-green-500 {
+  color: #22c55e !important;
+}
+
+html.dark-mode .text-pink-500 {
+  color: #ec4899 !important;
+}
+
+html.dark-mode .text-purple-500 {
+  color: #a855f7 !important;
+}
+
+html.dark-mode .text-emerald-500 {
+  color: #10b981 !important;
+}
+
+html.dark-mode .text-indigo-500 {
+  color: #6366f1 !important;
+}
+
+html.dark-mode .text-red-500 {
+  color: #ef4444 !important;
+}
+
+html.dark-mode .text-yellow-500 {
+  color: #eab308 !important;
+}
+
+/* Hover states para iconos */
+html.dark-mode .group-hover\:text-orange-600:hover {
+  color: #ea580c !important;
+}
+
+html.dark-mode .group-hover\:text-blue-600:hover {
+  color: #2563eb !important;
+}
+
+html.dark-mode .group-hover\:text-green-600:hover {
+  color: #16a34a !important;
+}
+
+html.dark-mode .group-hover\:text-pink-600:hover {
+  color: #db2777 !important;
+}
+
+html.dark-mode .group-hover\:text-purple-600:hover {
+  color: #9333ea !important;
+}
+
+html.dark-mode .group-hover\:text-emerald-600:hover {
+  color: #059669 !important;
+}
+
+html.dark-mode .group-hover\:text-indigo-600:hover {
+  color: #4f46e5 !important;
+}
+
+html.dark-mode .group-hover\:text-red-600:hover {
+  color: #dc2626 !important;
+}
+
+html.dark-mode .group-hover\:text-yellow-600:hover {
+  color: #ca8a04 !important;
+}
+
+/* Estilos para elementos de texto específicos */
+html.dark-mode .text-md,
+html.dark-mode .text-lg {
+  color: #cbd5e1 !important;
+}
+
+/* Estilos para elementos de navegación */
+html.dark-mode .cursor-pointer {
+  cursor: pointer;
+}
+
+html.dark-mode .transform.hover\:scale-105:hover {
+  transform: scale(1.05) !important;
+}
+
+html.dark-mode .transform.hover\:scale-110:hover {
+  transform: scale(1.1) !important;
+}
+
+/* Estilos para elementos de transición */
+html.dark-mode .transition-all {
+  transition: all 0.3s ease !important;
+}
+
+html.dark-mode .transition-transform {
+  transition: transform 0.3s ease !important;
+}
+
+html.dark-mode .transition-colors {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease !important;
+}
+
+/*
+ * Expediente médico (ExpedienteMedicoView, GrupoDocumentos, sugerencias vacías, SlidingButtonPanel):
+ * gradientes to-br, cabeceras con via-*, métricas pastel, aviso logotipo, botones secundarios,
+ * SliderButton (scoped), badges de resultados clínicos. DocumentoItem: bloque `.documento-item` más abajo.
+ */
+html.dark-mode .bg-gradient-to-r.from-emerald-600.via-emerald-500.to-emerald-600 {
+  background-image: linear-gradient(to right, #047857, #10b981, #047857) !important;
+}
+
+html.dark-mode .text-emerald-100 {
+  color: #a7f3d0 !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-emerald-500.to-green-600 {
+  background-image: linear-gradient(to bottom right, #047857, #166534) !important;
+}
+
+html.dark-mode .text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .text-purple-700 {
+  color: #ddd6fe !important;
+}
+
+html.dark-mode .text-orange-700 {
+  color: #fdba74 !important;
+}
+
+html.dark-mode .text-purple-600 {
+  color: #c4b5fd !important;
+}
+
+html.dark-mode .text-orange-600 {
+  color: #fdba74 !important;
+}
+
+html.dark-mode .text-sky-600 {
+  color: #7dd3fc !important;
+}
+
+html.dark-mode .text-rose-600 {
+  color: #fda4af !important;
+}
+
+html.dark-mode .text-cyan-500 {
+  color: #22d3ee !important;
+}
+
+html.dark-mode .bg-emerald-50 {
+  background-color: rgba(6, 78, 59, 0.45) !important;
+}
+
+html.dark-mode .bg-purple-50 {
+  background-color: rgba(76, 29, 149, 0.4) !important;
+}
+
+html.dark-mode .bg-orange-50 {
+  background-color: rgba(124, 45, 18, 0.45) !important;
+}
+
+html.dark-mode .bg-emerald-50 .text-emerald-600 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .bg-purple-50 .text-purple-600 {
+  color: #ddd6fe !important;
+}
+
+html.dark-mode .bg-orange-50 .text-orange-600 {
+  color: #fdba74 !important;
+}
+
+html.dark-mode .bg-emerald-100 {
+  background-color: #065f46 !important;
+}
+
+html.dark-mode .border-emerald-200 {
+  border-color: #047857 !important;
+}
+
+html.dark-mode .border-purple-200 {
+  border-color: #6b21a8 !important;
+}
+
+html.dark-mode .border-orange-200 {
+  border-color: #c2410c !important;
+}
+
+html.dark-mode .bg-gradient-to-r.from-amber-50.to-orange-50 {
+  background-image: linear-gradient(
+    to right,
+    rgba(120, 53, 15, 0.55),
+    rgba(154, 52, 18, 0.5)
+  ) !important;
+}
+
+html.dark-mode .border-amber-200 {
+  border-color: #b45309 !important;
+}
+
+html.dark-mode .bg-amber-100 {
+  background-color: #78350f !important;
+}
+
+html.dark-mode .text-amber-600 {
+  color: #fcd34d !important;
+}
+
+html.dark-mode .text-amber-800 {
+  color: #fde68a !important;
+}
+
+html.dark-mode .hover\:text-amber-900:hover {
+  color: #fffbeb !important;
+}
+
+html.dark-mode .hover\:border-teal-400:hover {
+  border-color: #2dd4bf !important;
+}
+
+html.dark-mode .hover\:border-indigo-400:hover {
+  border-color: #818cf8 !important;
+}
+
+html.dark-mode .hover\:border-purple-400:hover {
+  border-color: #c084fc !important;
+}
+
+html.dark-mode .hover\:border-green-400:hover {
+  border-color: #4ade80 !important;
+}
+
+html.dark-mode .hover\:border-blue-400:hover {
+  border-color: #60a5fa !important;
+}
+
+html.dark-mode .hover\:border-orange-400:hover {
+  border-color: #fb923c !important;
+}
+
+html.dark-mode .hover\:border-pink-400:hover {
+  border-color: #f472b6 !important;
+}
+
+html.dark-mode .border-teal-200 {
+  border-color: #0f766e !important;
+}
+
+html.dark-mode .border-indigo-200 {
+  border-color: #4338ca !important;
+}
+
+html.dark-mode .border-yellow-200 {
+  border-color: #a16207 !important;
+}
+
+html.dark-mode .border-green-200 {
+  border-color: #166534 !important;
+}
+
+html.dark-mode .border-blue-200 {
+  border-color: #1d4ed8 !important;
+}
+
+html.dark-mode .border-red-200 {
+  border-color: #b91c1c !important;
+}
+
+html.dark-mode .border-pink-200 {
+  border-color: #be185d !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-teal-50.to-teal-100 {
+  background-image: linear-gradient(to bottom right, #134e4a, #115e59) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-teal-50.to-teal-100:hover {
+  background-image: linear-gradient(to bottom right, #115e59, #0d9488) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-indigo-50.to-indigo-100 {
+  background-image: linear-gradient(to bottom right, #312e81, #3730a3) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-indigo-50.to-indigo-100:hover {
+  background-image: linear-gradient(to bottom right, #3730a3, #4338ca) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-yellow-50.to-yellow-100 {
+  background-image: linear-gradient(to bottom right, #713f12, #854d0e) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-yellow-50.to-yellow-100:hover {
+  background-image: linear-gradient(to bottom right, #854d0e, #a16207) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-purple-50.to-purple-100 {
+  background-image: linear-gradient(to bottom right, #581c87, #6b21a8) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-purple-50.to-purple-100:hover {
+  background-image: linear-gradient(to bottom right, #6b21a8, #7e22ce) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-green-50.to-green-100 {
+  background-image: linear-gradient(to bottom right, #14532d, #166534) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-green-50.to-green-100:hover {
+  background-image: linear-gradient(to bottom right, #166534, #15803d) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-blue-50.to-blue-100 {
+  background-image: linear-gradient(to bottom right, #1e3a8a, #1d4ed8) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-blue-50.to-blue-100:hover {
+  background-image: linear-gradient(to bottom right, #1d4ed8, #2563eb) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-red-50.to-red-100 {
+  background-image: linear-gradient(to bottom right, #7f1d1d, #991b1b) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-red-50.to-red-100:hover {
+  background-image: linear-gradient(to bottom right, #991b1b, #b91c1c) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-orange-50.to-orange-100 {
+  background-image: linear-gradient(to bottom right, #9a3412, #c2410c) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-orange-50.to-orange-100:hover {
+  background-image: linear-gradient(to bottom right, #c2410c, #ea580c) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-pink-50.to-pink-100 {
+  background-image: linear-gradient(to bottom right, #9d174d, #be185d) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-pink-50.to-pink-100:hover {
+  background-image: linear-gradient(to bottom right, #be185d, #db2777) !important;
+}
+
+html.dark-mode .border-emerald-600.bg-white,
+html.dark-mode button.border-emerald-600.bg-white {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode button.border-emerald-600.hover\:bg-emerald-50:hover {
+  background-color: #064e3b !important;
+}
+
+html.dark-mode .border-blue-600.bg-white,
+html.dark-mode button.border-blue-600.bg-white {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode button.border-blue-600.hover\:bg-blue-50:hover {
+  background-color: #1e3a5f !important;
+}
+
+html.dark-mode .border-emerald-600.bg-white .text-emerald-600,
+html.dark-mode button.border-emerald-600.bg-white .text-emerald-600 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .border-blue-600.bg-white .text-blue-600,
+html.dark-mode button.border-blue-600.bg-white .text-blue-600 {
+  color: #93c5fd !important;
+}
+
+html.dark-mode .button {
+  background-color: #1e293b !important;
+  border-color: #10b981 !important;
+}
+
+html.dark-mode .button .button__text {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .button:hover {
+  background-color: #047857 !important;
+}
+
+html.dark-mode .button .button__icon {
+  background-color: #065f46 !important;
+}
+
+html.dark-mode .bg-rose-100 {
+  background-color: rgba(136, 19, 55, 0.55) !important;
+}
+
+html.dark-mode .text-rose-700 {
+  color: #fecdd3 !important;
+}
+
+html.dark-mode .text-amber-700 {
+  color: #fcd34d !important;
+}
+
+html.dark-mode .hover\:from-gray-100:hover {
+  background-image: linear-gradient(to right, #334155, #475569) !important;
+}
+
+html.dark-mode .hover\:to-gray-200:hover {
+  background-image: linear-gradient(to right, #334155, #475569) !important;
+}
+
+html.dark-mode .hover\:from-gray-200:hover {
+  background-image: linear-gradient(to right, #475569, #64748b) !important;
+}
+
+html.dark-mode .hover\:to-gray-300:hover {
+  background-image: linear-gradient(to right, #475569, #64748b) !important;
+}
+
+html.dark-mode .hover\:bg-gradient-to-r.hover\:from-emerald-50.hover\:to-green-50:hover {
+  background-image: linear-gradient(to right, rgba(6, 78, 59, 0.55), rgba(22, 101, 52, 0.5)) !important;
+}
+
+html.dark-mode .hover\:bg-gradient-to-r.hover\:from-red-50.hover\:to-pink-50:hover {
+  background-image: linear-gradient(to right, rgba(127, 29, 29, 0.55), rgba(157, 23, 77, 0.45)) !important;
+}
+
+html.dark-mode .bg-green-100 {
+  background-color: rgba(22, 101, 52, 0.5) !important;
+}
+
+html.dark-mode .text-green-700 {
+  color: #86efac !important;
+}
+
+html.dark-mode .text-green-600 {
+  color: #4ade80 !important;
+}
+
+html.dark-mode .text-yellow-600 {
+  color: #fde047 !important;
+}
+
+html.dark-mode .bg-red-100 {
+  background-color: rgba(127, 29, 29, 0.45) !important;
+}
+
+html.dark-mode .group:hover .group-hover\:bg-red-200 {
+  background-color: #b91c1c !important;
+}
+
+html.dark-mode .bg-gradient-to-r.from-green-500.via-emerald-600.to-emerald-500 {
+  background-image: linear-gradient(to right, #15803d, #059669, #10b981) !important;
+}
+
+/*
+ * DocumentoItem.vue: tarjeta (.documento-item) y visores PDF/imagen (.documento-item-viewer).
+ * Visor PDF de ResultadosClinicosPanel: mismas reglas vía .resultados-clinicos-panel-viewer.
+ * Acota reglas para no afectar otros listados; light sin cambios.
+ */
+html.dark-mode .documento-item.border-yellow-300 {
+  border-color: #ca8a04 !important;
+}
+
+html.dark-mode .documento-item.hover\:border-yellow-400:hover {
+  border-color: #facc15 !important;
+}
+
+html.dark-mode .documento-item input[type='checkbox'].border-gray-300 {
+  background-color: #334155 !important;
+  border-color: #64748b !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .documento-item .bg-gradient-to-b.from-yellow-400.to-orange-500 {
+  background-image: linear-gradient(to bottom, #ca8a04, #ea580c) !important;
+}
+
+html.dark-mode .documento-item .bg-gradient-to-b.from-red-500.to-rose-600 {
+  background-image: linear-gradient(to bottom, #b91c1c, #e11d48) !important;
+}
+
+html.dark-mode .documento-item .bg-gradient-to-b.from-emerald-500.to-green-600 {
+  background-image: linear-gradient(to bottom, #059669, #15803d) !important;
+}
+
+html.dark-mode .documento-item .bg-gradient-to-b.from-gray-300.to-gray-300 {
+  background-color: #64748b !important;
+  background-image: none !important;
+}
+
+html.dark-mode .documento-item .bg-gradient-to-b.from-rose-500.to-red-400 {
+  background-image: linear-gradient(to bottom, #e11d48, #f87171) !important;
+}
+
+html.dark-mode .documento-item .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+html.dark-mode .documento-item .text-blue-700 {
+  color: #93c5fd !important;
+}
+
+html.dark-mode .documento-item .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+html.dark-mode .documento-item .text-indigo-600 {
+  color: #a5b4fc !important;
+}
+
+html.dark-mode .documento-item .text-teal-600 {
+  color: #5eead4 !important;
+}
+
+html.dark-mode .documento-item .text-violet-600 {
+  color: #c4b5fd !important;
+}
+
+html.dark-mode .documento-item .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .documento-item .text-pink-600 {
+  color: #f472b6 !important;
+}
+
+html.dark-mode .documento-item .text-rose-500 {
+  color: #fb7185 !important;
+}
+
+html.dark-mode .documento-item .text-yellow-500 {
+  color: #fde047 !important;
+}
+
+html.dark-mode .documento-item .bg-yellow-100 {
+  background-color: rgba(113, 63, 18, 0.5) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-yellow-200 {
+  background-color: rgba(161, 98, 7, 0.55) !important;
+}
+
+html.dark-mode .documento-item .bg-indigo-100 {
+  background-color: rgba(49, 46, 129, 0.5) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-indigo-200 {
+  background-color: #4338ca !important;
+}
+
+html.dark-mode .documento-item .bg-teal-100 {
+  background-color: rgba(15, 118, 110, 0.45) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-teal-200 {
+  background-color: #0f766e !important;
+}
+
+html.dark-mode .documento-item .bg-orange-100 {
+  background-color: rgba(154, 52, 18, 0.45) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-orange-200 {
+  background-color: #c2410c !important;
+}
+
+html.dark-mode .documento-item .bg-pink-100 {
+  background-color: rgba(157, 23, 77, 0.45) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-pink-200 {
+  background-color: #be185d !important;
+}
+
+html.dark-mode .documento-item .bg-sky-100 {
+  background-color: rgba(12, 74, 110, 0.5) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-sky-200 {
+  background-color: #0369a1 !important;
+}
+
+html.dark-mode .documento-item .bg-slate-100 {
+  background-color: rgba(51, 65, 85, 0.65) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-slate-200 {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .documento-item .bg-violet-100 {
+  background-color: rgba(91, 33, 182, 0.45) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-violet-200 {
+  background-color: #6d28d9 !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-rose-200 {
+  background-color: #be123c !important;
+}
+
+html.dark-mode .documento-item .bg-purple-100 {
+  background-color: rgba(88, 28, 135, 0.45) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-purple-200 {
+  background-color: #7e22ce !important;
+}
+
+html.dark-mode .documento-item .bg-blue-100 {
+  background-color: rgba(30, 58, 138, 0.5) !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-blue-200 {
+  background-color: #1d4ed8 !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-green-200 {
+  background-color: #166534 !important;
+}
+
+html.dark-mode .documento-item.group:hover .group-hover\:bg-emerald-200 {
+  background-color: #047857 !important;
+}
+
+html.dark-mode .documento-item .hover\:bg-green-200:hover {
+  background-color: #166534 !important;
+}
+
+html.dark-mode .documento-item .hover\:bg-sky-200:hover {
+  background-color: #0369a1 !important;
+}
+
+html.dark-mode .documento-item .hover\:bg-red-200:hover {
+  background-color: #b91c1c !important;
+}
+
+html.dark-mode .documento-item-viewer .bg-white.bg-opacity-95,
+html.dark-mode .resultados-clinicos-panel-viewer .bg-white.bg-opacity-95 {
+  background-color: rgba(30, 41, 59, 0.96) !important;
+}
+
+html.dark-mode .documento-item-viewer .border-b.border-gray-200,
+html.dark-mode .resultados-clinicos-panel-viewer .border-b.border-gray-200 {
+  border-color: #334155 !important;
+}
+
+html.dark-mode .documento-item-viewer .bg-gray-100,
+html.dark-mode .resultados-clinicos-panel-viewer .bg-gray-100 {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .documento-item-viewer .hover\:bg-gray-200:hover,
+html.dark-mode .resultados-clinicos-panel-viewer .hover\:bg-gray-200:hover {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .documento-item-viewer .text-gray-700,
+html.dark-mode .resultados-clinicos-panel-viewer .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .documento-item-viewer .bg-emerald-100,
+html.dark-mode .resultados-clinicos-panel-viewer .bg-emerald-100 {
+  background-color: rgba(6, 95, 70, 0.55) !important;
+}
+
+html.dark-mode .documento-item-viewer .hover\:bg-emerald-200:hover,
+html.dark-mode .resultados-clinicos-panel-viewer .hover\:bg-emerald-200:hover {
+  background-color: #047857 !important;
+}
+
+html.dark-mode .documento-item-viewer .bg-blue-100,
+html.dark-mode .resultados-clinicos-panel-viewer .bg-blue-100 {
+  background-color: rgba(30, 58, 138, 0.55) !important;
+}
+
+html.dark-mode .documento-item-viewer .hover\:bg-blue-200:hover,
+html.dark-mode .resultados-clinicos-panel-viewer .hover\:bg-blue-200:hover {
+  background-color: #1d4ed8 !important;
+}
+
+html.dark-mode .documento-item-viewer .bg-purple-100,
+html.dark-mode .resultados-clinicos-panel-viewer .bg-purple-100 {
+  background-color: rgba(88, 28, 135, 0.5) !important;
+}
+
+html.dark-mode .documento-item-viewer .hover\:bg-purple-200:hover,
+html.dark-mode .resultados-clinicos-panel-viewer .hover\:bg-purple-200:hover {
+  background-color: #7e22ce !important;
+}
+
+html.dark-mode .documento-item-viewer .bg-orange-100,
+html.dark-mode .resultados-clinicos-panel-viewer .bg-orange-100 {
+  background-color: rgba(154, 52, 18, 0.5) !important;
+}
+
+html.dark-mode .documento-item-viewer .hover\:bg-orange-200:hover,
+html.dark-mode .resultados-clinicos-panel-viewer .hover\:bg-orange-200:hover {
+  background-color: #c2410c !important;
+}
+
+html.dark-mode .documento-item-viewer .text-purple-700,
+html.dark-mode .resultados-clinicos-panel-viewer .text-purple-700 {
+  color: #ddd6fe !important;
+}
+
+/*
+ * Resultados clínicos: drawer (.resultados-clinicos-panel) y tarjetas embebidas (.resultados-clinicos-subsection).
+ * Contenedor del slot en GrupoDocumentos (.resultados-clinicos-extra-wrap): bg-gray-50/70 no hereda el remapeo de bg-gray-50.
+ */
+html.dark-mode .resultados-clinicos-extra-wrap {
+  background-color: rgba(30, 41, 59, 0.96) !important;
+  border-color: #334155 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .bg-gradient-to-r.from-emerald-50.to-green-50 {
+  background-image: linear-gradient(to right, rgba(6, 78, 59, 0.52), rgba(22, 101, 52, 0.48)) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .hover\:border-emerald-500:hover {
+  border-color: #10b981 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .hover\:bg-emerald-50:hover {
+  background-color: rgba(6, 78, 59, 0.42) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .hover\:bg-emerald-50\/50:hover {
+  background-color: rgba(6, 78, 59, 0.35) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .hover\:text-emerald-600:hover {
+  color: #34d399 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .border-dashed.border-gray-300 {
+  border-color: #475569 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .bg-gradient-to-br.from-amber-50.to-orange-50 {
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(120, 53, 15, 0.55),
+    rgba(154, 52, 18, 0.48)
+  ) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .bg-gradient-to-br.from-blue-50.to-cyan-50 {
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(30, 58, 138, 0.52),
+    rgba(14, 116, 144, 0.42)
+  ) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .border-amber-300 {
+  border-color: #d97706 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .hover\:border-amber-400:hover {
+  border-color: #fbbf24 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .border-blue-300 {
+  border-color: #3b82f6 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .hover\:border-blue-400:hover {
+  border-color: #60a5fa !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .border-amber-200 {
+  border-color: #b45309 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .border-blue-200 {
+  border-color: #2563eb !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .text-blue-800 {
+  color: #bfdbfe !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .text-amber-800\/90 {
+  color: rgba(253, 230, 138, 0.92) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .text-amber-700.bg-white {
+  background-color: #1e293b !important;
+  color: #fde68a !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .text-blue-700.bg-white {
+  background-color: #1e293b !important;
+  color: #93c5fd !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .hover\:bg-amber-50:hover {
+  background-color: rgba(120, 53, 15, 0.35) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .hover\:bg-blue-50:hover {
+  background-color: rgba(30, 58, 138, 0.4) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .max-h-52.overflow-y-auto.rounded-lg.border.border-gray-200 {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .rounded-lg.border.border-gray-200.bg-white.overflow-hidden {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html.dark-mode .resultados-clinicos-panel input[type='text'],
+html.dark-mode .resultados-clinicos-panel input[type='date'],
+html.dark-mode .resultados-clinicos-panel input[type='datetime-local'],
+html.dark-mode .resultados-clinicos-panel select,
+html.dark-mode .resultados-clinicos-panel textarea {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .resultados-clinicos-subsection .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .resultados-clinicos-subsection .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .resultados-clinicos-subsection .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+html.dark-mode .resultados-clinicos-subsection .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .resultados-clinicos-subsection .text-yellow-800 {
+  color: #fef08a !important;
+}
+
+html.dark-mode .resultados-clinicos-subsection .bg-yellow-100 {
+  background-color: rgba(113, 63, 18, 0.45) !important;
+}
+
+html.dark-mode .resultados-clinicos-panel .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+/* Bootstrap 5.3 + DataTables (data-bs-theme en la raíz) */
+html.dark-mode table.dataTable {
+  color: #e2e8f0 !important;
+}
+html.dark-mode table.dataTable thead th,
+html.dark-mode table.dataTable tbody td {
+  border-color: #334155 !important;
+}
+
+html.dark-mode table.dataTable thead th {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+/* DataTables: celdas con fondo blanco por defecto + texto claro del tema = ilegible */
+html.dark-mode table.dataTable tbody td,
+html.dark-mode table.dataTable tbody > tr > th {
+  background-color: #1e293b !important;
+}
+
+/*
+ * Semáforo de aptitud (franja izquierda): solo la PRIMERA celda de la fila lleva el gradiente;
+ * el resto queda con el fondo base (#1e293b vía regla general de tbody td).
+ */
+html.dark-mode table.dataTable tbody tr.apto-sin-restricciones-row:not(.por-vencer-row):not(.vencido-row) > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-sin-restricciones-row:not(.por-vencer-row):not(.vencido-row) > td:first-child {
+  background-image: linear-gradient(to right, #10b981 0px, #10b981 4px, #1e293b 4px) !important;
+  background-color: #1e293b !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-precaucion-row:not(.por-vencer-row):not(.vencido-row) > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-con-precaucion-row:not(.por-vencer-row):not(.vencido-row) > td:first-child {
+  background-image: linear-gradient(to right, #f59e0b 0px, #f59e0b 4px, #1e293b 4px) !important;
+  background-color: #1e293b !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-restricciones-row:not(.por-vencer-row):not(.vencido-row) > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-con-restricciones-row:not(.por-vencer-row):not(.vencido-row) > td:first-child {
+  background-image: linear-gradient(to right, #f97316 0px, #f97316 4px, #1e293b 4px) !important;
+  background-color: #1e293b !important;
+}
+
+html.dark-mode table.dataTable tbody tr.no-apto-row:not(.por-vencer-row):not(.vencido-row) > th:first-child,
+html.dark-mode table.dataTable tbody tr.no-apto-row:not(.por-vencer-row):not(.vencido-row) > td:first-child {
+  background-image: linear-gradient(to right, #dc2626 0px, #dc2626 4px, #1e293b 4px) !important;
+  background-color: #1e293b !important;
+}
+
+html.dark-mode table.dataTable tbody tr.evaluacion-no-completada-row:not(.por-vencer-row):not(.vencido-row) > th:first-child,
+html.dark-mode table.dataTable tbody tr.evaluacion-no-completada-row:not(.por-vencer-row):not(.vencido-row) > td:first-child {
+  background-image: linear-gradient(to right, #64748b 0px, #64748b 4px, #1e293b 4px) !important;
+  background-color: #1e293b !important;
+}
+
+/*
+ * Semáforo por vencimiento: en claro son naranja/rojo pastel en el <tr>.
+ * En oscuro usamos tintes oscuros en cada celda y anulamos el fondo del <tr>.
+ */
+html.dark-mode table.dataTable tbody tr.por-vencer-row {
+  background-color: transparent !important;
+}
+
+html.dark-mode table.dataTable tbody tr.por-vencer-row > th:not(:first-child),
+html.dark-mode table.dataTable tbody tr.por-vencer-row > td:not(:first-child) {
+  background-color: rgba(154, 65, 0, 0.42) !important;
+  background-image: none !important;
+}
+
+/* Por vencer sin fila de aptitud (sin franja): toda la fila tintada de forma uniforme */
+html.dark-mode table.dataTable tbody tr.por-vencer-row:not(.apto-sin-restricciones-row):not(.apto-con-precaucion-row):not(.apto-con-restricciones-row):not(.no-apto-row):not(.evaluacion-no-completada-row) > th:first-child,
+html.dark-mode table.dataTable tbody tr.por-vencer-row:not(.apto-sin-restricciones-row):not(.apto-con-precaucion-row):not(.apto-con-restricciones-row):not(.no-apto-row):not(.evaluacion-no-completada-row) > td:first-child {
+  background-color: rgba(154, 65, 0, 0.42) !important;
+  background-image: none !important;
+}
+
+html.dark-mode table.dataTable tbody tr.vencido-row {
+  background-color: transparent !important;
+}
+
+html.dark-mode table.dataTable tbody tr.vencido-row > th:not(:first-child),
+html.dark-mode table.dataTable tbody tr.vencido-row > td:not(:first-child) {
+  background-color: rgba(127, 29, 29, 0.5) !important;
+  background-image: none !important;
+}
+
+html.dark-mode table.dataTable tbody tr.vencido-row:not(.apto-sin-restricciones-row):not(.apto-con-precaucion-row):not(.apto-con-restricciones-row):not(.no-apto-row):not(.evaluacion-no-completada-row) > th:first-child,
+html.dark-mode table.dataTable tbody tr.vencido-row:not(.apto-sin-restricciones-row):not(.apto-con-precaucion-row):not(.apto-con-restricciones-row):not(.no-apto-row):not(.evaluacion-no-completada-row) > td:first-child {
+  background-color: rgba(127, 29, 29, 0.5) !important;
+  background-image: none !important;
+}
+
+/* Aptitud + por vencer: franja solo en la primera celda; el tinte naranja en el resto la cubre la regla por-vencer > td:not(:first-child) */
+html.dark-mode table.dataTable tbody tr.apto-sin-restricciones-row.por-vencer-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-sin-restricciones-row.por-vencer-row > td:first-child {
+  background-image: linear-gradient(to right, #10b981 0px, #10b981 4px, rgba(154, 65, 0, 0.42) 4px) !important;
+  background-color: rgba(154, 65, 0, 0.42) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-precaucion-row.por-vencer-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-con-precaucion-row.por-vencer-row > td:first-child {
+  background-image: linear-gradient(to right, #f59e0b 0px, #f59e0b 4px, rgba(154, 65, 0, 0.42) 4px) !important;
+  background-color: rgba(154, 65, 0, 0.42) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-restricciones-row.por-vencer-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-con-restricciones-row.por-vencer-row > td:first-child {
+  background-image: linear-gradient(to right, #f97316 0px, #f97316 4px, rgba(154, 65, 0, 0.42) 4px) !important;
+  background-color: rgba(154, 65, 0, 0.42) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.no-apto-row.por-vencer-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.no-apto-row.por-vencer-row > td:first-child {
+  background-image: linear-gradient(to right, #dc2626 0px, #dc2626 4px, rgba(154, 65, 0, 0.42) 4px) !important;
+  background-color: rgba(154, 65, 0, 0.42) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.evaluacion-no-completada-row.por-vencer-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.evaluacion-no-completada-row.por-vencer-row > td:first-child {
+  background-image: linear-gradient(to right, #64748b 0px, #64748b 4px, rgba(154, 65, 0, 0.42) 4px) !important;
+  background-color: rgba(154, 65, 0, 0.42) !important;
+}
+
+/* Aptitud + vencido: franja solo en la primera celda */
+html.dark-mode table.dataTable tbody tr.apto-sin-restricciones-row.vencido-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-sin-restricciones-row.vencido-row > td:first-child {
+  background-image: linear-gradient(to right, #10b981 0px, #10b981 4px, rgba(127, 29, 29, 0.5) 4px) !important;
+  background-color: rgba(127, 29, 29, 0.5) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-precaucion-row.vencido-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-con-precaucion-row.vencido-row > td:first-child {
+  background-image: linear-gradient(to right, #f59e0b 0px, #f59e0b 4px, rgba(127, 29, 29, 0.5) 4px) !important;
+  background-color: rgba(127, 29, 29, 0.5) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-restricciones-row.vencido-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.apto-con-restricciones-row.vencido-row > td:first-child {
+  background-image: linear-gradient(to right, #f97316 0px, #f97316 4px, rgba(127, 29, 29, 0.5) 4px) !important;
+  background-color: rgba(127, 29, 29, 0.5) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.no-apto-row.vencido-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.no-apto-row.vencido-row > td:first-child {
+  background-image: linear-gradient(to right, #dc2626 0px, #dc2626 4px, rgba(127, 29, 29, 0.5) 4px) !important;
+  background-color: rgba(127, 29, 29, 0.5) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.evaluacion-no-completada-row.vencido-row > th:first-child,
+html.dark-mode table.dataTable tbody tr.evaluacion-no-completada-row.vencido-row > td:first-child {
+  background-image: linear-gradient(to right, #64748b 0px, #64748b 4px, rgba(127, 29, 29, 0.5) 4px) !important;
+  background-color: rgba(127, 29, 29, 0.5) !important;
+}
+
+/* Estado vigencia (clases Tailwind en HTML renderizado por DataTables) */
+html.dark-mode table.dataTable .text-green-600 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode table.dataTable .text-orange-600 {
+  color: #fdba74 !important;
+}
+
+html.dark-mode table.dataTable .text-red-600 {
+  color: #fca5a5 !important;
+}
+
+/*
+ * DataTableDT — columna Acciones: retoques de color en oscuro (bordes + fondos legibles).
+ */
+html.dark-mode table.dataTable .btn-rt {
+  background-color: #4c1d95 !important;
+  color: #ede9fe !important;
+  border-color: #8b5cf6 !important;
+}
+
+html.dark-mode table.dataTable .btn-rt:hover {
+  background-color: #5b21b6 !important;
+  color: #f5f3ff !important;
+  border-color: #a78bfa !important;
+}
+
+html.dark-mode table.dataTable .btn-rt span {
+  color: inherit !important;
+}
+
+html.dark-mode table.dataTable .btn-editar.text-sky-600,
+html.dark-mode table.dataTable .btn-editar.bg-sky-100 {
+  background-color: #0c4a6e !important;
+  color: #e0f2fe !important;
+  border-color: #0ea5e9 !important;
+}
+
+html.dark-mode table.dataTable .btn-editar.text-sky-600:hover,
+html.dark-mode table.dataTable .btn-editar.bg-sky-100:hover {
+  background-color: #075985 !important;
+  color: #f0f9ff !important;
+  border-color: #38bdf8 !important;
+}
+
+html.dark-mode table.dataTable .btn-editar.text-gray-400,
+html.dark-mode table.dataTable .btn-editar.bg-gray-50 {
+  background-color: #334155 !important;
+  color: #cbd5e1 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode table.dataTable .btn-editar i,
+html.dark-mode table.dataTable .btn-editar span {
+  color: inherit !important;
+}
+
+html.dark-mode table.dataTable .btn-riesgos {
+  background-color: #78350f !important;
+  color: #fef3c7 !important;
+  border-color: #d97706 !important;
+}
+
+html.dark-mode table.dataTable .btn-riesgos:hover {
+  background-color: #92400e !important;
+  color: #fffbeb !important;
+  border-color: #fbbf24 !important;
+}
+
+html.dark-mode table.dataTable .btn-riesgos i,
+html.dark-mode table.dataTable .btn-riesgos span {
+  color: inherit !important;
+}
+
+/* Alta (verde) — bg-* puede no estar en el CSS si Tailwind no escanea el string del render */
+html.dark-mode table.dataTable .btn-alta-baja.text-green-600,
+html.dark-mode table.dataTable .btn-alta-baja.bg-green-100 {
+  background-color: #14532d !important;
+  color: #bbf7d0 !important;
+  border-color: #15803d !important;
+}
+
+html.dark-mode table.dataTable .btn-alta-baja.text-green-600:hover,
+html.dark-mode table.dataTable .btn-alta-baja.bg-green-100:hover {
+  background-color: #166534 !important;
+  color: #dcfce7 !important;
+  border-color: #22c55e !important;
+}
+
+/* Baja (naranja) */
+html.dark-mode table.dataTable .btn-alta-baja.text-orange-600,
+html.dark-mode table.dataTable .btn-alta-baja.bg-orange-100 {
+  background-color: #7c2d12 !important;
+  color: #fed7aa !important;
+  border-color: #ea580c !important;
+}
+
+html.dark-mode table.dataTable .btn-alta-baja.text-orange-600:hover,
+html.dark-mode table.dataTable .btn-alta-baja.bg-orange-100:hover {
+  background-color: #9a3412 !important;
+  color: #ffedd5 !important;
+  border-color: #fb923c !important;
+}
+
+html.dark-mode table.dataTable .btn-alta-baja.text-gray-400,
+html.dark-mode table.dataTable .btn-alta-baja.bg-gray-50 {
+  background-color: #334155 !important;
+  color: #cbd5e1 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode table.dataTable .btn-alta-baja span {
+  color: inherit !important;
+}
+
+/* Eliminar */
+html.dark-mode table.dataTable .btn-eliminar.text-red-600,
+html.dark-mode table.dataTable .btn-eliminar.bg-red-100 {
+  background-color: #7f1d1d !important;
+  color: #fecaca !important;
+  border-color: #dc2626 !important;
+}
+
+html.dark-mode table.dataTable .btn-eliminar.text-red-600:hover,
+html.dark-mode table.dataTable .btn-eliminar.bg-red-100:hover {
+  background-color: #991b1b !important;
+  color: #fee2e2 !important;
+  border-color: #ef4444 !important;
+}
+
+html.dark-mode table.dataTable .btn-eliminar.text-gray-400,
+html.dark-mode table.dataTable .btn-eliminar.bg-gray-50 {
+  background-color: #334155 !important;
+  color: #cbd5e1 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode table.dataTable .btn-eliminar span {
+  color: inherit !important;
+}
+
+/*
+ * DataTableDT.vue fuerza hover de fila con fondo claro (#e5e7eb) en cada celda.
+ * En modo oscuro conviene un resaltado oscuro y texto claro (no invertir texto al hover).
+ */
+html.dark-mode table.dataTable tbody tr:hover > * {
+  background-color: #334155 !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-sin-restricciones-row:hover > * {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-precaucion-row:hover > * {
+  background-color: rgba(245, 158, 11, 0.22) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-restricciones-row:hover > * {
+  background-color: rgba(249, 115, 22, 0.22) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.no-apto-row:hover > * {
+  background-color: rgba(248, 113, 113, 0.2) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.evaluacion-no-completada-row:hover > * {
+  background-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.por-vencer-row:hover > * {
+  background-color: rgba(251, 146, 60, 0.24) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.vencido-row:hover > * {
+  background-color: rgba(239, 68, 68, 0.22) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-sin-restricciones-row:hover {
+  background-color: transparent !important;
+  background-image: linear-gradient(to right, #10b981 0px, #10b981 4px, transparent 4px) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-precaucion-row:hover {
+  background-color: transparent !important;
+  background-image: linear-gradient(to right, #f59e0b 0px, #f59e0b 4px, transparent 4px) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.apto-con-restricciones-row:hover {
+  background-color: transparent !important;
+  background-image: linear-gradient(to right, #f97316 0px, #f97316 4px, transparent 4px) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.no-apto-row:hover {
+  background-color: transparent !important;
+  background-image: linear-gradient(to right, #dc2626 0px, #dc2626 4px, transparent 4px) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.evaluacion-no-completada-row:hover {
+  background-color: transparent !important;
+  background-image: linear-gradient(to right, #64748b 0px, #64748b 4px, transparent 4px) !important;
+}
+
+html.dark-mode table.dataTable tbody tr.por-vencer-row:hover,
+html.dark-mode table.dataTable tbody tr.vencido-row:hover {
+  background-color: transparent !important;
+}
+
+html.dark-mode .dataTables_wrapper .dataTables_length,
+html.dark-mode .dataTables_wrapper .dataTables_filter,
+html.dark-mode .dataTables_wrapper .dataTables_info,
+html.dark-mode .dataTables_wrapper .dataTables_paginate {
+  color: #cbd5e1 !important;
+}
+html.dark-mode .dataTables_wrapper .dataTables_filter input {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+/* Quill editor */
+html.dark-mode .ql-toolbar.ql-snow,
+html.dark-mode .ql-container.ql-snow {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+html.dark-mode .ql-snow .ql-stroke {
+  stroke: #cbd5e1 !important;
+}
+html.dark-mode .ql-snow .ql-fill {
+  fill: #cbd5e1 !important;
+}
+html.dark-mode .ql-editor {
+  color: #e2e8f0 !important;
+}
+html.dark-mode .ql-editor.ql-blank::before {
+  color: #64748b !important;
+}
+
+/* FormKit: inputs que no pasan por utilidades Tailwind */
+html.dark-mode .formkit-outer .formkit-input,
+html.dark-mode [data-family='text'] .formkit-input {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+html.dark-mode .formkit-outer .formkit-label {
+  color: #cbd5e1 !important;
+}
+
+/* Modales (Empresas, Centros, Trabajadores): submit verde más oscuro en dark mode. */
+html.dark-mode .modal-empresas .formkit-outer[data-type='submit'] .formkit-input,
+html.dark-mode .modal-centros .formkit-outer[data-type='submit'] .formkit-input,
+html.dark-mode .modal-trabajadores .formkit-outer[data-type='submit'] .formkit-input {
+  background-color: #047857 !important;
+  border-color: #065f46 !important;
+  color: #ecfdf5 !important;
+}
+
+html.dark-mode .modal-empresas .formkit-wrapper button[type='submit'],
+html.dark-mode .modal-centros .formkit-wrapper button[type='submit'],
+html.dark-mode .modal-trabajadores .formkit-wrapper button[type='submit'],
+html.dark-mode .modal-empresas button.formkit-input[type='submit'],
+html.dark-mode .modal-centros button.formkit-input[type='submit'],
+html.dark-mode .modal-trabajadores button.formkit-input[type='submit'],
+html.dark-mode .modal-empresas .formkit-input[type='submit'],
+html.dark-mode .modal-centros .formkit-input[type='submit'],
+html.dark-mode .modal-trabajadores .formkit-input[type='submit'] {
+  background-color: #047857 !important;
+  border-color: #065f46 !important;
+  color: #ecfdf5 !important;
+}
+
+html.dark-mode .modal-empresas .formkit-outer[data-type='submit'] .formkit-input:hover,
+html.dark-mode .modal-centros .formkit-outer[data-type='submit'] .formkit-input:hover,
+html.dark-mode .modal-trabajadores .formkit-outer[data-type='submit'] .formkit-input:hover {
+  background-color: #065f46 !important;
+  border-color: #064e3b !important;
+}
+
+html.dark-mode .modal-empresas .formkit-wrapper button[type='submit']:hover,
+html.dark-mode .modal-centros .formkit-wrapper button[type='submit']:hover,
+html.dark-mode .modal-trabajadores .formkit-wrapper button[type='submit']:hover,
+html.dark-mode .modal-empresas button.formkit-input[type='submit']:hover,
+html.dark-mode .modal-centros button.formkit-input[type='submit']:hover,
+html.dark-mode .modal-trabajadores button.formkit-input[type='submit']:hover,
+html.dark-mode .modal-empresas .formkit-input[type='submit']:hover,
+html.dark-mode .modal-centros .formkit-input[type='submit']:hover,
+html.dark-mode .modal-trabajadores .formkit-input[type='submit']:hover {
+  background-color: #065f46 !important;
+  border-color: #064e3b !important;
+}
+
+/*
+ * Steps de documentos (formularios Vue en componentes con `border-shadow`):
+ * unificar color de controles nativos para evitar inputs blancos con texto claro.
+ */
+html.dark-mode .border-shadow input[type='text'],
+html.dark-mode .border-shadow input[type='date'],
+html.dark-mode .border-shadow input[type='datetime-local'],
+html.dark-mode .border-shadow input[type='number'],
+html.dark-mode .border-shadow input[type='email'],
+html.dark-mode .border-shadow input[type='password'],
+html.dark-mode .border-shadow input[type='tel'],
+html.dark-mode .border-shadow select,
+html.dark-mode .border-shadow textarea {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .border-shadow input[type='text']::placeholder,
+html.dark-mode .border-shadow input[type='date']::placeholder,
+html.dark-mode .border-shadow input[type='datetime-local']::placeholder,
+html.dark-mode .border-shadow input[type='number']::placeholder,
+html.dark-mode .border-shadow input[type='email']::placeholder,
+html.dark-mode .border-shadow input[type='password']::placeholder,
+html.dark-mode .border-shadow input[type='tel']::placeholder,
+html.dark-mode .border-shadow textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Excepcion: inputs readonly con semaforizacion (exploracion fisica, examen vista, etc). */
+html.dark-mode .border-shadow input.bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+html.dark-mode .border-shadow input.bg-yellow-50 {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+html.dark-mode .border-shadow input.bg-orange-50 {
+  background-color: rgba(249, 115, 22, 0.22) !important;
+}
+
+html.dark-mode .border-shadow input.bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.16) !important;
+}
+
+html.dark-mode .border-shadow input.bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.22) !important;
+}
+
+html.dark-mode .border-shadow input.bg-red-200 {
+  background-color: rgba(220, 38, 38, 0.28) !important;
+}
+
+html.dark-mode .border-shadow input.text-emerald-800 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .border-shadow input.text-yellow-800 {
+  color: #fcd34d !important;
+}
+
+html.dark-mode .border-shadow input.text-orange-800 {
+  color: #fdba74 !important;
+}
+
+html.dark-mode .border-shadow input.text-red-900 {
+  color: #fca5a5 !important;
+}
+
+html.dark-mode .border-shadow input.text-red-950 {
+  color: #fecaca !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.dark-mode * {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+}
+
+/* EmpresaItem.vue: elevar contraste de textos */
+html.dark-mode .empresa-item-title {
+  color: #e8e8e8 !important;
+}
+
+html.dark-mode .empresa-item-subtitle,
+html.dark-mode .empresa-item-actions-label,
+html.dark-mode .text-item {
+  color: #c2c2c2 !important;
+}
+
+html.dark-mode .empresa-item-placeholder {
+  color: #6b6b6b !important;
+}
+
+html.dark-mode .empresa-item-placeholder-icon {
+  color: #4c5f7a !important;
+}
+
+html.dark-mode .empresa-item-muted {
+  color: #e2e8f0 !important;
+}
+
+/* Nota medica steps: tarjetas de ayuda azul (solo dark mode). */
+html.dark-mode .nota-medica-tip {
+  background-color: rgba(30, 58, 138, 0.28) !important;
+  border-color: #3b82f6 !important;
+}
+
+html.dark-mode .nota-medica-tip .text-blue-600 {
+  color: #93c5fd !important;
+}
+
+html.dark-mode .nota-medica-tip .text-blue-800,
+html.dark-mode .nota-medica-tip .text-blue-900 {
+  color: #dbeafe !important;
+}
+
+/* Nota medica (steps 6, 7, 8): inputs blancos en dark mode. */
+html.dark-mode .nota-medica-dark-inputs input,
+html.dark-mode .dark-mode-input-surface input,
+html.dark-mode .nota-medica-dark-inputs input[type='text'],
+html.dark-mode .dark-mode-input-surface input[type='text'],
+html.dark-mode .nota-medica-dark-inputs input[type='date'],
+html.dark-mode .dark-mode-input-surface input[type='date'],
+html.dark-mode .nota-medica-dark-inputs input[type='datetime-local'],
+html.dark-mode .dark-mode-input-surface input[type='datetime-local'],
+html.dark-mode .nota-medica-dark-inputs input[type='number'],
+html.dark-mode .dark-mode-input-surface input[type='number'],
+html.dark-mode .nota-medica-dark-inputs input[type='email'],
+html.dark-mode .dark-mode-input-surface input[type='email'],
+html.dark-mode .nota-medica-dark-inputs input[type='password'],
+html.dark-mode .dark-mode-input-surface input[type='password'],
+html.dark-mode .nota-medica-dark-inputs input[type='tel'],
+html.dark-mode .dark-mode-input-surface input[type='tel'],
+html.dark-mode .nota-medica-dark-inputs select,
+html.dark-mode .dark-mode-input-surface select,
+html.dark-mode .nota-medica-dark-inputs textarea,
+html.dark-mode .dark-mode-input-surface textarea {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs input::placeholder,
+html.dark-mode .dark-mode-input-surface input::placeholder,
+html.dark-mode .nota-medica-dark-inputs input[type='text']::placeholder,
+html.dark-mode .dark-mode-input-surface input[type='text']::placeholder,
+html.dark-mode .nota-medica-dark-inputs input[type='date']::placeholder,
+html.dark-mode .dark-mode-input-surface input[type='date']::placeholder,
+html.dark-mode .nota-medica-dark-inputs input[type='datetime-local']::placeholder,
+html.dark-mode .dark-mode-input-surface input[type='datetime-local']::placeholder,
+html.dark-mode .nota-medica-dark-inputs input[type='number']::placeholder,
+html.dark-mode .dark-mode-input-surface input[type='number']::placeholder,
+html.dark-mode .nota-medica-dark-inputs input[type='email']::placeholder,
+html.dark-mode .dark-mode-input-surface input[type='email']::placeholder,
+html.dark-mode .nota-medica-dark-inputs input[type='password']::placeholder,
+html.dark-mode .dark-mode-input-surface input[type='password']::placeholder,
+html.dark-mode .nota-medica-dark-inputs input[type='tel']::placeholder,
+html.dark-mode .dark-mode-input-surface input[type='tel']::placeholder,
+html.dark-mode .nota-medica-dark-inputs textarea::placeholder,
+html.dark-mode .dark-mode-input-surface textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* ModalCuestionarios: contraste de opciones y estados disabled en dark mode. */
+html.dark-mode .modal-cuestionarios .questionnaire-option:not(.disabled):not(:disabled) {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #a7f3d0 !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option:not(.disabled):not(:disabled) i {
+  color: #34d399 !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option:not(.disabled):not(:disabled):hover {
+  background-color: #1e293b !important;
+  border-color: #10b981 !important;
+  color: #ecfdf5 !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option:not(.disabled):not(:disabled):hover i {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option.disabled,
+html.dark-mode .modal-cuestionarios .questionnaire-option:disabled {
+  background-color: #111827 !important;
+  border-color: #334155 !important;
+  color: #64748b !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option.disabled i,
+html.dark-mode .modal-cuestionarios .questionnaire-option:disabled i {
+  color: #64748b !important;
+}

@@ -14,7 +14,7 @@
       <div
         v-if="isOpen"
         ref="drawerRef"
-        class="fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-30 flex flex-col"
+        class="resultados-clinicos-panel fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-30 flex flex-col"
       >
         <!-- Header -->
         <div ref="drawerHeaderRef" class="flex items-center justify-between h-14 md:h-auto p-3 md:p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
@@ -737,7 +737,7 @@
       <Teleport to="body">
         <Transition name="modal-fade" appear>
           <div v-if="showPdfViewer"
-            class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-[60]"
+            class="resultados-clinicos-panel-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-[60]"
             @click.self="cerrarPdf">
             
             <!-- Header del visor -->
@@ -890,6 +890,7 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { convertirFechaISOaDDMMYYYY, formatDateYYYYMMDD } from '@/helpers/dates';
 import ConfirmacionEliminar from '@/components/ConfirmacionEliminar.vue';
 import SelectorDocumentoExterno from '@/components/SelectorDocumentoExterno.vue';
+import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -903,6 +904,7 @@ const emit = defineEmits<{
 const toast: any = inject('toast');
 const store = useResultadosClinicosStore();
 const documentos = useDocumentosStore();
+const isHtmlDark = useHtmlDarkMode();
 
 const currentStep = ref<'select' | 'form'>('select');
 const isEditing = ref(false);
@@ -1965,21 +1967,23 @@ const getTipoIcon = (tipo?: string) => {
 };
 
 const getIconColor = (tipo?: string) => {
-  if (tipo === 'ESPIROMETRIA') return '#1d4ed8';
-  if (tipo === 'EKG') return '#dc2626';
-  if (tipo === 'TIPO_SANGRE') return '#991b1b';
-  if (tipo === 'RAYOS_X') return '#0f766e';
-  if (tipo === 'ANALISIS_LABORATORIO') return '#7c3aed';
-  return '#475569';
+  const dark = isHtmlDark.value;
+  if (tipo === 'ESPIROMETRIA') return dark ? '#93c5fd' : '#1d4ed8';
+  if (tipo === 'EKG') return dark ? '#fca5a5' : '#dc2626';
+  if (tipo === 'TIPO_SANGRE') return dark ? '#fecaca' : '#991b1b';
+  if (tipo === 'RAYOS_X') return dark ? '#5eead4' : '#0f766e';
+  if (tipo === 'ANALISIS_LABORATORIO') return dark ? '#ddd6fe' : '#7c3aed';
+  return dark ? '#cbd5e1' : '#475569';
 };
 
 const getIconBackground = (tipo?: string) => {
-  if (tipo === 'ESPIROMETRIA') return 'rgba(30,64,175,0.12)';
-  if (tipo === 'EKG') return 'rgba(220,38,38,0.12)';
-  if (tipo === 'TIPO_SANGRE') return 'rgba(153,27,27,0.12)';
-  if (tipo === 'RAYOS_X') return 'rgba(15,118,110,0.12)';
-  if (tipo === 'ANALISIS_LABORATORIO') return 'rgba(124,58,237,0.12)';
-  return 'rgba(71,85,105,0.08)';
+  const dark = isHtmlDark.value;
+  if (tipo === 'ESPIROMETRIA') return dark ? 'rgba(37,99,235,0.48)' : 'rgba(30,64,175,0.12)';
+  if (tipo === 'EKG') return dark ? 'rgba(220,38,38,0.45)' : 'rgba(220,38,38,0.12)';
+  if (tipo === 'TIPO_SANGRE') return dark ? 'rgba(185,28,28,0.5)' : 'rgba(153,27,27,0.12)';
+  if (tipo === 'RAYOS_X') return dark ? 'rgba(13,148,136,0.5)' : 'rgba(15,118,110,0.12)';
+  if (tipo === 'ANALISIS_LABORATORIO') return dark ? 'rgba(139,92,246,0.48)' : 'rgba(124,58,237,0.12)';
+  return dark ? 'rgba(148,163,184,0.35)' : 'rgba(71,85,105,0.08)';
 };
 
 const getFechaFieldLabel = (tipo?: string) => {

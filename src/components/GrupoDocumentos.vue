@@ -879,7 +879,10 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             </div>
         </div>
         
-        <div v-if="hasExtraSection" class="border-t border-gray-200 bg-gray-50/70 px-4 py-4">
+        <div
+            v-if="hasExtraSection"
+            class="resultados-clinicos-extra-wrap border-t border-gray-200 bg-gray-50/70 px-4 py-4"
+        >
             <slot name="extraSection" :year="year"></slot>
         </div>
 

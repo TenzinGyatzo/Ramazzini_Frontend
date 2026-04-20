@@ -30,7 +30,7 @@ watch(diagnostico, (newValue) => {
 </script>
 
 <template>
-    <div>
+    <div class="nota-medica-dark-inputs">
         <h2 class="font-bold mb-4 text-gray-800 leading-5">IDX:</h2>
         <div class="mt-4">
             <div class="font-light">
