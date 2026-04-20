@@ -196,13 +196,13 @@ if (periodoDePruebaFinalizado && estadoSuscripcion === 'cancelled' && finDeSuscr
             <!-- Buscador: siempre a la derecha -->
             <div class="relative w-full sm:w-60 md:w-80 lg:w-96">
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fa-solid fa-magnifying-glass text-gray-500 focus:text-emerald-500"></i>
+              <i class="fa-solid fa-magnifying-glass text-gray-500 dark:text-slate-300"></i>
               </span>
               <input
               v-model="busqueda"
               type="text"
               placeholder="Buscar empresa..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 hover:shadow-md rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 bg-white text-gray-800 placeholder-gray-500 hover:shadow-md rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 transition dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-300"
               />
             </div>
           </div>

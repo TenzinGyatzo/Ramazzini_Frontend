@@ -1942,9 +1942,9 @@ function handleClickTablaNaturalezaLesion(naturaleza) {
                       <span class="relative cursor-help">
                         <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
                         <span
-                          class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 md:bottom-auto md:top-1/2 md:left-full md:ml-2 md:-translate-x-0 md:-translate-y-1/2 w-64 text-sm font-normal bg-white text-gray-700 border border-gray-300 rounded shadow-lg px-3 py-2 opacity-0 peer-hover:opacity-100 transition-opacity z-10 pointer-events-none"
+                          class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 md:bottom-auto md:top-1/2 md:left-full md:ml-2 md:-translate-x-0 md:-translate-y-1/2 w-64 text-sm font-normal bg-white text-gray-700 border border-gray-300 rounded shadow-lg px-3 py-2 opacity-0 peer-hover:opacity-100 transition-opacity z-10 pointer-events-none dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600"
                         >
-                          Suma total de <span class="font-semibold text-emerald-600">días de incapacidad</span> acumulados en todos los <span class="font-semibold text-emerald-600">riesgos de trabajo</span>.
+                          Suma total de <span class="font-semibold text-emerald-600 dark:text-emerald-300">días de incapacidad</span> acumulados en todos los <span class="font-semibold text-emerald-600 dark:text-emerald-300">riesgos de trabajo</span>.
                         </span>
                       </span>
                     </h3>
@@ -1955,14 +1955,14 @@ function handleClickTablaNaturalezaLesion(naturaleza) {
                 <div 
                   :class="[
                     'flex-1 flex items-center justify-center text-center rounded-lg transition',
-                    totalDiasIncapacidadAcumulada > 0 ? 'cursor-pointer hover:bg-emerald-50' : 'cursor-default'
+                    totalDiasIncapacidadAcumulada > 0 ? 'cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/30' : 'cursor-default'
                   ]"
                 >
                   <div class="text-center">
-                    <div class="text-8xl font-medium text-emerald-600">
+                    <div class="text-8xl font-medium text-emerald-600 dark:text-emerald-300">
                       {{ totalDiasIncapacidadAcumulada }}
                     </div>
-                    <div class="text-sm text-gray-500 mt-1">Total de días acumulados</div>
+                    <div class="text-sm text-gray-500 dark:text-slate-300 mt-1">Total de días acumulados</div>
                   </div>
                 </div>
 

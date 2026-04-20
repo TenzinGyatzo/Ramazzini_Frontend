@@ -27,7 +27,7 @@ const handleSubmit = async (email) => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center p-8 w-full mx-auto">
+  <div class="auth-green-submit-match-login flex flex-col items-center justify-center p-8 w-full mx-auto">
     <!-- Mensaje de éxito -->
     <div class="text-center mb-3">
       <h2 class="text-3xl font-semibold text-emerald-600 mb-2">Olvidé mi contraseña</h2>

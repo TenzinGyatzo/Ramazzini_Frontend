@@ -708,7 +708,7 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
     <!-- Logo de la empresa -->
     <div v-if="empresas.currentEmpresa?.logotipoEmpresa?.data && 
       ['crear-documento'].includes(route.name as string)"
-      class="fixed top-4 right-4 h-16 w-16 md:h-24 md:w-24 rounded-lg z-50 flex flex-col items-center justify-center overflow-hidden bg-white shadow-lg border border-gray-200">
+      class="fixed top-4 right-4 h-16 w-16 md:h-24 md:w-24 rounded-lg z-[55] flex flex-col items-center justify-center overflow-hidden bg-white shadow-lg border border-gray-200">
       <img :src="'/uploads/logos/' + empresas.currentEmpresa?.logotipoEmpresa?.data"
       :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial" 
       class="max-h-full max-w-full object-contain p-2">
@@ -724,7 +724,11 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
       <div v-else 
         class="w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 2xl:w-1/6 mt-3 mb-5 cursor-pointer transform hover:scale-105 transition-transform duration-300 ease logo-transition" 
         @click="router.push({ name: 'inicio' })">
-        <img src="/img/logosRamazzini/RamazziniLogoNoBg.png" alt="Ramazzini-Logo" class="w-full drop-shadow-lg" />
+        <img
+          :src="isDarkMode ? '/img/logosRamazzini/RamazziniLogoClaroNoBg.png' : '/img/logosRamazzini/RamazziniLogoNoBg.png'"
+          alt="Ramazzini-Logo"
+          class="w-full drop-shadow-lg"
+        />
       </div>
     </Transition>
 

@@ -38,7 +38,7 @@ onUnmounted(() => {
       <div class="text-center mb-8">
         <p class="text-gray-600 text-lg leading-relaxed mb-4">
           Faltan uno o más documentos seleccionados. Por favor 
-          <span class="font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md">regenera los PDFs</span> 
+          <span class="font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md dark:text-amber-200 dark:bg-amber-900/40">regenera los PDFs</span> 
           antes de continuar.
         </p>
         <div class="flex items-center justify-center gap-2 text-sm text-gray-500">

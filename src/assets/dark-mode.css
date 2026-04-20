@@ -1790,6 +1790,31 @@ html.dark-mode .formkit-outer .formkit-label {
   color: #cbd5e1 !important;
 }
 
+/* Auth (Forgot/New/Onboarding): igualar submit verde al botón de Login en dark mode */
+html.dark-mode .auth-green-submit-match-login .formkit-outer[data-type='submit'] .formkit-input,
+html.dark-mode .auth-green-submit-match-login .formkit-wrapper button[type='submit'],
+html.dark-mode .auth-green-submit-match-login button.formkit-input[type='submit'],
+html.dark-mode .auth-green-submit-match-login .formkit-input[type='submit'] {
+  background-color: #059669 !important; /* emerald-600 */
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+  transition: all 0.3s ease-in-out !important;
+}
+
+html.dark-mode .auth-green-submit-match-login .formkit-outer[data-type='submit'] .formkit-input:hover,
+html.dark-mode .auth-green-submit-match-login .formkit-wrapper button[type='submit']:hover,
+html.dark-mode .auth-green-submit-match-login button.formkit-input[type='submit']:hover,
+html.dark-mode .auth-green-submit-match-login .formkit-input[type='submit']:hover {
+  background-color: #047857 !important; /* emerald-700 */
+  border-color: #047857 !important;
+  color: #e5e7eb !important; /* gray-200 */
+  transform: scale(1.05) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.3) !important;
+}
+
 /* Modales (Empresas, Centros, Trabajadores): submit verde más oscuro en dark mode. */
 html.dark-mode .modal-empresas .formkit-outer[data-type='submit'] .formkit-input,
 html.dark-mode .modal-centros .formkit-outer[data-type='submit'] .formkit-input,
@@ -1930,7 +1955,7 @@ html.dark-mode .empresa-item-placeholder {
 }
 
 html.dark-mode .empresa-item-placeholder-icon {
-  color: #4c5f7a !important;
+  color: #ffffff !important;
 }
 
 html.dark-mode .empresa-item-muted {
