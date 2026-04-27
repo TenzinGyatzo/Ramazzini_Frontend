@@ -841,6 +841,53 @@ html.dark-mode .bg-gradient-to-br.from-green-50.to-green-100:hover {
   background-image: linear-gradient(to bottom right, #166534, #15803d) !important;
 }
 
+/* EmpresasView / CentrosTrabajoView / TrabajadoresView: tarjetas vacías con gradientes pastel */
+html.dark-mode .bg-gradient-to-br.from-emerald-50.to-emerald-100 {
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(6, 78, 59, 0.52),
+    rgba(6, 95, 70, 0.55)
+  ) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-emerald-50.to-green-50 {
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(6, 78, 59, 0.52),
+    rgba(22, 101, 52, 0.48)
+  ) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-blue-50.to-indigo-50 {
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(30, 58, 138, 0.48),
+    rgba(49, 46, 129, 0.5)
+  ) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-purple-50.to-pink-50 {
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(88, 28, 135, 0.48),
+    rgba(157, 23, 77, 0.44)
+  ) !important;
+}
+
+html.dark-mode .bg-gradient-to-br.from-orange-50.to-red-50 {
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(154, 52, 18, 0.5),
+    rgba(127, 29, 29, 0.48)
+  ) !important;
+}
+
+/* Botones deshabilitados tipo TrabajadoresView (bg-gray-300 + text-gray-500) */
+html.dark-mode button.bg-gray-300.text-gray-500 {
+  background-color: #475569 !important;
+  color: #94a3b8 !important;
+}
+
 html.dark-mode .bg-gradient-to-br.from-blue-50.to-blue-100 {
   background-image: linear-gradient(to bottom right, #1e3a8a, #1d4ed8) !important;
 }

@@ -253,8 +253,8 @@ onBeforeRouteLeave((to, from, next) => {
     </div>
 
     <div v-if="loading" class="text-center py-20">
-      <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4 animate-pulse">
-        <i class="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
+        <i class="empresa-item-placeholder-icon fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
       </div>
       <h2 class="text-xl font-semibold text-gray-700 mb-2">Cargando Usuarios...</h2>
       <p class="text-gray-500">Obteniendo información de permisos</p>
