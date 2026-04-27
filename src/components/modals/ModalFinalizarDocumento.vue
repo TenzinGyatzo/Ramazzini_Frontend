@@ -237,11 +237,11 @@ onMounted(() => {
     aria-modal="true"
     aria-labelledby="modal-title"
   >
-    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden transform transition-all">
+    <div class="modal-finalizar-documento bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden transform transition-all">
       <div class="p-6">
         <!-- Header -->
         <div class="flex items-center gap-4 mb-6">
-          <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <div class="modal-finalizar-doc-emerald-icon w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
             <i class="fas fa-file-signature text-emerald-600 text-xl" aria-hidden="true"></i>
           </div>
           <div>
@@ -255,7 +255,7 @@ onMounted(() => {
           <!-- Información del Documento -->
           <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div class="flex items-center gap-2 mb-3">
-              <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div class="modal-finalizar-doc-emerald-icon w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-file-alt text-emerald-600 text-sm"></i>
               </div>
               <h4 class="text-sm font-bold text-gray-800">Información del Documento</h4>

@@ -165,7 +165,7 @@ onUnmounted(() => {
       >
         <!-- Header -->
         <div class="text-center mb-6">
-          <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-4 daily-consent-modal-icon">
             <i class="fa-solid fa-file-signature text-2xl text-blue-600"></i>
           </div>
           <h2 class="text-2xl font-bold text-gray-800 mb-2">
@@ -203,7 +203,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Método de consentimiento -->
-        <div class="mb-6">
+        <div class="mb-6 dark-mode-input-surface">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Método de Consentimiento
           </label>

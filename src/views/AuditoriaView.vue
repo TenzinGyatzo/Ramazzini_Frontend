@@ -191,7 +191,7 @@ async function verifyAudit() {
               <!-- <option value="GIIS_VALIDATION_EXECUTED">GIIS validación</option> -->
               <option value="AUDIT_EXPORT_DOWNLOAD">Export auditoría descargado</option>
               <!-- <option value="SYSTEM_JOB">Job sistema</option> -->
-            </optgroup>S
+            </optgroup>
             <optgroup label="Gestión de usuarios">
               <option value="USER_INVITATION_SENT">Invitación enviada</option>
               <option value="USER_ACTIVATED">Usuario activado</option>

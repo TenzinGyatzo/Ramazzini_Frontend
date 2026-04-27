@@ -200,7 +200,7 @@ watch(() => props.municipio, async (newMun) => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 dark-mode-input-surface">
     <!-- Estado -->
     <div class="flex flex-col">
       <label class="block font-medium text-lg text-gray-700 mb-1">

@@ -235,11 +235,11 @@ const handleConfirm = async () => {
     aria-modal="true"
     aria-labelledby="modal-title"
   >
-    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden transform transition-all">
+    <div class="modal-anular-documento bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden transform transition-all">
       <div class="p-6">
         <!-- Header -->
         <div class="flex items-center gap-4 mb-6">
-          <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <div class="modal-anular-doc-rose-icon w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
             <i class="fas fa-file-circle-xmark text-rose-600 text-xl" aria-hidden="true"></i>
           </div>
           <div>
@@ -253,7 +253,7 @@ const handleConfirm = async () => {
           <!-- Información del Documento -->
           <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div class="flex items-center gap-2 mb-3">
-              <div class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div class="modal-anular-doc-rose-icon w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-file-alt text-rose-600 text-sm"></i>
               </div>
               <h4 class="text-sm font-bold text-gray-800">Información del Documento</h4>
@@ -422,7 +422,7 @@ const handleConfirm = async () => {
 
           <!-- Campo de razón personalizada -->
           <Transition name="slide-fade">
-            <div v-if="mostrarCampoPersonalizado" class="space-y-2">
+            <div v-if="mostrarCampoPersonalizado" class="space-y-2 dark-mode-input-surface">
               <label class="block text-sm font-medium text-gray-700">
                 Especifique la razón <span class="text-rose-500">*</span>
               </label>

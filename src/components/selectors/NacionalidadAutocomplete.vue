@@ -193,7 +193,7 @@ const hideResults = () => {
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative dark-mode-input-surface">
     <label class="block font-medium text-lg text-gray-700 mb-1">
       {{ label }}
       <span v-if="required" class="text-red-500">*</span>

@@ -123,7 +123,7 @@ const toTitleCase = (str) => {
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative dark-mode-input-surface">
     <label
       :class="[
         'block font-medium text-gray-700 mb-1',

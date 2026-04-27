@@ -139,7 +139,7 @@ watch(
       <section class="mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
         <h2 class="text-lg font-medium text-gray-700 mb-3">Generar nuevo reporte</h2>
         <div class="flex flex-wrap items-end gap-4">
-          <div>
+          <div class="dark-mode-input-surface">
             <label class="block text-sm font-medium text-gray-600 mb-1">Mes y año</label>
             <input
               v-model="selectedYearMonth"

@@ -729,6 +729,15 @@ html.dark-mode .border-amber-200 {
   border-color: #b45309 !important;
 }
 
+/* Alertas / botones secundarios ámbar (ej. nota aclaratoria en FormStepper) */
+html.dark-mode .bg-amber-50 {
+  background-color: rgba(120, 53, 15, 0.52) !important;
+}
+
+html.dark-mode .hover\:bg-amber-100:hover {
+  background-color: #92400e !important;
+}
+
 html.dark-mode .bg-amber-100 {
   background-color: #78350f !important;
 }
@@ -924,6 +933,15 @@ html.dark-mode .bg-rose-100 {
 
 html.dark-mode .text-rose-700 {
   color: #fecdd3 !important;
+}
+
+/* Badge ANULADO (EstadoDocumentoBadge) y textos rose-800 en paneles oscuros */
+html.dark-mode .text-rose-800 {
+  color: #fecdd3 !important;
+}
+
+html.dark-mode .border-rose-200 {
+  border-color: #9f1239 !important;
 }
 
 html.dark-mode .text-amber-700 {
@@ -2022,6 +2040,234 @@ html.dark-mode .dark-mode-input-surface input[type='tel']::placeholder,
 html.dark-mode .nota-medica-dark-inputs textarea::placeholder,
 html.dark-mode .dark-mode-input-surface textarea::placeholder {
   color: #94a3b8 !important;
+}
+
+html.dark-mode .dark-mode-input-surface select option {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* Controles nativos month/week: popup e icono del calendario legibles en oscuro */
+html.dark-mode .nota-medica-dark-inputs input[type='month'],
+html.dark-mode .dark-mode-input-surface input[type='month'],
+html.dark-mode .nota-medica-dark-inputs input[type='week'],
+html.dark-mode .dark-mode-input-surface input[type='week'] {
+  color-scheme: dark;
+}
+
+html.dark-mode .nota-medica-dark-inputs input[type='month']::-webkit-calendar-picker-indicator,
+html.dark-mode .dark-mode-input-surface input[type='month']::-webkit-calendar-picker-indicator,
+html.dark-mode .nota-medica-dark-inputs input[type='week']::-webkit-calendar-picker-indicator,
+html.dark-mode .dark-mode-input-surface input[type='week']::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.85;
+}
+
+/*
+ * AuditoriaView.vue: estilos scoped con #fff / #eee / #ccc no heredan remapeos Tailwind.
+ */
+html.dark-mode .auditoria-view .subtitle {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .auditoria-view .card {
+  background-color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+
+html.dark-mode .auditoria-view .filters label {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .auditoria-view .filters input,
+html.dark-mode .auditoria-view .filters .filter-select,
+html.dark-mode .auditoria-view .export-format {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .auditoria-view .filters select option,
+html.dark-mode .auditoria-view .filters select optgroup,
+html.dark-mode .auditoria-view .export-format option {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .auditoria-view input[type='datetime-local'] {
+  color-scheme: dark;
+}
+
+html.dark-mode .auditoria-view input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.85;
+}
+
+html.dark-mode .auditoria-view .error {
+  color: #fca5a5 !important;
+}
+
+html.dark-mode .auditoria-view .verify-result .valid {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .auditoria-view .verify-result .invalid {
+  color: #fca5a5 !important;
+}
+
+html.dark-mode .auditoria-view .verify-result ul {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .auditoria-view .audit-table th,
+html.dark-mode .auditoria-view .audit-table td {
+  border-bottom-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .auditoria-view .audit-table th {
+  background-color: #0f172a !important;
+}
+
+html.dark-mode .auditoria-view .audit-table tbody tr {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode .auditoria-view .pagination {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .auditoria-view .pagination button {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #475569 !important;
+  border-radius: 4px;
+}
+
+html.dark-mode .auditoria-view .pagination button:hover:not(:disabled) {
+  background-color: #475569 !important;
+}
+
+/* DailyConsentModal: círculo del icono legible sobre panel oscuro */
+html.dark-mode .daily-consent-modal-icon {
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.4) !important;
+}
+
+/*
+ * ModalFinalizarDocumento.vue: títulos 900, cajas blue-100 e iconos 400 sin remapeo global suficiente.
+ */
+html.dark-mode .modal-finalizar-documento .text-blue-900 {
+  color: #dbeafe !important;
+}
+
+html.dark-mode .modal-finalizar-documento .text-emerald-900 {
+  color: #a7f3d0 !important;
+}
+
+html.dark-mode .modal-finalizar-documento .bg-blue-100 {
+  background-color: rgba(30, 58, 138, 0.42) !important;
+}
+
+html.dark-mode .modal-finalizar-documento .text-blue-400 {
+  color: #60a5fa !important;
+}
+
+html.dark-mode .modal-finalizar-documento .text-amber-400 {
+  color: #fbbf24 !important;
+}
+
+html.dark-mode .modal-finalizar-documento .text-red-400 {
+  color: #f87171 !important;
+}
+
+html.dark-mode .modal-finalizar-documento button.shadow-emerald-200 {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Iconos esmeralda del header / bloque documento: más claros solo en oscuro */
+html.dark-mode .modal-finalizar-documento .modal-finalizar-doc-emerald-icon {
+  background-color: rgba(16, 185, 129, 0.3) !important;
+  box-shadow: inset 0 0 0 1px rgba(110, 231, 183, 0.28) !important;
+}
+
+html.dark-mode .modal-finalizar-documento .modal-finalizar-doc-emerald-icon i {
+  color: #6ee7b7 !important;
+}
+
+/*
+ * ModalAnularDocumento.vue
+ */
+html.dark-mode .modal-anular-documento .modal-anular-doc-rose-icon {
+  background-color: rgba(244, 63, 94, 0.24) !important;
+  box-shadow: inset 0 0 0 1px rgba(251, 113, 133, 0.32) !important;
+}
+
+html.dark-mode .modal-anular-documento .modal-anular-doc-rose-icon i {
+  color: #fda4af !important;
+}
+
+html.dark-mode .modal-anular-documento .text-rose-900 {
+  color: #fecdd3 !important;
+}
+
+html.dark-mode .modal-anular-documento .text-rose-700 {
+  color: #fda4af !important;
+}
+
+html.dark-mode .modal-anular-documento .text-rose-600 {
+  color: #fb7185 !important;
+}
+
+html.dark-mode .modal-anular-documento .text-rose-500 {
+  color: #fb7185 !important;
+}
+
+html.dark-mode .modal-anular-documento .text-rose-400 {
+  color: #fb7185 !important;
+}
+
+html.dark-mode .modal-anular-documento .bg-rose-50 {
+  background-color: rgba(136, 19, 55, 0.38) !important;
+}
+
+html.dark-mode .modal-anular-documento .bg-rose-100 {
+  background-color: rgba(159, 18, 57, 0.45) !important;
+}
+
+html.dark-mode .modal-anular-documento .border-rose-200 {
+  border-color: #9f1239 !important;
+}
+
+html.dark-mode .modal-anular-documento .border-rose-400 {
+  border-color: #fb7185 !important;
+}
+
+html.dark-mode .modal-anular-documento .border-rose-500 {
+  border-color: #f43f5e !important;
+}
+
+html.dark-mode .modal-anular-documento .text-emerald-900 {
+  color: #a7f3d0 !important;
+}
+
+html.dark-mode .modal-anular-documento .text-emerald-400 {
+  color: #34d399 !important;
+}
+
+html.dark-mode .modal-anular-documento .text-blue-400 {
+  color: #60a5fa !important;
+}
+
+html.dark-mode .modal-anular-documento .text-red-400 {
+  color: #f87171 !important;
+}
+
+html.dark-mode .modal-anular-documento button.shadow-rose-200 {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(244, 63, 94, 0.25) !important;
+}
+
+html.dark-mode .modal-anular-documento input[type='radio'] {
+  accent-color: #f43f5e;
 }
 
 /* ModalCuestionarios: contraste de opciones y estados disabled en dark mode. */

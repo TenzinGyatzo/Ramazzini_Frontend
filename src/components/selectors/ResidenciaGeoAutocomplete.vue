@@ -464,7 +464,7 @@ const hideLocalidadResults = () => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 dark-mode-input-surface">
     <!-- Estado Residencia -->
     <div>
       <EstadoAutocomplete
