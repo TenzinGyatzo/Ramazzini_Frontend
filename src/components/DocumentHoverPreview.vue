@@ -97,7 +97,7 @@ const handleError = () => {
           <!-- Estado: PDF no disponible pero regenerable -->
           <div 
             v-if="status === 'unavailable'" 
-            class="hover-preview__status hover-preview__status--unavailable cursor-pointer hover:bg-amber-100 transition-colors duration-200"
+            class="hover-preview__status hover-preview__status--unavailable cursor-pointer transition-colors duration-200"
             @click.stop="emit('regenerate')"
           >
             <div class="hover-preview__unavailable-content">
@@ -244,6 +244,10 @@ const handleError = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.hover-preview__status--unavailable:hover {
+  background-color: #fef3c7;
 }
 
 .hover-preview__unavailable-content {
