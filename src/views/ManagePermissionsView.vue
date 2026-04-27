@@ -421,14 +421,14 @@ onBeforeRouteLeave((to, from, next) => {
             </h4>
 
             <!-- Mensaje informativo para administrativos -->
-            <div v-if="usuario.role === 'Administrativo'" class="mb-3 p-2 bg-amber-50 border border-amber-200 rounded text-[10px] sm:text-xs text-amber-700 flex items-start gap-2">
-              <i class="fas fa-info-circle mt-0.5"></i>
+            <div v-if="usuario.role === 'Administrativo'" class="manage-permissions-role-hint mb-3 p-2 bg-amber-50 border border-amber-200 rounded text-[10px] sm:text-xs text-amber-700 flex items-start gap-2">
+              <i class="fas fa-info-circle mt-0.5 shrink-0"></i>
               <span>Los usuarios administrativos no tienen permitido gestionar documentos médicos por políticas de seguridad.</span>
             </div>
 
             <!-- Mensaje informativo para técnicos evaluadores -->
-            <div v-if="usuario.role === 'Técnico Evaluador'" class="mb-3 p-2 bg-amber-50 border border-amber-200 rounded text-[10px] sm:text-xs text-amber-700 flex items-start gap-2">
-              <i class="fas fa-info-circle mt-0.5"></i>
+            <div v-if="usuario.role === 'Técnico Evaluador'" class="manage-permissions-role-hint mb-3 p-2 bg-amber-50 border border-amber-200 rounded text-[10px] sm:text-xs text-amber-700 flex items-start gap-2">
+              <i class="fas fa-info-circle mt-0.5 shrink-0"></i>
               <span>Los usuarios técnicos no tienen permitido gestionar documentos de Diagnóstico y Certificación.</span>
             </div>
 

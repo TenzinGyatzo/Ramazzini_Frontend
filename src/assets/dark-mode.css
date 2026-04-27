@@ -995,6 +995,21 @@ html.dark-mode .text-amber-700 {
   color: #fcd34d !important;
 }
 
+/* ManagePermissionsView: avisos rol (texto muy pequeño sobre fondo ámbar oscuro) */
+html.dark-mode .manage-permissions-role-hint {
+  background-color: rgba(180, 83, 9, 0.2) !important;
+  border-color: #d97706 !important;
+  color: #fef3c7 !important;
+}
+
+html.dark-mode .manage-permissions-role-hint .fa-info-circle {
+  color: #fbbf24 !important;
+}
+
+html.dark-mode .manage-permissions-role-hint span {
+  color: #fef3c7 !important;
+}
+
 html.dark-mode .hover\:from-gray-100:hover {
   background-image: linear-gradient(to right, #334155, #475569) !important;
 }
