@@ -570,7 +570,7 @@ const cancelarTransferencia = () => {
 </script>
 
 <template>
-  <div class="modal fixed top-0 left-0 z-40 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
+  <div class="modal modal-trabajadores fixed top-0 left-0 z-40 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
     <!-- Fondo oscuro transparente -->
     <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
     </div>

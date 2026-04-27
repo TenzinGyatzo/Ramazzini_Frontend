@@ -85,7 +85,16 @@ export function usePermissionRestrictions() {
   const documentosDiagnostico = ['aptitud', 'constanciaAptitud', 'certificado', 'certificadoExpedito', 'receta', 'notaMedica', 'lesion'];
   const documentosEvaluacion = ['historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'antidoping', 'deteccion'];
   const documentosExternos = ['documentoExterno'];
-  const otrosDocumentos = ['controlPrenatal', 'historiaOtologica', 'previoEspirometria', 'notaAclaratoria'];
+  const otrosDocumentos = [
+    'controlPrenatal',
+    'historiaOtologica',
+    'previoEspirometria',
+    'notaAclaratoria',
+    'entrevistaPsicologica',
+    'trastornosEstadoAnimo',
+    'cuestionarioProdromalBreve',
+    'trastornoLimitePersonalidad',
+  ];
 
   // Función para verificar si un usuario puede crear un tipo específico de documento
   const canCreateDocument = (documentType: string): boolean => {
@@ -133,6 +142,10 @@ export function usePermissionRestrictions() {
       'historiaOtologica': 'Historia Otológica',
       'previoEspirometria': 'Previo a Espirometría',
       'notaAclaratoria': 'Nota Aclaratoria',
+      'entrevistaPsicologica': 'Entrevista Psicológica',
+      'trastornosEstadoAnimo': 'Cuestionario Trastornos de Estado de Ánimo (MDQ)',
+      'cuestionarioProdromalBreve': 'Cuestionario Prodromal Breve',
+      'trastornoLimitePersonalidad': 'Cuestionario Trastorno Límite de la Personalidad',
     };
 
     const documentName = documentNames[documentType] || documentType;

@@ -304,6 +304,79 @@ import Step3Lesion from '../steps/lesionSteps/Step3.vue';
 import Step4Lesion from '../steps/lesionSteps/Step4.vue';
 import Step5Lesion from '../steps/lesionSteps/Step5.vue';
 import Step6Lesion from '../steps/lesionSteps/Step6.vue';
+import Step1EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step1.vue';
+import Step2EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step2.vue';
+import Step3EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step3.vue';
+import Step4EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step4.vue';
+import Step5EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step5.vue';
+import Step6EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step6.vue';
+import Step7EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step7.vue';
+import Step8EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step8.vue';
+import Step9EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step9.vue';
+import Step10EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step10.vue';
+import Step11EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step11.vue';
+import Step12EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step12.vue';
+import Step13EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step13.vue';
+import Step14EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step14.vue';
+import Step15EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step15.vue';
+import Step16EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step16.vue';
+import Step17EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step17.vue';
+import Step18EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step18.vue';
+import Step19EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step19.vue';
+import Step20EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step20.vue';
+import Step21EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step21.vue';
+import Step22EntrevistaPsicologica from '../steps/entrevistaPsicologicaSteps/Step22.vue';
+import Step1TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step1.vue';
+import Step2TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step2.vue';
+import Step3TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step3.vue';
+import Step4TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step4.vue';
+import Step5TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step5.vue';
+import Step6TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step6.vue';
+import Step7TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step7.vue';
+import Step8TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step8.vue';
+import Step9TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step9.vue';
+import Step10TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step10.vue';
+import Step11TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step11.vue';
+import Step12TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step12.vue';
+import Step13TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step13.vue';
+import Step14TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step14.vue';
+import Step15TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step15.vue';
+import Step16TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step16.vue';
+import Step17TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step17.vue';
+import Step18TrastornosEstadoAnimo from '../steps/trastornosEstadoAnimoSteps/Step18.vue';
+import Step1CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step1.vue';
+import Step2CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step2.vue';
+import Step3CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step3.vue';
+import Step4CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step4.vue';
+import Step5CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step5.vue';
+import Step6CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step6.vue';
+import Step7CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step7.vue';
+import Step8CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step8.vue';
+import Step9CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step9.vue';
+import Step10CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step10.vue';
+import Step11CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step11.vue';
+import Step12CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step12.vue';
+import Step13CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step13.vue';
+import Step14CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step14.vue';
+import Step15CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step15.vue';
+import Step16CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step16.vue';
+import Step17CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step17.vue';
+import Step18CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step18.vue';
+import Step19CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step19.vue';
+import Step20CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step20.vue';
+import Step21CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step21.vue';
+import Step22CuestionarioProdromalBreve from '../steps/cuestionarioProdromalBreveSteps/Step22.vue';
+import Step1TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step1.vue';
+import Step2TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step2.vue';
+import Step3TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step3.vue';
+import Step4TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step4.vue';
+import Step5TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step5.vue';
+import Step6TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step6.vue';
+import Step7TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step7.vue';
+import Step8TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step8.vue';
+import Step9TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step9.vue';
+import Step10TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step10.vue';
+import Step11TrastornoLimitePersonalidad from '../steps/trastornoLimitePersonalidadSteps/Step11.vue';
 import ModalFaltanCampos from '../ModalFaltanCampos.vue';
 import ModalCamposFaltantes from '../ModalCamposFaltantes.vue';
 import DailyConsentModal from '../DailyConsentModal.vue';
@@ -315,6 +388,12 @@ import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import { useNom024Fields } from '@/composables/useNom024Fields';
 import { useDailyConsentGate } from '@/composables/useDailyConsentGate';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
+import {
+  indicePasoP3Mdq,
+  indicePasoP4Mdq,
+  indicePasoP5Mdq,
+  requierePaso15SituacionesMismoPeriodo,
+} from '@/helpers/trastornosEstadoAnimoSteps';
 
 export default {
   components: { Step1Antidoping, Step2Antidoping, Step1Aptitud, Step2Aptitud, Step3Aptitud, Step4Aptitud, Step5Aptitud, Step6Aptitud, Step7Aptitud, Step8Aptitud, Step9Aptitud, Step10Aptitud, Step11Aptitud, Step1Audiometria, Step2Audiometria, Step3Audiometria, Step4Audiometria, Step5Audiometria, Step6Audiometria, Step7Audiometria, Step1Certificado, Step2Certificado, Step1CertificadoExpedito, Step2CertificadoExpedito, Step3CertificadoExpedito, Step4CertificadoExpedito, Step5CertificadoExpedito, Step6CertificadoExpedito, Step7CertificadoExpedito, Step8CertificadoExpedito, Step1ExamenVista, Step2ExamenVista, Step3ExamenVista, Step4ExamenVista, Step5ExamenVista, Step6ExamenVista, Step7ExamenVista, Step8ExamenVista, Step9ExamenVista, Step1ExploracionFisica, Step2ExploracionFisica, Step3ExploracionFisica, Step4ExploracionFisica, Step5ExploracionFisica, Step6ExploracionFisica, Step7ExploracionFisica, Step8ExploracionFisica, Step9ExploracionFisica, Step10ExploracionFisica, Step11ExploracionFisica, Step12ExploracionFisica, Step13ExploracionFisica, Step14ExploracionFisica, Step15ExploracionFisica, Step16ExploracionFisica, Step17ExploracionFisica, Step18ExploracionFisica, Step19ExploracionFisica, Step20ExploracionFisica, Step21ExploracionFisica, Step22ExploracionFisica, Step23ExploracionFisica, Step24ExploracionFisica, Step25ExploracionFisica, Step26ExploracionFisica, Step27ExploracionFisica, Step28ExploracionFisica, Step29ExploracionFisica, Step30ExploracionFisica, Step31ExploracionFisica, Step1HistoriaClinica, Step2HistoriaClinica, Step3HistoriaClinica, Step4HistoriaClinica, Step5HistoriaClinica, Step6HistoriaClinica, Step7HistoriaClinica, Step8HistoriaClinica, Step9HistoriaClinica, Step10HistoriaClinica, Step11HistoriaClinica, Step12HistoriaClinica, Step13HistoriaClinica, Step14HistoriaClinica, Step15HistoriaClinica, Step16HistoriaClinica, Step17HistoriaClinica, Step18HistoriaClinica, Step19HistoriaClinica, Step20HistoriaClinica, Step21HistoriaClinica, Step22HistoriaClinica, Step23HistoriaClinica, Step24HistoriaClinica, Step25HistoriaClinica, Step26HistoriaClinica, Step27HistoriaClinica, Step28HistoriaClinica, Step29HistoriaClinica, Step30HistoriaClinica, Step31HistoriaClinica, Step32HistoriaClinica, Step33HistoriaClinica, Step34HistoriaClinica, Step35HistoriaClinica, Step36HistoriaClinica, Step37HistoriaClinica, Step38HistoriaClinica, Step39HistoriaClinica, Step40HistoriaClinica, Step41HistoriaClinica, Step42HistoriaClinica, Step43HistoriaClinica, Step44HistoriaClinica, Step45HistoriaClinica, Step46HistoriaClinica, Step1NotaMedica, Step2NotaMedica, Step3NotaMedica, Step4NotaMedica, Step5NotaMedica, Step6NotaMedica, Step7NotaMedica, Step8NotaMedica, Step9NotaMedica, Step10NotaMedica, Step11NotaMedica, Step12NotaMedica, Step13NotaMedica, Step14NotaMedica, Step1NotaAclaratoria, Step1ControlPrenatal, Step2ControlPrenatal, Step3ControlPrenatal, Step4ControlPrenatal, Step5ControlPrenatal, Step6ControlPrenatal, Step7ControlPrenatal, Step8ControlPrenatal, Step9ControlPrenatal, Step10ControlPrenatal, Step11ControlPrenatal, Step12ControlPrenatal, Step13ControlPrenatal, Step14ControlPrenatal, Step15ControlPrenatal, Step16ControlPrenatal, Step17ControlPrenatal, Step18ControlPrenatal, Step19ControlPrenatal, Step20ControlPrenatal, Step21ControlPrenatal, Step22ControlPrenatal, Step23ControlPrenatal, Step24ControlPrenatal, Step25ControlPrenatal, Step26ControlPrenatal, Step27ControlPrenatal, Step28ControlPrenatal, Step29ControlPrenatal, Step30ControlPrenatal, Step31ControlPrenatal, Step32ControlPrenatal, Step33ControlPrenatal, Step34ControlPrenatal, Step35ControlPrenatal, Step36ControlPrenatal, Step37ControlPrenatal, Step38ControlPrenatal, Step39ControlPrenatal, Step40ControlPrenatal, Step41ControlPrenatal, Step42ControlPrenatal, Step43ControlPrenatal, Step44ControlPrenatal, Step45ControlPrenatal, Step46ControlPrenatal, Step47ControlPrenatal, Step48ControlPrenatal, Step49ControlPrenatal, Step50ControlPrenatal, Step51ControlPrenatal, Step52ControlPrenatal, Step53ControlPrenatal, Step54ControlPrenatal, Step55ControlPrenatal, Step56ControlPrenatal, Step57ControlPrenatal, Step58ControlPrenatal, Step59ControlPrenatal, Step60ControlPrenatal, Step61ControlPrenatal, Step62ControlPrenatal, Step63ControlPrenatal, Step64ControlPrenatal, Step65ControlPrenatal, Step66ControlPrenatal, Step67ControlPrenatal, Step68ControlPrenatal, Step69ControlPrenatal, Step70ControlPrenatal, Step71ControlPrenatal, Step72ControlPrenatal, Step73ControlPrenatal, Step74ControlPrenatal, Step75ControlPrenatal, Step76ControlPrenatal, Step77ControlPrenatal, Step78ControlPrenatal, Step79ControlPrenatal, Step80ControlPrenatal, Step81ControlPrenatal, Step82ControlPrenatal, Step83ControlPrenatal, Step84ControlPrenatal, Step85ControlPrenatal, Step86ControlPrenatal, Step87ControlPrenatal, Step88ControlPrenatal, Step89ControlPrenatal, Step1HistoriaOtologica, Step2HistoriaOtologica, Step3HistoriaOtologica, Step4HistoriaOtologica, Step5HistoriaOtologica, Step6HistoriaOtologica, Step7HistoriaOtologica, Step8HistoriaOtologica, Step9HistoriaOtologica, Step10HistoriaOtologica, Step11HistoriaOtologica, Step12HistoriaOtologica, Step13HistoriaOtologica, Step14HistoriaOtologica, Step15HistoriaOtologica, Step16HistoriaOtologica, Step17HistoriaOtologica, Step18HistoriaOtologica, Step19HistoriaOtologica, Step20HistoriaOtologica, Step21HistoriaOtologica, Step22HistoriaOtologica, Step23HistoriaOtologica, Step24HistoriaOtologica, Step25HistoriaOtologica, Step1PrevioEspirometria, Step2PrevioEspirometria, Step3PrevioEspirometria, Step4PrevioEspirometria, Step5PrevioEspirometria, Step6PrevioEspirometria, Step7PrevioEspirometria, Step8PrevioEspirometria, Step9PrevioEspirometria, Step10PrevioEspirometria, Step11PrevioEspirometria, Step12PrevioEspirometria, Step13PrevioEspirometria, Step14PrevioEspirometria, Step15PrevioEspirometria, Step16PrevioEspirometria, Step17PrevioEspirometria, Step18PrevioEspirometria, Step19PrevioEspirometria, Step20PrevioEspirometria, Step21PrevioEspirometria, Step22PrevioEspirometria, Step23PrevioEspirometria, Step24PrevioEspirometria, Step25PrevioEspirometria, Step26PrevioEspirometria, Step27PrevioEspirometria, Step28PrevioEspirometria, Step1Receta, Step2Receta, Step3Receta, Step4Receta, Step1ConstanciaAptitud, Step1Lesion, Step2Lesion, Step3Lesion, Step4Lesion, Step5Lesion, Step6Lesion, ModalFaltanCampos, ModalCamposFaltantes, DailyConsentModal },
@@ -503,6 +582,60 @@ export default {
       if (!currentUserId || !userId) return username;
       return String(userId) === String(currentUserId) ? username + ' (Yo)' : username;
     };
+
+    /**
+     * Pasos 1–14 fijos; paso 15 (P2) si ≥2 "Sí" en P1; P3–P5 después (índices según P2).
+     * @see requierePaso15SituacionesMismoPeriodo, indicePasoP3Mdq, indicePasoP4Mdq, indicePasoP5Mdq
+     */
+    function aplicarPasosTrastornosEstadoAnimo(preservarPasoActual) {
+      if (documentos.currentTypeOfDocument !== 'trastornosEstadoAnimo') return;
+
+      const fd = formData.formDataTrastornosEstadoAnimo;
+      const pasos = [
+        { component: Step1TrastornosEstadoAnimo, name: 'Paso 1' },
+        { component: Step2TrastornosEstadoAnimo, name: 'Paso 2' },
+        { component: Step3TrastornosEstadoAnimo, name: 'Paso 3' },
+        { component: Step4TrastornosEstadoAnimo, name: 'Paso 4' },
+        { component: Step5TrastornosEstadoAnimo, name: 'Paso 5' },
+        { component: Step6TrastornosEstadoAnimo, name: 'Paso 6' },
+        { component: Step7TrastornosEstadoAnimo, name: 'Paso 7' },
+        { component: Step8TrastornosEstadoAnimo, name: 'Paso 8' },
+        { component: Step9TrastornosEstadoAnimo, name: 'Paso 9' },
+        { component: Step10TrastornosEstadoAnimo, name: 'Paso 10' },
+        { component: Step11TrastornosEstadoAnimo, name: 'Paso 11' },
+        { component: Step12TrastornosEstadoAnimo, name: 'Paso 12' },
+        { component: Step13TrastornosEstadoAnimo, name: 'Paso 13' },
+        { component: Step14TrastornosEstadoAnimo, name: 'Paso 14' },
+      ];
+      if (requierePaso15SituacionesMismoPeriodo(fd)) {
+        pasos.push({ component: Step15TrastornosEstadoAnimo, name: 'Paso 15' });
+      } else {
+        fd.p2SituacionesMismoPeriodo = undefined;
+      }
+      pasos.push({
+        component: Step16TrastornosEstadoAnimo,
+        name: `Paso ${indicePasoP3Mdq(fd)}`,
+      });
+      pasos.push({
+        component: Step17TrastornosEstadoAnimo,
+        name: `Paso ${indicePasoP4Mdq(fd)}`,
+      });
+      pasos.push({
+        component: Step18TrastornosEstadoAnimo,
+        name: `Paso ${indicePasoP5Mdq(fd)}`,
+      });
+      stepsStore.setSteps(pasos, { preserveCurrentStep: preservarPasoActual });
+    }
+
+    watch(
+      () => formData.formDataTrastornosEstadoAnimo,
+      () => {
+        if (documentos.currentTypeOfDocument === 'trastornosEstadoAnimo') {
+          aplicarPasosTrastornosEstadoAnimo(true);
+        }
+      },
+      { deep: true }
+    );
 
     // Establece los pasos al montar el componente
     onMounted(() => {
@@ -906,6 +1039,72 @@ export default {
           { component: Step5Lesion, name: 'Paso 5' },
           { component: Step6Lesion, name: 'Paso 6' },
         ]);
+      } else if (documentos.currentTypeOfDocument === 'entrevistaPsicologica') {
+        stepsStore.setSteps([
+          { component: Step1EntrevistaPsicologica, name: 'Paso 1' },
+          { component: Step2EntrevistaPsicologica, name: 'Paso 2' },
+          { component: Step3EntrevistaPsicologica, name: 'Paso 3' },
+          { component: Step4EntrevistaPsicologica, name: 'Paso 4' },
+          { component: Step5EntrevistaPsicologica, name: 'Paso 5' },
+          { component: Step6EntrevistaPsicologica, name: 'Paso 6' },
+          { component: Step7EntrevistaPsicologica, name: 'Paso 7' },
+          { component: Step8EntrevistaPsicologica, name: 'Paso 8' },
+          { component: Step9EntrevistaPsicologica, name: 'Paso 9' },
+          { component: Step10EntrevistaPsicologica, name: 'Paso 10' },
+          { component: Step11EntrevistaPsicologica, name: 'Paso 11' },
+          { component: Step12EntrevistaPsicologica, name: 'Paso 12' },
+          { component: Step13EntrevistaPsicologica, name: 'Paso 13' },
+          { component: Step14EntrevistaPsicologica, name: 'Paso 14' },
+          { component: Step15EntrevistaPsicologica, name: 'Paso 15' },
+          { component: Step16EntrevistaPsicologica, name: 'Paso 16' },
+          { component: Step17EntrevistaPsicologica, name: 'Paso 17' },
+          { component: Step18EntrevistaPsicologica, name: 'Paso 18' },
+          { component: Step19EntrevistaPsicologica, name: 'Paso 19' },
+          { component: Step20EntrevistaPsicologica, name: 'Paso 20' },
+          { component: Step21EntrevistaPsicologica, name: 'Paso 21' },
+          { component: Step22EntrevistaPsicologica, name: 'Paso 22' },
+        ]);
+      } else if (documentos.currentTypeOfDocument === 'trastornosEstadoAnimo') {
+        aplicarPasosTrastornosEstadoAnimo(false);
+      } else if (documentos.currentTypeOfDocument === 'cuestionarioProdromalBreve') {
+        stepsStore.setSteps([
+          { component: Step1CuestionarioProdromalBreve, name: 'Paso 1' },
+          { component: Step2CuestionarioProdromalBreve, name: 'Paso 2' },
+          { component: Step3CuestionarioProdromalBreve, name: 'Paso 3' },
+          { component: Step4CuestionarioProdromalBreve, name: 'Paso 4' },
+          { component: Step5CuestionarioProdromalBreve, name: 'Paso 5' },
+          { component: Step6CuestionarioProdromalBreve, name: 'Paso 6' },
+          { component: Step7CuestionarioProdromalBreve, name: 'Paso 7' },
+          { component: Step8CuestionarioProdromalBreve, name: 'Paso 8' },
+          { component: Step9CuestionarioProdromalBreve, name: 'Paso 9' },
+          { component: Step10CuestionarioProdromalBreve, name: 'Paso 10' },
+          { component: Step11CuestionarioProdromalBreve, name: 'Paso 11' },
+          { component: Step12CuestionarioProdromalBreve, name: 'Paso 12' },
+          { component: Step13CuestionarioProdromalBreve, name: 'Paso 13' },
+          { component: Step14CuestionarioProdromalBreve, name: 'Paso 14' },
+          { component: Step15CuestionarioProdromalBreve, name: 'Paso 15' },
+          { component: Step16CuestionarioProdromalBreve, name: 'Paso 16' },
+          { component: Step17CuestionarioProdromalBreve, name: 'Paso 17' },
+          { component: Step18CuestionarioProdromalBreve, name: 'Paso 18' },
+          { component: Step19CuestionarioProdromalBreve, name: 'Paso 19' },
+          { component: Step20CuestionarioProdromalBreve, name: 'Paso 20' },
+          { component: Step21CuestionarioProdromalBreve, name: 'Paso 21' },
+          { component: Step22CuestionarioProdromalBreve, name: 'Paso 22' },
+        ]);
+      } else if (documentos.currentTypeOfDocument === 'trastornoLimitePersonalidad') {
+        stepsStore.setSteps([
+          { component: Step1TrastornoLimitePersonalidad, name: 'Paso 1' },
+          { component: Step2TrastornoLimitePersonalidad, name: 'Paso 2' },
+          { component: Step3TrastornoLimitePersonalidad, name: 'Paso 3' },
+          { component: Step4TrastornoLimitePersonalidad, name: 'Paso 4' },
+          { component: Step5TrastornoLimitePersonalidad, name: 'Paso 5' },
+          { component: Step6TrastornoLimitePersonalidad, name: 'Paso 6' },
+          { component: Step7TrastornoLimitePersonalidad, name: 'Paso 7' },
+          { component: Step8TrastornoLimitePersonalidad, name: 'Paso 8' },
+          { component: Step9TrastornoLimitePersonalidad, name: 'Paso 9' },
+          { component: Step10TrastornoLimitePersonalidad, name: 'Paso 10' },
+          { component: Step11TrastornoLimitePersonalidad, name: 'Paso 11' },
+        ]);
       } else {
         console.error(`Tipo de documento no reconocido: ${documentos.currentTypeOfDocument}`);
       }
@@ -1075,6 +1274,14 @@ export default {
         const lesionData = { ...formData.formDataLesion };
         normalizarCIEsLesion(lesionData);
         datosLimpios = limpiarValoresUndefined(lesionData);
+      } else if (documentos.currentTypeOfDocument === 'entrevistaPsicologica') {
+        datosLimpios = limpiarValoresUndefined(formData.formDataEntrevistaPsicologica);
+      } else if (documentos.currentTypeOfDocument === 'trastornosEstadoAnimo') {
+        datosLimpios = limpiarValoresUndefined(formData.formDataTrastornosEstadoAnimo);
+      } else if (documentos.currentTypeOfDocument === 'cuestionarioProdromalBreve') {
+        datosLimpios = limpiarValoresUndefined(formData.formDataCuestionarioProdromalBreve);
+      } else if (documentos.currentTypeOfDocument === 'trastornoLimitePersonalidad') {
+        datosLimpios = limpiarValoresUndefined(formData.formDataTrastornoLimitePersonalidad);
       } else {
         console.error(`Tipo de documento no reconocido: ${documentos.currentTypeOfDocument}`);
         return; // Salir si el tipo de documento no es válido

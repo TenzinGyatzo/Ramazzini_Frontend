@@ -1,25 +1,25 @@
 <template>
   <div class="recomendaciones-tabla">
     <div class="header">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-slate-100 mb-4">
         Recomendaciones de Medidas Preventivas
       </h3>
-      <p class="text-sm text-gray-600 mb-4">
+      <p class="text-sm text-gray-600 dark:text-slate-300 mb-4">
         Agrega hallazgos específicos y sus medidas preventivas correspondientes.
       </p>
     </div>
 
     <div class="table-container">
-      <table class="w-full border-collapse border border-gray-300">
+      <table class="w-full border-collapse border border-gray-300 dark:border-slate-600">
         <thead>
-          <tr class="bg-gray-50">
-            <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">
+          <tr class="bg-gray-50 dark:bg-slate-800">
+            <th class="border border-gray-300 dark:border-slate-600 px-4 py-3 text-left font-semibold text-gray-700 dark:text-slate-200">
               HALLAZGO
             </th>
-            <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">
+            <th class="border border-gray-300 dark:border-slate-600 px-4 py-3 text-left font-semibold text-gray-700 dark:text-slate-200">
               MEDIDA PREVENTIVA RECOMENDADA
             </th>
-            <th class="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700 w-20">
+            <th class="border border-gray-300 dark:border-slate-600 px-4 py-3 text-center font-semibold text-gray-700 dark:text-slate-200 w-20">
               Acciones
             </th>
           </tr>
@@ -28,30 +28,30 @@
           <tr 
             v-for="(item, index) in localItems" 
             :key="index"
-            class="hover:bg-gray-50"
+            class="hover:bg-gray-50 dark:hover:bg-slate-800/70"
           >
-            <td class="border border-gray-300 px-4 py-3">
+            <td class="border border-gray-300 dark:border-slate-600 px-4 py-3">
               <textarea
                 v-model="item.hallazgo"
                 @input="updateItem(index, 'hallazgo', ($event.target as HTMLTextAreaElement).value)"
-                class="w-full p-2 border border-gray-300 rounded resize-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                class="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-slate-100 placeholder-gray-500 dark:placeholder-slate-300 rounded resize-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 rows="2"
                 placeholder="Describe el hallazgo..."
               ></textarea>
             </td>
-            <td class="border border-gray-300 px-4 py-3">
+            <td class="border border-gray-300 dark:border-slate-600 px-4 py-3">
               <textarea
                 v-model="item.medidaPreventiva"
                 @input="updateItem(index, 'medidaPreventiva', ($event.target as HTMLTextAreaElement).value)"
-                class="w-full p-2 border border-gray-300 rounded resize-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                class="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-slate-100 placeholder-gray-500 dark:placeholder-slate-300 rounded resize-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 rows="2"
                 placeholder="Describe la medida preventiva..."
               ></textarea>
             </td>
-            <td class="border border-gray-300 px-4 py-3 text-center">
+            <td class="border border-gray-300 dark:border-slate-600 px-4 py-3 text-center">
               <button
                 @click="removeItem(index)"
-                class="text-red-600 hover:text-red-800 transition-colors"
+                class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                 title="Eliminar fila"
               >
                 <i class="fas fa-trash"></i>
@@ -71,7 +71,7 @@
         Agregar Recomendación
       </button>
       
-      <div v-if="localItems.length === 0" class="text-center py-8 text-gray-500">
+      <div v-if="localItems.length === 0" class="text-center py-8 text-gray-500 dark:text-slate-400">
         <i class="fas fa-table text-4xl mb-2"></i>
         <p>No hay recomendaciones agregadas</p>
         <p class="text-sm">Haz clic en "Agregar Recomendación" para comenzar</p>
@@ -206,6 +206,10 @@ defineExpose({
   border-radius: 0.5rem;
 }
 
+:global(html.dark-mode) .table-container {
+  border-color: #475569;
+}
+
 table {
   min-width: 100%;
 }
@@ -221,6 +225,10 @@ textarea:focus {
 /* Estilos para el hover de las filas */
 tbody tr:hover {
   background-color: #f9fafb;
+}
+
+:global(html.dark-mode) tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.7);
 }
 
 /* Estilos para los botones de acción */

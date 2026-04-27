@@ -74,7 +74,7 @@ function inicializarDataTable() {
     };
 
     // Definir las columnas que se ocultan por defecto
-    const columnasOcultas = [2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38];
+    const columnasOcultas = [2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42];
 
     dataTableInstance = new DataTablesCore('#customTable', {
       data: props.rows,
@@ -290,10 +290,50 @@ function inicializarDataTable() {
             return resultado === 'Indeterminado' ? '-' : resultado;
           },
           defaultContent: '-'
-        }, // 35 
-        { data: 'agentesRiesgoActuales', title: 'Agentes Riesgo', render: d => Array.isArray(d) ? d.join(', ') : '-', defaultContent: '-' }, // 36
-        { data: 'consultaResumen.fechaNotaMedica', title: 'Consultas', render: d => d ? 'Si' : 'No', defaultContent: '-' }, // 37
-        { data: 'estadoLaboral', title: 'Estado Laboral' }, // 38
+        }, // 35
+        {
+          data: null,
+          title: 'Espirometría',
+          render: function (_data, type, row) {
+            const etiqueta = row.resultadosClinicosResumen?.espirometria?.etiqueta ?? '-';
+            if (type === 'filter') return etiqueta;
+            return etiqueta;
+          },
+          defaultContent: '-'
+        }, // 36
+        {
+          data: null,
+          title: 'EKG',
+          render: function (_data, type, row) {
+            const etiqueta = row.resultadosClinicosResumen?.ekg?.etiqueta ?? '-';
+            if (type === 'filter') return etiqueta;
+            return etiqueta;
+          },
+          defaultContent: '-'
+        }, // 37
+        {
+          data: null,
+          title: 'Rayos X',
+          render: function (_data, type, row) {
+            const etiqueta = row.resultadosClinicosResumen?.rayosX?.etiqueta ?? '-';
+            if (type === 'filter') return etiqueta;
+            return etiqueta;
+          },
+          defaultContent: '-'
+        }, // 38
+        {
+          data: null,
+          title: 'Laboratorio',
+          render: function (_data, type, row) {
+            const etiqueta = row.resultadosClinicosResumen?.analisisLaboratorio?.etiqueta ?? '-';
+            if (type === 'filter') return etiqueta;
+            return etiqueta;
+          },
+          defaultContent: '-'
+        }, // 39
+        { data: 'agentesRiesgoActuales', title: 'Agentes Riesgo', render: d => Array.isArray(d) ? d.join(', ') : '-', defaultContent: '-' }, // 40
+        { data: 'consultaResumen.fechaNotaMedica', title: 'Consultas', render: d => d ? 'Si' : 'No', defaultContent: '-' }, // 41
+        { data: 'estadoLaboral', title: 'Estado Laboral' }, // 42
         {
           data: null,
           title: 'Expediente',
@@ -317,7 +357,7 @@ function inicializarDataTable() {
               </a>
             `;
           }
-        }, // 39 
+        }, // 43
         {
           data: null,
           title: 'Acciones',
@@ -418,7 +458,7 @@ function inicializarDataTable() {
               </div>
             `;
           }
-        }, // 40
+        }, // 44
       ],
       deferRender: true,
       scrollX: true,
@@ -451,9 +491,13 @@ function inicializarDataTable() {
         { targets: 32, width: '70px' }, // Tabaco
         { targets: 34, width: '80px' }, // Audiometría
         { targets: 35, width: '100px' }, // Categoría Audiometría
-        { targets: 36, width: '60px' }, // Agentes Riesgo
-        { targets: 37, width: '60px' }, // Consultas
-        { targets: 40, width: '248px', className: 'columna-acciones' } // Acciones con clase específica
+        { targets: 36, width: '90px' }, // Espirometría RC
+        { targets: 37, width: '70px' }, // EKG RC
+        { targets: 38, width: '80px' }, // Rayos X RC
+        { targets: 39, width: '90px' }, // Laboratorio RC
+        { targets: 40, width: '60px' }, // Agentes Riesgo
+        { targets: 41, width: '60px' }, // Consultas
+        { targets: 44, width: '248px', className: 'columna-acciones' } // Acciones con clase específica
       ]
     });
 
@@ -580,11 +624,15 @@ function aplicarTodosLosFiltrosDesdeLocalStorage() {
     { id: 'otro', columna: 30 },
     { id: 'aptitud', columna: 4 },
     { id: 'vigencia', columna: 5 }, // <-- Ahora funciona con filtro estándar
-    { id: 'exposicion', columna: 36 }, // <-- este tiene lógica especial
-    { id: 'consultas', columna: 37 },
-    { id: 'audiometria', columna: 34 }, // Nueva columna audiometría (Normal/Anormal)
-    { id: 'categoriaAudiometria', columna: 35 }, // Nueva columna categoría audiometría
-    { id: 'estadoLaboral', columna: 38 }
+    { id: 'exposicion', columna: 40 }, // agentes riesgo
+    { id: 'consultas', columna: 41 },
+    { id: 'audiometria', columna: 34 },
+    { id: 'categoriaAudiometria', columna: 35 },
+    { id: 'espirometriaRc', columna: 36 },
+    { id: 'ekgRc', columna: 37 },
+    { id: 'rayosXRc', columna: 38 },
+    { id: 'laboratorioRc', columna: 39 },
+    { id: 'estadoLaboral', columna: 42 }
   ];
 
       // 1. Limpiar filtros anteriores
@@ -731,7 +779,7 @@ defineExpose({
 // Agregar watcher para la prop mostrarColumnasOcultas
 watch(() => props.mostrarColumnasOcultas, (nuevoValor) => {
   if (dataTableInstance) {
-    const columnasOcultas = [2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39];
+    const columnasOcultas = [2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42];
     
     // Cambiar la visibilidad de las columnas
     columnasOcultas.forEach((columnaIndex) => {

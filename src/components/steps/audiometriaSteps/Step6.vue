@@ -382,7 +382,7 @@ const insertarDiagnostico = (texto) => {
 
         <!-- Constructor de diagnóstico de hipoacusia -->
         <div class="mb-6">
-            <div class="border rounded-lg">
+            <div class="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
                 <button
                     class="w-full flex items-center justify-between p-3 text-left hover:bg-emerald-50 transition-colors"
                     :class="isOpen('constructor') ? 'bg-emerald-50' : 'bg-white'"
@@ -471,7 +471,7 @@ const insertarDiagnostico = (texto) => {
             </div>
 
             <div class="space-y-2">
-                <div v-for="categoria in opcionesCompatibleCon" :key="categoria.categoria" class="border rounded-lg">
+                <div v-for="categoria in opcionesCompatibleCon" :key="categoria.categoria" class="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
                     <button
                         class="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 transition-colors"
                         :class="isOpen(categoria.categoria) ? 'bg-gray-50' : 'bg-white'"

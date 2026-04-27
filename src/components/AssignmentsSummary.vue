@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+  <div class="assignments-summary bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 sm:p-4">
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
       <div class="flex items-center">
         <i class="fas fa-chart-pie text-blue-600 mr-2 sm:mr-3 text-base sm:text-lg"></i>
@@ -121,3 +121,23 @@ const porcentajeCompletado = computed(() => {
   return Math.round((usuariosConAsignacionesCount / totalUsuarios) * 100);
 });
 </script>
+
+<style>
+html.dark-mode .assignments-summary {
+  background-image: linear-gradient(to right, rgba(30, 58, 138, 0.24), rgba(67, 56, 202, 0.22)) !important;
+  border-color: #1d4ed8 !important;
+}
+
+html.dark-mode .assignments-summary .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .assignments-summary .text-gray-600,
+html.dark-mode .assignments-summary .text-gray-500 {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .assignments-summary .bg-gray-200 {
+  background-color: #334155 !important;
+}
+</style>

@@ -52,7 +52,7 @@ const handleSubmit = async ({ password }) => {
 <template>
   <div
     v-if="validToken == true"
-    class="flex flex-col items-center justify-center p-8 w-full mx-auto"
+    class="auth-green-submit-match-login flex flex-col items-center justify-center p-8 w-full mx-auto"
   >
     <!-- Mensaje de éxito -->
     <div class="text-center mb-3">

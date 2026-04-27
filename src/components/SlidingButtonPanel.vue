@@ -29,6 +29,10 @@ const documentOrder = {
   "Control Prenatal": 15,
   "Certificado Expedito": 16,
   "Receta": 17,
+  "Entrevista Psicologica": 18,
+  "Trastornos Estado Animo": 19,
+  "Cuestionario Prodromal Breve": 20,
+  "Trastorno Limite Personalidad": 21,
 };
 
 // Importante: verificar tipos más específicos ANTES que los genéricos (ej. Certificado Expedito antes de Certificado)
@@ -49,6 +53,10 @@ const getDocumentType = (route) => {
   if (route.includes("Lesion")) return "Lesion";
   if (route.includes("Control Prenatal")) return "Control Prenatal";
   if (route.includes("Receta")) return "Receta";
+  if (route.includes("Entrevista Psicologica")) return "Entrevista Psicologica";
+  if (route.includes("Trastornos Estado Animo")) return "Trastornos Estado Animo";
+  if (route.includes("Cuestionario Prodromal Breve")) return "Cuestionario Prodromal Breve";
+  if (route.includes("Trastorno Limite Personalidad")) return "Trastorno Limite Personalidad";
   return "Documento Externo"; // Para cualquier otro caso
 };
 
@@ -125,12 +133,12 @@ const handleClick = async () => {
   <Transition name="slide-down" appear mode="out-in">
     <div
       v-if="isVisible"
-      class="fixed -top-3 transform h-[13.5vh] md:h-[12vh] w-[64vw] sm:w-[60vw] md:w-[40vw] lg:w-[30vw] xl:w-[30vw] 2xl:w-[20vw] bg-gradient-to-r from-green-500 via-emerald-600 to-emerald-500 flex justify-center items-center rounded-xl shadow-xl z-10"
+      class="sliding-download-panel fixed -top-3 transform h-[13.5vh] md:h-[12vh] w-[64vw] sm:w-[60vw] md:w-[40vw] lg:w-[30vw] xl:w-[30vw] 2xl:w-[20vw] bg-gradient-to-r from-green-500 via-emerald-600 to-emerald-500 flex justify-center items-center rounded-xl shadow-xl z-10"
     >
       <button
         @click="handleClick"
         :disabled="loading"
-        class="relative px-6 py-3 bg-gradient-to-r from-white to-gray-100 font-semibold text-gray-700 rounded-full shadow-md hover:from-gray-200 hover:to-gray-300 hover:text-gray-900 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+        class="sliding-download-button relative px-6 py-3 bg-gradient-to-r from-white to-gray-100 font-semibold text-gray-700 rounded-full shadow-md hover:from-gray-200 hover:to-gray-300 hover:text-gray-900 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         <span class="flex items-center space-x-2">
           <svg
@@ -185,6 +193,27 @@ const handleClick = async () => {
 .slide-down-leave-to {
   transform: translateY(-100px);
   opacity: 0;
+}
+</style>
+
+<style>
+html.dark-mode .sliding-download-panel {
+  background-image: linear-gradient(to right, #065f46, #047857, #059669) !important;
+  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.65) !important;
+}
+
+html.dark-mode .sliding-download-button {
+  background-image: linear-gradient(to right, #1e293b, #334155) !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .sliding-download-button:hover {
+  background-image: linear-gradient(to right, #334155, #475569) !important;
+  color: #f8fafc !important;
+}
+
+html.dark-mode .sliding-download-button:focus-visible {
+  box-shadow: 0 0 0 2px #34d399 !important;
 }
 </style>
 

@@ -35,7 +35,7 @@ export default {
      * @param filterVariant 'afeccion' = Cap V,XIX,O | 'causaExterna' = V01-Y98
      */
     searchCIE10GIIS(query, limit?, sexo?, edad?, solo4Caracteres?, filterVariant?) {
-        const params = { q: query };
+        const params: any = { q: query };
         if (limit !== undefined) params.limit = limit;
         if (sexo !== undefined) params.sexo = sexo;
         if (edad !== undefined) params.edad = edad;

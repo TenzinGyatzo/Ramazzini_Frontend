@@ -66,12 +66,12 @@ const handleCancelDelete = () => {
   <Transition name="slide-down" appear mode="out-in">
     <div
       v-if="isVisible"
-      class="fixed -top-3 transform h-[13.5vh] md:h-[12vh] w-[64vw] sm:w-[60vw] md:w-[40vw] lg:w-[30vw] xl:w-[30vw] 2xl:w-[20vw] bg-gradient-to-r from-red-500 via-rose-600 to-red-500 flex justify-center items-center rounded-xl shadow-xl z-10"
+      class="deletion-button-panel fixed -top-3 transform h-[13.5vh] md:h-[12vh] w-[64vw] sm:w-[60vw] md:w-[40vw] lg:w-[30vw] xl:w-[30vw] 2xl:w-[20vw] bg-gradient-to-r from-red-500 via-rose-600 to-red-500 flex justify-center items-center rounded-xl shadow-xl z-10"
     >
       <button
         @click="handleDeleteClick"
         :disabled="loading"
-        class="relative px-6 py-3 bg-gradient-to-r from-white to-gray-100 font-semibold text-gray-700 rounded-full shadow-md hover:from-gray-200 hover:to-gray-300 hover:text-gray-900 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+        class="deletion-button-panel-btn relative px-6 py-3 bg-gradient-to-r from-white to-gray-100 font-semibold text-gray-700 rounded-full shadow-md hover:from-gray-200 hover:to-gray-300 hover:text-gray-900 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
       >
         <span class="flex items-center space-x-2">
           <svg
@@ -122,3 +122,24 @@ const handleCancelDelete = () => {
   opacity: 0;
 }
 </style> 
+
+<style>
+html.dark-mode .deletion-button-panel {
+  background-image: linear-gradient(to right, #7f1d1d, #9f1239, #991b1b) !important;
+  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.65) !important;
+}
+
+html.dark-mode .deletion-button-panel-btn {
+  background-image: linear-gradient(to right, #1e293b, #334155) !important;
+  color: #fee2e2 !important;
+}
+
+html.dark-mode .deletion-button-panel-btn:hover {
+  background-image: linear-gradient(to right, #334155, #475569) !important;
+  color: #fff1f2 !important;
+}
+
+html.dark-mode .deletion-button-panel-btn:focus-visible {
+  box-shadow: 0 0 0 2px #fb7185 !important;
+}
+</style>

@@ -670,6 +670,50 @@ const handleDeleteSelected = async () => {
                     documentosAEliminar.push({ id: previoEspirometria._id, tipo: 'previoEspirometria' });
                 }
             });
+
+            // Entrevista Psicológica
+            yearData.entrevistasPsicologicas?.forEach(entrevistaPsicologica => {
+                const rutaBase = obtenerRutaDocumento(entrevistaPsicologica, 'Entrevista Psicologica');
+                const fecha = obtenerFechaDocumento(entrevistaPsicologica) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(entrevistaPsicologica, 'Entrevista Psicologica', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(entrevistaPsicologica)) {
+                    documentosAEliminar.push({ id: entrevistaPsicologica._id, tipo: 'entrevistaPsicologica' });
+                }
+            });
+
+            // Trastornos Estado Animo
+            yearData.trastornosEstadoAnimo?.forEach(trastornosEstadoAnimo => {
+                const rutaBase = obtenerRutaDocumento(trastornosEstadoAnimo, 'Trastornos Estado Animo');
+                const fecha = obtenerFechaDocumento(trastornosEstadoAnimo) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(trastornosEstadoAnimo, 'Trastornos Estado Animo', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(trastornosEstadoAnimo)) {
+                    documentosAEliminar.push({ id: trastornosEstadoAnimo._id, tipo: 'trastornosEstadoAnimo' });
+                }
+            });
+
+            // Cuestionario Prodromal Breve
+            yearData.cuestionarioProdromalBreve?.forEach(cuestionarioProdromalBreve => {
+                const rutaBase = obtenerRutaDocumento(cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve');
+                const fecha = obtenerFechaDocumento(cuestionarioProdromalBreve) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(cuestionarioProdromalBreve)) {
+                    documentosAEliminar.push({ id: cuestionarioProdromalBreve._id, tipo: 'cuestionarioProdromalBreve' });
+                }
+            });
+
+            // Trastorno Limite Personalidad
+            yearData.trastornoLimitePersonalidad?.forEach(trastornoLimitePersonalidad => {
+                const rutaBase = obtenerRutaDocumento(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad');
+                const fecha = obtenerFechaDocumento(trastornoLimitePersonalidad) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(trastornoLimitePersonalidad)) {
+                    documentosAEliminar.push({ id: trastornoLimitePersonalidad._id, tipo: 'trastornoLimitePersonalidad' });
+                }
+            });
         });
 
         const excluidosPorInmutables = totalSeleccionados - documentosAEliminar.length;
@@ -758,7 +802,11 @@ const totalDocumentosCreados = computed(() => {
       (yearData.lesiones?.length || 0) +
       (yearData.controlPrenatal?.length || 0) +
       (yearData.historiaOtologica?.length || 0) +
-      (yearData.previoEspirometria?.length || 0)
+      (yearData.previoEspirometria?.length || 0) +
+      (yearData.entrevistasPsicologicas?.length || 0) +
+      (yearData.trastornosEstadoAnimo?.length || 0) +
+      (yearData.cuestionarioProdromalBreve?.length || 0) +
+      (yearData.trastornoLimitePersonalidad?.length || 0)
     );
   }, 0);
 });
@@ -897,7 +945,7 @@ const añoMasReciente = computed(() => {
                         <div v-if="trabajadores.currentTrabajador?.sexo" class="flex items-center gap-2 group relative">
                           <i v-if="trabajadores.currentTrabajador?.sexo === 'Masculino'" class="fas fa-mars text-sky-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
                           <i v-else class="fas fa-venus text-rose-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
-                           <span class="text-sm sm:text-base text-gray-600">
+                           <span class="text-item text-sm sm:text-base text-gray-600">
                              <span class="block lg:hidden">{{ trabajadores.currentTrabajador.sexo }}</span>
                              <span class="hidden lg:block 2xl:hidden">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'M' : 'F' }}</span>
                              <span class="hidden 2xl:block">{{ trabajadores.currentTrabajador.sexo }}</span>
@@ -905,7 +953,7 @@ const añoMasReciente = computed(() => {
                         </div>
                         <div class="flex sm:hidden md:flex items-center gap-2 group relative">
                           <i class="fas fa-birthday-cake text-emerald-500 text-sm"></i>
-                          <span class="text-sm sm:text-base text-gray-600">
+                          <span class="text-item text-sm sm:text-base text-gray-600">
                             {{ calcularEdad(trabajadores.currentTrabajador?.fechaNacimiento) }} años
                           </span>
                           <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
@@ -915,7 +963,7 @@ const añoMasReciente = computed(() => {
                         </div>
                         <div class="flex items-center gap-2 group relative">
                           <i class="fas fa-briefcase text-blue-500 text-sm"></i>
-                          <span class="text-sm sm:text-base text-gray-600">
+                          <span class="text-item text-sm sm:text-base text-gray-600">
                             {{ trabajadores.currentTrabajador?.puesto }}
                           </span>
                           <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
@@ -1022,7 +1070,7 @@ const añoMasReciente = computed(() => {
                     <i class="fas fa-notes-medical text-white text-lg"></i>
                   </div>
                   <h3 class="font-semibold text-gray-900 text-sm mb-1">Historia Clínica</h3>
-                  <p class="text-xs text-gray-600">Entrevista médica</p>
+                  <p class="text-item text-xs text-gray-600">Entrevista médica</p>
                 </div>
               </button>
 
@@ -1037,7 +1085,7 @@ const añoMasReciente = computed(() => {
                     <i class="fa-solid fa-person text-white text-xl"></i>
                   </div>
                   <h3 class="font-semibold text-gray-900 text-sm mb-1">Exploración Física</h3>
-                  <p class="text-xs text-gray-600">Aparatos y sistemas</p>
+                  <p class="text-item text-xs text-gray-600">Aparatos y sistemas</p>
                 </div>
               </button>
 
@@ -1052,7 +1100,7 @@ const añoMasReciente = computed(() => {
                     <i class="fas fa-eye text-white text-lg"></i>
                   </div>
                   <h3 class="font-semibold text-gray-900 text-sm mb-1">Examen Vista</h3>
-                  <p class="text-xs text-gray-600">Agudeza visual y colores</p>
+                  <p class="text-item text-xs text-gray-600">Agudeza visual y colores</p>
                 </div>
               </button>
 
@@ -1067,7 +1115,7 @@ const añoMasReciente = computed(() => {
                     <i class="fas fa-volume-up text-white text-lg"></i>
                   </div>
                   <h3 class="font-semibold text-gray-900 text-sm mb-1">Audiometría</h3>
-                  <p class="text-xs text-gray-600">Audición</p>
+                  <p class="text-item text-xs text-gray-600">Audición</p>
                 </div>
               </button>
 
@@ -1082,7 +1130,7 @@ const añoMasReciente = computed(() => {
                     <i class="fas fa-user-check text-white text-lg"></i>
                   </div>
                   <h3 class="font-semibold text-gray-900 text-sm mb-1">Aptitud</h3>
-                  <p class="text-xs text-gray-600">Evaluación laboral</p>
+                  <p class="text-item text-xs text-gray-600">Evaluación laboral</p>
                 </div>
               </button>
 
@@ -1097,7 +1145,7 @@ const añoMasReciente = computed(() => {
                     <i class="fas fa-certificate text-white text-lg"></i>
                   </div>
                   <h3 class="font-semibold text-gray-900 text-sm mb-1">Certificado</h3>
-                  <p class="text-xs text-gray-600">Certificación médica</p>
+                  <p class="text-item text-xs text-gray-600">Certificación médica</p>
                 </div>
               </button>
 
@@ -1112,7 +1160,7 @@ const añoMasReciente = computed(() => {
                     <i class="fas fa-flask text-white text-lg"></i>
                   </div>
                   <h3 class="font-semibold text-gray-900 text-sm mb-1">Antidoping</h3>
-                  <p class="text-xs text-gray-600">Prueba de sustancias</p>
+                  <p class="text-item text-xs text-gray-600">Prueba de sustancias</p>
                 </div>
               </button>
 
@@ -1127,7 +1175,7 @@ const añoMasReciente = computed(() => {
                     <i class="fas fa-stethoscope text-white text-lg"></i>
                   </div>
                   <h3 class="font-semibold text-gray-900 text-sm mb-1">Nota Médica</h3>
-                  <p class="text-xs text-gray-600">Consultas</p>
+                  <p class="text-item text-xs text-gray-600">Consultas</p>
                 </div>
               </button>
 

@@ -144,7 +144,7 @@ function formatoNombre(campo) {
 </script>
 
 <template>
-  <div>
+  <div class="antidoping-step2">
     <h1 class="font-bold mb-4 text-gray-800 leading-5">Prueba Antidoping</h1>
 
     <div class="mb-4">
@@ -191,7 +191,7 @@ function formatoNombre(campo) {
         <label
           v-for="parametro in camposVisibles"
           :key="parametro"
-          class="flex items-center space-x-2 cursor-pointer hover:bg-emerald-100 rounded-md p-1"
+          class="antidoping-param-option flex items-center space-x-2 cursor-pointer hover:bg-emerald-100 rounded-md p-1"
         >
           <input
             type="checkbox"
@@ -207,3 +207,10 @@ function formatoNombre(campo) {
     </div>
   </div>
 </template>
+
+<style>
+/* En dark mode, suavizar hover de opciones con checkbox (sin tocar light mode). */
+html.dark-mode .antidoping-step2 .antidoping-param-option:hover {
+  background-color: #334155 !important;
+}
+</style>

@@ -20,12 +20,24 @@ export const useStepsStore = defineStore("steps", () => {
   const isNavigating = ref(false);
 
   // Establece los pasos y marca los componentes como no reactivos
-  const setSteps = (newSteps: Array<{ component: any; name: string }>) => {
+  const setSteps = (
+    newSteps: Array<{ component: any; name: string }>,
+    options?: { preserveCurrentStep?: boolean }
+  ) => {
+    const prevLen = steps.value.length;
+    const prevStep = currentStep.value;
+
     steps.value = newSteps.map((step) => ({
       ...step,
       component: markRaw(step.component),
     }));
-    currentStep.value = 1; // Reinicia el paso actual
+
+    if (options?.preserveCurrentStep && prevLen > 0) {
+      // p. ej. trastornos del estado de ánimo: el paso 15 aparece/desaparece según respuestas P1
+      currentStep.value = Math.min(prevStep, newSteps.length);
+    } else {
+      currentStep.value = 1;
+    }
   };
 
   // Validar los campos visibles del paso actual

@@ -858,3 +858,140 @@ export interface Lesion {
     anuladoPor?: string;
     razonAnulacion?: string;
 }
+
+export interface EntrevistaPsicologica {
+    _id: string;
+    fechaEntrevistaPsicologica: string;
+    estado?: DocumentoEstado;
+    fechaFinalizacion?: string;
+    finalizadoPor?: string;
+    fechaAnulacion?: string;
+    anuladoPor?: string;
+    razonAnulacion?: string;
+    apariencia: string;
+    actitudHaciaEvaluador: string;
+    nivelCooperacion: string;
+    contactoVisual: string;
+    conductaMotora: string;
+    estadoAnimoPredominante: string;
+    afecto: string;
+    intensidadEmocional: string;
+    cursoPensamiento: string;
+    alteracionesPensamiento: string;
+    descripcionAlteracionesPensamiento: string;
+    alteracionesPerceptuales: string;
+    descripcionAlteracionesPerceptuales: string;
+    orientacion: string;
+    atencionConcentracion: string;
+    memoria: string;
+    juicio: string;
+    concienciaEstado: string;
+    relacionesInterpersonales: string;
+    desempenoLaboralAutorreporte: string;
+    manejoEstres: string;
+    ideacionSuicida: string;
+    observacionesIdeacionSuicida: string;
+    conclusionClinica: string;
+}
+
+export interface TrastornosEstadoAnimo {
+    _id: string;
+    fechaTrastornosEstadoAnimo: string;
+    estado?: DocumentoEstado;
+    fechaFinalizacion?: string;
+    finalizadoPor?: string;
+    fechaAnulacion?: string;
+    anuladoPor?: string;
+    razonAnulacion?: string;
+    p1ExaltadoComportamientoNoHabitualOMetidoProblemas?: string;
+    p1IrritableGritosPeleas?: string;
+    p1MasSeguridadQueLoHabitual?: string;
+    p1DormiaMenosSinNecesitarMasSueno?: string;
+    p1HablabaMasOMasRapido?: string;
+    p1PensamientosAgolpados?: string;
+    p1DistraccionDificultadConcentracion?: string;
+    p1MasEnergiaQueLoHabitual?: string;
+    p1MasActivoOMasCosasQueLoHabitual?: string;
+    p1MasSocialExtrovertido?: string;
+    p1MasApetitoSexual?: string;
+    p1CosasExageradasRiesgosas?: string;
+    p1GastoDineroProblemas?: string;
+    p2SituacionesMismoPeriodo?: string;
+    p3NivelProblemaCausado?: string;
+    p4FamiliarDirectoBipolar?: string;
+    p5DiagnosticoProfesionalBipolar?: string;
+}
+
+export interface CuestionarioProdromalBreve {
+    _id: string;
+    fechaCuestionarioProdromalBreve: string;
+    estado?: DocumentoEstado;
+    fechaFinalizacion?: string;
+    finalizadoPor?: string;
+    fechaAnulacion?: string;
+    anuladoPor?: string;
+    razonAnulacion?: string;
+    p1?: string;
+    p1GradoAcuerdoStatement?: string;
+    p2?: string;
+    p2GradoAcuerdoStatement?: string;
+    p3?: string;
+    p3GradoAcuerdoStatement?: string;
+    p4?: string;
+    p4GradoAcuerdoStatement?: string;
+    p5?: string;
+    p5GradoAcuerdoStatement?: string;
+    p6?: string;
+    p6GradoAcuerdoStatement?: string;
+    p7?: string;
+    p7GradoAcuerdoStatement?: string;
+    p8?: string;
+    p8GradoAcuerdoStatement?: string;
+    p9?: string;
+    p9GradoAcuerdoStatement?: string;
+    p10?: string;
+    p10GradoAcuerdoStatement?: string;
+    p11?: string;
+    p11GradoAcuerdoStatement?: string;
+    p12?: string;
+    p12GradoAcuerdoStatement?: string;
+    p13?: string;
+    p13GradoAcuerdoStatement?: string;
+    p14?: string;
+    p14GradoAcuerdoStatement?: string;
+    p15?: string;
+    p15GradoAcuerdoStatement?: string;
+    p16?: string;
+    p16GradoAcuerdoStatement?: string;
+    p17?: string;
+    p17GradoAcuerdoStatement?: string;
+    p18?: string;
+    p18GradoAcuerdoStatement?: string;
+    p19?: string;
+    p19GradoAcuerdoStatement?: string;
+    p20?: string;
+    p20GradoAcuerdoStatement?: string;
+    p21?: string;
+    p21GradoAcuerdoStatement?: string;
+}
+
+export interface TrastornoLimitePersonalidad {
+    _id: string;
+    fechaTrastornoLimitePersonalidad: string;
+    estado?: DocumentoEstado;
+    fechaFinalizacion?: string;
+    finalizadoPor?: string;
+    fechaAnulacion?: string;
+    anuladoPor?: string;
+    razonAnulacion?: string;
+    relacionesCercanasDiscusionesRupturas?: string;
+    autolesionIntentoSuicidio?: string;
+    impulsividadOtrosDosProblemas?: string;
+    extremadamenteMalHumor?: string;
+    enojadoFrecuenteActuaEnojadoSarcastico?: string;
+    desconfianzaOtrasPersonas?: string;
+    sensacionIrrealidadEntornoIrreal?: string;
+    vacioCronico?: string;
+    faltaIdentidadQuienEs?: string;
+    esfuerzosEvitarAbandono?: string;
+}

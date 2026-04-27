@@ -321,7 +321,7 @@ const insertarDesdeConstructor = () => {
     <!-- Categorías de plantillas con desplegables -->
     <div class="space-y-2">
       <!-- Sin exposición -->
-      <div class="border rounded-lg">
+      <div class="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
         <button
           class="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 transition-colors"
           :class="isOpen('sin-expo') ? 'bg-gray-50' : 'bg-white'"
@@ -381,7 +381,7 @@ const insertarDesdeConstructor = () => {
       </div>
 
       <!-- Exposición con EPP -->
-      <div class="border rounded-lg">
+      <div class="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
         <button
           class="w-full flex items-center justify-between p-3 text-left hover:bg-green-50 transition-colors"
           :class="isOpen('con-epp') ? 'bg-green-50' : 'bg-white'"
@@ -428,7 +428,7 @@ const insertarDesdeConstructor = () => {
 
 
       <!-- Exposición sin EPP -->
-      <div class="border rounded-lg">
+      <div class="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
         <button
           class="w-full flex items-center justify-between p-3 text-left hover:bg-orange-50 transition-colors"
           :class="isOpen('sin-epp') ? 'bg-orange-50' : 'bg-white'"
@@ -474,7 +474,7 @@ const insertarDesdeConstructor = () => {
       </div>
 
       <!-- Exposición con síntomas -->
-      <div class="border rounded-lg">
+      <div class="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
         <button
           class="w-full flex items-center justify-between p-3 text-left hover:bg-red-50 transition-colors"
           :class="isOpen('con-sintomas') ? 'bg-red-50' : 'bg-white'"
@@ -521,7 +521,7 @@ const insertarDesdeConstructor = () => {
 
 
       <!-- Patologías otoscópicas -->
-      <div class="border rounded-lg">
+      <div class="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
         <button
           class="w-full flex items-center justify-between p-3 text-left hover:bg-purple-50 transition-colors"
           :class="isOpen('patologias') ? 'bg-purple-50' : 'bg-white'"
@@ -567,7 +567,7 @@ const insertarDesdeConstructor = () => {
       </div>
 
       <!-- Casos de revisión -->
-      <div class="border rounded-lg">
+      <div class="border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-800">
         <button
           class="w-full flex items-center justify-between p-3 text-left hover:bg-indigo-50 transition-colors"
           :class="isOpen('revision') ? 'bg-indigo-50' : 'bg-white'"

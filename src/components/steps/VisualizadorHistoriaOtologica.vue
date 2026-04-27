@@ -24,7 +24,7 @@ const goToStep = (stepNumber) => {
 
 <template>
   <div
-    class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
+    class="visualizador-historia-otologica flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
     <div class="flex flex-wrap md:flex-nowrap w-full gap-4 items-center">
@@ -436,8 +436,47 @@ const goToStep = (stepNumber) => {
   cursor: pointer;
 }
 
-.cursor-pointer:hover {
+.visualizador-historia-otologica div.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-historia-otologica div.cursor-pointer:hover {
   background-color: #f0f0f0;
-  /* Cambia el color según tu diseño */
+}
+
+.visualizador-historia-otologica tbody tr.cursor-pointer,
+.visualizador-historia-otologica thead tr.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-historia-otologica tbody tr.cursor-pointer > td,
+.visualizador-historia-otologica tbody tr.cursor-pointer > th,
+.visualizador-historia-otologica thead tr.cursor-pointer > td,
+.visualizador-historia-otologica thead tr.cursor-pointer > th {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-historia-otologica tbody tr.cursor-pointer:hover,
+.visualizador-historia-otologica tbody tr.cursor-pointer:hover > td,
+.visualizador-historia-otologica tbody tr.cursor-pointer:hover > th,
+.visualizador-historia-otologica thead tr.cursor-pointer:hover,
+.visualizador-historia-otologica thead tr.cursor-pointer:hover > td,
+.visualizador-historia-otologica thead tr.cursor-pointer:hover > th {
+  background-color: #f0f0f0;
+}
+</style>
+
+<style>
+html.dark-mode .visualizador-historia-otologica div.cursor-pointer:hover {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .visualizador-historia-otologica tbody tr.cursor-pointer:hover,
+html.dark-mode .visualizador-historia-otologica tbody tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-historia-otologica tbody tr.cursor-pointer:hover > th,
+html.dark-mode .visualizador-historia-otologica thead tr.cursor-pointer:hover,
+html.dark-mode .visualizador-historia-otologica thead tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-historia-otologica thead tr.cursor-pointer:hover > th {
+  background-color: #475569 !important;
 }
 </style>

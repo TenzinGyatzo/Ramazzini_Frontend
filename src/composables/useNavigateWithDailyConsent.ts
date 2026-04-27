@@ -57,7 +57,7 @@ export function useNavigateWithDailyConsent() {
       }
 
       // Si no existe consentimiento, abrir modal
-      return await new Promise<void>((resolve) => {
+      await new Promise<boolean>((resolve) => {
         pendingNavigation.value = to;
         modalTrabajadorId.value = trabajadorId;
         modalTrabajadorNombre.value = trabajadorNombre;
@@ -65,6 +65,7 @@ export function useNavigateWithDailyConsent() {
         resolveNavigation.value = resolve;
         showModal.value = true;
       });
+      return;
     } catch (error: any) {
       // Si hay error al verificar, navegar de todas formas (fallback)
       console.error('Error al verificar consentimiento:', error);

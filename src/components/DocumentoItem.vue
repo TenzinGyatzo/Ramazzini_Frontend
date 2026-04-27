@@ -10,6 +10,14 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { obtenerRutaDocumento, obtenerNombreArchivo, obtenerFechaDocumento, obtenerNombreDescargaCertificadoExpedito } from '@/helpers/rutas.ts';
+import { esConclusionSinHallazgos } from '@/helpers/conclusionEntrevistaPsicologica';
+import { cumpleCriterioTriajePositivoMdq } from '@/helpers/trastornosEstadoAnimoSteps';
+import {
+  contarFrecuenciaPQB,
+  sumarMalestarPQB,
+  textoInterpretacionPQB,
+  esPositivoRiesgoPsicoticoPQB,
+} from '@/helpers/cuestionarioProdromalBreveSteps';
 import ModalPdfEliminado from './ModalPdfEliminado.vue';
 import EstadoDocumentoBadge from './badges/EstadoDocumentoBadge.vue';
 import BadgeNotaAclaratoria from './badges/BadgeNotaAclaratoria.vue';
@@ -31,9 +39,9 @@ const getResultadoCuestionarioColor = (resultado, resultadoPersonalizado) => {
     }
     return 'gray';
   }
-  
+
   const resultadoLower = resultado.toLowerCase();
-  
+
   if (resultadoLower === 'procedente') {
     return 'green';
   } else if (resultadoLower === 'procedente con precaución') {
@@ -43,25 +51,25 @@ const getResultadoCuestionarioColor = (resultado, resultadoPersonalizado) => {
   } else if (resultadoLower === 'otro') {
     return 'gray'; // Color gris para resultado personalizado
   }
-  
+
   return 'gray';
 };
 
 const getResultadoCuestionarioTextoCorto = (resultado, resultadoPersonalizado) => {
   if (!resultado) return '';
-  
+
   const resultadoLower = resultado.toLowerCase();
-  
+
   // Si es "OTRO" y hay texto personalizado, mostrar el texto personalizado
   if (resultadoLower === 'otro' && resultadoPersonalizado) {
     return 'PERSONALIZADO';
   }
-  
+
   // Si el resultado está vacío pero hay texto personalizado, mostrar el texto personalizado
   if (!resultado && resultadoPersonalizado) {
     return 'PERSONALIZADO';
   }
-  
+
   // Para otros casos, mostrar el resultado normal
   return resultado.toUpperCase();
 };
@@ -69,19 +77,19 @@ const getResultadoCuestionarioTextoCorto = (resultado, resultadoPersonalizado) =
 // Función para obtener el texto a mostrar del resultado
 const getResultadoCuestionarioTexto = (resultado, resultadoPersonalizado) => {
   if (!resultado) return '';
-  
+
   const resultadoLower = resultado.toLowerCase();
-  
+
   // Si es "OTRO" y hay texto personalizado, mostrar el texto personalizado
   if (resultadoLower === 'otro' && resultadoPersonalizado) {
     return resultadoPersonalizado.toUpperCase();
   }
-  
+
   // Si el resultado está vacío pero hay texto personalizado, mostrar el texto personalizado
   if (!resultado && resultadoPersonalizado) {
     return resultadoPersonalizado.toUpperCase();
   }
-  
+
   // Para otros casos, mostrar el resultado normal
   return resultado.toUpperCase();
 };
@@ -89,7 +97,7 @@ const getResultadoCuestionarioTexto = (resultado, resultadoPersonalizado) => {
 // Función para obtener el nombre legible del tipo de documento
 const obtenerNombreTipoDocumento = (tipo) => {
   if (!tipo) return '';
-  
+
   const nombres = {
     // Singular
     'antidoping': 'Antidoping',
@@ -141,7 +149,7 @@ const obtenerNombreTipoDocumento = (tipo) => {
     'Constancia de Aptitud': 'Constancia de Aptitud',
     'Lesión': 'Lesión'
   };
-  
+
   return nombres[tipo] || tipo;
 };
 
@@ -159,15 +167,15 @@ const user = ref(JSON.parse(localStorage.getItem('user') || '{}'));
 
 // Composables de permisos
 const { canCreateDocument } = useUserPermissions();
-const { 
-  canManageDocumentosDiagnostico, 
-  canManageDocumentosEvaluacion, 
+const {
+  canManageDocumentosDiagnostico,
+  canManageDocumentosEvaluacion,
   canManageDocumentosExternos,
-  canManageCuestionariosAdicionales,
+  canManageOtrosDocumentos,
   executeIfCanManageDocumentosDiagnostico,
   executeIfCanManageDocumentosEvaluacion,
   executeIfCanManageDocumentosExternos,
-  executeIfCanManageCuestionariosAdicionales
+  executeIfCanManageOtrosDocumentos
 } = usePermissionRestrictions();
 
 const mostrarModalPdfEliminado = ref(false);
@@ -201,22 +209,22 @@ const emit = defineEmits(['eliminarDocumento', 'abrirModalAnular', 'abrirModalUp
 // Función para determinar si se puede editar un documento según su tipo
 const canEditDocument = (documentType) => {
   const tipoSinEspacios = documentType.toLowerCase().replace(/\s+/g, '');
-  
+
   // Documentos de diagnóstico y certificación (solo aptitud y certificado)
   if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
     return canManageDocumentosDiagnostico.value;
   }
-  
-  // Cuestionarios adicionales (incluye certificadoExpedito)
-  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito'].includes(tipoSinEspacios)) {
-    return canManageCuestionariosAdicionales.value;
+
+  // Otros documentos / cuestionarios adicionales (incluye certificado expedito y psicológicos)
+  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
+    return canManageOtrosDocumentos.value;
   }
-  
+
   // Documentos externos
   if (tipoSinEspacios === 'documentoexterno') {
     return canManageDocumentosExternos.value;
   }
-  
+
   // Documentos de evaluación (resto de documentos)
   return canManageDocumentosEvaluacion.value;
 };
@@ -229,15 +237,15 @@ const canDeleteDocument = (documentType) => {
 // Función para manejar la edición con validación de permisos
 const handleEditDocument = (documentoId, documentoTipo) => {
   const tipoSinEspacios = documentoTipo.toLowerCase().replace(/\s+/g, '');
-  
+
   if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
     executeIfCanManageDocumentosDiagnostico(() => {
       editarDocumento(documentoId, documentoTipo);
     }, 'editar documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito'].includes(tipoSinEspacios)) {
-    executeIfCanManageCuestionariosAdicionales(() => {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
+    executeIfCanManageOtrosDocumentos(() => {
       editarDocumento(documentoId, documentoTipo);
-    }, 'editar cuestionarios adicionales');
+    }, 'editar otros documentos');
   } else if (tipoSinEspacios === 'documentoexterno') {
     executeIfCanManageDocumentosExternos(() => {
       editarDocumento(documentoId, documentoTipo);
@@ -270,15 +278,15 @@ const getResultadoTipoLabel = (tipoEstudio) => {
 // Función para manejar la eliminación con validación de permisos
 const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
   const tipoSinEspacios = documentoTipo.toLowerCase().replace(/\s+/g, '');
-  
+
   if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
     executeIfCanManageDocumentosDiagnostico(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito'].includes(tipoSinEspacios)) {
-    executeIfCanManageCuestionariosAdicionales(() => {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
+    executeIfCanManageOtrosDocumentos(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
-    }, 'eliminar cuestionarios adicionales');
+    }, 'eliminar otros documentos');
   } else if (tipoSinEspacios === 'documentoexterno') {
     executeIfCanManageDocumentosExternos(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
@@ -292,7 +300,7 @@ const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
 
 const handleAnularDocument = (documentoId, documentoNombre, documentoTipo) => {
   const tipoSinEspacios = documentoTipo.toLowerCase().replace(/\s+/g, '');
-  
+
   const logic = () => {
     // Emitir evento para abrir el modal de anulación
     emit('abrirModalAnular', documentoId, documentoNombre, documentoTipo);
@@ -300,8 +308,8 @@ const handleAnularDocument = (documentoId, documentoNombre, documentoTipo) => {
 
   if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
     executeIfCanManageDocumentosDiagnostico(logic, 'anular documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito'].includes(tipoSinEspacios)) {
-    executeIfCanManageCuestionariosAdicionales(logic, 'anular cuestionarios adicionales');
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
+    executeIfCanManageOtrosDocumentos(logic, 'anular otros documentos');
   } else if (tipoSinEspacios === 'documentoexterno') {
     executeIfCanManageDocumentosExternos(logic, 'anular documentos externos');
   } else {
@@ -360,7 +368,7 @@ const descargarArchivo = async (documento, tipoDocumento) => {
         // Para Certificado Expedito, usar el nombre personalizado para la descarga
         let nombreArchivo;
         let nombreArchivoReal;
-        
+
         if (tipoDocumento === 'Certificado Expedito') {
             nombreArchivo = obtenerNombreDescargaCertificadoExpedito(fecha, trabajadores.currentTrabajador);
             nombreArchivoReal = obtenerNombreArchivo(documento, tipoDocumento, fecha, documentos);
@@ -413,7 +421,7 @@ const descargarYGuardarArchivo = async (ruta, nombreArchivo, nombreArchivoReal) 
 // If the value is empty or incorrect, the watermark will remain.
 const licenseKey = import.meta.env.VITE_VPV_LICENSE;
 
-// useLicense must be used here to ensure proper license 
+// useLicense must be used here to ensure proper license
 // initialization before the component renders.
 useLicense({ licenseKey });
 
@@ -613,7 +621,7 @@ const updateHoverSupport = () => {
 const computePreviewPosition = (rect, size) => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    
+
     // --- AJUSTE MANUAL HORIZONTAL POR MEDIA QUERIES ---
     // Aquí puedes ajustar el desplazamiento horizontal absoluto en píxeles.
     let horizontalOffset = 0;
@@ -648,7 +656,7 @@ const computePreviewPosition = (rect, size) => {
 
     // Centrar horizontalmente respecto al elemento + offset manual
     let x = rect.left + (rect.width / 2) - (size.width / 2) + horizontalOffset;
-    
+
     // Posicionar +150px parra posiciionar verticalmente
     let y = rect.top - size.height + 150;
 
@@ -699,7 +707,7 @@ const openHoverPreview = (targetOrEvent, payload) => {
 
     const target = targetOrEvent?.currentTarget || targetOrEvent?.target || targetOrEvent;
     let rect = null;
-    
+
     if (target && typeof target.getBoundingClientRect === 'function') {
         rect = target.getBoundingClientRect();
     } else if (targetOrEvent?.clientX !== undefined) {
@@ -719,11 +727,11 @@ const openHoverPreview = (targetOrEvent, payload) => {
     const maxWidth = Math.min(180, window.innerWidth - PREVIEW_MARGIN * 2);
     // Ratio ajustado para llenar el contenedor verticalmente sin franjas negras
     const LETTER_RATIO = 1.522;
-    
+
     let finalWidth = Math.round(maxWidth);
     let finalHeight = Math.round(maxWidth * LETTER_RATIO);
     const maxPossibleHeight = window.innerHeight - PREVIEW_MARGIN * 2;
-    
+
     if (finalHeight > maxPossibleHeight) {
         finalHeight = Math.round(maxPossibleHeight);
         finalWidth = Math.round(finalHeight / LETTER_RATIO);
@@ -772,15 +780,15 @@ const schedulePdfHover = (event, ruta, nombrePDF, updatedAt, title) => {
         // Determinar si el documento es regenerable (no es documento externo)
         const tipoSinEspacios = props.documentoTipo.toLowerCase().replace(/\s+/g, '');
         const isRegenerable = tipoSinEspacios !== 'documentoexterno';
-        
+
         const src = buildPdfUrl(ruta, nombrePDF, updatedAt, { useCacheBuster: true, fallbackToNow: false });
         // Incluimos pdfDisponible en la key para forzar el refresco cuando cambie el estado
         const key = `pdf:${ruta}:${nombrePDF}:${updatedAt || 'no-ts'}:${pdfDisponible.value}`;
         const target = event?.currentTarget || event?.target || event;
-        openHoverPreview(target || event, { 
-            key, 
-            type: 'pdf', 
-            src, 
+        openHoverPreview(target || event, {
+            key,
+            type: 'pdf',
+            src,
             title: title || 'Documento PDF',
             pdfAvailable: pdfDisponible.value,
             isRegenerable: isRegenerable,
@@ -886,7 +894,7 @@ const abrirImagen = async (rutaCompleta) => {
             imageUrl.value = rutaCompleta;
             currentImageUrl.value = rutaCompleta; // Guarda la URL actual para descargar
             showImageViewer.value = true;
-            
+
             // Agregar event listeners globales para el arrastre
             nextTick(() => {
                 document.addEventListener('mousemove', handleGlobalMouseMove);
@@ -917,11 +925,11 @@ const cerrarImagen = () => {
     // Resetear posición de la imagen
     imagePosition.value = { x: 0, y: 0 };
     lastImagePosition.value = { x: 0, y: 0 };
-    
+
     // Resetear estado de arrastre y cursor
     isDragging.value = false;
     document.body.style.cursor = 'default';
-    
+
     // Remover event listeners globales
     document.removeEventListener('mousemove', handleGlobalMouseMove);
     document.removeEventListener('mouseup', handleGlobalMouseUp);
@@ -941,7 +949,7 @@ const zoomIn = () => {
 const zoomOut = () => {
     const newZoom = Math.max(imageZoom.value / 1.2, 0.4);
     imageZoom.value = newZoom;
-    
+
     // Solo resetear posición si el zoom es menor o igual a 1 Y la imagen está desplazada
     if (newZoom <= 1 && (imagePosition.value.x !== 0 || imagePosition.value.y !== 0)) {
         // Solo resetear posición, no el zoom
@@ -970,7 +978,7 @@ const handleGlobalMouseUp = (event) => {
     if (isDragging.value) {
         stopDrag(event);
     }
-    
+
     // Asegurar que el cursor se restaure correctamente
     document.body.style.cursor = 'default';
 };
@@ -979,24 +987,24 @@ const handleGlobalMouseUp = (event) => {
 const startDrag = (event) => {
     // Prevenir el comportamiento de arrastre por defecto del navegador
     event.preventDefault();
-    
+
     // Removida la limitación del zoom - ahora se puede arrastrar en cualquier zoom
     isDragging.value = true;
     dragStart.value = {
         x: event.clientX - imagePosition.value.x,
         y: event.clientY - imagePosition.value.y
     };
-    
+
     // Cambiar cursor
     event.target.style.cursor = 'grabbing';
 };
 
 const onDrag = (event) => {
     if (!isDragging.value) return; // Removida la limitación del zoom
-    
+
     // Prevenir el comportamiento de arrastre por defecto del navegador
     event.preventDefault();
-    
+
     imagePosition.value = {
         x: event.clientX - dragStart.value.x,
         y: event.clientY - dragStart.value.y
@@ -1005,21 +1013,21 @@ const onDrag = (event) => {
 
 const stopDrag = (event) => {
     if (!isDragging.value) return;
-    
+
     // Prevenir el comportamiento de arrastre por defecto del navegador
     if (event) {
         event.preventDefault();
     }
-    
+
     isDragging.value = false;
     lastImagePosition.value = { ...imagePosition.value };
-    
+
     // Restaurar cursor en todos los elementos de imagen
     const imageElements = document.querySelectorAll('.image-viewer img');
     imageElements.forEach(element => {
         element.style.cursor = 'grab';
     });
-    
+
     // También restaurar el cursor en el documento
     document.body.style.cursor = 'default';
 };
@@ -1048,7 +1056,7 @@ const descargarPdfActual = async () => {
             const tipoSinEspacios = props.documentoTipo.toLowerCase().replace(/\s+/g, '');
             let documento = null;
             let tipoDocumento = '';
-            
+
             // Identificar el documento actual basado en el tipo
             switch (tipoSinEspacios) {
                 case 'notaaclaratoria':
@@ -1111,12 +1119,28 @@ const descargarPdfActual = async () => {
                     documento = props.previoEspirometria;
                     tipoDocumento = 'Previo Espirometria';
                     break;
+                case 'entrevistaPsicologica':
+                    documento = props.entrevistaPsicologica;
+                    tipoDocumento = 'Entrevista Psicologica';
+                    break;
+                case 'trastornosEstadoAnimo':
+                    documento = props.trastornosEstadoAnimo;
+                    tipoDocumento = 'Trastornos Estado Animo';
+                    break;
+                case 'cuestionarioProdromalBreve':
+                    documento = props.cuestionarioProdromalBreve;
+                    tipoDocumento = 'Cuestionario Prodromal Breve';
+                    break;
+                case 'trastornoLimitePersonalidad':
+                    documento = props.trastornoLimitePersonalidad;
+                    tipoDocumento = 'Trastorno Limite Personalidad';
+                    break;
                 case 'documentoexterno':
                     documento = props.documentoExterno;
                     tipoDocumento = 'Documento Externo';
                     break;
             }
-            
+
             if (documento) {
                 // Usar la misma lógica que descargarArchivo
                 await descargarArchivo(documento, tipoDocumento);
@@ -1157,7 +1181,7 @@ const descargarImagenActual = async () => {
             if (props.documentoExterno && props.documentoTipo.toLowerCase().replace(/\s+/g, '') === 'documentoexterno') {
                 const extension = obtenerExtensionArchivo(props.documentoExterno);
                 const nombreArchivo = `${props.documentoExterno.nombreDocumento} ${convertirFechaISOaDDMMYYYY(props.documentoExterno.fechaDocumento)}.${extension}`;
-                
+
                 const response = await axios.get(currentImageUrl.value, { responseType: 'blob' });
                 const blob = response.data;
                 const link = document.createElement('a');
@@ -1244,13 +1268,18 @@ const props = defineProps({
     historiaOtologica: [Object, String],
     previoEspirometria: [Object, String],
     lesion: [Object, String],
+    entrevistaPsicologica: [Object, String],
+    trastornosEstadoAnimo: [Object, String],
+    cuestionarioProdromalBreve: [Object, String],
+    trastornoLimitePersonalidad: [Object, String],
 });
 
 const currentDocumentData = computed(() => {
-    return props.antidoping || props.aptitud || props.audiometria || props.constanciaAptitud || 
-           props.certificado || props.certificadoExpedito || props.receta || props.documentoExterno || 
-           props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica || 
-           props.notaAclaratoria || props.controlPrenatal || props.historiaOtologica || props.previoEspirometria || props.lesion;
+    return props.antidoping || props.aptitud || props.audiometria || props.constanciaAptitud ||
+           props.certificado || props.certificadoExpedito || props.receta || props.documentoExterno ||
+           props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica ||
+           props.notaAclaratoria || props.controlPrenatal || props.historiaOtologica || props.previoEspirometria || props.lesion ||
+           props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad;
 });
 
 // Mapeo de campos de fecha para buscar documentos origen
@@ -1270,7 +1299,11 @@ const fechaCamposOrigen = {
     'previoEspirometria': 'fechaPrevioEspirometria',
     'recetas': 'fechaReceta',
     'constanciasAptitud': 'fechaConstanciaAptitud',
-    'lesiones': 'fechaReporteLesion'
+    'lesiones': 'fechaReporteLesion',
+    'entrevistasPsicologicas': 'fechaEntrevistaPsicologica',
+    'trastornosEstadoAnimo': 'fechaTrastornosEstadoAnimo',
+    'cuestionarioProdromalBreve': 'fechaCuestionarioProdromalBreve',
+    'trastornoLimitePersonalidad': 'fechaTrastornoLimitePersonalidad'
 };
 
 // Mapeo de tipos singulares a plurales para buscar en el store
@@ -1290,32 +1323,36 @@ const tipoSingularAPlural = {
     'previoEspirometria': 'previoEspirometria',
     'receta': 'recetas',
     'constanciaAptitud': 'constanciasAptitud',
-    'lesion': 'lesiones'
+    'lesion': 'lesiones',
+    'entrevistaPsicologica': 'entrevistasPsicologicas',
+    'trastornosEstadoAnimo': 'trastornosEstadoAnimo',
+    'cuestionarioProdromalBreve': 'cuestionarioProdromalBreve',
+    'trastornoLimitePersonalidad': 'trastornoLimitePersonalidad'
 };
 
 // Función para normalizar tipo de documento a plural
 const normalizarTipoAPlural = (tipo) => {
     if (!tipo) return tipo;
-    
+
     // Normalizar: quitar espacios y convertir a formato consistente
     const normalizado = tipo.replace(/\s+/g, '');
-    
+
     // Primero intentar directamente
     if (tipoSingularAPlural[tipo]) {
         return tipoSingularAPlural[tipo];
     }
-    
+
     // Convertir primera letra a minúscula y quitar espacios: "Historia Clinica" -> "historiaClinica"
     const camelCase = normalizado.charAt(0).toLowerCase() + normalizado.slice(1);
     if (tipoSingularAPlural[camelCase]) {
         return tipoSingularAPlural[camelCase];
     }
-    
+
     // Si ya está en camelCase pero con mayúscula inicial, convertirla
     if (tipoSingularAPlural[normalizado]) {
         return tipoSingularAPlural[normalizado];
     }
-    
+
     // Buscar en el mapeo si hay alguna key que al normalizar coincida
     const tipoNormalizadoParaComparar = normalizado.toLowerCase();
     for (const [key, value] of Object.entries(tipoSingularAPlural)) {
@@ -1324,25 +1361,25 @@ const normalizarTipoAPlural = (tipo) => {
             return value;
         }
     }
-    
+
     return tipo;
 };
 
 // Computed para verificar si el documento actual tiene notas aclaratorias asociadas
 const tieneNotasAclaratorias = computed(() => {
   if (!documentos.documentsByYear || !props.documentoId) return false;
-  
+
   // Normalizar el tipo del documento actual (puede venir como 'historiaClinica', 'Historia Clinica', etc.)
   const tipoNormalizado = normalizarTipoAPlural(props.documentoTipo);
-  
+
   for (const yearData of Object.values(documentos.documentsByYear)) {
     if (yearData.notasAclaratorias && Array.isArray(yearData.notasAclaratorias)) {
       const notaEncontrada = yearData.notasAclaratorias.find(nota => {
         if (nota.documentoOrigenId !== props.documentoId) return false;
-        
+
         // Normalizar el tipo de la nota aclaratoria
         const notaTipoNormalizado = normalizarTipoAPlural(nota.documentoOrigenTipo);
-        
+
         // Comparar ambos tipos normalizados
         return notaTipoNormalizado === tipoNormalizado;
       });
@@ -1355,20 +1392,20 @@ const tieneNotasAclaratorias = computed(() => {
 // Computed para determinar qué mostrar en "Documento que aclara"
 const documentoQueAclaraTexto = computed(() => {
     if (!props.notaAclaratoria) return '';
-    
+
     const documentoOrigenTipo = props.notaAclaratoria.documentoOrigenTipo;
     const documentoOrigenId = props.notaAclaratoria.documentoOrigenId;
     let documentoOrigenNombre = props.notaAclaratoria.documentoOrigenNombre;
     let documentoOrigenFecha = props.notaAclaratoria.documentoOrigenFecha;
-    
+
     // Verificar si es un documento externo
-    const esDocumentoExterno = documentoOrigenTipo === 'documentoExterno' || 
+    const esDocumentoExterno = documentoOrigenTipo === 'documentoExterno' ||
                                documentoOrigenTipo === 'Documento Externo' ||
                                documentoOrigenTipo === 'documentosExternos';
-    
+
     // Normalizar el tipo a plural para buscar en el store
     const tipoNormalizado = normalizarTipoAPlural(documentoOrigenTipo);
-    
+
     // Si faltan datos, buscar el documento origen en documentsByYear
     if ((!documentoOrigenNombre && esDocumentoExterno) || !documentoOrigenFecha) {
         if (documentos.documentsByYear && documentoOrigenId) {
@@ -1394,9 +1431,9 @@ const documentoQueAclaraTexto = computed(() => {
             });
         }
     }
-    
+
     let textoBase = '';
-    
+
     if (esDocumentoExterno && documentoOrigenNombre) {
         // Para documentos externos, mostrar el nombre específico
         textoBase = documentoOrigenNombre;
@@ -1407,19 +1444,19 @@ const documentoQueAclaraTexto = computed(() => {
         // Mostrar el tipo de documento formateado
         textoBase = obtenerNombreTipoDocumento(documentoOrigenTipo);
     }
-    
+
     // Agregar la fecha si está disponible
     if (documentoOrigenFecha) {
         const fecha = convertirFechaISOaDDMMYYYY(documentoOrigenFecha);
         return `${textoBase} (${fecha})`;
     }
-    
+
     return textoBase;
 });
 
 const puedeFinalizar = computed(() => {
     // Solo permitir finalizar si el estado es BORRADOR o no tiene estado (legacy)
-    
+
     if (!currentDocumentData.value || typeof currentDocumentData.value !== 'object') return false;
     const estado = currentDocumentData.value.estado;
     return !estado || estado.toLowerCase() === 'borrador';
@@ -1436,7 +1473,7 @@ const isAnulado = computed(() => {
 });
 
 // Un documento es de solo lectura si está finalizado O anulado Y la inmutabilidad está habilitada
-const documentImmutabilityEnabled = computed(() => 
+const documentImmutabilityEnabled = computed(() =>
     proveedorSaludStore.documentImmutabilityEnabled
 );
 const isReadOnly = computed(() => {
@@ -1483,6 +1520,10 @@ const documentoNombre = computed(() => {
     if (props.historiaClinica) return 'Historia Clínica';
     if (props.notaMedica) return 'Nota Médica';
     if (props.lesion) return 'Lesión';
+    if (props.entrevistaPsicologica) return 'Entrevista Psicológica';
+    if (props.trastornosEstadoAnimo) return 'Trastornos Estado Ánimo';
+    if (props.cuestionarioProdromalBreve) return 'Cuestionario Prodromal Breve';
+    if (props.trastornoLimitePersonalidad) return 'Trastorno Límite Personalidad';
     if (props.notaAclaratoria) return 'Nota Aclaratoria';
     if (props.controlPrenatal) return 'Control Prenatal';
     if (props.historiaOtologica) return 'Historia Otológica';
@@ -1501,7 +1542,7 @@ const indicadorLateral = computed(() => {
       title: 'Verificando disponibilidad del PDF...'
     };
   }
-  
+
   // Modo Eliminación
   if (props.isDeletionMode) {
     // Si está seleccionado en modo eliminación, siempre rojo
@@ -1511,7 +1552,7 @@ const indicadorLateral = computed(() => {
         title: 'Seleccionado para eliminar'
       };
     }
-    
+
     // Si no está seleccionado, verde si está disponible, gris si no
     if (pdfDisponible.value) {
       return {
@@ -1525,7 +1566,7 @@ const indicadorLateral = computed(() => {
       };
     }
   }
-  
+
   // Modo Normal
   if (pdfDisponible.value) {
     return {
@@ -1533,7 +1574,7 @@ const indicadorLateral = computed(() => {
       title: 'PDF disponible'
     };
   }
-  
+
   // Documento externo no disponible (solo en modo normal)
   if (props.documentoTipo.toLowerCase().replace(/\s+/g, '') === 'documentoexterno' && !pdfDisponible.value) {
     return {
@@ -1541,7 +1582,7 @@ const indicadorLateral = computed(() => {
       title: 'Documento externo no disponible'
     };
   }
-  
+
   // PDF no disponible (modo normal)
   return {
     class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-gray-300 to-gray-300',
@@ -1678,6 +1719,76 @@ const mensajeDetalladoAntidoping = computed(() => {
 
   return `Positivo a: ${sustanciasPositivas}`;
 })
+
+/** Alineado con `conclusionEntrevistaPsicologica.ts` (incluye variantes legacy del texto por defecto). */
+const entrevistaPsicologicaSinHallazgoConclusion = computed(() => {
+  const ep = props.entrevistaPsicologica;
+  if (!ep || typeof ep !== 'object') return true;
+  return esConclusionSinHallazgos(ep.conclusionClinica);
+});
+
+/** Misma regla que `VisualizadorTrastornosEstadoAnimo.vue` (MDQ). */
+const interpretacionTrastornosEstadoAnimo = computed(() => {
+  const d = props.trastornosEstadoAnimo;
+  if (!d || typeof d !== 'object') return '';
+  return cumpleCriterioTriajePositivoMdq(d)
+    ? 'Positivo para riesgo de trastorno bipolar'
+    : 'Negativo para riesgo de trastorno bipolar';
+});
+
+const claseColorInterpretacionMdqLista = computed(() => {
+  const d = props.trastornosEstadoAnimo;
+  if (!d || typeof d !== 'object') return 'text-gray-600';
+  return cumpleCriterioTriajePositivoMdq(d) ? 'text-orange-600' : 'text-emerald-600';
+});
+
+/** Misma regla que `VisualizadorCuestionarioProdromalBreve.vue` (PQ-B). */
+const frecuenciaPQBDocumento = computed(() => contarFrecuenciaPQB(props.cuestionarioProdromalBreve));
+const malestarPQBDocumento = computed(() => sumarMalestarPQB(props.cuestionarioProdromalBreve));
+
+const interpretacionCuestionarioProdromalBreve = computed(() =>
+  textoInterpretacionPQB(frecuenciaPQBDocumento.value, malestarPQBDocumento.value),
+);
+
+const claseColorInterpretacionPQBLista = computed(() =>
+  esPositivoRiesgoPsicoticoPQB(frecuenciaPQBDocumento.value, malestarPQBDocumento.value)
+    ? 'text-orange-600'
+    : 'text-emerald-600',
+);
+
+/** Misma regla que `VisualizadorTrastornoLimitePersonalidad.vue` (MSI-BPD). */
+const CAMPOS_MSI_BPD_TLP = [
+  'relacionesCercanasDiscusionesRupturas',
+  'autolesionIntentoSuicidio',
+  'impulsividadOtrosDosProblemas',
+  'extremadamenteMalHumor',
+  'enojadoFrecuenteActuaEnojadoSarcastico',
+  'desconfianzaOtrasPersonas',
+  'sensacionIrrealidadEntornoIrreal',
+  'vacioCronico',
+  'faltaIdentidadQuienEs',
+  'esfuerzosEvitarAbandono',
+];
+
+const puntajeTrastornoLimitePersonalidadDoc = computed(() => {
+  const d = props.trastornoLimitePersonalidad;
+  if (!d || typeof d !== 'object') return 0;
+  return CAMPOS_MSI_BPD_TLP.reduce((acc, k) => acc + (d[k] === 'Sí' ? 1 : 0), 0);
+});
+
+const interpretacionTrastornoLimitePersonalidad = computed(() => {
+  const p = puntajeTrastornoLimitePersonalidadDoc.value;
+  if (p <= 4) return 'Síntomas improbables de TLP presentes.';
+  if (p <= 6) return 'Posibles síntomas de TLP presentes.';
+  return 'Probable presencia de síntomas de TLP.';
+});
+
+const claseColorInterpretacionTlpLista = computed(() => {
+  const p = puntajeTrastornoLimitePersonalidadDoc.value;
+  if (p <= 4) return 'text-green-600';
+  if (p <= 6) return 'text-yellow-600';
+  return 'text-orange-600';
+});
 ///////////////////////////////////////////
 
 const construirRutaYNombrePDF = () => {
@@ -1685,7 +1796,7 @@ const construirRutaYNombrePDF = () => {
   const doc = {
     'constanciaaptitud': props.constanciaAptitud,
     'antidoping': props.antidoping,
-    'aptitud': props.aptitud, 
+    'aptitud': props.aptitud,
     'audiometria': props.audiometria,
     'certificado': props.certificado,
     'certificadoexpedito': props.certificadoExpedito,
@@ -1699,6 +1810,10 @@ const construirRutaYNombrePDF = () => {
     'controlprenatal': props.controlPrenatal,
     'historiaotologica': props.historiaOtologica,
     'previoespirometria': props.previoEspirometria,
+    'entrevistapsicologica': props.entrevistaPsicologica,
+    'trastornosestadoanimo': props.trastornosEstadoAnimo,
+    'cuestionarioprodromalbreve': props.cuestionarioProdromalBreve,
+    'trastornolimitepersonalidad': props.trastornoLimitePersonalidad,
   }[tipoSinEspacios];
 
   // Verificar que el documento exista
@@ -1707,7 +1822,7 @@ const construirRutaYNombrePDF = () => {
     return { ruta: null, nombre: null, updatedAt: null };
   }
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaReporteLesion;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaReporteLesion || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad;
 
   // Nombres de documentos (DEBEN coincidir con los del backend para construir rutas correctas)
   const tiposDocumentos = {
@@ -1718,7 +1833,7 @@ const construirRutaYNombrePDF = () => {
     'certificado': 'Certificado',
     'certificadoexpedito': 'Certificado Expedito',
     'receta': 'Receta',
-    'examenvista': 'Examen Vista', 
+    'examenvista': 'Examen Vista',
     'exploracionfisica': 'Exploracion Fisica',
     'historiaclinica': 'Historia Clinica',
     'notamedica': 'Nota Medica',
@@ -1727,11 +1842,15 @@ const construirRutaYNombrePDF = () => {
     'controlprenatal': 'Control Prenatal',
     'historiaotologica': 'Historia Otologica',
     'previoespirometria': 'Previo Espirometria',
+    'entrevistapsicologica': 'Entrevista Psicologica',
+    'trastornosestadoanimo': 'Trastornos Estado Animo',
+    'cuestionarioprodromalbreve': 'Cuestionario Prodromal Breve',
+    'trastornolimitepersonalidad': 'Trastorno Limite Personalidad',
   };
 
   const tipoDocumentoFormateado = tiposDocumentos[tipoSinEspacios];
   const fechaFormateada = fecha ? convertirFechaISOaDDMMYYYY(fecha).replace(/\//g, '-') : '';
-  
+
   // Para Nota Aclaratoria, usar la función obtenerNombreArchivo que ya tiene la lógica completa
   // Para Lesión, usar "Reporte Lesion {fechaAtencion} {folio}.pdf" (formato del backend)
   let nombreArchivo;
@@ -1760,7 +1879,7 @@ const abrirDocumentoCorrespondiente = () => {
     mostrarModalPdfEliminado.value = true;
     return;
   }
-  abrirPdf(ruta, nombre, updatedAt); 
+  abrirPdf(ruta, nombre, updatedAt);
 };
 
 const abrirNotaAclaratoria = (notaAclaratoria) => {
@@ -1782,27 +1901,27 @@ const manejarRegeneracionDesdePadre = async () => {
 
 /*
  * SISTEMA DE INDICADORES DE ESTADO DEL PDF:
- * 
+ *
  * 1. INDICADOR LATERAL (línea izquierda):
  *    - Verde: PDF disponible y listo para mostrar
  *    - Naranja/Rojo: Documento externo no disponible (solo para documentos externos)
  *    - Amarillo/Naranja: Verificando disponibilidad del PDF
  *    - Sin indicador: PDF no disponible (comportamiento normal del sistema)
- * 
+ *
  * 2. BORDE DEL ITEM:
  *    - Gris: Estado normal (PDF disponible o no disponible)
  *    - Amarillo: Verificando disponibilidad
- * 
+ *
  * 3. ICONO EN EL TÍTULO:
  *    - ✓ Verde: PDF disponible
  *    - ⚠️ Naranja: Documento externo no disponible (solo para documentos externos)
  *    - 🔄 Amarillo: Verificando disponibilidad
  *    - Sin icono: PDF no disponible (comportamiento normal del sistema)
- * 
+ *
  * 4. TOOLTIPS:
  *    - Al hacer hover sobre el indicador lateral se muestra el estado
  *    - Al hacer hover sobre el icono se muestra información adicional
- * 
+ *
  * 5. DIFERENCIACIÓN POR TIPO:
  *    - Informes (Antidoping, Aptitud, etc.): Solo indican cuando están disponibles
  *    - Documentos Externos: Indican tanto disponibilidad como no disponibilidad
@@ -1811,7 +1930,7 @@ const manejarRegeneracionDesdePadre = async () => {
 // Función para verificar si el PDF está disponible
 const verificarDisponibilidadPDF = async () => {
   const tipoSinEspacios = props.documentoTipo.toLowerCase().replace(/\s+/g, '');
-  
+
   // Para documentos externos, verificar si el archivo existe
   if (tipoSinEspacios === 'documentoexterno') {
     if (!props.documentoExterno || !props.documentoExterno.rutaDocumento) {
@@ -1843,7 +1962,7 @@ const verificarDisponibilidadPDF = async () => {
     verificandoPDF.value = true;
     const rutaCompleta = `${ruta}/${nombre}`.replace(/\/+/g, '/');
     const urlCompleta = new URL(rutaCompleta, import.meta.env.VITE_API_URL).href;
-    
+
     const response = await axios.head(urlCompleta);
     pdfDisponible.value = response.status === 200 && response.headers['content-type'] === 'application/pdf';
   } catch (error) {
@@ -1860,7 +1979,7 @@ onMounted(() => {
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.lesion, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria], () => {
+watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.lesion, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad], () => {
   verificarDisponibilidadPDF();
 }, { deep: true });
 
@@ -1890,7 +2009,7 @@ watch(() => props.lesion, (lesion) => {
 
     <!-- Items de documentos -->
     <div
-        class="group relative bg-white border rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer overflow-hidden"
+        class="documento-item group relative bg-white border rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer overflow-hidden"
         :class="{
             'hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50': !isDeletionMode,
             'hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50': isDeletionMode,
@@ -1900,10 +2019,10 @@ watch(() => props.lesion, (lesion) => {
             'border-gray-200 hover:border-gray-300': !pdfDisponible && !isDeletionMode,
             'border-gray-200 hover:border-red-400': !pdfDisponible && isDeletionMode
         }">
-        
+
         <!-- Indicador de disponibilidad del PDF -->
         <div :class="indicadorLateral.class" :title="indicadorLateral.title"></div>
-        
+
         <div class="flex items-center justify-between p-4 pl-6 min-h-[80px] max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3 max-[390px]:p-3 max-[390px]:pl-3">
             <div class="flex items-center flex-1 max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3 w-full">
 
@@ -1922,15 +2041,15 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, notaAclaratoria, 'Nota Aclaratoria')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" @click="abrirNotaAclaratoria(notaAclaratoria)">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-lg mr-4 group-hover:bg-yellow-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-exclamation-triangle text-yellow-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
@@ -1943,10 +2062,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(notaAclaratoria.fechaNotaAclaratoria) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="notaAclaratoria.estado" 
-                                    :fechaFinalizacion="notaAclaratoria.fechaFinalizacion" 
+                                    :estado="notaAclaratoria.estado"
+                                    :fechaFinalizacion="notaAclaratoria.fechaFinalizacion"
                                     :finalizadoPor="notaAclaratoria.finalizadoPor"
                                     :fechaAnulacion="notaAclaratoria.fechaAnulacion"
                                     :anuladoPor="notaAclaratoria.anuladoPor"
@@ -2003,7 +2122,7 @@ watch(() => props.lesion, (lesion) => {
                                 </div>
                             </div>
                         </div>
-                        
+
                     </div>
                 </div>
 
@@ -2022,7 +2141,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, antidoping, 'Antidoping')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2037,19 +2156,19 @@ watch(() => props.lesion, (lesion) => {
                             antidoping.updatedAt ? new Date(antidoping.updatedAt).getTime() : null,
                             'Antidoping')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-red-100 rounded-lg mr-4 group-hover:bg-red-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-flask text-red-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Antidoping
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -2065,10 +2184,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(antidoping.fechaAntidoping) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="antidoping.estado" 
-                                    :fechaFinalizacion="antidoping.fechaFinalizacion" 
+                                    :estado="antidoping.estado"
+                                    :fechaFinalizacion="antidoping.fechaFinalizacion"
                                     :finalizadoPor="antidoping.finalizadoPor"
                                     :fechaAnulacion="antidoping.fechaAnulacion"
                                     :anuladoPor="antidoping.anuladoPor"
@@ -2076,7 +2195,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -2107,7 +2226,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, constanciaAptitud, 'Constancia de Aptitud')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2122,12 +2241,12 @@ watch(() => props.lesion, (lesion) => {
                             constanciaAptitud.updatedAt ? new Date(constanciaAptitud.updatedAt).getTime() : null,
                             'Constancia de Aptitud')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mr-4 group-hover:bg-green-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-user-check text-green-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-80 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
@@ -2140,10 +2259,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(constanciaAptitud.fechaConstanciaAptitud) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="constanciaAptitud.estado" 
-                                    :fechaFinalizacion="constanciaAptitud.fechaFinalizacion" 
+                                    :estado="constanciaAptitud.estado"
+                                    :fechaFinalizacion="constanciaAptitud.fechaFinalizacion"
                                     :finalizadoPor="constanciaAptitud.finalizadoPor"
                                     :fechaAnulacion="constanciaAptitud.fechaAnulacion"
                                     :anuladoPor="constanciaAptitud.anuladoPor"
@@ -2169,7 +2288,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, aptitud, 'Aptitud')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2184,32 +2303,32 @@ watch(() => props.lesion, (lesion) => {
                             aptitud.updatedAt ? new Date(aptitud.updatedAt).getTime() : null,
                             'Aptitud al Puesto')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mr-4 group-hover:bg-green-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-user-check text-green-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-80 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Aptitud al Puesto
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
                                     class="hidden sm:flex ml-2"
                                 />
                                 <span v-else class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full"
-                                    :class="aptitud.aptitudPuesto === 'Apto Sin Restricciones' ? 'bg-emerald-100 text-emerald-700' : 
+                                    :class="aptitud.aptitudPuesto === 'Apto Sin Restricciones' ? 'bg-emerald-100 text-emerald-700' :
                                            aptitud.aptitudPuesto === 'Apto Con Precaución' ? 'bg-amber-100 text-amber-700' :
                                            aptitud.aptitudPuesto === 'Apto Con Restricciones' ? 'bg-orange-100 text-orange-700' :
                                            aptitud.aptitudPuesto === 'No Apto' ? 'bg-red-100 text-red-700' :
                                            aptitud.aptitudPuesto === 'Evaluación No Completada' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'">
-                                    {{ aptitud.aptitudPuesto === 'Evaluación No Completada' ? 'No completada' : 
-                                       trabajadores.currentTrabajador?.sexo === 'Femenino' ? 
+                                    {{ aptitud.aptitudPuesto === 'Evaluación No Completada' ? 'No completada' :
+                                       trabajadores.currentTrabajador?.sexo === 'Femenino' ?
                                          aptitud.aptitudPuesto.replace('Apto', 'Apta').charAt(0).toUpperCase() + aptitud.aptitudPuesto.replace('Apto', 'Apta').slice(1).toLowerCase() :
                                          aptitud.aptitudPuesto.charAt(0).toUpperCase() + aptitud.aptitudPuesto.slice(1).toLowerCase() }}
                                 </span>
@@ -2219,10 +2338,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(aptitud.fechaAptitudPuesto) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="aptitud.estado" 
-                                    :fechaFinalizacion="aptitud.fechaFinalizacion" 
+                                    :estado="aptitud.estado"
+                                    :fechaFinalizacion="aptitud.fechaFinalizacion"
                                     :finalizadoPor="aptitud.finalizadoPor"
                                     :fechaAnulacion="aptitud.fechaAnulacion"
                                     :anuladoPor="aptitud.anuladoPor"
@@ -2230,7 +2349,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <!-- <div class="hidden xl:block w-64 flex-shrink-0">
                             <div class="text-sm">
@@ -2261,7 +2380,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, audiometria, 'Audiometria')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2276,12 +2395,12 @@ watch(() => props.lesion, (lesion) => {
                             audiometria.updatedAt ? new Date(audiometria.updatedAt).getTime() : null,
                             'Audiometria')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-volume-up text-purple-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
@@ -2289,7 +2408,7 @@ watch(() => props.lesion, (lesion) => {
                                     Audiometría
                                 </h3>
                                 <!-- Mostrar resultado según método de audiometría -->
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -2315,10 +2434,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(audiometria.fechaAudiometria) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="audiometria.estado" 
-                                    :fechaFinalizacion="audiometria.fechaFinalizacion" 
+                                    :estado="audiometria.estado"
+                                    :fechaFinalizacion="audiometria.fechaFinalizacion"
                                     :finalizadoPor="audiometria.finalizadoPor"
                                     :fechaAnulacion="audiometria.fechaAnulacion"
                                     :anuladoPor="audiometria.anuladoPor"
@@ -2356,7 +2475,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, certificado, 'Certificado')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2371,19 +2490,19 @@ watch(() => props.lesion, (lesion) => {
                             certificado.updatedAt ? new Date(certificado.updatedAt).getTime() : null,
                             'Certificado')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-certificate text-blue-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Certificado
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -2399,10 +2518,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(certificado.fechaCertificado) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="certificado.estado" 
-                                    :fechaFinalizacion="certificado.fechaFinalizacion" 
+                                    :estado="certificado.estado"
+                                    :fechaFinalizacion="certificado.fechaFinalizacion"
                                     :finalizadoPor="certificado.finalizadoPor"
                                     :fechaAnulacion="certificado.fechaAnulacion"
                                     :anuladoPor="certificado.anuladoPor"
@@ -2410,7 +2529,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -2441,7 +2560,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, certificadoExpedito, 'Certificado Expedito')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2456,19 +2575,19 @@ watch(() => props.lesion, (lesion) => {
                             certificadoExpedito.updatedAt ? new Date(certificadoExpedito.updatedAt).getTime() : null,
                             'Certificado Expedito')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-certificate text-blue-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Certificado Ex.
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -2484,10 +2603,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(certificadoExpedito.fechaCertificadoExpedito) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="certificadoExpedito.estado" 
-                                    :fechaFinalizacion="certificadoExpedito.fechaFinalizacion" 
+                                    :estado="certificadoExpedito.estado"
+                                    :fechaFinalizacion="certificadoExpedito.fechaFinalizacion"
                                     :finalizadoPor="certificadoExpedito.finalizadoPor"
                                     :fechaAnulacion="certificadoExpedito.fechaAnulacion"
                                     :anuladoPor="certificadoExpedito.anuladoPor"
@@ -2495,7 +2614,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block w-64 flex-shrink-0">
                             <div class="text-sm flex xl:space-x-2">
@@ -2533,14 +2652,14 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, documentoExterno, 'Documento Externo')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
                         @click="abrirDocumentoExterno(documentoExterno)"
                         @mouseenter="scheduleDocumentoExternoHover($event, documentoExterno)"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento dinámico -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 rounded-lg mr-4 transition-colors duration-200 flex-shrink-0"
                              :class="obtenerExtensionArchivo(documentoExterno) === 'pdf' ? 'bg-red-100 group-hover:bg-red-200' : 'bg-blue-100 group-hover:bg-blue-200'">
@@ -2553,7 +2672,7 @@ watch(() => props.lesion, (lesion) => {
                                 <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
@@ -2577,7 +2696,7 @@ watch(() => props.lesion, (lesion) => {
                                         {{ obtenerExtensionArchivo(documentoExterno).toUpperCase() }}
                                     </span>
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -2596,11 +2715,11 @@ watch(() => props.lesion, (lesion) => {
                                     :class="obtenerExtensionArchivo(documentoExterno) === 'pdf' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'">
                                     {{ obtenerExtensionArchivo(documentoExterno).toUpperCase() }}
                                 </span>
-                            
-                                <EstadoDocumentoBadge 
+
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="documentoExterno.estado" 
-                                    :fechaFinalizacion="documentoExterno.fechaFinalizacion" 
+                                    :estado="documentoExterno.estado"
+                                    :fechaFinalizacion="documentoExterno.fechaFinalizacion"
                                     :finalizadoPor="documentoExterno.finalizadoPor"
                                     :fechaAnulacion="documentoExterno.fechaAnulacion"
                                     :anuladoPor="documentoExterno.anuladoPor"
@@ -2609,7 +2728,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -2639,7 +2758,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, examenVista, 'Examen Vista')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2654,19 +2773,19 @@ watch(() => props.lesion, (lesion) => {
                             examenVista.updatedAt ? new Date(examenVista.updatedAt).getTime() : null,
                             'Examen de la Vista')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-lg mr-4 group-hover:bg-yellow-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-eye text-yellow-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Examen de la Vista
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -2682,22 +2801,22 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(examenVista.fechaExamenVista) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="examenVista.estado" 
-                                    :fechaFinalizacion="examenVista.fechaFinalizacion" 
+                                    :estado="examenVista.estado"
+                                    :fechaFinalizacion="examenVista.fechaFinalizacion"
                                     :finalizadoPor="examenVista.finalizadoPor"
                                     :fechaAnulacion="examenVista.fechaAnulacion"
                                     :anuladoPor="examenVista.anuladoPor"
                                     :razonAnulacion="examenVista.razonAnulacion"
                                 />
-                                <span v-if="examenVista.porcentajeIshihara && examenVista.porcentajeIshihara < 80" 
+                                <span v-if="examenVista.porcentajeIshihara && examenVista.porcentajeIshihara < 80"
                                     class="hidden sm:flex px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700">
                                     Daltonismo
                                 </span>
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block flex-shrink-0">
                             <div class="text-sm flex space-x-2">
@@ -2750,13 +2869,13 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, exploracionFisica, 'Exploracion Fisica')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
                         @click="abrirPdf(
-                            `${exploracionFisica.rutaPDF}`, 
-                            `Exploracion Fisica ${convertirFechaISOaDDMMYYYY(exploracionFisica.fechaExploracionFisica)}.pdf`, 
+                            `${exploracionFisica.rutaPDF}`,
+                            `Exploracion Fisica ${convertirFechaISOaDDMMYYYY(exploracionFisica.fechaExploracionFisica)}.pdf`,
                             exploracionFisica.updatedAt ? new Date(exploracionFisica.updatedAt).getTime() : null)"
                         @mouseenter="schedulePdfHover(
                             $event,
@@ -2765,19 +2884,19 @@ watch(() => props.lesion, (lesion) => {
                             exploracionFisica.updatedAt ? new Date(exploracionFisica.updatedAt).getTime() : null,
                             'Exploracion Fisica')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg mr-4 group-hover:bg-indigo-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-person text-indigo-600 text-xl"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Exploración Física
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -2793,22 +2912,22 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(exploracionFisica.fechaExploracionFisica) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="exploracionFisica.estado" 
-                                    :fechaFinalizacion="exploracionFisica.fechaFinalizacion" 
+                                    :estado="exploracionFisica.estado"
+                                    :fechaFinalizacion="exploracionFisica.fechaFinalizacion"
                                     :finalizadoPor="exploracionFisica.finalizadoPor"
                                     :fechaAnulacion="exploracionFisica.fechaAnulacion"
                                     :anuladoPor="exploracionFisica.anuladoPor"
                                     :razonAnulacion="exploracionFisica.razonAnulacion"
                                 />
-                                <span v-if="exploracionFisica.indiceMasaCorporal && exploracionFisica.indiceMasaCorporal >= 30" 
+                                <span v-if="exploracionFisica.indiceMasaCorporal && exploracionFisica.indiceMasaCorporal >= 30"
                                     class="hidden sm:flex px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700">
                                     Obesidad
                                 </span>
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block w-64 flex-shrink-0">
                             <div class="text-sm flex xl:space-x-2">
@@ -2830,9 +2949,9 @@ watch(() => props.lesion, (lesion) => {
                                         :class="exploracionFisica.categoriaTensionArterial === 'Óptima' ? 'text-emerald-600' :
                                                exploracionFisica.categoriaTensionArterial === 'Normal' ? 'text-emerald-600' :
                                                exploracionFisica.categoriaTensionArterial === 'Alta' ? 'text-amber-600' :
-                                               exploracionFisica.categoriaTensionArterial === 'Hipertensión ligera' ? 'text-amber-600' :
-                                               exploracionFisica.categoriaTensionArterial === 'Hipertensión moderada' ? 'text-red-600' :
-                                               exploracionFisica.categoriaTensionArterial === 'Hipertensión severa' ? 'text-red-700' : 'text-gray-800'">
+                                               exploracionFisica.categoriaTensionArterial === 'Hipertensión grado 1' ? 'text-amber-600' :
+                                               exploracionFisica.categoriaTensionArterial === 'Hipertensión grado 2' ? 'text-red-600' :
+                                               exploracionFisica.categoriaTensionArterial === 'Hipertensión grado 3' ? 'text-red-700' : 'text-gray-800'">
                                         <span>
                                             {{ exploracionFisica.categoriaTensionArterial }}
                                             <span v-if="exploracionFisica.categoriaTensionArterial === 'Normal' || exploracionFisica.categoriaTensionArterial === 'Óptima' || exploracionFisica.categoriaTensionArterial === 'Alta'">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
@@ -2866,7 +2985,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, historiaClinica, 'Historia Clinica')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2881,19 +3000,19 @@ watch(() => props.lesion, (lesion) => {
                             historiaClinica.updatedAt ? new Date(historiaClinica.updatedAt).getTime() : null,
                             'Historia Clinica')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-teal-100 rounded-lg mr-4 group-hover:bg-teal-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-notes-medical text-teal-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Historia Clínica
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -2909,10 +3028,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(historiaClinica.fechaHistoriaClinica) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="historiaClinica.estado" 
-                                    :fechaFinalizacion="historiaClinica.fechaFinalizacion" 
+                                    :estado="historiaClinica.estado"
+                                    :fechaFinalizacion="historiaClinica.fechaFinalizacion"
                                     :finalizadoPor="historiaClinica.finalizadoPor"
                                     :fechaAnulacion="historiaClinica.fechaAnulacion"
                                     :anuladoPor="historiaClinica.anuladoPor"
@@ -2920,7 +3039,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block w-64 flex-shrink-0">
                             <div class="text-sm flex xl:space-x-2">
@@ -2932,7 +3051,7 @@ watch(() => props.lesion, (lesion) => {
                                     <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Accidente</p>
                                     <p class="font-medium text-sm truncate"
                                         :class="historiaClinica.accidenteLaboral === 'Si' && historiaClinica.secuelas !== 'Sin secuelas' ? 'text-red-600' : 'text-gray-800'">
-                                        {{ 
+                                        {{
                                             historiaClinica.accidenteLaboral === 'Si' && historiaClinica.secuelas === 'Sin secuelas' ? 'Si - Sin secuelas' :
                                             historiaClinica.accidenteLaboral === 'Si' && historiaClinica.secuelas !== 'Sin secuelas' ? `Si - Con secuelas` :
                                             historiaClinica.accidenteLaboral === 'No' ? 'Negado' : 'Negado'
@@ -2966,7 +3085,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, notaMedica, 'Nota Medica')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -2981,19 +3100,19 @@ watch(() => props.lesion, (lesion) => {
                             notaMedica.updatedAt ? new Date(notaMedica.updatedAt).getTime() : null,
                             'Nota Medica')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mr-4 group-hover:bg-orange-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-stethoscope text-orange-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Nota Médica
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -3008,10 +3127,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(notaMedica.fechaNotaMedica) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="notaMedica.estado" 
-                                    :fechaFinalizacion="notaMedica.fechaFinalizacion" 
+                                    :estado="notaMedica.estado"
+                                    :fechaFinalizacion="notaMedica.fechaFinalizacion"
                                     :finalizadoPor="notaMedica.finalizadoPor"
                                     :fechaAnulacion="notaMedica.fechaAnulacion"
                                     :anuladoPor="notaMedica.anuladoPor"
@@ -3019,7 +3138,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="notaMedica.diagnostico" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -3055,25 +3174,25 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, lesion, 'Lesion')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" @click="lesion.rutaPDF ? abrirPdf(
                         lesion.rutaPDF,
                         obtenerNombreArchivo(lesion, 'Lesion', obtenerFechaDocumento(lesion) || ''),
                         lesion.updatedAt ? new Date(lesion.updatedAt).getTime() : null) : abrirDocumentoCorrespondiente()">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-red-100 rounded-lg mr-4 group-hover:bg-red-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-user-injured text-red-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Lesión
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -3085,10 +3204,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(lesion.fechaReporteLesion) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="lesion.estado" 
-                                    :fechaFinalizacion="lesion.fechaFinalizacion" 
+                                    :estado="lesion.estado"
+                                    :fechaFinalizacion="lesion.fechaFinalizacion"
                                     :finalizadoPor="lesion.finalizadoPor"
                                     :fechaAnulacion="lesion.fechaAnulacion"
                                     :anuladoPor="lesion.anuladoPor"
@@ -3096,7 +3215,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="lesion.folio" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -3156,7 +3275,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, receta, 'Receta')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -3171,19 +3290,19 @@ watch(() => props.lesion, (lesion) => {
                             receta.updatedAt ? new Date(receta.updatedAt).getTime() : null,
                             'Receta')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-lg mr-4 group-hover:bg-emerald-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-prescription-bottle-medical text-emerald-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Receta Médica
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -3198,10 +3317,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(receta.fechaReceta) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="receta.estado" 
-                                    :fechaFinalizacion="receta.fechaFinalizacion" 
+                                    :estado="receta.estado"
+                                    :fechaFinalizacion="receta.fechaFinalizacion"
                                     :finalizadoPor="receta.finalizadoPor"
                                     :fechaAnulacion="receta.fechaAnulacion"
                                     :anuladoPor="receta.anuladoPor"
@@ -3209,7 +3328,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="receta.indicaciones" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -3224,7 +3343,7 @@ watch(() => props.lesion, (lesion) => {
                     </div>
                 </div>
 
-                <!-- Control Prenatal -->   
+                <!-- Control Prenatal -->
                 <div v-if="typeof controlPrenatal === 'object'" class="flex itemsats-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
@@ -3239,7 +3358,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, controlPrenatal, 'Control Prenatal')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -3254,19 +3373,19 @@ watch(() => props.lesion, (lesion) => {
                             controlPrenatal.updatedAt ? new Date(controlPrenatal.updatedAt).getTime() : null,
                             'Control Prenatal')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-pink-100 rounded-lg mr-4 group-hover:bg-pink-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-baby text-pink-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Control Prenatal
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
@@ -3281,10 +3400,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(controlPrenatal.fechaInicioControlPrenatal) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="controlPrenatal.estado" 
-                                    :fechaFinalizacion="controlPrenatal.fechaFinalizacion" 
+                                    :estado="controlPrenatal.estado"
+                                    :fechaFinalizacion="controlPrenatal.fechaFinalizacion"
                                     :finalizadoPor="controlPrenatal.finalizadoPor"
                                     :fechaAnulacion="controlPrenatal.fechaAnulacion"
                                     :anuladoPor="controlPrenatal.anuladoPor"
@@ -3292,7 +3411,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -3408,7 +3527,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, historiaOtologica, 'Historia Otologica')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -3423,25 +3542,25 @@ watch(() => props.lesion, (lesion) => {
                             historiaOtologica.updatedAt ? new Date(historiaOtologica.updatedAt).getTime() : null,
                             'Historia Otologica')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-ear-listen text-purple-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Historia Otologica
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
                                     class="hidden sm:flex ml-2"
                                 />
-                                <span v-else-if="historiaOtologica.resultadoCuestionario || historiaOtologica.resultadoCuestionarioPersonalizado" 
+                                <span v-else-if="historiaOtologica.resultadoCuestionario || historiaOtologica.resultadoCuestionarioPersonalizado"
                                       class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full"
                                       :class="{
                                         'bg-green-100 text-green-700': getResultadoCuestionarioColor(historiaOtologica.resultadoCuestionario, historiaOtologica.resultadoCuestionarioPersonalizado) === 'green',
@@ -3457,10 +3576,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(historiaOtologica.fechaHistoriaOtologica) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="historiaOtologica.estado" 
-                                    :fechaFinalizacion="historiaOtologica.fechaFinalizacion" 
+                                    :estado="historiaOtologica.estado"
+                                    :fechaFinalizacion="historiaOtologica.fechaFinalizacion"
                                     :finalizadoPor="historiaOtologica.finalizadoPor"
                                     :fechaAnulacion="historiaOtologica.fechaAnulacion"
                                     :anuladoPor="historiaOtologica.anuladoPor"
@@ -3468,7 +3587,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="historiaOtologica.resultadoCuestionario || historiaOtologica.resultadoCuestionarioPersonalizado" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -3504,7 +3623,7 @@ watch(() => props.lesion, (lesion) => {
                             @change="(event) => handleCheckboxChange(event, previoEspirometria, 'Previo Espirometria')">
                         <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
                     </div>
-                    
+
                     <!-- Contenido principal -->
                     <div
                         class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
@@ -3519,25 +3638,25 @@ watch(() => props.lesion, (lesion) => {
                             previoEspirometria.updatedAt ? new Date(previoEspirometria.updatedAt).getTime() : null,
                             'Previo Espirometria')"
                         @mouseleave="handleHoverLeave">
-                        
+
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-12 h-12 bg-sky-100 rounded-lg mr-4 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-wind text-sky-600 text-lg"></i>
                         </div>
-                        
+
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Previo Espirometria
                                 </h3>
-                                <BadgeNotaAclaratoria 
+                                <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
                                     class="hidden sm:flex ml-2"
                                 />
-                                <span v-else-if="previoEspirometria.resultadoCuestionario || previoEspirometria.resultadoCuestionarioPersonalizado" 
+                                <span v-else-if="previoEspirometria.resultadoCuestionario || previoEspirometria.resultadoCuestionarioPersonalizado"
                                       class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full"
                                       :class="{
                                         'bg-green-100 text-green-700': getResultadoCuestionarioColor(previoEspirometria.resultadoCuestionario, previoEspirometria.resultadoCuestionarioPersonalizado) === 'green',
@@ -3553,10 +3672,10 @@ watch(() => props.lesion, (lesion) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(previoEspirometria.fechaPrevioEspirometria) }}
                                 </p>
-                                <EstadoDocumentoBadge 
+                                <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
-                                    :estado="previoEspirometria.estado" 
-                                    :fechaFinalizacion="previoEspirometria.fechaFinalizacion" 
+                                    :estado="previoEspirometria.estado"
+                                    :fechaFinalizacion="previoEspirometria.fechaFinalizacion"
                                     :finalizadoPor="previoEspirometria.finalizadoPor"
                                     :fechaAnulacion="previoEspirometria.fechaAnulacion"
                                     :anuladoPor="previoEspirometria.anuladoPor"
@@ -3564,7 +3683,7 @@ watch(() => props.lesion, (lesion) => {
                                 />
                             </div>
                         </div>
-                        
+
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="previoEspirometria.resultadoCuestionario || previoEspirometria.resultadoCuestionarioPersonalizado" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
@@ -3578,6 +3697,288 @@ watch(() => props.lesion, (lesion) => {
                                          'text-gray-800': getResultadoCuestionarioColor(previoEspirometria.resultadoCuestionario, previoEspirometria.resultadoCuestionarioPersonalizado) === 'gray'
                                        }">
                                         {{ getResultadoCuestionarioTexto(previoEspirometria.resultadoCuestionario, previoEspirometria.resultadoCuestionarioPersonalizado) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Entrevista Psicologica -->
+                <div v-if="typeof entrevistaPsicologica === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <!-- Checkbox mejorado -->
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, entrevistaPsicologica, 'Entrevista Psicologica')">
+                    </div>
+
+                    <!-- Contenido principal -->
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${entrevistaPsicologica.rutaPDF}`,
+                            `Entrevista Psicologica ${convertirFechaISOaDDMMYYYY(entrevistaPsicologica.fechaEntrevistaPsicologica)}.pdf`,
+                            entrevistaPsicologica.updatedAt ? new Date(entrevistaPsicologica.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${entrevistaPsicologica.rutaPDF}`,
+                            `Entrevista Psicologica ${convertirFechaISOaDDMMYYYY(entrevistaPsicologica.fechaEntrevistaPsicologica)}.pdf`,
+                            entrevistaPsicologica.updatedAt ? new Date(entrevistaPsicologica.updatedAt).getTime() : null,
+                            'Entrevista Psicologica')"
+                        @mouseleave="handleHoverLeave">
+
+                        <!-- Icono del documento -->
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-slate-100 rounded-lg mr-4 group-hover:bg-slate-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-regular fa-comments text-slate-600 text-lg"></i>
+                        </div>
+
+                        <!-- Información del documento -->
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Entrevista Psicológica
+                                </h3>
+                                <span
+                                    v-if="entrevistaPsicologica.ideacionSuicida === 'Sí'"
+                                    class="hidden sm:flex ml-0 sm:ml-1 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                                    Alerta
+                                </span>
+                                <span
+                                    v-if="entrevistaPsicologica.ideacionSuicida === 'No'"
+                                    class="hidden sm:flex ml-0 sm:ml-1 px-2 py-1 text-xs font-medium rounded-full"
+                                    :class="entrevistaPsicologicaSinHallazgoConclusion ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                                    {{ entrevistaPsicologicaSinHallazgoConclusion ? 'Sin hallazgos' : 'Hallazgo' }}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(entrevistaPsicologica.fechaEntrevistaPsicologica) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="entrevistaPsicologica.estado"
+                                    :fechaFinalizacion="entrevistaPsicologica.fechaFinalizacion"
+                                    :finalizadoPor="entrevistaPsicologica.finalizadoPor"
+                                    :fechaAnulacion="entrevistaPsicologica.fechaAnulacion"
+                                    :anuladoPor="entrevistaPsicologica.anuladoPor"
+                                    :razonAnulacion="entrevistaPsicologica.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Información adicional (pantallas grandes): flex-1 para no capar el ancho en w-64 -->
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
+                                <div
+                                    v-if="entrevistaPsicologica.ideacionSuicida === 'Sí'"
+                                    class="hidden xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-shrink-0">
+                                    <div class="min-w-0">
+                                        <p class="text-red-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Riesgo</p>
+                                        <p class="font-medium text-sm truncate max-w-full text-red-700">
+                                            Ideación suicida
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Conclusión</p>
+                                    <p
+                                        class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
+                                        :class="entrevistaPsicologicaSinHallazgoConclusion ? 'text-gray-800' : 'text-red-600'"
+                                        :title="entrevistaPsicologica.conclusionClinica">
+                                        {{ entrevistaPsicologica.conclusionClinica }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trastornos del estado de ánimo -->
+                <div v-if="typeof trastornosEstadoAnimo === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, trastornosEstadoAnimo, 'Trastornos Estado Animo')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${trastornosEstadoAnimo.rutaPDF}`,
+                            `Trastornos Estado Animo ${convertirFechaISOaDDMMYYYY(trastornosEstadoAnimo.fechaTrastornosEstadoAnimo)}.pdf`,
+                            trastornosEstadoAnimo.updatedAt ? new Date(trastornosEstadoAnimo.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${trastornosEstadoAnimo.rutaPDF}`,
+                            `Trastornos Estado Animo ${convertirFechaISOaDDMMYYYY(trastornosEstadoAnimo.fechaTrastornosEstadoAnimo)}.pdf`,
+                            trastornosEstadoAnimo.updatedAt ? new Date(trastornosEstadoAnimo.updatedAt).getTime() : null,
+                            'Trastornos Estado Animo')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-violet-100 rounded-lg mr-4 group-hover:bg-violet-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-wave-square text-violet-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Trastornos del estado de ánimo
+                                </h3>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(trastornosEstadoAnimo.fechaTrastornosEstadoAnimo) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="trastornosEstadoAnimo.estado"
+                                    :fechaFinalizacion="trastornosEstadoAnimo.fechaFinalizacion"
+                                    :finalizadoPor="trastornosEstadoAnimo.finalizadoPor"
+                                    :fechaAnulacion="trastornosEstadoAnimo.fechaAnulacion"
+                                    :anuladoPor="trastornosEstadoAnimo.anuladoPor"
+                                    :razonAnulacion="trastornosEstadoAnimo.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Interpretación</p>
+                                    <p
+                                        class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
+                                        :class="claseColorInterpretacionMdqLista"
+                                        :title="interpretacionTrastornosEstadoAnimo">
+                                        {{ interpretacionTrastornosEstadoAnimo }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuestionario prodromal breve -->
+                <div v-if="typeof cuestionarioProdromalBreve === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${cuestionarioProdromalBreve.rutaPDF}`,
+                            `Cuestionario Prodromal Breve ${convertirFechaISOaDDMMYYYY(cuestionarioProdromalBreve.fechaCuestionarioProdromalBreve)}.pdf`,
+                            cuestionarioProdromalBreve.updatedAt ? new Date(cuestionarioProdromalBreve.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${cuestionarioProdromalBreve.rutaPDF}`,
+                            `Cuestionario Prodromal Breve ${convertirFechaISOaDDMMYYYY(cuestionarioProdromalBreve.fechaCuestionarioProdromalBreve)}.pdf`,
+                            cuestionarioProdromalBreve.updatedAt ? new Date(cuestionarioProdromalBreve.updatedAt).getTime() : null,
+                            'Cuestionario Prodromal Breve')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-brain text-purple-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Cuestionario prodromal breve
+                                </h3>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(cuestionarioProdromalBreve.fechaCuestionarioProdromalBreve) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="cuestionarioProdromalBreve.estado"
+                                    :fechaFinalizacion="cuestionarioProdromalBreve.fechaFinalizacion"
+                                    :finalizadoPor="cuestionarioProdromalBreve.finalizadoPor"
+                                    :fechaAnulacion="cuestionarioProdromalBreve.fechaAnulacion"
+                                    :anuladoPor="cuestionarioProdromalBreve.anuladoPor"
+                                    :razonAnulacion="cuestionarioProdromalBreve.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Interpretación</p>
+                                    <p
+                                        class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
+                                        :class="claseColorInterpretacionPQBLista"
+                                        :title="interpretacionCuestionarioProdromalBreve">
+                                        {{ interpretacionCuestionarioProdromalBreve }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trastorno límite de la personalidad -->
+                <div v-if="typeof trastornoLimitePersonalidad === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, trastornoLimitePersonalidad, 'Trastorno Limite Personalidad')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${trastornoLimitePersonalidad.rutaPDF}`,
+                            `Trastorno Limite Personalidad ${convertirFechaISOaDDMMYYYY(trastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad)}.pdf`,
+                            trastornoLimitePersonalidad.updatedAt ? new Date(trastornoLimitePersonalidad.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${trastornoLimitePersonalidad.rutaPDF}`,
+                            `Trastorno Limite Personalidad ${convertirFechaISOaDDMMYYYY(trastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad)}.pdf`,
+                            trastornoLimitePersonalidad.updatedAt ? new Date(trastornoLimitePersonalidad.updatedAt).getTime() : null,
+                            'Trastorno Limite Personalidad')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-rose-100 rounded-lg mr-4 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-heart-crack text-rose-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Trastorno límite de la personalidad
+                                </h3>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(trastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="trastornoLimitePersonalidad.estado"
+                                    :fechaFinalizacion="trastornoLimitePersonalidad.fechaFinalizacion"
+                                    :finalizadoPor="trastornoLimitePersonalidad.finalizadoPor"
+                                    :fechaAnulacion="trastornoLimitePersonalidad.fechaAnulacion"
+                                    :anuladoPor="trastornoLimitePersonalidad.anuladoPor"
+                                    :razonAnulacion="trastornoLimitePersonalidad.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Interpretación</p>
+                                    <p
+                                        class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
+                                        :class="claseColorInterpretacionTlpLista"
+                                        :title="interpretacionTrastornoLimitePersonalidad">
+                                        {{ interpretacionTrastornoLimitePersonalidad }}
                                     </p>
                                 </div>
                             </div>
@@ -3608,8 +4009,12 @@ watch(() => props.lesion, (lesion) => {
                     'Control Prenatal': controlPrenatal,
                     'Historia Otologica': historiaOtologica,
                     'Previo Espirometria': previoEspirometria,
+                    'Entrevista Psicologica': entrevistaPsicologica,
+                    'Trastornos Estado Animo': trastornosEstadoAnimo,
+                    'Cuestionario Prodromal Breve': cuestionarioProdromalBreve,
+                    'Trastorno Limite Personalidad': trastornoLimitePersonalidad,
                 }" :key="key">
-                    <button v-if="documento && documento.rutaDocumento" 
+                    <button v-if="documento && documento.rutaDocumento"
                         @click="descargarArchivo(documento, key)"
                         @mouseenter="(e) => updateTooltipPosition(e, 'Descargar documento')"
                         @mouseleave="hideTooltip"
@@ -3617,8 +4022,8 @@ watch(() => props.lesion, (lesion) => {
                         class="py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
                         <i class="fa-solid fa-download fa-lg"></i>
                     </button>
-                    <button v-if="documento && documento.rutaPDF" 
-                        @click="descargarArchivo(documento, key)" 
+                    <button v-if="documento && documento.rutaPDF"
+                        @click="descargarArchivo(documento, key)"
                         @mouseenter="(e) => updateTooltipPosition(e, 'Descargar documento')"
                         @mouseleave="hideTooltip"
                         type="button"
@@ -3630,8 +4035,8 @@ watch(() => props.lesion, (lesion) => {
                 <button v-if="documentoTipo === 'documentoExterno'" type="button"
                     :class="[
                         'py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canEditFinalized 
-                            ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110' 
+                        canEditFinalized
+                            ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
                     @click="handleEditDocumentoExterno"
@@ -3639,11 +4044,11 @@ watch(() => props.lesion, (lesion) => {
                     @mouseleave="hideTooltip">
                     <i :class="isReadOnly ? 'fa-regular fa-eye fa-lg' : 'fa-regular fa-pen-to-square fa-lg'"></i>
                 </button>
-                <button v-else type="button" 
+                <button v-else type="button"
                     :class="[
                         'py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canEditFinalized 
-                            ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110' 
+                        canEditFinalized
+                            ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
                     @click="handleEditDocument(documentoId, documentoTipo)"
@@ -3652,7 +4057,7 @@ watch(() => props.lesion, (lesion) => {
                     <i :class="isReadOnly ? 'fa-regular fa-eye fa-lg' : 'fa-regular fa-pen-to-square fa-lg'"></i>
                 </button>
 
-                <button v-if="puedeFinalizar && documentImmutabilityEnabled" type="button" 
+                <button v-if="puedeFinalizar && documentImmutabilityEnabled" type="button"
                     class="py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition-transform duration-200 ease-in-out transform hover:scale-110 shadow-sm z-5"
                     @click="$emit('abrirModalFinalizar', documentoId, documentoNombre, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, 'Finalizar documento')"
@@ -3664,7 +4069,7 @@ watch(() => props.lesion, (lesion) => {
                     :class="[
                         'py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
                         canDeleteDocument(documentoTipo) && !isAnulado
-                            ? 'bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110' 
+                            ? 'bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
                     :disabled="!canDeleteDocument(documentoTipo) || isAnulado"
@@ -3696,15 +4101,15 @@ watch(() => props.lesion, (lesion) => {
     <Teleport to="body">
         <Transition name="modal-fade" appear>
             <div v-if="showPdfViewer"
-                class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
+                class="documento-item-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
                 @click.self="cerrarPdf">
-            
+
             <!-- Header del visor -->
             <div class="absolute top-0 left-0 right-0 bg-white bg-opacity-95 backdrop-blur-sm border-b border-gray-200 z-10">
                 <div class="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4">
                     <!-- Sección izquierda -->
                     <div class="flex items-center space-x-2 sm:space-x-4">
-                        <button @click="cerrarPdf" 
+                        <button @click="cerrarPdf"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1 sm:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-times text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Cerrar</span>
@@ -3714,15 +4119,15 @@ watch(() => props.lesion, (lesion) => {
                             <span class="text-gray-700 font-medium text-xs sm:text-sm">Visor de PDF</span>
                         </div>
                     </div>
-                    
+
                     <!-- Controles adicionales -->
                     <div class="flex items-center space-x-1 sm:space-x-3">
-                        <button @click="descargarPdfActual" 
+                        <button @click="descargarPdfActual"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-download text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Descargar</span>
                         </button>
-                        <button @click="imprimirPdfActual" 
+                        <button @click="imprimirPdfActual"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-print text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Imprimir</span>
@@ -3735,12 +4140,12 @@ watch(() => props.lesion, (lesion) => {
             <div class="relative w-full h-full flex flex-col">
                 <!-- Contenedor del visor de PDF -->
                 <div class="flex-1 mt-16 sm:mt-20 mx-2 sm:mx-4 mb-4 bg-white rounded-xl shadow-2xl overflow-hidden">
-                    <VPdfViewer 
-                        :src="pdfUrl" 
-                        :initialThumbnails-visible="initialThumbnailsVisible" 
+                    <VPdfViewer
+                        :src="pdfUrl"
+                        :initialThumbnails-visible="initialThumbnailsVisible"
                         :initialScale="initialScale"
-                        locale="customLang" 
-                        :localization="localization" 
+                        locale="customLang"
+                        :localization="localization"
                     />
                 </div>
             </div>
@@ -3758,15 +4163,15 @@ watch(() => props.lesion, (lesion) => {
     <Teleport to="body">
         <Transition name="modal-fade" appear>
             <div v-if="showImageViewer"
-                class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
+                class="documento-item-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
                 @click.self="cerrarImagen">
-            
+
             <!-- Header del visor -->
             <div class="absolute top-0 left-0 right-0 bg-white bg-opacity-95 backdrop-blur-sm border-b border-gray-200 z-10">
                 <div class="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4">
                     <!-- Sección izquierda -->
                     <div class="flex items-center space-x-2 sm:space-x-4">
-                        <button @click="cerrarImagen" 
+                        <button @click="cerrarImagen"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1 sm:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-times text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Cerrar</span>
@@ -3776,30 +4181,30 @@ watch(() => props.lesion, (lesion) => {
                             <span class="text-gray-700 font-medium text-xs sm:text-sm">Visor de Imagen</span>
                         </div>
                     </div>
-                    
+
                     <!-- Controles de imagen -->
                     <div class="flex items-center space-x-1 sm:space-x-3">
-                        <button @click="rotarImagen" 
+                        <button @click="rotarImagen"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-redo text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Rotar</span>
                         </button>
-                        <button @click="descargarImagenActual" 
+                        <button @click="descargarImagenActual"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-download text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Descargar</span>
                         </button>
-                        <button @click="resetImagePosition" 
+                        <button @click="resetImagePosition"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-crosshairs text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Centrar</span>
                         </button>
-                        <button @click="zoomIn" 
+                        <button @click="zoomIn"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-search-plus text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Zoom +</span>
                         </button>
-                        <button @click="zoomOut" 
+                        <button @click="zoomOut"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-search-minus text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Zoom -</span>
@@ -3811,13 +4216,13 @@ watch(() => props.lesion, (lesion) => {
             <!-- Contenedor principal de la imagen -->
             <div class="relative w-full h-full flex flex-col image-viewer">
                 <div class="flex-1 mt-16 sm:mt-20 mx-2 sm:mx-4 mb-4 bg-white rounded-xl shadow-2xl overflow-hidden flex items-center justify-center">
-                    <img 
-                        :src="imageUrl" 
-                        :style="{ 
+                    <img
+                        :src="imageUrl"
+                        :style="{
                             transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) rotate(${rotationAngle}deg) scale(${imageZoom})`,
                             cursor: isDragging ? 'grabbing' : 'grab'
                         }"
-                        alt="Vista previa del documento" 
+                        alt="Vista previa del documento"
                         class="max-w-full max-h-full object-contain select-none"
                         draggable="false"
                         @wheel="handleImageWheel"
@@ -3837,7 +4242,7 @@ watch(() => props.lesion, (lesion) => {
             <!-- Indicador de ayuda -->
             <div class="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm">
                 <i class="fas fa-mouse mr-1 sm:mr-2"></i>
-                <span class="hidden sm:inline">Rueda del mouse para zoom •</span> 
+                <span class="hidden sm:inline">Rueda del mouse para zoom •</span>
                 <span class="hidden sm:inline">Arrastra para mover •</span>
                 <kbd class="px-1 sm:px-2 py-0.5 sm:py-1 bg-gray-700 rounded text-xs">ESC</kbd> <span class="hidden sm:inline">para cerrar</span>
             </div>
@@ -3848,7 +4253,7 @@ watch(() => props.lesion, (lesion) => {
     <!-- Tooltip para botones de acción -->
     <Teleport to="body">
         <Transition name="tooltip-fade">
-            <div 
+            <div
                 v-if="showTooltip"
                 class="fixed z-[9999] pointer-events-none"
                 :style="{
@@ -3951,12 +4356,12 @@ watch(() => props.lesion, (lesion) => {
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
     }
-    
+
     .help-indicator {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
     }
-    
+
     /* Ajustes específicos para móviles */
     .modal-fade-enter-from,
     .modal-fade-leave-to {

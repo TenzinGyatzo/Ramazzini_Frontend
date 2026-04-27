@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watchEffect } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watchEffect, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -28,6 +28,14 @@ import VisualizadorPrevioEspirometria from '@/components/steps/VisualizadorPrevi
 import VisualizadorReceta from '@/components/steps/VisualizadorReceta.vue';
 import VisualizadorConstanciaAptitud from '@/components/steps/VisualizadorConstanciaAptitud.vue';
 import VisualizadorReporteLesion from '@/components/steps/VisualizadorReporteLesion.vue';
+import VisualizadorEntrevistaPsicologica from '@/components/steps/VisualizadorEntrevistaPsicologica.vue';
+import VisualizadorTrastornosEstadoAnimo from '@/components/steps/VisualizadorTrastornosEstadoAnimo.vue';
+import VisualizadorCuestionarioProdromalBreve from '@/components/steps/VisualizadorCuestionarioProdromalBreve.vue';
+import VisualizadorTrastornoLimitePersonalidad from '@/components/steps/VisualizadorTrastornoLimitePersonalidad.vue';
+import {
+  ORIENTACION_SIN_HALLAZGO,
+  CONCLUSION_SIN_HALLAZGOS,
+} from '@/helpers/conclusionEntrevistaPsicologica';
 
 const route = useRoute();
 const router = useRouter();
@@ -184,6 +192,10 @@ watchEffect(async () => {
       receta: formData.formDataReceta,
       constanciaAptitud: formData.formDataConstanciaAptitud,
       lesion: formData.formDataLesion,
+      entrevistaPsicologica: formData.formDataEntrevistaPsicologica,
+      trastornosEstadoAnimo: formData.formDataTrastornosEstadoAnimo,
+      cuestionarioProdromalBreve: formData.formDataCuestionarioProdromalBreve,
+      trastornoLimitePersonalidad: formData.formDataTrastornoLimitePersonalidad,
     };
 
     const documentoForm = documentoMap[tipoDocumento.value];
@@ -412,6 +424,136 @@ const contraindicacionesAbsolutasNegadas = () => {
   formData.formDataPrevioEspirometria.inestabilidadHemodinamicaGrave = 'NO';
   formData.formDataPrevioEspirometria.hipertensionIntracraneal = 'NO';
   formData.formDataPrevioEspirometria.desprendimientoAgudoRetina = 'NO';
+};
+
+// Entrevista Psicologica
+const entrevistaPsicologicaSinHallazgos = () => {
+  formData.formDataEntrevistaPsicologica.apariencia = 'Adecuada';
+  formData.formDataEntrevistaPsicologica.actitudHaciaEvaluador = 'Colaboradora';
+  formData.formDataEntrevistaPsicologica.nivelCooperacion = 'Alta';
+  formData.formDataEntrevistaPsicologica.contactoVisual = 'Adecuado';
+  formData.formDataEntrevistaPsicologica.conductaMotora = 'Normal';
+  formData.formDataEntrevistaPsicologica.estadoAnimoPredominante = 'Eutímico (normal)';
+  formData.formDataEntrevistaPsicologica.afecto = 'Adecuado';
+  formData.formDataEntrevistaPsicologica.intensidadEmocional = 'Normal';
+  formData.formDataEntrevistaPsicologica.cursoPensamiento = 'Normal';
+  formData.formDataEntrevistaPsicologica.alteracionesPensamiento = 'No';
+  formData.formDataEntrevistaPsicologica.descripcionAlteracionesPensamiento = 'Pensamiento lógico y coherente, sin alteraciones evidentes.';
+  formData.formDataEntrevistaPsicologica.alteracionesPerceptuales = 'No';
+  formData.formDataEntrevistaPsicologica.descripcionAlteracionesPerceptuales = 'Niega alteraciones perceptuales durante la entrevista.';
+  formData.formDataEntrevistaPsicologica.orientacion = ORIENTACION_SIN_HALLAZGO;
+  formData.formDataEntrevistaPsicologica.atencionConcentracion = 'Adecuada';
+  formData.formDataEntrevistaPsicologica.memoria = 'Conservada';
+  formData.formDataEntrevistaPsicologica.juicio = 'Conservado';
+  formData.formDataEntrevistaPsicologica.concienciaEstado = 'Presente';
+  formData.formDataEntrevistaPsicologica.relacionesInterpersonales = 'Adecuadas';
+  formData.formDataEntrevistaPsicologica.desempenoLaboralAutorreporte = 'Adecuado';
+  formData.formDataEntrevistaPsicologica.manejoEstres = 'Adecuado';
+  formData.formDataEntrevistaPsicologica.ideacionSuicida = 'No';
+  formData.formDataEntrevistaPsicologica.observacionesIdeacionSuicida = 'Niega ideación suicida actual o reciente.';
+  formData.formDataEntrevistaPsicologica.conclusionClinica = CONCLUSION_SIN_HALLAZGOS;
+};
+
+/** Rellena sin hallazgos, va al paso 22 y avanza un paso más para mostrar «Completado» en el stepper */
+const entrevistaPsicologicaSinHallazgosYCompletado = async () => {
+  entrevistaPsicologicaSinHallazgos();
+  goToStep(22);
+  await nextTick();
+  steps.nextStep();
+};
+
+// Trastornos Estado de Animo (MDQ)
+const todoNegadoTrastornosEstadoAnimoYCompletado = async () => {
+  formData.formDataTrastornosEstadoAnimo.p1ExaltadoComportamientoNoHabitualOMetidoProblemas = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1IrritableGritosPeleas = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1MasSeguridadQueLoHabitual = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1DormiaMenosSinNecesitarMasSueno = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1HablabaMasOMasRapido = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1PensamientosAgolpados = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1DistraccionDificultadConcentracion = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1MasEnergiaQueLoHabitual = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1MasActivoOMasCosasQueLoHabitual = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1MasSocialExtrovertido = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1MasApetitoSexual = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1CosasExageradasRiesgosas = 'No';
+  formData.formDataTrastornosEstadoAnimo.p1GastoDineroProblemas = 'No';
+  formData.formDataTrastornosEstadoAnimo.p2SituacionesMismoPeriodo = 'No';
+  formData.formDataTrastornosEstadoAnimo.p3NivelProblemaCausado = 'Ningún problema';
+  formData.formDataTrastornosEstadoAnimo.p4FamiliarDirectoBipolar = 'No';
+  formData.formDataTrastornosEstadoAnimo.p5DiagnosticoProfesionalBipolar = 'No';
+
+  goToStep(steps.steps.length);
+  await nextTick();
+  steps.nextStep();
+};
+
+// Cuestionario Prodromal Breve (PQ-B)
+const todoNegadoCuestionarioProdromalBreveYCompletado = async () => {
+  formData.formDataCuestionarioProdromalBreve.p1 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p2 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p3 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p4 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p5 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p6 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p7 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p8 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p9 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p10 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p11 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p12 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p13 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p14 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p15 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p16 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p17 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p18 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p19 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p20 = 'No';
+  formData.formDataCuestionarioProdromalBreve.p21 = 'No';
+
+  formData.formDataCuestionarioProdromalBreve.p1GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p2GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p3GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p4GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p5GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p6GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p7GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p8GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p9GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p10GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p11GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p12GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p13GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p14GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p15GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p16GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p17GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p18GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p19GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p20GradoAcuerdoStatement = undefined;
+  formData.formDataCuestionarioProdromalBreve.p21GradoAcuerdoStatement = undefined;
+
+  goToStep(steps.steps.length);
+  await nextTick();
+  steps.nextStep();
+};
+
+// Trastorno Limite de Personalidad (MSI-BPD)
+const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
+  formData.formDataTrastornoLimitePersonalidad.relacionesCercanasDiscusionesRupturas = 'No';
+  formData.formDataTrastornoLimitePersonalidad.autolesionIntentoSuicidio = 'No';
+  formData.formDataTrastornoLimitePersonalidad.impulsividadOtrosDosProblemas = 'No';
+  formData.formDataTrastornoLimitePersonalidad.extremadamenteMalHumor = 'No';
+  formData.formDataTrastornoLimitePersonalidad.enojadoFrecuenteActuaEnojadoSarcastico = 'No';
+  formData.formDataTrastornoLimitePersonalidad.desconfianzaOtrasPersonas = 'No';
+  formData.formDataTrastornoLimitePersonalidad.sensacionIrrealidadEntornoIrreal = 'No';
+  formData.formDataTrastornoLimitePersonalidad.vacioCronico = 'No';
+  formData.formDataTrastornoLimitePersonalidad.faltaIdentidadQuienEs = 'No';
+  formData.formDataTrastornoLimitePersonalidad.esfuerzosEvitarAbandono = 'No';
+
+  goToStep(steps.steps.length);
+  await nextTick();
+  steps.nextStep();
 };
 
 </script>
@@ -884,6 +1026,126 @@ const contraindicacionesAbsolutasNegadas = () => {
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorReporteLesion />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="documentos.currentTypeOfDocument === 'entrevistaPsicologica'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/4">
+            <FormStepper />
+            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>Acción Rápida</span>
+              </p>
+              <button
+                type="button"
+                @click="entrevistaPsicologicaSinHallazgosYCompletado"
+                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2"
+              >
+                <span>Sin hallazgos en la entrevista</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="w-full xl:w-3/4">
+            <VisualizadorEntrevistaPsicologica />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="documentos.currentTypeOfDocument === 'trastornosEstadoAnimo'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/4">
+            <FormStepper />
+            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>Acción Rápida</span>
+              </p>
+              <button
+                type="button"
+                @click="todoNegadoTrastornosEstadoAnimoYCompletado"
+                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2"
+              >
+                <span>Todo negado</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="w-full xl:w-3/4">
+            <VisualizadorTrastornosEstadoAnimo />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="documentos.currentTypeOfDocument === 'cuestionarioProdromalBreve'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/4">
+            <FormStepper />
+            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>Acción Rápida</span>
+              </p>
+              <button
+                type="button"
+                @click="todoNegadoCuestionarioProdromalBreveYCompletado"
+                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2"
+              >
+                <span>Todo negado</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="w-full xl:w-3/4">
+            <VisualizadorCuestionarioProdromalBreve />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="documentos.currentTypeOfDocument === 'trastornoLimitePersonalidad'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/4">
+            <FormStepper />
+            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>Acción Rápida</span>
+              </p>
+              <button
+                type="button"
+                @click="todoNegadoTrastornoLimitePersonalidadYCompletado"
+                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2"
+              >
+                <span>Todo negado</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="w-full xl:w-3/4">
+            <VisualizadorTrastornoLimitePersonalidad />
           </div>
         </div>
       </Transition>

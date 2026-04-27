@@ -48,10 +48,12 @@ export function useUserPermissions() {
     return userStore.user?.permisos?.gestionarDocumentosExternos || false;
   });
 
-  const canManageCuestionariosAdicionales = computed(() => {
+  /** Mismo OR que `canManageOtrosDocumentos` en usePermissionRestrictions (NOM024 + legacy). */
+  const canManageOtrosDocumentos = computed(() => {
     if (!userRole.value) return false;
     if (userRole.value === 'Principal' || userRole.value === 'Administrador') return true;
-    return userStore.user?.permisos?.gestionarCuestionariosAdicionales || false;
+    const permisos = userStore.user?.permisos as Record<string, boolean> | undefined;
+    return permisos?.gestionarOtrosDocumentos ?? permisos?.gestionarCuestionariosAdicionales ?? false;
   });
 
   // Función para verificar si un usuario tiene acceso completo a empresas y centros
@@ -78,8 +80,17 @@ export function useUserPermissions() {
   // Tipos de documentos de diagnóstico y certificación
   const documentosDiagnostico = ['aptitud', 'certificado'];
   
-  // Tipos de cuestionarios adicionales
-  const cuestionariosAdicionales = ['controlPrenatal', 'historiaOtologica', 'previoEspirometria', 'certificadoExpedito'];
+  // Otros documentos / cuestionarios adicionales (incluye cuestionarios psicológicos)
+  const cuestionariosAdicionales = [
+    'controlPrenatal',
+    'historiaOtologica',
+    'previoEspirometria',
+    'certificadoExpedito',
+    'entrevistaPsicologica',
+    'trastornosEstadoAnimo',
+    'cuestionarioProdromalBreve',
+    'trastornoLimitePersonalidad',
+  ];
 
   // Función para verificar si un usuario puede crear un tipo específico de documento
   const canCreateDocument = (documentType: string): boolean => {
@@ -90,9 +101,8 @@ export function useUserPermissions() {
       return canManageDocumentosDiagnostico.value;
     }
     
-    // Verificar si es un cuestionario adicional
     if (cuestionariosAdicionales.includes(documentType)) {
-      return canManageCuestionariosAdicionales.value;
+      return canManageOtrosDocumentos.value;
     }
     
     // Para otros documentos, verificar permiso de evaluación
@@ -106,7 +116,7 @@ export function useUserPermissions() {
 
   // Función para obtener el mensaje de restricción apropiado
   const getRestrictionMessage = (documentType: string): string => {
-    const documentNames = {
+    const documentNames: Record<string, string> = {
       'aptitud': 'Aptitud para el Puesto',
       'certificado': 'Certificado Médico',
       'certificadoExpedito': 'Certificado Expedito',
@@ -120,6 +130,10 @@ export function useUserPermissions() {
       'controlPrenatal': 'Control Prenatal',
       'historiaOtologica': 'Historia Otológica',
       'previoEspirometria': 'Previo Espirometría',
+      'entrevistaPsicologica': 'Entrevista Psicológica',
+      'trastornosEstadoAnimo': 'Cuestionario Trastornos de Estado de Ánimo (MDQ)',
+      'cuestionarioProdromalBreve': 'Cuestionario Prodromal Breve',
+      'trastornoLimitePersonalidad': 'Cuestionario Trastorno Límite de la Personalidad',
     };
     
     const documentName = documentNames[documentType] || documentType;
@@ -127,7 +141,7 @@ export function useUserPermissions() {
     if (documentosDiagnostico.includes(documentType)) {
       return `No tienes permisos para gestionar documentos de diagnóstico y certificación.`;
     } else if (cuestionariosAdicionales.includes(documentType)) {
-      return `No tienes permisos para gestionar cuestionarios adicionales como ${documentName}.`;
+      return `No tienes permisos para gestionar otros documentos o cuestionarios adicionales como ${documentName}.`;
     } else {
       return `No tienes permisos para gestionar documentos de evaluación como ${documentName}.`;
     }
@@ -144,7 +158,9 @@ export function useUserPermissions() {
     canManageDocumentosDiagnostico,
     canManageDocumentosEvaluacion,
     canManageDocumentosExternos,
-    canManageCuestionariosAdicionales,
+    canManageOtrosDocumentos,
+    // Mismo ref que canManageOtrosDocumentos (compat.: canManageCuestionariosAdicionales)
+    canManageCuestionariosAdicionales: canManageOtrosDocumentos,
     canAccessCompletoEmpresasCentros,
     canAccessDashboardSalud,
     canAccessRiesgosTrabajo

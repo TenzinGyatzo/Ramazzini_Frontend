@@ -57,6 +57,10 @@ const questionnaireToDocumentType = {
   'previo-espirometria': 'previoEspirometria',
   'nota-aclaratoria': 'notaAclaratoria',
   'lesion': 'lesion',
+  'entrevista-psicologica': 'entrevistaPsicologica',
+  'trastornos-estado-animo': 'trastornosEstadoAnimo',
+  'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
+  'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
 };
 
 // Función para manejar la selección de cuestionarios
@@ -198,12 +202,72 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
       },
     });
     closeModal();
+  } else if (questionnaireType === 'entrevista-psicologica') {
+    await navigateWithDailyConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'entrevistaPsicologica'
+        }
+      },
+    });
+    closeModal();
+  } else if (questionnaireType === 'trastornos-estado-animo') {
+    await navigateWithDailyConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'trastornosEstadoAnimo'
+        }
+      },
+    });
+    closeModal();
+  } else if (questionnaireType === 'cuestionario-prodromal-breve') {
+    await navigateWithDailyConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'cuestionarioProdromalBreve'
+        }
+      },
+    });
+    closeModal();
+  } else if (questionnaireType === 'trastorno-limite-personalidad') {
+    await navigateWithDailyConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'trastornoLimitePersonalidad'
+        }
+      },
+    });
+    closeModal();
   }
 };
 </script>
 
 <template>
-  <div class="modal fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
+  <div class="modal modal-cuestionarios fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
     <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
     </div>
@@ -231,7 +295,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               Miscelaneos
             </div>
             <div class="space-y-2">
-              <button 
+              <button
                 v-if="isMX && notaAclaratoriaEnabled"
                 @click="handleQuestionnaireSelect('nota-aclaratoria')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
@@ -239,30 +303,30 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Nota Aclaratoria
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('lesion')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Lesión y/o Evento de Violencia
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('receta')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+                >
                 <i class="fas fa-prescription-bottle-medical text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Receta Médica
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('constancia-aptitud')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Constancia de Aptitud
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('certificado-expedito')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Certificado Expedito
@@ -277,19 +341,57 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               Cuestionarios previos a estudios de gabinete
             </div>
             <div class="space-y-2">
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('historia-otologica')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
                 <i class="fas fa-ear-deaf text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Historia Otológica (Previo a Audiometría)
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('previo-espirometria')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
                 <i class="fas fa-lungs text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Cuestionario Previo a Espirometría
+              </button>
+            </div>
+          </div>
+
+          <!-- Cuestionarios Psicologicos -->
+          <div class="space-y-3">
+            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
+              <i class="fas fa-exclamation-triangle text-emerald-500 mr-3"></i>
+              Cuestionarios Psicologicos
+            </div>
+            <div class="space-y-2">
+              <button
+                @click="handleQuestionnaireSelect('entrevista-psicologica')"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+              >
+                <i class="fa-regular fa-comments text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Entrevista Psicologica
+              </button>
+              <button
+                @click="handleQuestionnaireSelect('trastornos-estado-animo')"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+              >
+                <i class="fa-solid fa-wave-square text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Trastornos del Estado de Ánimo (MDQ)
+              </button>
+              <button
+                @click="handleQuestionnaireSelect('cuestionario-prodromal-breve')"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+              >
+                <i class="fa-solid fa-brain text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Cuestionario Prodromal Breve (PQ-B)
+              </button>
+              <button
+                @click="handleQuestionnaireSelect('trastorno-limite-personalidad')"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+              >
+                <i class="fa-solid fa-heart-crack text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Prueba del trastorno límite de personalidad (MSI-BPD)
               </button>
             </div>
           </div>
@@ -301,24 +403,24 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               Condición Personal
             </div>
             <div class="space-y-2">
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('control-prenatal')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
                 <i class="fas fa-baby text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Control Prenatal (Embarazo y Lactancia)
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('enfermedades-cronicas')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
               >
                 <i class="fas fa-heartbeat text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Enfermedades Crónicas
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('condiciones-muscoesqueleticas')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
               >
                 <i class="fas fa-bone text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
@@ -334,7 +436,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               Actividad/Entorno Laboral
             </div>
             <div class="space-y-2">
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('trabajos-altura')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -342,7 +444,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-warning text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Control de salud para POE a Trabajos en Altura
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('espacios-confinados')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -350,7 +452,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-box text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Control de salud para POE a Espacios Confinados
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('temperaturas-extremas')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -358,7 +460,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-thermometer-half text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Control de Salud para POE a Temperaturas Extremas
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('sustancias-peligrosas')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -366,7 +468,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-flask text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Control de salud para POE a Manipulación de Sustancias Peligrosas
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('maquinaria-pesada')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -384,7 +486,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               Riesgo Específico
             </div>
             <div class="space-y-2">
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('salud-auditiva')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -392,7 +494,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-deaf text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Monitoreo de la Salud Auditiva
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('salud-respiratoria')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -400,7 +502,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-lungs text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Monitoreo de la Salud Respiratoria
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('agentes-quimicos')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -408,7 +510,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-atom text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Monitoreo por Exposición a Agentes Químicos
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('agentes-biologicos')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -426,7 +528,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               Ergonomía y Carga Física
             </div>
             <div class="space-y-2">
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('riesgos-ergonomicos')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -434,7 +536,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-user-injured text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Riesgos por Posturas Prolongadas y Movimientos Repetitivos
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('manipulacion-cargas')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -452,7 +554,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               Factores Psicosociales
             </div>
             <div class="space-y-2">
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('riesgo-psicosocial')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -460,7 +562,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-chart-line text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Evaluación de Factores de Riesgo Psicosocial
               </button>
-              <button 
+              <button
                 @click="handleQuestionnaireSelect('estres-laboral')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled
@@ -484,12 +586,12 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     </Transition>
 
     <Transition appear name="fade">
-      <ModalDatosProfesionales 
-        v-if="showProfessionalDataModal" 
+      <ModalDatosProfesionales
+        v-if="showProfessionalDataModal"
         :missingFields="validationResult.missingFields"
         :routeName="validationResult.routeName"
         :firmanteTypeLabel="validationResult.firmanteTypeLabel"
-        @closeModal="showProfessionalDataModal = false" 
+        @closeModal="showProfessionalDataModal = false"
       />
     </Transition>
 
@@ -561,5 +663,77 @@ button.disabled i {
 button.disabled:hover i {
   transform: none;
   color: #9ca3af;
+}
+
+/* Dark mode: mantener contraste en botones deshabilitados */
+:global(html.dark-mode) button.disabled,
+:global(html.dark-mode) button:disabled {
+  background-color: #1e293b !important;
+  color: #94a3b8 !important;
+  border-color: #475569 !important;
+  opacity: 1 !important;
+}
+
+:global(html.dark-mode) button.disabled i,
+:global(html.dark-mode) button:disabled i {
+  color: #94a3b8 !important;
+}
+
+:global(html.dark-mode) button.disabled .text-emerald-700,
+:global(html.dark-mode) button:disabled .text-emerald-700,
+:global(html.dark-mode) button.disabled .text-emerald-600,
+:global(html.dark-mode) button:disabled .text-emerald-600,
+:global(html.dark-mode) button.disabled .text-emerald-500,
+:global(html.dark-mode) button:disabled .text-emerald-500 {
+  color: #94a3b8 !important;
+}
+
+:global(html.dark-mode) button.disabled:hover,
+:global(html.dark-mode) button:disabled:hover {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  transform: none;
+  box-shadow: none;
+}
+
+:global(html.dark-mode) button.disabled:hover i,
+:global(html.dark-mode) button:disabled:hover i {
+  transform: none;
+  color: #94a3b8 !important;
+}
+
+/* Dark mode: opciones del listado (no disabled) con hover más legible */
+:global(html.dark-mode) .modal-inner .questionnaire-option:not(.disabled):not(:disabled) {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #a7f3d0 !important;
+}
+
+:global(html.dark-mode) .modal-inner .questionnaire-option:not(.disabled):not(:disabled) i {
+  color: #34d399 !important;
+}
+
+:global(html.dark-mode) .modal-inner .questionnaire-option:not(.disabled):not(:disabled):hover {
+  background-color: #1e293b !important;
+  border-color: #10b981 !important;
+  color: #d1fae5 !important;
+}
+
+:global(html.dark-mode) .modal-inner .questionnaire-option:not(.disabled):not(:disabled):hover i {
+  color: #6ee7b7 !important;
+}
+
+/* Dark mode: opciones deshabilitadas del listado */
+:global(html.dark-mode) .modal-inner .questionnaire-option.disabled,
+:global(html.dark-mode) .modal-inner .questionnaire-option:disabled {
+  background-color: #111827 !important;
+  border-color: #334155 !important;
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+:global(html.dark-mode) .modal-inner .questionnaire-option.disabled i,
+:global(html.dark-mode) .modal-inner .questionnaire-option:disabled i {
+  color: #64748b !important;
 }
 </style>

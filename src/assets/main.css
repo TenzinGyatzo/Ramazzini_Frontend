@@ -44,3 +44,22 @@
     max-width: calc(min(100vw - 1005px - var(--sidebar-difference), 675px));
   }
 }
+
+/* Entrevista psicológica — conclusión: misma lógica que exploración (offsets idénticos), techos más altos */
+@layer utilities {
+  .max-w-dynamic-entrevista-conclusion {
+    max-width: calc(min(100vw - 770px - var(--sidebar-difference), 920px));
+  }
+
+  @media (min-width: 1280px) {
+    .xl-max-w-dynamic-entrevista-conclusion-xl {
+      max-width: calc(min(100vw - 955px - var(--sidebar-difference), 920px));
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .xxl-max-w-dynamic-entrevista-conclusion-2xl {
+      max-width: calc(min(100vw - 1140px - var(--sidebar-difference), 800px));
+    }
+  }
+}

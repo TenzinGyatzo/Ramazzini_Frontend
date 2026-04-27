@@ -69,7 +69,7 @@ function reestablecerRecomendacionesDefault() {
     <div class="space-y-2">
       <div v-for="(item, index) in recomendacionesAudiometria" :key="index" class="flex gap-2 items-center">
         <input
-          class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+          class="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-slate-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           v-model="recomendacionesAudiometria[index]"
           :placeholder="`Recomendación #${index + 1}`"
         />

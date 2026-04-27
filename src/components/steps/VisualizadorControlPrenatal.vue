@@ -134,7 +134,7 @@ const goToStep = (stepNumber) => {
     </div>
 
     <!-- Antecedentes Gineco Obstétricos -->
-    <div v-if="trabajadores.currentTrabajador.sexo === 'Femenino'" class="w-full md:w-[calc(50%-0.5rem)]">
+    <div v-if="trabajadores.currentTrabajador.sexo === 'Femenino'" class="control-prenatal-gineco w-full md:w-[calc(50%-0.5rem)]">
       <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Gineco Obstétricos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
@@ -183,7 +183,7 @@ const goToStep = (stepNumber) => {
     </div>
 
     <!-- Antecedentes Gineco Obstétricos Parte 2 -->
-    <div v-if="trabajadores.currentTrabajador.sexo === 'Femenino'" class="w-full md:w-[calc(50%-0.5rem)]">
+    <div v-if="trabajadores.currentTrabajador.sexo === 'Femenino'" class="control-prenatal-gineco w-full md:w-[calc(50%-0.5rem)]">
       <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Gineco Obstétricos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
@@ -235,7 +235,7 @@ const goToStep = (stepNumber) => {
     <div class="w-full">
       <h2 class="text-lg font-medium mb-1 text-center">Control Prenatal - Enero a Junio</h2>
       <div class="overflow-x-auto">
-        <table class="table-auto w-full border-collapse border border-gray-300 text-xs">
+        <table class="control-prenatal-meses table-auto w-full border-collapse border border-gray-300 text-xs">
           <!-- Encabezado de meses -->
           <thead>
             <tr>
@@ -349,7 +349,7 @@ const goToStep = (stepNumber) => {
     <div class="w-full">
       <h2 class="text-lg font-medium mb-1 text-center">Control Prenatal - Julio a Diciembre</h2>
       <div class="overflow-x-auto">
-        <table class="table-auto w-full border-collapse border border-gray-300 text-xs">
+        <table class="control-prenatal-meses table-auto w-full border-collapse border border-gray-300 text-xs">
           <!-- Encabezado de meses -->
           <thead>
             <tr>
@@ -563,5 +563,47 @@ const goToStep = (stepNumber) => {
 .cursor-pointer:hover {
   background-color: #f0f0f0;
   /* Cambia el color según tu diseño */
+}
+
+.control-prenatal-gineco tbody tr.cursor-pointer,
+.control-prenatal-gineco thead tr.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.control-prenatal-gineco tbody tr.cursor-pointer > td,
+.control-prenatal-gineco tbody tr.cursor-pointer > th,
+.control-prenatal-gineco thead tr.cursor-pointer > td,
+.control-prenatal-gineco thead tr.cursor-pointer > th {
+  transition: background-color 0.15s ease;
+}
+
+.control-prenatal-gineco tbody tr.cursor-pointer:hover,
+.control-prenatal-gineco tbody tr.cursor-pointer:hover > td,
+.control-prenatal-gineco tbody tr.cursor-pointer:hover > th,
+.control-prenatal-gineco thead tr.cursor-pointer:hover,
+.control-prenatal-gineco thead tr.cursor-pointer:hover > td,
+.control-prenatal-gineco thead tr.cursor-pointer:hover > th {
+  background-color: #f0f0f0;
+}
+
+.control-prenatal-meses td.cursor-pointer {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+</style>
+
+<style>
+html.dark-mode .control-prenatal-gineco tbody tr.cursor-pointer:hover,
+html.dark-mode .control-prenatal-gineco tbody tr.cursor-pointer:hover > td,
+html.dark-mode .control-prenatal-gineco tbody tr.cursor-pointer:hover > th,
+html.dark-mode .control-prenatal-gineco thead tr.cursor-pointer:hover,
+html.dark-mode .control-prenatal-gineco thead tr.cursor-pointer:hover > td,
+html.dark-mode .control-prenatal-gineco thead tr.cursor-pointer:hover > th {
+  background-color: #475569 !important;
+}
+
+/* En oscuro, evitar hover claro que borra contraste en las celdas mensuales. */
+html.dark-mode .control-prenatal-meses td.cursor-pointer:hover {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
 }
 </style>

@@ -65,15 +65,19 @@ const interpretacionAutomatica = computed(() => {
     return 'Datos insuficientes para generar interpretación automática.';
   }
 
-  // Función para clasificar severidad según criterios OMS
+  // Rangos dB HL: Normal -10 a 20 | Leve 21-40 | Moderada 41-60 | Grave 61-80 | Profunda 81-110
+  const DB_HL_NORMAL_MIN = -10;
+  const DB_HL_NORMAL_MAX = 20;
+  const enRangoNormal = (db) => db >= DB_HL_NORMAL_MIN && db <= DB_HL_NORMAL_MAX;
+
+  // Severidad según promedio de umbrales en frecuencias con caída (>20 dB HL)
   const clasificarSeveridad = (valores) => {
     const promedio = valores.reduce((a, b) => a + b, 0) / valores.length;
-    if (promedio <= 20) return "normal";
-    if (promedio <= 34) return "leve";
-    if (promedio <= 49) return "moderada";
-    if (promedio <= 64) return "moderada-severa";
-    if (promedio <= 79) return "severa";
-    return "profunda";
+    if (promedio <= 20) return 'normal';
+    if (promedio <= 40) return 'leve';
+    if (promedio <= 60) return 'moderada';
+    if (promedio <= 80) return 'grave o severa';
+    return 'profunda';
   };
 
   // Función para detectar patrones específicos de pérdida auditiva
@@ -332,8 +336,8 @@ const interpretacionAutomatica = computed(() => {
     const patrones = detectarPatrones(oido);
     const configuracion = analizarConfiguracion(oido);
 
-    // Verificar si está en rango normal (≤ 20 dB HL)
-    const esNormal = valoresValidos.every(item => item.valor <= 20);
+    // Normal: -10 a 20 dB HL en todas las frecuencias con dato
+    const esNormal = valoresValidos.every((item) => enRangoNormal(item.valor));
     
     if (esNormal) {
       let descripcion = `${nombreOido} dentro del rango de normalidad en todas sus frecuencias`;
@@ -353,22 +357,24 @@ const interpretacionAutomatica = computed(() => {
       };
     }
 
-    // Si no es normal, analizar las frecuencias con caída (≥ 25 dB HL)
-    const frecuenciasConCaida = valoresValidos.filter(item => item.valor >= 25);
-    
+    // Pérdida (caída): umbral > 20 dB HL; la severidad sigue la tabla de arriba
+    const frecuenciasConCaida = valoresValidos.filter(
+      (item) => item.valor > DB_HL_NORMAL_MAX,
+    );
+
     if (frecuenciasConCaida.length === 0) {
-      return { 
-        estado: 'normal', 
-        descripcion: `${nombreOido} dentro del rango de normalidad en todas sus frecuencias`,
+      return {
+        estado: 'normal',
+        descripcion: `${nombreOido} sin pérdida (> ${DB_HL_NORMAL_MAX} dB HL); alguna frecuencia registra umbral por debajo de ${DB_HL_NORMAL_MIN} dB HL (verificar registro).`,
         patrones,
-        configuracion
+        configuracion,
       };
     }
 
     // Calcular severidad de la caída
     const valoresCaida = frecuenciasConCaida.map(item => item.valor);
     const severidad = clasificarSeveridad(valoresCaida);
-    const adjetivoSeveridad = severidad === "normal" ? "" : ` ${severidad}`;
+    const adjetivoSeveridad = severidad === 'normal' ? '' : ` ${severidad}`;
 
     // Si todas las frecuencias tienen caída
     if (frecuenciasConCaida.length === valoresValidos.length) {
@@ -453,8 +459,12 @@ const interpretacionAutomatica = computed(() => {
     // Para caídas, comparar frecuencias y severidad
     if (analisis1.estado === 'caida') {
       const frecuenciasIguales = JSON.stringify(analisis1.frecuenciasCaida) === JSON.stringify(analisis2.frecuenciasCaida);
-      const severidadSimilar = analisis1.severidad === analisis2.severidad || 
-        (['leve', 'moderada'].includes(analisis1.severidad) && ['leve', 'moderada'].includes(analisis2.severidad));
+      const severidadSimilar =
+        analisis1.severidad === analisis2.severidad ||
+        (['leve', 'moderada'].includes(analisis1.severidad) &&
+          ['leve', 'moderada'].includes(analisis2.severidad)) ||
+        (['moderada', 'grave o severa'].includes(analisis1.severidad) &&
+          ['moderada', 'grave o severa'].includes(analisis2.severidad));
       
       return frecuenciasIguales && severidadSimilar;
     }

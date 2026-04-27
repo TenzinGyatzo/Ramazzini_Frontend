@@ -7,6 +7,7 @@ import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
 import CountrySelect from "@/components/CountrySelect.vue";
 import RegimenRegulatorioSelector from "@/components/onboarding/RegimenRegulatorioSelector.vue";
 import CLUESAutocomplete from "@/components/selectors/CLUESAutocomplete.vue";
+import { useHtmlDarkMode } from "@/composables/useHtmlDarkMode";
 
 const toast = inject("toast");
 
@@ -53,6 +54,7 @@ const formDataProveedorSalud = reactive({
 const proveedorSaludStore = useProveedorSaludStore();
 const userStore = useUserStore();
 const router = useRouter();
+const isHtmlDark = useHtmlDarkMode();
 
 const handleSubmitStep1 = async (data) => {
   Object.assign(formDataUser, data); // Guardar datos del usuario temporalmente
@@ -331,7 +333,7 @@ onMounted(() => {
 
 <template>
   <img
-    src="/img/logosRamazzini/RamazziniLogo.png"
+    :src="isHtmlDark ? '/img/logosRamazzini/RamazziniLogoClaroNoBg.png' : '/img/logosRamazzini/RamazziniLogoNoBg.png'"
     alt="Ramazzini Logo"
     class="max-w-[250px] max-h-[250px] object-contain p-2 mx-auto"
   />
@@ -363,14 +365,14 @@ onMounted(() => {
     <div class="mt-6">
       <button
         @click="router.push({ name: 'login' })"
-        class="bg-emerald-600 text-white py-2 px-6 rounded-lg hover:bg-emerald-700 transition duration-300"
+        class="w-full sm:text-xl md:text-2xl bg-emerald-600 hover:bg-emerald-700 text-white uppercase rounded-lg px-8 py-1 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md hover:shadow-lg hover:text-gray-200"
       >
         Ir al inicio de sesión
       </button>
     </div>
   </div>
 
-  <div v-else role="main" aria-label="Formulario de registro">
+  <div v-else class="auth-green-submit-match-login" role="main" aria-label="Formulario de registro">
     <!-- Indicador de pasos -->
     <div class="flex justify-center items-center gap-3 my-3" role="progressbar" :aria-valuenow="currentStep" aria-valuemin="1" aria-valuemax="2" :aria-label="`Paso ${currentStep} de 2`">
       <div class="flex flex-col items-center">

@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4">
+  <div class="resultados-clinicos-subsection space-y-4">
     <div class="flex flex-col gap-1">
       <div class="flex items-center justify-between">
         <div>
@@ -99,8 +99,9 @@
               <p v-if="getAlteracionLabel(resultado)">
                 <span class="font-semibold text-gray-800">Tipo de Alteración:</span> {{ getAlteracionLabel(resultado) }}
               </p>
-              <p v-if="resultado.hallazgoEspecifico">
-                <span class="font-semibold text-gray-800">Hallazgo Específico:</span> {{ resultado.hallazgoEspecifico }}
+              <p v-if="resultado.hallazgoEspecifico?.trim()">
+                <span class="font-semibold text-gray-800">{{ etiquetaHallazgoLibre(resultado) }}:</span>
+                {{ resultado.hallazgoEspecifico }}
               </p>
               <p v-if="resultado.relevanciaClinica">
                 <span class="font-semibold text-gray-800">Relevancia Clínica:</span> {{ getRelevanciaLabel(resultado.relevanciaClinica) }}
@@ -136,8 +137,10 @@ import {
 } from '@/stores/resultadosClinicos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import ConfirmacionEliminar from '@/components/ConfirmacionEliminar.vue';
+import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 
 const toast: any = inject('toast');
+const isHtmlDark = useHtmlDarkMode();
 
 const props = defineProps<{
   results: ResultadoClinico[];
@@ -216,45 +219,99 @@ const getTipoIcon = (tipo?: string) => {
   if (tipo === 'ESPIROMETRIA') return 'fas fa-lungs';
   if (tipo === 'EKG') return 'fas fa-heartbeat';
   if (tipo === 'TIPO_SANGRE') return 'fas fa-tint';
+  if (tipo === 'RAYOS_X') return 'fas fa-x-ray';
+  if (tipo === 'ANALISIS_LABORATORIO') return 'fas fa-vial';
   return 'fas fa-notes-medical';
 };
 
 const getIconColor = (tipo?: string) => {
-  if (tipo === 'ESPIROMETRIA') return '#1d4ed8';
-  if (tipo === 'EKG') return '#dc2626';
-  if (tipo === 'TIPO_SANGRE') return '#991b1b';
-  return '#475569';
+  const dark = isHtmlDark.value;
+  if (tipo === 'ESPIROMETRIA') return dark ? '#93c5fd' : '#1d4ed8';
+  if (tipo === 'EKG') return dark ? '#fca5a5' : '#dc2626';
+  if (tipo === 'TIPO_SANGRE') return dark ? '#fecaca' : '#991b1b';
+  if (tipo === 'RAYOS_X') return dark ? '#5eead4' : '#0f766e';
+  if (tipo === 'ANALISIS_LABORATORIO') return dark ? '#ddd6fe' : '#7c3aed';
+  return dark ? '#cbd5e1' : '#475569';
 };
 
 const getIconBackground = (tipo?: string) => {
-  if (tipo === 'ESPIROMETRIA') return 'rgba(30,64,175,0.12)';
-  if (tipo === 'EKG') return 'rgba(220,38,38,0.12)';
-  if (tipo === 'TIPO_SANGRE') return 'rgba(153,27,27,0.12)';
-  return 'rgba(71,85,105,0.08)';
+  const dark = isHtmlDark.value;
+  if (tipo === 'ESPIROMETRIA') return dark ? 'rgba(37,99,235,0.48)' : 'rgba(30,64,175,0.12)';
+  if (tipo === 'EKG') return dark ? 'rgba(220,38,38,0.45)' : 'rgba(220,38,38,0.12)';
+  if (tipo === 'TIPO_SANGRE') return dark ? 'rgba(185,28,28,0.5)' : 'rgba(153,27,27,0.12)';
+  if (tipo === 'RAYOS_X') return dark ? 'rgba(13,148,136,0.5)' : 'rgba(15,118,110,0.12)';
+  if (tipo === 'ANALISIS_LABORATORIO') return dark ? 'rgba(139,92,246,0.48)' : 'rgba(124,58,237,0.12)';
+  return dark ? 'rgba(148,163,184,0.35)' : 'rgba(71,85,105,0.08)';
 };
 
 const getAlteracionLabel = (resultado: ResultadoClinico) => {
-  if (resultado.tipoEstudio === 'ESPIROMETRIA' && resultado.tipoAlteracion) {
+  if (resultado.tipoEstudio === 'ESPIROMETRIA' && resultado.tipoAlteracionEspirometria) {
     const option = store.tipoAlteracionEspirometriaOptions.find(
-      (opt) => opt.value === resultado.tipoAlteracion
+      (opt) => opt.value === resultado.tipoAlteracionEspirometria
     );
-    return option?.label || resultado.tipoAlteracion;
+    return option?.label || resultado.tipoAlteracionEspirometria;
   }
 
-  if (resultado.tipoEstudio === 'EKG' && resultado.tipoAlteracionPrincipal) {
+  if (resultado.tipoEstudio === 'EKG' && resultado.tipoAlteracionEKG) {
     const option = store.tipoAlteracionEKGOptions.find(
-      (opt) => opt.value === resultado.tipoAlteracionPrincipal
+      (opt) => opt.value === resultado.tipoAlteracionEKG
     );
-    return option?.label || resultado.tipoAlteracionPrincipal;
+    return option?.label || resultado.tipoAlteracionEKG;
+  }
+
+  if (
+    resultado.tipoEstudio === 'RAYOS_X' &&
+    resultado.tipoAlteracionRayosX &&
+    resultado.tipoAlteracionRayosX.length > 0
+  ) {
+    return resultado.tipoAlteracionRayosX
+      .map(
+        (v) =>
+          store.tipoAlteracionRayosXOptions.find((o) => o.value === v)?.label || v
+      )
+      .join(', ');
+  }
+
+  if (
+    resultado.tipoEstudio === 'ANALISIS_LABORATORIO' &&
+    resultado.tipoAlteracionAnalisisLaboratorio &&
+    resultado.tipoAlteracionAnalisisLaboratorio.length > 0
+  ) {
+    return resultado.tipoAlteracionAnalisisLaboratorio
+      .map(
+        (v) =>
+          store.tipoAlteracionAnalisisLaboratorioOptions.find((o) => o.value === v)
+            ?.label || v
+      )
+      .join(', ');
   }
 
   return '';
 };
 
+const TIPOS_ESPECIFICAR_NORMAL = [
+  'ESPIROMETRIA',
+  'EKG',
+  'RAYOS_X',
+  'ANALISIS_LABORATORIO',
+] as const;
+
+const etiquetaHallazgoLibre = (resultado: ResultadoClinico) => {
+  if (
+    resultado.resultadoGlobal === 'NORMAL' &&
+    TIPOS_ESPECIFICAR_NORMAL.includes(
+      resultado.tipoEstudio as (typeof TIPOS_ESPECIFICAR_NORMAL)[number],
+    )
+  ) {
+    return 'Especificar';
+  }
+  return 'Hallazgo Específico';
+};
+
 const hasDetails = (resultado: ResultadoClinico) => {
   return !!(
     getAlteracionLabel(resultado) ||
-    resultado.hallazgoEspecifico ||
+    (resultado.hallazgoEspecifico && resultado.hallazgoEspecifico.trim()) ||
     resultado.relevanciaClinica ||
     resultado.recomendacion
   );

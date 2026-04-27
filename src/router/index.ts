@@ -224,9 +224,12 @@ router.beforeEach((to, from) => {
         return next({ name: "inicio" });
       }
 
-      // Validar si requiere ser Principal y no lo es
-      if (requiresPrincipal && (!user || user.role !== "Principal")) {
-        console.warn("Acceso denegado: solo usuarios Principal pueden gestionar asignaciones");
+      // Validar si requiere rol Principal o Administrador
+      if (
+        requiresPrincipal &&
+        (!user || (user.role !== "Principal" && user.role !== "Administrador"))
+      ) {
+        console.warn("Acceso denegado: solo usuarios Principal o Administrador pueden gestionar asignaciones");
         return next({ name: "inicio" });
       }
 

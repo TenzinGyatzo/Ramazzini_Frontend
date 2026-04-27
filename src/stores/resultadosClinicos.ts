@@ -6,16 +6,23 @@ import { useDocumentosStore } from "./documentos";
 export interface ResultadoClinico {
   _id?: string;
   idTrabajador: string;
-  tipoEstudio: 'ESPIROMETRIA' | 'EKG' | 'TIPO_SANGRE';
+  tipoEstudio:
+    | 'ESPIROMETRIA'
+    | 'EKG'
+    | 'TIPO_SANGRE'
+    | 'RAYOS_X'
+    | 'ANALISIS_LABORATORIO';
   fechaEstudio: string | Date;
   anioEstudio?: number;
   resultadoGlobal?: 'NORMAL' | 'ANORMAL' | 'NO_CONCLUYENTE';
   hallazgoEspecifico?: string;
   relevanciaClinica?: 'LEVE' | 'MODERADA' | 'ALTA';
   recomendacion?: string;
-  tipoAlteracion?: 'ANORMAL_OBSTRUCTIVO' | 'ANORMAL_RESTRICTIVO_SOSPECHADO' | 'ANORMAL_MIXTO';
-  tipoAlteracionPrincipal?: 'ANORMAL_ARRITMIA' | 'ANORMAL_TRASTORNO_CONDUCCION' | 'ANORMAL_ISQUEMIA_INFARTO' | 'ANORMAL_REPOLARIZACION' | 'ANORMAL_HIPERTROFIA_CRECIMIENTO_CAVIDADES' | 'ANORMAL_QT_ALTERADO';
+  tipoAlteracionEspirometria?: 'ANORMAL_OBSTRUCTIVO' | 'ANORMAL_RESTRICTIVO_SOSPECHADO' | 'ANORMAL_MIXTO';
+  tipoAlteracionEKG?: 'ANORMAL_ARRITMIA' | 'ANORMAL_TRASTORNO_CONDUCCION' | 'ANORMAL_ISQUEMIA_INFARTO' | 'ANORMAL_REPOLARIZACION' | 'ANORMAL_HIPERTROFIA_CRECIMIENTO_CAVIDADES' | 'ANORMAL_QT_ALTERADO';
   tipoSangre?: 'A_POS' | 'A_NEG' | 'B_POS' | 'B_NEG' | 'AB_POS' | 'AB_NEG' | 'O_POS' | 'O_NEG';
+  tipoAlteracionRayosX?: string[];
+  tipoAlteracionAnalisisLaboratorio?: string[];
   idDocumentoExterno?: string;
   documentoExterno?: {
     _id: string;
@@ -44,7 +51,9 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
   const tipoEstudioOptions = [
     { value: 'ESPIROMETRIA', label: 'Espirometría' },
     { value: 'EKG', label: 'EKG' },
+    { value: 'RAYOS_X', label: 'Rayos X' },
     { value: 'TIPO_SANGRE', label: 'Tipo de Sangre' },
+    { value: 'ANALISIS_LABORATORIO', label: 'Análisis de laboratorio' },
   ];
 
   const resultadoGlobalOptions = [
@@ -72,6 +81,33 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     { value: 'ANORMAL_REPOLARIZACION', label: 'Anormal Repolarización' },
     { value: 'ANORMAL_HIPERTROFIA_CRECIMIENTO_CAVIDADES', label: 'Anormal Hipertrofia/Crecimiento de Cavidades' },
     { value: 'ANORMAL_QT_ALTERADO', label: 'Anormal QT Alterado' },
+  ];
+
+  const tipoAlteracionRayosXOptions = [
+    { value: 'ALTERACION_PARENQUIMATOSA', label: 'Alteración parenquimatosa' },
+    { value: 'ALTERACION_PLEURAL', label: 'Alteración pleural' },
+    { value: 'ALTERACION_CARDIOMEDIASTINICA', label: 'Alteración cardiomediastínica' },
+    { value: 'NODULO_O_MASA', label: 'Nódulo o masa' },
+    { value: 'SECUELA_CRONICA', label: 'Secuela crónica' },
+    { value: 'ALTERACION_OSEA', label: 'Alteración ósea' },
+    { value: 'ALTERACION_ARTICULAR', label: 'Alteración articular' },
+    { value: 'ALTERACION_ALINEACION', label: 'Alteración de alineación' },
+    { value: 'CAMBIO_DEGENERATIVO', label: 'Cambio degenerativo' },
+    { value: 'FRACTURA_O_TRAUMA', label: 'Fractura o trauma' },
+    { value: 'OTRA_ALTERACION', label: 'Otra alteración' },
+  ];
+
+  const tipoAlteracionAnalisisLaboratorioOptions = [
+    { value: 'ALTERACION_HEMATOLOGICA', label: 'Alteración hematológica' },
+    { value: 'ALTERACION_METABOLICA', label: 'Alteración metabólica' },
+    { value: 'ALTERACION_RENAL', label: 'Alteración renal' },
+    { value: 'ALTERACION_HEPATICA', label: 'Alteración hepática' },
+    {
+      value: 'ALTERACION_INFECCIOSA_O_INFLAMATORIA',
+      label: 'Alteración infecciosa o inflamatoria',
+    },
+    { value: 'ALTERACION_URINARIA', label: 'Alteración urinaria' },
+    { value: 'OTRA_ALTERACION', label: 'Otra alteración' },
   ];
 
   const tipoSangreOptions = [
@@ -334,6 +370,8 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     relevanciaClinicaOptions,
     tipoAlteracionEspirometriaOptions,
     tipoAlteracionEKGOptions,
+    tipoAlteracionRayosXOptions,
+    tipoAlteracionAnalisisLaboratorioOptions,
     tipoSangreOptions,
     fetchByTrabajador,
     fetchResultadosAgrupados,

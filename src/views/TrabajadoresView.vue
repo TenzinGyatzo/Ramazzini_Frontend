@@ -68,34 +68,53 @@ const mostrarLeyenda = ref(false);
 const mostrarVigencias = ref(false); // Estado inicial: oculto
 const actualizandoTabla = ref(false);
 
-// 4. Filtros
-const filtrosConfig = [
-  { id: 'estadoLaboral', label: 'Estado Laboral', opciones: ['Activo', 'Inactivo'] },
-  { id: 'periodo', label: 'Periodo', opciones: [
-    'Hoy', 'Esta semana', 'Este mes', 'Mes anterior', 
+// 4. Filtros — agrupación UI (ids de filtro no cambian: DataTable / localStorage)
+type FiltroConfigItem = {
+  id: string;
+  label: string;
+  groupId: string;
+  opciones: string[] | (() => string[]);
+};
+
+const filtrosGrupos = [
+  { id: 'general', label: 'Situación laboral', icon: 'fa-solid fa-briefcase' },
+  { id: 'signos', label: 'Signos y medidas', icon: 'fa-solid fa-ruler-combined' },
+  { id: 'vision', label: 'Visión', icon: 'fa-solid fa-eye' },
+  { id: 'antecedentes', label: 'Antecedentes', icon: 'fa-solid fa-notes-medical' },
+  { id: 'estudios', label: 'Estudios', icon: 'fa-solid fa-microscope' },
+] as const;
+
+/** Filtros mostrados en la fila superior (no se repiten en acordeones). */
+const filtrosRapidosIds = ['periodo', 'sexo', 'vigencia', 'consultas'] as const;
+
+/** Solo para badges/chips: filtros rápidos usan groupId rapidos (no acordeón propio). */
+const filtrosConfig: FiltroConfigItem[] = [
+  { id: 'estadoLaboral', groupId: 'general', label: 'Estado Laboral', opciones: ['Activo', 'Inactivo'] },
+  { id: 'periodo', groupId: 'rapidos', label: 'Periodo', opciones: [
+    'Hoy', 'Esta semana', 'Este mes', 'Mes anterior',
     'Últimos 3 meses', 'Últimos 6 meses', 'Este año', 'Año anterior'
   ]},
-  { id: 'puesto', label: 'Puesto', opciones: () => puestosUnicos.value },
-  { id: 'sexo', label: 'Sexo', opciones: ['Masculino', 'Femenino'] },
-  { id: 'aptitud', label: 'Aptitud', opciones: [
+  { id: 'puesto', groupId: 'general', label: 'Puesto', opciones: () => puestosUnicos.value },
+  { id: 'sexo', groupId: 'rapidos', label: 'Sexo', opciones: ['Masculino', 'Femenino'] },
+  { id: 'aptitud', groupId: 'general', label: 'Aptitud', opciones: [
     'Apto Sin Restricciones', 'Apto Con Precaución', 'Apto Con Restricciones',
     'No Apto', 'Evaluación No Completada', '-'
   ]},
-  { id: 'vigencia', label: 'Estado de Vigencia', opciones: ['Vigente', 'Por vencer', 'Vencido'] },
-  { id: 'imc', label: 'Categoria IMC', opciones: [
+  { id: 'vigencia', groupId: 'rapidos', label: 'Estado de Vigencia', opciones: ['Vigente', 'Por vencer', 'Vencido'] },
+  { id: 'imc', groupId: 'signos', label: 'Categoria IMC', opciones: [
     'Bajo peso', 'Normal', 'Sobrepeso',
     'Obesidad clase I', 'Obesidad clase II', 'Obesidad clase III', '-'
   ]},
-  { id: 'cintura', label: 'Cintura', opciones: [
+  { id: 'cintura', groupId: 'signos', label: 'Cintura', opciones: [
     'Bajo Riesgo', 'Riesgo Aumentado', 'Alto Riesgo', '-'
   ]},
-  { id: 'tensionArterial', label: 'Tensión Arterial', opciones: [
-    'Óptima', 'Normal', 'Alta', 'Hipertensión ligera', 'Hipertensión moderada', 'Hipertensión severa', '-'
+  { id: 'tensionArterial', groupId: 'signos', label: 'Tensión Arterial', opciones: [
+    'Óptima', 'Normal', 'Alta', 'Hipertensión grado 1', 'Hipertensión grado 2', 'Hipertensión grado 3', '-'
   ]},
-  { id: 'diabetico', label: 'Diabético', opciones: ['Si', 'No', '-'] },
-  { id: 'hipertensivo', label: 'Hipertensivo', opciones: ['Si', 'No', '-'] },
-  { id: 'cardiopatico', label: 'Cardiopatías', opciones: ['Si', 'No', '-'] },
-  { id: 'agudeza', label: 'Agudeza Visual', opciones: [
+  { id: 'diabetico', groupId: 'antecedentes', label: 'Diabético', opciones: ['Si', 'No', '-'] },
+  { id: 'hipertensivo', groupId: 'antecedentes', label: 'Hipertensivo', opciones: ['Si', 'No', '-'] },
+  { id: 'cardiopatico', groupId: 'antecedentes', label: 'Cardiopatías', opciones: ['Si', 'No', '-'] },
+  { id: 'agudeza', groupId: 'vision', label: 'Agudeza Visual', opciones: [
     'Visión excepcional',
     'Visión normal',
     'Visión ligeramente reducida',
@@ -103,22 +122,22 @@ const filtrosConfig = [
     'Visión significativamente reducida',
     'Visión muy reducida'
   ]},
-  { id: 'daltonismo', label: 'Visión de color', opciones: ['Normal', 'Daltonismo']},
-  { id: 'correccionVisual', label: 'Vista corregida', opciones: ['Corregida', 'Sin corregir', 'No requiere', '-'] },
-  { id: 'lentes', label: 'Requiere Lentes', opciones: ['Requiere lentes', 'No requiere', '-'] },
-  { id: 'lumbalgia', label: 'Lumbalgia', opciones: ['Si', 'No', '-'] },
-  { id: 'epilepsia', label: 'Epilepsias', opciones: ['Si', 'No', '-'] },
-  { id: 'alergia', label: 'Alergias', opciones: ['Si', 'No', '-'] },
-  { id: 'accidente', label: 'Accidentes', opciones: ['Si', 'No', '-'] },
-  { id: 'otro', label: 'Otros', opciones: ['Si', 'No', '-'] },
-  { id: 'quirurgico', label: 'Cirugias', opciones: ['Si', 'No', '-'] },
-  { id: 'exposicion', label: 'Exposición a riesgos', opciones: [
+  { id: 'daltonismo', groupId: 'vision', label: 'Visión de color', opciones: ['Normal', 'Daltonismo']},
+  { id: 'correccionVisual', groupId: 'vision', label: 'Vista corregida', opciones: ['Corregida', 'Sin corregir', 'No requiere', '-'] },
+  { id: 'lentes', groupId: 'vision', label: 'Requiere Lentes', opciones: ['Requiere lentes', 'No requiere', '-'] },
+  { id: 'lumbalgia', groupId: 'antecedentes', label: 'Lumbalgia', opciones: ['Si', 'No', '-'] },
+  { id: 'epilepsia', groupId: 'antecedentes', label: 'Epilepsias', opciones: ['Si', 'No', '-'] },
+  { id: 'alergia', groupId: 'antecedentes', label: 'Alergias', opciones: ['Si', 'No', '-'] },
+  { id: 'accidente', groupId: 'antecedentes', label: 'Accidentes', opciones: ['Si', 'No', '-'] },
+  { id: 'otro', groupId: 'antecedentes', label: 'Otros', opciones: ['Si', 'No', '-'] },
+  { id: 'quirurgico', groupId: 'antecedentes', label: 'Cirugias', opciones: ['Si', 'No', '-'] },
+  { id: 'exposicion', groupId: 'general', label: 'Exposición a riesgos', opciones: [
     'Ergonómicos', 'Ruido', 'Polvos', 'Químicos', 'Psicosociales',
     'Temperaturas elevadas', 'Temperaturas abatidas', 'Vibraciones', 'Biológicos Infecciosos', '-'
   ]},
-  { id: 'consultas', label: 'Consultas', opciones: ['Si', 'No']},
-  { id: 'audiometria', label: 'Audiometría', opciones: ['Normal', 'Anormal', '-']},
-  { id: 'categoriaAudiometria', label: 'Categoría Audiometría', opciones: [
+  { id: 'consultas', groupId: 'rapidos', label: 'Consultas', opciones: ['Si', 'No']},
+  { id: 'audiometria', groupId: 'estudios', label: 'Audiometría', opciones: ['Normal', 'Anormal', '-']},
+  { id: 'categoriaAudiometria', groupId: 'estudios', label: 'Categoría Audiometría', opciones: [
     'Normal',
     'Hipoacusia leve',
     'Hipoacusia moderada',
@@ -127,7 +146,75 @@ const filtrosConfig = [
     'Hipoacusia profunda',
     '-'
   ]},
+  { id: 'espirometriaRc', groupId: 'estudios', label: 'Espirometría', opciones: ['Normal', 'Anormal', 'No concluyente', '-'] },
+  { id: 'ekgRc', groupId: 'estudios', label: 'EKG', opciones: ['Normal', 'Anormal', 'No concluyente', '-'] },
+  { id: 'rayosXRc', groupId: 'estudios', label: 'Rayos X', opciones: ['Normal', 'Anormal', 'No concluyente', '-'] },
+  { id: 'laboratorioRc', groupId: 'estudios', label: 'Laboratorios', opciones: ['Normal', 'Anormal', 'No concluyente', '-'] },
 ];
+
+const idsEnFiltrosRapidos = new Set<string>(filtrosRapidosIds);
+
+const filtrosConfigPorId = computed(() => {
+  const m: Record<string, FiltroConfigItem> = {};
+  filtrosConfig.forEach((f) => {
+    m[f.id] = f;
+  });
+  return m;
+});
+
+const filtrosRapidosConfig = computed(() =>
+  filtrosRapidosIds.map((id) => filtrosConfigPorId.value[id]).filter(Boolean) as FiltroConfigItem[]
+);
+
+function filtrosDelGrupoParaAcordeon(grupoId: string) {
+  return filtrosConfig.filter(
+    (f) => f.groupId === grupoId && !idsEnFiltrosRapidos.has(f.id)
+  );
+}
+
+function contarFiltrosActivosEnGrupo(grupoId: string): number {
+  let n = 0;
+  for (const id of filtrosAplicados) {
+    const cfg = filtrosConfigPorId.value[id];
+    if (cfg?.groupId === grupoId) n++;
+  }
+  return n;
+}
+
+/** Apertura de acordeones: al abrir el panel, solo grupos con filtros activos. */
+const acordeonAbierto = reactive<Record<string, boolean>>({});
+function sincronizarAcordeonesConFiltrosActivos() {
+  filtrosGrupos.forEach((g) => {
+    acordeonAbierto[g.id] = contarFiltrosActivosEnGrupo(g.id) > 0;
+  });
+}
+
+function onToggleAcordeon(grupoId: string, e: Event) {
+  const el = e.target as HTMLDetailsElement;
+  if (el?.open !== undefined) acordeonAbierto[grupoId] = el.open;
+}
+
+const chipsFiltrosActivos = computed(() => {
+  const out: { id: string; label: string; valor: string }[] = [];
+  filtrosAplicados.forEach((id) => {
+    const cfg = filtrosConfigPorId.value[id];
+    if (!cfg) return;
+    out.push({ id, label: cfg.label, valor: filtros[id] ?? '' });
+  });
+  return out;
+});
+
+function quitarFiltroChip(id: string) {
+  filtros[id] = id === 'estadoLaboral' ? 'Activo' : '';
+  if (id === 'estadoLaboral') {
+    localStorage.setItem(`filtro-${id}`, 'Activo');
+  } else {
+    localStorage.removeItem(`filtro-${id}`);
+  }
+  actualizarEstadoFiltro(id, filtros[id]);
+  dataTableRef.value?.aplicarTodosLosFiltrosDesdeLocalStorage();
+  sincronizarAcordeonesConFiltrosActivos();
+}
 
 const filtros = reactive<Record<string, string>>({
   sexo: '',
@@ -154,6 +241,10 @@ const filtros = reactive<Record<string, string>>({
   consultas: '',
   audiometria: '',
   categoriaAudiometria: '',
+  espirometriaRc: '',
+  ekgRc: '',
+  rayosXRc: '',
+  laboratorioRc: '',
   periodo: '',
   estadoLaboral: 'Activo',
 });
@@ -183,6 +274,7 @@ function resetearFiltros() {
     actualizarEstadoFiltro(id, filtros[id]);
   });
   dataTableRef.value?.aplicarTodosLosFiltrosDesdeLocalStorage();
+  sincronizarAcordeonesConFiltrosActivos();
 }
 
 const hayFiltrosActivos = computed(() => filtrosAplicados.size > 0);
@@ -265,10 +357,15 @@ onMounted(async () => {
       });
     }
   });
+
+  nextTick(() => sincronizarAcordeonesConFiltrosActivos());
 });
 
 watch(mostrarFiltros, (nuevoValor) => {
   localStorage.setItem('mostrarFiltros', String(nuevoValor));
+  if (nuevoValor) {
+    nextTick(() => sincronizarAcordeonesConFiltrosActivos());
+  }
 });
 
 // 6. Funciones de modales
@@ -555,6 +652,10 @@ const exportarFiltrados = () => {
       
       return resultado === 'Indeterminado' ? '-' : resultado;
     })(),
+    espirometriaRc: row.resultadosClinicosResumen?.espirometria?.etiqueta ?? '-',
+    ekgRc: row.resultadosClinicosResumen?.ekg?.etiqueta ?? '-',
+    rayosXRc: row.resultadosClinicosResumen?.rayosX?.etiqueta ?? '-',
+    laboratorioRc: row.resultadosClinicosResumen?.analisisLaboratorio?.etiqueta ?? '-',
     estadoLaboral: row.estadoLaboral || '-'
   }));
 
@@ -566,7 +667,7 @@ const filtrosValidos = {
   sexo: ['Masculino', 'Femenino'],
   imc: ['Bajo peso', 'Normal', 'Sobrepeso', 'Obesidad clase I', 'Obesidad clase II', 'Obesidad clase III'],
   cintura: ['Bajo Riesgo', 'Riesgo Aumentado', 'Alto Riesgo', '-'],
-  tensionArterial: ['Óptima', 'Normal', 'Alta', 'Hipertensión ligera', 'Hipertensión moderada', 'Hipertensión severa'],
+  tensionArterial: ['Óptima', 'Normal', 'Alta', 'Hipertensión grado 1', 'Hipertensión grado 2', 'Hipertensión grado 3'],
   aptitud: ['Apto Sin Restricciones', 'Apto Con Precaución', 'Apto Con Restricciones', 'No Apto', 'Evaluación No Completada'],
   vigencia: ['Vigente', 'Por vencer', 'Vencido'],
   lentes: ['Requiere lentes', 'No requiere'],
@@ -594,6 +695,10 @@ const filtrosValidos = {
   categoriaAudiometria: [
     'Normal', 'Hipoacusia leve', 'Hipoacusia moderada', 'H. moderada-severa', 'Hipoacusia severa', 'Hipoacusia profunda', '-'
   ],
+  espirometriaRc: ['Normal', 'Anormal', 'No concluyente', '-'],
+  ekgRc: ['Normal', 'Anormal', 'No concluyente', '-'],
+  rayosXRc: ['Normal', 'Anormal', 'No concluyente', '-'],
+  laboratorioRc: ['Normal', 'Anormal', 'No concluyente', '-'],
 };
 
 function aplicarFiltrosDesdeQuery(query: RouteLocationNormalizedLoaded['query']) {
@@ -853,42 +958,140 @@ const toggleVigencias = () => {
           </button>
         </div>
 
+        <!-- Chips: filtros aplicados (visible aunque el panel esté colapsado) -->
+        <div
+          v-if="hayFiltrosActivos"
+          class="flex flex-wrap items-center gap-2 mb-3"
+        >
+          <span class="text-xs font-medium text-gray-500 shrink-0">Filtros aplicados</span>
+          <button
+            v-for="chip in chipsFiltrosActivos"
+            :key="chip.id"
+            type="button"
+            class="inline-flex items-center gap-1.5 max-w-full pl-2.5 pr-2 py-1 rounded-full text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-900 hover:bg-emerald-100 transition-colors"
+            :title="'Quitar: ' + chip.label"
+            @click="quitarFiltroChip(chip.id)"
+          >
+            <span class="truncate"><span class="text-emerald-700/90">{{ chip.label }}:</span> {{ chip.valor }}</span>
+            <i class="fa-solid fa-xmark text-[10px] text-emerald-700/70 shrink-0" aria-hidden="true"></i>
+          </button>
+        </div>
+
         <!-- Sección de filtros -->
         <Transition name="desplegar-filtros" mode="out-in">
-          <div v-if="mostrarFiltros" class="border-t border-gray-100 pt-4">
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-              <div v-for="filtro in filtrosConfig" :key="filtro.id" class="space-y-1">
-                <label :for="`filtro-${filtro.id}`" class="block text-xs font-medium text-gray-700">
-                  {{ filtro.label }}
-                </label>
-                <div class="relative">
-                  <select
-                    :id="`filtro-${filtro.id}`"
-                    v-model="filtros[filtro.id]"
-                    @change="actualizarFiltroYGuardar(filtro.id)"
-                    :class="[
-                      'w-full px-2 py-1.5 text-xs rounded-lg border transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/20',
-                      filtrosAplicados.has(filtro.id) 
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-900 font-medium' 
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 focus:border-emerald-400'
-                    ]"
-                  >
-                    <option value="">Todos</option>
-                    <option
-                      v-for="opcion in typeof filtro.opciones === 'function' ? filtro.opciones() : filtro.opciones"
-                      :key="opcion"
-                      :value="opcion"
+          <div v-if="mostrarFiltros" class="border-t border-gray-100 pt-4 space-y-3">
+            <!-- Filtros rápidos (mismos ids; no se duplican en acordeones) -->
+            <div>
+              <p class="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-bolt text-amber-500"></i>
+                Filtros rápidos
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div v-for="filtro in filtrosRapidosConfig" :key="'rapido-' + filtro.id" class="space-y-1">
+                  <label :for="`filtro-${filtro.id}`" class="block text-xs font-medium text-gray-700">
+                    {{ filtro.label }}
+                  </label>
+                  <div class="relative">
+                    <select
+                      :id="`filtro-${filtro.id}`"
+                      v-model="filtros[filtro.id]"
+                      class="w-full px-2 py-1.5 text-xs rounded-lg border transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/20"
+                      :class="filtrosAplicados.has(filtro.id)
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-900 font-medium'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 focus:border-emerald-400'"
+                      @change="actualizarFiltroYGuardar(filtro.id)"
                     >
-                      {{ opcion }}
-                    </option>
-                  </select>
-                  
-                  <!-- Indicador de filtro activo -->
-                  <div v-if="filtrosAplicados.has(filtro.id)" 
-                       class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-white shadow-sm"></div>
+                      <option value="">Todos</option>
+                      <option
+                        v-for="opcion in typeof filtro.opciones === 'function' ? filtro.opciones() : filtro.opciones"
+                        :key="opcion"
+                        :value="opcion"
+                      >
+                        {{ opcion }}
+                      </option>
+                    </select>
+                    <div
+                      v-if="filtrosAplicados.has(filtro.id)"
+                      class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-white shadow-sm"
+                    />
+                  </div>
                 </div>
-                
               </div>
+            </div>
+
+            <!-- Acordeones por grupo -->
+            <div class="space-y-2">
+              <p class="text-xs font-semibold text-gray-600 mb-1">Más filtros por categoría</p>
+              <details
+                v-for="grupo in filtrosGrupos"
+                :key="grupo.id"
+                class="group border border-gray-100 rounded-xl overflow-hidden bg-white"
+                :open="acordeonAbierto[grupo.id] === true"
+                @toggle="onToggleAcordeon(grupo.id, $event)"
+              >
+                <summary
+                  class="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-gray-100/80 transition-colors [&::-webkit-details-marker]:hidden"
+                >
+                  <i :class="[grupo.icon, 'text-gray-500 text-sm w-5 text-center shrink-0']" aria-hidden="true"></i>
+                  <span class="text-xs font-semibold text-gray-800 flex-1 text-left">{{ grupo.label }}</span>
+                  <span
+                    v-if="contarFiltrosActivosEnGrupo(grupo.id) > 0"
+                    class="inline-flex min-w-[1.25rem] justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                  >
+                    {{ contarFiltrosActivosEnGrupo(grupo.id) }}
+                  </span>
+                  <i
+                    class="fa-solid fa-chevron-down text-gray-400 text-[10px] transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                  ></i>
+                </summary>
+                <div class="border-t border-gray-100 p-3">
+                  <div
+                    v-if="filtrosDelGrupoParaAcordeon(grupo.id).length"
+                    class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3"
+                  >
+                    <div
+                      v-for="filtro in filtrosDelGrupoParaAcordeon(grupo.id)"
+                      :key="filtro.id"
+                      class="space-y-1"
+                    >
+                      <label :for="`filtro-${filtro.id}`" class="block text-xs font-medium text-gray-700">
+                        {{ filtro.label }}
+                      </label>
+                      <div class="relative">
+                        <select
+                          :id="`filtro-${filtro.id}`"
+                          v-model="filtros[filtro.id]"
+                          class="w-full px-2 py-1.5 text-xs rounded-lg border transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-emerald-500/20"
+                          :class="filtrosAplicados.has(filtro.id)
+                            ? 'border-emerald-300 bg-emerald-50 text-emerald-900 font-medium'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 focus:border-emerald-400'"
+                          @change="actualizarFiltroYGuardar(filtro.id)"
+                        >
+                          <option value="">Todos</option>
+                          <option
+                            v-for="opcion in typeof filtro.opciones === 'function' ? filtro.opciones() : filtro.opciones"
+                            :key="opcion"
+                            :value="opcion"
+                          >
+                            {{ opcion }}
+                          </option>
+                        </select>
+                        <div
+                          v-if="filtrosAplicados.has(filtro.id)"
+                          class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-white shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <p
+                    v-else-if="grupo.id === 'estudios'"
+                    class="text-xs text-gray-500 leading-relaxed"
+                  >
+                    Puedes filtrar por resultado global de espirometría, EKG, rayos X y laboratorio (último estudio por tipo).
+                  </p>
+                </div>
+              </details>
             </div>
           </div>
         </Transition>
@@ -898,7 +1101,7 @@ const toggleVigencias = () => {
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="trabajadores.loading" class="text-center py-20">
           <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
-            <i class="fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
+            <i class="empresa-item-placeholder-icon fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
           </div>
           <h2 class="text-xl font-semibold text-gray-700 mb-2">Cargando Trabajadores...</h2>
           <p class="text-gray-500">Obteniendo los trabajadores del centro de trabajo</p>

@@ -26,7 +26,7 @@ const goToStep = (stepNumber) => {
 
 <template>
   <div
-    class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
+    class="visualizador-receta flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Badge y Fecha -->
     <div class="flex flex-wrap md:flex-nowrap w-full gap-4 items-center">
@@ -83,7 +83,7 @@ const goToStep = (stepNumber) => {
         </span>
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 2 }" @click="goToStep(7)">+ Agregar Tratamiento</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 2 }" @click="goToStep(2)">+ Agregar Tratamiento</div>
 
     <!-- Recomendaciones -->
     <div 
@@ -116,7 +116,7 @@ const goToStep = (stepNumber) => {
         Indicaciones: <span class="font-light">{{ formData.formDataReceta.indicaciones }}</span> 
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 4 }" @click="goToStep(9)">+ Agregar Indicaciones</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 4 }" @click="goToStep(4)">+ Agregar Indicaciones</div>
 
   </div>
 </template>
@@ -129,5 +129,10 @@ const goToStep = (stepNumber) => {
 .cursor-pointer:hover {
   background-color: #f0f0f0;
   /* Cambia el color según tu diseño */
+}
+
+html.dark-mode .visualizador-receta .cursor-pointer:hover {
+  background-color: #475569 !important;
+  color: #f8fafc !important;
 }
 </style>

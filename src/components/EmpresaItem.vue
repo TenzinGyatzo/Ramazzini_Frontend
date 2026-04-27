@@ -46,21 +46,21 @@ const handleEliminarEmpresa = (id: string, nombreComercial: string) => {
                 class="w-full h-32 object-contain mb-4 rounded" />
             
             <!-- Placeholder si no hay logotipo -->
-            <div v-else class="w-4/6 mx-auto h-32 flex flex-col items-center justify-center bg-gradient-to-r from-gray-200 to-gray-300 text-gray-500 rounded mb-4 text-center px-4 border-2 border-dashed border-gray-400">
-                <i class="fas fa-camera text-4xl mb-2"></i> <!-- Icono de FontAwesome -->
+            <div v-else class="empresa-item-placeholder w-4/6 mx-auto h-32 flex flex-col items-center justify-center bg-gradient-to-r from-gray-200 to-gray-300 text-gray-500 rounded mb-4 text-center px-4 border-2 border-dashed border-gray-400">
+                <i class="empresa-item-placeholder-icon fas fa-camera text-4xl mb-2"></i> <!-- Icono de FontAwesome -->
                 <span class="text-xs text-center">
                     <span class="hidden sm:inline">Identifica más rápido a tu cliente agregando un logotipo</span>
                     <span class="inline sm:hidden">Agrega un logotipo para identificarlo</span>
                 </span>
             </div>
 
-            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight truncate" :title="empresa.nombreComercial">{{ empresa.nombreComercial }}</h2>
+            <h2 class="empresa-item-title text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight truncate" :title="empresa.nombreComercial">{{ empresa.nombreComercial }}</h2>
             
             <!-- Si no hay razón social, ocultar o mostrar un mensaje alternativo -->
-            <p v-if="empresa.razonSocial" class="text-sm sm:text-base text-gray-600 leading-relaxed mb-2 truncate">
+            <p v-if="empresa.razonSocial" class="empresa-item-subtitle text-sm sm:text-base text-gray-600 leading-relaxed mb-2 truncate">
                 {{ empresa.razonSocial }}
             </p>
-            <p v-else class="text-sm sm:text-base text-gray-400 italic leading-relaxed mb-2">
+            <p v-else class="empresa-item-muted text-sm sm:text-base text-gray-400 italic leading-relaxed mb-2">
                 Sin razón social registrada
             </p>
             
@@ -70,7 +70,7 @@ const handleEliminarEmpresa = (id: string, nombreComercial: string) => {
             <div class="border-t border-gray-100 bg-gray-50 px-6 py-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 font-medium">Acciones</span>
+                        <span class="empresa-item-actions-label text-xs text-gray-500 font-medium">Acciones</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <button 
@@ -154,4 +154,5 @@ button:focus {
         transition: none;
     }
 }
+
 </style>

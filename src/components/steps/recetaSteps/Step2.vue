@@ -49,7 +49,7 @@ function removeTratamiento(index) {
 </script>
 
 <template>
-  <div>
+  <div class="dark-mode-input-surface">
     <h2 class="font-bold mb-4 text-gray-800 leading-5">Tratamiento:</h2>
     <div class="space-y-2">
       <div v-for="(item, index) in tratamiento" :key="index" class="flex gap-2 items-center">

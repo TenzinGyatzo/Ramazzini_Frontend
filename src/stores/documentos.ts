@@ -19,6 +19,10 @@ import type {
   Receta,
   ConstanciaAptitud,
   Lesion,
+  EntrevistaPsicologica,
+  TrastornosEstadoAnimo,
+  CuestionarioProdromalBreve,
+  TrastornoLimitePersonalidad,
 } from "@/interfaces/documentos.inteface";
 
 export type DocumentsByYear = {
@@ -40,6 +44,10 @@ export type DocumentsByYear = {
     recetas?: Receta[];
     constanciasAptitud?: ConstanciaAptitud[];
     lesiones?: Lesion[];
+    entrevistasPsicologicas?: EntrevistaPsicologica[];
+    trastornosEstadoAnimo?: TrastornosEstadoAnimo[];
+    cuestionarioProdromalBreve?: CuestionarioProdromalBreve[];
+    trastornoLimitePersonalidad?: TrastornoLimitePersonalidad[];
   };
 };
 
@@ -84,7 +92,11 @@ export const useDocumentosStore = defineStore("documentos", () => {
         previoEspirometria,
         recetas,
         constanciasAptitud,
-        lesiones
+        lesiones,
+        entrevistasPsicologicas,
+        trastornosEstadoAnimo,
+        cuestionarioProdromalBreve,
+        trastornoLimitePersonalidad,
       ] = await Promise.all([
         DocumentosAPI.getAntidopings(trabajadorId).catch(error => {
           console.error("Error al obtener antidopings", error);
@@ -153,7 +165,23 @@ export const useDocumentosStore = defineStore("documentos", () => {
         DocumentosAPI.getLesiones(trabajadorId).catch(error => {
           console.error("Error al obtener lesiones", error);
           return { data: [] };
-        })
+        }),
+        DocumentosAPI.getEntrevistaPsicologica(trabajadorId).catch(error => {
+          console.error("Error al obtener entrevistasPsicologicas", error);
+          return { data: [] };
+        }),
+        DocumentosAPI.getTrastornosEstadoAnimo(trabajadorId).catch(error => {
+          console.error("Error al obtener trastornosEstadoAnimo", error);
+          return { data: [] };
+        }),
+        DocumentosAPI.getCuestionarioProdromalBreve(trabajadorId).catch(error => {
+          console.error("Error al obtener cuestionarioProdromalBreve", error);
+          return { data: [] };
+        }),
+        DocumentosAPI.getTrastornoLimitePersonalidad(trabajadorId).catch(error => {
+          console.error("Error al obtener trastornoLimitePersonalidad", error);
+          return { data: [] };
+        }),
       ]);
 
       // Agrupar documentos por año (solo si es un array)
@@ -175,6 +203,10 @@ export const useDocumentosStore = defineStore("documentos", () => {
         recetas: Array.isArray(recetas.data) ? recetas.data : [],
         constanciasAptitud: Array.isArray(constanciasAptitud.data) ? constanciasAptitud.data : [],
         lesiones: Array.isArray(lesiones.data) ? lesiones.data : [],
+        entrevistasPsicologicas: Array.isArray(entrevistasPsicologicas.data) ? entrevistasPsicologicas.data : [],
+        trastornosEstadoAnimo: Array.isArray(trastornosEstadoAnimo.data) ? trastornosEstadoAnimo.data : [],
+        cuestionarioProdromalBreve: Array.isArray(cuestionarioProdromalBreve.data) ? cuestionarioProdromalBreve.data : [],
+        trastornoLimitePersonalidad: Array.isArray(trastornoLimitePersonalidad.data) ? trastornoLimitePersonalidad.data : [],
       };
 
       // Procesar documentos y agrupar por año
@@ -223,7 +255,11 @@ export const useDocumentosStore = defineStore("documentos", () => {
       previoEspirometria: "fechaPrevioEspirometria",
       recetas: "fechaReceta",
       constanciasAptitud: "fechaConstanciaAptitud",
-      lesiones: "fechaReporteLesion"
+      lesiones: "fechaReporteLesion",
+      entrevistasPsicologicas: "fechaEntrevistaPsicologica",
+      trastornosEstadoAnimo: "fechaTrastornosEstadoAnimo",
+      cuestionarioProdromalBreve: "fechaCuestionarioProdromalBreve",
+      trastornoLimitePersonalidad: "fechaTrastornoLimitePersonalidad",
     };
 
     return documento?.[fechaCampos[tipoDocumento]] || "";

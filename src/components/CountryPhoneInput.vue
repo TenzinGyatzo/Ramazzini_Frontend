@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <label class="block font-medium text-lg text-gray-700">
+  <div class="country-phone-input">
+    <label class="country-phone-input-label block font-medium text-lg text-gray-700">
       {{ label }}
       <span v-if="validation === 'required'" class="text-red-500">*</span>
     </label>
@@ -209,3 +209,33 @@ watch(() => props.initialCountry, (newCountry) => {
   }
 }, { immediate: true });
 </script>
+
+<style>
+html.dark-mode .country-phone-input .country-phone-input-label {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .country-phone-input select,
+html.dark-mode .country-phone-input input {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .country-phone-input input::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .country-phone-input select option {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .country-phone-input button {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .country-phone-input button:hover {
+  color: #e2e8f0 !important;
+}
+</style>

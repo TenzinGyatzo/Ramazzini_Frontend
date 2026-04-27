@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <label class="block font-medium text-lg text-gray-700">
+  <div class="country-select">
+    <label class="country-select-label block font-medium text-lg text-gray-700">
       {{ label }}
       <span v-if="validation === 'required'" class="text-red-500">*</span>
     </label>
@@ -99,3 +99,20 @@ const validateInput = (value) => {
   emit('validation', true);
 };
 </script>
+
+<style>
+html.dark-mode .country-select .country-select-label {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .country-select select {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .country-select select option {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+</style>

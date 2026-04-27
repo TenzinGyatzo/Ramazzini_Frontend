@@ -1300,7 +1300,7 @@ const mostrarTipScrollLateral = () => {
                 </div>
                 <div class="flex-1">
                   <p class="text-blue-700 text-sm font-normal">
-                    Mantén presionado <kbd class="px-2 py-1 bg-blue-100 border border-blue-200 rounded text-xs font-mono">Shift</kbd> para hacer scroll lateralmente
+                    Mantén presionado <kbd class="px-2 py-1 bg-blue-100 border border-blue-200 rounded text-xs font-mono dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-100">Shift</kbd> para hacer scroll lateralmente
                   </p>
                 </div>
               </div>
@@ -1349,10 +1349,10 @@ const mostrarTipScrollLateral = () => {
         ======================= -->
         <Transition name="fade" mode="out-in">
           <div v-if="vistaActual === 'tarjetas'" class="space-y-6">
-            <div v-for="grupo in riesgosAgrupados" :key="grupo.centroId" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div v-for="grupo in riesgosAgrupados" :key="grupo.centroId" class="rt-group-card bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
               <!-- Encabezado del Centro -->
               <button
-                class="w-full text-left p-6 hover:bg-gray-50 transition-all duration-200 border-b border-gray-100"
+                class="rt-group-header w-full text-left p-6 hover:bg-gray-50 dark:hover:bg-slate-900/70 transition-all duration-200 border-b border-gray-100 dark:border-slate-700"
                 @click="toggleCentro(grupo.centroId)"
               >
                 <div class="flex items-center justify-between">
@@ -1363,10 +1363,10 @@ const mostrarTipScrollLateral = () => {
                       </div>
                     </div>
                     <div class="flex-1 min-w-0">
-                      <h2 class="text-xl font-bold text-gray-900 truncate">
+                      <h2 class="text-xl font-bold text-gray-900 dark:text-slate-100 truncate">
                         {{ grupo.centroNombre }}
                       </h2>
-                      <p class="text-sm text-gray-500 mt-1 truncate">
+                      <p class="text-sm text-gray-500 dark:text-slate-400 mt-1 truncate">
                         <i class="fas fa-map-marker-alt mr-1"></i>
                         {{ grupo.centroDireccion }}
                       </p>
@@ -1380,12 +1380,12 @@ const mostrarTipScrollLateral = () => {
                         :class="[
                           'inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold',
                           grupo.riesgos.length === 0
-                            ? 'bg-gray-100 text-gray-600'
+                            ? 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-200'
                             : grupo.riesgos.length <= 5
-                            ? 'bg-amber-100 text-amber-700'
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200'
                             : grupo.riesgos.length <= 10
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'bg-red-100 text-red-700'
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200'
                         ]"
                       >
                         <i class="fas fa-exclamation-triangle mr-1"></i>
@@ -1397,7 +1397,7 @@ const mostrarTipScrollLateral = () => {
                     <div class="flex-shrink-0">
                       <i 
                         :class="[
-                          'fas transition-transform duration-200 text-gray-400',
+                          'fas transition-transform duration-200 text-gray-400 dark:text-slate-400',
                           centrosAbiertos[grupo.centroId] ? 'fa-chevron-up' : 'fa-chevron-down'
                         ]"
                       ></i>
@@ -1412,17 +1412,17 @@ const mostrarTipScrollLateral = () => {
                   <!-- Mensaje cuando no hay riesgos -->
                   <div v-if="grupo.riesgos.length === 0" class="text-center py-12">
                     <!-- Mostrar "No se encontraron riesgos" solo si el grupo tenía riesgos originalmente Y hay filtros activos -->
-                    <div v-if="hayFiltrosActivos && grupoTeníaRiesgosOriginalmente(grupo.centroId)" class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div v-if="hayFiltrosActivos && grupoTeníaRiesgosOriginalmente(grupo.centroId)" class="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                       <i class="fas fa-search text-gray-400 text-2xl"></i>
                     </div>
                     <!-- Mostrar "Sin riesgos registrados" si el grupo no tenía riesgos originalmente O no hay filtros activos -->
-                    <div v-else class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div v-else class="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                       <i class="fas fa-check-circle text-gray-400 text-2xl"></i>
                     </div>
-                    <h3 v-if="hayFiltrosActivos && grupoTeníaRiesgosOriginalmente(grupo.centroId)" class="text-lg font-medium text-gray-900 mb-2">No se encontraron riesgos</h3>
-                    <h3 v-else class="text-lg font-medium text-gray-900 mb-2">Sin riesgos registrados</h3>
-                    <p v-if="hayFiltrosActivos && grupoTeníaRiesgosOriginalmente(grupo.centroId)" class="text-gray-500 mb-4">No hay riesgos de trabajo que coincidan con los filtros aplicados.</p>
-                    <p v-else class="text-gray-500">Este centro de trabajo no tiene riesgos de trabajo registrados.</p>
+                    <h3 v-if="hayFiltrosActivos && grupoTeníaRiesgosOriginalmente(grupo.centroId)" class="text-lg font-medium text-gray-900 dark:text-slate-100 mb-2">No se encontraron riesgos</h3>
+                    <h3 v-else class="text-lg font-medium text-gray-900 dark:text-slate-100 mb-2">Sin riesgos registrados</h3>
+                    <p v-if="hayFiltrosActivos && grupoTeníaRiesgosOriginalmente(grupo.centroId)" class="text-gray-500 dark:text-slate-400 mb-4">No hay riesgos de trabajo que coincidan con los filtros aplicados.</p>
+                    <p v-else class="text-gray-500 dark:text-slate-400">Este centro de trabajo no tiene riesgos de trabajo registrados.</p>
                     <button
                       v-if="hayFiltrosActivos && grupoTeníaRiesgosOriginalmente(grupo.centroId)"
                       @click="limpiarFiltros"
@@ -1438,18 +1438,18 @@ const mostrarTipScrollLateral = () => {
                     <div
                       v-for="riesgo in grupo.riesgos"
                       :key="riesgo._id"
-                      class="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-emerald-300 transition-all duration-300"
+                      class="rt-risk-card bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg hover:border-emerald-300 transition-all duration-300"
                     >
                       <!-- Encabezado del Riesgo -->
                       <div class="flex items-start justify-between mb-0">
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center gap-2 mb-2">
-                            <h3 class="text-xl font-semibold text-gray-900 truncate">
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-slate-100 truncate">
                               {{ formatNombreCompletoRiesgo(riesgo) || 'Sin nombre' }}
                             </h3>
                           </div>
                           <div class="flex items-center gap-3 mb-2">
-                            <div class="text-base text-gray-600 font-medium group relative inline-block">
+                            <div class="text-base text-gray-600 dark:text-slate-300 font-medium group relative inline-block">
                               <i class="fas fa-briefcase mr-1"></i>
                               {{ riesgo.puestoTrabajador }}
                               <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
@@ -1460,7 +1460,7 @@ const mostrarTipScrollLateral = () => {
                             <div v-if="riesgo.sexoTrabajador" class="flex items-center gap-1 group relative">
                               <i v-if="riesgo.sexoTrabajador === 'Masculino'" class="fas fa-mars text-sky-600 text-sm"></i>
                               <i v-else class="fas fa-venus text-rose-600 text-sm"></i>
-                                <span class="text-sm sm:text-base text-gray-600">
+                                <span class="text-sm sm:text-base text-gray-600 dark:text-slate-300">
                                   <span class="hidden sm:block">{{ riesgo.sexoTrabajador }}</span>
                                 </span>
                               <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
@@ -1473,8 +1473,8 @@ const mostrarTipScrollLateral = () => {
                         
                         <!-- Fecha del Riesgo -->
                         <div class="flex-shrink-0 text-right">
-                          <div class="text-xs text-gray-500 mb-1">Fecha del Riesgo</div>
-                          <div class="text-sm font-semibold text-gray-700">
+                          <div class="text-xs text-gray-500 dark:text-slate-400 mb-1">Fecha del Riesgo</div>
+                          <div class="text-sm font-semibold text-gray-700 dark:text-slate-200">
                             {{ riesgo.fechaRiesgo ? new Date(riesgo.fechaRiesgo).toLocaleDateString('es-MX', {
                               timeZone: 'UTC',
                               year: 'numeric', 
@@ -1490,7 +1490,7 @@ const mostrarTipScrollLateral = () => {
                         <!-- Número de Empleado -->
                         <div v-if="riesgo.numeroEmpleado && riesgo.numeroEmpleado !== '-'" class="flex items-center gap-2 group relative">
                           <i class="fas fa-id-badge text-purple-500 text-sm"></i>
-                          <span class="text-sm text-gray-600">
+                          <span class="text-sm text-gray-600 dark:text-slate-300">
                             No. {{ riesgo.numeroEmpleado }}
                           </span>
                           <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
@@ -1502,7 +1502,7 @@ const mostrarTipScrollLateral = () => {
                         <!-- Edad -->
                         <div class="flex items-center gap-2 group relative">
                           <i class="fas fa-birthday-cake text-emerald-500 text-sm"></i>
-                          <span class="text-sm text-gray-600">
+                          <span class="text-sm text-gray-600 dark:text-slate-300">
                             {{ riesgo.fechaNacimiento ? calcularEdad(riesgo.fechaNacimiento) + ' años' : 'Edad desconocida' }}
                           </span>
                           <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
@@ -1514,7 +1514,7 @@ const mostrarTipScrollLateral = () => {
                         <!-- Antigüedad -->
                         <div class="flex items-center gap-2 group relative">
                           <i class="fas fa-clock text-cyan-500 text-sm"></i>
-                          <span class="text-sm text-gray-600">
+                          <span class="text-sm text-gray-600 dark:text-slate-300">
                             {{ riesgo.fechaIngreso ? calcularAntiguedad(riesgo.fechaIngreso) : 'Antigüedad desconocida' }}
                           </span>
                           <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
@@ -1545,7 +1545,7 @@ const mostrarTipScrollLateral = () => {
                             <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
                           </div>
                         </div>
-                        <div v-if="riesgo.parteCuerpoAfectada" class="text-base text-gray-600 group relative inline-block">
+                        <div v-if="riesgo.parteCuerpoAfectada" class="text-base text-gray-600 dark:text-slate-300 group relative inline-block">
                           <i class="fas fa-user-injured mr-1"></i>
                           {{ riesgo.parteCuerpoAfectada }}
                           <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
@@ -1560,7 +1560,7 @@ const mostrarTipScrollLateral = () => {
                         <!-- Recaída -->
                         <span
                           v-if="riesgo.recaida === 'Si'"
-                          class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200 text-xs font-normal"
+                          class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-900/40 dark:text-purple-200 dark:border-purple-700 text-xs font-normal"
                         >
                           <i class="fas fa-redo mr-1"></i>
                           Recaída
@@ -1570,9 +1570,9 @@ const mostrarTipScrollLateral = () => {
                         <span
                           v-if="riesgo.tipoRiesgo"
                           :class="{
-                            'bg-red-100 text-red-700 border-red-200': riesgo.tipoRiesgo === 'Accidente de Trabajo',
-                            'bg-orange-100 text-orange-700 border-orange-200': riesgo.tipoRiesgo === 'Accidente de Trayecto',
-                            'bg-pink-100 text-pink-700 border-pink-200': riesgo.tipoRiesgo === 'Enfermedad de Trabajo'
+                            'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-200 dark:border-red-700': riesgo.tipoRiesgo === 'Accidente de Trabajo',
+                            'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-200 dark:border-orange-700': riesgo.tipoRiesgo === 'Accidente de Trayecto',
+                            'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/40 dark:text-pink-200 dark:border-pink-700': riesgo.tipoRiesgo === 'Enfermedad de Trabajo'
                           }"
                           class="inline-flex items-center px-3 py-1 rounded-full border text-xs font-normal group relative"
                         >
@@ -1598,8 +1598,8 @@ const mostrarTipScrollLateral = () => {
                         <span
                           v-if="riesgo.manejo"
                           :class="riesgo.manejo === 'IMSS'
-                            ? 'bg-blue-100 text-blue-700 border-blue-200'
-                            : 'bg-purple-100 text-purple-700 border-purple-200'"
+                            ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-700'
+                            : 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-200 dark:border-purple-700'"
                           class="inline-flex items-center px-3 py-1 rounded-full border text-xs font-normal group relative"
                         >
                           <i class="fas fa-hospital mr-1"></i>
@@ -1613,7 +1613,7 @@ const mostrarTipScrollLateral = () => {
                         <!-- Alta / Incapacidad -->
                         <span 
                           v-if="riesgo.alta === 'Incapacidad Activa'" 
-                          class="inline-flex items-center px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200 text-xs font-normal group relative"
+                          class="inline-flex items-center px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/40 dark:text-red-200 dark:border-red-700 text-xs font-normal group relative"
                         >
                           <i class="fas fa-clock mr-1"></i>
                           Incapacidad Activa
@@ -1624,7 +1624,7 @@ const mostrarTipScrollLateral = () => {
                         </span>
                         <span
                           v-else-if="riesgo.alta"
-                          class="inline-flex items-center px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 border border-cyan-200 text-xs font-normal group relative"
+                          class="inline-flex items-center px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 border border-cyan-200 dark:bg-cyan-900/40 dark:text-cyan-200 dark:border-cyan-700 text-xs font-normal group relative"
                         >
                           <i class="fas fa-check-circle mr-1"></i>
                           Alta: {{ riesgo.fechaAlta ? new Date(riesgo.fechaAlta).toLocaleDateString('es-MX', { timeZone: 'UTC' }) : 'Fecha no registrada' }}
@@ -1637,7 +1637,7 @@ const mostrarTipScrollLateral = () => {
                         <!-- Días de Incapacidad -->
                         <span 
                           v-if="riesgo.diasIncapacidad" 
-                          class="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200 text-xs font-normal group relative"
+                          class="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-200 dark:border-yellow-700 text-xs font-normal group relative"
                         >
                           <i class="fas fa-calendar-day mr-1"></i>
                           {{ riesgo.diasIncapacidad }} días
@@ -1650,7 +1650,7 @@ const mostrarTipScrollLateral = () => {
                         <!-- Estatus ST2 -->
                         <span 
                           v-if="riesgo.manejo === 'IMSS' && riesgo.alta === 'Alta ST2'" 
-                          class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200 text-xs font-normal group relative"
+                          class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/40 dark:text-green-200 dark:border-green-700 text-xs font-normal group relative"
                         >
                           <i class="fas fa-file-medical mr-1"></i>
                           ST2 Recibida
@@ -1661,7 +1661,7 @@ const mostrarTipScrollLateral = () => {
                         </span>
                         <span 
                           v-else-if="riesgo.manejo === 'IMSS' && riesgo.alta !== 'Alta ST2'" 
-                          class="inline-flex items-center px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200 text-xs font-normal group relative"
+                          class="inline-flex items-center px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/40 dark:text-red-200 dark:border-red-700 text-xs font-normal group relative"
                         >
                           <i class="fas fa-exclamation-triangle mr-1"></i>
                           ST2 Pendiente
@@ -1674,7 +1674,7 @@ const mostrarTipScrollLateral = () => {
                         <!-- Secuelas e IPP -->
                         <span
                           v-if="riesgo.secuelas === 'Si'"
-                          class="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-700 border border-pink-200 text-xs font-normal group relative"
+                          class="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-700 border border-pink-200 dark:bg-pink-900/40 dark:text-pink-200 dark:border-pink-700 text-xs font-normal group relative"
                         >
                           <i class="fas fa-exclamation-triangle mr-1"></i>
                           {{ riesgo.porcentajeIPP || 0 }}% IPP
@@ -1688,17 +1688,17 @@ const mostrarTipScrollLateral = () => {
                       <!-- Notas -->
                       <div
                         v-if="riesgo.notas"
-                        class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 relative"
+                        class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 mb-4 relative"
                       >
                         <div class="flex items-center gap-2 mb-2">
-                          <i class="fas fa-sticky-note text-gray-500"></i>
-                          <span class="text-sm font-medium text-gray-700">Notas</span>
+                          <i class="fas fa-sticky-note text-gray-500 dark:text-slate-400"></i>
+                          <span class="text-sm font-medium text-gray-700 dark:text-slate-200">Notas</span>
                         </div>
                         <div
                           :ref="el => asignarRefNota(riesgo._id, el)"
                           :class="{
                             'line-clamp-2': !notasExpandibles[riesgo._id],
-                            'whitespace-pre-wrap text-sm text-gray-700 leading-relaxed': true
+                            'whitespace-pre-wrap text-sm text-gray-700 dark:text-slate-200 leading-relaxed': true
                           }"
                         >
                           {{ riesgo.notas }}
@@ -1810,5 +1810,65 @@ const mostrarTipScrollLateral = () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Tarjetas de Riesgos de Trabajo - Dark mode */
+:global(html.dark-mode) .rt-group-card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+:global(html.dark-mode) .rt-group-header {
+  border-bottom-color: #334155;
+}
+
+:global(html.dark-mode) .rt-group-header:hover {
+  background-color: #0f172a;
+}
+
+:global(html.dark-mode) .rt-risk-card {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+:global(html.dark-mode) .rt-risk-card:hover {
+  border-color: #10b981;
+}
+
+:global(html.dark-mode) .rt-group-card .text-gray-900,
+:global(html.dark-mode) .rt-risk-card .text-gray-900 {
+  color: #f1f5f9;
+}
+
+:global(html.dark-mode) .rt-group-card .text-gray-700,
+:global(html.dark-mode) .rt-risk-card .text-gray-700 {
+  color: #cbd5e1;
+}
+
+:global(html.dark-mode) .rt-group-card .text-gray-600,
+:global(html.dark-mode) .rt-risk-card .text-gray-600 {
+  color: #94a3b8;
+}
+
+:global(html.dark-mode) .rt-group-card .text-gray-500,
+:global(html.dark-mode) .rt-risk-card .text-gray-500,
+:global(html.dark-mode) .rt-group-card .text-gray-400 {
+  color: #94a3b8;
+}
+
+:global(html.dark-mode) .rt-group-card .bg-gray-100,
+:global(html.dark-mode) .rt-risk-card .bg-gray-100 {
+  background-color: #1e293b;
+}
+
+:global(html.dark-mode) .rt-group-card .border-gray-100,
+:global(html.dark-mode) .rt-group-card .border-gray-200,
+:global(html.dark-mode) .rt-group-card .border-white,
+:global(html.dark-mode) .rt-risk-card .border-gray-200 {
+  border-color: #334155;
+}
+
+:global(html.dark-mode) .rt-risk-card .bg-gray-50 {
+  background-color: #1e293b;
 }
 </style>

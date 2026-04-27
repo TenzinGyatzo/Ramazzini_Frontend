@@ -39,6 +39,8 @@ const resultadosClinicos = ref([]);
 const nearestEKG = ref(null);
 const nearestEspirometria = ref(null);
 const nearestTipoSangre = ref(null);
+const nearestRayosX = ref(null);
+const nearestAnalisisLaboratorio = ref(null);
 
 onMounted(async () => {
   try {
@@ -118,6 +120,11 @@ const calculateNearestDocuments = (fechaAptitudPuesto) => {
   nearestEKG.value = findMostRecentByTipo(resultadosClinicos.value, 'EKG');
   nearestEspirometria.value = findMostRecentByTipo(resultadosClinicos.value, 'ESPIROMETRIA');
   nearestTipoSangre.value = findMostRecentByTipo(resultadosClinicos.value, 'TIPO_SANGRE');
+  nearestRayosX.value = findMostRecentByTipo(resultadosClinicos.value, 'RAYOS_X');
+  nearestAnalisisLaboratorio.value = findMostRecentByTipo(
+    resultadosClinicos.value,
+    'ANALISIS_LABORATORIO',
+  );
 };
 
 // Watch para reactuar a cambios en la fecha
@@ -258,6 +265,30 @@ const tipoAlteracionEKGLabels = {
   ANORMAL_QT_ALTERADO: 'Anormal QT alterado',
 };
 
+const tipoAlteracionRayosXLabels = {
+  ALTERACION_PARENQUIMATOSA: 'Alteración parenquimatosa',
+  ALTERACION_PLEURAL: 'Alteración pleural',
+  ALTERACION_CARDIOMEDIASTINICA: 'Alteración cardiomediastínica',
+  NODULO_O_MASA: 'Nódulo o masa',
+  SECUELA_CRONICA: 'Secuela crónica',
+  ALTERACION_OSEA: 'Alteración ósea',
+  ALTERACION_ARTICULAR: 'Alteración articular',
+  ALTERACION_ALINEACION: 'Alteración de alineación',
+  CAMBIO_DEGENERATIVO: 'Cambio degenerativo',
+  FRACTURA_O_TRAUMA: 'Fractura o trauma',
+  OTRA_ALTERACION: 'Otra alteración',
+};
+
+const tipoAlteracionAnalisisLaboratorioLabels = {
+  ALTERACION_HEMATOLOGICA: 'Alteración hematológica',
+  ALTERACION_METABOLICA: 'Alteración metabólica',
+  ALTERACION_RENAL: 'Alteración renal',
+  ALTERACION_HEPATICA: 'Alteración hepática',
+  ALTERACION_INFECCIOSA_O_INFLAMATORIA: 'Alteración infecciosa o inflamatoria',
+  ALTERACION_URINARIA: 'Alteración urinaria',
+  OTRA_ALTERACION: 'Otra alteración',
+};
+
 const tipoSangreResumen = computed(() => {
   if (!nearestTipoSangre.value) {
     return null;
@@ -267,21 +298,26 @@ const tipoSangreResumen = computed(() => {
   return tipoSangreLabels[tipoSangre] || tipoSangre || '-';
 });
 
+const textoHallazgoTrim = (h) => {
+  if (h == null) return null;
+  const t = String(h).trim();
+  return t.length > 0 ? t : null;
+};
+
 const ekgResumen = computed(() => {
   if (!nearestEKG.value || nearestEKG.value.resultadoGlobal === 'NO_CONCLUYENTE') {
     return null;
   }
 
-  if (nearestEKG.value.hallazgoEspecifico) {
-    return nearestEKG.value.hallazgoEspecifico;
-  }
+  const libre = textoHallazgoTrim(nearestEKG.value.hallazgoEspecifico);
+  if (libre) return libre;
 
   if (nearestEKG.value.resultadoGlobal === 'NORMAL') {
     return 'Normal, valores dentro del rango de referencia';
   }
 
   if (nearestEKG.value.resultadoGlobal === 'ANORMAL') {
-    const tipoAlteracion = nearestEKG.value.tipoAlteracionPrincipal;
+    const tipoAlteracion = nearestEKG.value.tipoAlteracionEKG;
     return tipoAlteracionEKGLabels[tipoAlteracion] || tipoAlteracion || 'Anormal';
   }
 
@@ -293,16 +329,15 @@ const espirometriaResumen = computed(() => {
     return null;
   }
 
-  if (nearestEspirometria.value.hallazgoEspecifico) {
-    return nearestEspirometria.value.hallazgoEspecifico;
-  }
+  const libre = textoHallazgoTrim(nearestEspirometria.value.hallazgoEspecifico);
+  if (libre) return libre;
 
   if (nearestEspirometria.value.resultadoGlobal === 'NORMAL') {
     return 'Normal, valores dentro del rango de referencia';
   }
 
   if (nearestEspirometria.value.resultadoGlobal === 'ANORMAL') {
-    const tipoAlteracion = nearestEspirometria.value.tipoAlteracion;
+    const tipoAlteracion = nearestEspirometria.value.tipoAlteracionEspirometria;
     return tipoAlteracionEspirometriaLabels[tipoAlteracion] || tipoAlteracion || 'Anormal';
   }
 
@@ -312,11 +347,56 @@ const espirometriaResumen = computed(() => {
 const showEKG = computed(() => !!nearestEKG.value && nearestEKG.value.resultadoGlobal !== 'NO_CONCLUYENTE');
 const showEspirometria = computed(() => !!nearestEspirometria.value && nearestEspirometria.value.resultadoGlobal !== 'NO_CONCLUYENTE');
 
+const rayosXResumen = computed(() => {
+  const r = nearestRayosX.value;
+  if (!r || r.resultadoGlobal === 'NO_CONCLUYENTE') return null;
+  const libre = textoHallazgoTrim(r.hallazgoEspecifico);
+  if (libre) return libre;
+  if (r.resultadoGlobal === 'NORMAL') {
+    return 'Dentro de límites normales';
+  }
+  if (r.resultadoGlobal === 'ANORMAL') {
+    const arr = r.tipoAlteracionRayosX;
+    if (Array.isArray(arr) && arr.length > 0) {
+      return arr.map((k) => tipoAlteracionRayosXLabels[k] || k).join(', ');
+    }
+    return 'Anormal';
+  }
+  return null;
+});
+
+const analisisLaboratorioResumen = computed(() => {
+  const r = nearestAnalisisLaboratorio.value;
+  if (!r || r.resultadoGlobal === 'NO_CONCLUYENTE') return null;
+  const libre = textoHallazgoTrim(r.hallazgoEspecifico);
+  if (libre) return libre;
+  if (r.resultadoGlobal === 'NORMAL') {
+    return 'Resultados dentro de parámetros normales';
+  }
+  if (r.resultadoGlobal === 'ANORMAL') {
+    const arr = r.tipoAlteracionAnalisisLaboratorio;
+    if (Array.isArray(arr) && arr.length > 0) {
+      return arr.map((k) => tipoAlteracionAnalisisLaboratorioLabels[k] || k).join(', ');
+    }
+    return 'Anormal';
+  }
+  return null;
+});
+
+const showRayosX = computed(
+  () => !!nearestRayosX.value && nearestRayosX.value.resultadoGlobal !== 'NO_CONCLUYENTE',
+);
+const showAnalisisLaboratorio = computed(
+  () =>
+    !!nearestAnalisisLaboratorio.value &&
+    nearestAnalisisLaboratorio.value.resultadoGlobal !== 'NO_CONCLUYENTE',
+);
+
 </script>
 
 <template>
   <div
-    class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
+    class="visualizador-aptitud flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
     <div class="flex flex-wrap md:flex-nowrap w-full gap-4 items-center">
@@ -502,6 +582,18 @@ const showEspirometria = computed(() => !!nearestEspirometria.value && nearestEs
               convertirFechaISOaDDMMYYYY(nearestEspirometria.fechaEstudio) : '-' }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ espirometriaResumen || '-' }}</td>
           </tr>
+          <tr v-if="showRayosX" class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">RAYOS X</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ nearestRayosX ?
+              convertirFechaISOaDDMMYYYY(nearestRayosX.fechaEstudio) : '-' }}</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ rayosXResumen || '-' }}</td>
+          </tr>
+          <tr v-if="showAnalisisLaboratorio" class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">ANÁLISIS DE LABORATORIO</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ nearestAnalisisLaboratorio ?
+              convertirFechaISOaDDMMYYYY(nearestAnalisisLaboratorio.fechaEstudio) : '-' }}</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ analisisLaboratorioResumen || '-' }}</td>
+          </tr>
           <tr v-if="formData.formDataAptitud.evaluacionAdicional1" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 2 }">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">{{ formData.formDataAptitud.evaluacionAdicional1.toUpperCase() }}</td>
@@ -650,8 +742,47 @@ const showEspirometria = computed(() => !!nearestEspirometria.value && nearestEs
   cursor: pointer;
 }
 
-.cursor-pointer:hover {
+.visualizador-aptitud div.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-aptitud div.cursor-pointer:hover {
   background-color: #f0f0f0;
-  /* Cambia el color según tu diseño */
+}
+
+.visualizador-aptitud tbody tr.cursor-pointer,
+.visualizador-aptitud thead tr.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-aptitud tbody tr.cursor-pointer > td,
+.visualizador-aptitud tbody tr.cursor-pointer > th,
+.visualizador-aptitud thead tr.cursor-pointer > td,
+.visualizador-aptitud thead tr.cursor-pointer > th {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-aptitud tbody tr.cursor-pointer:hover,
+.visualizador-aptitud tbody tr.cursor-pointer:hover > td,
+.visualizador-aptitud tbody tr.cursor-pointer:hover > th,
+.visualizador-aptitud thead tr.cursor-pointer:hover,
+.visualizador-aptitud thead tr.cursor-pointer:hover > td,
+.visualizador-aptitud thead tr.cursor-pointer:hover > th {
+  background-color: #f0f0f0;
+}
+</style>
+
+<style>
+html.dark-mode .visualizador-aptitud div.cursor-pointer:hover {
+  background-color: #475569 !important;
+}
+
+html.dark-mode .visualizador-aptitud tbody tr.cursor-pointer:hover,
+html.dark-mode .visualizador-aptitud tbody tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-aptitud tbody tr.cursor-pointer:hover > th,
+html.dark-mode .visualizador-aptitud thead tr.cursor-pointer:hover,
+html.dark-mode .visualizador-aptitud thead tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-aptitud thead tr.cursor-pointer:hover > th {
+  background-color: #475569 !important;
 }
 </style>

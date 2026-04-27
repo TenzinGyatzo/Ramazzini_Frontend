@@ -56,5 +56,22 @@ watch(antecedentes, (newValue) => {
             </div>
         </div>
 
+        <!-- Información adicional sobre cómo redactar -->
+        <div class="nota-medica-tip mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-xs font-medium text-blue-900 mb-2">Consejos para describir la exploración:</h4>
+                    <ul class="text-xs text-blue-800 space-y-1">
+                        <li>• Describa hallazgos normales y anormales</li>
+                        <li>• Sea objetivo y específico en las observaciones</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 </template>

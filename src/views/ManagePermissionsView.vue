@@ -234,7 +234,7 @@ onBeforeRouteLeave((to, from, next) => {
         <!-- Indicador de cambios y botones de acción -->
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-end w-full lg:w-auto">
           <!-- Indicador de cambios sin guardar -->
-          <div v-if="hasUnsavedChanges" class="flex flex-wrap items-center justify-between sm:justify-center text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 text-xs sm:text-sm gap-1">
+          <div v-if="hasUnsavedChanges" class="permissions-unsaved-indicator flex flex-wrap items-center justify-between sm:justify-center text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 text-xs sm:text-sm gap-1">
             <i class="fas fa-exclamation-triangle mr-2"></i>
             <span class="font-medium">Cambios sin guardar</span>
           </div>
@@ -554,3 +554,11 @@ onBeforeRouteLeave((to, from, next) => {
     </div>
   </div>
 </template>
+
+<style>
+html.dark-mode .permissions-unsaved-indicator {
+  color: #fcd34d !important;
+  background-color: rgba(146, 64, 14, 0.28) !important;
+  border-color: #b45309 !important;
+}
+</style>

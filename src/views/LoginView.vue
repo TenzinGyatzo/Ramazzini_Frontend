@@ -111,25 +111,25 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+  <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-slate-900">
     <form
       @submit.prevent="handleLogin"
-      class="bg-white p-8 rounded-2xl shadow-md w-10/12 md:w-1/2 lg:w-1/3 lg:max-w-lg"
+      class="bg-white p-8 rounded-2xl shadow-md w-10/12 md:w-1/2 lg:w-1/3 lg:max-w-lg dark:bg-slate-800 dark:border dark:border-slate-700"
     >
-      <h1 class="text-2xl font-semibold mb-4 text-gray-800">Iniciar Sesión</h1>
+      <h1 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-slate-100">Iniciar Sesión</h1>
       <div class="mb-4">
-        <label for="email" class="block text-sm lg:text-base font-medium text-gray-700"
+        <label for="email" class="block text-sm lg:text-base font-medium text-gray-700 dark:text-slate-200"
           >Email</label
         >
         <input
           v-model="email"
           id="email"
           type="text"
-          class="w-full mt-1 p-2 border rounded focus:outline-none focus:border-emerald-500"
+          class="w-full mt-1 p-2 border border-gray-300 bg-white text-gray-800 placeholder-gray-500 rounded focus:outline-none focus:border-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-300"
         />
       </div>
       <div class="mb-4 relative">
-        <label for="password" class="block text-sm lg:text-base font-medium text-gray-700"
+        <label for="password" class="block text-sm lg:text-base font-medium text-gray-700 dark:text-slate-200"
           >Contraseña</label
         >
         <div class="relative">
@@ -137,12 +137,12 @@ const handleLogin = async () => {
             v-model="password"
             id="password"
             :type="showPassword ? 'text' : 'password'"
-            class="w-full mt-1 p-2 pr-10 border rounded focus:outline-none focus:border-emerald-500"
+            class="w-full mt-1 p-2 pr-10 border border-gray-300 bg-white text-gray-800 placeholder-gray-500 rounded focus:outline-none focus:border-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-300"
           />
           <button
             type="button"
             @click="showPassword = !showPassword"
-            class="absolute inset-y-0 right-2 top-1 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
+            class="absolute inset-y-0 right-2 top-1 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none dark:text-slate-300 dark:hover:text-slate-100"
           >
             <span v-if="showPassword"><i class="fa-regular fa-eye-slash"></i></span>
             <span v-else><i class="fa-regular fa-eye"></i></span>
@@ -189,12 +189,12 @@ const handleLogin = async () => {
 
     <div class="grid grid-cols-2 gap-6">
       <button @click="router.push({ name: 'onboarding' })"
-          class="mt-4 font-light text-sky-500 hover:underline text-sm">
+          class="mt-4 font-light text-sky-500 hover:underline text-sm dark:text-sky-400">
           Crear una cuenta
       </button>
   
       <button @click="router.push({ name: 'forgot-password' })"
-          class="mt-4 font-light text-sky-500 hover:underline text-sm">
+          class="mt-4 font-light text-sky-500 hover:underline text-sm dark:text-sky-400">
           Olvidé mi contraseña
       </button>
     </div>

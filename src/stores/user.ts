@@ -19,6 +19,7 @@ interface User {
     gestionarDocumentosEvaluacion: boolean;
     gestionarDocumentosExternos: boolean;
     gestionarOtrosDocumentos: boolean;
+    gestionarCuestionariosAdicionales?: boolean;
     accesoCompletoEmpresasCentros: boolean;
     accesoDashboardSalud: boolean;
     accesoRiesgosTrabajo: boolean;

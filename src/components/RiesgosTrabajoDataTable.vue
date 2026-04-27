@@ -65,10 +65,10 @@ onMounted(() => {
             if (!data || data === 'Sin secuelas' || data === 0) return 'Sin secuelas';
             const ipp = parseInt(data);
             let colorClass = '';
-            if (ipp >= 50) colorClass = 'bg-red-200 text-red-800';
-            else if (ipp >= 25) colorClass = 'bg-red-100 text-red-700';
-            else if (ipp >= 10) colorClass = 'bg-orange-100 text-orange-700';
-            else colorClass = 'bg-yellow-100 text-yellow-700';
+            if (ipp >= 50) colorClass = 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-100';
+            else if (ipp >= 25) colorClass = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200';
+            else if (ipp >= 10) colorClass = 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200';
+            else colorClass = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200';
             
             return `<span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${colorClass}">${data}%</span>`;
           }
@@ -163,7 +163,7 @@ onMounted(() => {
               <div class="flex gap-2">
                 <button
                   type="button"
-                  class="btn-editar px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 rounded transition-colors duration-200"
+                  class="btn-editar px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-600 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-200 dark:border dark:border-blue-700 rounded transition-colors duration-200"
                   data-id="${row._id}"
                 >
                   <i class="fas fa-edit mr-1"></i>
@@ -171,7 +171,7 @@ onMounted(() => {
                 </button>
                 <button
                   type="button"
-                  class="btn-eliminar px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-600 rounded transition-colors duration-200"
+                  class="btn-eliminar px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/40 dark:hover:bg-red-900/60 dark:text-red-200 dark:border dark:border-red-700 rounded transition-colors duration-200"
                   data-id="${row._id}"
                   data-descripcion="${row.naturalezaLesion || 'Sin descripción'}"
                 >
@@ -560,38 +560,38 @@ table.dataTable tbody td {
 
 /* Estilos para los badges de estado */
 :deep(.badge-recaida) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200 dark:border dark:border-purple-700;
 }
 
 :deep(.badge-secuelas) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200 dark:border dark:border-pink-700;
 }
 
 :deep(.badge-accidente-trabajo) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200 dark:border dark:border-red-700;
 }
 
 :deep(.badge-accidente-trayecto) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-200 dark:border dark:border-orange-700;
 }
 
 :deep(.badge-enfermedad-trabajo) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200 dark:border dark:border-pink-700;
 }
 
 :deep(.badge-imss) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 dark:border dark:border-blue-700;
 }
 
 :deep(.badge-interno) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200 dark:border dark:border-purple-700;
 }
 
 :deep(.badge-incapacidad-activa) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200 dark:border dark:border-red-700;
 }
 
 :deep(.badge-alta) {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-200 dark:border dark:border-cyan-700;
 }
 </style>

@@ -14,7 +14,7 @@
       <div
         v-if="isOpen"
         ref="drawerRef"
-        class="fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-30 flex flex-col"
+        class="resultados-clinicos-panel fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-30 flex flex-col"
       >
         <!-- Header -->
         <div ref="drawerHeaderRef" class="flex items-center justify-between h-14 md:h-auto p-3 md:p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
@@ -86,6 +86,25 @@
                         <div class="text-sm text-gray-500">Electrocardiograma</div>
                       </div>
                     </button>
+                    <button
+                      @click="selectTipo('RAYOS_X')"
+                      class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                    >
+                      <div
+                        class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
+                        :style="{ backgroundColor: getIconBackground('RAYOS_X') }"
+                      >
+                        <i
+                          :class="getTipoIcon('RAYOS_X')"
+                          class="text-lg"
+                          :style="{ color: getIconColor('RAYOS_X') }"
+                        ></i>
+                      </div>
+                      <div>
+                        <div class="font-medium text-gray-800">Rayos X</div>
+                        <div class="text-sm text-gray-500">Estudio de imagen</div>
+                      </div>
+                    </button>
                   </div>
                 </div>
 
@@ -113,6 +132,25 @@
                       <div>
                         <div class="font-medium text-gray-800">Tipo de Sangre</div>
                         <div class="text-sm text-gray-500">Grupo sanguíneo</div>
+                      </div>
+                    </button>
+                    <button
+                      @click="selectTipo('ANALISIS_LABORATORIO')"
+                      class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                    >
+                      <div
+                        class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
+                        :style="{ backgroundColor: getIconBackground('ANALISIS_LABORATORIO') }"
+                      >
+                        <i
+                          :class="getTipoIcon('ANALISIS_LABORATORIO')"
+                          class="text-lg"
+                          :style="{ color: getIconColor('ANALISIS_LABORATORIO') }"
+                        ></i>
+                      </div>
+                      <div>
+                        <div class="font-medium text-gray-800">Análisis de laboratorio</div>
+                        <div class="text-sm text-gray-500">Resultados de laboratorio</div>
                       </div>
                     </button>
                   </div>
@@ -212,11 +250,19 @@
                   <div>
                     <template v-if="formData.resultadoGlobal === 'ANORMAL'">
                       <label class="block text-sm font-medium text-gray-700 mb-1">
-                        {{ formData.tipoEstudio === 'EKG' ? 'Tipo de Alteración Principal' : 'Tipo de Alteración' }} <span class="text-red-500">*</span>
+                        {{
+                          formData.tipoEstudio === 'EKG'
+                            ? 'Tipo de Alteración Principal'
+                            : formData.tipoEstudio === 'RAYOS_X' ||
+                                formData.tipoEstudio === 'ANALISIS_LABORATORIO'
+                              ? 'Categorías de alteración'
+                              : 'Tipo de Alteración'
+                        }}
+                        <span class="text-red-500">*</span>
                       </label>
                       <select
                         v-if="formData.tipoEstudio === 'ESPIROMETRIA'"
-                        v-model="formData.tipoAlteracion"
+                        v-model="formData.tipoAlteracionEspirometria"
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       >
@@ -231,7 +277,7 @@
                       </select>
                       <select
                         v-else-if="formData.tipoEstudio === 'EKG'"
-                        v-model="formData.tipoAlteracionPrincipal"
+                        v-model="formData.tipoAlteracionEKG"
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       >
@@ -244,6 +290,42 @@
                           {{ option.label }}
                         </option>
                       </select>
+                      <div
+                        v-else-if="formData.tipoEstudio === 'RAYOS_X'"
+                        class="max-h-52 overflow-y-auto rounded-lg border border-gray-200 p-2 space-y-1.5"
+                      >
+                        <label
+                          v-for="option in store.tipoAlteracionRayosXOptions"
+                          :key="option.value"
+                          class="flex items-start gap-2 text-sm text-gray-800 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            class="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                            :checked="(formData.tipoAlteracionRayosX || []).includes(option.value)"
+                            @change="toggleTipoAlteracionRayosX(option.value)"
+                          />
+                          <span>{{ option.label }}</span>
+                        </label>
+                      </div>
+                      <div
+                        v-else-if="formData.tipoEstudio === 'ANALISIS_LABORATORIO'"
+                        class="max-h-52 overflow-y-auto rounded-lg border border-gray-200 p-2 space-y-1.5"
+                      >
+                        <label
+                          v-for="option in store.tipoAlteracionAnalisisLaboratorioOptions"
+                          :key="option.value"
+                          class="flex items-start gap-2 text-sm text-gray-800 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            class="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                            :checked="(formData.tipoAlteracionAnalisisLaboratorio || []).includes(option.value)"
+                            @change="toggleTipoAlteracionAnalisisLaboratorio(option.value)"
+                          />
+                          <span>{{ option.label }}</span>
+                        </label>
+                      </div>
                     </template>
                   </div>
                 </div>
@@ -296,6 +378,26 @@
                   </div>
                 </div>
 
+              </template>
+
+              <!-- Texto libre para resultado Normal (mismo hallazgoEspecifico que en ANORMAL) -->
+              <template
+                v-if="
+                  formData.resultadoGlobal === 'NORMAL' &&
+                  esTipoConEspecificarNormal(formData.tipoEstudio)
+                "
+              >
+                <div class="mb-0 mt-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Especificar
+                  </label>
+                  <textarea
+                    v-model="formData.hallazgoEspecifico"
+                    rows="2"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    :placeholder="getDefaultEspecificarNormal(formData.tipoEstudio)"
+                  ></textarea>
+                </div>
               </template>
 
               <!-- Campo específico para Tipo de Sangre (siempre requerido) -->
@@ -586,6 +688,12 @@
                           - <span class="text-red-600 font-semibold">{{ getTipoSangreLabel(item.tipoSangre) }}</span>
                         </span>
                       </div>
+                      <div
+                        v-if="joinAlteracionesLinea(item)"
+                        class="text-[10px] text-amber-800/90 truncate mt-0.5 pl-7"
+                      >
+                        {{ joinAlteracionesLinea(item) }}
+                      </div>
                     </div>
                     <div class="flex gap-1 ml-2 flex-shrink-0">
                       <button
@@ -629,7 +737,7 @@
       <Teleport to="body">
         <Transition name="modal-fade" appear>
           <div v-if="showPdfViewer"
-            class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-[60]"
+            class="resultados-clinicos-panel-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-[60]"
             @click.self="cerrarPdf">
             
             <!-- Header del visor -->
@@ -782,6 +890,7 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { convertirFechaISOaDDMMYYYY, formatDateYYYYMMDD } from '@/helpers/dates';
 import ConfirmacionEliminar from '@/components/ConfirmacionEliminar.vue';
 import SelectorDocumentoExterno from '@/components/SelectorDocumentoExterno.vue';
+import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -795,6 +904,7 @@ const emit = defineEmits<{
 const toast: any = inject('toast');
 const store = useResultadosClinicosStore();
 const documentos = useDocumentosStore();
+const isHtmlDark = useHtmlDarkMode();
 
 const currentStep = ref<'select' | 'form'>('select');
 const isEditing = ref(false);
@@ -807,8 +917,10 @@ const formData = ref<Partial<ResultadoClinico>>({
   hallazgoEspecifico: '',
   relevanciaClinica: undefined,
   recomendacion: '',
-  tipoAlteracion: undefined,
-  tipoAlteracionPrincipal: undefined,
+  tipoAlteracionEspirometria: undefined,
+  tipoAlteracionEKG: undefined,
+  tipoAlteracionRayosX: [],
+  tipoAlteracionAnalisisLaboratorio: [],
   tipoSangre: undefined,
   idDocumentoExterno: undefined,
   documentoExterno: undefined,
@@ -820,6 +932,34 @@ const showSelectorDocumento = ref(false);
 const previousDocumentoId = ref<string | undefined>(undefined);
 const pendingDesvincularDocumento = ref(false);
 const pendingVincularDocumento = ref(false);
+
+/** Para transiciones del select Resultado global (defaults al pasar a NORMAL). */
+const prevResultadoGlobal = ref<string | undefined>(undefined);
+
+const TIPOS_CON_ESPECIFICAR_NORMAL = [
+  'ESPIROMETRIA',
+  'EKG',
+  'RAYOS_X',
+  'ANALISIS_LABORATORIO',
+] as const;
+
+function getDefaultEspecificarNormal(tipo?: string): string {
+  switch (tipo) {
+    case 'ESPIROMETRIA':
+    case 'EKG':
+      return 'Normal, valores dentro del rango de referencia';
+    case 'RAYOS_X':
+      return 'Dentro de límites normales';
+    case 'ANALISIS_LABORATORIO':
+      return 'Resultados dentro de parámetros normales';
+    default:
+      return '';
+  }
+}
+
+function esTipoConEspecificarNormal(tipo?: string): boolean {
+  return TIPOS_CON_ESPECIFICAR_NORMAL.includes(tipo as (typeof TIPOS_CON_ESPECIFICAR_NORMAL)[number]);
+}
 
 // Computed para obtener el documento vinculado
 const documentoVinculado = computed(() => {
@@ -933,7 +1073,25 @@ watch(
   { flush: 'post' }
 );
 
-const selectTipo = (tipo: 'ESPIROMETRIA' | 'EKG' | 'TIPO_SANGRE') => {
+const toggleTipoAlteracionRayosX = (value: string) => {
+  const cur = formData.value.tipoAlteracionRayosX ?? [];
+  const set = new Set(cur);
+  if (set.has(value)) set.delete(value);
+  else set.add(value);
+  formData.value.tipoAlteracionRayosX = Array.from(set);
+};
+
+const toggleTipoAlteracionAnalisisLaboratorio = (value: string) => {
+  const cur = formData.value.tipoAlteracionAnalisisLaboratorio ?? [];
+  const set = new Set(cur);
+  if (set.has(value)) set.delete(value);
+  else set.add(value);
+  formData.value.tipoAlteracionAnalisisLaboratorio = Array.from(set);
+};
+
+const selectTipo = (
+  tipo: 'ESPIROMETRIA' | 'EKG' | 'TIPO_SANGRE' | 'RAYOS_X' | 'ANALISIS_LABORATORIO',
+) => {
   // Entrar en modo "Registrar" (nuevo)
   isEditing.value = false;
   editingId.value = null;
@@ -966,14 +1124,30 @@ const setFechaHoy = () => {
 };
 
 const handleResultadoGlobalChange = () => {
-  // Si cambia a NORMAL o NO_CONCLUYENTE, limpiar campos condicionales
-  if (formData.value.resultadoGlobal !== 'ANORMAL') {
+  const prev = prevResultadoGlobal.value;
+  const cur = formData.value.resultadoGlobal;
+  const tipo = formData.value.tipoEstudio;
+
+  if (cur === 'ANORMAL') {
     formData.value.hallazgoEspecifico = '';
+  } else if (cur === 'NORMAL' && esTipoConEspecificarNormal(tipo)) {
+    if (prev === 'ANORMAL' || prev === 'NO_CONCLUYENTE' || prev === undefined) {
+      formData.value.hallazgoEspecifico = getDefaultEspecificarNormal(tipo);
+    }
+  } else if (cur === 'NO_CONCLUYENTE') {
+    formData.value.hallazgoEspecifico = '';
+  }
+
+  if (cur !== 'ANORMAL') {
     formData.value.relevanciaClinica = undefined;
     formData.value.recomendacion = '';
-    formData.value.tipoAlteracion = undefined;
-    formData.value.tipoAlteracionPrincipal = undefined;
+    formData.value.tipoAlteracionEspirometria = undefined;
+    formData.value.tipoAlteracionEKG = undefined;
+    formData.value.tipoAlteracionRayosX = [];
+    formData.value.tipoAlteracionAnalisisLaboratorio = [];
   }
+
+  prevResultadoGlobal.value = cur;
 };
 
 const handleEdit = (item: ResultadoClinico) => {
@@ -1002,15 +1176,28 @@ const handleEdit = (item: ResultadoClinico) => {
   const documentFromItem = item.documentoExterno || (typeof item.idDocumentoExterno === 'object' ? item.idDocumentoExterno : undefined);
   const documentIdFromItem = typeof item.idDocumentoExterno === 'string' ? item.idDocumentoExterno : documentFromItem?._id;
 
+  let hallazgo = item.hallazgoEspecifico || '';
+  if (
+    item.resultadoGlobal === 'NORMAL' &&
+    esTipoConEspecificarNormal(item.tipoEstudio) &&
+    !String(hallazgo).trim()
+  ) {
+    hallazgo = getDefaultEspecificarNormal(item.tipoEstudio);
+  }
+
   formData.value = {
     tipoEstudio: item.tipoEstudio,
     fechaEstudio: fecha,
     resultadoGlobal: item.resultadoGlobal,
-    hallazgoEspecifico: item.hallazgoEspecifico || '',
+    hallazgoEspecifico: hallazgo,
     relevanciaClinica: item.relevanciaClinica,
     recomendacion: item.recomendacion || '',
-    tipoAlteracion: item.tipoAlteracion,
-    tipoAlteracionPrincipal: item.tipoAlteracionPrincipal,
+    tipoAlteracionEspirometria: item.tipoAlteracionEspirometria,
+    tipoAlteracionEKG: item.tipoAlteracionEKG,
+    tipoAlteracionRayosX: item.tipoAlteracionRayosX ? [...item.tipoAlteracionRayosX] : [],
+    tipoAlteracionAnalisisLaboratorio: item.tipoAlteracionAnalisisLaboratorio
+      ? [...item.tipoAlteracionAnalisisLaboratorio]
+      : [],
     tipoSangre: item.tipoSangre,
     idDocumentoExterno: documentIdFromItem,
     documentoExterno: documentFromItem,
@@ -1018,6 +1205,8 @@ const handleEdit = (item: ResultadoClinico) => {
   previousDocumentoId.value = documentIdFromItem;
   pendingDesvincularDocumento.value = false;
   pendingVincularDocumento.value = false;
+
+  prevResultadoGlobal.value = item.resultadoGlobal;
   
   // Ir directamente al formulario (no mostrar selector)
   currentStep.value = 'form';
@@ -1103,7 +1292,7 @@ const handleSubmit = async () => {
   try {
     // Validaciones adicionales
     if (formData.value.tipoEstudio !== 'TIPO_SANGRE' && formData.value.resultadoGlobal === 'ANORMAL') {
-      if (formData.value.tipoEstudio === 'ESPIROMETRIA' && !formData.value.tipoAlteracion) {
+      if (formData.value.tipoEstudio === 'ESPIROMETRIA' && !formData.value.tipoAlteracionEspirometria) {
         toast.open({
           message: 'Por favor seleccione el tipo de alteración',
           type: 'error',
@@ -1111,9 +1300,32 @@ const handleSubmit = async () => {
         return;
       }
       
-      if (formData.value.tipoEstudio === 'EKG' && !formData.value.tipoAlteracionPrincipal) {
+      if (formData.value.tipoEstudio === 'EKG' && !formData.value.tipoAlteracionEKG) {
         toast.open({
           message: 'Por favor seleccione el tipo de alteración principal',
+          type: 'error',
+        });
+        return;
+      }
+      if (
+        formData.value.tipoEstudio === 'RAYOS_X' &&
+        !(formData.value.tipoAlteracionRayosX && formData.value.tipoAlteracionRayosX.length > 0)
+      ) {
+        toast.open({
+          message: 'Seleccione al menos una categoría de alteración en Rayos X',
+          type: 'error',
+        });
+        return;
+      }
+      if (
+        formData.value.tipoEstudio === 'ANALISIS_LABORATORIO' &&
+        !(
+          formData.value.tipoAlteracionAnalisisLaboratorio &&
+          formData.value.tipoAlteracionAnalisisLaboratorio.length > 0
+        )
+      ) {
+        toast.open({
+          message: 'Seleccione al menos una categoría de alteración en análisis de laboratorio',
           type: 'error',
         });
         return;
@@ -1137,17 +1349,21 @@ const handleSubmit = async () => {
 
     if (formData.value.tipoEstudio !== 'TIPO_SANGRE') {
       payload.resultadoGlobal = formData.value.resultadoGlobal;
-      
-      // Si el resultado es NORMAL o NO_CONCLUYENTE, nos aseguramos de limpiar los campos de ANORMAL
+
       if (formData.value.resultadoGlobal !== 'ANORMAL') {
-        payload.hallazgoEspecifico = '';
         payload.relevanciaClinica = null;
         payload.recomendacion = '';
-        payload.tipoAlteracion = null;
-        payload.tipoAlteracionPrincipal = null;
+        if (formData.value.resultadoGlobal === 'NO_CONCLUYENTE') {
+          payload.hallazgoEspecifico = '';
+        } else if (
+          formData.value.resultadoGlobal === 'NORMAL' &&
+          esTipoConEspecificarNormal(formData.value.tipoEstudio)
+        ) {
+          payload.hallazgoEspecifico = formData.value.hallazgoEspecifico ?? '';
+        }
       }
     }
-    
+
     // Agregar campos condicionales
     if (formData.value.resultadoGlobal === 'ANORMAL') {
       payload.hallazgoEspecifico = formData.value.hallazgoEspecifico;
@@ -1155,11 +1371,15 @@ const handleSubmit = async () => {
       payload.recomendacion = formData.value.recomendacion;
       
       if (formData.value.tipoEstudio === 'ESPIROMETRIA') {
-        payload.tipoAlteracion = formData.value.tipoAlteracion;
-      }
-      
-      if (formData.value.tipoEstudio === 'EKG') {
-        payload.tipoAlteracionPrincipal = formData.value.tipoAlteracionPrincipal;
+        payload.tipoAlteracionEspirometria = formData.value.tipoAlteracionEspirometria;
+      } else if (formData.value.tipoEstudio === 'EKG') {
+        payload.tipoAlteracionEKG = formData.value.tipoAlteracionEKG;
+      } else if (formData.value.tipoEstudio === 'RAYOS_X') {
+        payload.tipoAlteracionRayosX = [...(formData.value.tipoAlteracionRayosX || [])];
+      } else if (formData.value.tipoEstudio === 'ANALISIS_LABORATORIO') {
+        payload.tipoAlteracionAnalisisLaboratorio = [
+          ...(formData.value.tipoAlteracionAnalisisLaboratorio || []),
+        ];
       }
     }
     
@@ -1240,8 +1460,10 @@ const resetForm = () => {
     hallazgoEspecifico: '',
     relevanciaClinica: undefined,
     recomendacion: '',
-    tipoAlteracion: undefined,
-    tipoAlteracionPrincipal: undefined,
+    tipoAlteracionEspirometria: undefined,
+    tipoAlteracionEKG: undefined,
+    tipoAlteracionRayosX: [],
+    tipoAlteracionAnalisisLaboratorio: [],
     tipoSangre: undefined,
     idDocumentoExterno: undefined,
     documentoExterno: undefined,
@@ -1249,6 +1471,7 @@ const resetForm = () => {
   previousDocumentoId.value = undefined;
   pendingDesvincularDocumento.value = false;
   pendingVincularDocumento.value = false;
+  prevResultadoGlobal.value = undefined;
 };
 
 const hasResults = computed(() => {
@@ -1709,31 +1932,65 @@ const getTipoSangreLabel = (tipo?: string) => {
   return option?.label || tipo || '';
 };
 
+const joinAlteracionesLinea = (item: ResultadoClinico) => {
+  if (item.resultadoGlobal !== 'ANORMAL') return '';
+  if (item.tipoEstudio === 'RAYOS_X' && item.tipoAlteracionRayosX?.length) {
+    return item.tipoAlteracionRayosX
+      .map(
+        (v) =>
+          store.tipoAlteracionRayosXOptions.find((o) => o.value === v)?.label || v,
+      )
+      .join(', ');
+  }
+  if (
+    item.tipoEstudio === 'ANALISIS_LABORATORIO' &&
+    item.tipoAlteracionAnalisisLaboratorio?.length
+  ) {
+    return item.tipoAlteracionAnalisisLaboratorio
+      .map(
+        (v) =>
+          store.tipoAlteracionAnalisisLaboratorioOptions.find((o) => o.value === v)
+            ?.label || v,
+      )
+      .join(', ');
+  }
+  return '';
+};
+
 const getTipoIcon = (tipo?: string) => {
   if (tipo === 'ESPIROMETRIA') return 'fas fa-lungs';
   if (tipo === 'EKG') return 'fas fa-heartbeat';
   if (tipo === 'TIPO_SANGRE') return 'fas fa-tint';
+  if (tipo === 'RAYOS_X') return 'fas fa-x-ray';
+  if (tipo === 'ANALISIS_LABORATORIO') return 'fas fa-vial';
   return 'fas fa-notes-medical';
 };
 
 const getIconColor = (tipo?: string) => {
-  if (tipo === 'ESPIROMETRIA') return '#1d4ed8';
-  if (tipo === 'EKG') return '#dc2626';
-  if (tipo === 'TIPO_SANGRE') return '#991b1b';
-  return '#475569';
+  const dark = isHtmlDark.value;
+  if (tipo === 'ESPIROMETRIA') return dark ? '#93c5fd' : '#1d4ed8';
+  if (tipo === 'EKG') return dark ? '#fca5a5' : '#dc2626';
+  if (tipo === 'TIPO_SANGRE') return dark ? '#fecaca' : '#991b1b';
+  if (tipo === 'RAYOS_X') return dark ? '#5eead4' : '#0f766e';
+  if (tipo === 'ANALISIS_LABORATORIO') return dark ? '#ddd6fe' : '#7c3aed';
+  return dark ? '#cbd5e1' : '#475569';
 };
 
 const getIconBackground = (tipo?: string) => {
-  if (tipo === 'ESPIROMETRIA') return 'rgba(30,64,175,0.12)';
-  if (tipo === 'EKG') return 'rgba(220,38,38,0.12)';
-  if (tipo === 'TIPO_SANGRE') return 'rgba(153,27,27,0.12)';
-  return 'rgba(71,85,105,0.08)';
+  const dark = isHtmlDark.value;
+  if (tipo === 'ESPIROMETRIA') return dark ? 'rgba(37,99,235,0.48)' : 'rgba(30,64,175,0.12)';
+  if (tipo === 'EKG') return dark ? 'rgba(220,38,38,0.45)' : 'rgba(220,38,38,0.12)';
+  if (tipo === 'TIPO_SANGRE') return dark ? 'rgba(185,28,28,0.5)' : 'rgba(153,27,27,0.12)';
+  if (tipo === 'RAYOS_X') return dark ? 'rgba(13,148,136,0.5)' : 'rgba(15,118,110,0.12)';
+  if (tipo === 'ANALISIS_LABORATORIO') return dark ? 'rgba(139,92,246,0.48)' : 'rgba(124,58,237,0.12)';
+  return dark ? 'rgba(148,163,184,0.35)' : 'rgba(71,85,105,0.08)';
 };
 
 const getFechaFieldLabel = (tipo?: string) => {
   if (tipo === 'TIPO_SANGRE') return 'Fecha de determinación';
-  if (tipo === 'ESPIROMETRIA' || tipo === 'EKG') return 'Fecha del estudio';
-  return 'Fecha de toma de muestra';
+  if (tipo === 'ESPIROMETRIA' || tipo === 'EKG' || tipo === 'RAYOS_X') return 'Fecha del estudio';
+  if (tipo === 'ANALISIS_LABORATORIO') return 'Fecha de toma de muestra';
+  return 'Fecha del estudio';
 };
 
 const formatDate = (date: string | Date) => {

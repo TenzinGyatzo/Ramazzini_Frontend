@@ -450,9 +450,9 @@ export const categoriasTensionArterialOrdenadas = [
   'Óptima',
   'Normal',
   'Alta',
-  'Hipertensión ligera',
-  'Hipertensión moderada',
-  'Hipertensión severa'
+  'Hipertensión grado 1',
+  'Hipertensión grado 2',
+  'Hipertensión grado 3',
 ];
 
 export function contarPorCategoriaTensionArterial(data: { categoriaTensionArterial: string | null }[]): [string, number, number][] {
@@ -627,7 +627,8 @@ export function distribuirPorMetodo(
   ];
 }
 
-// ===== RESULTADOS CLINICOS (EKG / ESPIROMETRIA) =====
+// ===== RESULTADOS CLINICOS (EKG / ESPIROMETRÍA / RAYOS X / LABORATORIO) =====
+// Los bloques `rayosX` y `analisisLaboratorio` del dashboard incluyen arrays de categorías cuando ANORMAL.
 export type ResultadoGlobalClinico = 'NORMAL' | 'ANORMAL' | 'NO_CONCLUYENTE';
 
 export const ordenTipoAlteracionEkg = [
@@ -660,6 +661,111 @@ export const etiquetasTipoAlteracionEspirometria: Record<string, string> = {
   ANORMAL_MIXTO: 'Mixto'
 };
 
+export const ordenTipoAlteracionRayosX = [
+  'ALTERACION_PARENQUIMATOSA',
+  'ALTERACION_PLEURAL',
+  'ALTERACION_CARDIOMEDIASTINICA',
+  'NODULO_O_MASA',
+  'SECUELA_CRONICA',
+  'ALTERACION_OSEA',
+  'ALTERACION_ARTICULAR',
+  'ALTERACION_ALINEACION',
+  'CAMBIO_DEGENERATIVO',
+  'FRACTURA_O_TRAUMA',
+  'OTRA_ALTERACION',
+];
+
+export const ordenTipoAlteracionAnalisisLaboratorio = [
+  'ALTERACION_HEMATOLOGICA',
+  'ALTERACION_METABOLICA',
+  'ALTERACION_RENAL',
+  'ALTERACION_HEPATICA',
+  'ALTERACION_INFECCIOSA_O_INFLAMATORIA',
+  'ALTERACION_URINARIA',
+  'OTRA_ALTERACION',
+];
+
+export const etiquetasTipoAlteracionRayosX: Record<string, string> = {
+  ALTERACION_PARENQUIMATOSA: 'Parenquimatosa',
+  ALTERACION_PLEURAL: 'Pleural',
+  ALTERACION_CARDIOMEDIASTINICA: 'Cardiomediastínica',
+  NODULO_O_MASA: 'Nódulo/masa',
+  SECUELA_CRONICA: 'Secuela crónica',
+  ALTERACION_OSEA: 'Ósea',
+  ALTERACION_ARTICULAR: 'Articular',
+  ALTERACION_ALINEACION: 'Alineación',
+  CAMBIO_DEGENERATIVO: 'Degenerativo',
+  FRACTURA_O_TRAUMA: 'Fractura/trauma',
+  OTRA_ALTERACION: 'Otra',
+};
+
+export const etiquetasTipoAlteracionAnalisisLaboratorio: Record<string, string> = {
+  ALTERACION_HEMATOLOGICA: 'Hematología',
+  ALTERACION_METABOLICA: 'Metabolismo',
+  ALTERACION_RENAL: 'Renal',
+  ALTERACION_HEPATICA: 'Hepática',
+  ALTERACION_INFECCIOSA_O_INFLAMATORIA: 'Infecciosa/inflamatoria',
+  ALTERACION_URINARIA: 'Urinaria',
+  OTRA_ALTERACION: 'Otra',
+};
+
+/** Normaliza campos `tipoAlteracionRayosX` o `tipoAlteracionAnalisisLaboratorio` (array en BD) para la distribución multi-categoría. */
+export function mapToCategoriasMultiples<
+  T extends { resultadoGlobal?: string | null }
+>(
+  data: (T & Record<string, unknown>)[],
+  campo: 'tipoAlteracionRayosX' | 'tipoAlteracionAnalisisLaboratorio'
+): { resultadoGlobal?: string | null; categorias?: string[] | null }[] {
+  return data.map((item) => {
+    const raw = item[campo];
+    const categorias = Array.isArray(raw)
+      ? raw.filter((c): c is string => typeof c === 'string' && c.length > 0)
+      : raw != null && String(raw).trim() !== ''
+        ? [String(raw)]
+        : [];
+    return { resultadoGlobal: item.resultadoGlobal, categorias };
+  });
+}
+
+/** Cuenta categorías en resultados ANORMAL con arrays (un trabajador puede aportar varias categorías). */
+export function distribuirResultadosClinicosPorCategoriasMultiples(
+  data: {
+    resultadoGlobal?: string | null;
+    categorias?: string[] | null;
+  }[],
+  ordenCategorias: string[]
+): [string, number, number][] {
+  const conteo: Record<string, number> = {
+    NORMAL: 0,
+  };
+  for (const c of ordenCategorias) {
+    conteo[c] = 0;
+  }
+
+  for (const item of data) {
+    const resultado = (item.resultadoGlobal || '').toUpperCase();
+    if (resultado === 'NORMAL') {
+      conteo.NORMAL += 1;
+      continue;
+    }
+    if (resultado === 'ANORMAL' && Array.isArray(item.categorias)) {
+      for (const cat of item.categorias) {
+        if (cat && conteo[cat] !== undefined) {
+          conteo[cat] += 1;
+        }
+      }
+    }
+  }
+
+  const totalParaPct = Object.values(conteo).reduce((acc, v) => acc + v, 0);
+  const labels = ['NORMAL', ...ordenCategorias];
+  return labels.map((label) => {
+    const cantidad = conteo[label] || 0;
+    const porcentaje = totalParaPct > 0 ? Math.round((cantidad / totalParaPct) * 100) : 0;
+    return [label, cantidad, porcentaje];
+  });
+}
+
 export function calcularProporcionResultadosClinicos(
   data: { resultadoGlobal?: string | null }[]
 ): Record<ResultadoGlobalClinico, number> {
@@ -680,7 +786,11 @@ export function calcularProporcionResultadosClinicos(
 }
 
 export function distribuirResultadosClinicos(
-  data: { resultadoGlobal?: string | null; tipoAlteracion?: string | null }[],
+  data: {
+    resultadoGlobal?: string | null;
+    tipoAlteracionEspirometria?: string | null;
+    tipoAlteracionEKG?: string | null;
+  }[],
   ordenCategorias: string[]
 ): [string, number, number][] {
   const conteo: Record<string, number> = {
@@ -699,7 +809,8 @@ export function distribuirResultadosClinicos(
     }
 
     if (resultado === 'ANORMAL') {
-      const alteracion = item.tipoAlteracion || '';
+      const alteracion =
+        item.tipoAlteracionEspirometria ?? item.tipoAlteracionEKG ?? '';
       if (alteracion && conteo[alteracion] !== undefined) {
         conteo[alteracion] += 1;
       }
@@ -716,7 +827,188 @@ export function distribuirResultadosClinicos(
   });
 }
 
+// —— Tamizajes psicológicos (dashboard): reglas operativas, no diagnóstico clínico ——
 
+const RESPUESTA_SI = 'Sí';
 
+const CAMPOS_P1_TRASTORNOS_ESTADO_ANIMO = [
+  'p1ExaltadoComportamientoNoHabitualOMetidoProblemas',
+  'p1IrritableGritosPeleas',
+  'p1MasSeguridadQueLoHabitual',
+  'p1DormiaMenosSinNecesitarMasSueno',
+  'p1HablabaMasOMasRapido',
+  'p1PensamientosAgolpados',
+  'p1DistraccionDificultadConcentracion',
+  'p1MasEnergiaQueLoHabitual',
+  'p1MasActivoOMasCosasQueLoHabitual',
+  'p1MasSocialExtrovertido',
+  'p1MasApetitoSexual',
+  'p1CosasExageradasRiesgosas',
+  'p1GastoDineroProblemas',
+] as const;
+
+/**
+ * Tamizaje riesgo bipolar (TEA): ≥2 «Sí» en P1 y P2 (mismo período) = «Sí».
+ * Revisar umbrales con criterio clínico interno.
+ */
+export function esTamizajeBipolarPositivoTEA(row: Record<string, unknown>): boolean {
+  const totalSi = CAMPOS_P1_TRASTORNOS_ESTADO_ANIMO.filter((k) => row[k] === RESPUESTA_SI).length;
+  return totalSi >= 2 && row.p2SituacionesMismoPeriodo === RESPUESTA_SI;
+}
+
+export function calcularAnilloTamizajeBipolarTEA(data: Record<string, unknown>[]) {
+  if (!data.length) {
+    return { positivos: 0, porcentaje: 0, chart: { labels: [] as string[], datasets: [] as any[] } };
+  }
+
+  let positivos = 0;
+  let negativos = 0;
+  for (const row of data) {
+    if (esTamizajeBipolarPositivoTEA(row)) positivos++;
+    else negativos++;
+  }
+
+  const total = positivos + negativos;
+  const porcentaje = total > 0 ? Math.round((positivos / total) * 100) : 0;
+
+  return {
+    positivos,
+    porcentaje,
+    chart: {
+      labels: ['Positivo', 'Negativo'],
+      datasets: [
+        {
+          data: [positivos, negativos],
+          backgroundColor: ['#b45309', '#D1D5DB'],
+          hoverOffset: 8,
+        },
+      ],
+    },
+  };
+}
+
+/**
+ * Mínimo de respuestas «Sí» en p1–p21 para marcar tamizaje prodromal como positivo.
+ * Valor revisable con el equipo clínico.
+ */
+export const UMBRAL_SI_CPB_RIESGO_PSICOTICO = 5;
+
+export function contarSiCuestionarioProdromalBreve(row: Record<string, unknown>): number {
+  let n = 0;
+  for (let i = 1; i <= 21; i++) {
+    if (row[`p${i}`] === RESPUESTA_SI) n++;
+  }
+  return n;
+}
+
+export function calcularAnilloTamizajeProdromalCPB(data: Record<string, unknown>[]) {
+  if (!data.length) {
+    return { positivos: 0, porcentaje: 0, chart: { labels: [] as string[], datasets: [] as any[] } };
+  }
+
+  let positivos = 0;
+  let negativos = 0;
+  for (const row of data) {
+    if (contarSiCuestionarioProdromalBreve(row) >= UMBRAL_SI_CPB_RIESGO_PSICOTICO) positivos++;
+    else negativos++;
+  }
+
+  const total = positivos + negativos;
+  const porcentaje = total > 0 ? Math.round((positivos / total) * 100) : 0;
+
+  return {
+    positivos,
+    porcentaje,
+    chart: {
+      labels: ['Positivo', 'Negativo'],
+      datasets: [
+        {
+          data: [positivos, negativos],
+          backgroundColor: ['#b45309', '#D1D5DB'],
+          hoverOffset: 8,
+        },
+      ],
+    },
+  };
+}
+
+const CAMPOS_SI_TRASTORNO_LIMITE = [
+  'relacionesCercanasDiscusionesRupturas',
+  'autolesionIntentoSuicidio',
+  'impulsividadOtrosDosProblemas',
+  'extremadamenteMalHumor',
+  'enojadoFrecuenteActuaEnojadoSarcastico',
+  'desconfianzaOtrasPersonas',
+  'sensacionIrrealidadEntornoIrreal',
+  'vacioCronico',
+  'faltaIdentidadQuienEs',
+  'esfuerzosEvitarAbandono',
+] as const;
+
+export function contarCriteriosSiTLP(row: Record<string, unknown>): number {
+  return CAMPOS_SI_TRASTORNO_LIMITE.filter((k) => row[k] === RESPUESTA_SI).length;
+}
+
+/**
+ * Franjas por conteo de «Sí» (0–10): 0–2 improbable, 3–5 posible, 6–10 probable.
+ * Cortes revisables con criterio clínico interno.
+ */
+export function clasificarFranjaTamizajeTLP(totalSi: number): 0 | 1 | 2 {
+  if (totalSi <= 2) return 0;
+  if (totalSi <= 5) return 1;
+  return 2;
+}
+
+export const ETIQUETAS_FRANJAS_TAMIZAJE_TLP = [
+  'Síntomas improbables',
+  'Posibles síntomas',
+  'Síntomas probables',
+] as const;
+
+function contarTrabajadoresPorFranjasTamizajeTLP(
+  data: Record<string, unknown>[]
+): [number, number, number] {
+  const counts: [number, number, number] = [0, 0, 0];
+  for (const row of data) {
+    const idx = clasificarFranjaTamizajeTLP(contarCriteriosSiTLP(row));
+    counts[idx]++;
+  }
+  return counts;
+}
+
+/** Tabla [categoría, cantidad, porcentaje] alineada al gráfico de barras TLP. */
+export function tablaFranjasTamizajeTLP(
+  data: Record<string, unknown>[]
+): [string, number, number][] {
+  if (!data.length) return [];
+
+  const counts = contarTrabajadoresPorFranjasTamizajeTLP(data);
+  const total = data.length;
+
+  return ETIQUETAS_FRANJAS_TAMIZAJE_TLP.map((label, i) => {
+    const cantidad = counts[i];
+    const porcentaje = total > 0 ? Math.round((cantidad / total) * 100) : 0;
+    return [label, cantidad, porcentaje];
+  });
+}
+
+export function calcularBarrasFranjasTamizajeTLP(data: Record<string, unknown>[]) {
+  if (!data.length) {
+    return { labels: [] as string[], datasets: [] as any[] };
+  }
+
+  const counts = contarTrabajadoresPorFranjasTamizajeTLP(data);
+
+  return {
+    labels: [...ETIQUETAS_FRANJAS_TAMIZAJE_TLP],
+    datasets: [
+      {
+        label: 'Trabajadores',
+        data: [...counts],
+        backgroundColor: ['#9CA3AF', '#F59E0B', '#b45309'],
+      },
+    ],
+  };
+}
 
 

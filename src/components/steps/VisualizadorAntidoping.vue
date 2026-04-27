@@ -57,7 +57,7 @@ const showOpiaceos = computed(() => {
 
 <template>
   <div
-    class="border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg p-7 2xl:p-7 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-lg mx-auto">
+    class="visualizador-antidoping border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg p-7 2xl:p-7 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-lg mx-auto">
     <div class="flex justify-between items-start mb-4">
       <h2 class="text-lg font-medium">Información del Documento</h2>
       <EstadoDocumentoBadgeAlt 
@@ -148,8 +148,35 @@ const showOpiaceos = computed(() => {
   cursor: pointer;
 }
 
-.cursor-pointer:hover {
+.visualizador-antidoping tbody tr.cursor-pointer,
+.visualizador-antidoping thead tr.cursor-pointer {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-antidoping tbody tr.cursor-pointer > td,
+.visualizador-antidoping tbody tr.cursor-pointer > th,
+.visualizador-antidoping thead tr.cursor-pointer > td,
+.visualizador-antidoping thead tr.cursor-pointer > th {
+  transition: background-color 0.15s ease;
+}
+
+.visualizador-antidoping tbody tr.cursor-pointer:hover,
+.visualizador-antidoping tbody tr.cursor-pointer:hover > td,
+.visualizador-antidoping tbody tr.cursor-pointer:hover > th,
+.visualizador-antidoping thead tr.cursor-pointer:hover,
+.visualizador-antidoping thead tr.cursor-pointer:hover > td,
+.visualizador-antidoping thead tr.cursor-pointer:hover > th {
   background-color: #f0f0f0;
-  /* Cambia el color según tu diseño */
+}
+</style>
+
+<style>
+html.dark-mode .visualizador-antidoping tbody tr.cursor-pointer:hover,
+html.dark-mode .visualizador-antidoping tbody tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-antidoping tbody tr.cursor-pointer:hover > th,
+html.dark-mode .visualizador-antidoping thead tr.cursor-pointer:hover,
+html.dark-mode .visualizador-antidoping thead tr.cursor-pointer:hover > td,
+html.dark-mode .visualizador-antidoping thead tr.cursor-pointer:hover > th {
+  background-color: #475569 !important;
 }
 </style>

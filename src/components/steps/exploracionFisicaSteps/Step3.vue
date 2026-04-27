@@ -81,11 +81,11 @@ function setCategoriaTensionArterial() {
   } else if (sistolica >= 131 && sistolica <= 139) {
     categoriaSistolica = 'Alta';
   } else if (sistolica >= 140 && sistolica <= 159) {
-    categoriaSistolica = 'Hipertensión ligera';
+    categoriaSistolica = 'Hipertensión grado 1';
   } else if (sistolica >= 160 && sistolica <= 179) {
-    categoriaSistolica = 'Hipertensión moderada';
+    categoriaSistolica = 'Hipertensión grado 2';
   } else {
-    categoriaSistolica = 'Hipertensión severa';
+    categoriaSistolica = 'Hipertensión grado 3';
   }
 
   if (diastolica <= 80) {
@@ -95,19 +95,19 @@ function setCategoriaTensionArterial() {
   } else if (diastolica >= 86 && diastolica <= 89) {
     categoriaDiastolica = 'Alta';
   } else if (diastolica >= 90 && diastolica <= 99) {
-    categoriaDiastolica = 'Hipertensión ligera';
+    categoriaDiastolica = 'Hipertensión grado 1';
   } else if (diastolica >= 100 && diastolica <= 109) {
-    categoriaDiastolica = 'Hipertensión moderada';
+    categoriaDiastolica = 'Hipertensión grado 2';
   } else {
-    categoriaDiastolica = 'Hipertensión severa';
+    categoriaDiastolica = 'Hipertensión grado 3';
   }
 
-  if (categoriaSistolica === 'Hipertensión severa' || categoriaDiastolica === 'Hipertensión severa') {
-    categoria = 'Hipertensión severa';
-  } else if (categoriaSistolica === 'Hipertensión moderada' || categoriaDiastolica === 'Hipertensión moderada') {
-    categoria = 'Hipertensión moderada';
-  } else if (categoriaSistolica === 'Hipertensión ligera' || categoriaDiastolica === 'Hipertensión ligera') {
-    categoria = 'Hipertensión ligera';
+  if (categoriaSistolica === 'Hipertensión grado 3' || categoriaDiastolica === 'Hipertensión grado 3') {
+    categoria = 'Hipertensión grado 3';
+  } else if (categoriaSistolica === 'Hipertensión grado 2' || categoriaDiastolica === 'Hipertensión grado 2') {
+    categoria = 'Hipertensión grado 2';
+  } else if (categoriaSistolica === 'Hipertensión grado 1' || categoriaDiastolica === 'Hipertensión grado 1') {
+    categoria = 'Hipertensión grado 1';
   } else if (categoriaSistolica === 'Alta' || categoriaDiastolica === 'Alta') {
     categoria = 'Alta';
   } else if (categoriaSistolica === 'Normal' || categoriaDiastolica === 'Normal') {
@@ -184,16 +184,16 @@ function setCategoriaSaturacionOxigeno() {
 const mensajeErrorTensionSistolica = computed(() => {
   return tensionArterialSistolica.value < 60 
     ? 'Debe ser mínimo 60' 
-    : tensionArterialSistolica.value > 200 
-      ? 'Debe ser máximo 200' 
+    : tensionArterialSistolica.value > 300 
+      ? 'Debe ser máximo 300' 
       : '';
 });
 
 const mensajeErrorTensionDiastolica = computed(() => {
   return tensionArterialDiastolica.value < 40 
     ? 'Debe ser mínimo 40' 
-    : tensionArterialDiastolica.value > 150 
-      ? 'Debe ser máximo 150' 
+    : tensionArterialDiastolica.value > 200 
+      ? 'Debe ser máximo 200' 
       : '';
 });
 
@@ -242,8 +242,8 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
             v-model="tensionArterialSistolica" 
             min="60" 
-            max="200"
-            placeholder="60-200"
+            max="300"
+            placeholder="60-300"
           >
           <transition
             enter-active-class="transition-all duration-200 ease-out"
@@ -268,8 +268,8 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
             v-model="tensionArterialDiastolica" 
             min="40" 
-            max="150"
-            placeholder="40-150"
+            max="200"
+            placeholder="40-200"
           />
           <transition
             enter-active-class="transition-all duration-200 ease-out"
@@ -293,9 +293,9 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             categoriaTensionArterial === 'Óptima' ? 'bg-emerald-50 text-emerald-800' : '',
             categoriaTensionArterial === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
             categoriaTensionArterial === 'Alta' ? 'bg-yellow-50 text-yellow-800' : '',
-            categoriaTensionArterial === 'Hipertensión ligera' ? 'bg-red-50 text-red-900' : '',
-            categoriaTensionArterial === 'Hipertensión moderada' ? 'bg-red-100 text-red-900' : '',
-            categoriaTensionArterial === 'Hipertensión severa' ? 'bg-red-200 text-red-950' : ''
+            categoriaTensionArterial === 'Hipertensión grado 1' ? 'bg-red-50 text-red-900' : '',
+            categoriaTensionArterial === 'Hipertensión grado 2' ? 'bg-red-100 text-red-900' : '',
+            categoriaTensionArterial === 'Hipertensión grado 3' ? 'bg-red-200 text-red-950' : ''
           ]"
           v-model="categoriaTensionArterial" 
           readonly 

@@ -11,6 +11,7 @@ const userStore = useUserStore();
 const toast = inject("toast");
 const registroExitoso = ref(false);
 const showSubscriptionModal = ref(false);
+const showPassword = ref(false);
 
 const user = ref(
   JSON.parse(localStorage.getItem("user")) || null // Recuperar usuario guardado o establecer null si no existe
@@ -102,7 +103,7 @@ const volver = () => {
   <Transition appear mode="out-in" name="slide-up">
     <div
       v-if="registroExitoso == false"
-      class="relative bg-white text-gray-800 w-full max-w-lg p-8 sm:p-10 mt-2 rounded-lg max-h-[82vh] shadow-lg overflow-y-auto mx-auto"
+      class="add-user-view relative bg-white text-gray-800 w-full max-w-lg p-8 sm:p-10 mt-2 rounded-lg max-h-[82vh] shadow-lg overflow-y-auto mx-auto"
     >
       <h1 class="text-2xl sm:text-3xl text-gray-800">Agregar usuario adicional</h1>
       <hr class="mt-2 mb-3" />
@@ -168,18 +169,27 @@ const volver = () => {
           v-model="formDataUser.role"
         />
 
-        <FormKit
-          type="password"
-          label="Establece una contraseña"
-          name="password"
-          placeholder="Contraseña de usuario"
-          validation="required|passwordValidation"
-          :validation-messages="{
-            required: 'Este campo es obligatorio',
-            passwordValidation: 'Mín. 8 dígitos, 1 mayúscula y 1 número.',
-          }"
-          v-model="formDataUser.password"
-        />
+        <div class="relative">
+          <FormKit
+            :type="showPassword ? 'text' : 'password'"
+            label="Establece una contraseña"
+            name="password"
+            placeholder="Contraseña de usuario"
+            validation="required|passwordValidation"
+            :validation-messages="{
+              required: 'Este campo es obligatorio',
+              passwordValidation: 'Mín. 8 dígitos, 1 mayúscula y 1 número.',
+            }"
+            v-model="formDataUser.password"
+          />
+          <button
+            type="button"
+            class="absolute right-3 top-[2.35rem] text-sm text-emerald-700 hover:text-emerald-800"
+            @click="showPassword = !showPassword"
+          >
+            {{ showPassword ? "Ocultar" : "Ver" }}
+          </button>
+        </div>
 
         <hr class="my-3" />
         <div
@@ -230,3 +240,20 @@ const volver = () => {
     </div>
   </Transition>
 </template>
+
+<style>
+html.dark-mode .add-user-view .formkit-outer[data-type='submit'] .formkit-input,
+html.dark-mode .add-user-view .formkit-wrapper button[type='submit'],
+html.dark-mode .add-user-view .formkit-input[type='submit'] {
+  background-color: #047857 !important;
+  border-color: #065f46 !important;
+  color: #ecfdf5 !important;
+}
+
+html.dark-mode .add-user-view .formkit-outer[data-type='submit'] .formkit-input:hover,
+html.dark-mode .add-user-view .formkit-wrapper button[type='submit']:hover,
+html.dark-mode .add-user-view .formkit-input[type='submit']:hover {
+  background-color: #065f46 !important;
+  border-color: #064e3b !important;
+}
+</style>
