@@ -334,6 +334,7 @@ const editarDocumento = (documentoId, documentoTipo) => {
         }
     }
 
+    documentos.setCurrentTypeOfDocument(documentoTipo);
     router.push({
         name: 'crear-documento',
         params: {

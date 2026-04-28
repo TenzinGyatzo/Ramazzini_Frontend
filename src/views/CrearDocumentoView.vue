@@ -52,6 +52,13 @@ const { documentImmutabilityEnabled } = useRegulatoryPolicy();
 const isFinalized = computed(() => documentos.isFinalized);
 const disableEdit = computed(() => documentImmutabilityEnabled.value && isFinalized.value);
 
+// Alinear el store con la ruta antes de montar hijos (p. ej. edición desde DocumentoItem sin navigateTo).
+// Si no, el v-if puede montar primero el FormStepper de otro tipo y corromper pasos / pantalla «Completado».
+const tipoDesdeRuta = route.params.tipoDocumento;
+if (tipoDesdeRuta) {
+  documentos.setCurrentTypeOfDocument(String(tipoDesdeRuta));
+}
+
 const empresaId = ref('');
 const centroTrabajoId = ref('');
 const trabajadorId = ref('');

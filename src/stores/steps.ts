@@ -33,8 +33,9 @@ export const useStepsStore = defineStore("steps", () => {
     }));
 
     if (options?.preserveCurrentStep && prevLen > 0) {
-      // p. ej. trastornos del estado de ánimo: el paso 15 aparece/desaparece según respuestas P1
-      currentStep.value = Math.min(prevStep, newSteps.length);
+      // Incluir la pantalla «Completado» (paso = length + 1), no solo el último paso del formulario.
+      const maxStepInclusive = newSteps.length + 1;
+      currentStep.value = Math.min(prevStep, maxStepInclusive);
     } else {
       currentStep.value = 1;
     }
