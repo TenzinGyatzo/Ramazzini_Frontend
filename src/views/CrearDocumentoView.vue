@@ -44,6 +44,13 @@ const steps = useStepsStore();
 const { ensureUserLoaded } = useCurrentUser();
 const { canCreateDocument, getRestrictionMessage } = useUserPermissions();
 
+// Alinear el store con la ruta antes de montar hijos (p. ej. edición desde DocumentoItem sin navigateTo).
+// Si no, el v-if puede montar primero el FormStepper de otro tipo y corromper pasos / pantalla «Completado».
+const tipoDesdeRuta = route.params.tipoDocumento;
+if (tipoDesdeRuta) {
+  documentos.setCurrentTypeOfDocument(String(tipoDesdeRuta));
+}
+
 const empresaId = ref('');
 const centroTrabajoId = ref('');
 const trabajadorId = ref('');
