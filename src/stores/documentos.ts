@@ -21,6 +21,7 @@ import type {
   TrastornosEstadoAnimo,
   CuestionarioProdromalBreve,
   TrastornoLimitePersonalidad,
+  EventoSeguimientoCardiometabolico,
 } from "@/interfaces/documentos.inteface";
 
 export type DocumentsByYear = {
@@ -44,6 +45,7 @@ export type DocumentsByYear = {
     trastornosEstadoAnimo?: TrastornosEstadoAnimo[];
     cuestionarioProdromalBreve?: CuestionarioProdromalBreve[];
     trastornoLimitePersonalidad?: TrastornoLimitePersonalidad[];
+    eventoSeguimientoCardiometabolico?: EventoSeguimientoCardiometabolico[];
   };
 };
 
@@ -91,6 +93,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
         trastornosEstadoAnimo,
         cuestionarioProdromalBreve,
         trastornoLimitePersonalidad,
+        eventoSeguimientoCardiometabolico,
       ] = await Promise.all([
         DocumentosAPI.getAntidopings(trabajadorId).catch(error => {
           console.error("Error al obtener antidopings", error);
@@ -168,6 +171,10 @@ export const useDocumentosStore = defineStore("documentos", () => {
           console.error("Error al obtener trastornoLimitePersonalidad", error);
           return { data: [] };
         }),
+        DocumentosAPI.getEventoSeguimientoCardiometabolico(trabajadorId).catch(error => {
+          console.error("Error al obtener eventoSeguimientoCardiometabolico", error);
+          return { data: [] };
+        }),
       ]);
 
       // Agrupar documentos por año (solo si es un array)
@@ -191,6 +198,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
         trastornosEstadoAnimo: Array.isArray(trastornosEstadoAnimo.data) ? trastornosEstadoAnimo.data : [],
         cuestionarioProdromalBreve: Array.isArray(cuestionarioProdromalBreve.data) ? cuestionarioProdromalBreve.data : [],
         trastornoLimitePersonalidad: Array.isArray(trastornoLimitePersonalidad.data) ? trastornoLimitePersonalidad.data : [],
+        eventoSeguimientoCardiometabolico: Array.isArray(eventoSeguimientoCardiometabolico.data) ? eventoSeguimientoCardiometabolico.data : [],
       };
 
       // Procesar documentos y agrupar por año
@@ -242,6 +250,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
       trastornosEstadoAnimo: "fechaTrastornosEstadoAnimo",
       cuestionarioProdromalBreve: "fechaCuestionarioProdromalBreve",
       trastornoLimitePersonalidad: "fechaTrastornoLimitePersonalidad",
+      eventoSeguimientoCardiometabolico: "fechaControlCardiometabolico",
     };
 
     return documento?.[fechaCampos[tipoDocumento]] || "";

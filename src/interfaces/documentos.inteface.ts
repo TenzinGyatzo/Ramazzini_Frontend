@@ -627,3 +627,19 @@ export interface TrastornoLimitePersonalidad {
     faltaIdentidadQuienEs?: string;
     esfuerzosEvitarAbandono?: string;
 }
+
+export interface EventoSeguimientoCardiometabolico {
+    _id: string;
+    fechaControlCardiometabolico: string;
+    motivoSeguimiento: string;
+    diagnosticosActivos: string[];
+    estadoCondiciones: string;
+    signosVitales: string;
+    somatometria: string;
+    laboratorio: string;
+    adherenciaTerapeutica: string;
+    sintomasRelevantes: string;
+    evaluacionClinica: string;  
+    plan: string;
+    proximaRevisionSugerida: string;
+}

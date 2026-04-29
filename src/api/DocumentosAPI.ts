@@ -77,6 +77,10 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/trastornoLimitePersonalidad`);
     },
 
+    getEventoSeguimientoCardiometabolico(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/eventoSeguimientoCardiometabolico`);
+    },
+
     getAlturaDisponible(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/altura-disponible`);
     },

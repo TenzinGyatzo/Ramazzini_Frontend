@@ -22,6 +22,7 @@ export const useFormDataStore = defineStore('formData', () => {
   const formDataTrastornosEstadoAnimo = ref({}); // Estado compartido
   const formDataCuestionarioProdromalBreve = ref({}); // Estado compartido
   const formDataTrastornoLimitePersonalidad = ref({}); // Estado compartido
+  const formDataEventoSeguimientoCardiometabolico = ref({}); // Estado compartido
 
   const setFormDataFromDocument = (documento, tipoDocumento) => {
     if (!documento) {
@@ -87,6 +88,9 @@ export const useFormDataStore = defineStore('formData', () => {
       case 'trastornoLimitePersonalidad':
         formDataTrastornoLimitePersonalidad.value = { ...documento };
         break;
+      case 'eventoSeguimientoCardiometabolico':
+        formDataEventoSeguimientoCardiometabolico.value = { ...documento };
+        break;
       default:
         console.error('Tipo de documento no reconocido:', tipoDocumento);
         break;
@@ -122,6 +126,7 @@ export const useFormDataStore = defineStore('formData', () => {
     formDataTrastornosEstadoAnimo.value = {};
     formDataCuestionarioProdromalBreve.value = {};
     formDataTrastornoLimitePersonalidad.value = {};
+    formDataEventoSeguimientoCardiometabolico.value = {};
   };
 
   const consultarAlturaDisponible = async (trabajadorId: string) => {
@@ -164,9 +169,10 @@ export const useFormDataStore = defineStore('formData', () => {
     formDataTrastornosEstadoAnimo,
     formDataCuestionarioProdromalBreve,
     formDataTrastornoLimitePersonalidad,
-    setFormDataFromDocument,
+    formDataEventoSeguimientoCardiometabolico,
+    consultarAlturaDisponible,
     resetFormData,
     setExamenVistaCeguera,
-    consultarAlturaDisponible
+    setFormDataFromDocument,
   };
 });
