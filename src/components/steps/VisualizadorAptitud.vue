@@ -84,14 +84,20 @@ onMounted(async () => {
   }
 });
 
-const findMostRecentByTipo = (items, tipo) => {
+const findMostRecentByTipo = (items, tipo, referenceYear) => {
   if (!items?.length) {
     return null;
   }
 
-  return items
-    .filter((item) => item?.tipoEstudio === tipo && item?.fechaEstudio)
-    .reduce((latest, current) => {
+  let candidates = items.filter((item) => item?.tipoEstudio === tipo && item?.fechaEstudio);
+  if (referenceYear != null && !Number.isNaN(referenceYear)) {
+    candidates = candidates.filter((item) => {
+      const d = new Date(item.fechaEstudio);
+      return !isNaN(d.getTime()) && d.getFullYear() === referenceYear;
+    });
+  }
+
+  return candidates.reduce((latest, current) => {
       const currentDate = new Date(current.fechaEstudio);
       if (isNaN(currentDate.getTime())) {
         return latest;
@@ -106,20 +112,66 @@ const findMostRecentByTipo = (items, tipo) => {
     }, null);
 };
 
-// Función reutilizable para calcular los documentos más cercanos
+// Función reutilizable para calcular los documentos más cercanos (mismo año calendario que fecha de aptitud)
+const nearestOpts = { sameYearAsReference: true };
+
 const calculateNearestDocuments = (fechaAptitudPuesto) => {
-  nearestExamenVista.value = findNearestDocument(examenesVista.value, fechaAptitudPuesto, 'fechaExamenVista');
-  nearestHistoriaClinica.value = findNearestDocument(historiasClinicas.value, fechaAptitudPuesto, 'fechaHistoriaClinica');
-  nearestExploracionFisica.value = findNearestDocument(exploracionesFisicas.value, fechaAptitudPuesto, 'fechaExploracionFisica');
-  nearestAudiometria.value = findNearestDocument(audiometrias.value, fechaAptitudPuesto, 'fechaAudiometria');
-  nearestAntidoping.value = findNearestDocument(antidopings.value, fechaAptitudPuesto, 'fechaAntidoping');
-  nearestEKG.value = findMostRecentByTipo(resultadosClinicos.value, 'EKG');
-  nearestEspirometria.value = findMostRecentByTipo(resultadosClinicos.value, 'ESPIROMETRIA');
-  nearestTipoSangre.value = findMostRecentByTipo(resultadosClinicos.value, 'TIPO_SANGRE');
-  nearestRayosX.value = findMostRecentByTipo(resultadosClinicos.value, 'RAYOS_X');
+  const ref = fechaAptitudPuesto ? new Date(fechaAptitudPuesto) : null;
+  const referenceYear =
+    ref && !isNaN(ref.getTime()) ? ref.getFullYear() : null;
+
+  nearestExamenVista.value = findNearestDocument(
+    examenesVista.value,
+    fechaAptitudPuesto,
+    'fechaExamenVista',
+    nearestOpts,
+  );
+  nearestHistoriaClinica.value = findNearestDocument(
+    historiasClinicas.value,
+    fechaAptitudPuesto,
+    'fechaHistoriaClinica',
+    nearestOpts,
+  );
+  nearestExploracionFisica.value = findNearestDocument(
+    exploracionesFisicas.value,
+    fechaAptitudPuesto,
+    'fechaExploracionFisica',
+    nearestOpts,
+  );
+  nearestAudiometria.value = findNearestDocument(
+    audiometrias.value,
+    fechaAptitudPuesto,
+    'fechaAudiometria',
+    nearestOpts,
+  );
+  nearestAntidoping.value = findNearestDocument(
+    antidopings.value,
+    fechaAptitudPuesto,
+    'fechaAntidoping',
+    nearestOpts,
+  );
+  nearestEKG.value = findMostRecentByTipo(
+    resultadosClinicos.value, 
+    'EKG', referenceYear
+  );
+  nearestEspirometria.value = findMostRecentByTipo(
+    resultadosClinicos.value,
+    'ESPIROMETRIA',
+    referenceYear,
+  );
+  nearestTipoSangre.value = findMostRecentByTipo(
+    resultadosClinicos.value,
+    'TIPO_SANGRE'
+  );
+  nearestRayosX.value = findMostRecentByTipo(
+    resultadosClinicos.value, 
+    'RAYOS_X', 
+    referenceYear,
+  );
   nearestAnalisisLaboratorio.value = findMostRecentByTipo(
     resultadosClinicos.value,
     'ANALISIS_LABORATORIO',
+    referenceYear,
   );
 };
 

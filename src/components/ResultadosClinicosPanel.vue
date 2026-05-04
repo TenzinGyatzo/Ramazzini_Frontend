@@ -338,12 +338,22 @@
                   <label class="block text-sm font-medium text-gray-700 mb-1">
                     Hallazgo Específico
                   </label>
-                  <textarea
+                  <input
                     v-model="formData.hallazgoEspecifico"
-                    rows="2"
-                    class="w-full px-3 py-2 -mb-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    type="text"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    list="hallazgo-especifico-sugerencias"
                     placeholder="Describa el hallazgo específico..."
-                  ></textarea>
+                  />
+                  <datalist id="hallazgo-especifico-sugerencias">
+                    <option
+                      v-for="sugerencia in hallazgoEspecificoSugerencias"
+                      :key="sugerencia"
+                      :value="sugerencia"
+                    >
+                      {{ sugerencia }}
+                    </option>
+                  </datalist>
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -391,12 +401,22 @@
                   <label class="block text-sm font-medium text-gray-700 mb-1">
                     Especificar
                   </label>
-                  <textarea
+                  <input
                     v-model="formData.hallazgoEspecifico"
-                    rows="2"
+                    type="text"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    list="hallazgo-especifico-sugerencias"
                     :placeholder="getDefaultEspecificarNormal(formData.tipoEstudio)"
-                  ></textarea>
+                  />
+                  <datalist id="hallazgo-especifico-sugerencias">
+                    <option
+                      v-for="sugerencia in hallazgoEspecificoSugerencias"
+                      :key="sugerencia"
+                      :value="sugerencia"
+                    >
+                      {{ sugerencia }}
+                    </option>
+                  </datalist>
                 </div>
               </template>
 
@@ -943,11 +963,103 @@ const TIPOS_CON_ESPECIFICAR_NORMAL = [
   'ANALISIS_LABORATORIO',
 ] as const;
 
+type HallazgoSugerenciasPorResultado = { normal: string[]; anormal: string[] };
+
+const HALLAZGO_ESPECIFICO_SUGERENCIAS_POR_TIPO: Record<
+  (typeof TIPOS_CON_ESPECIFICAR_NORMAL)[number],
+  HallazgoSugerenciasPorResultado
+> = {
+  ANALISIS_LABORATORIO: {
+    normal: [
+      'Resultados de laboratorio sin hallazgos patológicos',
+      'Perfil bioquímico sin alteraciones relevantes',
+      'Todos los parámetros analizados se encuentran dentro de rangos de referencia',
+  ],
+    anormal: [
+      'Hipertrigliceridemia e hipercolesterolemia, resto de parámetros dentro de rango',
+      'Alteraciones en el perfil lipídico (colesterol total, LDL, HDL y triglicéridos)',
+      'Alteraciones en el metabolismo de la glucosa (glucemia y/o hemoglobina glucosilada elevadas), con o sin dislipidemia asociada',
+      'Perfil lipídico y glucémico con valores fuera de rango',
+      'Alteraciones aisladas en uno o más parámetros bioquímicos de relevancia clínica',
+    ],
+  },
+  RAYOS_X: {
+    normal: [
+      'Radiografías sin evidencia de alteraciones óseas, articulares ni parenquimatosas',
+      'Estudios radiográficos dentro de parámetros normales para las proyecciones realizadas',
+      'Sin hallazgos radiográficos patológicos en las imágenes evaluadas',
+      'Tórax dentro de límites normales. Columna AP y Lateral dentro de límites normales',
+      'Columna vertebral en proyecciones AP y lateral dentro de límites normales',
+      'Tórax dentro de límites normales',
+    ],
+    anormal: [
+      'Hallazgos radiográficos sugestivos de proceso infeccioso o inflamatorio pulmonar',
+      'Patrón intersticial o alveolar anormal en campos pulmonares',
+      'Alteraciones en la silueta cardiomediastinal',
+      'Datos radiográficos compatibles con enfermedad pulmonar crónica',
+      'Rectificación de la curvatura fisiológica de la columna',
+      'Escoliosis en columna vertebral',
+      'Cambios degenerativos en columna vertebral (espondilosis)',
+      'Disminución de espacios intervertebrales',
+      'Alteraciones en la alineación vertebral',
+      'Hallazgos sugestivos de hernia discal',
+      'Lesiones óseas o articulares identificadas en estructuras evaluadas',
+      'Hallazgos radiográficos que requieren correlación clínica y/o estudios complementarios',
+    ],
+  },
+  ESPIROMETRIA: {
+    normal: [
+      'Dentro de parámetros normales, sin alteraciones ventilatorias',
+      'Función pulmonar conservada, sin evidencia de patrón obstructivo ni restrictivo',
+      'Valores dentro de rangos de referencia',
+    ],
+    anormal: [
+      'Patrón obstructivo leve, sugestivo de limitación al flujo aéreo',
+      'Patrón obstructivo moderado, sugestivo de limitación al flujo aéreo',
+      'Patrón obstructivo severo, sugestivo de limitación al flujo aéreo',
+      'Patrón restrictivo, con disminución de la capacidad pulmonar',
+      'Alteración ventilatoria mixta (obstructiva y restrictiva)',
+      'Disminución de la función pulmonar en parámetros espirométricos (FEV1, FVC y relación FEV1/FVC)',
+      'Respuesta broncodilatadora positiva, sugestiva de reversibilidad de la obstrucción',
+    ],
+  },
+  EKG: {
+    normal: [
+      'Ritmo sinusal, sin alteraciones electrocardiográficas significativas',
+      'Ritmo sinusal, sin criterios de dilatación de cavidades o de isquemia miocárdica',
+      'Electrocardiograma dentro de parámetros normales',
+      'Actividad eléctrica cardíaca dentro de rangos normales',
+    ],
+    anormal: [
+      'Arritmia cardíaca identificada',
+      'Trastorno de la conducción auriculoventricular',
+      'Trastorno de la conducción intraventricular (bloqueo de rama)',
+      'Cambios electrocardiográficos sugestivos de isquemia miocárdica',
+      'Alteraciones en el segmento ST y/o onda T',
+      'Crecimiento o sobrecarga de cavidades cardíacas',
+      'Bradicardia sinusal fuera de parámetros normales',
+      'Taquicardia sinusal fuera de parámetros normales',
+    ],
+  },
+};
+
+const hallazgoEspecificoSugerencias = computed(() => {
+  const tipo = formData.value.tipoEstudio;
+  const resultado = formData.value.resultadoGlobal;
+  if (!tipo || !(tipo in HALLAZGO_ESPECIFICO_SUGERENCIAS_POR_TIPO)) return [];
+
+  const entry = HALLAZGO_ESPECIFICO_SUGERENCIAS_POR_TIPO[tipo as keyof typeof HALLAZGO_ESPECIFICO_SUGERENCIAS_POR_TIPO];
+  if (resultado === 'NORMAL') return entry.normal;
+  if (resultado === 'ANORMAL') return entry.anormal;
+  return [];
+});
+
 function getDefaultEspecificarNormal(tipo?: string): string {
   switch (tipo) {
     case 'ESPIROMETRIA':
+      return 'Dentro de parámetros normales, sin alteraciones ventilatorias';
     case 'EKG':
-      return 'Normal, valores dentro del rango de referencia';
+      return 'Ritmo sinusal, sin alteraciones electrocardiográficas significativas';
     case 'RAYOS_X':
       return 'Dentro de límites normales';
     case 'ANALISIS_LABORATORIO':
