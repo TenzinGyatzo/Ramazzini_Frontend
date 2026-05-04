@@ -279,62 +279,83 @@ function resetearFiltros() {
 
 const hayFiltrosActivos = computed(() => filtrosAplicados.size > 0);
 
+/*
+ * Logs de rendimiento (desactivados): filtrar consola por `[TrabajadoresView:carga]`
+ * const LOG_CARGA = '[TrabajadoresView:carga]';
+ * const tMount = performance.now();
+ * const roundMs = (n: number) => Math.round(n * 100) / 100;
+ * const logCarga = (etapa: string, extra?: Record<string, unknown>) => {
+ *   console.info(`${LOG_CARGA} ${etapa}`, {
+ *     desdeMontajeMs: roundMs(performance.now() - tMount),
+ *     ...extra,
+ *   });
+ * };
+ */
+
 // 5. Ciclo de vida
 onMounted(async () => {
   const empresaId = String(route.params.idEmpresa);
   const centroTrabajoId = String(route.params.idCentroTrabajo);
   const guardado = localStorage.getItem('mostrarFiltros');
 
-  // const t0 = performance.now();
-  
   // Iniciar la carga con un delay mínimo para garantizar que el spinner se muestre
+  empresas.currentEmpresaId = empresaId;
+  centrosTrabajo.currentCentroTrabajoId = centroTrabajoId;
+
   const inicioCarga = Date.now();
-  await trabajadores.fetchTrabajadoresConHistoria(empresaId, centroTrabajoId);
-  
-  // Garantizar que el spinner se muestre por al menos 300ms para mejor UX
+  await Promise.all([
+    trabajadores.fetchTrabajadoresConHistoria(empresaId, centroTrabajoId),
+    empresas.fetchEmpresaById(empresaId),
+    centrosTrabajo.fetchCentroTrabajoById(empresaId, centroTrabajoId),
+  ]);
+  // logCarga('fetchParalelo trabajadores+empresa+centro', {
+  //   duracionMs: roundMs(performance.now() - tFetch),
+  //   registros: trabajadores.trabajadores.length,
+  //   empresaId,
+  //   centroTrabajoId,
+  // });
+
+  // Garantizar que el spinner se muestre por al menos tiempoMinimoSpinner ms para mejor UX
   const tiempoTranscurrido = Date.now() - inicioCarga;
   const tiempoMinimoSpinner = 100;
   if (tiempoTranscurrido < tiempoMinimoSpinner) {
-    await new Promise(resolve => setTimeout(resolve, tiempoMinimoSpinner - tiempoTranscurrido));
+    const pad = tiempoMinimoSpinner - tiempoTranscurrido;
+    await new Promise(resolve => setTimeout(resolve, pad));
+    // logCarga('esperaMinimaSpinner', { duracionMs: pad });
   }
-  
+
   // Aplicar filtros desde query antes de mostrar la tabla
   aplicarFiltrosDesdeQuery(route.query);
   router.replace({ query: {} });
-  
+  // logCarga('filtrosDesdeQueryYRuta');
+
   // Esperar a que el DOM se actualice completamente
   await nextTick();
-  
+  // logCarga('postNextTick');
+
   // Usar requestAnimationFrame para asegurar que el DOM esté completamente renderizado
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       mostrarTabla.value = true;
-      
+      // logCarga('mostrarTabla (tras 2 rAF)');
+
       // Esperar un tick más para que el componente DataTableDT se monte
       nextTick(() => {
         // Aplicar filtros después de que la tabla esté lista
         setTimeout(() => {
           dataTableRef.value?.aplicarTodosLosFiltrosDesdeLocalStorage();
           tablaLista.value = true; // Marcar que la tabla está completamente lista
+          // logCarga('tablaLista + filtros localStorage', {
+          //   aplicarFiltrosLsMs: roundMs(performance.now() - tDt),
+          // });
+          // logCarga('FIN montaje lista para uso', {
+          //   totalDesdeMontajeMs: roundMs(performance.now() - tMount),
+          // });
         }, 50); // Pequeño delay para asegurar que DataTables esté inicializado
       });
     });
   });
 
-  // const t1 = performance.now();
-  // console.log('Tiempo en cargar y renderizar trabajadores:', t1 - t0, 'ms');
-
-  // requestIdleCallback(() => {
-  //   const renderEnd = performance.now();
-  //   console.log('Tiempo desde nextTick hasta render:', renderEnd - t1, 'ms');
-  // });
-
-  //console.log('Trabajadores:', trabajadores.trabajadores);
-  
-  empresas.currentEmpresaId = empresaId;
-  empresas.fetchEmpresaById(empresaId);
-  centrosTrabajo.currentCentroTrabajoId = centroTrabajoId;
-  centrosTrabajo.fetchCentroTrabajoById(empresaId, centroTrabajoId);
   mostrarFiltros.value = guardado === 'true';
 
   filtrosConfig.forEach(({ id }) => {

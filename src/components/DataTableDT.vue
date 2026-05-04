@@ -849,6 +849,26 @@ watch(() => props.tablaLista, (nuevoValor) => {
   }
 });
 
+/** Refresco del dataset cuando Pinia sustituye el arreglo (p. ej. tras borrar/importar). */
+watch(
+  () => props.rows,
+  (newRows) => {
+    if (!dataTableInstance) return;
+    const rows = Array.isArray(newRows) ? newRows : [];
+    dataTableInstance.clear();
+    dataTableInstance.rows.add(rows);
+    dataTableInstance.order([[0, 'desc']]);
+    const tieneNumeroEmpleado = rows.some(
+      (row: any) =>
+        row.numeroEmpleado &&
+        row.numeroEmpleado !== '-' &&
+        String(row.numeroEmpleado).trim() !== ''
+    );
+    dataTableInstance.column(1).visible(tieneNumeroEmpleado);
+    aplicarTodosLosFiltrosDesdeLocalStorage();
+  }
+);
+
 // Función helper para calcular estado de vigencia y días restantes
 function calcularEstadoVigencia(fechaAptitudPuesto: string | Date | null): { estado: string; diasRestantes: number; diasTranscurridos: number; color: string } {
   if (!fechaAptitudPuesto) {
