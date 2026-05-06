@@ -19,6 +19,7 @@ import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { obtenerRutaDocumento, obtenerNombreArchivo, obtenerFechaDocumento } from '@/helpers/rutas';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
+import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useUserPermissions } from '@/composables/useUserPermissions';
@@ -47,6 +48,7 @@ const showDocumentoExternoUpdateModal = ref(false);
 const showSubscriptionModal = ref(false);
 const showDeleteModal = ref(false);
 const showCuestionariosModal = ref(false);
+const showSeguimientoProgramadoModal = ref(false);
 const showResultadosClinicosPanel = ref(false);
 const selectedDocumentId = ref<string | null>(null);
 const selectedDocumentName = ref<string>('');
@@ -130,6 +132,10 @@ const toggleCuestionariosModal = () => {
   }
 
   showCuestionariosModal.value = !showCuestionariosModal.value;
+};
+
+const openSeguimientoProgramadoModal = () => {
+  showSeguimientoProgramadoModal.value = true;
 };
 
 const toggleDeleteModal = (
@@ -675,8 +681,18 @@ const añoMasReciente = computed(() => {
       </Transition>
 
       <Transition appear name="fade">
-        <ModalCuestionarios v-if="showCuestionariosModal" @closeModal="toggleCuestionariosModal" />
+        <ModalCuestionarios
+          v-if="showCuestionariosModal"
+          @closeModal="toggleCuestionariosModal"
+          @openSeguimientoProgramado="openSeguimientoProgramadoModal"
+        />
       </Transition>
+
+      <ModalSeguimientoProgramadoCardiometabolico
+        :visible="showSeguimientoProgramadoModal && !!trabajadores.currentTrabajadorId"
+        :trabajador-id="trabajadores.currentTrabajadorId ?? null"
+        @close="showSeguimientoProgramadoModal = false"
+      />
 
       <ResultadosClinicosPanel 
         v-if="showResultadosClinicosPanel && trabajadores.currentTrabajadorId" 

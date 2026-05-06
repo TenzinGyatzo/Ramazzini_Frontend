@@ -206,11 +206,11 @@ function setCategoriaIMC(IMC) {
   } else if (IMC >= 25 && IMC <= 29.99) {
     categoria = 'Sobrepeso';
   } else if (IMC >= 30 && IMC <= 34.99) {
-    categoria = 'Obesidad grado I';
+    categoria = 'Obesidad clase I';
   } else if (IMC >= 35 && IMC <= 39.99) {
-    categoria = 'Obesidad grado II';
+    categoria = 'Obesidad clase II';
   } else if (IMC >= 40) {
-    categoria = 'Obesidad grado III';
+    categoria = 'Obesidad clase III';
   }
   categoriaIMC.value = categoria;
 }
@@ -373,9 +373,9 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
               categoriaIMC === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
               categoriaIMC === 'Bajo peso' ? 'bg-yellow-50 text-yellow-800' : '',
               categoriaIMC === 'Sobrepeso' ? 'bg-yellow-50 text-yellow-800' : '',
-              categoriaIMC === 'Obesidad grado I' ? 'bg-red-50 text-red-900' : '',
-              categoriaIMC === 'Obesidad grado II' ? 'bg-red-100 text-red-900' : '',
-              categoriaIMC === 'Obesidad grado III' ? 'bg-red-200 text-red-950' : ''
+              categoriaIMC === 'Obesidad clase I' ? 'bg-red-50 text-red-900' : '',
+              categoriaIMC === 'Obesidad clase II' ? 'bg-red-100 text-red-900' : '',
+              categoriaIMC === 'Obesidad clase III' ? 'bg-red-200 text-red-950' : ''
             ]"
             readonly
             title="La categoría se determina automáticamente según su IMC"

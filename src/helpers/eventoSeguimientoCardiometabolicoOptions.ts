@@ -15,9 +15,9 @@ export const ESTADO_CONTROL_CONDICION_OPTS = [
 
 export const GRADO_OBESIDAD_OPTS = [
   { value: 'SOBREPESO', label: 'Sobrepeso' },
-  { value: 'OBESIDAD_I', label: 'Obesidad grado I' },
-  { value: 'OBESIDAD_II', label: 'Obesidad grado II' },
-  { value: 'OBESIDAD_III', label: 'Obesidad grado III' },
+  { value: 'OBESIDAD_I', label: 'Obesidad clase I' },
+  { value: 'OBESIDAD_II', label: 'Obesidad clase II' },
+  { value: 'OBESIDAD_III', label: 'Obesidad clase III' },
 ] as const;
 
 export function labelDiagnostico(value: string) {
@@ -36,7 +36,7 @@ const CATEGORIA_IMC_A_GRADO: Record<string, string> = {
   'Obesidad clase I': 'OBESIDAD_I',
   'Obesidad clase II': 'OBESIDAD_II',
   'Obesidad clase III': 'OBESIDAD_III',
-  /** Alias: `Step3.vue` usa «grado» en la UI; `categoriaImcEspaniolDesdeNumero` usa «clase». */
+  /** Alias: registros antiguos en BD pueden seguir guardando «Obesidad grado …». */
   'Obesidad grado I': 'OBESIDAD_I',
   'Obesidad grado II': 'OBESIDAD_II',
   'Obesidad grado III': 'OBESIDAD_III',

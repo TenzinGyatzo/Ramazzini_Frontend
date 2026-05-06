@@ -8,7 +8,7 @@ import { usePermissionRestrictions } from '@/composables/usePermissionRestrictio
 
 const toast = inject('toast');
 
-const emit = defineEmits(['closeModal']);
+const emit = defineEmits(['closeModal', 'openSeguimientoProgramado']);
 const router = useRouter();
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -17,6 +17,13 @@ const { executeIfCanManageCuestionariosAdicionales } = usePermissionRestrictions
 
 const closeModal = () => {
   emit('closeModal');
+};
+
+const openModalSeguimientosProgramados = () => {
+  executeIfCanManageCuestionariosAdicionales(() => {
+    emit('openSeguimientoProgramado');
+    closeModal();
+  }, 'acceder a cuestionarios adicionales');
 };
 
 // Función para manejar la selección de cuestionarios
@@ -139,6 +146,7 @@ const handleQuestionnaireSelect = (questionnaireType) => {
           tipoDocumento: 'eventoSeguimientoCardiometabolico'
         }
       });
+      closeModal();
     }
   }, 'acceder a cuestionarios adicionales');
 };
@@ -204,13 +212,24 @@ const handleQuestionnaireSelect = (questionnaireType) => {
               Condición Personal
             </div>
             <div class="space-y-2">
-              <button 
-                @click="handleQuestionnaireSelect('evento-seguimiento-cardiometabolico')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fas fa-heartbeat text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Evento Seguimiento Cardiometabolico
-              </button>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <button 
+                  @click="handleQuestionnaireSelect('evento-seguimiento-cardiometabolico')"
+                  class="questionnaire-option flex-1 min-w-0 text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center gap-2 group border border-gray-200 hover:border-emerald-300"
+                >
+                  <i class="fas fa-heartbeat text-emerald-500 text-sm group-hover:text-emerald-600 shrink-0" />
+                  <span class="min-w-0">Evento Seguimiento Cardiometabólico</span>
+                </button>
+                <button
+                  type="button"
+                  class="questionnaire-option shrink-0 sm:w-40 px-4 py-3 rounded-lg hover:bg-slate-50 text-sm text-slate-700 transition-colors duration-150 flex flex-col sm:flex-row items-center justify-center gap-2 border border-gray-200 hover:border-slate-400"
+                  title="Citas y estados sin valoración clínica PDF"
+                  @click="openModalSeguimientosProgramados"
+                >
+                  <i class="fas fa-calendar-check text-slate-600 text-base" />
+                  <span class="text-center leading-tight">Citas</span>
+                </button>
+              </div>
               <button 
                 @click="handleQuestionnaireSelect('control-prenatal')"
                 class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
