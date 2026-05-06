@@ -18,6 +18,7 @@ import {
   textoInterpretacionPQB,
   esPositivoRiesgoPsicoticoPQB,
 } from '@/helpers/cuestionarioProdromalBreveSteps';
+import { ESTADO_CONTROL_CONDICION_OPTS, GRADO_OBESIDAD_OPTS } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
 import ModalPdfEliminado from './ModalPdfEliminado.vue';
 import DocumentHoverPreview from './DocumentHoverPreview.vue';
 import { useUserPermissions } from '@/composables/useUserPermissions';
@@ -132,7 +133,7 @@ const canEditDocument = (documentType) => {
   }
   
   // Cuestionarios adicionales (incluye certificadoExpedito)
-  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad'].includes(tipoSinEspacios)) {
+  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico'].includes(tipoSinEspacios)) {
     return canManageCuestionariosAdicionales.value;
   }
   
@@ -158,7 +159,7 @@ const handleEditDocument = (documentoId, documentoTipo) => {
     executeIfCanManageDocumentosDiagnostico(() => {
       editarDocumento(documentoId, documentoTipo);
     }, 'editar documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad'].includes(tipoSinEspacios)) {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico'].includes(tipoSinEspacios)) {
     executeIfCanManageCuestionariosAdicionales(() => {
       editarDocumento(documentoId, documentoTipo);
     }, 'editar cuestionarios adicionales');
@@ -199,7 +200,7 @@ const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
     executeIfCanManageDocumentosDiagnostico(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad'].includes(tipoSinEspacios)) {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico'].includes(tipoSinEspacios)) {
     executeIfCanManageCuestionariosAdicionales(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar cuestionarios adicionales');
@@ -1021,6 +1022,10 @@ const descargarPdfActual = async () => {
                     documento = props.trastornoLimitePersonalidad;
                     tipoDocumento = 'Trastorno Limite Personalidad';
                     break;
+                case 'eventoseguimientocardiometabolico':
+                    documento = props.eventoSeguimientoCardiometabolico;
+                    tipoDocumento = 'Evento Seguimiento Cardiometabolico';
+                    break;
                 case 'documentoexterno':
                     documento = props.documentoExterno;
                     tipoDocumento = 'Documento Externo';
@@ -1151,6 +1156,7 @@ const props = defineProps({
     trastornosEstadoAnimo: [Object, String],
     cuestionarioProdromalBreve: [Object, String],
     trastornoLimitePersonalidad: [Object, String],
+    eventoSeguimientoCardiometabolico: [Object, String],
 });
 
 const { antidoping } = props; // Desestructuración para acceder a antidoping
@@ -1411,6 +1417,47 @@ const claseColorInterpretacionTlpLista = computed(() => {
   if (p <= 6) return 'text-yellow-600';
   return 'text-orange-600';
 });
+
+/** Chips en lista para Evento Seguimiento Cardiometabólico (misma semántica que `VisualizadorEventoSeguimientoCardiometabolico`). */
+const labelControlCardiometabolicoDoc = (code) => {
+  if (!code) return '—';
+  const o = ESTADO_CONTROL_CONDICION_OPTS.find((x) => x.value === code);
+  return o?.label ?? String(code);
+};
+
+const labelGradoObesidadCardiometabolicoDoc = (code) => {
+  if (!code) return '—';
+  const o = GRADO_OBESIDAD_OPTS.find((x) => x.value === code);
+  return o?.label ?? String(code);
+};
+
+const claseTextoEstadoCardiometabolicoLista = computed(() => {
+  const d = props.eventoSeguimientoCardiometabolico;
+  if (!d || typeof d !== 'object') {
+    return { hipertensionArterial: 'text-gray-600', diabetesMellitusTipo2: 'text-gray-600', dislipidemia: 'text-gray-600', obesidad: 'text-gray-600' };
+  }
+  const ec = d.estadoCondiciones;
+  const ctrl = (key) => {
+    const c = ec?.[key]?.control;
+    if (c === 'CONTROLADA') return 'text-emerald-700';
+    if (c === 'NO_CONTROLADA') return 'text-red-700';
+    if (c === 'NO_VALORABLE') return 'text-gray-800';
+    return 'text-gray-600';
+  };
+  const g = ec?.obesidad?.grado;
+  let obesidadClase = 'text-gray-600';
+  if (!g) obesidadClase = ec ? 'text-gray-900' : 'text-gray-600';
+  else if (g === 'SOBREPESO') obesidadClase = 'text-gray-900';
+  else if (g === 'OBESIDAD_I') obesidadClase = 'text-red-600';
+  else if (g === 'OBESIDAD_II') obesidadClase = 'text-red-700';
+  else if (g === 'OBESIDAD_III') obesidadClase = 'text-red-900';
+  return {
+    hipertensionArterial: ctrl('hipertensionArterial'),
+    diabetesMellitusTipo2: ctrl('diabetesMellitusTipo2'),
+    dislipidemia: ctrl('dislipidemia'),
+    obesidad: obesidadClase,
+  };
+});
 ///////////////////////////////////////////
 
 const construirRutaYNombrePDF = () => {
@@ -1434,9 +1481,10 @@ const construirRutaYNombrePDF = () => {
     'trastornosestadoanimo': props.trastornosEstadoAnimo,
     'cuestionarioprodromalbreve': props.cuestionarioProdromalBreve,
     'trastornolimitepersonalidad': props.trastornoLimitePersonalidad,
+    'eventoseguimientocardiometabolico': props.eventoSeguimientoCardiometabolico,
   }[tipoSinEspacios];
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico;
 
   const tiposDocumentos = {
     'constanciaaptitud': 'Constancia de Aptitud',
@@ -1457,6 +1505,7 @@ const construirRutaYNombrePDF = () => {
     'trastornosestadoanimo': 'Trastornos Estado Animo',
     'cuestionarioprodromalbreve': 'Cuestionario Prodromal Breve',
     'trastornolimitepersonalidad': 'Trastorno Limite Personalidad',
+    'eventoseguimientocardiometabolico': 'Evento Seguimiento Cardiometabolico',
   };
 
   const tipoDocumentoFormateado = tiposDocumentos[tipoSinEspacios];
@@ -1568,7 +1617,7 @@ onMounted(() => {
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad], () => {
+watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico], () => {
   verificarDisponibilidadPDF();
 }, { deep: true });
 
@@ -2990,6 +3039,90 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
                     </div>
                 </div>
+                    
+                <!-- Evento Seguimiento Cardiometabolico -->
+                <div v-if="typeof eventoSeguimientoCardiometabolico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${eventoSeguimientoCardiometabolico.rutaPDF}`,
+                            `Evento Seguimiento Cardiometabolico ${convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico)}.pdf`,
+                            eventoSeguimientoCardiometabolico.updatedAt ? new Date(eventoSeguimientoCardiometabolico.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${eventoSeguimientoCardiometabolico.rutaPDF}`,
+                            `Evento Seguimiento Cardiometabolico ${convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico)}.pdf`,
+                            eventoSeguimientoCardiometabolico.updatedAt ? new Date(eventoSeguimientoCardiometabolico.updatedAt).getTime() : null,
+                            'Evento Seguimiento Cardiometabolico')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-rose-100 rounded-lg mr-4 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-heart-crack text-rose-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Evento Seguimiento Cardiometabolico
+                                </h3>
+                            </div>
+                            <p class="text-sm text-gray-500 flex items-center">
+                                <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                {{ convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico) }}
+                            </p>
+                        </div>
+
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">HTA</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="claseTextoEstadoCardiometabolicoLista.hipertensionArterial"
+                                        :title="labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.hipertensionArterial?.control)">
+                                        {{ labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.hipertensionArterial?.control) }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">DM2</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="claseTextoEstadoCardiometabolicoLista.diabetesMellitusTipo2"
+                                        :title="labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.diabetesMellitusTipo2?.control)">
+                                        {{ labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.diabetesMellitusTipo2?.control) }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Dislipidemia</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="claseTextoEstadoCardiometabolicoLista.dislipidemia"
+                                        :title="labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.dislipidemia?.control)">
+                                        {{ labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.dislipidemia?.control) }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[11rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Nivel obesidad</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="claseTextoEstadoCardiometabolicoLista.obesidad"
+                                        :title="labelGradoObesidadCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.obesidad?.grado)">
+                                        {{ labelGradoObesidadCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.obesidad?.grado) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
 
@@ -3016,6 +3149,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     'Trastornos Estado Animo': trastornosEstadoAnimo,
                     'Cuestionario Prodromal Breve': cuestionarioProdromalBreve,
                     'Trastorno Limite Personalidad': trastornoLimitePersonalidad,
+                    'Evento Seguimiento Cardiometabolico': eventoSeguimientoCardiometabolico,
                 }" :key="key">
                     <button v-if="documento && documento.rutaDocumento" @click="descargarArchivo(documento, key)"
                         type="button"

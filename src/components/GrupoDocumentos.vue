@@ -86,7 +86,8 @@ const totalDocumentos = computed(() => {
            (props.documents.entrevistasPsicologicas?.length || 0) +
            (props.documents.trastornosEstadoAnimo?.length || 0) +
            (props.documents.cuestionarioProdromalBreve?.length || 0) +
-           (props.documents.trastornoLimitePersonalidad?.length || 0);
+           (props.documents.trastornoLimitePersonalidad?.length || 0) + 
+           (props.documents.eventoSeguimientoCardiometabolico?.length || 0);
 });
 
 // Obtener todas las rutas de documentos de este grupo específico
@@ -278,6 +279,16 @@ const rutasDelGrupo = computed(() => {
             const rutaBase = obtenerRutaDocumento(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad');
             const fecha = obtenerFechaDocumento(trastornoLimitePersonalidad) || 'SinFecha';
             const nombreArchivo = obtenerNombreArchivo(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad', fecha);
+            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+            rutas.push(ruta);
+        });
+    }
+
+    if (props.documents.eventoSeguimientoCardiometabolico) {
+        props.documents.eventoSeguimientoCardiometabolico.forEach(eventoSeguimientoCardiometabolico => {
+            const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
+            const fecha = obtenerFechaDocumento(eventoSeguimientoCardiometabolico) || 'SinFecha';
+            const nombreArchivo = obtenerNombreArchivo(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico', fecha);
             const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
             rutas.push(ruta);
         });
@@ -874,6 +885,30 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                         return props.selectedRoutes.includes(ruta);
                     })()"
                     @eliminarDocumento="$emit('eliminarDocumento', trastornoLimitePersonalidad._id, convertirFechaISOaDDMMYYYY(trastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad), 'trastornoLimitePersonalidad')" 
+                    @openSubscriptionModal="emit('openSubscriptionModal')"
+                />
+            </div>
+        </div>
+
+        <!-- Evento Seguimiento Cardiometabolico -->
+        <div v-if="documents.eventoSeguimientoCardiometabolico && documents.eventoSeguimientoCardiometabolico.length > 0">
+            <div v-for="(eventoSeguimientoCardiometabolico, index) in documents.eventoSeguimientoCardiometabolico" :key="eventoSeguimientoCardiometabolico._id"
+                 class="transition-all duration-200 hover:bg-gray-50"
+                 :style="{ animationDelay: `${index * 50}ms` }">
+                <DocumentoItem 
+                    :eventoSeguimientoCardiometabolico="eventoSeguimientoCardiometabolico" 
+                    :documentoId="eventoSeguimientoCardiometabolico._id" 
+                    :documentoTipo="'eventoSeguimientoCardiometabolico'" 
+                    :toggleRouteSelection="toggleRouteSelection"
+                    :isDeletionMode="isDeletionMode"
+                    :isSelected="(() => {
+                        const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
+                        const fecha = obtenerFechaDocumento(eventoSeguimientoCardiometabolico) || 'SinFecha';
+                        const nombreArchivo = obtenerNombreArchivo(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico', fecha);
+                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                        return props.selectedRoutes.includes(ruta);
+                    })()"
+                    @eliminarDocumento="$emit('eliminarDocumento', eventoSeguimientoCardiometabolico._id, convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico), 'eventoSeguimientoCardiometabolico')" 
                     @openSubscriptionModal="emit('openSubscriptionModal')"
                 />
             </div>

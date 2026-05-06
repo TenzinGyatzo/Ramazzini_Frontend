@@ -628,18 +628,64 @@ export interface TrastornoLimitePersonalidad {
     esfuerzosEvitarAbandono?: string;
 }
 
+export interface VisitaControlCondicionEsc {
+  control?: string;
+}
+
+export interface EventoSeguimientoCardiometabolicoObesidad {
+  grado?: string;
+}
+
+export interface EstadoCondicionesCardiometabolicasEvento {
+  hipertensionArterial?: VisitaControlCondicionEsc;
+  diabetesMellitusTipo2?: VisitaControlCondicionEsc;
+  dislipidemia?: VisitaControlCondicionEsc;
+  obesidad?: EventoSeguimientoCardiometabolicoObesidad;
+}
+
+export interface SignosVitalesCardiometabolicoEsc {
+  tensionArterialSistolica?: number;
+  tensionArterialDiastolica?: number;
+  categoriaTensionArterial?: string;
+  frecuenciaCardiaca?: number;
+  categoriaFrecuenciaCardiaca?: string;
+}
+
+export interface SomatometriaCardiometabolicoEsc {
+  peso?: number;
+  altura?: number;
+  indiceMasaCorporal?: number;
+  categoriaIMC?: string;
+  circunferenciaCintura?: number;
+  categoriaCircunferenciaCintura?: string;
+}
+
+export interface LaboratorioCardiometabolicoEsc {
+  glucosaMgDl?: number;
+  categoriaGlucosa?: string;
+  hba1cPorcentaje?: number;
+  categoriaHbA1c?: string;
+  colesterolTotalMgDl?: number;
+  categoriaColesterolTotal?: string;
+  ldlMgDl?: number;
+  categoriaLDL?: string;
+  hdlMgDl?: number;
+  categoriaHDL?: string;
+  trigliceridosMgDl?: number;
+  categoriaTrigliceridos?: string;
+}
+
 export interface EventoSeguimientoCardiometabolico {
     _id: string;
-    fechaControlCardiometabolico: string;
+    fechaEventoSeguimientoCardiometabolico: string;
     motivoSeguimiento: string;
-    diagnosticosActivos: string[];
-    estadoCondiciones: string;
-    signosVitales: string;
-    somatometria: string;
-    laboratorio: string;
-    adherenciaTerapeutica: string;
-    sintomasRelevantes: string;
-    evaluacionClinica: string;  
-    plan: string;
-    proximaRevisionSugerida: string;
+    diagnosticosActivos?: string[];
+    estadoCondiciones?: EstadoCondicionesCardiometabolicasEvento;
+    signosVitales?: SignosVitalesCardiometabolicoEsc;
+    somatometria?: SomatometriaCardiometabolicoEsc;
+    laboratorio?: LaboratorioCardiometabolicoEsc;
+    adherenciaTerapeutica?: string;
+    sintomasRelevantes?: string;
+    riesgosActuales?: string;
+    proximaRevisionSugerida?: string;
 }

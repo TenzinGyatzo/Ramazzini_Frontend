@@ -76,7 +76,7 @@ const documentTypes = computed(() => {
     }
     // Si la ruta no contiene ninguno de los tipos específicos pero tiene extensión, es un documento externo
     else if (!route.includes('Constancia de Aptitud') && !route.includes('Aptitud') && !route.includes('Historia Clinica') && !route.includes('Exploracion Fisica') && 
-             !route.includes('Examen Vista') && !route.includes('Historia Otologica') && !route.includes('Audiometria') && !route.includes('Antidoping') && !route.includes('Certificado') && !route.includes('Certificado Expedito') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Receta') && !route.includes('Entrevista Psicologica') && !route.includes('Trastornos Estado Animo') && !route.includes('Cuestionario Prodromal Breve') && !route.includes('Trastorno Limite Personalidad') && !route.includes('Control Prenatal') && (route.includes('.pdf') || route.includes('.png') || route.includes('.jpg') || 
+             !route.includes('Examen Vista') && !route.includes('Historia Otologica') && !route.includes('Audiometria') && !route.includes('Antidoping') && !route.includes('Certificado') && !route.includes('Certificado Expedito') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Receta') && !route.includes('Entrevista Psicologica') && !route.includes('Trastornos Estado Animo') && !route.includes('Cuestionario Prodromal Breve') && !route.includes('Trastorno Limite Personalidad') && !route.includes('Evento Seguimiento Cardiometabolico') && !route.includes('Control Prenatal') && (route.includes('.pdf') || route.includes('.png') || route.includes('.jpg') || 
              route.includes('.jpeg') || route.includes('.doc') || route.includes('.docx'))) {
       types.documentosExternos = (types.documentosExternos || 0) + 1;
     }
@@ -94,6 +94,9 @@ const documentTypes = computed(() => {
     }
     else if (route.includes('Trastorno Limite Personalidad')) {
       types.trastornoLimitePersonalidad = (types.trastornoLimitePersonalidad || 0) + 1;
+    }
+    else if (route.includes('Evento Seguimiento Cardiometabolico')) {
+      types.eventoSeguimientoCardiometabolico = (types.eventoSeguimientoCardiometabolico || 0) + 1;
     }
   });
   
@@ -217,6 +220,10 @@ const documentTypes = computed(() => {
                       <div v-if="documentTypes.trastornoLimitePersonalidad" class="flex items-center space-x-2">
                         <i class="fas fa-heart-crack text-purple-600"></i>
                         <span>{{ documentTypes.trastornoLimitePersonalidad }} Trastorno{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }} Limite{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }} Personalidad{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }}</span>
+                      </div>
+                      <div v-if="documentTypes.eventoSeguimientoCardiometabolico" class="flex items-center space-x-2">
+                        <i class="fas fa-heartbeat text-purple-600"></i>
+                        <span>{{ documentTypes.eventoSeguimientoCardiometabolico }} Evento{{ documentTypes.eventoSeguimientoCardiometabolico !== 1 ? 's' : '' }} Seguimiento{{ documentTypes.eventoSeguimientoCardiometabolico !== 1 ? 's' : '' }} Cardiometabolico{{ documentTypes.eventoSeguimientoCardiometabolico !== 1 ? 's' : '' }}</span>
                       </div>
                     </div>
                   </div>

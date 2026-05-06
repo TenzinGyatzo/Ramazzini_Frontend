@@ -735,6 +735,23 @@ const camposRequeridosPorTipo: Record<
       validacion: validarSiNo,
     },
   ],
+
+  eventoSeguimientoCardiometabolico: [
+    {
+      campo: 'fechaEventoSeguimientoCardiometabolico',
+      nombre: 'Fecha de seguimiento cardiometabólico',
+      tipo: 'fecha',
+      paso: 1,
+      validacion: validarFecha,
+    },
+    {
+      campo: 'motivoSeguimiento',
+      nombre: 'Motivo del seguimiento',
+      tipo: 'texto',
+      paso: 1,
+      validacion: validarTexto,
+    },
+  ],
 };
 
 // Función principal para validar campos requeridos

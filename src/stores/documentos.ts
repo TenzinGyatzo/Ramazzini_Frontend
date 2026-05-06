@@ -250,7 +250,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
       trastornosEstadoAnimo: "fechaTrastornosEstadoAnimo",
       cuestionarioProdromalBreve: "fechaCuestionarioProdromalBreve",
       trastornoLimitePersonalidad: "fechaTrastornoLimitePersonalidad",
-      eventoSeguimientoCardiometabolico: "fechaControlCardiometabolico",
+      eventoSeguimientoCardiometabolico: "fechaEventoSeguimientoCardiometabolico",
     };
 
     return documento?.[fechaCampos[tipoDocumento]] || "";

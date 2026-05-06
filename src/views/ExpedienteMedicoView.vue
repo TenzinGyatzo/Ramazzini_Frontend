@@ -529,6 +529,17 @@ const handleDeleteSelected = async () => {
                     documentosAEliminar.push({ id: trastornoLimitePersonalidad._id, tipo: 'trastornoLimitePersonalidad' });
                 }
             });
+
+            // Evento Seguimiento Cardiometabolico
+            yearData.eventoSeguimientoCardiometabolico?.forEach(eventoSeguimientoCardiometabolico => {
+                const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
+                const fecha = obtenerFechaDocumento(eventoSeguimientoCardiometabolico) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (selectedRoutes.value.includes(ruta)) {
+                    documentosAEliminar.push({ id: eventoSeguimientoCardiometabolico._id, tipo: 'eventoSeguimientoCardiometabolico' });
+                }
+            });
         });
                 
         // Eliminar documentos uno por uno
@@ -609,7 +620,8 @@ const totalDocumentosCreados = computed(() => {
       (yearData.entrevistasPsicologicas?.length || 0) +
       (yearData.trastornosEstadoAnimo?.length || 0) +
       (yearData.cuestionarioProdromalBreve?.length || 0) +
-      (yearData.trastornoLimitePersonalidad?.length || 0)
+      (yearData.trastornoLimitePersonalidad?.length || 0) +
+      (yearData.eventoSeguimientoCardiometabolico?.length || 0)
     );
   }, 0);
 });
