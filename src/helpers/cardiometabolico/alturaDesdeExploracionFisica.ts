@@ -9,6 +9,10 @@ const ALTURA_MAX_M = 2.5;
 const PESO_MIN_KG = 35;
 const PESO_MAX_KG = 300;
 
+/** cm — igual que Step 3 ESC */
+const CINTURA_MIN_CM = 40;
+const CINTURA_MAX_CM = 200;
+
 function pesoValidoKg(p: unknown): number | undefined {
   if (p == null || typeof p !== 'number' || Number.isNaN(p) || !Number.isFinite(p)) return undefined;
   if (p < PESO_MIN_KG || p > PESO_MAX_KG) return undefined;
@@ -21,13 +25,20 @@ function alturaValidaM(a: unknown): number | undefined {
   return a;
 }
 
+function circunferenciaCinturaValidaCm(c: unknown): number | undefined {
+  if (c == null || typeof c !== 'number' || Number.isNaN(c) || !Number.isFinite(c)) return undefined;
+  if (c < CINTURA_MIN_CM || c > CINTURA_MAX_CM) return undefined;
+  return c;
+}
+
 /**
- * Peso y/o altura de la exploración física más reciente por fecha (`fechaExploracionFisica`).
+ * Peso, altura y/o circunferencia de cintura de la exploración física más reciente por fecha (`fechaExploracionFisica`).
  * Solo el último documento del trabajador; si ese informe no trae un dato válido, no se buscan otros estudios.
  */
 export type SomatometriaUltimaExploracionFisica = {
   peso?: number;
   altura?: number;
+  circunferenciaCintura?: number;
   /** Fecha del informe EF usado como fuente (misma que `fechaExploracionFisica` del documento más reciente). */
   fechaExploracionFisica?: string;
 };
@@ -56,8 +67,9 @@ export function obtenerSomatometriaUltimaExploracionFisica(
   const ultima = delTrabajador[0];
   const peso = pesoValidoKg(ultima?.peso);
   const altura = alturaValidaM(ultima?.altura);
+  const circunferenciaCintura = circunferenciaCinturaValidaCm(ultima?.circunferenciaCintura);
 
-  if (peso === undefined && altura === undefined) return {};
+  if (peso === undefined && altura === undefined && circunferenciaCintura === undefined) return {};
 
   const fechaExploracionFisica =
     typeof ultima?.fechaExploracionFisica === 'string' && ultima.fechaExploracionFisica.trim() !== ''
@@ -67,6 +79,7 @@ export function obtenerSomatometriaUltimaExploracionFisica(
   return {
     ...(peso !== undefined ? { peso } : {}),
     ...(altura !== undefined ? { altura } : {}),
+    ...(circunferenciaCintura !== undefined ? { circunferenciaCintura } : {}),
     ...(fechaExploracionFisica !== undefined ? { fechaExploracionFisica } : {}),
   };
 }

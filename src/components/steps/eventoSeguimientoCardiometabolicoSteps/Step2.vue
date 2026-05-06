@@ -80,6 +80,10 @@ function asegurarSomatometriaMinimaParaImc() {
   if (!(typeof s.peso === 'number') || s.peso <= 0) {
     s.peso = ef?.peso != null ? ef.peso : esHombre ? 80 : 70;
   }
+  if (!(typeof s.circunferenciaCintura === 'number') || s.circunferenciaCintura <= 0) {
+    s.circunferenciaCintura =
+      ef?.circunferenciaCintura != null ? ef.circunferenciaCintura : esHombre ? 93 : 79;
+  }
 }
 
 function toggleDiagnostico(value) {

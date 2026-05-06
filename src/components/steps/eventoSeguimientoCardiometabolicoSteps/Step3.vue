@@ -23,9 +23,10 @@ const categoriaIMC = ref('Normal');
 const circunferenciaCintura = ref(85);
 const categoriaCircunferenciaCintura = ref('Bajo Riesgo');
 
-/** Notas discretas cuando peso/altura vienen de la EF más reciente; se ocultan al editar el campo. */
+/** Notas discretas cuando peso/altura/circunferencia vienen de la EF más reciente; se ocultan al editar el campo. */
 const mostrarNotaPesoDesdeEF = ref(false);
 const mostrarNotaAlturaDesdeEF = ref(false);
+const mostrarNotaCircunferenciaDesdeEF = ref(false);
 const fechaExploracionFisicaFuenteIso = ref('');
 
 const fechaExploracionFisicaFuenteLegible = computed(() => {
@@ -43,6 +44,10 @@ function limpiarNotaAlturaDesdeEF() {
   mostrarNotaAlturaDesdeEF.value = false;
 }
 
+function limpiarNotaCircunferenciaDesdeEF() {
+  mostrarNotaCircunferenciaDesdeEF.value = false;
+}
+
 function mismoValorNumericoSomatometria(a, b) {
   if (typeof a !== 'number' || typeof b !== 'number' || Number.isNaN(a) || Number.isNaN(b)) return false;
   return Math.abs(a - b) < 0.001;
@@ -52,9 +57,15 @@ function mismoValorNumericoSomatometria(a, b) {
 function sincronizarNotasProcedenciaExploracionFisica(efSom) {
   mostrarNotaPesoDesdeEF.value = false;
   mostrarNotaAlturaDesdeEF.value = false;
+  mostrarNotaCircunferenciaDesdeEF.value = false;
   fechaExploracionFisicaFuenteIso.value = '';
 
-  if (!efSom || (efSom.peso == null && efSom.altura == null)) return;
+  if (
+    !efSom ||
+    (efSom.peso == null && efSom.altura == null && efSom.circunferenciaCintura == null)
+  ) {
+    return;
+  }
 
   if (efSom.peso != null && mismoValorNumericoSomatometria(peso.value, efSom.peso)) {
     mostrarNotaPesoDesdeEF.value = true;
@@ -62,9 +73,17 @@ function sincronizarNotasProcedenciaExploracionFisica(efSom) {
   if (efSom.altura != null && mismoValorNumericoSomatometria(altura.value, efSom.altura)) {
     mostrarNotaAlturaDesdeEF.value = true;
   }
+  if (
+    efSom.circunferenciaCintura != null &&
+    mismoValorNumericoSomatometria(circunferenciaCintura.value, efSom.circunferenciaCintura)
+  ) {
+    mostrarNotaCircunferenciaDesdeEF.value = true;
+  }
 
   if (
-    (mostrarNotaPesoDesdeEF.value || mostrarNotaAlturaDesdeEF.value) &&
+    (mostrarNotaPesoDesdeEF.value ||
+      mostrarNotaAlturaDesdeEF.value ||
+      mostrarNotaCircunferenciaDesdeEF.value) &&
     efSom.fechaExploracionFisica
   ) {
     fechaExploracionFisicaFuenteIso.value = efSom.fechaExploracionFisica;
@@ -95,9 +114,16 @@ onMounted(() => {
   som();
   const docSom = documentos.currentDocument?.somatometria;
   const fdSom = som();
-  if (docSom && (docSom.peso != null || docSom.altura != null)) {
+  if (
+    docSom &&
+    (docSom.peso != null || docSom.altura != null || docSom.circunferenciaCintura != null)
+  ) {
     hydrateFromSom(docSom);
-  } else if (fdSom?.peso != null || fdSom?.altura != null) {
+  } else if (
+    fdSom?.peso != null ||
+    fdSom?.altura != null ||
+    fdSom?.circunferenciaCintura != null
+  ) {
     hydrateFromSom(fdSom);
   } else {
     const esHombre = trabajadores.currentTrabajador?.sexo === 'Masculino';
@@ -110,6 +136,8 @@ onMounted(() => {
 
   const alturaPersistida = docSom?.altura != null || fdSom?.altura != null;
   const pesoPersistido = docSom?.peso != null || fdSom?.peso != null;
+  const circunferenciaPersistida =
+    docSom?.circunferenciaCintura != null || fdSom?.circunferenciaCintura != null;
 
   const efSom = obtenerSomatometriaUltimaExploracionFisica(
     documentos.documentsByYear,
@@ -124,6 +152,10 @@ onMounted(() => {
     }
     if (!pesoPersistido && efSom.peso != null) {
       peso.value = efSom.peso;
+      aplicoDatosEf = true;
+    }
+    if (!circunferenciaPersistida && efSom.circunferenciaCintura != null) {
+      circunferenciaCintura.value = efSom.circunferenciaCintura;
       aplicoDatosEf = true;
     }
   }
@@ -375,6 +407,8 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
               min="40"
               max="200"
               placeholder="40-200"
+              @input="limpiarNotaCircunferenciaDesdeEF"
+              @change="limpiarNotaCircunferenciaDesdeEF"
             />
           </div>
           <transition
@@ -389,6 +423,17 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
               ⚠️ {{ mensajeErrorCircunferenciaCintura }}
             </p>
           </transition>
+          <p
+            v-if="mostrarNotaCircunferenciaDesdeEF"
+            class="text-xs text-gray-500 mt-1.5 leading-snug"
+          >
+            <template v-if="fechaExploracionFisicaFuenteLegible">
+              Valor obtenido de exploración física · {{ fechaExploracionFisicaFuenteLegible }}
+            </template>
+            <template v-else>
+              Valor obtenido de exploración física
+            </template>
+          </p>
         </div>
         <div class="relative">
           <input
