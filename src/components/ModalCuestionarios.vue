@@ -197,6 +197,38 @@ const handleQuestionnaireSelect = (questionnaireType) => {
             </div>
           </div>
 
+          <!-- Vigilancia médica por condición personal -->
+          <div class="space-y-3">
+            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
+              <i class="fas fa-user-circle text-emerald-500 mr-3"></i>
+              Condición Personal
+            </div>
+            <div class="space-y-2">
+              <button 
+                @click="handleQuestionnaireSelect('evento-seguimiento-cardiometabolico')"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+              >
+                <i class="fas fa-heartbeat text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Evento Seguimiento Cardiometabolico
+              </button>
+              <button 
+                @click="handleQuestionnaireSelect('control-prenatal')"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
+              >
+                <i class="fas fa-baby text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Control Prenatal (Embarazo y Lactancia)
+              </button>
+              <button 
+                @click="handleQuestionnaireSelect('condiciones-muscoesqueleticas')"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
+                disabled
+              >
+                <i class="fas fa-bone text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Condiciones muscoesqueléticas
+              </button>
+            </div>
+          </div>
+
           <!-- Cuestionarios previos a estudios de gabinete -->
           <div class="space-y-3">
             <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
@@ -258,46 +290,6 @@ const handleQuestionnaireSelect = (questionnaireType) => {
               </button>
             </div>
           </div> 
-
-          <!-- Vigilancia médica por condición personal -->
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-user-circle text-emerald-500 mr-3"></i>
-              Condición Personal
-            </div>
-            <div class="space-y-2">
-              <button 
-                @click="handleQuestionnaireSelect('evento-seguimiento-cardiometabolico')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fas fa-heartbeat text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Evento Seguimiento Cardiometabolico
-              </button>
-              <button 
-                @click="handleQuestionnaireSelect('control-prenatal')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fas fa-baby text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Control Prenatal (Embarazo y Lactancia)
-              </button>
-              <button 
-                @click="handleQuestionnaireSelect('enfermedades-cronicas')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-heartbeat text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Enfermedades Crónicas
-              </button>
-              <button 
-                @click="handleQuestionnaireSelect('condiciones-muscoesqueleticas')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-bone text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Condiciones muscoesqueléticas
-              </button>
-            </div>
-          </div>
 
           <!-- Vigilancia médica por tipo de actividad o entorno laboral -->
           <!-- <div class="space-y-3">
