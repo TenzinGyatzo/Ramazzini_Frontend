@@ -234,3 +234,29 @@ export function generarConclusionClinica(fd: Record<string, unknown>): string {
 
   return texto.trim();
 }
+
+const TEXTO_SIN_HALLAZGOS_RESUMEN =
+  'Sin hallazgos significativos en la entrevista psicológica estructurada.';
+
+/**
+ * Una línea para tablas de aptitud / alteraciones: no repite el párrafo largo de `generarConclusionClinica`.
+ */
+export function resumenSucintoEntrevistaPsicologica(
+  doc: Record<string, unknown> | null | undefined,
+): string {
+  if (!doc || typeof doc !== 'object') {
+    return '';
+  }
+  if (!hayHallazgosSignificativos(doc)) {
+    return TEXTO_SIN_HALLAZGOS_RESUMEN;
+  }
+  const hallazgos: string[] = [];
+  for (const campo of ORDEN_CAMPOS) {
+    const frase = hallazgoPorCampo(campo, doc[campo]);
+    if (frase) hallazgos.push(frase);
+  }
+  if (hallazgos.length === 0) {
+    return TEXTO_SIN_HALLAZGOS_RESUMEN;
+  }
+  return `Hallazgos: ${joinHallazgos(hallazgos)}.`;
+}
