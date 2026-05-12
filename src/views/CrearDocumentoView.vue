@@ -29,6 +29,7 @@ import VisualizadorTrastornosEstadoAnimo from '@/components/steps/VisualizadorTr
 import VisualizadorCuestionarioProdromalBreve from '@/components/steps/VisualizadorCuestionarioProdromalBreve.vue';
 import VisualizadorTrastornoLimitePersonalidad from '@/components/steps/VisualizadorTrastornoLimitePersonalidad.vue';
 import VisualizadorEventoSeguimientoCardiometabolico from '@/components/steps/VisualizadorEventoSeguimientoCardiometabolico.vue';
+import VisualizadorInformeLongitudinalCardiometabolico from '@/components/steps/VisualizadorInformeLongitudinalCardiometabolico.vue';
 import {
   ORIENTACION_SIN_HALLAZGO,
   CONCLUSION_SIN_HALLAZGOS,
@@ -60,9 +61,15 @@ if (tipoDesdeRuta) {
  *
  * ESC: además necesita `fetchAllDocuments` (exploraciones físicas en `documentsByYear`) para Step 2/3;
  * sin eso, al recargar CrearDocumentoView los datos de EF no existían hasta venir del expediente.
+ *
+ * Informe longitudinal CM: `fetchAllDocuments` para poblar eventos CM en `documentsByYear` (paso 1).
  */
 const exploracionesEscListas = ref(
   String(route.params.tipoDocumento || '') !== 'eventoSeguimientoCardiometabolico',
+);
+
+const informeCmDocumentsListas = ref(
+  String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico',
 );
 
 const datosListos = computed(() => {
@@ -75,6 +82,9 @@ const datosListos = computed(() => {
   }
   if (documentos.currentTypeOfDocument === 'eventoSeguimientoCardiometabolico') {
     return exploracionesEscListas.value;
+  }
+  if (documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico') {
+    return informeCmDocumentsListas.value;
   }
   return true;
 });
@@ -152,6 +162,16 @@ onMounted(() => {
       exploracionesEscListas.value = true;
     });
   }
+
+  if (
+    String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico' &&
+    trabajadores.currentTrabajadorId
+  ) {
+    informeCmDocumentsListas.value = false;
+    documentos.fetchAllDocuments(trabajadores.currentTrabajadorId).finally(() => {
+      informeCmDocumentsListas.value = true;
+    });
+  }
 });
 
 // Verificar cuando los datos se hayan cargado completamente
@@ -193,6 +213,7 @@ watchEffect(async () => {
       cuestionarioProdromalBreve: formData.formDataCuestionarioProdromalBreve,
       trastornoLimitePersonalidad: formData.formDataTrastornoLimitePersonalidad,
       eventoSeguimientoCardiometabolico: formData.formDataEventoSeguimientoCardiometabolico,
+      informeLongitudinalCardiometabolico: formData.formDataInformeLongitudinalCardiometabolico,
     };
 
     const documentoForm = documentoMap[tipoDocumento.value];
@@ -1131,6 +1152,18 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorEventoSeguimientoCardiometabolico />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/4">
+            <FormStepper />
+          </div>
+          <div class="w-full xl:w-3/4">
+            <VisualizadorInformeLongitudinalCardiometabolico />
           </div>
         </div>
       </Transition>

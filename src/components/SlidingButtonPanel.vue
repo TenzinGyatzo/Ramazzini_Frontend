@@ -32,6 +32,7 @@ const documentOrder = {
   "Cuestionario Prodromal Breve": 18,
   "Trastorno Limite Personalidad": 19,
   "Evento Seguimiento Cardiometabolico": 20,
+  "Informe Longitudinal Cardiometabolico": 21,
 };
 
 const getDocumentType = (route) => {
@@ -54,6 +55,7 @@ const getDocumentType = (route) => {
   if (route.includes("Cuestionario Prodromal Breve")) return "Cuestionario Prodromal Breve";
   if (route.includes("Trastorno Limite Personalidad")) return "Trastorno Limite Personalidad";
   if (route.includes("Evento Seguimiento Cardiometabolico")) return "Evento Seguimiento Cardiometabolico";
+  if (route.includes("Informe Longitudinal Cardiometabolico")) return "Informe Longitudinal Cardiometabolico";
   return "Documento Externo"; // Para cualquier otro caso
 };
 

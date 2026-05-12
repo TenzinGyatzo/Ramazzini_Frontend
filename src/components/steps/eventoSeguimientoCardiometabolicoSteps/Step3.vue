@@ -114,17 +114,15 @@ onMounted(() => {
   som();
   const docSom = documentos.currentDocument?.somatometria;
   const fdSom = som();
-  if (
-    docSom &&
-    (docSom.peso != null || docSom.altura != null || docSom.circunferenciaCintura != null)
-  ) {
-    hydrateFromSom(docSom);
-  } else if (
-    fdSom?.peso != null ||
-    fdSom?.altura != null ||
-    fdSom?.circunferenciaCintura != null
-  ) {
+  const fdTieneMediciones =
+    fdSom?.peso != null || fdSom?.altura != null || fdSom?.circunferenciaCintura != null;
+  const docTieneMediciones =
+    docSom?.peso != null || docSom?.altura != null || docSom?.circunferenciaCintura != null;
+
+  if (fdTieneMediciones) {
     hydrateFromSom(fdSom);
+  } else if (docTieneMediciones) {
+    hydrateFromSom(docSom);
   } else {
     const esHombre = trabajadores.currentTrabajador?.sexo === 'Masculino';
     peso.value = esHombre ? 80 : 70;
@@ -134,10 +132,10 @@ onMounted(() => {
     setCategoriaCircunferenciaCintura();
   }
 
-  const alturaPersistida = docSom?.altura != null || fdSom?.altura != null;
-  const pesoPersistido = docSom?.peso != null || fdSom?.peso != null;
+  const alturaPersistida = fdSom?.altura != null || docSom?.altura != null;
+  const pesoPersistido = fdSom?.peso != null || docSom?.peso != null;
   const circunferenciaPersistida =
-    docSom?.circunferenciaCintura != null || fdSom?.circunferenciaCintura != null;
+    fdSom?.circunferenciaCintura != null || docSom?.circunferenciaCintura != null;
 
   const efSom = obtenerSomatometriaUltimaExploracionFisica(
     documentos.documentsByYear,

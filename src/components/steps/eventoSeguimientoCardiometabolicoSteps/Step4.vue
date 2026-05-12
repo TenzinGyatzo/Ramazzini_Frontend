@@ -40,10 +40,10 @@ onMounted(() => {
   sv();
   const docSv = documentos.currentDocument?.signosVitales;
   const fdSv = sv();
-  if (docSv && (docSv.tensionArterialSistolica != null || docSv.frecuenciaCardiaca != null)) {
-    hydrate(docSv);
-  } else if (fdSv?.tensionArterialSistolica != null || fdSv?.frecuenciaCardiaca != null) {
+  if (fdSv?.tensionArterialSistolica != null || fdSv?.frecuenciaCardiaca != null) {
     hydrate(fdSv);
+  } else if (docSv && (docSv.tensionArterialSistolica != null || docSv.frecuenciaCardiaca != null)) {
+    hydrate(docSv);
   } else {
     setCategoriaTensionArterial();
     setCategoriaFrecuenciaCardiaca();

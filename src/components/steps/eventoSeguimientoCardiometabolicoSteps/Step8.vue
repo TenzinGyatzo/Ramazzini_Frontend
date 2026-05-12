@@ -193,8 +193,8 @@ function hydrateFrom(source) {
 }
 
 onMounted(() => {
-  hydrateFrom(formDataEventoSeguimientoCardiometabolico);
   hydrateFrom(documentos.currentDocument);
+  hydrateFrom(formDataEventoSeguimientoCardiometabolico);
   pushAlFormulario();
 });
 

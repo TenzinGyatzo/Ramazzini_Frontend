@@ -137,11 +137,26 @@ function hydrate(v) {
   trigliceridosMgDl.value = strOrEmpty(v.trigliceridosMgDl);
 }
 
+const CLAVES_LAB_ENTRADA = [
+  'glucosaMgDl',
+  'hba1cPorcentaje',
+  'colesterolTotalMgDl',
+  'ldlMgDl',
+  'hdlMgDl',
+  'trigliceridosMgDl',
+];
+
+function laboratorioTieneValoresDeEntrada(L) {
+  if (!L || typeof L !== 'object') return false;
+  return CLAVES_LAB_ENTRADA.some((k) => L[k] != null && L[k] !== '');
+}
+
 onMounted(() => {
   lab();
   const docL = documentos.currentDocument?.laboratorio;
   const fdL = lab();
-  if (docL && Object.keys(docL).length > 0) hydrate(docL);
+  if (laboratorioTieneValoresDeEntrada(fdL)) hydrate(fdL);
+  else if (laboratorioTieneValoresDeEntrada(docL)) hydrate(docL);
   else if (fdL && Object.keys(fdL).some((k) => fdL[k] != null)) hydrate(fdL);
   pushLaboratorio();
 });

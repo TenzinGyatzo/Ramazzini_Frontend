@@ -40,19 +40,26 @@ function aplicar(key, valor) {
 function hidratar() {
   const src = documentos.currentDocument || {};
   const ec = src.estadoCondiciones;
-  if (!ec || typeof ec !== 'object') return;
-
   const fd = formDataEventoSeguimientoCardiometabolico;
-  if (!fd.estadoCondiciones) fd.estadoCondiciones = {};
 
-  for (const k of ['hipertensionArterial', 'diabetesMellitusTipo2', 'dislipidemia']) {
-    if (ec[k]?.control) fd.estadoCondiciones[k] = { control: ec[k].control };
+  if (ec && typeof ec === 'object') {
+    if (!fd.estadoCondiciones) fd.estadoCondiciones = {};
+    for (const k of ['hipertensionArterial', 'diabetesMellitusTipo2', 'dislipidemia']) {
+      const yaEnFd =
+        fd.estadoCondiciones[k]?.control != null && fd.estadoCondiciones[k].control !== '';
+      if (!yaEnFd && ec[k]?.control) fd.estadoCondiciones[k] = { control: ec[k].control };
+    }
+    const gradoFd = fd.estadoCondiciones.obesidad?.grado;
+    const yaGrado = gradoFd != null && String(gradoFd).trim() !== '';
+    if (!yaGrado && ec.obesidad?.grado) {
+      if (!fd.estadoCondiciones.obesidad) fd.estadoCondiciones.obesidad = {};
+      fd.estadoCondiciones.obesidad.grado = ec.obesidad.grado;
+    }
   }
-  if (ec.obesidad?.grado) {
-    if (!fd.estadoCondiciones.obesidad) fd.estadoCondiciones.obesidad = {};
-    fd.estadoCondiciones.obesidad.grado = ec.obesidad.grado;
-  }
-  const ob = fd.estadoCondiciones?.obesidad;
+
+  if (!fd.estadoCondiciones) return;
+
+  const ob = fd.estadoCondiciones.obesidad;
   if (ob) {
     delete ob.control;
     if (Object.keys(ob).length === 0) delete fd.estadoCondiciones.obesidad;

@@ -146,6 +146,15 @@ const handleQuestionnaireSelect = (questionnaireType) => {
           tipoDocumento: 'eventoSeguimientoCardiometabolico'
         }
       });
+    } else if (questionnaireType === 'informe-longitudinal-cardiometabolico') {
+      router.push({
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'informeLongitudinalCardiometabolico'
+        }
+      });
       closeModal();
     }
   }, 'acceder a cuestionarios adicionales');
@@ -230,6 +239,14 @@ const handleQuestionnaireSelect = (questionnaireType) => {
                   <span class="text-center leading-tight">Citas</span>
                 </button>
               </div>
+              <button 
+                  @click="handleQuestionnaireSelect('informe-longitudinal-cardiometabolico')"
+                  class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
+                  disabled
+                >
+                  <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                  <span class="min-w-0">Informe Longitudinal Cardiometabólico</span>
+              </button>
               <button 
                 @click="handleQuestionnaireSelect('control-prenatal')"
                 class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"

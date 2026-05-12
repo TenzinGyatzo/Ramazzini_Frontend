@@ -102,6 +102,7 @@ const documentTypeLabels = {
   cuestionarioProdromalBreve: "Cuestionario Prodromal Breve",
   trastornoLimitePersonalidad: "Trastorno Limite Personalidad",
   eventoSeguimientoCardiometabolico: "Evento Seguimiento Cardiometabolico",
+  informelongitudinalcardiometabolico: "Informe Longitudinal Cardiometabolico",
 };
 
 // Computed properties para mejorar la legibilidad

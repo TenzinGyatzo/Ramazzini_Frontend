@@ -22,6 +22,7 @@ import type {
   CuestionarioProdromalBreve,
   TrastornoLimitePersonalidad,
   EventoSeguimientoCardiometabolico,
+  InformeLongitudinalCardiometabolico,
 } from "@/interfaces/documentos.inteface";
 
 export type DocumentsByYear = {
@@ -46,6 +47,7 @@ export type DocumentsByYear = {
     cuestionarioProdromalBreve?: CuestionarioProdromalBreve[];
     trastornoLimitePersonalidad?: TrastornoLimitePersonalidad[];
     eventoSeguimientoCardiometabolico?: EventoSeguimientoCardiometabolico[];
+    informeLongitudinalCardiometabolico?: InformeLongitudinalCardiometabolico[];
   };
 };
 
@@ -94,6 +96,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
         cuestionarioProdromalBreve,
         trastornoLimitePersonalidad,
         eventoSeguimientoCardiometabolico,
+        informeLongitudinalCardiometabolico,
       ] = await Promise.all([
         DocumentosAPI.getAntidopings(trabajadorId).catch(error => {
           console.error("Error al obtener antidopings", error);
@@ -175,6 +178,10 @@ export const useDocumentosStore = defineStore("documentos", () => {
           console.error("Error al obtener eventoSeguimientoCardiometabolico", error);
           return { data: [] };
         }),
+        DocumentosAPI.getInformeLongitudinalCardiometabolico(trabajadorId).catch(error => {
+          console.error("Error al obtener informeLongitudinalCardiometabolico", error);
+          return { data: [] };
+        }),
       ]);
 
       // Agrupar documentos por año (solo si es un array)
@@ -199,6 +206,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
         cuestionarioProdromalBreve: Array.isArray(cuestionarioProdromalBreve.data) ? cuestionarioProdromalBreve.data : [],
         trastornoLimitePersonalidad: Array.isArray(trastornoLimitePersonalidad.data) ? trastornoLimitePersonalidad.data : [],
         eventoSeguimientoCardiometabolico: Array.isArray(eventoSeguimientoCardiometabolico.data) ? eventoSeguimientoCardiometabolico.data : [],
+        informeLongitudinalCardiometabolico: Array.isArray(informeLongitudinalCardiometabolico.data) ? informeLongitudinalCardiometabolico.data : [],
       };
 
       // Procesar documentos y agrupar por año
@@ -251,6 +259,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
       cuestionarioProdromalBreve: "fechaCuestionarioProdromalBreve",
       trastornoLimitePersonalidad: "fechaTrastornoLimitePersonalidad",
       eventoSeguimientoCardiometabolico: "fechaEventoSeguimientoCardiometabolico",
+      informeLongitudinalCardiometabolico: "fechaInformeLongitudinalCardiometabolico",
     };
 
     return documento?.[fechaCampos[tipoDocumento]] || "";
@@ -270,11 +279,20 @@ export const useDocumentosStore = defineStore("documentos", () => {
     currentDocumentId.value = "";
   }
 
+  /** El controller devuelve `{ message, data: documento }`; devolvemos siempre el documento persistido. */
+  function unwrapPersistedDocument(apiBody: unknown): any {
+    if (!apiBody || typeof apiBody !== 'object') return apiBody;
+    const o = apiBody as Record<string, unknown>;
+    const inner = o.data;
+    if (inner && typeof inner === 'object' && '_id' in inner) return inner;
+    return o;
+  }
+
   async function createDocument(documentType: string, trabajadorId: string, data: any) {
     try {
       loading.value = true;
       const response = await DocumentosAPI.createDocument(documentType, trabajadorId, data);
-      return response.data; // Retorna solo los datos relevantes
+      return unwrapPersistedDocument(response.data);
     } catch (error) {
       console.error('Error al crear el documento en el store:', error);
       throw error;
@@ -287,7 +305,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     try {
       loading.value = true;
       const response = await DocumentosAPI.updateDocument(documentType, trabajadorId, documentId, data);
-      return response.data; // Retorna solo los datos relevantes
+      return unwrapPersistedDocument(response.data);
     } catch (error) {
       console.error('Error al actualizar el documento en el store:', error);
       throw error;

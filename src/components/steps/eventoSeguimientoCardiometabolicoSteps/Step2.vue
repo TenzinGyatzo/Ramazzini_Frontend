@@ -39,14 +39,15 @@ function normalizarEstadoCondicionesDesdeFuente(ec) {
 function hidratar() {
   const src = documentos.currentDocument || {};
   const fd = formDataEventoSeguimientoCardiometabolico;
-  if (!fd.diagnosticosActivos) fd.diagnosticosActivos = [];
-  if (Array.isArray(src.diagnosticosActivos)) {
-    fd.diagnosticosActivos = [...src.diagnosticosActivos];
+  if (!Array.isArray(fd.diagnosticosActivos)) {
+    fd.diagnosticosActivos = Array.isArray(src.diagnosticosActivos)
+      ? [...src.diagnosticosActivos]
+      : [];
   }
   const fromSrc = normalizarEstadoCondicionesDesdeFuente(src.estadoCondiciones);
   const fromFd = normalizarEstadoCondicionesDesdeFuente(fd.estadoCondiciones);
-  if (fromSrc !== undefined) fd.estadoCondiciones = fromSrc;
-  else if (fromFd !== undefined) fd.estadoCondiciones = fromFd;
+  if (fromFd !== undefined) fd.estadoCondiciones = fromFd;
+  else if (fromSrc !== undefined) fd.estadoCondiciones = fromSrc;
   else delete fd.estadoCondiciones;
 }
 

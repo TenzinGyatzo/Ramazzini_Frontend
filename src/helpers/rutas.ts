@@ -42,6 +42,7 @@ export const obtenerFechaDocumento = (documento) => {
         'fechaCuestionarioProdromalBreve',
         'fechaTrastornoLimitePersonalidad',
         'fechaEventoSeguimientoCardiometabolico',
+        'fechaInformeLongitudinalCardiometabolico',
     ];
 
     for (const campo of camposFecha) {

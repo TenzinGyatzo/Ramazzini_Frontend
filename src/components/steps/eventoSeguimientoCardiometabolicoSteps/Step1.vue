@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -11,7 +12,8 @@ import { useDocumentosStore } from '@/stores/documentos';
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
-const { formDataEventoSeguimientoCardiometabolico } = useFormDataStore();
+const formDataStore = useFormDataStore();
+const { formDataEventoSeguimientoCardiometabolico: fdRef } = storeToRefs(formDataStore);
 const documentos = useDocumentosStore();
 
 const MOTIVO_OTRO = 'OTRO';
@@ -29,22 +31,48 @@ const opcionesSelectMotivo = [
   { label: 'Otro', value: MOTIVO_OTRO },
 ];
 
-// Obtener la fecha actual en formato YYYY-MM-DD
 const today = format(new Date(), 'yyyy-MM-dd');
 
-// Fecha en el paso: sincronizar con Pinia al montar/aun si el usuario no toca el datepicker (@IsDate/@IsNotEmpty en backend)
-const fechaEventoSeguimientoCardiometabolico = ref(today);
+function fechaInicialDesdeFuentes() {
+  const fd = fdRef.value;
+  const doc = documentos.currentDocument;
+  return (
+    formatDateYYYYMMDD(fd?.fechaEventoSeguimientoCardiometabolico) ||
+    formatDateYYYYMMDD(doc?.fechaEventoSeguimientoCardiometabolico) ||
+    today
+  );
+}
+
+function parseMotivoRefsDesdeString(valor) {
+  if (!valor || typeof valor !== 'string' || !String(valor).trim()) {
+    return { sel: OPCIONES_MOTIVO[0], otro: '' };
+  }
+  const s = String(valor).trim();
+  if (OPCIONES_MOTIVO.includes(s)) return { sel: s, otro: '' };
+  return { sel: MOTIVO_OTRO, otro: s };
+}
+
+function motivoStringInicial() {
+  const fd = fdRef.value;
+  const doc = documentos.currentDocument;
+  const fromFd = fd?.motivoSeguimiento != null ? String(fd.motivoSeguimiento).trim() : '';
+  if (fromFd) return fromFd;
+  const fromDoc = doc?.motivoSeguimiento != null ? String(doc.motivoSeguimiento).trim() : '';
+  return fromDoc;
+}
+
+const fechaEventoSeguimientoCardiometabolico = ref(fechaInicialDesdeFuentes());
+const motivoIni = parseMotivoRefsDesdeString(motivoStringInicial());
+const motivoSeleccion = ref(motivoIni.sel);
+const motivoOtroTexto = ref(motivoIni.otro);
 
 watch(
   fechaEventoSeguimientoCardiometabolico,
   (newValue) => {
-    formDataEventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico = newValue;
+    fdRef.value.fechaEventoSeguimientoCardiometabolico = newValue;
   },
   { immediate: true },
 );
-
-const motivoSeleccion = ref(OPCIONES_MOTIVO[0]);
-const motivoOtroTexto = ref('');
 
 function motivoValorParaPayload() {
   if (motivoSeleccion.value === MOTIVO_OTRO) {
@@ -56,41 +84,38 @@ function motivoValorParaPayload() {
 watch(
   [motivoSeleccion, motivoOtroTexto],
   () => {
-    formDataEventoSeguimientoCardiometabolico.motivoSeguimiento = motivoValorParaPayload();
+    fdRef.value.motivoSeguimiento = motivoValorParaPayload();
   },
   { immediate: true },
 );
 
 function hidratarMotivoDesdeString(valor) {
-  if (!valor || typeof valor !== 'string') {
-    return;
-  }
-  if (OPCIONES_MOTIVO.includes(valor)) {
-    motivoSeleccion.value = valor;
-    motivoOtroTexto.value = '';
-  } else {
-    motivoSeleccion.value = MOTIVO_OTRO;
-    motivoOtroTexto.value = valor;
-  }
+  const { sel, otro } = parseMotivoRefsDesdeString(valor);
+  motivoSeleccion.value = sel;
+  motivoOtroTexto.value = otro;
 }
 
-onMounted(() => {
-  if (documentos.currentDocument) {
-    fechaEventoSeguimientoCardiometabolico.value = formatDateYYYYMMDD(
-      documentos.currentDocument.fechaEventoSeguimientoCardiometabolico || today,
-    );
-    if (documentos.currentDocument.motivoSeguimiento) {
-      hidratarMotivoDesdeString(documentos.currentDocument.motivoSeguimiento);
-    }
-  }
+/** Cuando `setFormDataFromDocument` llega después del primer render, alinear refs con el borrador. */
+watch(
+  fdRef,
+  (fd) => {
+    if (!fd || typeof fd !== 'object') return;
+    const f = formatDateYYYYMMDD(fd.fechaEventoSeguimientoCardiometabolico);
+    if (f) fechaEventoSeguimientoCardiometabolico.value = f;
+    const ms = fd.motivoSeguimiento != null ? String(fd.motivoSeguimiento).trim() : '';
+    if (ms) hidratarMotivoDesdeString(ms);
+  },
+  { deep: true },
+);
 
-  formDataEventoSeguimientoCardiometabolico.idTrabajador = trabajadores.currentTrabajadorId;
+onMounted(() => {
+  fdRef.value.idTrabajador = trabajadores.currentTrabajadorId;
 
   const empresa = empresas.currentEmpresa.nombreComercial;
   const centroTrabajo = centrosTrabajo.currentCentroTrabajo.nombreCentro;
   const trabajadorNombre = trabajadores.currentTrabajador.nombre;
   const trabajadorId = trabajadores.currentTrabajadorId;
-  formDataEventoSeguimientoCardiometabolico.rutaPDF = `expedientes-medicos/${empresa}/${centroTrabajo}/${trabajadorNombre}_${trabajadorId}`;
+  fdRef.value.rutaPDF = `expedientes-medicos/${empresa}/${centroTrabajo}/${trabajadorNombre}_${trabajadorId}`;
 });
 </script>
 

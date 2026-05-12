@@ -133,7 +133,7 @@ const canEditDocument = (documentType) => {
   }
   
   // Cuestionarios adicionales (incluye certificadoExpedito)
-  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico'].includes(tipoSinEspacios)) {
+  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
     return canManageCuestionariosAdicionales.value;
   }
   
@@ -159,7 +159,7 @@ const handleEditDocument = (documentoId, documentoTipo) => {
     executeIfCanManageDocumentosDiagnostico(() => {
       editarDocumento(documentoId, documentoTipo);
     }, 'editar documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico'].includes(tipoSinEspacios)) {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
     executeIfCanManageCuestionariosAdicionales(() => {
       editarDocumento(documentoId, documentoTipo);
     }, 'editar cuestionarios adicionales');
@@ -200,7 +200,7 @@ const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
     executeIfCanManageDocumentosDiagnostico(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico'].includes(tipoSinEspacios)) {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
     executeIfCanManageCuestionariosAdicionales(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar cuestionarios adicionales');
@@ -1026,6 +1026,10 @@ const descargarPdfActual = async () => {
                     documento = props.eventoSeguimientoCardiometabolico;
                     tipoDocumento = 'Evento Seguimiento Cardiometabolico';
                     break;
+                case 'informelongitudinalcardiometabolico':
+                    documento = props.informeLongitudinalCardiometabolico;
+                    tipoDocumento = 'Informe Longitudinal Cardiometabolico';
+                    break;
                 case 'documentoexterno':
                     documento = props.documentoExterno;
                     tipoDocumento = 'Documento Externo';
@@ -1157,6 +1161,7 @@ const props = defineProps({
     cuestionarioProdromalBreve: [Object, String],
     trastornoLimitePersonalidad: [Object, String],
     eventoSeguimientoCardiometabolico: [Object, String],
+    informeLongitudinalCardiometabolico: [Object, String],
 });
 
 const { antidoping } = props; // Desestructuración para acceder a antidoping
@@ -1482,9 +1487,10 @@ const construirRutaYNombrePDF = () => {
     'cuestionarioprodromalbreve': props.cuestionarioProdromalBreve,
     'trastornolimitepersonalidad': props.trastornoLimitePersonalidad,
     'eventoseguimientocardiometabolico': props.eventoSeguimientoCardiometabolico,
+    'informelongitudinalcardiometabolico': props.informeLongitudinalCardiometabolico,
   }[tipoSinEspacios];
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico;
 
   const tiposDocumentos = {
     'constanciaaptitud': 'Constancia de Aptitud',
@@ -1506,6 +1512,7 @@ const construirRutaYNombrePDF = () => {
     'cuestionarioprodromalbreve': 'Cuestionario Prodromal Breve',
     'trastornolimitepersonalidad': 'Trastorno Limite Personalidad',
     'eventoseguimientocardiometabolico': 'Evento Seguimiento Cardiometabolico',
+    'informelongitudinalcardiometabolico': 'Informe Longitudinal Cardiometabolico',
   };
 
   const tipoDocumentoFormateado = tiposDocumentos[tipoSinEspacios];
@@ -1617,7 +1624,7 @@ onMounted(() => {
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico], () => {
+watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico], () => {
   verificarDisponibilidadPDF();
 }, { deep: true });
 
@@ -3124,6 +3131,47 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     </div>
                 </div>
 
+                <!-- Informe Longitudinal Cardiometabolico -->
+                <div v-if="typeof informeLongitudinalCardiometabolico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${informeLongitudinalCardiometabolico.rutaPDF}`,
+                            `Informe Longitudinal Cardiometabolico ${convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico)}.pdf`,
+                            informeLongitudinalCardiometabolico.updatedAt ? new Date(informeLongitudinalCardiometabolico.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${informeLongitudinalCardiometabolico.rutaPDF}`,
+                            `Informe Longitudinal Cardiometabolico ${convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico)}.pdf`,
+                            informeLongitudinalCardiometabolico.updatedAt ? new Date(informeLongitudinalCardiometabolico.updatedAt).getTime() : null,
+                            'Informe Longitudinal Cardiometabolico')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-rose-100 rounded-lg mr-4 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-heart-crack text-rose-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Informe Longitudinal Cardiometabolico
+                                </h3>
+                            </div>
+                            <p class="text-sm text-gray-500 flex items-center">
+                                <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                {{ convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico) }}
+                            </p>
+                        </div>
+
+ 
+                    </div>
+                </div>
+
             </div>
 
             <!-- Botones de acción -->
@@ -3150,6 +3198,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     'Cuestionario Prodromal Breve': cuestionarioProdromalBreve,
                     'Trastorno Limite Personalidad': trastornoLimitePersonalidad,
                     'Evento Seguimiento Cardiometabolico': eventoSeguimientoCardiometabolico,
+                    'Informe Longitudinal Cardiometabolico': informeLongitudinalCardiometabolico,
                 }" :key="key">
                     <button v-if="documento && documento.rutaDocumento" @click="descargarArchivo(documento, key)"
                         type="button"

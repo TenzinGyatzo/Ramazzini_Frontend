@@ -546,6 +546,20 @@ const handleDeleteSelected = async () => {
                     documentosAEliminar.push({ id: eventoSeguimientoCardiometabolico._id, tipo: 'eventoSeguimientoCardiometabolico' });
                 }
             });
+
+            // Informe Longitudinal Cardiometabolico
+            yearData.informeLongitudinalCardiometabolico?.forEach(informeLongitudinalCardiometabolico => {
+                const rutaBase = obtenerRutaDocumento(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico');
+                const fecha = obtenerFechaDocumento(informeLongitudinalCardiometabolico) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (informeLongitudinalCardiometabolico._id && selectedRoutes.value.includes(ruta)) {
+                    documentosAEliminar.push({
+                        id: informeLongitudinalCardiometabolico._id,
+                        tipo: 'informeLongitudinalCardiometabolico',
+                    });
+                }
+            });
         });
                 
         // Eliminar documentos uno por uno
@@ -627,7 +641,8 @@ const totalDocumentosCreados = computed(() => {
       (yearData.trastornosEstadoAnimo?.length || 0) +
       (yearData.cuestionarioProdromalBreve?.length || 0) +
       (yearData.trastornoLimitePersonalidad?.length || 0) +
-      (yearData.eventoSeguimientoCardiometabolico?.length || 0)
+      (yearData.eventoSeguimientoCardiometabolico?.length || 0) + 
+      (yearData.informeLongitudinalCardiometabolico?.length || 0)
     );
   }, 0);
 });

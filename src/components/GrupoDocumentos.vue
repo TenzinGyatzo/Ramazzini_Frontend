@@ -87,7 +87,8 @@ const totalDocumentos = computed(() => {
            (props.documents.trastornosEstadoAnimo?.length || 0) +
            (props.documents.cuestionarioProdromalBreve?.length || 0) +
            (props.documents.trastornoLimitePersonalidad?.length || 0) + 
-           (props.documents.eventoSeguimientoCardiometabolico?.length || 0);
+           (props.documents.eventoSeguimientoCardiometabolico?.length || 0) +
+           (props.documents.informeLongitudinalCardiometabolico?.length || 0);
 });
 
 // Obtener todas las rutas de documentos de este grupo específico
@@ -294,6 +295,15 @@ const rutasDelGrupo = computed(() => {
         });
     }
 
+    if (props.documents.informeLongitudinalCardiometabolico) {
+        props.documents.informeLongitudinalCardiometabolico.forEach(informeLongitudinalCardiometabolico => {
+            const rutaBase = obtenerRutaDocumento(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabólico');
+            const fecha = obtenerFechaDocumento(informeLongitudinalCardiometabolico) || 'SinFecha';
+            const nombreArchivo = obtenerNombreArchivo(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabólico', fecha);
+            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+            rutas.push(ruta);
+        });
+    }
     return rutas;
 });
 
@@ -909,6 +919,30 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                         return props.selectedRoutes.includes(ruta);
                     })()"
                     @eliminarDocumento="$emit('eliminarDocumento', eventoSeguimientoCardiometabolico._id, convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico), 'eventoSeguimientoCardiometabolico')" 
+                    @openSubscriptionModal="emit('openSubscriptionModal')"
+                />
+            </div>
+        </div>
+
+        <!-- Informe Longitudinal Cardiometabolico -->
+        <div v-if="documents.informeLongitudinalCardiometabolico && documents.informeLongitudinalCardiometabolico.length > 0">
+            <div v-for="(informeLongitudinalCardiometabolico, index) in documents.informeLongitudinalCardiometabolico" :key="informeLongitudinalCardiometabolico._id"
+                 class="transition-all duration-200 hover:bg-gray-50"
+                 :style="{ animationDelay: `${index * 50}ms` }">
+                <DocumentoItem 
+                    :informeLongitudinalCardiometabolico="informeLongitudinalCardiometabolico" 
+                    :documentoId="informeLongitudinalCardiometabolico._id" 
+                    :documentoTipo="'informeLongitudinalCardiometabolico'" 
+                    :toggleRouteSelection="toggleRouteSelection"
+                    :isDeletionMode="isDeletionMode"
+                    :isSelected="(() => {
+                        const rutaBase = obtenerRutaDocumento(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico');
+                        const fecha = obtenerFechaDocumento(informeLongitudinalCardiometabolico) || 'SinFecha';
+                        const nombreArchivo = obtenerNombreArchivo(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico', fecha);
+                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                        return props.selectedRoutes.includes(ruta);
+                    })()"
+                    @eliminarDocumento="$emit('eliminarDocumento', informeLongitudinalCardiometabolico._id, convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico), 'informeLongitudinalCardiometabolico')" 
                     @openSubscriptionModal="emit('openSubscriptionModal')"
                 />
             </div>

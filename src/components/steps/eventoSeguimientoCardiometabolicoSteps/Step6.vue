@@ -149,8 +149,8 @@ function debePrefijarAsintomatico() {
 }
 
 onMounted(() => {
-  hydrateFrom(formDataEventoSeguimientoCardiometabolico);
   hydrateFrom(documentos.currentDocument);
+  hydrateFrom(formDataEventoSeguimientoCardiometabolico);
   if (debePrefijarAsintomatico()) {
     sintomasChipsOn.value = new Set([etiquetaAsintomaticoSexo.value]);
   }
