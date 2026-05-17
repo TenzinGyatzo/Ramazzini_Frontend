@@ -63,6 +63,9 @@ if (tipoDesdeRuta) {
  * sin eso, al recargar CrearDocumentoView los datos de EF no existían hasta venir del expediente.
  *
  * Informe longitudinal CM: `fetchAllDocuments` para poblar eventos CM en `documentsByYear` (paso 1).
+ * En edición, además esperar `fetchDocumentById` antes de montar hijos: si el visualizador
+ * arranca con el formulario vacío (tras `resetFormData`) muestra «No hay suficientes datos…»
+ * aunque el informe guardado sí tenga `eventosConcentrados`.
  */
 const exploracionesEscListas = ref(
   String(route.params.tipoDocumento || '') !== 'eventoSeguimientoCardiometabolico',
@@ -70,6 +73,11 @@ const exploracionesEscListas = ref(
 
 const informeCmDocumentsListas = ref(
   String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico',
+);
+
+const informeCmDocumentoHidratado = ref(
+  String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico' ||
+    !String(route.params.idDocumento || ''),
 );
 
 const datosListos = computed(() => {
@@ -84,7 +92,7 @@ const datosListos = computed(() => {
     return exploracionesEscListas.value;
   }
   if (documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico') {
-    return informeCmDocumentsListas.value;
+    return informeCmDocumentsListas.value && informeCmDocumentoHidratado.value;
   }
   return true;
 });
@@ -114,9 +122,17 @@ onMounted(() => {
 
   formData.resetFormData();
 
+  const esInformeCm =
+    String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico';
+  const editandoInformeCm = esInformeCm && !!String(documentoId.value || '');
+
   // Cargar documento si existe
   if (documentoId.value && tipoDocumento.value) {
-    documentos.fetchDocumentById(tipoDocumento.value, trabajadores.currentTrabajadorId, documentoId.value)
+    if (editandoInformeCm) {
+      informeCmDocumentoHidratado.value = false;
+    }
+    documentos
+      .fetchDocumentById(tipoDocumento.value, trabajadores.currentTrabajadorId, documentoId.value)
       .then(() => {
         if (documentos.currentDocument) {
           formData.setFormDataFromDocument(documentos.currentDocument, tipoDocumento.value);
@@ -124,7 +140,12 @@ onMounted(() => {
           console.error('No se encontraron datos para el documento especificado.');
         }
       })
-      .catch(error => console.error('Error al cargar los datos del documento:', error));
+      .catch((error) => console.error('Error al cargar los datos del documento:', error))
+      .finally(() => {
+        if (editandoInformeCm) {
+          informeCmDocumentoHidratado.value = true;
+        }
+      });
   }
 
   // Consultar altura disponible para control prenatal (una sola vez al iniciar)

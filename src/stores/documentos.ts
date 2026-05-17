@@ -229,6 +229,16 @@ export const useDocumentosStore = defineStore("documentos", () => {
         });
       });
 
+      // Ordenar cada tipo por fecha clínica ascendente (más antiguo primero)
+      Object.values(documentsByYear.value).forEach((grupoAnio) => {
+        Object.keys(grupoAnio).forEach((tipoDocumento) => {
+          const docs = grupoAnio[tipoDocumento];
+          if (Array.isArray(docs) && docs.length > 1) {
+            grupoAnio[tipoDocumento] = ordenarPorFechaClinicaAsc(tipoDocumento, docs);
+          }
+        });
+      });
+
     } catch (error) {
       console.error("Error general al obtener documentos", error);
     } finally {
@@ -263,6 +273,14 @@ export const useDocumentosStore = defineStore("documentos", () => {
     };
 
     return documento?.[fechaCampos[tipoDocumento]] || "";
+  }
+
+  function ordenarPorFechaClinicaAsc(tipoDocumento: string, documentos: any[]): any[] {
+    return [...documentos].sort((a, b) => {
+      const fechaA = obtenerCampoFecha(tipoDocumento, a);
+      const fechaB = obtenerCampoFecha(tipoDocumento, b);
+      return new Date(fechaA).getTime() - new Date(fechaB).getTime();
+    });
   }
 
   function setCurrentTypeOfDocument(type: string) {

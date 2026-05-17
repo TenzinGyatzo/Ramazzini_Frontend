@@ -19,6 +19,7 @@ import {
   clasificarLDL,
   clasificarTrigliceridos,
 } from '@/helpers/cardiometabolico/laboratorioCategorias';
+import { filaTratamientoTieneContenido } from '@/helpers/cardiometabolico/tratamientoActualFacilidades';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -26,6 +27,12 @@ const formData = useFormDataStore();
 const steps = useStepsStore();
 
 const esc = computed(() => formData.formDataEventoSeguimientoCardiometabolico);
+
+const filasTratamientoVista = computed(() => {
+  const arr = esc.value.tratamientoActual;
+  if (!Array.isArray(arr)) return [];
+  return arr.filter(filaTratamientoTieneContenido);
+});
 
 function fmt(v) {
   if (v === undefined || v === null || v === '') return '—';
@@ -620,6 +627,62 @@ const goToStep = (stepNumber) => {
         @click="goToStep(6)"
       >
         <h3 class="text-center text-xs sm:text-sm font-semibold uppercase tracking-wide text-gray-900 border-b border-gray-300 pb-1.5 mb-2">
+          Tratamiento actual
+        </h3>
+        <div v-if="filasTratamientoVista.length" class="overflow-x-auto">
+          <table class="table-auto w-full min-w-[520px] border-collapse border border-gray-300 text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="px-2 py-1.5 border border-gray-300 text-left font-semibold text-gray-800">
+                  Medicamento
+                </th>
+                <th class="px-2 py-1.5 border border-gray-300 text-left font-semibold text-gray-800">
+                  Dosis
+                </th>
+                <th class="px-2 py-1.5 border border-gray-300 text-left font-semibold text-gray-800">
+                  Frecuencia
+                </th>
+                <th class="px-2 py-1.5 border border-gray-300 text-left font-semibold text-gray-800">
+                  Motivo de uso
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(fila, idx) in filasTratamientoVista"
+                :key="idx"
+                class="odd:bg-white even:bg-gray-50"
+              >
+                <td class="px-2 py-1.5 border border-gray-300 align-top text-gray-800">
+                  {{ fmt(fila.medicamento) }}
+                </td>
+                <td class="px-2 py-1.5 border border-gray-300 align-top text-gray-800">
+                  {{ fmt(fila.dosis) }}
+                </td>
+                <td class="px-2 py-1.5 border border-gray-300 align-top text-gray-800">
+                  {{ fmt(fila.frecuencia) }}
+                </td>
+                <td class="px-2 py-1.5 border border-gray-300 align-top text-gray-800">
+                  {{ fmt(fila.motivoUso) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p
+          v-else
+          class="text-xs sm:text-sm text-gray-700 border border-gray-300 border-dashed px-2 py-2 bg-gray-50/50"
+        >
+          Sin medicamentos registrados en esta visita.
+        </p>
+      </div>
+
+      <div
+        class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
+        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 7 }"
+        @click="goToStep(7)"
+      >
+        <h3 class="text-center text-xs sm:text-sm font-semibold uppercase tracking-wide text-gray-900 border-b border-gray-300 pb-1.5 mb-2">
           Adherencia y síntomas
         </h3>
         <table class="table-auto w-full border-collapse border border-gray-300 text-xs sm:text-sm">
@@ -636,16 +699,6 @@ const goToStep = (stepNumber) => {
           <tbody>
             <tr class="odd:bg-white even:bg-gray-50">
               <td class="px-2 py-1.5 border border-gray-300 font-semibold text-gray-800 align-top">
-                {{ etiquetaVistaMayusc('Síntomas relevantes') }}
-              </td>
-              <td
-                class="px-2 py-1.5 border border-gray-300 font-normal text-gray-800 align-top leading-snug whitespace-pre-wrap"
-              >
-                {{ fmtSintomasRelevantesVista(esc.sintomasRelevantes) }}
-              </td>
-            </tr>
-            <tr class="odd:bg-white even:bg-gray-50">
-              <td class="px-2 py-1.5 border border-gray-300 font-semibold text-gray-800 align-top">
                 {{ etiquetaVistaMayusc('Adherencia terapéutica') }}
               </td>
               <td
@@ -654,14 +707,24 @@ const goToStep = (stepNumber) => {
                 {{ fmt(esc.adherenciaTerapeutica) }}
               </td>
             </tr>
+            <tr class="odd:bg-white even:bg-gray-50">
+              <td class="px-2 py-1.5 border border-gray-300 font-semibold text-gray-800 align-top">
+                {{ etiquetaVistaMayusc('Síntomas relevantes') }}
+              </td>
+              <td
+                class="px-2 py-1.5 border border-gray-300 font-normal text-gray-800 align-top leading-snug whitespace-pre-wrap"
+              >
+                {{ fmtSintomasRelevantesVista(esc.sintomasRelevantes) }}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
 
       <div
         class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 7 }"
-        @click="goToStep(7)"
+        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 8 }"
+        @click="goToStep(8)"
       >
         <h3 class="text-center text-xs sm:text-sm font-semibold uppercase tracking-wide text-gray-900 border-b border-gray-300 pb-1.5 mb-2">
           Estado por condición en esta visita
@@ -714,8 +777,8 @@ const goToStep = (stepNumber) => {
 
       <div
         class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 8 }"
-        @click="goToStep(8)"
+        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 9 }"
+        @click="goToStep(9)"
       >
         <h3 class="text-center text-xs sm:text-sm font-semibold uppercase tracking-wide text-gray-900 border-b border-gray-300 pb-1.5 mb-2">
           Riesgos y próxima cita

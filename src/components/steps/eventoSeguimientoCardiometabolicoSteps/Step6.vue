@@ -1,257 +1,178 @@
 <script setup>
-import { computed, ref, shallowRef, watch, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
-import { useTrabajadoresStore } from '@/stores/trabajadores';
 import {
-  CHIPS_SINTOMAS_FRECUENTES_OTROS,
-  ETIQUETAS_ASINTOMATICO_VARIANTES,
-  SUGERENCIAS_ADHERENCIA_TERAPEUTICA,
-} from '@/helpers/cardiometabolico/evolucionYSugerencias';
-
-const VARIANTES_ASINTOMATICO_SET = new Set(ETIQUETAS_ASINTOMATICO_VARIANTES);
+  CHIPS_FRECUENCIA_TRATAMIENTO,
+  CHIPS_MOTIVO_USO,
+  SUGERENCIAS_MEDICAMENTOS_FRECUENTES,
+  filaTratamientoTieneContenido,
+  normalizarFilaTratamiento,
+} from '@/helpers/cardiometabolico/tratamientoActualFacilidades';
 
 const { formDataEventoSeguimientoCardiometabolico } = useFormDataStore();
 const documentos = useDocumentosStore();
-const trabajadores = useTrabajadoresStore();
 
-const textareaObservacionesClass =
-  'w-full min-h-[5rem] p-2.5 text-sm border-2 border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200';
-const inputFullClass =
-  'w-full py-2 px-3 text-sm border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500';
-const labelClass = 'block text-sm font-semibold text-gray-800 mb-1.5';
+const inputClass =
+  'w-full py-2 px-2.5 text-sm border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200';
+const fieldLabelClass = 'block text-xs font-medium text-gray-700 mb-0.5';
 
-const etiquetaAsintomaticoSexo = computed(() =>
-  trabajadores.currentTrabajador?.sexo === 'Femenino'
-    ? 'Asintomática'
-    : 'Asintomático',
-);
+/** @type {import('vue').Ref<import('@/helpers/cardiometabolico/tratamientoActualFacilidades').TratamientoActualFilaEsc[]>} */
+const tratamientoActualFilas = ref([]);
 
-const chipsEnPantalla = computed(() => [
-  etiquetaAsintomaticoSexo.value,
-  ...CHIPS_SINTOMAS_FRECUENTES_OTROS,
-]);
-
-function quitarVariantsAsintomaticoDelSet(set) {
-  set.delete('Asintomático');
-  set.delete('Asintomática');
+function nuevaFilaTratamiento() {
+  tratamientoActualFilas.value.push({});
 }
 
-const adherenciaTerapeutica = ref('');
-const sintomasTextoLibre = ref('');
-const mostrarTextoLibreSintomas = ref(false);
-/** @type {import('vue').ShallowRef<Set<string>>} */
-const sintomasChipsOn = shallowRef(new Set());
-
-function sintomasSeleccionadosEnOrden() {
-  const on = sintomasChipsOn.value;
-  const etiquetaAs = etiquetaAsintomaticoSexo.value;
-  const otros = CHIPS_SINTOMAS_FRECUENTES_OTROS.filter((c) => on.has(c));
-  if (on.has(etiquetaAs)) return [etiquetaAs, ...otros];
-  return otros;
-}
-
-function construirTextoSintomas() {
-  const line = sintomasSeleccionadosEnOrden().join('; ');
-  const lib = sintomasTextoLibre.value.trim();
-  if (line && lib) return `${line}\n\n${lib}`;
-  if (line) return line;
-  return lib;
-}
-
-function hydrateSintomasDesdeCadena(raw) {
-  sintomasTextoLibre.value = '';
-  sintomasChipsOn.value = new Set();
-  mostrarTextoLibreSintomas.value = false;
-
-  if (raw == null || raw === '') return;
-
-  const str = String(raw);
-  const parts = str.split(/\n\n+/);
-  const head = parts[0] ?? '';
-  const tail = parts.slice(1).join('\n\n').trim();
-
-  const nextSet = new Set();
-  const unknownTokens = [];
-  const etiquetaAsCanon = etiquetaAsintomaticoSexo.value;
-  const otrosLabels = new Set(CHIPS_SINTOMAS_FRECUENTES_OTROS);
-
-  for (const tok of head.split(';').map((t) => t.trim()).filter(Boolean)) {
-    if (VARIANTES_ASINTOMATICO_SET.has(tok))
-      nextSet.add(etiquetaAsCanon);
-    else if (otrosLabels.has(tok)) nextSet.add(tok);
-    else unknownTokens.push(tok);
-  }
-
-  let libre = tail;
-  if (unknownTokens.length) {
-    const orphan = unknownTokens.join('; ');
-    libre = libre ? `${orphan}\n\n${libre}` : orphan;
-  }
-
-  sintomasChipsOn.value = nextSet;
-  sintomasTextoLibre.value = libre;
-  mostrarTextoLibreSintomas.value = libre.trim().length > 0;
-}
-
-function toggleTextoLibreSintomas() {
-  mostrarTextoLibreSintomas.value = !mostrarTextoLibreSintomas.value;
-}
-
-function toggleChipEtiqueta(etiqueta) {
-  const prev = sintomasChipsOn.value;
-  const next = new Set(prev);
-  const etiquetaAs = etiquetaAsintomaticoSexo.value;
-  const estabaSeleccionado = next.has(etiqueta);
-
-  if (estabaSeleccionado) {
-    next.delete(etiqueta);
-    sintomasChipsOn.value = next;
-    return;
-  }
-
-  if (etiqueta === etiquetaAs) {
-    sintomasChipsOn.value = new Set([etiquetaAs]);
-    return;
-  }
-
-  quitarVariantsAsintomaticoDelSet(next);
-  next.add(etiqueta);
-  sintomasChipsOn.value = next;
-}
-
-/** @param {string} etiqueta */
-function chipActivoClase(etiqueta) {
-  return sintomasChipsOn.value.has(etiqueta)
-    ? 'border-emerald-600 bg-emerald-600 text-white'
-    : 'border-gray-300 bg-white text-gray-800 hover:border-emerald-400';
+function eliminarFilaTratamiento(index) {
+  tratamientoActualFilas.value.splice(index, 1);
 }
 
 function pushAll() {
   const fd = formDataEventoSeguimientoCardiometabolico;
-  fd.adherenciaTerapeutica = adherenciaTerapeutica.value;
-  fd.sintomasRelevantes = construirTextoSintomas();
+  const filas = tratamientoActualFilas.value
+    .map(normalizarFilaTratamiento)
+    .filter(filaTratamientoTieneContenido);
+  fd.tratamientoActual = filas.length ? filas : undefined;
+}
+
+function hydrateTratamientoDesde(source) {
+  if (!source?.tratamientoActual || !Array.isArray(source.tratamientoActual)) {
+    tratamientoActualFilas.value = [];
+    return;
+  }
+  tratamientoActualFilas.value = source.tratamientoActual.map((r) => ({
+    medicamento: r.medicamento ?? '',
+    dosis: r.dosis ?? '',
+    frecuencia: r.frecuencia ?? '',
+    motivoUso: r.motivoUso ?? '',
+  }));
 }
 
 function hydrateFrom(source) {
   if (!source) return;
-  if (source.adherenciaTerapeutica != null)
-    adherenciaTerapeutica.value = source.adherenciaTerapeutica;
-  if (source.sintomasRelevantes != null)
-    hydrateSintomasDesdeCadena(source.sintomasRelevantes);
-}
-
-function debePrefijarAsintomatico() {
-  return (
-    sintomasChipsOn.value.size === 0 &&
-    sintomasTextoLibre.value.trim() === ''
-  );
+  hydrateTratamientoDesde(source);
 }
 
 onMounted(() => {
   hydrateFrom(documentos.currentDocument);
   hydrateFrom(formDataEventoSeguimientoCardiometabolico);
-  if (debePrefijarAsintomatico()) {
-    sintomasChipsOn.value = new Set([etiquetaAsintomaticoSexo.value]);
-  }
   pushAll();
 });
 
-watch([adherenciaTerapeutica, sintomasTextoLibre, sintomasChipsOn], () => pushAll());
+watch(tratamientoActualFilas, () => pushAll(), { deep: true });
 </script>
 
 <template>
   <div>
     <h1 class="text-2xl font-bold mb-3 text-gray-900">
-      Adherencia terapéutica y síntomas relevantes
+      Tratamiento actual
     </h1>
 
-    <div class="space-y-4">
-      <section
-        aria-labelledby="titulo-sintomas-esc"
-        class="rounded-lg border border-gray-200 bg-gray-50/70 p-2 sm:p-3 space-y-3"
-      >
-        <div class="border-b border-gray-200 pb-3">
-          <h2 id="titulo-sintomas-esc" class="text-sm font-semibold text-gray-900">
-            Síntomas relevantes
-          </h2>
-          <p class="text-xs text-gray-600 mt-1 leading-relaxed">
-            Seleccione hallazgos frecuentes; puede ampliar con texto libre.
-          </p>
-          <div class="flex flex-wrap gap-2 mt-3">
-            <button
-              v-for="lbl in chipsEnPantalla"
-              :key="lbl"
-              type="button"
-              class="rounded-full px-3 py-1 text-xs border-2 transition-colors duration-150"
-              :class="chipActivoClase(lbl)"
-              @click="toggleChipEtiqueta(lbl)"
-            >
-              {{ lbl }}
-            </button>
-          </div>
-          <div
-            class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 pt-3 border-t border-gray-200/90"
-          >
-            <button
-              type="button"
-              class="inline-flex items-center rounded-full border border-dashed border-emerald-400/70 bg-white px-3 py-1.5 text-xs font-medium text-emerald-900 shadow-sm hover:bg-emerald-50/90 hover:border-emerald-500 transition-colors"
-              @click="toggleTextoLibreSintomas"
-            >
-              {{ mostrarTextoLibreSintomas ? 'Ocultar descripción libre' : 'Describir más' }}
-            </button>
-            <span
-              v-if="sintomasTextoLibre.trim() && !mostrarTextoLibreSintomas"
-              class="text-xs text-gray-500"
-              title="Hay texto opcional registrado para esta misma sección"
-            >
-              Hay descripción opcional oculta
-            </span>
-          </div>
-        </div>
-        <Transition
-          enter-active-class="transition duration-150 ease-out"
-          enter-from-class="opacity-0 -translate-y-1"
-          enter-to-class="opacity-100 translate-y-0"
-          leave-active-class="transition duration-100 ease-in"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
+    <section aria-label="Medicamentos actuales" class="space-y-3 min-w-0">
+      <p v-if="!tratamientoActualFilas.length" class="text-sm text-gray-600 italic">
+        Sin medicamentos registrados en esta visita
+      </p>
+
+      <div v-else class="space-y-4">
+        <article
+          v-for="(fila, idx) in tratamientoActualFilas"
+          :key="idx"
+          class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0 space-y-2 min-w-0"
         >
-          <div v-if="mostrarTextoLibreSintomas" class="space-y-1.5">
-            <label :class="labelClass" for="sintomas-texto-libre">
-              Texto opcional sobre síntomas
-            </label>
-
-            <textarea
-              id="sintomas-texto-libre"
-              v-model="sintomasTextoLibre"
-              rows="3"
-              :class="textareaObservacionesClass"
-            />
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Medicamento {{ idx + 1 }}
+            </span>
+            <button
+              type="button"
+              class="shrink-0 text-red-600 hover:text-red-800 text-sm font-medium"
+              title="Quitar medicamento"
+              @click="eliminarFilaTratamiento(idx)"
+            >
+              Quitar
+            </button>
           </div>
-        </Transition>
-      </section>
 
-      <div class="flex flex-col min-w-0">
-        <label :class="labelClass" for="adherencia-inp">Adherencia terapéutica</label>
-        <div class="relative">
-          <input
-            id="adherencia-inp"
-            v-model="adherenciaTerapeutica"
-            type="text"
-            autocomplete="off"
-            list="dl-esc-adherencia"
-            :class="inputFullClass"
-            placeholder="Selecciona o escribe"
-          />
-          <datalist id="dl-esc-adherencia">
-            <option v-for="s in SUGERENCIAS_ADHERENCIA_TERAPEUTICA" :key="s" :value="s">
-              {{ s }}
-            </option>
-          </datalist>
-        </div>
+          <div class="grid grid-cols-2 gap-2 min-w-0">
+            <div class="min-w-0">
+              <label :class="fieldLabelClass" :for="`med-${idx}`">Nombre</label>
+              <input
+                :id="`med-${idx}`"
+                v-model="fila.medicamento"
+                type="text"
+                autocomplete="off"
+                list="dl-esc-medicamentos"
+                :class="inputClass"
+                placeholder="Ej. Metformina"
+              />
+            </div>
+            <div class="min-w-0">
+              <label :class="fieldLabelClass" :for="`dosis-${idx}`">Dosis</label>
+              <input
+                :id="`dosis-${idx}`"
+                v-model="fila.dosis"
+                type="text"
+                :class="inputClass"
+                placeholder="850 mg"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 min-w-0">
+            <div class="min-w-0">
+              <label :class="fieldLabelClass" :for="`freq-${idx}`">Frecuencia</label>
+              <input
+                :id="`freq-${idx}`"
+                v-model="fila.frecuencia"
+                type="text"
+                autocomplete="off"
+                list="dl-esc-frecuencia-trat"
+                :class="inputClass"
+                placeholder="Cada 24 h"
+              />
+            </div>
+            <div class="min-w-0">
+              <label :class="fieldLabelClass" :for="`motivo-${idx}`">Motivo de uso</label>
+              <input
+                :id="`motivo-${idx}`"
+                v-model="fila.motivoUso"
+                type="text"
+                autocomplete="off"
+                list="dl-esc-motivo-uso"
+                :class="inputClass"
+                placeholder="Ej. DM2"
+              />
+            </div>
+          </div>
+        </article>
       </div>
-      
-    </div>
+
+      <datalist id="dl-esc-medicamentos">
+        <option
+          v-for="m in SUGERENCIAS_MEDICAMENTOS_FRECUENTES"
+          :key="m"
+          :value="m"
+        />
+      </datalist>
+      <datalist id="dl-esc-frecuencia-trat">
+        <option
+          v-for="f in CHIPS_FRECUENCIA_TRATAMIENTO"
+          :key="f"
+          :value="f"
+        />
+      </datalist>
+      <datalist id="dl-esc-motivo-uso">
+        <option v-for="m in CHIPS_MOTIVO_USO" :key="m" :value="m" />
+      </datalist>
+
+      <button
+        type="button"
+        class="text-sm font-medium text-emerald-800 hover:text-emerald-950 underline-offset-2 hover:underline"
+        @click="nuevaFilaTratamiento"
+      >
+        + Agregar medicamento
+      </button>
+    </section>
   </div>
 </template>

@@ -70,6 +70,13 @@ export interface LaboratorioCardiometabolicoEsc {
   categoriaTrigliceridos?: string;
 }
 
+export interface TratamientoActualCardiometabolicoEsc {
+  medicamento?: string;
+  dosis?: string;
+  frecuencia?: string;
+  motivoUso?: string;
+}
+
 export interface EventoSeguimientoCardiometabolico {
   _id: string;
   fechaEventoSeguimientoCardiometabolico: string;
@@ -79,6 +86,7 @@ export interface EventoSeguimientoCardiometabolico {
   signosVitales?: SignosVitalesCardiometabolicoEsc;
   somatometria?: SomatometriaCardiometabolicoEsc;
   laboratorio?: LaboratorioCardiometabolicoEsc;
+  tratamientoActual?: TratamientoActualCardiometabolicoEsc[];
   adherenciaTerapeutica?: string;
   sintomasRelevantes?: string;
   riesgosActuales?: string;
@@ -140,7 +148,10 @@ export interface EventoConcentradoCardiometabolicoEsc {
   somatometria?: SomatometriaCardiometabolicoEsc;
   laboratorio?: LaboratorioCardiometabolicoEsc;
   riesgoActual?: string;
+  /** Legacy; no usar para tratamiento. */
   plan?: string;
+  tratamientoActual?: TratamientoActualCardiometabolicoEsc[];
+  estadoCondiciones?: EstadoCondicionesCardiometabolicasEvento;
 }
 
 export interface SeguimientoProgramadoConcentradoCardiometabolicoEsc {
@@ -171,6 +182,8 @@ export interface InformeLongitudinalCardiometabolico {
   numeroReprogramaciones?: number;
   porcentajeAsistencia?: number;
   consistenciaSeguimiento?: string;
+  /** Texto breve: cómo se obtuvo la consistencia y el % de asistencia operativa (eventos / eventos+inas+cancel). */
+  interpretacionConsistenciaSeguimiento?: string;
   datosFaltantesRelevantes?: string[];
   idTrabajador?: string;
   eventosIncluidos?: string[];
@@ -181,9 +194,13 @@ export interface InformeLongitudinalCardiometabolico {
   resumenIndicadores?: ResumenIndicadoresLongitudinalEsc;
   graficasIncluidas?: string[];
   nivelRiesgoLongitudinal?: string;
+  /** Trayectoria agregada del periodo (Favorable, Estable, …). */
+  tendenciaLongitudinal?: string;
   interpretacionRiesgoLongitudinal?: string;
   factoresPersistentes?: string[];
   alertasRelevantes?: string[];
+  /** Viñetas de contexto terapéutico; solo en evidencia clínica de soporte. */
+  contextoTerapeutico?: string[];
   resumenLongitudinalSugerido?: string;
   conclusionClinicaSugerida?: string;
   recomendacionesSugeridas?: string;
