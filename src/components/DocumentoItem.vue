@@ -1,8 +1,8 @@
 <script setup>
 import axios from 'axios';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import { VPdfViewer, Locales, useLicense } from '@vue-pdf-viewer/viewer';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref } from 'vue';
+import { VPdfViewer, Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
 import { useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -323,6 +323,31 @@ useLicense({ licenseKey });
 // Estados para mostrar el visor y la URL del PDF
 const showPdfViewer = ref(false);
 const pdfUrl = ref('');
+const pdfTotalPages = ref(null);
+/** Ancho de la 1.ª página en px (viewport pdf.js a escala 1). */
+const pdfFirstPageWidth = ref(null);
+
+async function fetchPdfMetadata(blob) {
+    try {
+        const [pdfjs, workerModule] = await Promise.all([
+            import('pdfjs-dist'),
+            import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+        ]);
+        pdfjs.GlobalWorkerOptions.workerSrc = workerModule.default;
+        const doc = await pdfjs.getDocument({ data: await blob.arrayBuffer() }).promise;
+        const page = await doc.getPage(1);
+        const viewport = page.getViewport({ scale: 1 });
+        const metadata = {
+            numPages: doc.numPages,
+            pageWidth: viewport.width,
+        };
+        await doc.destroy();
+        return metadata;
+    } catch (error) {
+        console.warn('[DocumentoItem] No se pudo leer metadatos del PDF:', error);
+        return { numPages: 1, pageWidth: null };
+    }
+}
 
 const localization = {
     customLang: {
@@ -423,9 +448,14 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
         const contentType = response.headers['content-type'];
 
         if (response.status === 200 && contentType === 'application/pdf') {
+            const metadata = await fetchPdfMetadata(response.data);
+            pdfTotalPages.value = metadata.numPages;
+            pdfFirstPageWidth.value = metadata.pageWidth;
             pdfUrl.value = fullPath; // Actualiza tu variable de URL
             currentPdfUrl.value = fullPath; // Guarda la URL actual para descargar/imprimir
+            pdfViewerReady.value = false;
             showPdfViewer.value = true; // Muestra el visor PDF
+            await preparePdfViewerMount();
         } else {
             console.warn('El archivo no es un PDF o no existe.', { status: response.status, contentType });
             alert('El archivo PDF no existe o no es válido.');
@@ -440,10 +470,264 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
     }
 };
 
+const pdfViewerRef = ref(null);
+const pdfViewerContainerRef = ref(null);
+/** Montar VPdfViewer solo cuando ya tenemos escala inicial (tope 200%). */
+const pdfViewerReady = ref(false);
+const pdfInitialScale = ref(1);
+let pdfViewerResizeObserver = null;
+let pdfViewerResizeDebounceTimer = null;
+let pdfViewerClampTimer = null;
+let pdfViewerLastObservedWidth = 0;
+let pdfViewerClampGeneration = 0;
+
+const PDF_VIEWER_RESIZE_DEBOUNCE_MS = 175;
+const PDF_VIEWER_RESIZE_MIN_DELTA_PX = 8;
+const PDF_VIEWER_MAX_SCALE = 2; // 200%
+const PDF_VIEWER_MIN_SCALE_MOBILE = 0.85;
+const PDF_VIEWER_MIN_SCALE_THRESHOLD = 0.75;
+const PDF_VIEWER_THUMBNAIL_PANEL_PX = 180;
+const PDF_VIEWER_HORIZONTAL_PADDING_PX = 16;
+const PDF_VIEWER_CLAMP_POLL_MS = 50;
+const PDF_VIEWER_CLAMP_MAX_ATTEMPTS = 40;
+
+function getPdfZoomControl() {
+    const instance = pdfViewerRef.value;
+    if (!instance) return null;
+    const control =
+        instance.zoomControl ??
+        instance.$?.exposed?.zoomControl ??
+        instance.$?.setupState?.zoomControl;
+    return control?.value ?? control ?? null;
+}
+
+function waitForPdfZoomControl(callback, attempt = 0) {
+    const zoomCtrl = getPdfZoomControl();
+    if (zoomCtrl) {
+        callback(zoomCtrl);
+        return;
+    }
+    if (attempt >= 40 || !showPdfViewer.value) return;
+    setTimeout(() => waitForPdfZoomControl(callback, attempt + 1), 50);
+}
+
+function readPdfZoomScale(zoomCtrl) {
+    if (!zoomCtrl) return null;
+    const raw = zoomCtrl.scale;
+    const scale = typeof raw === 'number' ? raw : unref(raw);
+    return typeof scale === 'number' && scale > 0 ? scale : null;
+}
+
+function clearPdfViewerClampTimer() {
+    if (pdfViewerClampTimer) {
+        clearTimeout(pdfViewerClampTimer);
+        pdfViewerClampTimer = null;
+    }
+}
+
+function disconnectPdfViewerResizeObserver() {
+    pdfViewerClampGeneration += 1;
+    clearPdfViewerClampTimer();
+    if (pdfViewerResizeDebounceTimer) {
+        clearTimeout(pdfViewerResizeDebounceTimer);
+        pdfViewerResizeDebounceTimer = null;
+    }
+    if (pdfViewerResizeObserver) {
+        pdfViewerResizeObserver.disconnect();
+        pdfViewerResizeObserver = null;
+    }
+    pdfViewerLastObservedWidth = 0;
+}
+
+function enforcePdfZoomLimits(zoomCtrl) {
+    const scale = readPdfZoomScale(zoomCtrl);
+    if (scale == null) return false;
+
+    if (scale > PDF_VIEWER_MAX_SCALE) {
+        zoomCtrl.zoom(PDF_VIEWER_MAX_SCALE);
+        return true;
+    }
+
+    if (windowWidth.value < 480 && scale < PDF_VIEWER_MIN_SCALE_THRESHOLD) {
+        zoomCtrl.zoom(PDF_VIEWER_MIN_SCALE_MOBILE);
+        return true;
+    }
+
+    return false;
+}
+
+function schedulePdfZoomClamp(zoomCtrl, generation, attempt = 0) {
+    clearPdfViewerClampTimer();
+
+    if (generation !== pdfViewerClampGeneration || !showPdfViewer.value) return;
+
+    const changed = enforcePdfZoomLimits(zoomCtrl);
+    const scale = readPdfZoomScale(zoomCtrl);
+
+    const shouldContinue =
+        attempt < PDF_VIEWER_CLAMP_MAX_ATTEMPTS &&
+        (scale == null || changed || scale > PDF_VIEWER_MAX_SCALE || attempt < 10);
+
+    if (!shouldContinue) return;
+
+    pdfViewerClampTimer = setTimeout(() => {
+        pdfViewerClampTimer = null;
+        schedulePdfZoomClamp(zoomCtrl, generation, attempt + 1);
+    }, PDF_VIEWER_CLAMP_POLL_MS);
+}
+
+function getPdfContentAreaWidth() {
+    const container = pdfViewerContainerRef.value;
+    if (!container) return 0;
+
+    let width = container.clientWidth;
+    if (initialThumbnailsVisible.value) {
+        width -= PDF_VIEWER_THUMBNAIL_PANEL_PX;
+    }
+    return Math.max(width - PDF_VIEWER_HORIZONTAL_PADDING_PX, 0);
+}
+
+function computeTargetPdfScale() {
+    const pageWidth = pdfFirstPageWidth.value;
+    const areaWidth = getPdfContentAreaWidth();
+    if (!pageWidth || pageWidth <= 0 || areaWidth <= 0) return null;
+
+    const fitScale = areaWidth / pageWidth;
+    let scale = Math.min(fitScale, PDF_VIEWER_MAX_SCALE);
+
+    if (windowWidth.value < 480 && scale < PDF_VIEWER_MIN_SCALE_THRESHOLD) {
+        scale = PDF_VIEWER_MIN_SCALE_MOBILE;
+    }
+
+    return Math.max(scale, 0.25);
+}
+
+function applyNumericFitZoom(zoomCtrl) {
+    const target = computeTargetPdfScale();
+    if (target == null) return false;
+
+    zoomCtrl.zoom(target);
+
+    const scale = readPdfZoomScale(zoomCtrl);
+    if (scale != null && scale > PDF_VIEWER_MAX_SCALE) {
+        zoomCtrl.zoom(PDF_VIEWER_MAX_SCALE);
+    }
+    return true;
+}
+
+function applyFitToWidth(retryCount = 0) {
+    const zoomCtrl = getPdfZoomControl();
+    if (!zoomCtrl) {
+        if (retryCount < 40 && showPdfViewer.value) {
+            setTimeout(() => applyFitToWidth(retryCount + 1), 50);
+        }
+        return;
+    }
+
+    const generation = pdfViewerClampGeneration;
+    const hasPageWidth = (pdfFirstPageWidth.value ?? 0) > 0;
+    const areaWidth = getPdfContentAreaWidth();
+
+    if (hasPageWidth && areaWidth <= 0 && retryCount < 12) {
+        nextTick(() => {
+            if (generation !== pdfViewerClampGeneration) return;
+            applyFitToWidth(retryCount + 1);
+        });
+        return;
+    }
+
+    if (applyNumericFitZoom(zoomCtrl)) {
+        nextTick(() => {
+            if (generation !== pdfViewerClampGeneration) return;
+            applyNumericFitZoom(zoomCtrl);
+        });
+        schedulePdfZoomClamp(zoomCtrl, generation, 0);
+        return;
+    }
+
+    // Sin metadatos: PageWidth y luego forzar tope 200%
+    zoomCtrl.zoom(ZoomLevel.PageWidth);
+    nextTick(() => {
+        if (generation !== pdfViewerClampGeneration) return;
+        schedulePdfZoomClamp(zoomCtrl, generation, 0);
+    });
+}
+
+async function preparePdfViewerMount(attempt = 0) {
+    if (!showPdfViewer.value) return;
+
+    await nextTick();
+
+    const scale = computeTargetPdfScale();
+    if (scale == null) {
+        if (attempt < 24) {
+            requestAnimationFrame(() => preparePdfViewerMount(attempt + 1));
+            return;
+        }
+        pdfInitialScale.value = 1;
+    } else {
+        pdfInitialScale.value = scale;
+    }
+
+    pdfViewerReady.value = true;
+}
+
+function handlePdfCanvasLoaded() {
+    waitForPdfZoomControl((zoomCtrl) => {
+        const generation = pdfViewerClampGeneration;
+        if (!applyNumericFitZoom(zoomCtrl)) {
+            enforcePdfZoomLimits(zoomCtrl);
+        }
+        schedulePdfZoomClamp(zoomCtrl, generation, 0);
+    });
+}
+
+const pdfAfterCanvasLoaded = { 1: handlePdfCanvasLoaded };
+
+function scheduleApplyFitToWidth() {
+    if (pdfViewerResizeDebounceTimer) {
+        clearTimeout(pdfViewerResizeDebounceTimer);
+    }
+    pdfViewerResizeDebounceTimer = setTimeout(() => {
+        pdfViewerResizeDebounceTimer = null;
+        applyFitToWidth();
+    }, PDF_VIEWER_RESIZE_DEBOUNCE_MS);
+}
+
+function connectPdfViewerResizeObserver() {
+    disconnectPdfViewerResizeObserver();
+    const el = pdfViewerContainerRef.value;
+    if (!el) return;
+
+    pdfViewerLastObservedWidth = el.clientWidth;
+    pdfViewerResizeObserver = new ResizeObserver((entries) => {
+        const width = entries[0]?.contentRect?.width ?? 0;
+        if (Math.abs(width - pdfViewerLastObservedWidth) < PDF_VIEWER_RESIZE_MIN_DELTA_PX) return;
+        pdfViewerLastObservedWidth = width;
+        scheduleApplyFitToWidth();
+    });
+    pdfViewerResizeObserver.observe(el);
+}
+
+function handlePdfViewerLoaded() {
+    nextTick(() => {
+        waitForPdfZoomControl((zoomCtrl) => {
+            const generation = pdfViewerClampGeneration;
+            applyNumericFitZoom(zoomCtrl);
+            schedulePdfZoomClamp(zoomCtrl, generation, 0);
+            connectPdfViewerResizeObserver();
+        });
+    });
+}
+
 // Función para cerrar el visor
 const cerrarPdf = () => {
+    disconnectPdfViewerResizeObserver();
+    pdfViewerReady.value = false;
     showPdfViewer.value = false;
     pdfUrl.value = '';
+    pdfTotalPages.value = null;
+    pdfFirstPageWidth.value = null;
 };
 
 // Función para abrir un documento externo
@@ -1253,21 +1537,32 @@ const updateWindowWidth = () => {
 
 // Agregar y eliminar el listener de eventos
 onMounted(() => window.addEventListener('resize', updateWindowWidth));
-onUnmounted(() => window.removeEventListener('resize', updateWindowWidth));
+onUnmounted(() => {
+    window.removeEventListener('resize', updateWindowWidth);
+    disconnectPdfViewerResizeObserver();
+});
 
-/// Computed para las condiciones responsivas
+/// Computed para las condiciones responsivas (thumbnails)
 const isExtraLargeScreen = computed(() => windowWidth.value >= 1280);
 const isLargeScreen = computed(() => windowWidth.value >= 1024 && windowWidth.value < 1280);
-const isMediumScreen = computed(() => windowWidth.value >= 768 && windowWidth.value < 1024);
-const isSmallScreen = computed(() => windowWidth.value < 768);
 
-// Valores dinámicos para initialThumbnails-visible y initialScale
-const initialThumbnailsVisible = computed(() => isLargeScreen.value || isExtraLargeScreen.value);
-const initialScale = computed(() => {
-  if (isExtraLargeScreen.value) return 2; // >= 1280px
-  if (isLargeScreen.value) return 1.75;   // 1024px - 1279px
-  if (isMediumScreen.value) return 1.4;   // 768px - 1023px
-  return 0.8;                               // < 768px
+const initialThumbnailsVisible = computed(() => {
+    const screenOk = isLargeScreen.value || isExtraLargeScreen.value;
+    if (!screenOk) return false;
+    return (pdfTotalPages.value ?? 1) > 1;
+});
+
+watch(initialThumbnailsVisible, (visible, prev) => {
+    if (visible && !prev && showPdfViewer.value) {
+        scheduleApplyFitToWidth();
+    }
+});
+
+watch(showPdfViewer, (open) => {
+    if (!open) {
+        disconnectPdfViewerResizeObserver();
+        pdfViewerReady.value = false;
+    }
 });
 
 // Lógica para mensajes dinámicos de antidopings
@@ -3397,7 +3692,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
     <Teleport to="body">
         <Transition name="modal-fade" appear>
             <div v-if="showPdfViewer"
-                class="documento-item-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
+                class="documento-item-viewer fixed inset-0 z-50 flex flex-col overflow-hidden bg-black bg-opacity-90 backdrop-blur-sm"
                 @click.self="cerrarPdf">
             
             <!-- Header del visor -->
@@ -3433,15 +3728,23 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
             </div>
 
             <!-- Contenedor principal del visor -->
-            <div class="relative w-full h-full flex flex-col">
+            <div class="relative flex min-h-0 min-w-0 flex-1 flex-col px-2 pb-4 sm:px-4">
                 <!-- Contenedor del visor de PDF -->
-                <div class="flex-1 mt-16 sm:mt-20 mx-2 sm:mx-4 mb-4 bg-white rounded-xl shadow-2xl overflow-hidden">
-                    <VPdfViewer 
-                        :src="pdfUrl" 
-                        :initialThumbnails-visible="initialThumbnailsVisible" 
-                        :initialScale="initialScale"
-                        locale="customLang" 
-                        :localization="localization" 
+                <div
+                    ref="pdfViewerContainerRef"
+                    class="pdf-viewer-host mt-16 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl bg-white shadow-2xl sm:mt-20"
+                >
+                    <VPdfViewer
+                        v-if="pdfViewerReady"
+                        ref="pdfViewerRef"
+                        class="h-full w-full max-w-full"
+                        :src="pdfUrl"
+                        :initialThumbnails-visible="initialThumbnailsVisible"
+                        :initialScale="pdfInitialScale"
+                        :afterCanvasLoaded="pdfAfterCanvasLoaded"
+                        locale="customLang"
+                        :localization="localization"
+                        @loaded="handlePdfViewerLoaded"
                     />
                 </div>
             </div>
@@ -3572,6 +3875,17 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
 .control-button:hover {
     @apply transform scale-105;
+}
+
+/* Visor PDF: evitar desborde horizontal del componente interno */
+.documento-item-viewer .pdf-viewer-host {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.documento-item-viewer .pdf-viewer-host :deep(> *) {
+    max-width: 100%;
 }
 
 /* Estilos para el indicador de zoom */

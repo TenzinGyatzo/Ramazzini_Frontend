@@ -15,6 +15,8 @@ interface Trabajador {
   puesto: string;
   fechaIngreso: string;
   telefono: string;
+  contactoEmergenciaNombre?: string;
+  contactoEmergenciaTelefono?: string;
   estadoCivil: string;
   numeroEmpleado: string;
   nss: string;

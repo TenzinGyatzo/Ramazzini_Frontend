@@ -175,6 +175,20 @@ const antecedentesLaborales = ref([
               {{ trabajadores.currentTrabajador?.numeroEmpleado || 'No asignado' }}
             </td>
           </tr>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
+              CONTACTO DE EMERGENCIA
+            </td>
+            <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">
+              {{ trabajadores.currentTrabajador?.contactoEmergenciaNombre ?? '' }}
+            </td>
+            <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
+              TEL. CONTACTO EMERGENCIA
+            </td>
+            <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">
+              {{ trabajadores.currentTrabajador?.contactoEmergenciaTelefono ?? '' }}
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
