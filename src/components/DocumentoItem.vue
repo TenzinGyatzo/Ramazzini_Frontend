@@ -323,6 +323,16 @@ useLicense({ licenseKey });
 // Estados para mostrar el visor y la URL del PDF
 const showPdfViewer = ref(false);
 const pdfUrl = ref('');
+/** Blob URL del PDF en memoria (src del visor); evita 2ª descarga HTTP. */
+let pdfBlobUrl = null;
+
+function revokePdfBlobUrl() {
+    if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+        pdfBlobUrl = null;
+    }
+}
+
 const pdfTotalPages = ref(null);
 /** Ancho de la 1.ª página en px (viewport pdf.js a escala 1). */
 const pdfFirstPageWidth = ref(null);
@@ -451,10 +461,15 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
             const metadata = await fetchPdfMetadata(response.data);
             pdfTotalPages.value = metadata.numPages;
             pdfFirstPageWidth.value = metadata.pageWidth;
-            pdfUrl.value = fullPath; // Actualiza tu variable de URL
-            currentPdfUrl.value = fullPath; // Guarda la URL actual para descargar/imprimir
+            revokePdfBlobUrl();
+            pdfBlobUrl = URL.createObjectURL(response.data);
+            pdfUrl.value = pdfBlobUrl;
+            currentPdfUrl.value = fullPath;
+            pdfScaleCorrectionAttempted = false;
+            pdfScaleCorrectionPending = false;
+            pdfViewerMountKey.value = 0;
             pdfViewerReady.value = false;
-            showPdfViewer.value = true; // Muestra el visor PDF
+            showPdfViewer.value = true;
             await preparePdfViewerMount();
         } else {
             console.warn('El archivo no es un PDF o no existe.', { status: response.status, contentType });
@@ -475,6 +490,9 @@ const pdfViewerContainerRef = ref(null);
 /** Montar VPdfViewer solo cuando ya tenemos escala inicial (tope 200%). */
 const pdfViewerReady = ref(false);
 const pdfInitialScale = ref(1);
+const pdfViewerMountKey = ref(0);
+let pdfScaleCorrectionAttempted = false;
+let pdfScaleCorrectionPending = false;
 let pdfViewerResizeObserver = null;
 let pdfViewerResizeDebounceTimer = null;
 let pdfViewerClampTimer = null;
@@ -486,8 +504,10 @@ const PDF_VIEWER_RESIZE_MIN_DELTA_PX = 8;
 const PDF_VIEWER_MAX_SCALE = 2; // 200%
 const PDF_VIEWER_MIN_SCALE_MOBILE = 0.85;
 const PDF_VIEWER_MIN_SCALE_THRESHOLD = 0.75;
-const PDF_VIEWER_THUMBNAIL_PANEL_PX = 180;
-const PDF_VIEWER_HORIZONTAL_PADDING_PX = 16;
+const PDF_VIEWER_THUMBNAIL_PANEL_PX = 200;
+/** Margen interno del visor: scrollbar + padding de página (estimado pre-montaje). */
+const PDF_VIEWER_HORIZONTAL_PADDING_PX = 48;
+const PDF_VIEWER_SCALE_CORRECTION_THRESHOLD = 0.02;
 const PDF_VIEWER_CLAMP_POLL_MS = 50;
 const PDF_VIEWER_CLAMP_MAX_ATTEMPTS = 40;
 
@@ -577,6 +597,9 @@ function schedulePdfZoomClamp(zoomCtrl, generation, attempt = 0) {
 }
 
 function getPdfContentAreaWidth() {
+    const liveWidth = measurePdfContentWidthFromDom();
+    if (liveWidth > 0) return liveWidth;
+
     const container = pdfViewerContainerRef.value;
     if (!container) return 0;
 
@@ -587,9 +610,28 @@ function getPdfContentAreaWidth() {
     return Math.max(width - PDF_VIEWER_HORIZONTAL_PADDING_PX, 0);
 }
 
-function computeTargetPdfScale() {
+function measurePdfContentWidthFromDom() {
+    const host = pdfViewerContainerRef.value;
+    if (!host) return 0;
+
+    const pagesContainer = host.querySelector('.vpv-pages-container');
+    if (pagesContainer?.clientWidth > 0) {
+        return pagesContainer.clientWidth;
+    }
+
+    const innerContainer = host.querySelector('.vpv-inner-container');
+    if (innerContainer?.clientWidth > 0) {
+        const sidebar = host.querySelector('.vpv-sidebar-wrapper');
+        const sidebarWidth = sidebar?.getBoundingClientRect().width ?? 0;
+        return Math.max(innerContainer.clientWidth - sidebarWidth - 8, 0);
+    }
+
+    return 0;
+}
+
+function computeTargetPdfScale(areaWidthOverride = null) {
     const pageWidth = pdfFirstPageWidth.value;
-    const areaWidth = getPdfContentAreaWidth();
+    const areaWidth = areaWidthOverride ?? getPdfContentAreaWidth();
     if (!pageWidth || pageWidth <= 0 || areaWidth <= 0) return null;
 
     const fitScale = areaWidth / pageWidth;
@@ -600,6 +642,33 @@ function computeTargetPdfScale() {
     }
 
     return Math.max(scale, 0.25);
+}
+
+function applyInitialScaleCorrection() {
+    if (pdfScaleCorrectionAttempted || pdfScaleCorrectionPending || !showPdfViewer.value) return;
+
+    pdfScaleCorrectionPending = true;
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            pdfScaleCorrectionPending = false;
+            if (pdfScaleCorrectionAttempted || !showPdfViewer.value) return;
+
+            const target = computeTargetPdfScale();
+            if (target == null) {
+                pdfScaleCorrectionAttempted = true;
+                return;
+            }
+
+            if (Math.abs(target - pdfInitialScale.value) <= PDF_VIEWER_SCALE_CORRECTION_THRESHOLD) {
+                pdfScaleCorrectionAttempted = true;
+                return;
+            }
+
+            pdfScaleCorrectionAttempted = true;
+            pdfInitialScale.value = target;
+            pdfViewerMountKey.value += 1;
+        });
+    });
 }
 
 function applyNumericFitZoom(zoomCtrl) {
@@ -673,6 +742,7 @@ async function preparePdfViewerMount(attempt = 0) {
 }
 
 function handlePdfCanvasLoaded() {
+    applyInitialScaleCorrection();
     waitForPdfZoomControl((zoomCtrl) => {
         const generation = pdfViewerClampGeneration;
         if (!applyNumericFitZoom(zoomCtrl)) {
@@ -710,6 +780,7 @@ function connectPdfViewerResizeObserver() {
 }
 
 function handlePdfViewerLoaded() {
+    applyInitialScaleCorrection();
     nextTick(() => {
         waitForPdfZoomControl((zoomCtrl) => {
             const generation = pdfViewerClampGeneration;
@@ -724,7 +795,11 @@ function handlePdfViewerLoaded() {
 const cerrarPdf = () => {
     disconnectPdfViewerResizeObserver();
     pdfViewerReady.value = false;
+    pdfScaleCorrectionAttempted = false;
+    pdfScaleCorrectionPending = false;
+    pdfViewerMountKey.value = 0;
     showPdfViewer.value = false;
+    revokePdfBlobUrl();
     pdfUrl.value = '';
     pdfTotalPages.value = null;
     pdfFirstPageWidth.value = null;
@@ -3736,6 +3811,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 >
                     <VPdfViewer
                         v-if="pdfViewerReady"
+                        :key="pdfViewerMountKey"
                         ref="pdfViewerRef"
                         class="h-full w-full max-w-full"
                         :src="pdfUrl"
