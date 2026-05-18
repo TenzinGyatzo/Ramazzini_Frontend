@@ -6,11 +6,11 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { calcularEdad, calcularAntiguedad, convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
+import { DIAGNOSTICO_CARDIOMETABOLICO_OPTS } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
 import {
-  DIAGNOSTICO_CARDIOMETABOLICO_OPTS,
-  ESTADO_CONTROL_CONDICION_OPTS,
-  GRADO_OBESIDAD_OPTS,
-} from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
+  claseCssEstadoCondicionEscVista,
+  textoEstadoCondicionEscVista,
+} from '@/helpers/cardiometabolico/coherenciaClinicaEsc';
 import {
   clasificarColesterolTotal,
   clasificarGlucosa,
@@ -27,6 +27,13 @@ const formData = useFormDataStore();
 const steps = useStepsStore();
 
 const esc = computed(() => formData.formDataEventoSeguimientoCardiometabolico);
+
+const ctxCoherencia = computed(() => {
+  const sexo = trabajadores.currentTrabajador?.sexo;
+  if (sexo === 'Femenino') return { sexoPaciente: 'Femenino' };
+  if (sexo === 'Masculino') return { sexoPaciente: 'Masculino' };
+  return {};
+});
 
 const filasTratamientoVista = computed(() => {
   const arr = esc.value.tratamientoActual;
@@ -52,16 +59,6 @@ function fmtSintomasRelevantesVista(raw) {
   return t.replace(/\n\n+/g, '\n');
 }
 
-function labelControl(code) {
-  const o = ESTADO_CONTROL_CONDICION_OPTS.find((x) => x.value === code);
-  return o?.label ?? fmt(code);
-}
-
-function labelGrado(code) {
-  const o = GRADO_OBESIDAD_OPTS.find((x) => x.value === code);
-  return o?.label ?? fmt(code);
-}
-
 const FILAS_ESTADO_CONDICION = [
   { key: 'hipertensionArterial', label: 'Hipertensión arterial' },
   { key: 'diabetesMellitusTipo2', label: 'Diabetes mellitus tipo 2' },
@@ -72,29 +69,11 @@ const FILAS_ESTADO_CONDICION_IZQ = FILAS_ESTADO_CONDICION.slice(0, 2);
 const FILAS_ESTADO_CONDICION_DER = FILAS_ESTADO_CONDICION.slice(2, 4);
 
 function textoFilaEstadoCondicion(key) {
-  const ec = esc.value.estadoCondiciones;
-  if (key === 'obesidad') {
-    const g = ec?.obesidad?.grado;
-    return g ? labelGrado(g) : '—';
-  }
-  const c = ec?.[key]?.control;
-  return c ? labelControl(c) : '—';
+  return textoEstadoCondicionEscVista(esc.value, key, ctxCoherencia.value);
 }
 
-/** Color del texto: control (HTA, DM2, dislipidemia); obesidad por grado I/II/III. */
 function claseTextoEstadoCondicion(key) {
-  const ec = esc.value.estadoCondiciones;
-  if (key === 'obesidad') {
-    const g = ec?.obesidad?.grado;
-    if (g === 'OBESIDAD_I') return 'text-red-600';
-    if (g === 'OBESIDAD_II') return 'text-red-700';
-    if (g === 'OBESIDAD_III') return 'text-red-900';
-    return 'text-gray-900';
-  }
-  const c = ec?.[key]?.control;
-  if (c === 'CONTROLADA') return 'text-emerald-700';
-  if (c === 'NO_CONTROLADA') return 'text-red-700';
-  return 'text-gray-900';
+  return claseCssEstadoCondicionEscVista(esc.value, key, ctxCoherencia.value);
 }
 
 function diagnosticoVigiladoActivo(codigo) {

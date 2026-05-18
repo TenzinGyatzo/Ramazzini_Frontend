@@ -96,6 +96,9 @@ export interface EventoSeguimientoCardiometabolico {
 export interface CondicionControlResumenInformeLongitudinal {
   presente?: boolean;
   estadoActual?: string;
+  /** Última visita con dato relevante (motor ESC): hallazgo, alteración o control. */
+  codigoEstadoVigencia?: string;
+  razonUltimaVisita?: string;
   tendencia?: string;
   observaciones?: string;
   interpretacionAutomatica?: string;
@@ -120,13 +123,7 @@ export interface ResumenIndicadorLongitudinalEsc {
   valorInicial?: number;
   valorFinal?: number;
   cambioAbsoluto?: number;
-  cambioPorcentual?: number;
-  mejorValor?: number;
-  peorValor?: number;
   tendencia?: string;
-  interpretacion?: string;
-  tieneDatosSuficientes?: boolean;
-  numeroMediciones?: number;
 }
 
 export interface ResumenIndicadoresLongitudinalEsc {
@@ -134,22 +131,17 @@ export interface ResumenIndicadoresLongitudinalEsc {
   tensionArterialDiastolica?: ResumenIndicadorLongitudinalEsc;
   peso?: ResumenIndicadorLongitudinalEsc;
   indiceMasaCorporal?: ResumenIndicadorLongitudinalEsc;
-  circunferenciaCintura?: ResumenIndicadorLongitudinalEsc;
   glucosaMgDl?: ResumenIndicadorLongitudinalEsc;
   hba1cPorcentaje?: ResumenIndicadorLongitudinalEsc;
-  ldlMgDl?: ResumenIndicadorLongitudinalEsc;
-  trigliceridosMgDl?: ResumenIndicadorLongitudinalEsc;
 }
 
 export interface EventoConcentradoCardiometabolicoEsc {
   idEventoOriginal?: string;
   fechaControl?: string;
+  diagnosticosActivos?: string[];
   signosVitales?: SignosVitalesCardiometabolicoEsc;
   somatometria?: SomatometriaCardiometabolicoEsc;
   laboratorio?: LaboratorioCardiometabolicoEsc;
-  riesgoActual?: string;
-  /** Legacy; no usar para tratamiento. */
-  plan?: string;
   tratamientoActual?: TratamientoActualCardiometabolicoEsc[];
   estadoCondiciones?: EstadoCondicionesCardiometabolicasEvento;
 }
@@ -172,7 +164,6 @@ export interface InformeLongitudinalCardiometabolico {
   fechaInformeLongitudinalCardiometabolico: string;
   periodoInicio: string;
   periodoFin: string;
-  fechaUltimoEventoConsiderado?: string;
   numeroEventosIncluidos: number;
   numeroEventosValidos?: number;
   numeroSeguimientosProgramados?: number;
@@ -182,8 +173,6 @@ export interface InformeLongitudinalCardiometabolico {
   numeroReprogramaciones?: number;
   porcentajeAsistencia?: number;
   consistenciaSeguimiento?: string;
-  /** Texto breve: cómo se obtuvo la consistencia y el % de asistencia operativa (eventos / eventos+inas+cancel). */
-  interpretacionConsistenciaSeguimiento?: string;
   datosFaltantesRelevantes?: string[];
   idTrabajador?: string;
   eventosIncluidos?: string[];
@@ -192,23 +181,16 @@ export interface InformeLongitudinalCardiometabolico {
   eventosConcentrados?: EventoConcentradoCardiometabolicoEsc[];
   seguimientosProgramadosConcentrados?: SeguimientoProgramadoConcentradoCardiometabolicoEsc[];
   resumenIndicadores?: ResumenIndicadoresLongitudinalEsc;
-  graficasIncluidas?: string[];
   nivelRiesgoLongitudinal?: string;
   /** Trayectoria agregada del periodo (Favorable, Estable, …). */
   tendenciaLongitudinal?: string;
   interpretacionRiesgoLongitudinal?: string;
-  factoresPersistentes?: string[];
-  alertasRelevantes?: string[];
   /** Viñetas de contexto terapéutico; solo en evidencia clínica de soporte. */
   contextoTerapeutico?: string[];
-  resumenLongitudinalSugerido?: string;
-  conclusionClinicaSugerida?: string;
-  recomendacionesSugeridas?: string;
-  limitacionesSugeridas?: string;
-  resumenLongitudinal?: string;
-  conclusionClinica?: string;
-  recomendaciones?: string;
-  limitaciones?: string;
+  graficaEvolucionGlucemica?: string;
+  graficaEvolucionPresionArterial?: string;
+  graficaEvolucionPesoImc?: string;
+  graficaEvolucionPerfilLipidico?: string;
   rutaPDF?: string;
   createdBy?: unknown;
   updatedBy?: unknown;

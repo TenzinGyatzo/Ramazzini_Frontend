@@ -155,12 +155,6 @@ function sincronizarPayloadInforme() {
   fd.eventosIncluidos = eventosSel.map((e) => e._id);
   fd.numeroEventosIncluidos = eventosSel.length;
 
-  const fechasEv = eventosSel
-    .map((e) => toYyyyMmDd(e.fechaEventoSeguimientoCardiometabolico))
-    .filter(Boolean)
-    .sort();
-  fd.fechaUltimoEventoConsiderado = fechasEv.length ? fechasEv[fechasEv.length - 1] : undefined;
-
   const concentradoPersistido =
     Array.isArray(fd.eventosConcentrados) &&
     fd.eventosConcentrados.length > 0 &&

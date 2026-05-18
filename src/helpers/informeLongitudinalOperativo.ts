@@ -1,6 +1,5 @@
 /**
- * Derivaciones operativas y borradores de texto para Informe longitudinal cardiometabólico (cliente).
- * Las fórmulas están documentadas; validar frente al negocio si hace falta.
+ * Derivaciones operativas para Informe longitudinal cardiometabólico (cliente).
  */
 import type {
   CondicionControlResumenInformeLongitudinal,
@@ -9,19 +8,35 @@ import type {
   InformeLongitudinalCardiometabolico,
   ResumenCondicionesCardiometabolicasInformeLongitudinal,
   ResumenIndicadoresLongitudinalEsc,
-  ResumenIndicadorLongitudinalEsc,
   SeguimientoProgramadoConcentradoCardiometabolicoEsc,
 } from '@/interfaces/documentos.inteface';
-import {
-  CONSISTENCIA_SEGUIMIENTO_LONGITUDINAL,
-  GRAFICAS_LONGITUDINAL_CARDIOMETABOLICA,
-} from '@/helpers/informeLongitudinalCardiometabolicoOptions';
+import { CONSISTENCIA_SEGUIMIENTO_LONGITUDINAL } from '@/helpers/informeLongitudinalCardiometabolicoOptions';
 import {
   CONFIG_UMBRALES_SEVERIDAD_ILC,
   inferirNivelRiesgoLongitudinalDescontrol,
   inferirTendenciaLongitudinalAgregada,
 } from '@/helpers/informeLongitudinalRiesgoTrayectoria';
 import { resumenRegimenTratamientoEnPeriodo } from '@/helpers/informeLongitudinalTratamiento';
+import {
+  CONDICION_ILC_A_ESC,
+  codigoControlClinicoParaTendencia,
+  codigoEstadoVigenciaDesdeResultado,
+  diagnosticoActivoEnEvento,
+  diagnosticoObesidadEnEvento,
+  estadoActualControlDesdeVisita,
+  evaluarCondicionEnEvento,
+  eventoConcentradoAEscForm,
+  tendenciaControlDesdeSerie,
+  tendenciaControlAString,
+  type CondicionControlIlc,
+} from '@/helpers/informeLongitudinalCoherenciaEsc';
+import type { EscCoherenciaContexto } from '@/helpers/cardiometabolico/coherenciaClinicaEsc';
+import {
+  derivarResumenIndicadoresCompleto,
+  eventosCronologicos,
+  proyectarResumenIndicadoresParaPersistencia,
+  type ResumenIndicadoresEnriquecido,
+} from '@/helpers/informeLongitudinalIndicadores';
 export type {
   InferenciaRiesgoTendenciaResult,
   ParamsInferenciaRiesgoDescontrol,
@@ -147,194 +162,130 @@ export function contarEventosConDatosNumericos(eventos: EventoConcentradoCardiom
   return n;
 }
 
-function parseFechaComparable(f?: string): number {
-  if (!f || typeof f !== 'string') return NaN;
-  const t = Date.parse(f.includes('T') ? f : `${f}T12:00:00.000Z`);
-  return Number.isNaN(t) ? NaN : t;
+export { eventosCronologicos } from '@/helpers/informeLongitudinalIndicadores';
+
+const ORDEN_GRADO_OBESIDAD: Record<string, number> = {
+  SOBREPESO: 1,
+  OBESIDAD_I: 2,
+  OBESIDAD_II: 3,
+  OBESIDAD_III: 4,
+};
+
+function tendenciaGradoObesidadDesdeSerie(grados: string[]): string | undefined {
+  if (grados.length < 2) return undefined;
+  const o0 = ORDEN_GRADO_OBESIDAD[grados[0]!];
+  const o1 = ORDEN_GRADO_OBESIDAD[grados[grados.length - 1]!];
+  if (o0 == null || o1 == null) return undefined;
+  if (o0 === o1) return 'Estable';
+  if (o1 < o0) return 'Mejoría';
+  if (o1 > o0) return 'Empeoramiento';
+  return undefined;
 }
 
-/** Ordena por `fechaControl` ascendente y descarta sin fecha válida para series. */
-function eventosCronologicos(events: EventoConcentradoCardiometabolicoEsc[]): EventoConcentradoCardiometabolicoEsc[] {
-  return [...events]
-    .filter((e) => typeof e.fechaControl === 'string' && Number.isFinite(parseFechaComparable(e.fechaControl)))
-    .sort((a, b) => parseFechaComparable(a.fechaControl!) - parseFechaComparable(b.fechaControl!));
-}
+function buildControlResumenDesdeEventos(
+  cron: EventoConcentradoCardiometabolicoEsc[],
+  condicionIlc: CondicionControlIlc,
+  ctx?: EscCoherenciaContexto,
+): CondicionControlResumenInformeLongitudinal | undefined {
+  const escKey = CONDICION_ILC_A_ESC[condicionIlc];
+  let presente = false;
+  let huboDatoRelevante = false;
+  let codigoEstadoVigencia: string | undefined;
+  let razonUltimaVisita: string | undefined;
+  let estadoActual: string | undefined;
+  const serieClinica: ('CONTROLADA' | 'NO_CONTROLADA')[] = [];
 
-function buildIndicador(
-  valoresConFecha: { v: number; idx: number }[],
-): ResumenIndicadorLongitudinalEsc | undefined {
-  const nums = valoresConFecha.filter((x) => !Number.isNaN(x.v));
-  if (nums.length === 0) return undefined;
-  const primero = nums[0];
-  const ultimo = nums[nums.length - 1];
-  const mejor = Math.min(...nums.map((x) => x.v));
-  const peor = Math.max(...nums.map((x) => x.v));
-  const inicial = primero!.v;
-  const final = ultimo!.v;
-  const cambioAbsoluto = final - inicial;
-  const cambioPorcentual =
-    inicial !== 0 ? Math.round(((final - inicial) / Math.abs(inicial)) * 10000) / 100 : undefined;
-  return {
-    valorInicial: inicial,
-    valorFinal: final,
-    cambioAbsoluto,
-    cambioPorcentual,
-    mejorValor: mejor,
-    peorValor: peor,
-    tieneDatosSuficientes: nums.length >= 2,
-    numeroMediciones: nums.length,
-    tendencia:
-      nums.length < 2
-        ? undefined
-        : cambioAbsoluto < -0.0001
-          ? 'Mejoría'
-          : cambioAbsoluto > 0.0001
-            ? 'Empeoramiento'
-            : 'Estable',
-    interpretacion: nums.length < 2 ? undefined : `Serie longitudinal (${nums.length} mediciones incluidas en el informe).`,
+  for (const ev of cron) {
+    const form = eventoConcentradoAEscForm(ev);
+    const resultado = evaluarCondicionEnEvento(ev, escKey, ctx);
+    if (diagnosticoActivoEnEvento(ev, escKey)) presente = true;
+
+    const vigencia = codigoEstadoVigenciaDesdeResultado(resultado, form, escKey);
+    codigoEstadoVigencia = vigencia;
+    razonUltimaVisita = resultado.razon;
+    if (vigencia !== 'SIN_DIAGNOSTICO_ACTIVO' || resultado.diagnosticoActivo) {
+      huboDatoRelevante = true;
+    }
+
+    const ctrlVisita = estadoActualControlDesdeVisita(resultado, form, escKey);
+    if (ctrlVisita) estadoActual = ctrlVisita;
+
+    const clinico = codigoControlClinicoParaTendencia(resultado, form, escKey);
+    if (clinico) serieClinica.push(clinico);
+  }
+
+  if (!huboDatoRelevante && !presente) return undefined;
+
+  const tendencia = tendenciaControlAString(tendenciaControlDesdeSerie(serieClinica));
+  const out: CondicionControlResumenInformeLongitudinal = {
+    presente,
+    codigoEstadoVigencia,
+    razonUltimaVisita,
   };
+  if (estadoActual) out.estadoActual = estadoActual;
+  if (tendencia) out.tendencia = tendencia;
+  return out;
+}
+
+function buildObesidadResumenDesdeEventos(
+  cron: EventoConcentradoCardiometabolicoEsc[],
+): CondicionObesidadResumenInformeLongitudinal | undefined {
+  let presente = false;
+  const grados: string[] = [];
+
+  for (const ev of cron) {
+    if (diagnosticoObesidadEnEvento(ev)) presente = true;
+    const g = ev.estadoCondiciones?.obesidad?.grado?.trim();
+    if (g && diagnosticoObesidadEnEvento(ev)) grados.push(g);
+  }
+
+  if (!presente && grados.length === 0) return undefined;
+
+  const out: CondicionObesidadResumenInformeLongitudinal = { presente };
+  if (grados.length) {
+    out.gradoActual = grados[grados.length - 1];
+    const tend = tendenciaGradoObesidadDesdeSerie(grados);
+    if (tend) out.tendencia = tend;
+  }
+  return out;
 }
 
 /**
- * Serie mínima para TA (sist/diast), peso, IMC, glucosa y HbA1c (sin lípidos en este resumen).
- * Cada eje solo aparece si hay al menos un valor; tendencia solo con ≥2 mediciones (`buildIndicador`).
+ * Agrega resumen por condición usando coherencia ESC por visita.
+ * `presente` solo con diagnóstico activo documentado; vigencia y tendencia según plan ILC.
  */
-export function derivarResumenIndicadoresMinimo(
+export function derivarResumenCondicionesDesdeEventos(
   eventosConcentrados: EventoConcentradoCardiometabolicoEsc[] | undefined,
-): ResumenIndicadoresLongitudinalEsc | undefined {
+  ctx?: EscCoherenciaContexto,
+): ResumenCondicionesCardiometabolicasInformeLongitudinal | undefined {
   const cron = eventosCronologicos(Array.isArray(eventosConcentrados) ? eventosConcentrados : []);
   if (cron.length === 0) return undefined;
 
-  const tas: { v: number; idx: number }[] = [];
-  const tasDia: { v: number; idx: number }[] = [];
-  const peso: { v: number; idx: number }[] = [];
-  const imc: { v: number; idx: number }[] = [];
-  const glu: { v: number; idx: number }[] = [];
-  const hba: { v: number; idx: number }[] = [];
-
-  cron.forEach((e, idx) => {
-    const sis = e.signosVitales?.tensionArterialSistolica;
-    const dia = e.signosVitales?.tensionArterialDiastolica;
-    if (sis != null && !Number.isNaN(Number(sis))) tas.push({ v: Number(sis), idx });
-    if (dia != null && !Number.isNaN(Number(dia))) tasDia.push({ v: Number(dia), idx });
-    const pv = e.somatometria?.peso;
-    if (pv != null && !Number.isNaN(Number(pv))) peso.push({ v: Number(pv), idx });
-    const imcv = e.somatometria?.indiceMasaCorporal;
-    if (imcv != null && !Number.isNaN(Number(imcv))) imc.push({ v: Number(imcv), idx });
-    const g = e.laboratorio?.glucosaMgDl;
-    if (g != null && !Number.isNaN(Number(g))) glu.push({ v: Number(g), idx });
-    const h = e.laboratorio?.hba1cPorcentaje;
-    if (h != null && !Number.isNaN(Number(h))) hba.push({ v: Number(h), idx });
-  });
-
-  const out: ResumenIndicadoresLongitudinalEsc = {};
-  const iS = buildIndicador(tas);
-  const iD = buildIndicador(tasDia);
-  const iPeso = buildIndicador(peso);
-  const iImc = buildIndicador(imc);
-  const iGlu = buildIndicador(glu);
-  const iHba = buildIndicador(hba);
-  if (iS) out.tensionArterialSistolica = iS;
-  if (iD) out.tensionArterialDiastolica = iD;
-  if (iPeso) out.peso = iPeso;
-  if (iImc) out.indiceMasaCorporal = iImc;
-  if (iGlu) out.glucosaMgDl = iGlu;
-  if (iHba) out.hba1cPorcentaje = iHba;
+  const out: ResumenCondicionesCardiometabolicasInformeLongitudinal = {};
+  const hta = buildControlResumenDesdeEventos(cron, 'hipertension', ctx);
+  const dm = buildControlResumenDesdeEventos(cron, 'diabetes', ctx);
+  const dis = buildControlResumenDesdeEventos(cron, 'dislipidemia', ctx);
+  const ob = buildObesidadResumenDesdeEventos(cron);
+  if (hta) out.hipertension = hta;
+  if (dm) out.diabetes = dm;
+  if (dis) out.dislipidemia = dis;
+  if (ob) out.obesidad = ob;
 
   return Object.keys(out).length ? out : undefined;
 }
 
-function partesCondicionControl(b: CondicionControlResumenInformeLongitudinal): string[] {
-  const parts: string[] = [];
-  if (b.presente != null) parts.push(`Presente: ${b.presente ? 'Sí' : 'No'}`);
-  if (b.estadoActual) parts.push(`Estado: ${b.estadoActual}`);
-  if (b.tendencia) parts.push(`Tendencia: ${b.tendencia}`);
-  if (b.interpretacionAutomatica) parts.push(b.interpretacionAutomatica);
-  if (b.observaciones) parts.push(b.observaciones);
-  return parts;
-}
-
-function partesObesidadResumen(b: CondicionObesidadResumenInformeLongitudinal): string[] {
-  const parts: string[] = [];
-  if (b.presente != null) parts.push(`Presente: ${b.presente ? 'Sí' : 'No'}`);
-  if (b.gradoActual) parts.push(`Grado: ${b.gradoActual}`);
-  if (b.tendencia) parts.push(`Tendencia: ${b.tendencia}`);
-  if (b.interpretacionAutomatica) parts.push(b.interpretacionAutomatica);
-  if (b.observaciones) parts.push(b.observaciones);
-  return parts;
-}
-
 /**
- * Una línea legible por condición a partir de `resumenCondiciones` (p. ej. backend o futura derivación).
- * Omite bloques sin información útil.
+ * Proyección slim (6 ejes visibles) desde eventos concentrados.
+ * Para inferencia usar `derivarResumenIndicadoresCompleto`.
  */
-export function derivarFactoresPersistentesDesdeCondiciones(
-  rc: ResumenCondicionesCardiometabolicasInformeLongitudinal | undefined,
-): string[] {
-  if (!rc || typeof rc !== 'object') return [];
-  const out: string[] = [];
-  const pushLine = (titulo: string, parts: string[]) => {
-    if (!parts.length) return;
-    out.push(`${titulo}: ${parts.join(' · ')}`);
-  };
-  if (rc.hipertension) pushLine('Hipertensión arterial', partesCondicionControl(rc.hipertension));
-  if (rc.diabetes) pushLine('Diabetes mellitus', partesCondicionControl(rc.diabetes));
-  if (rc.dislipidemia) pushLine('Dislipidemia', partesCondicionControl(rc.dislipidemia));
-  if (rc.obesidad) pushLine('Obesidad', partesObesidadResumen(rc.obesidad));
-  return out;
+export function derivarResumenIndicadoresMinimo(
+  eventosConcentrados: EventoConcentradoCardiometabolicoEsc[] | undefined,
+): ResumenIndicadoresLongitudinalEsc | undefined {
+  return proyectarResumenIndicadoresParaPersistencia(derivarResumenIndicadoresCompleto(eventosConcentrados));
 }
 
-export interface ParamsAlertasAutomaticas {
-  numeroEventosIncluidos: number;
-  metricas: MetricasDerivadasSeguimiento;
-  datosFaltantesRelevantes: string[] | undefined;
-  resumenIndicadores: ResumenIndicadoresLongitudinalEsc | undefined;
-}
-
-/**
- * Alertas operativas: huecos de datos, baja densidad de mediciones estructuradas y tendencias desfavorables.
- */
-export function derivarAlertasRelevantesAutomaticas(p: ParamsAlertasAutomaticas): string[] {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  const push = (s: string) => {
-    const t = s.trim();
-    if (!t || seen.has(t)) return;
-    seen.add(t);
-    out.push(t);
-  };
-
-  for (const d of p.datosFaltantesRelevantes || []) {
-    push(`[Datos] ${d}`);
-  }
-
-  const nev = typeof p.numeroEventosIncluidos === 'number' ? p.numeroEventosIncluidos : 0;
-  const evOk = typeof p.metricas.numeroEventosValidos === 'number' ? p.metricas.numeroEventosValidos : 0;
-  if (nev > 0 && evOk === 0) {
-    push(
-      '[Cobertura] Los eventos incluidos no aportan suficientes mediciones estructuradas (TA completa, IMC o laboratorio mínimo) para tendencias robustas en este informe.',
-    );
-  }
-
-  const r = p.resumenIndicadores;
-  if (r && typeof r === 'object') {
-    const pares: [string, ResumenIndicadorLongitudinalEsc | undefined][] = [
-      ['TA sistólica', r.tensionArterialSistolica],
-      ['TA diastólica', r.tensionArterialDiastolica],
-      ['Peso', r.peso],
-      ['IMC', r.indiceMasaCorporal],
-      ['Glucosa', r.glucosaMgDl],
-      ['HbA1c', r.hba1cPorcentaje],
-    ];
-    for (const [label, o] of pares) {
-      if (o?.tendencia === 'Empeoramiento') {
-        push(`[Tendencia] ${label}: empeoramiento en el periodo; interpretar en contexto clínico.`);
-      }
-    }
-  }
-
-  return out;
-}
+export { derivarResumenIndicadoresCompleto, proyectarResumenIndicadoresParaPersistencia };
+export type { ResumenIndicadoresEnriquecido };
 
 export function derivarDatosFaltantesDesdeUltimoEvento(
   eventosConcentrados: EventoConcentradoCardiometabolicoEsc[] | undefined,
@@ -369,82 +320,6 @@ export function derivarDatosFaltantesDesdeUltimoEvento(
     lineas.push('El perfil lipídico disponible es insuficiente para valorar evolución completa (sin LDL ni triglicéridos en el último control).');
   }
   return lineas;
-}
-
-export interface SugerenciasNarrativa {
-  resumenLongitudinalSugerido: string;
-  conclusionClinicaSugerida: string;
-  recomendacionesSugeridas: string;
-  limitacionesSugeridas: string;
-}
-
-function lineaFmtPeriodo(pin?: string, pfin?: string): string {
-  if (pin && pfin) return `${pin} – ${pfin}`;
-  return '[periodo no definido]';
-}
-
-/**
- * Textos tipo borrador. No sustituyen criterio clínico; el médico edita los campos “finales”.
- */
-export function derivarTextoSugerido(
-  form: Pick<
-    InformeLongitudinalCardiometabolico,
-    | 'periodoInicio'
-    | 'periodoFin'
-    | 'fechaUltimoEventoConsiderado'
-    | 'numeroEventosIncluidos'
-    | 'numeroSeguimientosProgramados'
-  > &
-    Partial<
-      Pick<
-        InformeLongitudinalCardiometabolico,
-        'fechaInformeLongitudinalCardiometabolico' | 'eventosConcentrados'
-      >
-    >,
-  m: MetricasDerivadasSeguimiento,
-): SugerenciasNarrativa {
-  const periodo = lineaFmtPeriodo(form.periodoInicio, form.periodoFin);
-  const nev = typeof form.numeroEventosIncluidos === 'number' ? form.numeroEventosIncluidos : 0;
-  const ns = typeof form.numeroSeguimientosProgramados === 'number' ? form.numeroSeguimientosProgramados : 0;
-  const as = m.porcentajeAsistencia;
-
-  let resumen = `Seguimiento longitudinal cardiometabólico (${periodo}). `;
-  resumen += `Se incluyen ${nev} evento(s) clínico(s) en el expediente seleccionado. `;
-  if (ns > 0) {
-    resumen += `Cit(s) de agenda consideradas (excl. estado Realizada): ${ns}. Eventos de seguimiento incluidos en el informe: ${m.numeroSeguimientosRealizados}; `;
-    resumen += `No asistió: ${m.numeroInasistencias}; Cancelada: ${m.numeroCancelaciones}.`;
-    if (m.numeroReprogramaciones > 0) resumen += ` Hay ${m.numeroReprogramaciones} registro(s) con indicación de reprogramación.`;
-    if (typeof as === 'number')
-      resumen += ` Proporción eventos incluidos / (eventos + inasistencias + cancelaciones en agenda): ~${as} %.`;
-    resumen += ' ';
-  } else {
-    resumen += ' No hay citas de agenda seleccionadas fuera de estado Realizada en este periodo. ';
-  }
-
-  const evVal = typeof m.numeroEventosValidos === 'number' ? m.numeroEventosValidos : 0;
-  if (nev > 0) resumen += `Eventos con al menos datos de TA, IMC o laboratorio (${evVal} de ${nev}).`;
-
-  let conclusion =
-    nev === 0
-      ? 'Con la selección actual no hay suficientes eventos para una conclusión clínica estructurada.'
-      : 'Interpretación clínica pendiente de revisión médica tras validar valores y línea de tiempo seleccionados.';
-
-  let recom =
-    nev === 0
-      ? 'Revisar el periodo o las fuentes en el paso 1 antes de cerrar.'
-      : 'Validar objetivos individuales (TA, lípidos y glucemia/HbA1c) y próximos controles según guiía clínica aplicable.';
-  recom += typeof form.fechaUltimoEventoConsiderado === 'string'
-    ? ` Último evento registrado incluido: ${form.fechaUltimoEventoConsiderado}.`
-    : '';
-
-  const lim =
-    'Estas líneas son sugerencias generadas automáticamente a partir del expediente disponible en el momento; pueden existir errores por datos incompletos o actualizaciones externas.';
-  return {
-    resumenLongitudinalSugerido: resumen.trim(),
-    conclusionClinicaSugerida: conclusion,
-    recomendacionesSugeridas: recom,
-    limitacionesSugeridas: lim,
-  };
 }
 
 export interface ResultadoInferenciaLongitudinal {
@@ -505,11 +380,6 @@ export function inferirConsistenciaYNivelRiesgo(
     tendenciaLongitudinal: risk.tendenciaLongitudinal,
     interpretacionRiesgoLongitudinal: risk.interpretacionRiesgoLongitudinal,
   };
-}
-
-/** Coincide con backend `GRAFICAS_LONGITUDINAL_DEFAULT` (tres primeras del catálogo local). */
-export function graficasIncluidasPorDefecto(): string[] {
-  return [GRAFICAS_LONGITUDINAL_CARDIOMETABOLICA[0]!, GRAFICAS_LONGITUDINAL_CARDIOMETABOLICA[1]!, GRAFICAS_LONGITUDINAL_CARDIOMETABOLICA[2]!];
 }
 
 const VIÑETA_MEJORIA_VARIACION =
@@ -612,23 +482,49 @@ export function derivarContextoTerapeutico(params: {
   return out.slice(0, 3);
 }
 
+/** Sugerencia algorítmica de riesgo (no muta el formulario). */
+export function calcularSugerenciaRiesgoLongitudinal(
+  form: InformeLongitudinalCardiometabolico,
+): InferenciaRiesgoTendenciaResult {
+  const ev = form.eventosConcentrados || [];
+  const met = derivarMetricasSeguimientoYEventos(form.seguimientosProgramadosConcentrados || [], ev);
+  const indCompleto = derivarResumenIndicadoresCompleto(ev);
+  const rc = form.resumenCondiciones ?? derivarResumenCondicionesDesdeEventos(ev, undefined);
+  const nEv = typeof form.numeroEventosIncluidos === 'number' ? form.numeroEventosIncluidos : 0;
+  const evValOk =
+    typeof form.numeroEventosValidos === 'number'
+      ? form.numeroEventosValidos
+      : typeof met.numeroEventosValidos === 'number'
+        ? met.numeroEventosValidos
+        : 0;
+  const datosN = Array.isArray(form.datosFaltantesRelevantes) ? form.datosFaltantesRelevantes.length : 0;
+  return inferirNivelRiesgoLongitudinalDescontrol({
+    resumenIndicadores: indCompleto ?? form.resumenIndicadores,
+    resumenCondiciones: rc,
+    metricas: met,
+    nEventosIncluidos: nEv,
+    numeroEventosValidos: evValOk,
+    datosFaltantesCount: datosN,
+    eventosConcentrados: ev,
+  });
+}
+
 /**
- * Aplica métricas, borradores de recomendaciones/limitaciones, resumen de indicadores y datos faltantes.
- * Con `sobrescribirInterpretacionAutomatizada: true` (montaje Step2) también fija riesgo, interpretación del riesgo,
- * consistencia ordinal, factores y alertas, y elimina conclusión/resumen (finales y sugeridos) del modelo.
+ * Aplica métricas, resumen de indicadores, condiciones, datos faltantes y derivaciones del informe.
+ * Con `preservarJuicioClinicoRiesgo: true` actualiza trayectoria/estructura sin pisar riesgo ni interpretación del médico.
  */
 export function aplicarIteracionDosAlFormulario(
   form: InformeLongitudinalCardiometabolico,
   opts?: {
     aplicarInterpretacionInferidaSiVacio?: boolean;
-    prellenarGraficasSiVacio?: boolean;
     /** Sobrescribe `datosFaltantesRelevantes` con lo derivado (evita fusión manual en esta iteración). */
     recalcDatosFaltantes?: boolean;
-    /**
-     * Si es `true`, asigna siempre riesgo, interpretación del riesgo, consistencia, factores y alertas desde
-     * heurísticas y borra `resumenLongitudinal` / `conclusionClinica` y borradores de resumen/conclusión.
-     */
+    /** Asigna riesgo, interpretación, consistencia y resumenCondiciones desde heurísticas (legacy/tests). */
     sobrescribirInterpretacionAutomatizada?: boolean;
+    /** Derivación estructural + trayectoria; no asigna `nivelRiesgoLongitudinal` ni `interpretacionRiesgoLongitudinal`. */
+    preservarJuicioClinicoRiesgo?: boolean;
+    /** Sexo del paciente para coherencia ESC (p. ej. HDL). */
+    coherenciaCtx?: EscCoherenciaContexto;
   },
 ): void {
   const seg = form.seguimientosProgramadosConcentrados || [];
@@ -643,14 +539,9 @@ export function aplicarIteracionDosAlFormulario(
   form.porcentajeAsistencia = met.porcentajeAsistencia;
   form.numeroEventosValidos = met.numeroEventosValidos;
 
-  const textos = derivarTextoSugerido(form, met);
-  form.recomendacionesSugeridas = textos.recomendacionesSugeridas;
-  form.limitacionesSugeridas = textos.limitacionesSugeridas;
-  delete form.resumenLongitudinalSugerido;
-  delete form.conclusionClinicaSugerida;
-
-  const ind = derivarResumenIndicadoresMinimo(ev);
-  if (ind) form.resumenIndicadores = ind;
+  const indCompleto = derivarResumenIndicadoresCompleto(ev);
+  const indSlim = proyectarResumenIndicadoresParaPersistencia(indCompleto);
+  if (indSlim) form.resumenIndicadores = indSlim;
   else delete form.resumenIndicadores;
 
   if (opts?.recalcDatosFaltantes !== false) {
@@ -659,13 +550,19 @@ export function aplicarIteracionDosAlFormulario(
 
   const nEv = typeof form.numeroEventosIncluidos === 'number' ? form.numeroEventosIncluidos : 0;
 
-  if (opts?.sobrescribirInterpretacionAutomatizada === true) {
+  const derivarEstructura =
+    opts?.sobrescribirInterpretacionAutomatizada === true || opts?.preservarJuicioClinicoRiesgo === true;
+
+  if (derivarEstructura) {
+    const rc = derivarResumenCondicionesDesdeEventos(ev, opts?.coherenciaCtx);
+    if (rc) form.resumenCondiciones = rc;
+    else delete form.resumenCondiciones;
+
     const cons = inferirConsistenciaSeguimiento(met, nEv);
     form.consistenciaSeguimiento = cons.consistenciaSeguimiento;
-    delete form.interpretacionConsistenciaSeguimiento;
     const evValOk = typeof met.numeroEventosValidos === 'number' ? met.numeroEventosValidos : 0;
     const risk = inferirNivelRiesgoLongitudinalDescontrol({
-      resumenIndicadores: form.resumenIndicadores,
+      resumenIndicadores: indCompleto ?? form.resumenIndicadores,
       resumenCondiciones: form.resumenCondiciones,
       metricas: met,
       nEventosIncluidos: nEv,
@@ -673,21 +570,17 @@ export function aplicarIteracionDosAlFormulario(
       datosFaltantesCount: Array.isArray(form.datosFaltantesRelevantes) ? form.datosFaltantesRelevantes.length : 0,
       eventosConcentrados: ev,
     });
-    form.nivelRiesgoLongitudinal = risk.nivelRiesgoLongitudinal;
     form.tendenciaLongitudinal = risk.tendenciaLongitudinal;
-    form.interpretacionRiesgoLongitudinal = risk.interpretacionRiesgoLongitudinal;
-    delete form.resumenLongitudinal;
-    delete form.conclusionClinica;
-    form.factoresPersistentes = derivarFactoresPersistentesDesdeCondiciones(form.resumenCondiciones);
-    form.alertasRelevantes = derivarAlertasRelevantesAutomaticas({
-      numeroEventosIncluidos: nEv,
-      metricas: met,
-      datosFaltantesRelevantes: form.datosFaltantesRelevantes,
-      resumenIndicadores: form.resumenIndicadores,
-    });
+
+    if (opts?.sobrescribirInterpretacionAutomatizada === true && opts?.preservarJuicioClinicoRiesgo !== true) {
+      form.nivelRiesgoLongitudinal = risk.nivelRiesgoLongitudinal;
+      form.interpretacionRiesgoLongitudinal = risk.interpretacionRiesgoLongitudinal;
+    }
+    delete form.factoresPersistentes;
+    delete form.alertasRelevantes;
   } else if (opts?.aplicarInterpretacionInferidaSiVacio) {
     const infer = inferirConsistenciaYNivelRiesgo(met, nEv, {
-      resumenIndicadores: form.resumenIndicadores,
+      resumenIndicadores: indCompleto ?? form.resumenIndicadores,
       resumenCondiciones: form.resumenCondiciones,
       datosFaltantesRelevantes: form.datosFaltantesRelevantes,
       eventosConcentrados: ev,
@@ -696,10 +589,6 @@ export function aplicarIteracionDosAlFormulario(
     if (!form.nivelRiesgoLongitudinal) form.nivelRiesgoLongitudinal = infer.nivelRiesgoLongitudinal;
     if (!form.tendenciaLongitudinal) form.tendenciaLongitudinal = infer.tendenciaLongitudinal;
     if (!form.interpretacionRiesgoLongitudinal) form.interpretacionRiesgoLongitudinal = infer.interpretacionRiesgoLongitudinal;
-  }
-
-  if (opts?.prellenarGraficasSiVacio === true && (!form.graficasIncluidas || form.graficasIncluidas.length === 0)) {
-    form.graficasIncluidas = graficasIncluidasPorDefecto();
   }
 
   const ctx = derivarContextoTerapeutico({

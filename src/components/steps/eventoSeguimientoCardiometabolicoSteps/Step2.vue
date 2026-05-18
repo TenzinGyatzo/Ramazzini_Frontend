@@ -6,12 +6,14 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import {
   DIAGNOSTICO_CARDIOMETABOLICO_OPTS,
   CODIGO_DIAGNOSTICO_OBESIDAD,
+  labelDiagnostico,
   aplicarObesidadDesdeCategoriaIMC,
   sincronizarDiagnosticoObesidadPorImc,
   ajustarSomatometriaHaciaImcObjetivo,
   imcRedondeadoDesdePesoAltura,
   categoriaImcEspaniolDesdeNumero,
 } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
+import { limpiarControlAlDesmarcarDiagnostico } from '@/helpers/cardiometabolico/coherenciaClinicaEsc';
 import { obtenerSomatometriaUltimaExploracionFisica } from '@/helpers/cardiometabolico/alturaDesdeExploracionFisica';
 
 const { formDataEventoSeguimientoCardiometabolico } = useFormDataStore();
@@ -126,8 +128,18 @@ function toggleDiagnostico(value) {
   }
 
   const i = fd.diagnosticosActivos.indexOf(value);
-  if (i >= 0) fd.diagnosticosActivos.splice(i, 1);
-  else fd.diagnosticosActivos.push(value);
+  if (i >= 0) {
+    const quitoControl = limpiarControlAlDesmarcarDiagnostico(fd, value);
+    fd.diagnosticosActivos.splice(i, 1);
+    if (quitoControl) {
+      toast?.open({
+        message: `Se quitó la valoración de control de ${labelDiagnostico(value)} porque ya no está como diagnóstico activo.`,
+        type: 'info',
+      });
+    }
+  } else {
+    fd.diagnosticosActivos.push(value);
+  }
 }
 </script>
 

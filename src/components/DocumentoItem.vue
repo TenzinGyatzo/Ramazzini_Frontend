@@ -1463,6 +1463,92 @@ const claseTextoEstadoCardiometabolicoLista = computed(() => {
     obesidad: obesidadClase,
   };
 });
+
+/** Chips en lista para Informe Longitudinal Cardiometabólico (misma semántica que `VisualizadorInformeLongitudinalCardiometabolico`). */
+function tonoRiesgoLongitudinalInformeLista(nivel) {
+  const s = nivel == null ? '' : String(nivel).trim();
+  if (!s) return 'neutral';
+  if (s === 'Muy Bajo' || s === 'Bajo') return 'ok';
+  if (s === 'Moderado') return 'warn';
+  if (s === 'Alto' || s === 'Crítico') return 'bad';
+  return 'neutral';
+}
+
+function tonoTrayectoriaLongitudinalInformeLista(t) {
+  const s = t == null ? '' : String(t).trim();
+  if (!s) return 'neutral';
+  if (s === 'Favorable' || s === 'Estable') return 'ok';
+  if (s === 'Mixta') return 'warn';
+  if (s === 'Desfavorable') return 'bad';
+  return 'neutral';
+}
+
+function tonoPorcentajeAsistenciaInformeLista(p) {
+  if (p == null || p === '') return 'neutral';
+  const n = Number(p);
+  if (!Number.isFinite(n)) return 'neutral';
+  if (n >= 70) return 'ok';
+  if (n >= 50) return 'warn';
+  return 'bad';
+}
+
+function tonoConsistenciaSeguimientoInformeLista(c) {
+  const s = c == null ? '' : String(c).trim();
+  if (!s) return 'neutral';
+  if (s === 'Adecuado') return 'ok';
+  if (s === 'Irregular') return 'warn';
+  if (s === 'Insuficiente') return 'bad';
+  return 'neutral';
+}
+
+function claseTextoTonoInformeLongitudinalLista(tono) {
+  if (tono === 'ok') return 'text-emerald-700';
+  if (tono === 'warn') return 'text-amber-700';
+  if (tono === 'bad') return 'text-red-700';
+  return 'text-gray-600';
+}
+
+const chipsInformeLongitudinalLista = computed(() => {
+  const d = props.informeLongitudinalCardiometabolico;
+  const dash = '—';
+  const vacio = {
+    riesgo: { label: dash, clase: 'text-gray-600' },
+    trayectoria: { label: dash, clase: 'text-gray-600' },
+    asistencia: { label: dash, clase: 'text-gray-600' },
+    consistencia: { label: dash, clase: 'text-gray-600' },
+  };
+  if (!d || typeof d !== 'object') return vacio;
+
+  const nivel = d.nivelRiesgoLongitudinal;
+  const tray = d.tendenciaLongitudinal;
+  const pct = d.porcentajeAsistencia;
+  const cons = d.consistenciaSeguimiento;
+
+  let asistenciaLabel = dash;
+  if (pct != null && pct !== '') {
+    const n = Number(pct);
+    if (Number.isFinite(n)) asistenciaLabel = `${Math.round(n)} %`;
+  }
+
+  return {
+    riesgo: {
+      label: nivel != null && String(nivel).trim() !== '' ? String(nivel) : dash,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoRiesgoLongitudinalInformeLista(nivel)),
+    },
+    trayectoria: {
+      label: tray != null && String(tray).trim() !== '' ? String(tray) : dash,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoTrayectoriaLongitudinalInformeLista(tray)),
+    },
+    asistencia: {
+      label: asistenciaLabel,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoPorcentajeAsistenciaInformeLista(pct)),
+    },
+    consistencia: {
+      label: cons != null && String(cons).trim() !== '' ? String(cons) : dash,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoConsistenciaSeguimientoInformeLista(cons)),
+    },
+  };
+});
 ///////////////////////////////////////////
 
 const construirRutaYNombrePDF = () => {
@@ -3168,7 +3254,50 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             </p>
                         </div>
 
- 
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Riesgo</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalLista.riesgo.clase"
+                                        :title="chipsInformeLongitudinalLista.riesgo.label">
+                                        {{ chipsInformeLongitudinalLista.riesgo.label }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Trayectoria</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalLista.trayectoria.clase"
+                                        :title="chipsInformeLongitudinalLista.trayectoria.label">
+                                        {{ chipsInformeLongitudinalLista.trayectoria.label }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">% Asistencia</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug tabular-nums"
+                                        :class="chipsInformeLongitudinalLista.asistencia.clase"
+                                        :title="chipsInformeLongitudinalLista.asistencia.label">
+                                        {{ chipsInformeLongitudinalLista.asistencia.label }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[11rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Consistencia</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalLista.consistencia.clase"
+                                        :title="chipsInformeLongitudinalLista.consistencia.label">
+                                        {{ chipsInformeLongitudinalLista.consistencia.label }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

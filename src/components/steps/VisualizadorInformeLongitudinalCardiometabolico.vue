@@ -41,6 +41,8 @@ import GraficaEvolucionPresionArterial from '@/components/graficas/GraficaEvoluc
 import GraficaEvolucionPesoImc from '@/components/graficas/GraficaEvolucionPesoImc.vue';
 import GraficaEvolucionPerfilLipidico from '@/components/graficas/GraficaEvolucionPerfilLipidico.vue';
 import TimelineSeguimientoInformeILC from '@/components/timeline/TimelineSeguimientoInformeILC.vue';
+import { bloquesResumenCondicionesParaVista } from '@/helpers/informeLongitudinalResumenCondicionesVista';
+import { formatearCambioIndicadorConSigno } from '@/helpers/informeLongitudinalIndicadores';
 import {
   buildTimelineSeguimientoItems,
   MSJ_TIMELINE_SEGUIMIENTO_VACIA,
@@ -53,7 +55,10 @@ import {
   hayEvidenciaClinicaSoporteVisible,
   hayEvidenciaTratamientoPeriodo,
   refrescarEventosConcentradosEnInforme,
+  TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC,
 } from '@/helpers/informeLongitudinalTratamiento';
+import { aplicarIteracionDosAlFormulario } from '@/helpers/informeLongitudinalOperativo';
+import { coherenciaCtxDesdeSexo } from '@/helpers/informeLongitudinalCoherenciaEsc';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -86,6 +91,10 @@ function aplicarRefrescoEventosConcentradosDesdeExpediente() {
     trabajadores.currentTrabajadorId,
   );
   refrescarEventosConcentradosEnInforme(fd, eventos);
+  aplicarIteracionDosAlFormulario(fd, {
+    preservarJuicioClinicoRiesgo: true,
+    coherenciaCtx: coherenciaCtxDesdeSexo(trabajadores.currentTrabajador?.sexo),
+  });
 }
 
 watch(
@@ -240,10 +249,6 @@ const consistenciaSeguimientoLegible = computed(() => {
   return String(v);
 });
 
-const hayBorradorAutomatico = computed(
-  () => !!(fm.value?.recomendacionesSugeridas || fm.value?.limitacionesSugeridas),
-);
-
 const mostrarEvidenciaClinicaSoporte = computed(() =>
   hayEvidenciaClinicaSoporteVisible(fm.value?.eventosConcentrados, fm.value?.contextoTerapeutico),
 );
@@ -294,28 +299,41 @@ function formatoIndicador(o) {
   const tramo =
     sVi != null && sVf != null ? `${sVi} → ${sVf}` : sVi != null ? `${sVi}` : `${sVf}`;
   const delta =
-    o.cambioAbsoluto != null && vi != null && vf != null
-      ? ` (Δ ${fmtIndicadorNum(o.cambioAbsoluto)})`
+    vi != null && vf != null
+      ? formatearCambioIndicadorConSigno(
+          o.cambioAbsoluto ?? Number(vf) - Number(vi),
+          (abs) => fmtIndicadorNum(abs),
+        )
       : '';
   const tend = o.tendencia ? ` · ${o.tendencia}` : ' · —';
   return `${tramo}${delta}${tend}`;
 }
 
-/** Solo tramo + Δ (presentación tabla evolución); sin concatenar tendencia aquí. */
-function detalleNumericoIndicador(o) {
+/** Tramo inicial → final (tabla evolución). */
+function tramoNumericoIndicador(o) {
   if (!o || typeof o !== 'object') return '';
   const vi = o.valorInicial;
   const vf = o.valorFinal;
   if (vi == null && vf == null) return '';
   const sVi = fmtIndicadorNum(vi);
   const sVf = fmtIndicadorNum(vf);
-  const tramo =
-    sVi != null && sVf != null ? `${sVi} → ${sVf}` : sVi != null ? `${sVi}` : `${sVf}`;
-  const delta =
-    o.cambioAbsoluto != null && vi != null && vf != null
-      ? ` (Δ ${fmtIndicadorNum(o.cambioAbsoluto)})`
-      : '';
-  return `${tramo}${delta}`;
+  if (sVi != null && sVf != null) return `${sVi} → ${sVf}`;
+  if (sVi != null) return `${sVi}`;
+  return `${sVf}`;
+}
+
+/** Solo diferencia absoluta con signo (tabla evolución). */
+function diferenciaNumericaIndicador(o) {
+  if (!o || typeof o !== 'object') return '';
+  const vi = o.valorInicial;
+  const vf = o.valorFinal;
+  if (vi == null || vf == null) return '';
+  return (
+    formatearCambioIndicadorConSigno(
+      o.cambioAbsoluto ?? Number(vf) - Number(vi),
+      (abs) => fmtIndicadorNum(abs),
+    ) || ''
+  );
 }
 
 const porcentajeAsistenciaLegible = computed(() => {
@@ -335,7 +353,8 @@ const filasEvolucionVista = computed(() => {
     rows.push({
       label,
       tendencia: o?.tendencia ? String(o.tendencia) : '—',
-      detalle: detalleNumericoIndicador(o) || '—',
+      tramo: tramoNumericoIndicador(o) || '—',
+      diferencia: diferenciaNumericaIndicador(o) || '—',
     });
   };
   push('TA sistólica (mmHg)', r.tensionArterialSistolica);
@@ -347,38 +366,11 @@ const filasEvolucionVista = computed(() => {
   return rows;
 });
 
-const otrasGraficasIncluidasVista = computed(() => {
-  const list = fm.value?.graficasIncluidas ?? [];
-  return list.filter(
-    (g) =>
-      g !== 'Glucosa / HbA1c' &&
-      g !== 'Tensión arterial' &&
-      g !== 'Peso / IMC' &&
-      g !== 'Lípidos',
-  );
-});
-
-const resumenCondicionesBloques = computed(() => {
-  const rc = fm.value?.resumenCondiciones;
-  if (!rc || typeof rc !== 'object') return [];
-  const out = [];
-  const push = (titulo, bloque) => {
-    if (!bloque || typeof bloque !== 'object') return;
-    const parts = [];
-    if (bloque.presente != null) parts.push(`Presente: ${bloque.presente ? 'Sí' : 'No'}`);
-    if (bloque.estadoActual) parts.push(`Estado: ${bloque.estadoActual}`);
-    if (bloque.gradoActual) parts.push(`Grado: ${bloque.gradoActual}`);
-    if (bloque.tendencia) parts.push(`Tendencia: ${bloque.tendencia}`);
-    if (bloque.interpretacionAutomatica) parts.push(bloque.interpretacionAutomatica);
-    if (bloque.observaciones) parts.push(bloque.observaciones);
-    if (parts.length) out.push({ titulo, texto: parts.join(' · ') });
-  };
-  push('Hipertensión', rc.hipertension);
-  push('Diabetes', rc.diabetes);
-  push('Dislipidemia', rc.dislipidemia);
-  push('Obesidad', rc.obesidad);
-  return out;
-});
+const resumenCondicionesBloques = computed(() =>
+  bloquesResumenCondicionesParaVista(fm.value?.resumenCondiciones, {
+    resumenIndicadores: fm.value?.resumenIndicadores,
+  }),
+);
 
 const timelineSeguimientoItems = computed(() =>
   buildTimelineSeguimientoItems(fm.value?.eventosConcentrados, fm.value?.seguimientosProgramadosConcentrados),
@@ -1341,7 +1333,7 @@ defineExpose({
     </div>
 
     <div class="w-full space-y-4 pt-1.5 text-sm sm:text-base">
-      <!-- Interpretación clínica (paso 2) -->
+      <!-- Riesgo e interpretación (paso 2) -->
       <div
         class="w-full cursor-pointer rounded-lg ring-1 ring-slate-200/70 bg-white p-3 sm:p-4 space-y-4"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 2 }"
@@ -1368,7 +1360,14 @@ defineExpose({
             {{ fm.interpretacionRiesgoLongitudinal }}
           </p>
         </section>
+      </div>
 
+      <!-- Trayectoria y seguimiento (paso 3) -->
+      <div
+        class="w-full cursor-pointer rounded-lg ring-1 ring-slate-200/70 bg-white p-3 sm:p-4 space-y-4"
+        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 3 }"
+        @click="goToStep(3)"
+      >
         <section v-if="filasEvolucionVista.length">
           <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1.5">
             Evolución principal / tendencia en indicadores
@@ -1379,7 +1378,8 @@ defineExpose({
             >
               <div class="col-span-4 sm:col-span-3">Indicador</div>
               <div class="col-span-4 sm:col-span-3">Tendencia</div>
-              <div class="col-span-4 sm:col-span-6">Valor inicial → Valor final (Diferencia absoluta)</div>
+              <div class="col-span-4 sm:col-span-3">Valor inicial → final</div>
+              <div class="col-span-4 sm:col-span-3">Dif. absoluta</div>
             </div>
             <div
               v-for="(row, i) in filasEvolucionVista"
@@ -1389,11 +1389,42 @@ defineExpose({
               <div class="col-span-4 sm:col-span-3 font-semibold text-slate-900 leading-snug">
                 {{ row.label }}
               </div>
-              <div class="col-span-4 sm:col-span-3 text-slate-800">{{ row.tendencia }}</div>
-              <div class="col-span-4 sm:col-span-6 text-slate-500 tabular-nums leading-snug">
-                {{ row.detalle }}
+              <div class="col-span-4 sm:col-span-3 text-slate-800 leading-snug">{{ row.tendencia }}</div>
+              <div class="col-span-4 sm:col-span-3 text-slate-500 tabular-nums leading-snug">
+                {{ row.tramo }}
+              </div>
+              <div class="col-span-4 sm:col-span-3 text-slate-500 tabular-nums leading-snug">
+                {{ row.diferencia }}
               </div>
             </div>
+          </div>
+        </section>
+
+        <section class="space-y-2">
+          <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1.5">
+            ESTADO CLÍNICO DURANTE EL PERIODO
+          </h4>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <article
+              v-for="(b, i) in resumenCondicionesBloques"
+              :key="i"
+              class="rounded-md border border-slate-100 bg-slate-50/30 p-2.5 text-left"
+            >
+              <h5 class="text-xs font-semibold text-slate-900 mb-1.5">{{ b.titulo }}</h5>
+              <ul class="space-y-1">
+                <li
+                  v-for="(ln, j) in b.lineas"
+                  :key="j"
+                  class="text-xs text-slate-700 leading-snug"
+                >
+                  <template v-if="ln.soloValor">{{ ln.valor }}</template>
+                  <template v-else>
+                    <span class="text-slate-600">{{ ln.etiqueta }}:</span>
+                    {{ ' ' }}{{ ln.valor }}
+                  </template>
+                </li>
+              </ul>
+            </article>
           </div>
         </section>
 
@@ -1483,40 +1514,6 @@ defineExpose({
           </div>
         </section>
 
-        <section v-if="fm.conclusionClinica && String(fm.conclusionClinica).trim()">
-          <h4 class="text-[11px] font-semibold text-slate-900 mb-1">CONCLUSIÓN CLÍNICA</h4>
-          <p
-            class="text-xs sm:text-sm whitespace-pre-wrap text-slate-800 leading-snug rounded-md border border-slate-200 bg-white px-3 py-2 max-w-3xl"
-          >
-            {{ fm.conclusionClinica }}
-          </p>
-        </section>
-
-        <section v-if="fm.resumenLongitudinal && String(fm.resumenLongitudinal).trim()">
-          <h4 class="text-[11px] font-semibold text-slate-700 mb-1 leading-tight">RESUMEN LONGITUDINAL</h4>
-          <p
-            class="text-xs sm:text-sm whitespace-pre-wrap text-slate-800 leading-snug rounded-md border border-slate-100 bg-slate-50/50 px-3 py-2 max-w-3xl"
-          >
-            {{ fm.resumenLongitudinal }}
-          </p>
-        </section>
-
-        <section v-if="resumenCondicionesBloques.length" class="space-y-2">
-          <h4 class="text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-0.5 leading-tight">
-            ESTADO POR CONDICIÓN
-          </h4>
-          <div class="grid gap-2 sm:grid-cols-2">
-            <article
-              v-for="(b, i) in resumenCondicionesBloques"
-              :key="i"
-              class="rounded-md border border-slate-100 bg-slate-50/30 p-2.5 text-left"
-            >
-              <h5 class="text-xs font-semibold text-slate-900 mb-1">{{ b.titulo }}</h5>
-              <p class="text-xs text-slate-700 leading-snug">{{ b.texto }}</p>
-            </article>
-          </div>
-        </section>
-
         <section class="w-full rounded-md border border-slate-200/80 bg-slate-50/30 px-3 py-2.5">
           <h4 class="text-[11px] font-semibold text-slate-700 mb-0.5 leading-tight">CONTINUIDAD DEL SEGUIMIENTO</h4>
           <p class="text-[11px] text-slate-500 mb-2 mt-0.5 leading-tight">
@@ -1544,7 +1541,7 @@ defineExpose({
           </div>
           <dl class="space-y-1.5 text-xs">
             <div class="flex flex-wrap gap-x-2 gap-y-0.5">
-              <dt class="text-slate-500 shrink-0">Eventos / inasistencias / cancelaciones</dt>
+              <dt class="text-slate-500 shrink-0">Eventos / Inasistencias / Cancelaciones</dt>
               <dd class="font-medium tabular-nums text-slate-700">
                 {{ texto(fm.numeroSeguimientosRealizados ?? fm.numeroEventosIncluidos) }} /
                 {{ texto(fm.numeroInasistencias) }} /
@@ -1561,9 +1558,9 @@ defineExpose({
         class="w-full cursor-pointer rounded-lg bg-slate-50/60 text-slate-600 px-3 py-2.5 ring-1 ring-slate-200/60 space-y-3"
         :class="{
           'outline outline-2 outline-offset-2 outline-yellow-500':
-            steps.currentStep === 1 || steps.currentStep === 2,
+            steps.currentStep === 1 || steps.currentStep === 2 || steps.currentStep === 3,
         }"
-        @click="goToStep(steps.currentStep === 2 ? 2 : 1)"
+        @click="goToStep(steps.currentStep === 2 ? 2 : steps.currentStep === 3 ? 3 : 1)"
       >
         <div class="space-y-1">
           <h3 class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-0 leading-tight">
@@ -1572,7 +1569,7 @@ defineExpose({
           <ul
             v-if="mostrarContextoTerapeutico"
             class="list-disc list-inside text-xs text-slate-600 leading-snug space-y-0.5 -mt-0.5"
-            @click.stop="goToStep(2)"
+            @click.stop="goToStep(3)"
           >
             <li v-for="(linea, i) in contextoTerapeuticoVista" :key="`ctx-${i}`">{{ linea }}</li>
           </ul>
@@ -1603,9 +1600,14 @@ defineExpose({
               <p
                 v-for="(med, mi) in celda.medicamentos"
                 :key="`med-${gi}-${ci}-${mi}`"
-                class="text-[11px] text-slate-600 leading-snug break-words"
+                :class="[
+                  'text-[11px] leading-snug break-words',
+                  med === TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC
+                    ? 'text-slate-500 italic'
+                    : 'text-slate-600',
+                ]"
               >
-                · {{ med }}
+                {{ med === TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC ? med : `· ${med}` }}
               </p>
               <p
                 v-if="celda.medicamentosOmitidos > 0"

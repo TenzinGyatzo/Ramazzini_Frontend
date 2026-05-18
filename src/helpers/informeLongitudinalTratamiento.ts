@@ -16,6 +16,12 @@ const MAX_FILAS_MEDICAMENTO_ILC = 12;
 /** Tarjetas por fila en visualizador y PDF cuando hay más de una. */
 export const DIAS_POR_FILA_TRATAMIENTO_ILC = 2;
 
+/** Huella de régimen sin medicación documentada (agrupa visitas consecutivas sin tratamiento). */
+export const FINGERPRINT_SIN_TRATAMIENTO_ILC = '';
+
+export const TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC =
+  'Sin tratamiento farmacológico registrado en este periodo.';
+
 export interface BloqueTratamientoPorFechaIlc {
   fechaLabel: string;
   lineasMedicamento: string[];
@@ -93,6 +99,10 @@ export function fingerprintRegimenTratamiento(ev: EventoConcentradoCardiometabol
   return lineas.join('|');
 }
 
+export function esFingerprintSinTratamiento(fingerprint: string): boolean {
+  return fingerprint === FINGERPRINT_SIN_TRATAMIENTO_ILC;
+}
+
 /** Resumen de tratamiento farmacológico en eventos concentrados del periodo. */
 export interface ResumenRegimenTratamientoPeriodo {
   controlesTotales: number;
@@ -108,10 +118,9 @@ export function resumenRegimenTratamientoEnPeriodo(
   let controlesConTratamiento = 0;
 
   for (const ev of cron) {
-    if (!eventoConcentradoTieneTratamiento(ev)) continue;
-    controlesConTratamiento += 1;
     const fp = fingerprintRegimenTratamiento(ev);
-    if (fp) fingerprints.add(fp);
+    fingerprints.add(fp);
+    if (eventoConcentradoTieneTratamiento(ev)) controlesConTratamiento += 1;
   }
 
   return {
@@ -158,6 +167,22 @@ function medicamentosVisiblesDesdeEvento(ev: EventoConcentradoCardiometabolicoEs
   };
 }
 
+/** Contenido de tarjeta por visita; sin medicación → línea explícita (mismo fingerprint vacío). */
+function contenidoMedicamentosSegmento(ev: EventoConcentradoCardiometabolicoEsc): {
+  medicamentos: string[];
+  medicamentosOmitidos: number;
+  truncadoLista: boolean;
+} {
+  if (!eventoConcentradoTieneTratamiento(ev)) {
+    return {
+      medicamentos: [TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC],
+      medicamentosOmitidos: 0,
+      truncadoLista: false,
+    };
+  }
+  return medicamentosVisiblesDesdeEvento(ev);
+}
+
 function segmentoInternoACelda(seg: SegmentoTratamientoInterno): CeldaTratamientoDiaIlc {
   return {
     fechaInicio: seg.fechaInicio,
@@ -170,13 +195,13 @@ function segmentoInternoACelda(seg: SegmentoTratamientoInterno): CeldaTratamient
 }
 
 /**
- * Agrupa eventos consecutivos con el mismo fingerprint de régimen.
- * Nueva tarjeta solo si cambia el fingerprint.
+ * Agrupa **todos** los ESC del periodo por fingerprint de régimen (incluye sin medicación).
+ * Nueva tarjeta si cambia el régimen o si deja de haber medicación documentada.
  */
 export function buildSegmentosTratamientoPeriodo(
   eventos: EventoConcentradoCardiometabolicoEsc[] | undefined,
 ): CeldaTratamientoDiaIlc[] {
-  const cron = eventosConcentradosCronologicos(eventos).filter(eventoConcentradoTieneTratamiento);
+  const cron = eventosConcentradosCronologicos(eventos);
   const segmentos: SegmentoTratamientoInterno[] = [];
 
   for (const ev of cron) {
@@ -184,7 +209,7 @@ export function buildSegmentosTratamientoPeriodo(
     if (!fecha) continue;
 
     const fp = fingerprintRegimenTratamiento(ev);
-    const meds = medicamentosVisiblesDesdeEvento(ev);
+    const meds = contenidoMedicamentosSegmento(ev);
     const ultimo = segmentos[segmentos.length - 1];
 
     if (ultimo && ultimo.fingerprint === fp) {
@@ -205,10 +230,13 @@ export function buildSegmentosTratamientoPeriodo(
   return segmentos.map(segmentoInternoACelda);
 }
 
+/** Bloque de tratamiento visible si hay al menos un control fechado en el periodo. */
 export function hayEvidenciaTratamientoPeriodo(
   eventos: EventoConcentradoCardiometabolicoEsc[] | undefined,
 ): boolean {
-  return eventosConcentradosCronologicos(eventos).some(eventoConcentradoTieneTratamiento);
+  return eventosConcentradosCronologicos(eventos).some((ev) =>
+    Boolean(String(ev.fechaControl ?? '').trim()),
+  );
 }
 
 export function hayDatosConcentradoTabular(
@@ -267,10 +295,10 @@ export type EventoEscFuenteIlc = {
   _id?: unknown;
   idTrabajador?: unknown;
   fechaEventoSeguimientoCardiometabolico?: string | Date;
+  diagnosticosActivos?: string[];
   signosVitales?: EventoConcentradoCardiometabolicoEsc['signosVitales'];
   somatometria?: EventoConcentradoCardiometabolicoEsc['somatometria'];
   laboratorio?: EventoConcentradoCardiometabolicoEsc['laboratorio'];
-  riesgosActuales?: EventoConcentradoCardiometabolicoEsc['riesgoActual'];
   estadoCondiciones?: EventoConcentradoCardiometabolicoEsc['estadoCondiciones'];
   tratamientoActual?: TratamientoActualFilaEsc[];
 };
@@ -283,13 +311,16 @@ export function idsArrayFromMongoRefs(arr: unknown): string[] {
 /** Snapshot de un ESC para `eventosConcentrados` del ILC (datos actuales del expediente). */
 export function snapshotEventoConcentradoIlc(ev: EventoEscFuenteIlc): EventoConcentradoCardiometabolicoEsc {
   const tratamiento = sanitizarTratamientoActualArray(ev.tratamientoActual);
+  const dx = Array.isArray(ev.diagnosticosActivos)
+    ? [...new Set(ev.diagnosticosActivos.map((c) => String(c).trim()).filter(Boolean))]
+    : undefined;
   return {
     idEventoOriginal: mongoIdStr(ev._id) || undefined,
     fechaControl: toYyyyMmDdIlc(ev.fechaEventoSeguimientoCardiometabolico) || undefined,
+    diagnosticosActivos: dx?.length ? dx : undefined,
     signosVitales: ev.signosVitales,
     somatometria: ev.somatometria,
     laboratorio: ev.laboratorio,
-    riesgoActual: ev.riesgosActuales,
     estadoCondiciones: ev.estadoCondiciones,
     tratamientoActual: tratamiento,
   };

@@ -11,6 +11,20 @@ import type {
   ResumenIndicadorLongitudinalEsc,
 } from '@/interfaces/documentos.inteface';
 import { NIVEL_RIESGO_LONGITUDINAL, TENDENCIA_LONGITUDINAL_INFORME } from '@/helpers/informeLongitudinalCardiometabolicoOptions';
+import {
+  ejeConSerieParaTrayectoria,
+  ejesPrincipalesParaTrayectoria,
+  type EstadisticaEjeLongitudinal,
+  type ResumenIndicadoresEnriquecido,
+} from '@/helpers/informeLongitudinalIndicadores';
+import {
+  codigoControlClinicoParaTendencia,
+  diagnosticoActivoEnEvento,
+  evaluarCondicionEnEvento,
+  eventoConcentradoAEscForm,
+} from '@/helpers/informeLongitudinalCoherenciaEsc';
+
+export type ResumenIndicadoresParaMotor = ResumenIndicadoresLongitudinalEsc | ResumenIndicadoresEnriquecido;
 
 /** Subconjunto de métricas para residual (evita dependencia circular con `informeLongitudinalOperativo`). */
 export interface MetricasInferenciaResidual {
@@ -44,9 +58,15 @@ export const CONFIG_UMBRALES_SEVERIDAD_ILC = {
   imcModeradoAlto: 35,
   imcModerado: 30,
   imcObesidadGradoSevero: 35,
+  ldlMuyAlto: 190,
+  ldlAlto: 160,
+  ldlLimite: 130,
+  tgMuyAlto: 500,
+  tgAlto: 200,
+  tgLimite: 150,
   datosFaltantesMuchos: 8,
   datosFaltantesModerados: 4,
-  /** Mínimo de ejes con `tieneDatosSuficientes` para inferir trayectoria agregada. */
+  /** Mínimo de ejes principales con tendencia definida para inferir trayectoria agregada. */
   minEjesConSerieParaTrayectoria: 1,
 } as const;
 
@@ -58,7 +78,7 @@ export interface DriversInformeLongitudinal {
 }
 
 export interface ParamsInferenciaRiesgoDescontrol {
-  resumenIndicadores: ResumenIndicadoresLongitudinalEsc | undefined;
+  resumenIndicadores: ResumenIndicadoresParaMotor | undefined;
   resumenCondiciones: ResumenCondicionesCardiometabolicasInformeLongitudinal | undefined;
   metricas: MetricasInferenciaResidual;
   nEventosIncluidos: number;
@@ -145,48 +165,152 @@ function ordinalImc(v: number): number {
   return 0;
 }
 
-function indicadorValores(o: ResumenIndicadorLongitudinalEsc | undefined): {
+function ordinalLdl(v: number): number {
+  const c = CONFIG_UMBRALES_SEVERIDAD_ILC;
+  if (v >= c.ldlMuyAlto) return 3;
+  if (v >= c.ldlAlto) return 3;
+  if (v >= c.ldlLimite) return 2;
+  return 0;
+}
+
+function ordinalTrigliceridos(v: number): number {
+  const c = CONFIG_UMBRALES_SEVERIDAD_ILC;
+  if (v >= c.tgMuyAlto) return 3;
+  if (v >= c.tgAlto) return 2;
+  if (v >= c.tgLimite) return 1;
+  return 0;
+}
+
+function normCat(s?: string): string {
+  return String(s || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '');
+}
+
+/** Fallback ordinal desde categoría ESC cuando no hay número en el periodo. */
+export function ordinalDesdeCategoria(eje: string, categoria?: string): number | undefined {
+  const c = normCat(categoria);
+  if (!c || c.includes('no valorable')) return undefined;
+  switch (eje) {
+    case 'glucosa':
+      if (c === 'elevada') return 3;
+      if (c.includes('alterad')) return 1;
+      if (c === 'normal') return 0;
+      return undefined;
+    case 'hba1c':
+      if (c.includes('compatible') && c.includes('diabetes')) return 3;
+      if (c.includes('prediabetes')) return 1;
+      if (c === 'normal') return 0;
+      return undefined;
+    case 'ldl':
+      if (c.includes('muy alto')) return 3;
+      if (c === 'alto') return 3;
+      if (c.includes('limite')) return 2;
+      if (c.includes('optimo') || c.includes('cerca')) return 0;
+      return undefined;
+    case 'trigliceridos':
+      if (c.includes('muy alto')) return 3;
+      if (c === 'alto') return 3;
+      if (c.includes('limite')) return 2;
+      if (c === 'normal') return 0;
+      return undefined;
+    case 'tension':
+      if (c.includes('crisis') || c.includes('estadio 3') || c.includes('grado 3')) return 4;
+      if (c.includes('estadio 2') || c.includes('grado 2')) return 3;
+      if (c.includes('estadio 1') || c.includes('grado 1') || c.includes('elevad')) return 2;
+      if (c.includes('normal') || c.includes('optim')) return 0;
+      return undefined;
+    case 'imc':
+      if (c.includes('obesidad iii') || c.includes('obesidad 3')) return 3;
+      if (c.includes('obesidad ii') || c.includes('obesidad 2')) return 3;
+      if (c.includes('obesidad')) return 2;
+      if (c.includes('sobrepeso')) return 1;
+      return undefined;
+    default:
+      return undefined;
+  }
+}
+
+function indicadorValores(o: ResumenIndicadorLongitudinalEsc | EstadisticaEjeLongitudinal | undefined): {
   peor?: number;
   final?: number;
   nMed?: number;
+  ultimaCategoria?: string;
 } {
   if (!o) return {};
+  const est = o as EstadisticaEjeLongitudinal;
+  const peorEnriquecido = num(est.peorValor);
+  const peorFallback = maxPair(undefined, num(o.valorInicial));
+  const peorFinalFallback = maxPair(peorFallback, num(o.valorFinal));
   return {
-    peor: num(o.peorValor),
+    peor: peorEnriquecido ?? peorFinalFallback,
     final: num(o.valorFinal),
-    nMed: typeof o.numeroMediciones === 'number' ? o.numeroMediciones : undefined,
+    nMed: typeof est.numeroMediciones === 'number' ? est.numeroMediciones : undefined,
+    ultimaCategoria: est.ultimaCategoria,
   };
 }
 
-function evaluarSeveridadPorEjes(ind: ResumenIndicadoresLongitudinalEsc | undefined): {
+function ordinalEjeConFallback(
+  ejeCat: string,
+  peorNum: number | undefined,
+  ordinalFn: (v: number) => number,
+  categoria?: string,
+): number {
+  if (peorNum != null) return ordinalFn(peorNum);
+  const oc = ordinalDesdeCategoria(ejeCat, categoria);
+  return oc ?? 0;
+}
+
+function evaluarSeveridadPorEjes(ind: ResumenIndicadoresParaMotor | undefined): {
   ordinalEjes: number;
   glucPeor?: number;
   hbaPeor?: number;
   sistPeor?: number;
   diastPeor?: number;
+  ldlPeor?: number;
+  tgPeor?: number;
   nMedGluc?: number;
   nMedHba?: number;
 } {
   if (!ind) return { ordinalEjes: 0 };
+  const enr = ind as ResumenIndicadoresEnriquecido;
   const g = indicadorValores(ind.glucosaMgDl);
   const h = indicadorValores(ind.hba1cPorcentaje);
   const s = indicadorValores(ind.tensionArterialSistolica);
   const d = indicadorValores(ind.tensionArterialDiastolica);
   const im = indicadorValores(ind.indiceMasaCorporal);
+  const ldl = indicadorValores(enr.ldlMgDl);
+  const tg = indicadorValores(enr.trigliceridosMgDl);
 
-  const glucMax = maxPair(g.peor, g.final);
-  const hbaMax = maxPair(h.peor, h.final);
-  const sistMax = maxPair(s.peor, s.final);
-  const diastMax = maxPair(d.peor, d.final);
-  const imcMax = maxPair(im.peor, im.final);
+  const glucMax = g.peor;
+  const hbaMax = h.peor;
+  const sistMax = s.peor;
+  const diastMax = d.peor;
+  const imcMax = im.peor;
+  const ldlMax = ldl.peor;
+  const tgMax = tg.peor;
 
   let maxOrd = 0;
-  if (glucMax != null) maxOrd = Math.max(maxOrd, ordinalGlucosa(glucMax));
-  if (hbaMax != null) maxOrd = Math.max(maxOrd, ordinalHbA1c(hbaMax));
-  if (sistMax != null && diastMax != null) maxOrd = Math.max(maxOrd, ordinalTension(sistMax, diastMax));
-  else if (sistMax != null) maxOrd = Math.max(maxOrd, ordinalTension(sistMax, diastMax ?? 0));
-  else if (diastMax != null) maxOrd = Math.max(maxOrd, ordinalTension(sistMax ?? 0, diastMax));
-  if (imcMax != null) maxOrd = Math.max(maxOrd, ordinalImc(imcMax));
+  maxOrd = Math.max(maxOrd, ordinalEjeConFallback('glucosa', glucMax, ordinalGlucosa, g.ultimaCategoria));
+  maxOrd = Math.max(maxOrd, ordinalEjeConFallback('hba1c', hbaMax, ordinalHbA1c, h.ultimaCategoria));
+  if (sistMax != null || diastMax != null) {
+    maxOrd = Math.max(
+      maxOrd,
+      sistMax != null && diastMax != null
+        ? ordinalTension(sistMax, diastMax)
+        : sistMax != null
+          ? ordinalTension(sistMax, diastMax ?? 0)
+          : ordinalTension(sistMax ?? 0, diastMax!),
+    );
+  } else {
+    const oTa = ordinalDesdeCategoria('tension', s.ultimaCategoria ?? d.ultimaCategoria);
+    if (oTa != null) maxOrd = Math.max(maxOrd, oTa);
+  }
+  maxOrd = Math.max(maxOrd, ordinalEjeConFallback('imc', imcMax, ordinalImc, im.ultimaCategoria));
+  maxOrd = Math.max(maxOrd, ordinalEjeConFallback('ldl', ldlMax, ordinalLdl, ldl.ultimaCategoria));
+  maxOrd = Math.max(maxOrd, ordinalEjeConFallback('trigliceridos', tgMax, ordinalTrigliceridos, tg.ultimaCategoria));
 
   return {
     ordinalEjes: maxOrd,
@@ -194,6 +318,8 @@ function evaluarSeveridadPorEjes(ind: ResumenIndicadoresLongitudinalEsc | undefi
     hbaPeor: hbaMax ?? undefined,
     sistPeor: sistMax ?? undefined,
     diastPeor: diastMax ?? undefined,
+    ldlPeor: ldlMax ?? undefined,
+    tgPeor: tgMax ?? undefined,
     nMedGluc: g.nMed,
     nMedHba: h.nMed,
   };
@@ -262,11 +388,10 @@ function evaluarPisosClinicos(
 }
 
 function controlDm2EnEvento(e: EventoConcentradoCardiometabolicoEsc): boolean {
-  const st = e.estadoCondiciones as Record<string, unknown> | undefined;
-  if (!st || typeof st !== 'object') return false;
-  const dm = (st.diabetesMellitusTipo2 ?? st.diabetes) as { control?: string } | undefined;
-  const ctrl = dm && typeof dm === 'object' ? dm.control : undefined;
-  return typeof ctrl === 'string' && esEstadoNoControlado(ctrl);
+  if (!diagnosticoActivoEnEvento(e, 'diabetesMellitusTipo2')) return false;
+  const form = eventoConcentradoAEscForm(e);
+  const r = evaluarCondicionEnEvento(e, 'diabetesMellitusTipo2');
+  return codigoControlClinicoParaTendencia(r, form, 'diabetesMellitusTipo2') === 'NO_CONTROLADA';
 }
 
 function eventosConDm2NoControlada(eventos: EventoConcentradoCardiometabolicoEsc[] | undefined): number {
@@ -294,15 +419,18 @@ function evaluarResidualAcotado(
   return Math.min(2, Math.max(r, a));
 }
 
-function ejesEnBandaAltaOPeorPeor(ind: ResumenIndicadoresLongitudinalEsc | undefined): number {
+function ejesEnBandaAltaOPeorPeor(ind: ResumenIndicadoresParaMotor | undefined): number {
   if (!ind) return 0;
-  const { glucPeor, hbaPeor, sistPeor, diastPeor } = evaluarSeveridadPorEjes(ind);
+  const { glucPeor, hbaPeor, sistPeor, diastPeor, ldlPeor, tgPeor } = evaluarSeveridadPorEjes(ind);
+  const c = CONFIG_UMBRALES_SEVERIDAD_ILC;
   let n = 0;
-  if (glucPeor != null && glucPeor >= CONFIG_UMBRALES_SEVERIDAD_ILC.glucosaAlto) n += 1;
-  if (hbaPeor != null && hbaPeor >= CONFIG_UMBRALES_SEVERIDAD_ILC.hba1cAlto) n += 1;
+  if (glucPeor != null && glucPeor >= c.glucosaAlto) n += 1;
+  if (hbaPeor != null && hbaPeor >= c.hba1cAlto) n += 1;
   const sp = sistPeor ?? 0;
   const dp = diastPeor ?? 0;
-  if (sp >= CONFIG_UMBRALES_SEVERIDAD_ILC.taSistAlto || dp >= CONFIG_UMBRALES_SEVERIDAD_ILC.taDiastAlto) n += 1;
+  if (sp >= c.taSistAlto || dp >= c.taDiastAlto) n += 1;
+  if (ldlPeor != null && ldlPeor >= c.ldlAlto) n += 1;
+  if (tgPeor != null && tgPeor >= c.tgAlto) n += 1;
   return n;
 }
 
@@ -349,7 +477,7 @@ function ordinalANivel(o: number): string {
 }
 
 export function inferirTendenciaLongitudinalAgregada(
-  ind: ResumenIndicadoresLongitudinalEsc | undefined,
+  ind: ResumenIndicadoresParaMotor | undefined,
   rc: ResumenCondicionesCardiometabolicasInformeLongitudinal | undefined,
   p: {
     nEventosIncluidos: number;
@@ -368,15 +496,9 @@ export function inferirTendenciaLongitudinalAgregada(
   }
 
   const minK = CONFIG_UMBRALES_SEVERIDAD_ILC.minEjesConSerieParaTrayectoria;
-  const pares: ResumenIndicadorLongitudinalEsc[] = [];
-  if (ind?.tensionArterialSistolica) pares.push(ind.tensionArterialSistolica);
-  if (ind?.tensionArterialDiastolica) pares.push(ind.tensionArterialDiastolica);
-  if (ind?.indiceMasaCorporal) pares.push(ind.indiceMasaCorporal);
-  if (ind?.glucosaMgDl) pares.push(ind.glucosaMgDl);
-  if (ind?.hba1cPorcentaje) pares.push(ind.hba1cPorcentaje);
-  if (ind?.peso) pares.push(ind.peso);
+  const pares = ejesPrincipalesParaTrayectoria(ind);
 
-  const conSerie = pares.filter((x) => x.tieneDatosSuficientes === true).length;
+  const conSerie = pares.filter((x) => ejeConSerieParaTrayectoria(x)).length;
   if (conSerie < minK) {
     p.motivos.push(`Menos de ${minK} eje(s) con serie suficiente para tendencia agregada.`);
     return ins;
@@ -387,7 +509,7 @@ export function inferirTendenciaLongitudinalAgregada(
   let est = 0;
   let varia = 0;
   for (const o of pares) {
-    if (!o.tieneDatosSuficientes || !o.tendencia) continue;
+    if (!ejeConSerieParaTrayectoria(o) || !o.tendencia) continue;
     if (o.tendencia === 'Mejoría') mej += 1;
     else if (o.tendencia === 'Empeoramiento') emp += 1;
     else if (o.tendencia === 'Estable') est += 1;
@@ -469,7 +591,7 @@ function construirInterpretacion(params: {
 
 function llenarDriversRiesgo(
   d: DriversInformeLongitudinal,
-  ind: ResumenIndicadoresLongitudinalEsc | undefined,
+  ind: ResumenIndicadoresParaMotor | undefined,
   sev: ReturnType<typeof evaluarSeveridadPorEjes>,
   condCount: number,
   ordinalBase: number,
@@ -488,12 +610,20 @@ function llenarDriversRiesgo(
   if (sev.sistPeor != null && sev.sistPeor >= c.taSistAlto) {
     d.riesgo.push(`TA sistólica elevada (${sev.sistPeor} mmHg)`);
   }
+  if (sev.ldlPeor != null && sev.ldlPeor >= c.ldlAlto) {
+    d.riesgo.push(`LDL elevado en el periodo (${sev.ldlPeor} mg/dL)`);
+  }
+  if (sev.tgPeor != null && sev.tgPeor >= c.tgMuyAlto) {
+    d.riesgo.push(`Triglicéridos muy elevados (${sev.tgPeor} mg/dL) en el periodo`);
+  } else if (sev.tgPeor != null && sev.tgPeor >= c.tgAlto) {
+    d.riesgo.push(`Triglicéridos elevados (${sev.tgPeor} mg/dL) en el periodo`);
+  }
   if (condCount >= 3) d.riesgo.push('Múltiples condiciones cardiometabólicas no controladas en el resumen');
   else if (condCount === 2) d.riesgo.push('Dos condiciones no controladas en el resumen');
   else if (condCount === 1) d.riesgo.push('Una condición no controlada en el resumen');
 
-  const im = ind?.indiceMasaCorporal;
-  const imcMax = maxPair(im?.peorValor, im?.valorFinal);
+  const im = ind?.indiceMasaCorporal as EstadisticaEjeLongitudinal | undefined;
+  const imcMax = im?.peorValor ?? maxPair(undefined, im?.valorFinal);
   if (imcMax != null && imcMax >= c.imcAlto) d.riesgo.push('IMC en obesidad III (piso de severidad)');
   else if (imcMax != null && imcMax >= c.imcModeradoAlto) d.riesgo.push('IMC en obesidad clase II');
 
@@ -549,8 +679,8 @@ export function inferirNivelRiesgoLongitudinalDescontrol(p: ParamsInferenciaRies
 
   const ind = p.resumenIndicadores;
   const sev = evaluarSeveridadPorEjes(ind);
-  const im = ind?.indiceMasaCorporal;
-  const imcMax = maxPair(im?.peorValor, im?.valorFinal);
+  const im = ind?.indiceMasaCorporal as EstadisticaEjeLongitudinal | undefined;
+  const imcMax = im?.peorValor ?? maxPair(undefined, im?.valorFinal);
   const condCount = contarCondicionesNoControladas(p.resumenCondiciones, imcMax);
   const ordinalCond = ordinalPorConteoCondiciones(condCount);
   const ordinalPiso = evaluarPisosClinicos(p.resumenCondiciones, p.eventosConcentrados, imcMax);
@@ -613,6 +743,11 @@ export function inferirNivelRiesgoLongitudinalDescontrol(p: ParamsInferenciaRies
   const nivel = ordinalANivel(ordinalBase);
 
   llenarDriversRiesgo(drivers, ind, sev, condCount, ordinalBase);
+  if (sev.tgPeor != null && sev.tgPeor >= CONFIG_UMBRALES_SEVERIDAD_ILC.tgMuyAlto) {
+    drivers.advertencias.push(
+      `Triglicéridos ≥ ${CONFIG_UMBRALES_SEVERIDAD_ILC.tgMuyAlto} mg/dL en el periodo; valorar riesgo de pancreatitis y manejo urgente según contexto clínico.`,
+    );
+  }
   if (motivosT.length) drivers.advertencias.push(...motivosT);
 
   const interpretacionRiesgoLongitudinal = construirInterpretacion({

@@ -7,6 +7,7 @@ import {
   hayVariosRegimenesTratamientoEnPeriodo,
   refrescarEventosConcentradosEnInforme,
   resumenRegimenTratamientoEnPeriodo,
+  TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC,
 } from './informeLongitudinalTratamiento';
 
 const metformina = {
@@ -58,6 +59,28 @@ describe('buildCeldasTratamientoPeriodo — agrupación por fingerprint', () => 
     expect(celdas[1].medicamentos[0]).toContain('1000 mg');
   });
 
+  it('agrupa visitas consecutivas sin medicación en un solo segmento', () => {
+    const eventos = [ev('2025-02-01'), ev('2025-04-01'), ev('2025-05-01')];
+    const celdas = buildCeldasTratamientoPeriodo(eventos);
+    expect(celdas).toHaveLength(1);
+    expect(celdas[0].fechaLabel).toBe('01-02-2025 – 01-05-2025');
+    expect(celdas[0].medicamentos).toEqual([TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC]);
+  });
+
+  it('sin medicación entre dos regímenes abre segmento intermedio', () => {
+    const eventos = [
+      ev('2025-01-01', { tratamiento: [metformina] }),
+      ev('2025-03-01'),
+      ev('2025-06-01', { tratamiento: [metformina] }),
+    ];
+    const celdas = buildCeldasTratamientoPeriodo(eventos);
+    expect(celdas).toHaveLength(3);
+    expect(celdas[0].medicamentos[0]).toContain('Metformina');
+    expect(celdas[1].medicamentos).toEqual([TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC]);
+    expect(celdas[1].fechaLabel).toBe('01-03-2025');
+    expect(celdas[2].medicamentos[0]).toContain('Metformina');
+  });
+
   it('refrescarEventosConcentradosEnInforme usa tratamiento actual del expediente', () => {
     const form = {
       eventosIncluidos: ['ev1', 'ev2'],
@@ -98,7 +121,7 @@ describe('resumenRegimenTratamientoEnPeriodo', () => {
     ]);
     expect(r.controlesTotales).toBe(2);
     expect(r.controlesConTratamiento).toBe(1);
-    expect(r.fingerprintsDistintos).toBe(1);
+    expect(r.fingerprintsDistintos).toBe(2);
     expect(hayRegimenTerapeuticoEstableEnPeriodo([ev('2025-01-01', { tratamiento: [metformina] })])).toBe(
       true,
     );
@@ -118,6 +141,14 @@ describe('hayVariosRegimenesTratamientoEnPeriodo', () => {
     const eventos = [
       ev('2025-01-01', { tratamiento: [metformina] }),
       ev('2025-04-01', { tratamiento: [{ ...metformina, dosis: '1000 mg' }] }),
+    ];
+    expect(hayVariosRegimenesTratamientoEnPeriodo(eventos)).toBe(true);
+  });
+
+  it('cuenta suspensión de medicación (visita sin tratamiento) como cambio de régimen', () => {
+    const eventos = [
+      ev('2025-01-01', { tratamiento: [metformina] }),
+      ev('2025-04-01'),
     ];
     expect(hayVariosRegimenesTratamientoEnPeriodo(eventos)).toBe(true);
   });
