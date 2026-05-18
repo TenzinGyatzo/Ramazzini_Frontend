@@ -485,14 +485,14 @@ const antecedentesLaborales = ref([
       </table>
     </div>
 
-    <!-- Antecedentes de Accidentes de Trabajo -->
+    <!-- Antecedentes de Riesgos de Trabajo -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-sm': (trabajadores.currentTrabajador?.sexo === 'Masculino' ? (steps.currentStep + 14 === 45) : (steps.currentStep === 45)) }">
       <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Laborales</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
       <tbody>
         <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(45)">
         <td class="w-1/2 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
-          ACCIDENTES DE TRABAJO
+          RIESGO DE TRABAJO
         </td>
         <td class="w-1/2 text-xs sm:text-sm px-2 py-0 border border-gray-300">
           {{ historiaClinicaData.accidenteLaboral }}
@@ -500,7 +500,7 @@ const antecedentesLaborales = ref([
         </tr>
         <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(45)">
         <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
-          DESCRIPCIÓN ACCIDENTE
+          DESCRIPCIÓN RIESGO DE TRABAJO
         </td>
         <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300">
           {{ historiaClinicaData.accidenteLaboralEspecificar }}
