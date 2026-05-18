@@ -15,6 +15,7 @@ import {
   CONFIG_UMBRALES_SEVERIDAD_ILC,
   inferirNivelRiesgoLongitudinalDescontrol,
   inferirTendenciaLongitudinalAgregada,
+  type InferenciaRiesgoTendenciaResult,
 } from '@/helpers/informeLongitudinalRiesgoTrayectoria';
 import { resumenRegimenTratamientoEnPeriodo } from '@/helpers/informeLongitudinalTratamiento';
 import {
@@ -576,8 +577,6 @@ export function aplicarIteracionDosAlFormulario(
       form.nivelRiesgoLongitudinal = risk.nivelRiesgoLongitudinal;
       form.interpretacionRiesgoLongitudinal = risk.interpretacionRiesgoLongitudinal;
     }
-    delete form.factoresPersistentes;
-    delete form.alertasRelevantes;
   } else if (opts?.aplicarInterpretacionInferidaSiVacio) {
     const infer = inferirConsistenciaYNivelRiesgo(met, nEv, {
       resumenIndicadores: indCompleto ?? form.resumenIndicadores,

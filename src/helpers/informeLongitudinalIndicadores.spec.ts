@@ -104,7 +104,7 @@ describe('derivarResumenIndicadoresCompleto', () => {
     ]);
     const slim = proyectarResumenIndicadoresParaPersistencia(enr);
     expect(slim?.glucosaMgDl?.valorInicial).toBe(200);
-    expect(slim?.ldlMgDl).toBeUndefined();
+    expect(slim).not.toHaveProperty('ldlMgDl');
     expect((slim?.glucosaMgDl as { peorValor?: number })?.peorValor).toBeUndefined();
   });
 });
