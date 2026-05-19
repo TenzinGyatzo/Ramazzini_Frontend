@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, inject, computed, nextTick } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, type RouteParamsRaw } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -283,18 +283,23 @@ const navigateTo = (routeName: string, params: Record<string, unknown>) => {
     return;
   }
 
-  const routeParams =
+  const routeParams: RouteParamsRaw =
     routeName === 'crear-documento'
       ? {
-          idEmpresa: params.idEmpresa ?? empresas.currentEmpresaId,
-          idCentroTrabajo:
+          idEmpresa: String(params.idEmpresa ?? empresas.currentEmpresaId ?? ''),
+          idCentroTrabajo: String(
             params.idCentroTrabajo ??
-            centrosTrabajo.currentCentroTrabajoId ??
-            route.params.idCentroTrabajo,
-          idTrabajador: params.idTrabajador ?? trabajadores.currentTrabajadorId,
-          ...params,
+              centrosTrabajo.currentCentroTrabajoId ??
+              route.params.idCentroTrabajo ??
+              '',
+          ),
+          idTrabajador: String(params.idTrabajador ?? trabajadores.currentTrabajadorId ?? ''),
+          tipoDocumento: String(params.tipoDocumento ?? ''),
+          ...(params.idDocumento != null
+            ? { idDocumento: String(params.idDocumento) }
+            : {}),
         }
-      : params;
+      : (params as RouteParamsRaw);
 
   router.push({ name: routeName, params: routeParams });
   if (routeName === 'crear-documento') {

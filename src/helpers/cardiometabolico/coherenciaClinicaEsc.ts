@@ -1124,8 +1124,8 @@ export function sincronizarEstadoControlAutomatico(
 
     if (r.estadoCalculado === 'CONTROLADA' && !r.controlSeleccionableManualmente) {
       if (!form.estadoCondiciones) form.estadoCondiciones = {};
-      if (!form.estadoCondiciones[condicion]) form.estadoCondiciones[condicion] = {};
-      form.estadoCondiciones[condicion].control = 'CONTROLADA';
+      const bloqueControlada = form.estadoCondiciones[condicion] ?? (form.estadoCondiciones[condicion] = {});
+      bloqueControlada.control = 'CONTROLADA';
       continue;
     }
 
@@ -1134,8 +1134,8 @@ export function sincronizarEstadoControlAutomatico(
       r.persistirControlAutomatico !== false
     ) {
       if (!form.estadoCondiciones) form.estadoCondiciones = {};
-      if (!form.estadoCondiciones[condicion]) form.estadoCondiciones[condicion] = {};
-      form.estadoCondiciones[condicion].control = 'NO_VALORABLE';
+      const bloqueNoValorables = form.estadoCondiciones[condicion] ?? (form.estadoCondiciones[condicion] = {});
+      bloqueNoValorables.control = 'NO_VALORABLE';
       continue;
     }
 
@@ -1148,8 +1148,8 @@ export function sincronizarEstadoControlAutomatico(
       const manual = controlManual(form, condicion);
       if (!manual) {
         if (!form.estadoCondiciones) form.estadoCondiciones = {};
-        if (!form.estadoCondiciones[condicion]) form.estadoCondiciones[condicion] = {};
-        form.estadoCondiciones[condicion].control = 'NO_CONTROLADA';
+        const bloqueNoControlada = form.estadoCondiciones[condicion] ?? (form.estadoCondiciones[condicion] = {});
+        bloqueNoControlada.control = 'NO_CONTROLADA';
       }
       continue;
     }
@@ -1200,11 +1200,13 @@ export function limpiarControlAlDesmarcarDiagnostico(
 ): boolean {
   const clave = MAPA_DIAGNOSTICO_A_CONDICION[codigoDiagnostico];
   if (!clave || clave === 'obesidad') return false;
-  if (!form.estadoCondiciones?.[clave]?.control) return false;
-  const bloque = form.estadoCondiciones[clave];
+  const estadoCondiciones = form.estadoCondiciones;
+  if (!estadoCondiciones) return false;
+  const bloque = estadoCondiciones[clave];
+  if (!bloque?.control) return false;
   delete bloque.control;
   if (Object.keys(bloque).length === 0) {
-    delete form.estadoCondiciones[clave];
+    delete estadoCondiciones[clave];
   }
   if (form.estadoCondiciones && Object.keys(form.estadoCondiciones).length === 0) {
     delete form.estadoCondiciones;

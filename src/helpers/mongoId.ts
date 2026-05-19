@@ -7,8 +7,13 @@ export function mongoIdStr(x: unknown): string {
   return String(x);
 }
 
+type PayloadConAuditoria = Record<string, unknown> & {
+  createdBy?: unknown;
+  updatedBy?: unknown;
+};
+
 /** Normaliza createdBy/updatedBy tras GET con populate (evita 400 en PATCH). */
-export function normalizarCamposAuditoriaPayload<T extends Record<string, unknown>>(
+export function normalizarCamposAuditoriaPayload<T extends PayloadConAuditoria>(
   payload: T,
   updatedByUserId?: string | null,
 ): T {
