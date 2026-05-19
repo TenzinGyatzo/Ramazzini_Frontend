@@ -95,10 +95,11 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
-
 const periodoDePruebaFinalizado = proveedorSaludStore.proveedorSalud?.periodoDePruebaFinalizado;
 const estadoSuscripcion = proveedorSaludStore.proveedorSalud?.estadoSuscripcion;
-const finDeSuscripcion = proveedorSaludStore.proveedorSalud?.finDeSuscripcion ? new Date(proveedorSaludStore.proveedorSalud.finDeSuscripcion) : null;
+const finDeSuscripcion = proveedorSaludStore.proveedorSalud?.finDeSuscripcion
+  ? new Date(proveedorSaludStore.proveedorSalud.finDeSuscripcion)
+  : null;
 
 const user = ref(JSON.parse(localStorage.getItem('user') || '{}'));
 
@@ -219,13 +220,11 @@ const editarDocumento = (documentoId, documentoTipo) => {
     if (!proveedorSaludStore.proveedorSalud) return;
 
     if (periodoDePruebaFinalizado) {
-        // Bloquear si el periodo de prueba ha finalizado y no tiene suscripción activa (Inactive aparece cuando el pago falla repetidamente)
         if (!estadoSuscripcion || estadoSuscripcion === 'inactive') {
             emit('openSubscriptionModal');
             return;
         }
 
-        // Bloquear solo si canceló la suscripción y la fecha de fin de suscripción ya pasó
         if (estadoSuscripcion === 'cancelled' && finDeSuscripcion && new Date() > finDeSuscripcion) {
             emit('openSubscriptionModal');
             return;
@@ -3721,7 +3720,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     @click="handleEditDocumentoExterno">
                     <i class="fa-regular fa-pen-to-square fa-lg"></i>
                 </button>
-                <button v-else type="button" 
+                <button v-else type="button"
                     :class="[
                         'py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
                         canEditDocument(documentoTipo) 

@@ -246,7 +246,7 @@ const tieneResultadosParaAnio = (year: string) => {
   return resultados && Array.isArray(resultados) && resultados.length > 0;
 };
 
-const navigateTo = (routeName, params) => {
+const navigateTo = (routeName: string, params: Record<string, unknown>) => {
   if (!proveedorSaludStore.proveedorSalud) return;
 
   if (periodoDePruebaFinalizado.value) {
@@ -255,29 +255,52 @@ const navigateTo = (routeName, params) => {
       return;
     }
 
-    if (estadoSuscripcion.value === 'cancelled' && finDeSuscripcion.value && new Date() > finDeSuscripcion.value) {
+    if (
+      estadoSuscripcion.value === 'cancelled' &&
+      finDeSuscripcion.value &&
+      new Date() > finDeSuscripcion.value
+    ) {
       showSubscriptionModal.value = true;
       return;
     }
   }
 
-  if (routeName === 'crear-documento' && params.tipoDocumento === 'historiaClinica' && historiasDelMes.value != null && historiasDelMes.value >= proveedorSaludStore.proveedorSalud?.maxHistoriasPermitidasAlMes) {
+  if (
+    routeName === 'crear-documento' &&
+    params.tipoDocumento === 'historiaClinica' &&
+    historiasDelMes.value != null &&
+    historiasDelMes.value >= proveedorSaludStore.proveedorSalud?.maxHistoriasPermitidasAlMes
+  ) {
     showSubscriptionModal.value = true;
     return;
   }
 
-  // Validar permisos para documentos
-  if (routeName === 'crear-documento' && !canCreateDocument(params.tipoDocumento)) {
+  if (routeName === 'crear-documento' && !canCreateDocument(params.tipoDocumento as string)) {
     toast.open({
-      message: getRestrictionMessage(params.tipoDocumento),
+      message: getRestrictionMessage(params.tipoDocumento as string),
       type: 'error',
     });
     return;
   }
 
-  router.push({ name: routeName, params });
-  documentos.setCurrentTypeOfDocument(params.tipoDocumento);
-  documentos.currentDocument = null;
+  const routeParams =
+    routeName === 'crear-documento'
+      ? {
+          idEmpresa: params.idEmpresa ?? empresas.currentEmpresaId,
+          idCentroTrabajo:
+            params.idCentroTrabajo ??
+            centrosTrabajo.currentCentroTrabajoId ??
+            route.params.idCentroTrabajo,
+          idTrabajador: params.idTrabajador ?? trabajadores.currentTrabajadorId,
+          ...params,
+        }
+      : params;
+
+  router.push({ name: routeName, params: routeParams });
+  if (routeName === 'crear-documento') {
+    documentos.setCurrentTypeOfDocument(params.tipoDocumento as string);
+    documentos.currentDocument = null;
+  }
 };
 
 const toggleRouteSelection = (route: string, isSelected: boolean) => {
@@ -866,7 +889,7 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'historiaClinica'
-              })" class="group relative bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border-2 border-teal-200 hover:border-teal-400 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="group relative bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border-teal-200 hover:border-teal-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
                   <div class="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-600 transition-colors">
                     <i class="fas fa-notes-medical text-white text-lg"></i>
@@ -881,7 +904,7 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'exploracionFisica'
-              })" class="group relative bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 border-2 border-indigo-200 hover:border-indigo-400 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="group relative bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 border-indigo-200 hover:border-indigo-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
                   <div class="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-600 transition-colors">
                     <i class="fa-solid fa-person text-white text-xl"></i>
@@ -896,7 +919,7 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'examenVista'
-              })" class="group relative bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 border-2 border-yellow-200 hover:border-yellow-400 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="group relative bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 border-yellow-200 hover:border-yellow-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
                   <div class="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-yellow-600 transition-colors">
                     <i class="fas fa-eye text-white text-lg"></i>
@@ -911,7 +934,7 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'audiometria'
-              })" class="group relative bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-2 border-purple-200 hover:border-purple-400 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="group relative bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-purple-200 hover:border-purple-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
                   <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-600 transition-colors">
                     <i class="fas fa-volume-up text-white text-lg"></i>
@@ -926,7 +949,7 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'aptitud'
-              })" class="group relative bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-2 border-green-200 hover:border-green-400 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="group relative bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-green-200 hover:border-green-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
                   <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-green-600 transition-colors">
                     <i class="fas fa-user-check text-white text-lg"></i>
@@ -941,7 +964,7 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'certificado'
-              })" class="group relative bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-2 border-blue-200 hover:border-blue-400 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="group relative bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200 hover:border-blue-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
                   <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-600 transition-colors">
                     <i class="fas fa-certificate text-white text-lg"></i>
@@ -956,7 +979,7 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'antidoping'
-              })" class="group relative bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-2 border-red-200 hover:border-red-400 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="group relative bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 hover:border-red-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
                   <div class="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-red-600 transition-colors">
                     <i class="fas fa-flask text-white text-lg"></i>
@@ -971,7 +994,7 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'notaMedica'
-              })" class="group relative bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 border-2 border-orange-200 hover:border-orange-400 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="group relative bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 border-orange-200 hover:border-orange-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
                   <div class="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-600 transition-colors">
                     <i class="fas fa-stethoscope text-white text-lg"></i>

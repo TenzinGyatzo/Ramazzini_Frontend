@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, RouterLink } from "vue-router";
 import AuthAPI from "@/api/AuthAPI";
 import axios from "axios";
 
@@ -110,15 +110,15 @@ const handleLogin = async () => {
     </form> 
 
     <div class="grid grid-cols-2 gap-6">
-      <button @click="router.push({ name: 'onboarding' })"
+      <RouterLink :to="{ name: 'onboarding' }"
           class="mt-4 font-light text-sky-500 hover:underline text-sm dark:text-sky-400">
           Crear una cuenta
-      </button>
+      </RouterLink>
   
-      <button @click="router.push({ name: 'forgot-password' })"
+      <RouterLink :to="{ name: 'forgot-password' }"
           class="mt-4 font-light text-sky-500 hover:underline text-sm dark:text-sky-400">
           Olvidé mi contraseña
-      </button>
+      </RouterLink>
     </div>
 
 

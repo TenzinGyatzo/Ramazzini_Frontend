@@ -2,7 +2,7 @@
 import { ref, inject, watch, watchEffect, computed } from 'vue';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { useRouter } from 'vue-router';
+import { useRouter, RouterLink } from 'vue-router';
 
 const enfermeraFirmante = useEnfermeraFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -358,11 +358,10 @@ const firmaSrc = computed(() => {
                         <hr class="my-3">
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
                             <!-- Botón de Volver -->
-                            <button type="button"
-                                class="text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg mb-1"
-                                @click="volver">
+                            <RouterLink :to="{ name: 'inicio' }"
+                                class="nav-action-link block text-center text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg mb-1">
                                 Volver
-                            </button>
+                            </RouterLink>
                             <!-- Botón de Actualizar -->
                             <div class="w-full sm:w-1/2 pr-2">
                                 <FormKit type="submit">

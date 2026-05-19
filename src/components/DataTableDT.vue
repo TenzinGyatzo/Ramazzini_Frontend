@@ -501,27 +501,6 @@ function inicializarDataTable() {
       ]
     });
 
-    $(document).on('click', '.btn-expediente', function (e) {
-      // Solo intercepta si NO es clic con Ctrl/Command o botón medio
-      if (e.ctrlKey || e.metaKey || e.which === 2) return;
-
-      e.preventDefault();
-
-      const idTrabajador = $(this).data('id');
-      const trabajador = props.rows.find(t => t._id === idTrabajador);
-
-      if (trabajador) {
-        router.push({
-          name: 'expediente-medico',
-          params: {
-            idEmpresa: empresas.currentEmpresaId,
-            idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-            idTrabajador: trabajador._id
-          }
-        });
-      }
-    });
-
     $(document).on('click', '.btn-rt', function () {
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
@@ -591,7 +570,6 @@ function inicializarDataTable() {
 }
 
 onBeforeUnmount(() => {
-  $(document).off('click', '.btn-expediente');
   $(document).off('click', '.btn-rt');
   $(document).off('click', '.btn-riesgos');
   $(document).off('click', '.btn-editar');

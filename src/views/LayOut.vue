@@ -6,8 +6,7 @@ import { useMedicoFirmanteStore } from "@/stores/medicoFirmante";
 import { useEnfermeraFirmanteStore } from "@/stores/enfermeraFirmante";
 import { useTecnicoFirmanteStore } from "@/stores/tecnicoFirmante";
 import { useEmpresasStore } from "@/stores/empresas";
-import { useRoute } from "vue-router";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter, RouterLink } from "vue-router";
 import TooltipInfo from "@/components/TooltipInfo.vue";
 import {
   THEME_STORAGE_KEY,
@@ -716,20 +715,20 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
 
     <!-- Transición para el logo de Ramazzini -->
     <Transition appear mode="out-in" name="slide-up">
-      <div v-if="route.path === '/'" 
-        class="w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 2xl:w-1/8 mt-14 cursor-pointer transform hover:scale-105 transition-transform duration-300 ease logo-transition" 
-        @click="router.push({ name: 'inicio' })">
+      <RouterLink v-if="route.path === '/'" 
+        :to="{ name: 'inicio' }"
+        class="layout-nav-link block w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 2xl:w-1/8 mt-14 cursor-pointer transform hover:scale-105 transition-transform duration-300 ease logo-transition">
         <img src="/img/logosRamazzini/RamazziniBrand.png" alt="Ramazzini-Logo" class="w-full drop-shadow-lg" />
-      </div>
-      <div v-else 
-        class="w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 2xl:w-1/6 mt-3 mb-5 cursor-pointer transform hover:scale-105 transition-transform duration-300 ease logo-transition" 
-        @click="router.push({ name: 'inicio' })">
+      </RouterLink>
+      <RouterLink v-else 
+        :to="{ name: 'inicio' }"
+        class="layout-nav-link block w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 2xl:w-1/6 mt-3 mb-5 cursor-pointer transform hover:scale-105 transition-transform duration-300 ease logo-transition">
         <img
           :src="isDarkMode ? '/img/logosRamazzini/RamazziniLogoClaroNoBg.png' : '/img/logosRamazzini/RamazziniLogoNoBg.png'"
           alt="Ramazzini-Logo"
           class="w-full drop-shadow-lg"
         />
-      </div>
+      </RouterLink>
     </Transition>
 
     <!-- Contenido principal -->
@@ -745,11 +744,11 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
         
         <!-- Botones de acción -->
         <div class="grid gap-4 w-full max-w-md mt-2">
-          <button
-            @click="router.push({ name: 'empresas' })"
-            class="w-full text-lg sm:text-xl md:text-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white uppercase rounded-xl px-6 py-3 transition-all duration-300 ease transform hover:scale-105 shadow-lg hover:shadow-xl font-medium tracking-wide button-transition">
+          <RouterLink
+            :to="{ name: 'empresas' }"
+            class="layout-nav-link block w-full text-center text-lg sm:text-xl md:text-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white uppercase rounded-xl px-6 py-3 transition-all duration-300 ease transform hover:scale-105 shadow-lg hover:shadow-xl font-medium tracking-wide button-transition">
             VER MIS CLIENTES
-          </button>
+          </RouterLink>
 
           <div class="flex justify-center">
             <a href="/login">
@@ -870,13 +869,13 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
               <i class="fa-solid fa-shield-alt mr-2 text-orange-500"></i>
               Administrador
             </p>
-            <a @click="router.push({ name: 'panel-administrador' })" 
-               class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-orange-50 hover:to-orange-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-orange-300 group">
+            <RouterLink :to="{ name: 'panel-administrador' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-orange-50 hover:to-orange-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-orange-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-tachometer-alt text-orange-500 group-hover:text-orange-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Panel de Administrador</span>
               </div>
-            </a>
+            </RouterLink>
           </div>
           
           <!-- Configuración -->
@@ -887,8 +886,9 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
             </p>
 
             <!-- Proveedor de Salud -->
-            <a v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador'" 
-               @click="router.push({ name: 'perfil-proveedor' })" 
+            <RouterLink v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador'" 
+               :to="{ name: 'perfil-proveedor' }"
+               @click="isMenuOpen = false"
                :class="[
                  'block py-3 px-4 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border group',
                  logotipoPendiente 
@@ -933,10 +933,10 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
                       : 'text-gray-700 group-hover:text-gray-900'
                 ]">Mi Negocio</span>
               </div>
-            </a>
+            </RouterLink>
 
             <!-- Médico Firmante -->
-            <a v-if="user.user?.role === 'Principal' || user.user?.role === 'Médico' || user.user?.role === 'Administrador'" @click="router.push({ name: 'medico-firmante' })" 
+            <RouterLink v-if="user.user?.role === 'Principal' || user.user?.role === 'Médico' || user.user?.role === 'Administrador'" :to="{ name: 'medico-firmante' }" @click="isMenuOpen = false" 
                :class="[
                  'block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group',
                  mostrarTooltipMedico 
@@ -967,10 +967,10 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
                     : 'text-gray-700 group-hover:text-gray-900'
                 ]">Médico Firmante</span>
               </div>
-            </a>
+            </RouterLink>
 
             <!-- Enfermera Firmante -->
-            <a v-if="user.user?.role === 'Enfermero/a'" @click="router.push({ name: 'enfermera-firmante' })" 
+            <RouterLink v-if="user.user?.role === 'Enfermero/a'" :to="{ name: 'enfermera-firmante' }" @click="isMenuOpen = false" 
                :class="[
                  'block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group',
                  mostrarTooltipEnfermera 
@@ -1001,10 +1001,10 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
                     : 'text-gray-700 group-hover:text-gray-900'
                 ]">Enfermero/a Firmante</span>
               </div>
-            </a>
+            </RouterLink>
 
             <!-- Técnico Evaluador Firmante -->
-            <a v-if="user.user?.role === 'Técnico Evaluador'" @click="router.push({ name: 'tecnico-evaluador-firmante' })" 
+            <RouterLink v-if="user.user?.role === 'Técnico Evaluador'" :to="{ name: 'tecnico-evaluador-firmante' }" @click="isMenuOpen = false" 
                :class="[
                  'block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group',
                  mostrarTooltipTecnicoEvaluador 
@@ -1035,7 +1035,7 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
                     : 'text-gray-700 group-hover:text-gray-900'
                 ]">Técnico Firmante</span>
               </div>
-            </a>
+            </RouterLink>
 
             <!-- Administrativo -->
             <p v-if="user.user?.role === 'Administrativo'" class="text-sm font-medium text-gray-700 text-justify">Tienes el rol de Administrativo. No hay nada que configurar para este rol.</p>
@@ -1047,42 +1047,42 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
               <i class="fa-solid fa-users mr-2 text-purple-500"></i>
               Gestión de Usuarios
             </p>
-            <a @click="router.push({ name: 'add-user' })" 
-               class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-purple-50 hover:to-purple-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-purple-300 group">
+            <RouterLink :to="{ name: 'add-user' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-purple-50 hover:to-purple-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-purple-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-user-plus text-purple-500 group-hover:text-purple-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Agregar Usuario</span>
               </div>
-            </a>
-            <a @click="router.push({ name: 'user-productivity' })" 
-               class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-blue-300 group">
+            </RouterLink>
+            <RouterLink :to="{ name: 'user-productivity' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-blue-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-chart-line text-blue-500 group-hover:text-blue-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Monitoreo de Usuarios</span>
               </div>
-            </a>
-            <a @click="router.push({ name: 'manage-permissions' })" 
-               class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-indigo-50 hover:to-indigo-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-indigo-300 group">
+            </RouterLink>
+            <RouterLink :to="{ name: 'manage-permissions' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-indigo-50 hover:to-indigo-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-indigo-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-shield-halved text-indigo-500 group-hover:text-indigo-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Gestionar Permisos</span>
               </div>
-            </a>
-            <a @click="router.push({ name: 'manage-assignments' })" 
+            </RouterLink>
+            <RouterLink :to="{ name: 'manage-assignments' }" @click="isMenuOpen = false"
                v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador' "
-               class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-purple-50 hover:to-purple-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-purple-300 group">
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-purple-50 hover:to-purple-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-purple-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-users-gear text-purple-500 group-hover:text-purple-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Asignar Centros</span>
               </div>
-            </a>
-            <a @click="router.push({ name: 'remove-users' })" 
-               class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-red-50 hover:to-red-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-red-300 group">
+            </RouterLink>
+            <RouterLink :to="{ name: 'remove-users' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-red-50 hover:to-red-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-red-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-user-minus text-red-500 group-hover:text-red-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Eliminar Usuarios</span>
               </div>
-            </a>
+            </RouterLink>
           </div>
 
           <!-- Suscripción -->
@@ -1091,20 +1091,20 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
               <i class="fa-solid fa-credit-card mr-2 text-emerald-500"></i>
               Suscripción
             </p>
-            <a @click="router.push({ name: 'suscripcion-activa' })" 
-               class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
+            <RouterLink :to="{ name: 'suscripcion-activa' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-crown text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Mi Suscripción</span>
               </div>
-            </a>
-            <a @click="router.push({ name: 'subscription' })" 
-               class="block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
+            </RouterLink>
+            <RouterLink :to="{ name: 'subscription' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-list text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Ver Planes</span>
               </div>
-            </a>
+            </RouterLink>
           </div>
 
           <!-- Dark Mode Toggle -->

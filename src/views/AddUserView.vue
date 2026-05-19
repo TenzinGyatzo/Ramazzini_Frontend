@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, inject, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, RouterLink } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import ModalSuscripcion from "@/components/suscripciones/ModalSuscripcion.vue";
 import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
@@ -230,12 +230,12 @@ const volver = () => {
 
       <!-- Botón de redirección al inicio -->
       <div class="mt-2">
-        <button
-          @click="router.push({ name: 'inicio' })"
-          class="text-sm sm:text-base bg-emerald-600 text-white py-2 px-6 rounded-lg hover:bg-emerald-700 transition duration-300"
+        <RouterLink
+          :to="{ name: 'inicio' }"
+          class="nav-action-link inline-block text-sm sm:text-base bg-emerald-600 text-white py-2 px-6 rounded-lg hover:bg-emerald-700 transition duration-300"
         >
           Regresar al inicio
-        </button>
+        </RouterLink>
       </div>
     </div>
   </Transition>
