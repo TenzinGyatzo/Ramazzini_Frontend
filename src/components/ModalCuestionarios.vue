@@ -396,7 +396,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                   title="Citas y estados sin valoración clínica PDF"
                   @click="openModalSeguimientosProgramados">
                   <i class="fas fa-calendar-check text-slate-600 text-base" />
-                  <span class="text-center leading-tight">Programados CM</span>
+                  <span class="text-center leading-tight">Citas</span>
                 </button>
               </div>
               <button type="button" @click="handleQuestionnaireSelect('informe-longitudinal-cardiometabolico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
@@ -409,9 +409,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               </button>
               <button
                 type="button"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled>
-                <i class="fas fa-bone text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                disabled
+                class="questionnaire-option questionnaire-option--disabled w-full text-left px-4 py-3 rounded-lg text-sm flex items-center group border border-gray-200">
+                <i class="fas fa-bone mr-3 text-sm"></i>
                 Condiciones muscoesqueléticas
               </button>
             </div>
@@ -496,6 +496,20 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
 </template>
 
 <style scoped>
+.questionnaire-option--disabled,
+.questionnaire-option:disabled {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.questionnaire-option--disabled i,
+.questionnaire-option:disabled i {
+  color: #9ca3af;
+}
 
 .fade-enter-active,
 .fade-leave-active {
