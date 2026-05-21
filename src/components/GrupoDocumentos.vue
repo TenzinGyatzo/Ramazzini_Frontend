@@ -102,14 +102,10 @@ const totalDocumentos = computed(() => {
            (props.documents.entrevistasPsicologicas?.length || 0) +
            (props.documents.trastornosEstadoAnimo?.length || 0) +
            (props.documents.cuestionarioProdromalBreve?.length || 0) +
-<<<<<<< HEAD
-           (props.documents.trastornoLimitePersonalidad?.length || 0)
-    );
-=======
-           (props.documents.trastornoLimitePersonalidad?.length || 0) + 
+           (props.documents.trastornoLimitePersonalidad?.length || 0) +
            (props.documents.eventoSeguimientoCardiometabolico?.length || 0) +
-           (props.documents.informeLongitudinalCardiometabolico?.length || 0);
->>>>>>> main
+           (props.documents.informeLongitudinalCardiometabolico?.length || 0)
+    );
 });
 
 // Obtener todas las rutas de documentos de este grupo específico
@@ -1206,8 +1202,6 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             </div>
         </div>
 
-<<<<<<< HEAD
-=======
         <!-- Evento Seguimiento Cardiometabolico -->
         <div v-if="documents.eventoSeguimientoCardiometabolico && documents.eventoSeguimientoCardiometabolico.length > 0">
             <div v-for="(eventoSeguimientoCardiometabolico, index) in documents.eventoSeguimientoCardiometabolico" :key="eventoSeguimientoCardiometabolico._id"
@@ -1255,8 +1249,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                 />
             </div>
         </div>
-        
->>>>>>> main
+
         <div
             v-if="hasExtraSection"
             class="resultados-clinicos-extra-wrap border-t border-gray-200 bg-gray-50/70 px-4 py-4"

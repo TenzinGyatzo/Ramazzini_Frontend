@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath } from 'url';
@@ -21,27 +20,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.spec.ts'],
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-=======
-import { fileURLToPath, URL } from 'node:url';
-import { defineConfig } from 'vitest/config';
-import vue from '@vitejs/plugin-vue';
-
-export default defineConfig({
-  plugins: [vue()],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
-  },
-  test: {
-    environment: 'node',
-    include: ['src/**/*.spec.ts'],
-  },
->>>>>>> main
 });

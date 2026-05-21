@@ -4,10 +4,7 @@ import { useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
-<<<<<<< HEAD
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-=======
->>>>>>> main
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
 import { useNavigateWithDailyConsent } from '@/composables/useNavigateWithDailyConsent';
@@ -22,9 +19,8 @@ const router = useRouter();
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
-<<<<<<< HEAD
 const proveedorSaludStore = useProveedorSaludStore();
-const { validateDocumentCreation } = usePermissionRestrictions();
+const { validateDocumentCreation, executeIfCanManageOtrosDocumentos } = usePermissionRestrictions();
 const { validationResult, loadFirmanteData } = useProfessionalDataValidation();
 const {
   navigateWithDailyConsent,
@@ -49,9 +45,6 @@ const notaAclaratoriaEnabled = computed(() => {
 onMounted(async () => {
   await loadFirmanteData();
 });
-=======
-const { executeIfCanManageCuestionariosAdicionales } = usePermissionRestrictions();
->>>>>>> main
 
 const QUESTIONNAIRE_TIPO_MAP = {
   'receta': 'receta',
@@ -72,7 +65,6 @@ const closeModal = () => {
   emit('closeModal');
 };
 
-<<<<<<< HEAD
 const questionnaireToDocumentType = {
   'control-prenatal': 'controlPrenatal',
   'constancia-aptitud': 'constanciaAptitud',
@@ -86,6 +78,15 @@ const questionnaireToDocumentType = {
   'trastornos-estado-animo': 'trastornosEstadoAnimo',
   'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
   'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
+  'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
+  'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
+};
+
+const openModalSeguimientosProgramados = () => {
+  executeIfCanManageOtrosDocumentos(() => {
+    emit('openSeguimientoProgramado');
+    closeModal();
+  }, 'acceder a cuestionarios adicionales');
 };
 
 // Función para manejar la selección de cuestionarios
@@ -287,50 +288,39 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
       },
     });
     closeModal();
-  }
-=======
-const openModalSeguimientosProgramados = () => {
-  executeIfCanManageCuestionariosAdicionales(() => {
-    emit('openSeguimientoProgramado');
-    closeModal();
-  }, 'acceder a cuestionarios adicionales');
-};
-
-const navigateToQuestionnaire = (questionnaireType) => {
-  const tipoDocumento = QUESTIONNAIRE_TIPO_MAP[questionnaireType];
-  if (!tipoDocumento) return;
-
-  if (questionnaireType === 'control-prenatal' && trabajadores.currentTrabajador?.sexo === 'Masculino') {
-    toast.open({
-      message: 'No puedes hacer control prenatal al sexo masculino.',
-      type: 'error',
+  } else if (questionnaireType === 'evento-seguimiento-cardiometabolico') {
+    await navigateWithDailyConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'eventoSeguimientoCardiometabolico',
+        },
+      },
     });
-    return;
-  }
-
-  router.push({
-    name: 'crear-documento',
-    params: {
-      idEmpresa: empresas.currentEmpresaId,
-      idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-      idTrabajador: trabajadores.currentTrabajadorId,
-      tipoDocumento,
-    },
-  });
-
-  if (
-    questionnaireType === 'control-prenatal' ||
-    questionnaireType === 'informe-longitudinal-cardiometabolico'
-  ) {
+    closeModal();
+  } else if (questionnaireType === 'informe-longitudinal-cardiometabolico') {
+    await navigateWithDailyConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'informeLongitudinalCardiometabolico',
+        },
+      },
+    });
     closeModal();
   }
-};
-
-const handleQuestionnaireSelect = (questionnaireType) => {
-  executeIfCanManageCuestionariosAdicionales(() => {
-    navigateToQuestionnaire(questionnaireType);
-  }, 'acceder a cuestionarios adicionales');
->>>>>>> main
 };
 </script>
 
@@ -357,9 +347,9 @@ const handleQuestionnaireSelect = (questionnaireType) => {
               Miscelaneos
             </div>
             <div class="space-y-2">
-<<<<<<< HEAD
               <button
                 v-if="isMX && notaAclaratoriaEnabled"
+                type="button"
                 @click="handleQuestionnaireSelect('nota-aclaratoria')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
@@ -367,31 +357,13 @@ const handleQuestionnaireSelect = (questionnaireType) => {
                 Nota Aclaratoria
               </button>
               <button
+                type="button"
                 @click="handleQuestionnaireSelect('lesion')"
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Lesión y/o Evento de Violencia
               </button>
-              <button
-                @click="handleQuestionnaireSelect('receta')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-                >
-                <i class="fas fa-prescription-bottle-medical text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Receta Médica
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('constancia-aptitud')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Constancia de Aptitud
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('certificado-expedito')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-=======
               <button type="button" @click="handleQuestionnaireSelect('receta')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-prescription-bottle-medical text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Receta Médica
@@ -401,91 +373,18 @@ const handleQuestionnaireSelect = (questionnaireType) => {
                 Constancia de Aptitud
               </button>
               <button type="button" @click="handleQuestionnaireSelect('certificado-expedito')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
->>>>>>> main
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Certificado Expedito
               </button>
             </div>
           </div>
 
-<<<<<<< HEAD
-          <!-- Cuestionarios previos a estudios de gabinete -->
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-clipboard-question text-emerald-500 mr-3"></i>
-              Cuestionarios previos a estudios de gabinete
-            </div>
-            <div class="space-y-2">
-              <button
-                @click="handleQuestionnaireSelect('historia-otologica')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fas fa-ear-deaf text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Historia Otológica (Previo a Audiometría)
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('previo-espirometria')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fas fa-lungs text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Cuestionario Previo a Espirometría
-              </button>
-            </div>
-          </div>
-
-          <!-- Cuestionarios Psicologicos -->
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-exclamation-triangle text-emerald-500 mr-3"></i>
-              Cuestionarios Psicologicos
-            </div>
-            <div class="space-y-2">
-              <button
-                @click="handleQuestionnaireSelect('entrevista-psicologica')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fa-regular fa-comments text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Entrevista Psicologica
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('trastornos-estado-animo')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fa-solid fa-wave-square text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Trastornos del Estado de Ánimo (MDQ)
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('cuestionario-prodromal-breve')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fa-solid fa-brain text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Cuestionario Prodromal Breve (PQ-B)
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('trastorno-limite-personalidad')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fa-solid fa-heart-crack text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Prueba del trastorno límite de personalidad (MSI-BPD)
-              </button>
-            </div>
-          </div>
-
-          <!-- Vigilancia médica por condición personal -->
-=======
->>>>>>> main
           <div class="space-y-3">
             <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
               <i class="fas fa-user-circle text-emerald-500 mr-3"></i>
               Condición Personal
             </div>
             <div class="space-y-2">
-<<<<<<< HEAD
-              <button
-                @click="handleQuestionnaireSelect('control-prenatal')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-=======
               <div class="flex flex-col sm:flex-row gap-2">
                 <button type="button" @click="handleQuestionnaireSelect('evento-seguimiento-cardiometabolico')" class="questionnaire-option flex-1 min-w-0 text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center gap-2 group border border-gray-200 hover:border-emerald-300">
                   <i class="fas fa-heartbeat text-emerald-500 text-sm group-hover:text-emerald-600 shrink-0" />
@@ -505,28 +404,13 @@ const handleQuestionnaireSelect = (questionnaireType) => {
                 <span class="min-w-0">Informe Longitudinal Cardiometabólico</span>
               </button>
               <button type="button" @click="handleQuestionnaireSelect('control-prenatal')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
->>>>>>> main
                 <i class="fas fa-baby text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Control Prenatal (Embarazo y Lactancia)
               </button>
               <button
-<<<<<<< HEAD
-                @click="handleQuestionnaireSelect('enfermedades-cronicas')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-heartbeat text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Enfermedades Crónicas
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('condiciones-muscoesqueleticas')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-=======
+                type="button"
                 class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
                 disabled>
->>>>>>> main
                 <i class="fas fa-bone text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Condiciones muscoesqueléticas
               </button>
@@ -539,47 +423,6 @@ const handleQuestionnaireSelect = (questionnaireType) => {
               Cuestionarios previos a estudios de gabinete
             </div>
             <div class="space-y-2">
-<<<<<<< HEAD
-              <button
-                @click="handleQuestionnaireSelect('trabajos-altura')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-warning text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Control de salud para POE a Trabajos en Altura
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('espacios-confinados')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-box text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Control de salud para POE a Espacios Confinados
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('temperaturas-extremas')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-thermometer-half text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Control de Salud para POE a Temperaturas Extremas
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('sustancias-peligrosas')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-flask text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Control de salud para POE a Manipulación de Sustancias Peligrosas
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('maquinaria-pesada')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-truck text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Control para POE a Conducción y Operación de Maquinaria Pesada
-=======
               <button type="button" @click="handleQuestionnaireSelect('historia-otologica')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-ear-deaf text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Historia Otológica (Previo a Audiometría)
@@ -587,7 +430,6 @@ const handleQuestionnaireSelect = (questionnaireType) => {
               <button type="button" @click="handleQuestionnaireSelect('previo-espirometria')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-lungs text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Cuestionario Previo a Espirometría
->>>>>>> main
               </button>
             </div>
           </div>
@@ -598,103 +440,6 @@ const handleQuestionnaireSelect = (questionnaireType) => {
               Cuestionarios Psicologicos
             </div>
             <div class="space-y-2">
-<<<<<<< HEAD
-              <button
-                @click="handleQuestionnaireSelect('salud-auditiva')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-deaf text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Monitoreo de la Salud Auditiva
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('salud-respiratoria')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-lungs text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Monitoreo de la Salud Respiratoria
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('agentes-quimicos')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-atom text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Monitoreo por Exposición a Agentes Químicos
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('agentes-biologicos')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-bacteria text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Seguimiento Médico por Contacto con Agentes Biológicos
-              </button>
-            </div>
-          </div> -->
-
-          <!-- Vigilancia médica por ergonomía y carga física -->
-          <!-- <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-running text-emerald-500 mr-3"></i>
-              Ergonomía y Carga Física
-            </div>
-            <div class="space-y-2">
-              <button
-                @click="handleQuestionnaireSelect('riesgos-ergonomicos')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-user-injured text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Riesgos por Posturas Prolongadas y Movimientos Repetitivos
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('manipulacion-cargas')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-dumbbell text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Riesgos por Manipulación Manual de Cargas
-              </button>
-            </div>
-          </div> -->
-
-          <!-- Vigilancia médica por factores psicosociales -->
-          <!-- <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-brain text-emerald-500 mr-3"></i>
-              Factores Psicosociales
-            </div>
-            <div class="space-y-2">
-              <button
-                @click="handleQuestionnaireSelect('riesgo-psicosocial')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-chart-line text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Evaluación de Factores de Riesgo Psicosocial
-              </button>
-              <button
-                @click="handleQuestionnaireSelect('estres-laboral')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300 disabled"
-                disabled
-              >
-                <i class="fas fa-tired text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Seguimiento de Estrés Laboral y Fatiga Mental
-              </button>
-            </div>
-          </div> -->
-        </div>
-
-        <!-- Botón de cerrar -->
-        <div class="mt-8">
-          <button
-            class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-            @click="closeModal">
-            Cerrar
-          </button>
-=======
               <button type="button" @click="handleQuestionnaireSelect('entrevista-psicologica')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fa-regular fa-comments text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Entrevista Psicologica
@@ -713,7 +458,15 @@ const handleQuestionnaireSelect = (questionnaireType) => {
               </button>
             </div>
           </div>
->>>>>>> main
+        </div>
+
+        <div class="mt-8">
+          <button
+            type="button"
+            class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+            @click="closeModal">
+            Cerrar
+          </button>
         </div>
       </div>
     </Transition>

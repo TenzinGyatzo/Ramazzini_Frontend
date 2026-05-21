@@ -2,13 +2,9 @@
 import { ref, inject, watch, watchEffect, computed } from 'vue';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-<<<<<<< HEAD
-import { useRouter } from 'vue-router';
+import { useRouter, RouterLink } from 'vue-router';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';
 import PaisNacimientoAutocomplete from '@/components/selectors/PaisNacimientoAutocomplete.vue';
-=======
-import { useRouter, RouterLink } from 'vue-router';
->>>>>>> main
 
 const medicoFirmante = useMedicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();

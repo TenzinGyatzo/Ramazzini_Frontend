@@ -1,32 +1,11 @@
-<<<<<<< HEAD
 import { DocumentoEstado } from './nom024.interface';
+
 /** Usuario poblado desde el backend (findDocument con populate) */
 export interface UserRef {
-=======
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/**
- * Tipos de documentos del expediente. Muchos modelos están como `any` por compatibilidad con el cliente;
- * Evento e Informe longitudinal cardiometabólico declarados con más detalle.
- */
-export type Antidoping = any;
-export type Aptitud = any;
-export type Audiometria = any;
-export type Certificado = any;
-export type CertificadoExpedito = any;
-export type DocumentoExterno = any;
-export type ExamenVista = any;
-export type ExploracionFisica = any;
-export type HistoriaClinica = any;
-export type NotaMedica = any;
-export type ControlPrenatal = any;
-export type HistoriaOtologica = any;
-export type PrevioEspirometria = any;
-export type Receta = any;
-export type ConstanciaAptitud = any;
-export type EntrevistaPsicologica = any;
-export type TrastornosEstadoAnimo = any;
-export type CuestionarioProdromalBreve = any;
-export type TrastornoLimitePersonalidad = any;
+  _id: string;
+  username?: string;
+  nombre?: string;
+}
 
 export interface VisitaControlCondicionEsc {
   control?: string;
@@ -83,7 +62,6 @@ export interface TratamientoActualCardiometabolicoEsc {
 }
 
 export interface EventoSeguimientoCardiometabolico {
->>>>>>> main
   _id: string;
   fechaEventoSeguimientoCardiometabolico: string;
   motivoSeguimiento: string;
@@ -97,9 +75,15 @@ export interface EventoSeguimientoCardiometabolico {
   sintomasRelevantes?: string;
   riesgosActuales?: string;
   proximaRevisionSugerida?: string;
+  idTrabajador?: string;
+  rutaPDF?: string;
+  estado?: DocumentoEstado;
+  fechaFinalizacion?: string;
+  finalizadoPor?: string;
+  createdBy?: string | UserRef;
+  updatedBy?: string | UserRef;
 }
 
-<<<<<<< HEAD
 export interface Antidoping {
     _id: string;
     fechaAntidoping: string;
@@ -1090,7 +1074,7 @@ export interface TrastornoLimitePersonalidad {
     faltaIdentidadQuienEs?: string;
     esfuerzosEvitarAbandono?: string;
 }
-=======
+
 export interface CondicionControlResumenInformeLongitudinal {
   presente?: boolean;
   estadoActual?: string;
@@ -1194,5 +1178,7 @@ export interface InformeLongitudinalCardiometabolico {
   updatedBy?: unknown;
   createdAt?: string;
   updatedAt?: string;
+  estado?: DocumentoEstado;
+  fechaFinalizacion?: string;
+  finalizadoPor?: string;
 }
->>>>>>> main

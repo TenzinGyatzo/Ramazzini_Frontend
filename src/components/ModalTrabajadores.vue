@@ -711,9 +711,6 @@ const cancelarTransferencia = () => {
                   <span class="font-medium text-lg text-gray-700">Fecha de Ingreso</span>
                 </template>
               </FormKit>
-<<<<<<< HEAD
-              <div class="lg:col-span-2 grid gap-3 sm:grid-cols-2">
-=======
               <FormKit type="text" label="Nombre contacto de emergencia" name="contactoEmergenciaNombre"
                 placeholder="Ej: María López García"
                 :value="trabajadores.currentTrabajador?.contactoEmergenciaNombre || ''" />
@@ -723,7 +720,6 @@ const cancelarTransferencia = () => {
                 :validation-messages="{ phoneValidation: 'El número de teléfono debe tener entre 4 y 15 dígitos' }"
                 :value="trabajadores.currentTrabajador?.contactoEmergenciaTelefono || ''" />
               <div class="lg:col-span-2 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
->>>>>>> main
                 <FormKit type="text" label="Número de Empleado" name="numeroEmpleado" placeholder="Sólo números"
                   validation="optional|matches:/^[0-9]*$/"
                   :validation-messages="{

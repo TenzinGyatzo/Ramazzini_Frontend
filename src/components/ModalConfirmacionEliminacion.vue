@@ -77,18 +77,6 @@ const documentTypes = computed(() => {
     else if (route.includes('Previo Espirometria')) {
       types.previoEspirometria = (types.previoEspirometria || 0) + 1;
     }
-<<<<<<< HEAD
-=======
-    else if (route.includes('Documento Externo')) {
-      types.documentosExternos = (types.documentosExternos || 0) + 1;
-    }
-    // Si la ruta no contiene ninguno de los tipos específicos pero tiene extensión, es un documento externo
-    else if (!route.includes('Constancia de Aptitud') && !route.includes('Aptitud') && !route.includes('Historia Clinica') && !route.includes('Exploracion Fisica') && 
-             !route.includes('Examen Vista') && !route.includes('Historia Otologica') && !route.includes('Audiometria') && !route.includes('Antidoping') && !route.includes('Certificado') && !route.includes('Certificado Expedito') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Receta') && !route.includes('Entrevista Psicologica') && !route.includes('Trastornos Estado Animo') && !route.includes('Cuestionario Prodromal Breve') && !route.includes('Trastorno Limite Personalidad') && !route.includes('Evento Seguimiento Cardiometabolico') && !route.includes('Informe Longitudinal Cardiometabolico') && !route.includes('Control Prenatal') && (route.includes('.pdf') || route.includes('.png') || route.includes('.jpg') || 
-             route.includes('.jpeg') || route.includes('.doc') || route.includes('.docx'))) {
-      types.documentosExternos = (types.documentosExternos || 0) + 1;
-    }
->>>>>>> main
     else if (route.includes('Nota Medica')) {
       types.notasMedicas = (types.notasMedicas || 0) + 1;
     }
@@ -108,9 +96,14 @@ const documentTypes = computed(() => {
     else if (route.includes('Trastorno Limite Personalidad')) {
       types.trastornoLimitePersonalidad = (types.trastornoLimitePersonalidad || 0) + 1;
     }
-<<<<<<< HEAD
     else if (route.includes('Control Prenatal')) {
       types.controlPrenatal = (types.controlPrenatal || 0) + 1;
+    }
+    else if (route.includes('Evento Seguimiento Cardiometabolico')) {
+      types.eventoSeguimientoCardiometabolico = (types.eventoSeguimientoCardiometabolico || 0) + 1;
+    }
+    else if (route.includes('Informe Longitudinal Cardiometabolico')) {
+      types.informeLongitudinalCardiometabolico = (types.informeLongitudinalCardiometabolico || 0) + 1;
     }
     else if (route.includes('Documento Externo')) {
       types.documentosExternos = (types.documentosExternos || 0) + 1;
@@ -118,17 +111,11 @@ const documentTypes = computed(() => {
     // Si la ruta no contiene ninguno de los tipos específicos pero tiene extensión, es un documento externo
     else if (!route.includes('Nota Aclaratoria') && !route.includes('Constancia de Aptitud') && !route.includes('Aptitud') && !route.includes('Historia Clinica')
             && !route.includes('Exploracion Fisica') && !route.includes('Examen Vista') && !route.includes('Historia Otologica') && !route.includes('Audiometria') && !route.includes('Antidoping')
-            && !route.includes('Certificado') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Lesion') && !route.includes('Lesión') && !route.includes('Receta')
+            && !route.includes('Certificado') && !route.includes('Certificado Expedito') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Lesion') && !route.includes('Lesión') && !route.includes('Receta')
             && !route.includes('Entrevista Psicologica') && !route.includes('Trastornos Estado Animo') && !route.includes('Cuestionario Prodromal Breve') && !route.includes('Trastorno Limite Personalidad')
-            && !route.includes('Control Prenatal') && (route.includes('.pdf') || route.includes('.png') || route.includes('.jpg') || route.includes('.jpeg') || route.includes('.doc') || route.includes('.docx'))) {
+            && !route.includes('Control Prenatal') && !route.includes('Evento Seguimiento Cardiometabolico') && !route.includes('Informe Longitudinal Cardiometabolico')
+            && (route.includes('.pdf') || route.includes('.png') || route.includes('.jpg') || route.includes('.jpeg') || route.includes('.doc') || route.includes('.docx'))) {
       types.documentosExternos = (types.documentosExternos || 0) + 1;
-=======
-    else if (route.includes('Evento Seguimiento Cardiometabolico')) {
-      types.eventoSeguimientoCardiometabolico = (types.eventoSeguimientoCardiometabolico || 0) + 1;
-    }
-    else if (route.includes('Informe Longitudinal Cardiometabolico')) {
-      types.informeLongitudinalCardiometabolico = (types.informeLongitudinalCardiometabolico || 0) + 1;
->>>>>>> main
     }
   });
 

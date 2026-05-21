@@ -19,14 +19,11 @@ import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { obtenerRutaDocumento, obtenerNombreArchivo, obtenerFechaDocumento } from '@/helpers/rutas';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
-<<<<<<< HEAD
 import ModalFinalizarDocumento from '@/components/modals/ModalFinalizarDocumento.vue';
 import ModalAnularDocumento from '@/components/modals/ModalAnularDocumento.vue';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
 import DailyConsentModal from '@/components/DailyConsentModal.vue';
-=======
 import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
->>>>>>> main
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
@@ -68,11 +65,8 @@ const showDeleteModal = ref(false);
 const showFinalizeModal = ref(false);
 const showAnularModal = ref(false);
 const showCuestionariosModal = ref(false);
-<<<<<<< HEAD
 const showProfessionalDataModal = ref(false);
-=======
 const showSeguimientoProgramadoModal = ref(false);
->>>>>>> main
 const showResultadosClinicosPanel = ref(false);
 const selectedDocumentId = ref<string | null>(null);
 const selectedDocumentName = ref<string>('');
@@ -346,17 +340,13 @@ const yearsWithRecords = computed(() => {
   return Array.from(años).sort((a, b) => Number(b) - Number(a));
 });
 
-<<<<<<< HEAD
-const navigateTo = async (routeName, params) => {
-=======
 // Función para verificar si hay resultados para un año específico
 const tieneResultadosParaAnio = (year: string) => {
   const resultados = resultadosPorAnio.value?.[year];
   return resultados && Array.isArray(resultados) && resultados.length > 0;
 };
 
-const navigateTo = (routeName: string, params: Record<string, unknown>) => {
->>>>>>> main
+const navigateTo = async (routeName: string, params: Record<string, unknown>) => {
   if (!proveedorSaludStore.proveedorSalud) return;
 
   if (periodoDePruebaFinalizado.value) {
@@ -393,37 +383,12 @@ const navigateTo = (routeName: string, params: Record<string, unknown>) => {
     return;
   }
 
-<<<<<<< HEAD
   // Validar datos profesionales antes de crear cualquier documento
   if (routeName === 'crear-documento' && !validationResult.value.isValid) {
     showProfessionalDataModal.value = true;
     return;
   }
 
-  // Si es crear-documento, usar navegación con consentimiento preventivo
-  if (routeName === 'crear-documento' && trabajadores.currentTrabajadorId && trabajadores.currentTrabajador) {
-    await navigateWithDailyConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador.sexo,
-      to: {
-        name: routeName,
-        params,
-      },
-    });
-    // Solo actualizar stores si la navegación fue exitosa (el composable maneja la navegación)
-    if (routeName === 'crear-documento') {
-      documentos.setCurrentTypeOfDocument(params.tipoDocumento);
-      documentos.currentDocument = null;
-    }
-  } else {
-    // Para otras rutas, navegar normalmente
-    router.push({ name: routeName, params });
-    if (routeName === 'crear-documento') {
-      documentos.setCurrentTypeOfDocument(params.tipoDocumento);
-      documentos.currentDocument = null;
-    }
-=======
   const routeParams: RouteParamsRaw =
     routeName === 'crear-documento'
       ? {
@@ -442,11 +407,25 @@ const navigateTo = (routeName: string, params: Record<string, unknown>) => {
         }
       : (params as RouteParamsRaw);
 
-  router.push({ name: routeName, params: routeParams });
-  if (routeName === 'crear-documento') {
+  // Si es crear-documento, usar navegación con consentimiento preventivo
+  if (routeName === 'crear-documento' && trabajadores.currentTrabajadorId && trabajadores.currentTrabajador) {
+    await navigateWithDailyConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      trabajadorSexo: trabajadores.currentTrabajador.sexo,
+      to: {
+        name: routeName,
+        params: routeParams,
+      },
+    });
     documentos.setCurrentTypeOfDocument(params.tipoDocumento as string);
     documentos.currentDocument = null;
->>>>>>> main
+  } else {
+    router.push({ name: routeName, params: routeParams });
+    if (routeName === 'crear-documento') {
+      documentos.setCurrentTypeOfDocument(params.tipoDocumento as string);
+      documentos.currentDocument = null;
+    }
   }
 };
 
@@ -942,7 +921,6 @@ const añoMasReciente = computed(() => {
       </Transition>
 
       <Transition appear name="fade">
-<<<<<<< HEAD
         <ModalFinalizarDocumento v-if="showFinalizeModal && selectedDocumentId && selectedDocumentType" 
           :documentId="selectedDocumentId"
           :documentType="selectedDocumentType"
@@ -965,8 +943,18 @@ const añoMasReciente = computed(() => {
       </Transition>
 
       <Transition appear name="fade">
-        <ModalCuestionarios v-if="showCuestionariosModal" @closeModal="toggleCuestionariosModal" />
+        <ModalCuestionarios
+          v-if="showCuestionariosModal"
+          @closeModal="toggleCuestionariosModal"
+          @openSeguimientoProgramado="openSeguimientoProgramadoModal"
+        />
       </Transition>
+
+      <ModalSeguimientoProgramadoCardiometabolico
+        :visible="showSeguimientoProgramadoModal && !!trabajadores.currentTrabajadorId"
+        :trabajador-id="trabajadores.currentTrabajadorId ?? null"
+        @close="showSeguimientoProgramadoModal = false"
+      />
 
       <Transition appear name="fade">
         <ModalDatosProfesionales 
@@ -989,20 +977,6 @@ const añoMasReciente = computed(() => {
           @cancel="handleConsentCancel"
         />
       </Transition>
-=======
-        <ModalCuestionarios
-          v-if="showCuestionariosModal"
-          @closeModal="toggleCuestionariosModal"
-          @openSeguimientoProgramado="openSeguimientoProgramadoModal"
-        />
-      </Transition>
-
-      <ModalSeguimientoProgramadoCardiometabolico
-        :visible="showSeguimientoProgramadoModal && !!trabajadores.currentTrabajadorId"
-        :trabajador-id="trabajadores.currentTrabajadorId ?? null"
-        @close="showSeguimientoProgramadoModal = false"
-      />
->>>>>>> main
 
       <ResultadosClinicosPanel 
         v-if="showResultadosClinicosPanel && trabajadores.currentTrabajadorId" 

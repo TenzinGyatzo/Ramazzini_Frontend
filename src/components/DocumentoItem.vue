@@ -216,17 +216,9 @@ const canEditDocument = (documentType) => {
   if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
     return canManageDocumentosDiagnostico.value;
   }
-<<<<<<< HEAD
-
-  // Otros documentos / cuestionarios adicionales (incluye certificado expedito y psicológicos)
-  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
+  // Otros documentos / cuestionarios adicionales (incluye certificado expedito, psicológicos y cardiometabólicos)
+  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad', 'eventoseguimientocardiometabolico', 'informelongitudinalcardiometabolico'].includes(tipoSinEspacios)) {
     return canManageOtrosDocumentos.value;
-=======
-  
-  // Cuestionarios adicionales (incluye certificadoExpedito)
-  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
-    return canManageCuestionariosAdicionales.value;
->>>>>>> main
   }
 
   // Documentos externos
@@ -251,13 +243,8 @@ const handleEditDocument = (documentoId, documentoTipo) => {
     executeIfCanManageDocumentosDiagnostico(() => {
       editarDocumento(documentoId, documentoTipo);
     }, 'editar documentos de diagnóstico y certificación');
-<<<<<<< HEAD
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad', 'eventoseguimientocardiometabolico', 'informelongitudinalcardiometabolico'].includes(tipoSinEspacios)) {
     executeIfCanManageOtrosDocumentos(() => {
-=======
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
-    executeIfCanManageCuestionariosAdicionales(() => {
->>>>>>> main
       editarDocumento(documentoId, documentoTipo);
     }, 'editar otros documentos');
   } else if (tipoSinEspacios === 'documentoexterno') {
@@ -297,13 +284,8 @@ const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
     executeIfCanManageDocumentosDiagnostico(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar documentos de diagnóstico y certificación');
-<<<<<<< HEAD
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad', 'eventoseguimientocardiometabolico', 'informelongitudinalcardiometabolico'].includes(tipoSinEspacios)) {
     executeIfCanManageOtrosDocumentos(() => {
-=======
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
-    executeIfCanManageCuestionariosAdicionales(() => {
->>>>>>> main
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar otros documentos');
   } else if (tipoSinEspacios === 'documentoexterno') {
@@ -2343,17 +2325,13 @@ const construirRutaYNombrePDF = () => {
     'informelongitudinalcardiometabolico': props.informeLongitudinalCardiometabolico,
   }[tipoSinEspacios];
 
-<<<<<<< HEAD
   // Verificar que el documento exista
   if (!doc) {
     console.warn('[construirRutaYNombrePDF] Documento no encontrado para tipo:', tipoSinEspacios);
     return { ruta: null, nombre: null, updatedAt: null };
   }
-=======
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico;
->>>>>>> main
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaReporteLesion || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaReporteLesion || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico;
 
   // Nombres de documentos (DEBEN coincidir con los del backend para construir rutas correctas)
   const tiposDocumentos = {
@@ -2512,11 +2490,7 @@ onMounted(() => {
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
-<<<<<<< HEAD
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.lesion, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad], () => {
-=======
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico], () => {
->>>>>>> main
+watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.lesion, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico], () => {
   verificarDisponibilidadPDF();
 }, { deep: true });
 
@@ -4846,15 +4820,6 @@ watch(() => props.lesion, (lesion) => {
             <!-- Contenedor principal del visor -->
             <div class="relative flex min-h-0 min-w-0 flex-1 flex-col px-2 pb-4 sm:px-4">
                 <!-- Contenedor del visor de PDF -->
-<<<<<<< HEAD
-                <div class="flex-1 mt-16 sm:mt-20 mx-2 sm:mx-4 mb-4 bg-white rounded-xl shadow-2xl overflow-hidden">
-                    <VPdfViewer
-                        :src="pdfUrl"
-                        :initialThumbnails-visible="initialThumbnailsVisible"
-                        :initialScale="initialScale"
-                        locale="customLang"
-                        :localization="localization"
-=======
                 <div
                     ref="pdfViewerContainerRef"
                     class="pdf-viewer-host mt-16 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl bg-white shadow-2xl sm:mt-20"
@@ -4871,7 +4836,6 @@ watch(() => props.lesion, (lesion) => {
                         locale="customLang"
                         :localization="localization"
                         @loaded="handlePdfViewerLoaded"
->>>>>>> main
                     />
                 </div>
             </div>

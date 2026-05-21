@@ -138,41 +138,30 @@ onMounted(() => {
   
   formData.resetFormData();
 
-<<<<<<< HEAD
   // Detectar si se viene con un documento origen para nota aclaratoria
   // Priorizar valores preexistentes (establecidos por FormStepper) sobre query params
   if (tipoDocumento.value === 'notaAclaratoria') {
     if (documentoOrigenTipoPreexistente && documentoOrigenIdPreexistente) {
-      // Restaurar valores que ya estaban en el store antes del reset
       formData.formDataNotaAclaratoria.documentoOrigenTipo = documentoOrigenTipoPreexistente;
       formData.formDataNotaAclaratoria.documentoOrigenId = documentoOrigenIdPreexistente;
     } else if (documentoOrigenTipoTemp && documentoOrigenIdTemp) {
-      // Si no había valores preexistentes, usar los query params
       formData.formDataNotaAclaratoria.documentoOrigenTipo = String(documentoOrigenTipoTemp);
       formData.formDataNotaAclaratoria.documentoOrigenId = String(documentoOrigenIdTemp);
     }
   }
 
-  // Cargar documento si existe, o limpiar si es nuevo documento
-  if (documentoId.value && tipoDocumento.value) {
-    // Limpiar currentDocument antes de cargar para que el watcher en FormStepper
-    // detecte correctamente el cambio de null a documento cargado
-    documentos.currentDocument = null;
-    
-    documentos.fetchDocumentById(tipoDocumento.value, trabajadores.currentTrabajadorId, documentoId.value)
-=======
   const esInformeCm =
     String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico';
   const editandoInformeCm = esInformeCm && !!String(documentoId.value || '');
 
-  // Cargar documento si existe
+  // Cargar documento si existe, o limpiar si es nuevo documento
   if (documentoId.value && tipoDocumento.value) {
+    documentos.currentDocument = null;
     if (editandoInformeCm) {
       informeCmDocumentoHidratado.value = false;
     }
     documentos
       .fetchDocumentById(tipoDocumento.value, trabajadores.currentTrabajadorId, documentoId.value)
->>>>>>> main
       .then(() => {
         if (documentos.currentDocument) {
           formData.setFormDataFromDocument(documentos.currentDocument, tipoDocumento.value);
@@ -180,29 +169,23 @@ onMounted(() => {
           console.error('No se encontraron datos para el documento especificado.');
         }
       })
-<<<<<<< HEAD
-      .catch(error => {
+      .catch((error) => {
         console.error('Error al cargar los datos del documento:', error);
         if (error.response?.status === 403) {
-          toast.open({ 
-            message: 'No tienes permiso para editar este documento o ya ha sido finalizado.', 
-            type: 'error' 
+          toast.open({
+            message: 'No tienes permiso para editar este documento o ya ha sido finalizado.',
+            type: 'error',
           });
           router.back();
         }
-      });
-  } else {
-    // Si es un nuevo documento (sin documentoId), limpiar el currentDocument 
-    // para que FormStepper inicie desde el paso 1
-    documentos.currentDocument = null;
-=======
-      .catch((error) => console.error('Error al cargar los datos del documento:', error))
+      })
       .finally(() => {
         if (editandoInformeCm) {
           informeCmDocumentoHidratado.value = true;
         }
       });
->>>>>>> main
+  } else {
+    documentos.currentDocument = null;
   }
 
   // Consultar altura disponible para control prenatal (una sola vez al iniciar)

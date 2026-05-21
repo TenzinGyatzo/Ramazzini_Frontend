@@ -1,11 +1,6 @@
 <script setup lang="ts">
-<<<<<<< HEAD
 import { ref, computed, watch, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-=======
-import { ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
->>>>>>> main
 import AuthAPI from "@/api/AuthAPI";
 import axios from "axios";
 

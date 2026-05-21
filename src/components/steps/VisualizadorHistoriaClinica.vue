@@ -106,13 +106,8 @@ const antecedentesLaborales = ref([
           '&nbsp;' }} )</p>
         <p class="flex-1 md:flex-none">Periódico ( {{ historiaClinicaData.motivoExamen === 'Periódico' ?
           'X' : '&nbsp;' }} )</p>
-<<<<<<< HEAD
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
-          formatDateDDMMYYYY(formData.formDataHistoriaClinica.fechaHistoriaClinica) }}</span></p>
-=======
-        <p class="w-full md:w-auto">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(historiaClinicaData.fechaHistoriaClinica) }}</span></p>
->>>>>>> main
       </div>
     </div>
 
