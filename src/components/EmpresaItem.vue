@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { RouterLink } from 'vue-router';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 
-const router = useRouter();
 const { canManageEmpresas, executeIfCanManageEmpresas } = usePermissionRestrictions();
 
 defineProps({
@@ -37,8 +36,10 @@ const handleEliminarEmpresa = (id: string, nombreComercial: string) => {
     <div class="group">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
             <!-- Contenido principal -->
-            <button type="button" class="w-full text-center p-6 hover:bg-gray-50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-            @click="empresa?._id ? router.push({ name: 'centros-trabajo', params: { idEmpresa: empresa._id } }) : null">
+            <RouterLink
+            v-if="empresa?._id"
+            :to="{ name: 'centros-trabajo', params: { idEmpresa: empresa._id } }"
+            class="empresa-card-link block w-full text-center p-6 hover:bg-gray-50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-200">
             
             <img v-if="empresa.logotipoEmpresa?.data"
                 :src="'/uploads/logos/' + empresa.logotipoEmpresa.data + '?t=' + empresa.updatedAt"
@@ -64,7 +65,7 @@ const handleEliminarEmpresa = (id: string, nombreComercial: string) => {
                 Sin razón social registrada
             </p>
             
-            </button>
+            </RouterLink>
 
             <!-- Barra de acciones -->
             <div class="border-t border-gray-100 bg-gray-50 px-6 py-3">
@@ -111,6 +112,11 @@ const handleEliminarEmpresa = (id: string, nombreComercial: string) => {
 </template>
 
 <style scoped>
+.empresa-card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
 /* Animaciones suaves para las transiciones */
 .group {
     transition: all 0.3s ease;

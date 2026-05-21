@@ -2,9 +2,13 @@
 import { ref, inject, watchEffect, computed } from 'vue';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+<<<<<<< HEAD
 import { useRouter } from 'vue-router';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';
 import PaisNacimientoAutocomplete from '@/components/selectors/PaisNacimientoAutocomplete.vue';
+=======
+import { useRouter, RouterLink } from 'vue-router';
+>>>>>>> main
 
 const tecnicoFirmante = useTecnicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -284,7 +288,7 @@ const firmaSrc = computed(() => `${baseURL}/assets/signatories/${tecnicoFirmante
 
             <hr class="my-3">
             <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
-              <button type="button" class="text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg mb-1" @click="volver">Volver</button>
+              <RouterLink :to="{ name: 'inicio' }" class="nav-action-link block text-center text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg mb-1">Volver</RouterLink>
               <div class="w-full sm:w-1/2 pr-2">
                 <FormKit type="submit">
                   <span v-if="tecnicoFirmante.loading">Guardando...</span>

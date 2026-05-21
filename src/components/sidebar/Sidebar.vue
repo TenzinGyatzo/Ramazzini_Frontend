@@ -103,6 +103,8 @@ const documentTypeLabels = {
   trastornosEstadoAnimo: "Trastornos Estado Animo",
   cuestionarioProdromalBreve: "Cuestionario Prodromal Breve",
   trastornoLimitePersonalidad: "Trastorno Limite Personalidad",
+  eventoSeguimientoCardiometabolico: "Evento Seguimiento Cardiometabolico",
+  informeLongitudinalCardiometabolico: "Informe Longitudinal Cardiometabolico",
 };
 
 // Computed properties para mejorar la legibilidad

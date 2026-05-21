@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch, inject, provide, reactive } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -846,15 +846,14 @@ const mostrarTipScrollLateral = () => {
           </div>
 
           <div class="ml-auto flex items-center gap-3">
-            <button
-              type="button"
-              @click="router.push({ name: 'dashboard-rt', params: { idEmpresa: empresasStore.currentEmpresaId } })"
-              class="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-xs md:text-sm lg:text-base font-normal rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-200 min-w-40"
+            <RouterLink
+              :to="{ name: 'dashboard-rt', params: { idEmpresa: empresasStore.currentEmpresaId } }"
+              class="nav-action-link flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-xs md:text-sm lg:text-base font-normal rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-200 min-w-40"
             >
               <i class="fas fa-chart-line text-xs md:text-sm lg:text-base"></i>
               <span class="hidden xl:inline">Estadísticas RTs</span>
               <span class="xl:hidden">Estadísticas</span>
-            </button>
+            </RouterLink>
             <GreenButton text="Exportar RTs" @click="exportarFiltrados">
               <template #icon>
                 <i class="fas fa-file-excel text-sm xl:text-base group-hover:scale-110 transition-transform duration-200"></i>

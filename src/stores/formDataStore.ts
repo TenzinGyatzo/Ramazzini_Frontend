@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
+import { normalizarCamposAuditoriaPayload } from '@/helpers/mongoId';
 
 export const useFormDataStore = defineStore('formData', () => {
   const formDataAntidoping = ref({}); // Estado compartido
@@ -24,6 +25,8 @@ export const useFormDataStore = defineStore('formData', () => {
   const formDataTrastornosEstadoAnimo = ref({}); // Estado compartido
   const formDataCuestionarioProdromalBreve = ref({}); // Estado compartido
   const formDataTrastornoLimitePersonalidad = ref({}); // Estado compartido
+  const formDataEventoSeguimientoCardiometabolico = ref({}); // Estado compartido
+  const formDataInformeLongitudinalCardiometabolico = ref({}); // Estado compartido
 
   const setFormDataFromDocument = (documento, tipoDocumento) => {
     if (!documento) {
@@ -31,69 +34,77 @@ export const useFormDataStore = defineStore('formData', () => {
       return;
     }
 
+    const doc = normalizarCamposAuditoriaPayload({ ...documento });
+
     switch (tipoDocumento) {
       case 'antidoping':
-        formDataAntidoping.value = { ...documento };
+        formDataAntidoping.value = doc;
         break;
       case 'aptitud':
-        formDataAptitud.value = { ...documento };
+        formDataAptitud.value = doc;
         break;
       case 'audiometria':
-        formDataAudiometria.value = { ...documento };
+        formDataAudiometria.value = doc;
         break;
       case 'certificado':
-        formDataCertificado.value = { ...documento };
+        formDataCertificado.value = doc;
         break;
       case 'certificadoExpedito':
-        formDataCertificadoExpedito.value = { ...documento };
+        formDataCertificadoExpedito.value = doc;
         break;
       case 'documentoExterno':
-        formDataDocumentoExterno.value = { ...documento };
+        formDataDocumentoExterno.value = doc;
         break;
       case 'examenVista':
-        formDataExamenVista.value = { ...documento };
+        formDataExamenVista.value = doc;
         break;
       case 'exploracionFisica':
-        formDataExploracionFisica.value = { ...documento };
+        formDataExploracionFisica.value = doc;
         break;
       case 'historiaClinica':
-        formDataHistoriaClinica.value = { ...documento };
+        formDataHistoriaClinica.value = doc;
         break;
       case 'notaMedica':
-        formDataNotaMedica.value = { ...documento };
+        formDataNotaMedica.value = doc;
         break;
       case 'notaAclaratoria':
         formDataNotaAclaratoria.value = { ...documento };
         break;
       case 'controlPrenatal':
-        formDataControlPrenatal.value = { ...documento };
+        formDataControlPrenatal.value = doc;
         break;
       case 'historiaOtologica':
-        formDataHistoriaOtologica.value = { ...documento };
+        formDataHistoriaOtologica.value = doc;
         break;
       case 'previoEspirometria':
-        formDataPrevioEspirometria.value = { ...documento };
+        formDataPrevioEspirometria.value = doc;
         break;
       case 'receta':
-        formDataReceta.value = { ...documento };
+        formDataReceta.value = doc;
         break;
       case 'constanciaAptitud':
-        formDataConstanciaAptitud.value = { ...documento };
+        formDataConstanciaAptitud.value = doc;
         break;
       case 'lesion':
         formDataLesion.value = { ...documento };
         break;
       case 'entrevistaPsicologica':
-        formDataEntrevistaPsicologica.value = { ...documento };
+        formDataEntrevistaPsicologica.value = doc;
         break;
       case 'trastornosEstadoAnimo':
-        formDataTrastornosEstadoAnimo.value = { ...documento };
+        formDataTrastornosEstadoAnimo.value = doc;
         break;
       case 'cuestionarioProdromalBreve':
-        formDataCuestionarioProdromalBreve.value = { ...documento };
+        formDataCuestionarioProdromalBreve.value = doc;
         break;
       case 'trastornoLimitePersonalidad':
-        formDataTrastornoLimitePersonalidad.value = { ...documento };
+        formDataTrastornoLimitePersonalidad.value = doc;
+        break;
+      case 'eventoSeguimientoCardiometabolico':
+        formDataEventoSeguimientoCardiometabolico.value = doc;
+        break;
+      case 'informeLongitudinalCardiometabolico':
+        formDataInformeLongitudinalCardiometabolico.value = doc;
         break;
       default:
         console.error('Tipo de documento no reconocido:', tipoDocumento);
@@ -132,6 +143,8 @@ export const useFormDataStore = defineStore('formData', () => {
     formDataTrastornosEstadoAnimo.value = {};
     formDataCuestionarioProdromalBreve.value = {};
     formDataTrastornoLimitePersonalidad.value = {};
+    formDataEventoSeguimientoCardiometabolico.value = {};
+    formDataInformeLongitudinalCardiometabolico.value = {};
   };
 
   const consultarAlturaDisponible = async (trabajadorId: string) => {
@@ -176,9 +189,11 @@ export const useFormDataStore = defineStore('formData', () => {
     formDataTrastornosEstadoAnimo,
     formDataCuestionarioProdromalBreve,
     formDataTrastornoLimitePersonalidad,
-    setFormDataFromDocument,
+    formDataEventoSeguimientoCardiometabolico,
+    formDataInformeLongitudinalCardiometabolico,
+    consultarAlturaDisponible,
     resetFormData,
     setExamenVistaCeguera,
-    consultarAlturaDisponible
+    setFormDataFromDocument,
   };
 });

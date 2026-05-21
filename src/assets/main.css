@@ -63,3 +63,25 @@
     }
   }
 }
+
+/* Enlaces RouterLink: conservar apariencia de botones/tarjetas (clic central / Ctrl+clic) */
+a.layout-nav-link,
+a.nav-action-link,
+a.empresa-card-link,
+a.centro-card-link {
+  text-decoration: none;
+}
+
+a.empresa-card-link,
+a.centro-card-link {
+  display: block;
+}
+
+a.nav-action-link.flex,
+a.nav-action-link[class*='flex'] {
+  display: inline-flex;
+}
+
+a.layout-nav-link:not([class*='text-white']):not([class*='text-emerald']):not([class*='text-gray']) {
+  color: inherit;
+}

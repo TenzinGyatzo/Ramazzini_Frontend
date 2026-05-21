@@ -207,6 +207,8 @@ export const obtenerFechaDocumento = (documento) => {
         'fechaTrastornosEstadoAnimo',
         'fechaCuestionarioProdromalBreve',
         'fechaTrastornoLimitePersonalidad',
+        'fechaEventoSeguimientoCardiometabolico',
+        'fechaInformeLongitudinalCardiometabolico',
     ];
 
     for (const campo of camposFecha) {

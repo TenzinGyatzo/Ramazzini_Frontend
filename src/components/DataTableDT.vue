@@ -501,27 +501,6 @@ function inicializarDataTable() {
       ]
     });
 
-    $(document).on('click', '.btn-expediente', function (e) {
-      // Solo intercepta si NO es clic con Ctrl/Command o botón medio
-      if (e.ctrlKey || e.metaKey || e.which === 2) return;
-
-      e.preventDefault();
-
-      const idTrabajador = $(this).data('id');
-      const trabajador = props.rows.find(t => t._id === idTrabajador);
-
-      if (trabajador) {
-        router.push({
-          name: 'expediente-medico',
-          params: {
-            idEmpresa: empresas.currentEmpresaId,
-            idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-            idTrabajador: trabajador._id
-          }
-        });
-      }
-    });
-
     $(document).on('click', '.btn-rt', function () {
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
@@ -591,7 +570,6 @@ function inicializarDataTable() {
 }
 
 onBeforeUnmount(() => {
-  $(document).off('click', '.btn-expediente');
   $(document).off('click', '.btn-rt');
   $(document).off('click', '.btn-riesgos');
   $(document).off('click', '.btn-editar');
@@ -848,6 +826,26 @@ watch(() => props.tablaLista, (nuevoValor) => {
     });
   }
 });
+
+/** Refresco del dataset cuando Pinia sustituye el arreglo (p. ej. tras borrar/importar). */
+watch(
+  () => props.rows,
+  (newRows) => {
+    if (!dataTableInstance) return;
+    const rows = Array.isArray(newRows) ? newRows : [];
+    dataTableInstance.clear();
+    dataTableInstance.rows.add(rows);
+    dataTableInstance.order([[0, 'desc']]);
+    const tieneNumeroEmpleado = rows.some(
+      (row: any) =>
+        row.numeroEmpleado &&
+        row.numeroEmpleado !== '-' &&
+        String(row.numeroEmpleado).trim() !== ''
+    );
+    dataTableInstance.column(1).visible(tieneNumeroEmpleado);
+    aplicarTodosLosFiltrosDesdeLocalStorage();
+  }
+);
 
 // Función helper para calcular estado de vigencia y días restantes
 function calcularEstadoVigencia(fechaAptitudPuesto: string | Date | null): { estado: string; diasRestantes: number; diasTranscurridos: number; color: string } {

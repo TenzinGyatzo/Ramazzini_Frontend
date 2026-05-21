@@ -32,6 +32,8 @@ import VisualizadorEntrevistaPsicologica from '@/components/steps/VisualizadorEn
 import VisualizadorTrastornosEstadoAnimo from '@/components/steps/VisualizadorTrastornosEstadoAnimo.vue';
 import VisualizadorCuestionarioProdromalBreve from '@/components/steps/VisualizadorCuestionarioProdromalBreve.vue';
 import VisualizadorTrastornoLimitePersonalidad from '@/components/steps/VisualizadorTrastornoLimitePersonalidad.vue';
+import VisualizadorEventoSeguimientoCardiometabolico from '@/components/steps/VisualizadorEventoSeguimientoCardiometabolico.vue';
+import VisualizadorInformeLongitudinalCardiometabolico from '@/components/steps/VisualizadorInformeLongitudinalCardiometabolico.vue';
 import {
   ORIENTACION_SIN_HALLAZGO,
   CONCLUSION_SIN_HALLAZGOS,
@@ -58,6 +60,50 @@ const tipoDesdeRuta = route.params.tipoDocumento;
 if (tipoDesdeRuta) {
   documentos.setCurrentTypeOfDocument(String(tipoDesdeRuta));
 }
+
+/**
+ * Gate de los hijos: empresa, centro y trabajador deben estar resueltos antes de montar
+ * `FormStepper` y los `Visualizador*`. Sus pasos (Step1) acceden a `currentEmpresa.nombreComercial`,
+ * `currentCentroTrabajo.nombreCentro` y `currentTrabajador.nombre` en `onMounted`. Si no están, truenan.
+ * Tras recargar, `setup` corre antes de los `fetch*ById` del `onMounted` del padre.
+ *
+ * ESC: además necesita `fetchAllDocuments` (exploraciones físicas en `documentsByYear`) para Step 2/3;
+ * sin eso, al recargar CrearDocumentoView los datos de EF no existían hasta venir del expediente.
+ *
+ * Informe longitudinal CM: `fetchAllDocuments` para poblar eventos CM en `documentsByYear` (paso 1).
+ * En edición, además esperar `fetchDocumentById` antes de montar hijos: si el visualizador
+ * arranca con el formulario vacío (tras `resetFormData`) muestra «No hay suficientes datos…»
+ * aunque el informe guardado sí tenga `eventosConcentrados`.
+ */
+const exploracionesEscListas = ref(
+  String(route.params.tipoDocumento || '') !== 'eventoSeguimientoCardiometabolico',
+);
+
+const informeCmDocumentsListas = ref(
+  String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico',
+);
+
+const informeCmDocumentoHidratado = ref(
+  String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico' ||
+    !String(route.params.idDocumento || ''),
+);
+
+const datosListos = computed(() => {
+  if (
+    !empresas.currentEmpresa?.nombreComercial ||
+    !centrosTrabajo.currentCentroTrabajo?.nombreCentro ||
+    !trabajadores.currentTrabajador?.nombre
+  ) {
+    return false;
+  }
+  if (documentos.currentTypeOfDocument === 'eventoSeguimientoCardiometabolico') {
+    return exploracionesEscListas.value;
+  }
+  if (documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico') {
+    return informeCmDocumentsListas.value && informeCmDocumentoHidratado.value;
+  }
+  return true;
+});
 
 const empresaId = ref('');
 const centroTrabajoId = ref('');
@@ -92,6 +138,7 @@ onMounted(() => {
   
   formData.resetFormData();
 
+<<<<<<< HEAD
   // Detectar si se viene con un documento origen para nota aclaratoria
   // Priorizar valores preexistentes (establecidos por FormStepper) sobre query params
   if (tipoDocumento.value === 'notaAclaratoria') {
@@ -113,6 +160,19 @@ onMounted(() => {
     documentos.currentDocument = null;
     
     documentos.fetchDocumentById(tipoDocumento.value, trabajadores.currentTrabajadorId, documentoId.value)
+=======
+  const esInformeCm =
+    String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico';
+  const editandoInformeCm = esInformeCm && !!String(documentoId.value || '');
+
+  // Cargar documento si existe
+  if (documentoId.value && tipoDocumento.value) {
+    if (editandoInformeCm) {
+      informeCmDocumentoHidratado.value = false;
+    }
+    documentos
+      .fetchDocumentById(tipoDocumento.value, trabajadores.currentTrabajadorId, documentoId.value)
+>>>>>>> main
       .then(() => {
         if (documentos.currentDocument) {
           formData.setFormDataFromDocument(documentos.currentDocument, tipoDocumento.value);
@@ -120,6 +180,7 @@ onMounted(() => {
           console.error('No se encontraron datos para el documento especificado.');
         }
       })
+<<<<<<< HEAD
       .catch(error => {
         console.error('Error al cargar los datos del documento:', error);
         if (error.response?.status === 403) {
@@ -134,6 +195,14 @@ onMounted(() => {
     // Si es un nuevo documento (sin documentoId), limpiar el currentDocument 
     // para que FormStepper inicie desde el paso 1
     documentos.currentDocument = null;
+=======
+      .catch((error) => console.error('Error al cargar los datos del documento:', error))
+      .finally(() => {
+        if (editandoInformeCm) {
+          informeCmDocumentoHidratado.value = true;
+        }
+      });
+>>>>>>> main
   }
 
   // Consultar altura disponible para control prenatal (una sola vez al iniciar)
@@ -160,6 +229,26 @@ onMounted(() => {
       }
     });
     return;
+  }
+
+  if (
+    String(tipoDocumento.value || '') === 'eventoSeguimientoCardiometabolico' &&
+    trabajadores.currentTrabajadorId
+  ) {
+    exploracionesEscListas.value = false;
+    documentos.fetchAllDocuments(trabajadores.currentTrabajadorId).finally(() => {
+      exploracionesEscListas.value = true;
+    });
+  }
+
+  if (
+    String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico' &&
+    trabajadores.currentTrabajadorId
+  ) {
+    informeCmDocumentsListas.value = false;
+    documentos.fetchAllDocuments(trabajadores.currentTrabajadorId).finally(() => {
+      informeCmDocumentsListas.value = true;
+    });
   }
 });
 
@@ -203,6 +292,8 @@ watchEffect(async () => {
       trastornosEstadoAnimo: formData.formDataTrastornosEstadoAnimo,
       cuestionarioProdromalBreve: formData.formDataCuestionarioProdromalBreve,
       trastornoLimitePersonalidad: formData.formDataTrastornoLimitePersonalidad,
+      eventoSeguimientoCardiometabolico: formData.formDataEventoSeguimientoCardiometabolico,
+      informeLongitudinalCardiometabolico: formData.formDataInformeLongitudinalCardiometabolico,
     };
 
     const documentoForm = documentoMap[tipoDocumento.value];
@@ -569,7 +660,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
   <Transition appear mode="out-in" name="slide-up">
     <div>
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'antidoping'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'antidoping'"
           class="max-w-3xl mx-auto flex flex-wrap lg:flex-nowrap gap-3 md:gap-6 justify-center">
           <div class="w-full lg:w-1/2">
             <FormStepper />
@@ -581,7 +672,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'aptitud'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'aptitud'"
           class=" flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -607,7 +698,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'audiometria'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'audiometria'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -619,7 +710,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'certificado'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'certificado'"
           class="max-w-6xl mx-auto flex flex-wrap lg:flex-nowrap gap-3 md:gap-6 justify-center">
           <div class="w-full xl:w-1/3">
             <FormStepper />
@@ -631,7 +722,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
       
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'certificadoExpedito'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'certificadoExpedito'"
           class="max-w-6xl mx-auto flex flex-wrap lg:flex-nowrap gap-3 md:gap-6 justify-center">
           <div class="w-full xl:w-1/3">
             <FormStepper />
@@ -643,7 +734,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">  
-        <div v-if="documentos.currentTypeOfDocument === 'exploracionFisica'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'exploracionFisica'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -672,7 +763,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">  
-        <div v-if="documentos.currentTypeOfDocument === 'examenVista'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'examenVista'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -684,7 +775,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'historiaClinica'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'historiaClinica'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -731,7 +822,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">  
-        <div v-if="documentos.currentTypeOfDocument === 'notaMedica'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'notaMedica'"
           class="max-w-6xl mx-auto flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/3">
             <FormStepper />
@@ -755,7 +846,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition> 
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'controlPrenatal'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'controlPrenatal'"
           class="max-w-6xl mx-auto flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/3">
             <FormStepper />
@@ -872,7 +963,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
       
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'historiaOtologica'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'historiaOtologica'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -937,7 +1028,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'previoEspirometria'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'previoEspirometria'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -1002,7 +1093,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">  
-        <div v-if="documentos.currentTypeOfDocument === 'receta'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'receta'"
           class="max-w-6xl mx-auto flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/3">
             <FormStepper />
@@ -1014,7 +1105,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition> 
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'constanciaAptitud'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'constanciaAptitud'"
           class="max-w-6xl mx-auto flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/3">
             <FormStepper />
@@ -1038,7 +1129,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'entrevistaPsicologica'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'entrevistaPsicologica'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -1068,7 +1159,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'trastornosEstadoAnimo'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'trastornosEstadoAnimo'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -1098,7 +1189,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'cuestionarioProdromalBreve'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'cuestionarioProdromalBreve'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -1128,7 +1219,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
       </Transition>
 
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="documentos.currentTypeOfDocument === 'trastornoLimitePersonalidad'"
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'trastornoLimitePersonalidad'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
@@ -1153,6 +1244,30 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorTrastornoLimitePersonalidad />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'eventoSeguimientoCardiometabolico'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/4">
+            <FormStepper />
+          </div>
+          <div class="w-full xl:w-3/4">
+            <VisualizadorEventoSeguimientoCardiometabolico />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/4">
+            <FormStepper />
+          </div>
+          <div class="w-full xl:w-3/4">
+            <VisualizadorInformeLongitudinalCardiometabolico />
           </div>
         </div>
       </Transition>

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { RouterLink } from 'vue-router';
 import { ref, onMounted, watch } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 
-const router = useRouter();
 const trabajadores = useTrabajadoresStore();
 const { canManageCentrosTrabajo, executeIfCanManageCentrosTrabajo } = usePermissionRestrictions();
 
@@ -100,9 +99,9 @@ onMounted(() => {
     <div v-if="centro && empresa" class="group">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
             <!-- Contenido principal -->
-            <button type="button"
-                class="w-full text-left p-6 hover:bg-gray-50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                @click="router.push({ name: 'trabajadores', params: { idEmpresa: empresa._id, idCentroTrabajo: centro._id } })">
+            <RouterLink
+                :to="{ name: 'trabajadores', params: { idEmpresa: empresa._id, idCentroTrabajo: centro._id } }"
+                class="centro-card-link block w-full text-left p-6 hover:bg-gray-50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                 
                 <!-- Header con icono y título -->
                 <div class="flex items-start justify-between mb-4">
@@ -149,7 +148,7 @@ onMounted(() => {
                     
 
                 </div>
-            </button>
+            </RouterLink>
 
             <!-- Barra de acciones -->
             <div class="border-t border-gray-100 bg-gray-50 px-6 py-3">
@@ -196,6 +195,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.centro-card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
 /* Animaciones suaves para las transiciones */
 .group {
     transition: all 0.3s ease;

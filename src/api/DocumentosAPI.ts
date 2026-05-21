@@ -85,6 +85,14 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/trastornoLimitePersonalidad`);
     },
 
+    getEventoSeguimientoCardiometabolico(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/eventoSeguimientoCardiometabolico`);
+    },
+
+    getInformeLongitudinalCardiometabolico(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/informeLongitudinalCardiometabolico`);
+    },
+
     getAlturaDisponible(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/altura-disponible`);
     },

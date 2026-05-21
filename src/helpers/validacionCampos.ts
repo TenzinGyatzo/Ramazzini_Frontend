@@ -309,6 +309,34 @@ function validarP3NivelProblemaCausado(valor: any): boolean {
   return esOpcionNivelProblemaP3(valor);
 }
 
+function validarMongoIdFlexible(valor: any): boolean {
+  if (!validarTexto(valor)) return false;
+  return /^[a-f\d]{24}$/i.test(String(valor).trim());
+}
+
+function validarPeriodoFinNoAnterior(valor: any, datos?: any): boolean {
+  if (!datos || !validarFecha(valor)) return false;
+  const ini = datos.periodoInicio;
+  if (!validarFecha(ini)) return false;
+  return new Date(valor).getTime() >= new Date(ini).getTime();
+}
+
+/** Al menos un evento CM incluido (ids). Acepta strings u ObjectIds del backend. */
+function validarListaEventosIncluidosNoVacia(valor: any): boolean {
+  if (!Array.isArray(valor) || valor.length === 0) return false;
+  return valor.every((x) => {
+    const id =
+      x != null && typeof x === 'object' && x._id != null ? String(x._id).trim() : String(x ?? '').trim();
+    return validarMongoIdFlexible(id);
+  });
+}
+
+function validarNumeroEnteroNoNegativo(valor: any): boolean {
+  if (esValorVacio(valor) && valor !== 0) return false;
+  const n = Number(valor);
+  return Number.isInteger(n) && n >= 0;
+}
+
 /** Coincide con `gradoAcuerdoStatementSiOpciones` en cuestionario-prodromal-breve.schema.ts */
 const GRADO_ACUERDO_PRODROMAL_OPCIONES = [
   'Totalmente en desacuerdo',
@@ -998,6 +1026,61 @@ const camposRequeridosPorTipo: Record<string, Array<{
       tipo: 'seleccion',
       paso: 11,
       validacion: validarSiNo,
+    },
+  ],
+
+  eventoSeguimientoCardiometabolico: [
+    {
+      campo: 'fechaEventoSeguimientoCardiometabolico',
+      nombre: 'Fecha de seguimiento cardiometabólico',
+      tipo: 'fecha',
+      paso: 1,
+      validacion: validarFecha,
+    },
+    {
+      campo: 'motivoSeguimiento',
+      nombre: 'Motivo del seguimiento',
+      tipo: 'texto',
+      paso: 1,
+      validacion: validarTexto,
+    },
+  ],
+
+  informeLongitudinalCardiometabolico: [
+    {
+      campo: 'fechaInformeLongitudinalCardiometabolico',
+      nombre: 'Fecha del informe longitudinal',
+      tipo: 'fecha',
+      paso: 1,
+      validacion: validarFecha,
+    },
+    {
+      campo: 'periodoInicio',
+      nombre: 'Inicio del periodo',
+      tipo: 'fecha',
+      paso: 1,
+      validacion: validarFecha,
+    },
+    {
+      campo: 'periodoFin',
+      nombre: 'Fin del periodo (no anterior al inicio)',
+      tipo: 'fecha',
+      paso: 1,
+      validacion: validarPeriodoFinNoAnterior,
+    },
+    {
+      campo: 'eventosIncluidos',
+      nombre: 'Al menos un evento clínico cardiometabólico seleccionado',
+      tipo: 'lista',
+      paso: 1,
+      validacion: validarListaEventosIncluidosNoVacia,
+    },
+    {
+      campo: 'idTrabajador',
+      nombre: 'Trabajador',
+      tipo: 'texto',
+      paso: 1,
+      validacion: validarMongoIdFlexible,
     },
   ],
 };

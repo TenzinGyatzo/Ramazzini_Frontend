@@ -12,6 +12,7 @@ const loading = ref(false);
 const today = new Date();
 
 const documentOrder = {
+<<<<<<< HEAD
   "Nota Aclaratoria": 1,
   "Constancia de Aptitud": 2,
   Aptitud: 3,
@@ -33,6 +34,29 @@ const documentOrder = {
   "Trastornos Estado Animo": 19,
   "Cuestionario Prodromal Breve": 20,
   "Trastorno Limite Personalidad": 21,
+=======
+  "Constancia de Aptitud": 1,
+  Aptitud: 2,
+  "Historia Clinica": 3,
+  "Exploracion Fisica": 4,
+  "Examen Vista": 5,
+  "Historia Otologica": 6,
+  Audiometria: 7,
+  Antidoping: 8,
+  Certificado: 9,
+  "Previo Espirometria": 10,
+  "Documento Externo": 11,
+  "Nota Medica": 12,
+  "Control Prenatal": 13,
+  "Certificado Expedito": 14,
+  "Receta": 15,
+  "Entrevista Psicologica": 16,
+  "Trastornos Estado Animo": 17,
+  "Cuestionario Prodromal Breve": 18,
+  "Trastorno Limite Personalidad": 19,
+  "Evento Seguimiento Cardiometabolico": 20,
+  "Informe Longitudinal Cardiometabolico": 21,
+>>>>>>> main
 };
 
 // Importante: verificar tipos más específicos ANTES que los genéricos (ej. Certificado Expedito antes de Certificado)
@@ -57,6 +81,8 @@ const getDocumentType = (route) => {
   if (route.includes("Trastornos Estado Animo")) return "Trastornos Estado Animo";
   if (route.includes("Cuestionario Prodromal Breve")) return "Cuestionario Prodromal Breve";
   if (route.includes("Trastorno Limite Personalidad")) return "Trastorno Limite Personalidad";
+  if (route.includes("Evento Seguimiento Cardiometabolico")) return "Evento Seguimiento Cardiometabolico";
+  if (route.includes("Informe Longitudinal Cardiometabolico")) return "Informe Longitudinal Cardiometabolico";
   return "Documento Externo"; // Para cualquier otro caso
 };
 

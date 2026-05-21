@@ -11,6 +11,12 @@ import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
 import ResultadosClinicosAPI from '@/api/ResultadosClinicosAPI';
 import { findNearestDocument } from '@/helpers/findNearestDocuments';
+import { resumenSucintoEntrevistaPsicologica } from '@/helpers/conclusionEntrevistaPsicologica';
+import {
+  textoResumenTrastornosEstadoAnimo,
+  textoResumenCuestionarioProdromalBreve,
+  textoResumenTrastornoLimitePersonalidad,
+} from '@/helpers/resumenesCuestionariosPsicologicosAptitud';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -41,6 +47,15 @@ const nearestEspirometria = ref(null);
 const nearestTipoSangre = ref(null);
 const nearestRayosX = ref(null);
 const nearestAnalisisLaboratorio = ref(null);
+
+const entrevistasPsicologicas = ref([]);
+const nearestEntrevistaPsicologica = ref(null);
+const trastornosEstadoAnimoList = ref([]);
+const nearestTrastornosEstadoAnimo = ref(null);
+const cuestionariosProdromalBreve = ref([]);
+const nearestCuestionarioProdromalBreve = ref(null);
+const trastornosLimitePersonalidad = ref([]);
+const nearestTrastornoLimitePersonalidad = ref(null);
 
 onMounted(async () => {
   try {
@@ -82,20 +97,55 @@ onMounted(async () => {
     resultadosClinicos.value = [];
   }
 
+  try {
+    const r = await DocumentosAPI.getEntrevistaPsicologica(trabajadores.currentTrabajadorId);
+    entrevistasPsicologicas.value = r.data || [];
+  } catch (error) {
+    console.error('Error al obtener entrevistas psicológicas:', error);
+    entrevistasPsicologicas.value = [];
+  }
+  try {
+    const r = await DocumentosAPI.getTrastornosEstadoAnimo(trabajadores.currentTrabajadorId);
+    trastornosEstadoAnimoList.value = r.data || [];
+  } catch (error) {
+    console.error('Error al obtener cuestionario estado de ánimo:', error);
+    trastornosEstadoAnimoList.value = [];
+  }
+  try {
+    const r = await DocumentosAPI.getCuestionarioProdromalBreve(trabajadores.currentTrabajadorId);
+    cuestionariosProdromalBreve.value = r.data || [];
+  } catch (error) {
+    console.error('Error al obtener cuestionario prodromal breve:', error);
+    cuestionariosProdromalBreve.value = [];
+  }
+  try {
+    const r = await DocumentosAPI.getTrastornoLimitePersonalidad(trabajadores.currentTrabajadorId);
+    trastornosLimitePersonalidad.value = r.data || [];
+  } catch (error) {
+    console.error('Error al obtener cuestionario TLP:', error);
+    trastornosLimitePersonalidad.value = [];
+  }
+
     // Llamar la función de cálculo inicial si ya existe fechaAptitudPuesto
     if (formData.formDataAptitud.fechaAptitudPuesto) {
     calculateNearestDocuments(formData.formDataAptitud.fechaAptitudPuesto);
   }
 });
 
-const findMostRecentByTipo = (items, tipo) => {
+const findMostRecentByTipo = (items, tipo, referenceYear) => {
   if (!items?.length) {
     return null;
   }
 
-  return items
-    .filter((item) => item?.tipoEstudio === tipo && item?.fechaEstudio)
-    .reduce((latest, current) => {
+  let candidates = items.filter((item) => item?.tipoEstudio === tipo && item?.fechaEstudio);
+  if (referenceYear != null && !Number.isNaN(referenceYear)) {
+    candidates = candidates.filter((item) => {
+      const d = new Date(item.fechaEstudio);
+      return !isNaN(d.getTime()) && d.getFullYear() === referenceYear;
+    });
+  }
+
+  return candidates.reduce((latest, current) => {
       const currentDate = new Date(current.fechaEstudio);
       if (isNaN(currentDate.getTime())) {
         return latest;
@@ -110,20 +160,90 @@ const findMostRecentByTipo = (items, tipo) => {
     }, null);
 };
 
-// Función reutilizable para calcular los documentos más cercanos
+// Función reutilizable para calcular los documentos más cercanos (mismo año calendario que fecha de aptitud)
+const nearestOpts = { sameYearAsReference: true };
+
 const calculateNearestDocuments = (fechaAptitudPuesto) => {
-  nearestExamenVista.value = findNearestDocument(examenesVista.value, fechaAptitudPuesto, 'fechaExamenVista');
-  nearestHistoriaClinica.value = findNearestDocument(historiasClinicas.value, fechaAptitudPuesto, 'fechaHistoriaClinica');
-  nearestExploracionFisica.value = findNearestDocument(exploracionesFisicas.value, fechaAptitudPuesto, 'fechaExploracionFisica');
-  nearestAudiometria.value = findNearestDocument(audiometrias.value, fechaAptitudPuesto, 'fechaAudiometria');
-  nearestAntidoping.value = findNearestDocument(antidopings.value, fechaAptitudPuesto, 'fechaAntidoping');
-  nearestEKG.value = findMostRecentByTipo(resultadosClinicos.value, 'EKG');
-  nearestEspirometria.value = findMostRecentByTipo(resultadosClinicos.value, 'ESPIROMETRIA');
-  nearestTipoSangre.value = findMostRecentByTipo(resultadosClinicos.value, 'TIPO_SANGRE');
-  nearestRayosX.value = findMostRecentByTipo(resultadosClinicos.value, 'RAYOS_X');
+  const ref = fechaAptitudPuesto ? new Date(fechaAptitudPuesto) : null;
+  const referenceYear =
+    ref && !isNaN(ref.getTime()) ? ref.getFullYear() : null;
+
+  nearestExamenVista.value = findNearestDocument(
+    examenesVista.value,
+    fechaAptitudPuesto,
+    'fechaExamenVista',
+    nearestOpts,
+  );
+  nearestHistoriaClinica.value = findNearestDocument(
+    historiasClinicas.value,
+    fechaAptitudPuesto,
+    'fechaHistoriaClinica',
+    nearestOpts,
+  );
+  nearestExploracionFisica.value = findNearestDocument(
+    exploracionesFisicas.value,
+    fechaAptitudPuesto,
+    'fechaExploracionFisica',
+    nearestOpts,
+  );
+  nearestAudiometria.value = findNearestDocument(
+    audiometrias.value,
+    fechaAptitudPuesto,
+    'fechaAudiometria',
+    nearestOpts,
+  );
+  nearestAntidoping.value = findNearestDocument(
+    antidopings.value,
+    fechaAptitudPuesto,
+    'fechaAntidoping',
+    nearestOpts,
+  );
+  nearestEKG.value = findMostRecentByTipo(
+    resultadosClinicos.value, 
+    'EKG', referenceYear
+  );
+  nearestEspirometria.value = findMostRecentByTipo(
+    resultadosClinicos.value,
+    'ESPIROMETRIA',
+    referenceYear,
+  );
+  nearestTipoSangre.value = findMostRecentByTipo(
+    resultadosClinicos.value,
+    'TIPO_SANGRE'
+  );
+  nearestRayosX.value = findMostRecentByTipo(
+    resultadosClinicos.value, 
+    'RAYOS_X', 
+    referenceYear,
+  );
   nearestAnalisisLaboratorio.value = findMostRecentByTipo(
     resultadosClinicos.value,
     'ANALISIS_LABORATORIO',
+    referenceYear,
+  );
+  nearestEntrevistaPsicologica.value = findNearestDocument(
+    entrevistasPsicologicas.value,
+    fechaAptitudPuesto,
+    'fechaEntrevistaPsicologica',
+    nearestOpts,
+  );
+  nearestTrastornosEstadoAnimo.value = findNearestDocument(
+    trastornosEstadoAnimoList.value,
+    fechaAptitudPuesto,
+    'fechaTrastornosEstadoAnimo',
+    nearestOpts,
+  );
+  nearestCuestionarioProdromalBreve.value = findNearestDocument(
+    cuestionariosProdromalBreve.value,
+    fechaAptitudPuesto,
+    'fechaCuestionarioProdromalBreve',
+    nearestOpts,
+  );
+  nearestTrastornoLimitePersonalidad.value = findNearestDocument(
+    trastornosLimitePersonalidad.value,
+    fechaAptitudPuesto,
+    'fechaTrastornoLimitePersonalidad',
+    nearestOpts,
   );
 };
 
@@ -392,6 +512,24 @@ const showAnalisisLaboratorio = computed(
     nearestAnalisisLaboratorio.value.resultadoGlobal !== 'NO_CONCLUYENTE',
 );
 
+const entrevistaPsicologicaResumen = computed(() =>
+  nearestEntrevistaPsicologica.value
+    ? resumenSucintoEntrevistaPsicologica(nearestEntrevistaPsicologica.value)
+    : '',
+);
+
+const trastornosEstadoAnimoResumen = computed(() =>
+  textoResumenTrastornosEstadoAnimo(nearestTrastornosEstadoAnimo.value),
+);
+
+const cuestionarioProdromalBreveResumen = computed(() =>
+  textoResumenCuestionarioProdromalBreve(nearestCuestionarioProdromalBreve.value),
+);
+
+const trastornoLimitePersonalidadResumen = computed(() =>
+  textoResumenTrastornoLimitePersonalidad(nearestTrastornoLimitePersonalidad.value),
+);
+
 </script>
 
 <template>
@@ -508,7 +646,7 @@ const showAnalisisLaboratorio = computed(
     <div class="w-full">
       <h2 class="mb-1 text-left">La evaluación médica para la aptitud ante el puesto está basada
         en la siguiente información:</h2>
-      <table class="table-auto w-full border-collapse border border-gray-200" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }">
+      <table class="tabla-resumen-estudios-aptitud table-auto w-full border-collapse border border-gray-200" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }">
         <thead>
           <tr class="bg-gray-200">
             <th class="w-1/4 text-xs sm:text-sm px-2 py-0 border border-gray-300 text-center">INFORMACIÓN Y ESTUDIOS
@@ -593,6 +731,30 @@ const showAnalisisLaboratorio = computed(
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ nearestAnalisisLaboratorio ?
               convertirFechaISOaDDMMYYYY(nearestAnalisisLaboratorio.fechaEstudio) : '-' }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ analisisLaboratorioResumen || '-' }}</td>
+          </tr>
+          <tr v-if="nearestEntrevistaPsicologica" class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">ENTREVISTA PSICOLÓGICA</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{
+              convertirFechaISOaDDMMYYYY(nearestEntrevistaPsicologica.fechaEntrevistaPsicologica) }}</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ entrevistaPsicologicaResumen }}</td>
+          </tr>
+          <tr v-if="nearestTrastornosEstadoAnimo" class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">TRASTORNOS DEL ESTADO DE ÁNIMO</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{
+              convertirFechaISOaDDMMYYYY(nearestTrastornosEstadoAnimo.fechaTrastornosEstadoAnimo) }}</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ trastornosEstadoAnimoResumen }}</td>
+          </tr>
+          <tr v-if="nearestCuestionarioProdromalBreve" class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">CUESTIONARIO PRODROMAL BREVE</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{
+              convertirFechaISOaDDMMYYYY(nearestCuestionarioProdromalBreve.fechaCuestionarioProdromalBreve) }}</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ cuestionarioProdromalBreveResumen }}</td>
+          </tr>
+          <tr v-if="nearestTrastornoLimitePersonalidad" class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">TRASTORNO LÍMITE PERSONALIDAD</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{
+              convertirFechaISOaDDMMYYYY(nearestTrastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad) }}</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ trastornoLimitePersonalidadResumen }}</td>
           </tr>
           <tr v-if="formData.formDataAptitud.evaluacionAdicional1" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 2 }">
@@ -738,6 +900,13 @@ const showAnalisisLaboratorio = computed(
 </template>
 
 <style scoped>
+.tabla-resumen-estudios-aptitud thead th:nth-child(2),
+.tabla-resumen-estudios-aptitud tbody td:nth-child(2) {
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
 .cursor-pointer {
   cursor: pointer;
 }

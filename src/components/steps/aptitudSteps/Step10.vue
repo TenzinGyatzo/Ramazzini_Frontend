@@ -4,6 +4,10 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useDocumentosStore } from '@/stores/documentos';
 import DocumentosAPI from '@/api/DocumentosAPI';
+import {
+    obtenerCuatroTamizajesPsicologicosCercanos,
+    construirTextoPaso4TamizajePsi,
+} from '@/helpers/tamizajePsicologicoPaso4Resultados';
 
 const mensajeCopiado = ref(false);
 
@@ -363,13 +367,30 @@ const generarTextoPaso3 = () => {
     return texto;
 };
 
+const generarTextoPaso4 = async () => {
+    try {
+        const docs = await obtenerCuatroTamizajesPsicologicosCercanos(
+            trabajadores.currentTrabajadorId,
+            formDataAptitud.fechaAptitudPuesto,
+        );
+        if (!docs) {
+            return '';
+        }
+        return construirTextoPaso4TamizajePsi(docs);
+    } catch (error) {
+        console.error('Error al armar texto de tamizaje psicológico (paso 4):', error);
+        return '';
+    }
+};
+
 // Función para generar texto completo precargado
 const generarTextoPrecargado = async () => {
     const textoPaso1 = generarTextoPaso1();
     const textoPaso2 = await obtenerTextoPaso2();
     const textoPaso3 = generarTextoPaso3();
+    const textoPaso4 = await generarTextoPaso4();
 
-    return inicioSugerido + textoPaso1 + textoPaso2 + textoPaso3;
+    return inicioSugerido + textoPaso1 + textoPaso2 + textoPaso3 + textoPaso4;
 };
 
 </script>

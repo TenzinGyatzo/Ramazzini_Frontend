@@ -33,7 +33,7 @@ onUnmounted(() => {
     }
 
     if (!formDataHistoriaClinica.accidenteLaboralEspecificar) {
-        formDataHistoriaClinica.accidenteLaboralEspecificar = 'Niega haber sufrido accidentes';
+        formDataHistoriaClinica.accidenteLaboralEspecificar = 'Niega haber sufrido riesgos de trabajo';
     }
 
     if (!formDataHistoriaClinica.descripcionDelDano) {
@@ -71,11 +71,11 @@ watch(accidenteLaboral, async (newValue) => {
     <div>
         <!-- Jerarquía Visual Mejorada -->
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Antecedentes Laborales</h1>
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">ACCIDENTE DE TRABAJO</h2>
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">RIESGO DE TRABAJO</h2>
         
         <!-- Pregunta principal con mejor jerarquía -->
         <div class="mb-8">
-            <p class="text-lg font-medium mb-4 text-gray-800">¿El trabajador ha sufrido un accidente de trabajo?</p>
+            <p class="text-lg font-medium mb-4 text-gray-800">¿El trabajador ha sufrido un riesgo de trabajo (accidente o enfermedad de trabajo)?</p>
             
             <!-- Diseño de Radio Buttons más Visual tipo Card -->
             <div class="grid grid-cols-2 gap-3">
@@ -182,13 +182,13 @@ watch(accidenteLaboral, async (newValue) => {
         >
             <div v-if="accidenteLaboral === 'Si'" class="space-y-4">
                 <div>
-                    <p class="text-lg font-medium mb-3 text-gray-800">Describa el accidente:</p>
+                    <p class="text-lg font-medium mb-3 text-gray-800">Describa el riesgo de trabajo (accidente o enfermedad de trabajo):</p>
                     <input 
                         ref="inputEspecificar"
                         type="text"
                         class="w-full p-3 border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
                         v-model="formDataHistoriaClinica.accidenteLaboralEspecificar"
-                        placeholder="Ej: Descripción del accidente"
+                        placeholder="Ej: Caída en planta, lumbalgia por esfuerzo repetitivo"
                         required
                     >
                 </div>

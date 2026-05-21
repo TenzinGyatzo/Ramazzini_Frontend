@@ -69,6 +69,10 @@ export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, he
     const originalSize = config.options.scales.y.ticks.font.size || 12;
     config.options.scales.y.ticks.font.size = Math.round(originalSize * scaleFactor * 1); // 0% más grande
   }
+  if (config.options.scales?.y1?.ticks?.font) {
+    const originalSize = config.options.scales.y1.ticks.font.size || 11;
+    config.options.scales.y1.ticks.font.size = Math.round(originalSize * scaleFactor * 1);
+  }
 
   // Escalado específico para gráfica de audiometría (línea)
   if (config.type === 'line') {
@@ -111,6 +115,14 @@ export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, he
       const originalSize = config.options.scales.y.ticks.font.size || 12;
       config.options.scales.y.ticks.font.size = Math.round(originalSize * 1.5);
     }
+    if (config.options.scales?.y1?.title?.font) {
+      const originalSize = config.options.scales.y1.title.font.size || 11;
+      config.options.scales.y1.title.font.size = Math.round(originalSize * 1.5);
+    }
+    if (config.options.scales?.y1?.ticks?.font) {
+      const originalSize = config.options.scales.y1.ticks.font.size || 11;
+      config.options.scales.y1.ticks.font.size = Math.round(originalSize * 1.5);
+    }
 
     // Escalar indicadores de datos (puntos en la línea) - hacer más grandes
     if (config.options.elements?.point?.radius) {
@@ -143,17 +155,29 @@ export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, he
 
   // Configurar cuadrícula según el tipo de gráfica
   if (config.type === 'line') {
-    // Para gráficas de línea (audiometría), mostrar cuadrícula
-  if (config.options.scales?.x?.grid) {
-     config.options.scales.x.grid.display = true;
-     config.options.scales.x.grid.color = '#6b7280';
-     config.options.scales.x.grid.lineWidth = 0.5;
-   }
-   if (config.options.scales?.y?.grid) {
-     config.options.scales.y.grid.display = true;
-     config.options.scales.y.grid.color = '#6b7280';
-     config.options.scales.y.grid.lineWidth = 0.5;
-   }
+    const gridFallback = '#6b7280';
+    // Respetar grid.color de la config (p. ej. ILC con rgba ligero); solo aplicar fallback si no viene definido.
+    if (config.options.scales?.x?.grid) {
+      config.options.scales.x.grid.display = true;
+      if (config.options.scales.x.grid.color == null) {
+        config.options.scales.x.grid.color = gridFallback;
+      }
+      config.options.scales.x.grid.lineWidth = config.options.scales.x.grid.lineWidth ?? 0.5;
+    }
+    if (config.options.scales?.y?.grid) {
+      config.options.scales.y.grid.display = true;
+      if (config.options.scales.y.grid.color == null) {
+        config.options.scales.y.grid.color = gridFallback;
+      }
+      config.options.scales.y.grid.lineWidth = config.options.scales.y.grid.lineWidth ?? 0.5;
+    }
+    if (config.options.scales?.y1?.grid && config.options.scales.y1.grid.display === true) {
+      const g1 = config.options.scales.y1.grid;
+      if (g1.color == null) {
+        g1.color = gridFallback;
+      }
+      g1.lineWidth = g1.lineWidth ?? 0.5;
+    }
   } else {
     // Para otros tipos de gráfica, desactivar cuadrícula
     if (config.options.scales?.x?.grid) {
@@ -161,6 +185,9 @@ export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, he
     }
     if (config.options.scales?.y?.grid) {
       config.options.scales.y.grid.display = false;
+    }
+    if (config.options.scales?.y1?.grid) {
+      config.options.scales.y1.grid.display = false;
     }
   }
 
@@ -186,6 +213,15 @@ export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, he
     config.options.scales.y.ticks = config.options.scales.y.ticks || {};
     config.options.scales.y.ticks.color = '#374151';
   }
+  if (config.options.scales?.y1) {
+    config.options.scales.y1.border = {
+      display: true,
+      color: '#374151',
+      width: ejeWidth
+    };
+    config.options.scales.y1.ticks = config.options.scales.y1.ticks || {};
+    config.options.scales.y1.ticks.color = '#374151';
+  }
 
   // Escalar padding para mantener proporciones
   if (config.options.layout?.padding) {
@@ -208,6 +244,10 @@ export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, he
   if (config.options.scales?.y?.ticks) {
     const originalTickPadding = config.options.scales.y.ticks.padding ?? 6;
     config.options.scales.y.ticks.padding = Math.round(originalTickPadding * scaleFactor);
+  }
+  if (config.options.scales?.y1?.ticks) {
+    const originalTickPadding = config.options.scales.y1.ticks.padding ?? 6;
+    config.options.scales.y1.ticks.padding = Math.round(originalTickPadding * scaleFactor);
   }
 
   // Configuraciones específicas por tipo de gráfica

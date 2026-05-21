@@ -5,7 +5,7 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useRiesgoTrabajoStore } from '@/stores/riesgosTrabajo';
 import { ref, onMounted, inject, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
 import GreenButton from '@/components/GreenButton.vue';
 import ModalCentros from '@/components/ModalCentros.vue';
 import ModalEliminar from '@/components/ModalEliminar.vue';
@@ -268,25 +268,37 @@ onMounted(async () => {
                 
                 <!-- Botones de otras vistas -->
                 <div class="flex flex-col sm:flex-row justify-center gap-3">
+                  <RouterLink
+                    v-if="canAccessDashboardSalud && empresas.currentEmpresa && totalTrabajadores > 0"
+                    :to="{ name: 'dashboard-empresa', params: { idEmpresa: empresas.currentEmpresa._id } }"
+                    class="nav-action-link flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    title="Ver dashboard de salud">
+                    <i class="fas fa-chart-line text-sm"></i>
+                    <span>Estadísticas de Salud</span>
+                  </RouterLink>
                   <button
-                    v-if="canAccessDashboardSalud"
+                    v-else-if="canAccessDashboardSalud"
                     type="button"
-                    :disabled="!empresas.currentEmpresa || totalTrabajadores === 0"
-                    @click="empresas.currentEmpresa && router.push({ name: 'dashboard-empresa', params: { idEmpresa: empresas.currentEmpresa._id } })"
-                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    :title="totalTrabajadores > 0 ? 'Ver dashboard de salud' : 'No hay trabajadores registrados'"
-                    >
+                    disabled
+                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white text-sm font-medium rounded-lg opacity-50 cursor-not-allowed"
+                    title="No hay trabajadores registrados">
                     <i class="fas fa-chart-line text-sm"></i>
                     <span>Estadísticas de Salud</span>
                   </button>
+                  <RouterLink
+                    v-if="esProveedorMexicano && canAccessRiesgosTrabajo && empresas.currentEmpresa && tieneRiesgosTrabajo"
+                    :to="{ name: 'riesgos-trabajo', params: { idEmpresa: empresas.currentEmpresa._id } }"
+                    class="nav-action-link flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    title="Ver riesgos de trabajo">
+                    <i class="fas fa-hard-hat text-sm"></i>
+                    <span>Riesgos de Trabajo</span>
+                  </RouterLink>
                   <button
-                    v-if="esProveedorMexicano && canAccessRiesgosTrabajo"
+                    v-else-if="esProveedorMexicano && canAccessRiesgosTrabajo"
                     type="button"
-                    :disabled="!empresas.currentEmpresa || !tieneRiesgosTrabajo"
-                    @click="empresas.currentEmpresa && router.push({ name: 'riesgos-trabajo', params: { idEmpresa: empresas.currentEmpresa._id } })"
-                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    :title="!tieneRiesgosTrabajo ? 'No hay riesgos de trabajo registrados' : 'Ver riesgos de trabajo'"
-                  >
+                    disabled
+                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-medium rounded-lg opacity-50 cursor-not-allowed"
+                    :title="!tieneRiesgosTrabajo ? 'No hay riesgos de trabajo registrados' : 'Ver riesgos de trabajo'">
                     <i class="fas fa-hard-hat text-sm"></i>
                     <span>Riesgos de Trabajo</span>
                   </button>

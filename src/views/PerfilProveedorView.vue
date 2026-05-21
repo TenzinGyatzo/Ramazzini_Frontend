@@ -1,7 +1,7 @@
 <script setup>
 import { ref, inject, computed, watch, watchEffect } from "vue";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
-import { useRouter } from "vue-router";
+import { useRouter, RouterLink } from "vue-router";
 import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
 import CountrySelect from "@/components/CountrySelect.vue";
 import CLUESAutocomplete from "@/components/selectors/CLUESAutocomplete.vue";
@@ -789,11 +789,10 @@ const logoSrc = computed(() => {
             <hr class="my-3" />
             <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
               <!-- Botón de Volver -->
-              <button type="button"
-                class="text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg mb-1"
-                @click="volver">
+              <RouterLink :to="{ name: 'inicio' }"
+                class="nav-action-link block text-center text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg mb-1">
                 Volver
-              </button>
+              </RouterLink>
               <!-- Botón de Actualizar -->
               <div class="w-full sm:w-1/2 pr-2">
                 <FormKit type="submit">

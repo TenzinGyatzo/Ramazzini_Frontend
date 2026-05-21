@@ -1,8 +1,8 @@
 <script setup>
 import axios from 'axios';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import { VPdfViewer, Locales, useLicense } from '@vue-pdf-viewer/viewer';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref } from 'vue';
+import { VPdfViewer, Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
 import { useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -18,6 +18,7 @@ import {
   textoInterpretacionPQB,
   esPositivoRiesgoPsicoticoPQB,
 } from '@/helpers/cuestionarioProdromalBreveSteps';
+import { ESTADO_CONTROL_CONDICION_OPTS, GRADO_OBESIDAD_OPTS } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
 import ModalPdfEliminado from './ModalPdfEliminado.vue';
 import EstadoDocumentoBadge from './badges/EstadoDocumentoBadge.vue';
 import BadgeNotaAclaratoria from './badges/BadgeNotaAclaratoria.vue';
@@ -158,10 +159,11 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
-
 const periodoDePruebaFinalizado = proveedorSaludStore.proveedorSalud?.periodoDePruebaFinalizado;
 const estadoSuscripcion = proveedorSaludStore.proveedorSalud?.estadoSuscripcion;
-const finDeSuscripcion = proveedorSaludStore.proveedorSalud?.finDeSuscripcion ? new Date(proveedorSaludStore.proveedorSalud.finDeSuscripcion) : null;
+const finDeSuscripcion = proveedorSaludStore.proveedorSalud?.finDeSuscripcion
+  ? new Date(proveedorSaludStore.proveedorSalud.finDeSuscripcion)
+  : null;
 
 const user = ref(JSON.parse(localStorage.getItem('user') || '{}'));
 
@@ -214,10 +216,17 @@ const canEditDocument = (documentType) => {
   if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
     return canManageDocumentosDiagnostico.value;
   }
+<<<<<<< HEAD
 
   // Otros documentos / cuestionarios adicionales (incluye certificado expedito y psicológicos)
   if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
     return canManageOtrosDocumentos.value;
+=======
+  
+  // Cuestionarios adicionales (incluye certificadoExpedito)
+  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
+    return canManageCuestionariosAdicionales.value;
+>>>>>>> main
   }
 
   // Documentos externos
@@ -242,8 +251,13 @@ const handleEditDocument = (documentoId, documentoTipo) => {
     executeIfCanManageDocumentosDiagnostico(() => {
       editarDocumento(documentoId, documentoTipo);
     }, 'editar documentos de diagnóstico y certificación');
+<<<<<<< HEAD
   } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
     executeIfCanManageOtrosDocumentos(() => {
+=======
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
+    executeIfCanManageCuestionariosAdicionales(() => {
+>>>>>>> main
       editarDocumento(documentoId, documentoTipo);
     }, 'editar otros documentos');
   } else if (tipoSinEspacios === 'documentoexterno') {
@@ -283,8 +297,13 @@ const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
     executeIfCanManageDocumentosDiagnostico(() => {
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar documentos de diagnóstico y certificación');
+<<<<<<< HEAD
   } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
     executeIfCanManageOtrosDocumentos(() => {
+=======
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistaPsicologica', 'trastornosEstadoAnimo', 'cuestionarioProdromalBreve', 'trastornoLimitePersonalidad', 'eventoSeguimientoCardiometabolico', 'informeLongitudinalCardiometabolico'].includes(tipoSinEspacios)) {
+    executeIfCanManageCuestionariosAdicionales(() => {
+>>>>>>> main
       emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
     }, 'eliminar otros documentos');
   } else if (tipoSinEspacios === 'documentoexterno') {
@@ -321,13 +340,11 @@ const editarDocumento = (documentoId, documentoTipo) => {
     if (!proveedorSaludStore.proveedorSalud) return;
 
     if (periodoDePruebaFinalizado) {
-        // Bloquear si el periodo de prueba ha finalizado y no tiene suscripción activa (Inactive aparece cuando el pago falla repetidamente)
         if (!estadoSuscripcion || estadoSuscripcion === 'inactive') {
             emit('openSubscriptionModal');
             return;
         }
 
-        // Bloquear solo si canceló la suscripción y la fecha de fin de suscripción ya pasó
         if (estadoSuscripcion === 'cancelled' && finDeSuscripcion && new Date() > finDeSuscripcion) {
             emit('openSubscriptionModal');
             return;
@@ -429,6 +446,41 @@ useLicense({ licenseKey });
 // Estados para mostrar el visor y la URL del PDF
 const showPdfViewer = ref(false);
 const pdfUrl = ref('');
+/** Blob URL del PDF en memoria (src del visor); evita 2ª descarga HTTP. */
+let pdfBlobUrl = null;
+
+function revokePdfBlobUrl() {
+    if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+        pdfBlobUrl = null;
+    }
+}
+
+const pdfTotalPages = ref(null);
+/** Ancho de la 1.ª página en px (viewport pdf.js a escala 1). */
+const pdfFirstPageWidth = ref(null);
+
+async function fetchPdfMetadata(blob) {
+    try {
+        const [pdfjs, workerModule] = await Promise.all([
+            import('pdfjs-dist'),
+            import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+        ]);
+        pdfjs.GlobalWorkerOptions.workerSrc = workerModule.default;
+        const doc = await pdfjs.getDocument({ data: await blob.arrayBuffer() }).promise;
+        const page = await doc.getPage(1);
+        const viewport = page.getViewport({ scale: 1 });
+        const metadata = {
+            numPages: doc.numPages,
+            pageWidth: viewport.width,
+        };
+        await doc.destroy();
+        return metadata;
+    } catch (error) {
+        console.warn('[DocumentoItem] No se pudo leer metadatos del PDF:', error);
+        return { numPages: 1, pageWidth: null };
+    }
+}
 
 const localization = {
     customLang: {
@@ -529,9 +581,19 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
         const contentType = response.headers['content-type'];
 
         if (response.status === 200 && contentType === 'application/pdf') {
-            pdfUrl.value = fullPath; // Actualiza tu variable de URL
-            currentPdfUrl.value = fullPath; // Guarda la URL actual para descargar/imprimir
-            showPdfViewer.value = true; // Muestra el visor PDF
+            const metadata = await fetchPdfMetadata(response.data);
+            pdfTotalPages.value = metadata.numPages;
+            pdfFirstPageWidth.value = metadata.pageWidth;
+            revokePdfBlobUrl();
+            pdfBlobUrl = URL.createObjectURL(response.data);
+            pdfUrl.value = pdfBlobUrl;
+            currentPdfUrl.value = fullPath;
+            pdfScaleCorrectionAttempted = false;
+            pdfScaleCorrectionPending = false;
+            pdfViewerMountKey.value = 0;
+            pdfViewerReady.value = false;
+            showPdfViewer.value = true;
+            await preparePdfViewerMount();
         } else {
             console.warn('El archivo no es un PDF o no existe.', { status: response.status, contentType });
             alert('El archivo PDF no existe o no es válido.');
@@ -546,10 +608,324 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
     }
 };
 
+const pdfViewerRef = ref(null);
+const pdfViewerContainerRef = ref(null);
+/** Montar VPdfViewer solo cuando ya tenemos escala inicial (tope 200%). */
+const pdfViewerReady = ref(false);
+const pdfInitialScale = ref(1);
+const pdfViewerMountKey = ref(0);
+let pdfScaleCorrectionAttempted = false;
+let pdfScaleCorrectionPending = false;
+let pdfViewerResizeObserver = null;
+let pdfViewerResizeDebounceTimer = null;
+let pdfViewerClampTimer = null;
+let pdfViewerLastObservedWidth = 0;
+let pdfViewerClampGeneration = 0;
+
+const PDF_VIEWER_RESIZE_DEBOUNCE_MS = 175;
+const PDF_VIEWER_RESIZE_MIN_DELTA_PX = 8;
+const PDF_VIEWER_MAX_SCALE = 2; // 200%
+const PDF_VIEWER_MIN_SCALE_MOBILE = 0.85;
+const PDF_VIEWER_MIN_SCALE_THRESHOLD = 0.75;
+const PDF_VIEWER_THUMBNAIL_PANEL_PX = 200;
+/** Margen interno del visor: scrollbar + padding de página (estimado pre-montaje). */
+const PDF_VIEWER_HORIZONTAL_PADDING_PX = 48;
+const PDF_VIEWER_SCALE_CORRECTION_THRESHOLD = 0.02;
+const PDF_VIEWER_CLAMP_POLL_MS = 50;
+const PDF_VIEWER_CLAMP_MAX_ATTEMPTS = 40;
+
+function getPdfZoomControl() {
+    const instance = pdfViewerRef.value;
+    if (!instance) return null;
+    const control =
+        instance.zoomControl ??
+        instance.$?.exposed?.zoomControl ??
+        instance.$?.setupState?.zoomControl;
+    return control?.value ?? control ?? null;
+}
+
+function waitForPdfZoomControl(callback, attempt = 0) {
+    const zoomCtrl = getPdfZoomControl();
+    if (zoomCtrl) {
+        callback(zoomCtrl);
+        return;
+    }
+    if (attempt >= 40 || !showPdfViewer.value) return;
+    setTimeout(() => waitForPdfZoomControl(callback, attempt + 1), 50);
+}
+
+function readPdfZoomScale(zoomCtrl) {
+    if (!zoomCtrl) return null;
+    const raw = zoomCtrl.scale;
+    const scale = typeof raw === 'number' ? raw : unref(raw);
+    return typeof scale === 'number' && scale > 0 ? scale : null;
+}
+
+function clearPdfViewerClampTimer() {
+    if (pdfViewerClampTimer) {
+        clearTimeout(pdfViewerClampTimer);
+        pdfViewerClampTimer = null;
+    }
+}
+
+function disconnectPdfViewerResizeObserver() {
+    pdfViewerClampGeneration += 1;
+    clearPdfViewerClampTimer();
+    if (pdfViewerResizeDebounceTimer) {
+        clearTimeout(pdfViewerResizeDebounceTimer);
+        pdfViewerResizeDebounceTimer = null;
+    }
+    if (pdfViewerResizeObserver) {
+        pdfViewerResizeObserver.disconnect();
+        pdfViewerResizeObserver = null;
+    }
+    pdfViewerLastObservedWidth = 0;
+}
+
+function enforcePdfZoomLimits(zoomCtrl) {
+    const scale = readPdfZoomScale(zoomCtrl);
+    if (scale == null) return false;
+
+    if (scale > PDF_VIEWER_MAX_SCALE) {
+        zoomCtrl.zoom(PDF_VIEWER_MAX_SCALE);
+        return true;
+    }
+
+    if (windowWidth.value < 480 && scale < PDF_VIEWER_MIN_SCALE_THRESHOLD) {
+        zoomCtrl.zoom(PDF_VIEWER_MIN_SCALE_MOBILE);
+        return true;
+    }
+
+    return false;
+}
+
+function schedulePdfZoomClamp(zoomCtrl, generation, attempt = 0) {
+    clearPdfViewerClampTimer();
+
+    if (generation !== pdfViewerClampGeneration || !showPdfViewer.value) return;
+
+    const changed = enforcePdfZoomLimits(zoomCtrl);
+    const scale = readPdfZoomScale(zoomCtrl);
+
+    const shouldContinue =
+        attempt < PDF_VIEWER_CLAMP_MAX_ATTEMPTS &&
+        (scale == null || changed || scale > PDF_VIEWER_MAX_SCALE || attempt < 10);
+
+    if (!shouldContinue) return;
+
+    pdfViewerClampTimer = setTimeout(() => {
+        pdfViewerClampTimer = null;
+        schedulePdfZoomClamp(zoomCtrl, generation, attempt + 1);
+    }, PDF_VIEWER_CLAMP_POLL_MS);
+}
+
+function getPdfContentAreaWidth() {
+    const liveWidth = measurePdfContentWidthFromDom();
+    if (liveWidth > 0) return liveWidth;
+
+    const container = pdfViewerContainerRef.value;
+    if (!container) return 0;
+
+    let width = container.clientWidth;
+    if (initialThumbnailsVisible.value) {
+        width -= PDF_VIEWER_THUMBNAIL_PANEL_PX;
+    }
+    return Math.max(width - PDF_VIEWER_HORIZONTAL_PADDING_PX, 0);
+}
+
+function measurePdfContentWidthFromDom() {
+    const host = pdfViewerContainerRef.value;
+    if (!host) return 0;
+
+    const pagesContainer = host.querySelector('.vpv-pages-container');
+    if (pagesContainer?.clientWidth > 0) {
+        return pagesContainer.clientWidth;
+    }
+
+    const innerContainer = host.querySelector('.vpv-inner-container');
+    if (innerContainer?.clientWidth > 0) {
+        const sidebar = host.querySelector('.vpv-sidebar-wrapper');
+        const sidebarWidth = sidebar?.getBoundingClientRect().width ?? 0;
+        return Math.max(innerContainer.clientWidth - sidebarWidth - 8, 0);
+    }
+
+    return 0;
+}
+
+function computeTargetPdfScale(areaWidthOverride = null) {
+    const pageWidth = pdfFirstPageWidth.value;
+    const areaWidth = areaWidthOverride ?? getPdfContentAreaWidth();
+    if (!pageWidth || pageWidth <= 0 || areaWidth <= 0) return null;
+
+    const fitScale = areaWidth / pageWidth;
+    let scale = Math.min(fitScale, PDF_VIEWER_MAX_SCALE);
+
+    if (windowWidth.value < 480 && scale < PDF_VIEWER_MIN_SCALE_THRESHOLD) {
+        scale = PDF_VIEWER_MIN_SCALE_MOBILE;
+    }
+
+    return Math.max(scale, 0.25);
+}
+
+function applyInitialScaleCorrection() {
+    if (pdfScaleCorrectionAttempted || pdfScaleCorrectionPending || !showPdfViewer.value) return;
+
+    pdfScaleCorrectionPending = true;
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            pdfScaleCorrectionPending = false;
+            if (pdfScaleCorrectionAttempted || !showPdfViewer.value) return;
+
+            const target = computeTargetPdfScale();
+            if (target == null) {
+                pdfScaleCorrectionAttempted = true;
+                return;
+            }
+
+            if (Math.abs(target - pdfInitialScale.value) <= PDF_VIEWER_SCALE_CORRECTION_THRESHOLD) {
+                pdfScaleCorrectionAttempted = true;
+                return;
+            }
+
+            pdfScaleCorrectionAttempted = true;
+            pdfInitialScale.value = target;
+            pdfViewerMountKey.value += 1;
+        });
+    });
+}
+
+function applyNumericFitZoom(zoomCtrl) {
+    const target = computeTargetPdfScale();
+    if (target == null) return false;
+
+    zoomCtrl.zoom(target);
+
+    const scale = readPdfZoomScale(zoomCtrl);
+    if (scale != null && scale > PDF_VIEWER_MAX_SCALE) {
+        zoomCtrl.zoom(PDF_VIEWER_MAX_SCALE);
+    }
+    return true;
+}
+
+function applyFitToWidth(retryCount = 0) {
+    const zoomCtrl = getPdfZoomControl();
+    if (!zoomCtrl) {
+        if (retryCount < 40 && showPdfViewer.value) {
+            setTimeout(() => applyFitToWidth(retryCount + 1), 50);
+        }
+        return;
+    }
+
+    const generation = pdfViewerClampGeneration;
+    const hasPageWidth = (pdfFirstPageWidth.value ?? 0) > 0;
+    const areaWidth = getPdfContentAreaWidth();
+
+    if (hasPageWidth && areaWidth <= 0 && retryCount < 12) {
+        nextTick(() => {
+            if (generation !== pdfViewerClampGeneration) return;
+            applyFitToWidth(retryCount + 1);
+        });
+        return;
+    }
+
+    if (applyNumericFitZoom(zoomCtrl)) {
+        nextTick(() => {
+            if (generation !== pdfViewerClampGeneration) return;
+            applyNumericFitZoom(zoomCtrl);
+        });
+        schedulePdfZoomClamp(zoomCtrl, generation, 0);
+        return;
+    }
+
+    // Sin metadatos: PageWidth y luego forzar tope 200%
+    zoomCtrl.zoom(ZoomLevel.PageWidth);
+    nextTick(() => {
+        if (generation !== pdfViewerClampGeneration) return;
+        schedulePdfZoomClamp(zoomCtrl, generation, 0);
+    });
+}
+
+async function preparePdfViewerMount(attempt = 0) {
+    if (!showPdfViewer.value) return;
+
+    await nextTick();
+
+    const scale = computeTargetPdfScale();
+    if (scale == null) {
+        if (attempt < 24) {
+            requestAnimationFrame(() => preparePdfViewerMount(attempt + 1));
+            return;
+        }
+        pdfInitialScale.value = 1;
+    } else {
+        pdfInitialScale.value = scale;
+    }
+
+    pdfViewerReady.value = true;
+}
+
+function handlePdfCanvasLoaded() {
+    applyInitialScaleCorrection();
+    waitForPdfZoomControl((zoomCtrl) => {
+        const generation = pdfViewerClampGeneration;
+        if (!applyNumericFitZoom(zoomCtrl)) {
+            enforcePdfZoomLimits(zoomCtrl);
+        }
+        schedulePdfZoomClamp(zoomCtrl, generation, 0);
+    });
+}
+
+const pdfAfterCanvasLoaded = { 1: handlePdfCanvasLoaded };
+
+function scheduleApplyFitToWidth() {
+    if (pdfViewerResizeDebounceTimer) {
+        clearTimeout(pdfViewerResizeDebounceTimer);
+    }
+    pdfViewerResizeDebounceTimer = setTimeout(() => {
+        pdfViewerResizeDebounceTimer = null;
+        applyFitToWidth();
+    }, PDF_VIEWER_RESIZE_DEBOUNCE_MS);
+}
+
+function connectPdfViewerResizeObserver() {
+    disconnectPdfViewerResizeObserver();
+    const el = pdfViewerContainerRef.value;
+    if (!el) return;
+
+    pdfViewerLastObservedWidth = el.clientWidth;
+    pdfViewerResizeObserver = new ResizeObserver((entries) => {
+        const width = entries[0]?.contentRect?.width ?? 0;
+        if (Math.abs(width - pdfViewerLastObservedWidth) < PDF_VIEWER_RESIZE_MIN_DELTA_PX) return;
+        pdfViewerLastObservedWidth = width;
+        scheduleApplyFitToWidth();
+    });
+    pdfViewerResizeObserver.observe(el);
+}
+
+function handlePdfViewerLoaded() {
+    applyInitialScaleCorrection();
+    nextTick(() => {
+        waitForPdfZoomControl((zoomCtrl) => {
+            const generation = pdfViewerClampGeneration;
+            applyNumericFitZoom(zoomCtrl);
+            schedulePdfZoomClamp(zoomCtrl, generation, 0);
+            connectPdfViewerResizeObserver();
+        });
+    });
+}
+
 // Función para cerrar el visor
 const cerrarPdf = () => {
+    disconnectPdfViewerResizeObserver();
+    pdfViewerReady.value = false;
+    pdfScaleCorrectionAttempted = false;
+    pdfScaleCorrectionPending = false;
+    pdfViewerMountKey.value = 0;
     showPdfViewer.value = false;
+    revokePdfBlobUrl();
     pdfUrl.value = '';
+    pdfTotalPages.value = null;
+    pdfFirstPageWidth.value = null;
 };
 
 // Función para abrir un documento externo
@@ -1136,6 +1512,14 @@ const descargarPdfActual = async () => {
                     documento = props.trastornoLimitePersonalidad;
                     tipoDocumento = 'Trastorno Limite Personalidad';
                     break;
+                case 'eventoseguimientocardiometabolico':
+                    documento = props.eventoSeguimientoCardiometabolico;
+                    tipoDocumento = 'Evento Seguimiento Cardiometabolico';
+                    break;
+                case 'informelongitudinalcardiometabolico':
+                    documento = props.informeLongitudinalCardiometabolico;
+                    tipoDocumento = 'Informe Longitudinal Cardiometabolico';
+                    break;
                 case 'documentoexterno':
                     documento = props.documentoExterno;
                     tipoDocumento = 'Documento Externo';
@@ -1273,6 +1657,8 @@ const props = defineProps({
     trastornosEstadoAnimo: [Object, String],
     cuestionarioProdromalBreve: [Object, String],
     trastornoLimitePersonalidad: [Object, String],
+    eventoSeguimientoCardiometabolico: [Object, String],
+    informeLongitudinalCardiometabolico: [Object, String],
 });
 
 const currentDocumentData = computed(() => {
@@ -1621,21 +2007,32 @@ const updateWindowWidth = () => {
 
 // Agregar y eliminar el listener de eventos
 onMounted(() => window.addEventListener('resize', updateWindowWidth));
-onUnmounted(() => window.removeEventListener('resize', updateWindowWidth));
+onUnmounted(() => {
+    window.removeEventListener('resize', updateWindowWidth);
+    disconnectPdfViewerResizeObserver();
+});
 
-/// Computed para las condiciones responsivas
+/// Computed para las condiciones responsivas (thumbnails)
 const isExtraLargeScreen = computed(() => windowWidth.value >= 1280);
 const isLargeScreen = computed(() => windowWidth.value >= 1024 && windowWidth.value < 1280);
-const isMediumScreen = computed(() => windowWidth.value >= 768 && windowWidth.value < 1024);
-const isSmallScreen = computed(() => windowWidth.value < 768);
 
-// Valores dinámicos para initialThumbnails-visible y initialScale
-const initialThumbnailsVisible = computed(() => isLargeScreen.value || isExtraLargeScreen.value);
-const initialScale = computed(() => {
-  if (isExtraLargeScreen.value) return 2; // >= 1280px
-  if (isLargeScreen.value) return 1.75;   // 1024px - 1279px
-  if (isMediumScreen.value) return 1.4;   // 768px - 1023px
-  return 0.8;                               // < 768px
+const initialThumbnailsVisible = computed(() => {
+    const screenOk = isLargeScreen.value || isExtraLargeScreen.value;
+    if (!screenOk) return false;
+    return (pdfTotalPages.value ?? 1) > 1;
+});
+
+watch(initialThumbnailsVisible, (visible, prev) => {
+    if (visible && !prev && showPdfViewer.value) {
+        scheduleApplyFitToWidth();
+    }
+});
+
+watch(showPdfViewer, (open) => {
+    if (!open) {
+        disconnectPdfViewerResizeObserver();
+        pdfViewerReady.value = false;
+    }
 });
 
 // Lógica para mensajes dinámicos de antidopings
@@ -1790,6 +2187,133 @@ const claseColorInterpretacionTlpLista = computed(() => {
   if (p <= 6) return 'text-yellow-600';
   return 'text-orange-600';
 });
+
+/** Chips en lista para Evento Seguimiento Cardiometabólico (misma semántica que `VisualizadorEventoSeguimientoCardiometabolico`). */
+const labelControlCardiometabolicoDoc = (code) => {
+  if (!code) return '—';
+  const o = ESTADO_CONTROL_CONDICION_OPTS.find((x) => x.value === code);
+  return o?.label ?? String(code);
+};
+
+const labelGradoObesidadCardiometabolicoDoc = (code) => {
+  if (!code) return '—';
+  const o = GRADO_OBESIDAD_OPTS.find((x) => x.value === code);
+  return o?.label ?? String(code);
+};
+
+const claseTextoEstadoCardiometabolicoLista = computed(() => {
+  const d = props.eventoSeguimientoCardiometabolico;
+  if (!d || typeof d !== 'object') {
+    return { hipertensionArterial: 'text-gray-600', diabetesMellitusTipo2: 'text-gray-600', dislipidemia: 'text-gray-600', obesidad: 'text-gray-600' };
+  }
+  const ec = d.estadoCondiciones;
+  const ctrl = (key) => {
+    const c = ec?.[key]?.control;
+    if (c === 'CONTROLADA') return 'text-emerald-700';
+    if (c === 'NO_CONTROLADA') return 'text-red-700';
+    if (c === 'NO_VALORABLE') return 'text-gray-800';
+    return 'text-gray-600';
+  };
+  const g = ec?.obesidad?.grado;
+  let obesidadClase = 'text-gray-600';
+  if (!g) obesidadClase = ec ? 'text-gray-900' : 'text-gray-600';
+  else if (g === 'SOBREPESO') obesidadClase = 'text-gray-900';
+  else if (g === 'OBESIDAD_I') obesidadClase = 'text-red-600';
+  else if (g === 'OBESIDAD_II') obesidadClase = 'text-red-700';
+  else if (g === 'OBESIDAD_III') obesidadClase = 'text-red-900';
+  return {
+    hipertensionArterial: ctrl('hipertensionArterial'),
+    diabetesMellitusTipo2: ctrl('diabetesMellitusTipo2'),
+    dislipidemia: ctrl('dislipidemia'),
+    obesidad: obesidadClase,
+  };
+});
+
+/** Chips en lista para Informe Longitudinal Cardiometabólico (misma semántica que `VisualizadorInformeLongitudinalCardiometabolico`). */
+function tonoRiesgoLongitudinalInformeLista(nivel) {
+  const s = nivel == null ? '' : String(nivel).trim();
+  if (!s) return 'neutral';
+  if (s === 'Muy Bajo' || s === 'Bajo') return 'ok';
+  if (s === 'Moderado') return 'warn';
+  if (s === 'Alto' || s === 'Crítico') return 'bad';
+  return 'neutral';
+}
+
+function tonoTrayectoriaLongitudinalInformeLista(t) {
+  const s = t == null ? '' : String(t).trim();
+  if (!s) return 'neutral';
+  if (s === 'Favorable' || s === 'Estable') return 'ok';
+  if (s === 'Mixta') return 'warn';
+  if (s === 'Desfavorable') return 'bad';
+  return 'neutral';
+}
+
+function tonoPorcentajeAsistenciaInformeLista(p) {
+  if (p == null || p === '') return 'neutral';
+  const n = Number(p);
+  if (!Number.isFinite(n)) return 'neutral';
+  if (n >= 70) return 'ok';
+  if (n >= 50) return 'warn';
+  return 'bad';
+}
+
+function tonoConsistenciaSeguimientoInformeLista(c) {
+  const s = c == null ? '' : String(c).trim();
+  if (!s) return 'neutral';
+  if (s === 'Adecuado') return 'ok';
+  if (s === 'Irregular') return 'warn';
+  if (s === 'Insuficiente') return 'bad';
+  return 'neutral';
+}
+
+function claseTextoTonoInformeLongitudinalLista(tono) {
+  if (tono === 'ok') return 'text-emerald-700';
+  if (tono === 'warn') return 'text-amber-700';
+  if (tono === 'bad') return 'text-red-700';
+  return 'text-gray-600';
+}
+
+const chipsInformeLongitudinalLista = computed(() => {
+  const d = props.informeLongitudinalCardiometabolico;
+  const dash = '—';
+  const vacio = {
+    riesgo: { label: dash, clase: 'text-gray-600' },
+    trayectoria: { label: dash, clase: 'text-gray-600' },
+    asistencia: { label: dash, clase: 'text-gray-600' },
+    consistencia: { label: dash, clase: 'text-gray-600' },
+  };
+  if (!d || typeof d !== 'object') return vacio;
+
+  const nivel = d.nivelRiesgoLongitudinal;
+  const tray = d.tendenciaLongitudinal;
+  const pct = d.porcentajeAsistencia;
+  const cons = d.consistenciaSeguimiento;
+
+  let asistenciaLabel = dash;
+  if (pct != null && pct !== '') {
+    const n = Number(pct);
+    if (Number.isFinite(n)) asistenciaLabel = `${Math.round(n)} %`;
+  }
+
+  return {
+    riesgo: {
+      label: nivel != null && String(nivel).trim() !== '' ? String(nivel) : dash,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoRiesgoLongitudinalInformeLista(nivel)),
+    },
+    trayectoria: {
+      label: tray != null && String(tray).trim() !== '' ? String(tray) : dash,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoTrayectoriaLongitudinalInformeLista(tray)),
+    },
+    asistencia: {
+      label: asistenciaLabel,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoPorcentajeAsistenciaInformeLista(pct)),
+    },
+    consistencia: {
+      label: cons != null && String(cons).trim() !== '' ? String(cons) : dash,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoConsistenciaSeguimientoInformeLista(cons)),
+    },
+  };
+});
 ///////////////////////////////////////////
 
 const construirRutaYNombrePDF = () => {
@@ -1815,13 +2339,19 @@ const construirRutaYNombrePDF = () => {
     'trastornosestadoanimo': props.trastornosEstadoAnimo,
     'cuestionarioprodromalbreve': props.cuestionarioProdromalBreve,
     'trastornolimitepersonalidad': props.trastornoLimitePersonalidad,
+    'eventoseguimientocardiometabolico': props.eventoSeguimientoCardiometabolico,
+    'informelongitudinalcardiometabolico': props.informeLongitudinalCardiometabolico,
   }[tipoSinEspacios];
 
+<<<<<<< HEAD
   // Verificar que el documento exista
   if (!doc) {
     console.warn('[construirRutaYNombrePDF] Documento no encontrado para tipo:', tipoSinEspacios);
     return { ruta: null, nombre: null, updatedAt: null };
   }
+=======
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico;
+>>>>>>> main
 
   const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaReporteLesion || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad;
 
@@ -1847,6 +2377,8 @@ const construirRutaYNombrePDF = () => {
     'trastornosestadoanimo': 'Trastornos Estado Animo',
     'cuestionarioprodromalbreve': 'Cuestionario Prodromal Breve',
     'trastornolimitepersonalidad': 'Trastorno Limite Personalidad',
+    'eventoseguimientocardiometabolico': 'Evento Seguimiento Cardiometabolico',
+    'informelongitudinalcardiometabolico': 'Informe Longitudinal Cardiometabolico',
   };
 
   const tipoDocumentoFormateado = tiposDocumentos[tipoSinEspacios];
@@ -1980,7 +2512,11 @@ onMounted(() => {
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
+<<<<<<< HEAD
 watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.lesion, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad], () => {
+=======
+watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico], () => {
+>>>>>>> main
   verificarDisponibilidadPDF();
 }, { deep: true });
 
@@ -3986,6 +4522,174 @@ watch(() => props.lesion, (lesion) => {
                         </div>
                     </div>
                 </div>
+                    
+                <!-- Evento Seguimiento Cardiometabolico -->
+                <div v-if="typeof eventoSeguimientoCardiometabolico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${eventoSeguimientoCardiometabolico.rutaPDF}`,
+                            `Evento Seguimiento Cardiometabolico ${convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico)}.pdf`,
+                            eventoSeguimientoCardiometabolico.updatedAt ? new Date(eventoSeguimientoCardiometabolico.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${eventoSeguimientoCardiometabolico.rutaPDF}`,
+                            `Evento Seguimiento Cardiometabolico ${convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico)}.pdf`,
+                            eventoSeguimientoCardiometabolico.updatedAt ? new Date(eventoSeguimientoCardiometabolico.updatedAt).getTime() : null,
+                            'Evento Seguimiento Cardiometabolico')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-rose-100 rounded-lg mr-4 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-heart-crack text-rose-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Evento Seguimiento Cardiometabolico
+                                </h3>
+                            </div>
+                            <p class="text-sm text-gray-500 flex items-center">
+                                <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                {{ convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico) }}
+                            </p>
+                        </div>
+
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">HTA</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="claseTextoEstadoCardiometabolicoLista.hipertensionArterial"
+                                        :title="labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.hipertensionArterial?.control)">
+                                        {{ labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.hipertensionArterial?.control) }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">DM2</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="claseTextoEstadoCardiometabolicoLista.diabetesMellitusTipo2"
+                                        :title="labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.diabetesMellitusTipo2?.control)">
+                                        {{ labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.diabetesMellitusTipo2?.control) }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Dislipidemia</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="claseTextoEstadoCardiometabolicoLista.dislipidemia"
+                                        :title="labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.dislipidemia?.control)">
+                                        {{ labelControlCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.dislipidemia?.control) }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[11rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Nivel obesidad</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="claseTextoEstadoCardiometabolicoLista.obesidad"
+                                        :title="labelGradoObesidadCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.obesidad?.grado)">
+                                        {{ labelGradoObesidadCardiometabolicoDoc(eventoSeguimientoCardiometabolico.estadoCondiciones?.obesidad?.grado) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informe Longitudinal Cardiometabolico -->
+                <div v-if="typeof informeLongitudinalCardiometabolico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${informeLongitudinalCardiometabolico.rutaPDF}`,
+                            `Informe Longitudinal Cardiometabolico ${convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico)}.pdf`,
+                            informeLongitudinalCardiometabolico.updatedAt ? new Date(informeLongitudinalCardiometabolico.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${informeLongitudinalCardiometabolico.rutaPDF}`,
+                            `Informe Longitudinal Cardiometabolico ${convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico)}.pdf`,
+                            informeLongitudinalCardiometabolico.updatedAt ? new Date(informeLongitudinalCardiometabolico.updatedAt).getTime() : null,
+                            'Informe Longitudinal Cardiometabolico')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-rose-100 rounded-lg mr-4 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-heart-crack text-rose-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Informe Longitudinal Cardiometabolico
+                                </h3>
+                            </div>
+                            <p class="text-sm text-gray-500 flex items-center">
+                                <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                {{ convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico) }}
+                            </p>
+                        </div>
+
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Riesgo</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalLista.riesgo.clase"
+                                        :title="chipsInformeLongitudinalLista.riesgo.label">
+                                        {{ chipsInformeLongitudinalLista.riesgo.label }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Trayectoria</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalLista.trayectoria.clase"
+                                        :title="chipsInformeLongitudinalLista.trayectoria.label">
+                                        {{ chipsInformeLongitudinalLista.trayectoria.label }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">% Asistencia</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug tabular-nums"
+                                        :class="chipsInformeLongitudinalLista.asistencia.clase"
+                                        :title="chipsInformeLongitudinalLista.asistencia.label">
+                                        {{ chipsInformeLongitudinalLista.asistencia.label }}
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[11rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Consistencia</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalLista.consistencia.clase"
+                                        :title="chipsInformeLongitudinalLista.consistencia.label">
+                                        {{ chipsInformeLongitudinalLista.consistencia.label }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
 
@@ -4014,6 +4718,8 @@ watch(() => props.lesion, (lesion) => {
                     'Trastornos Estado Animo': trastornosEstadoAnimo,
                     'Cuestionario Prodromal Breve': cuestionarioProdromalBreve,
                     'Trastorno Limite Personalidad': trastornoLimitePersonalidad,
+                    'Evento Seguimiento Cardiometabolico': eventoSeguimientoCardiometabolico,
+                    'Informe Longitudinal Cardiometabolico': informeLongitudinalCardiometabolico,
                 }" :key="key">
                     <button v-if="documento && documento.rutaDocumento"
                         @click="descargarArchivo(documento, key)"
@@ -4102,7 +4808,7 @@ watch(() => props.lesion, (lesion) => {
     <Teleport to="body">
         <Transition name="modal-fade" appear>
             <div v-if="showPdfViewer"
-                class="documento-item-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
+                class="documento-item-viewer fixed inset-0 z-50 flex flex-col overflow-hidden bg-black bg-opacity-90 backdrop-blur-sm"
                 @click.self="cerrarPdf">
 
             <!-- Header del visor -->
@@ -4138,8 +4844,9 @@ watch(() => props.lesion, (lesion) => {
             </div>
 
             <!-- Contenedor principal del visor -->
-            <div class="relative w-full h-full flex flex-col">
+            <div class="relative flex min-h-0 min-w-0 flex-1 flex-col px-2 pb-4 sm:px-4">
                 <!-- Contenedor del visor de PDF -->
+<<<<<<< HEAD
                 <div class="flex-1 mt-16 sm:mt-20 mx-2 sm:mx-4 mb-4 bg-white rounded-xl shadow-2xl overflow-hidden">
                     <VPdfViewer
                         :src="pdfUrl"
@@ -4147,6 +4854,24 @@ watch(() => props.lesion, (lesion) => {
                         :initialScale="initialScale"
                         locale="customLang"
                         :localization="localization"
+=======
+                <div
+                    ref="pdfViewerContainerRef"
+                    class="pdf-viewer-host mt-16 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl bg-white shadow-2xl sm:mt-20"
+                >
+                    <VPdfViewer
+                        v-if="pdfViewerReady"
+                        :key="pdfViewerMountKey"
+                        ref="pdfViewerRef"
+                        class="h-full w-full max-w-full"
+                        :src="pdfUrl"
+                        :initialThumbnails-visible="initialThumbnailsVisible"
+                        :initialScale="pdfInitialScale"
+                        :afterCanvasLoaded="pdfAfterCanvasLoaded"
+                        locale="customLang"
+                        :localization="localization"
+                        @loaded="handlePdfViewerLoaded"
+>>>>>>> main
                     />
                 </div>
             </div>
@@ -4299,6 +5024,17 @@ watch(() => props.lesion, (lesion) => {
 
 .control-button:hover {
     transform: scale(1.05);
+}
+
+/* Visor PDF: evitar desborde horizontal del componente interno */
+.documento-item-viewer .pdf-viewer-host {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.documento-item-viewer .pdf-viewer-host :deep(> *) {
+    max-width: 100%;
 }
 
 /* Estilos para el indicador de zoom */
