@@ -80,12 +80,12 @@ const antecedentesLaborales = ref([
     <div class="flex flex-wrap md:flex-nowrap w-full gap-4 items-center">
       <EstadoDocumentoBadgeAlt 
         v-if="isMX"
-        :estado="formData.formDataHistoriaClinica.estado" 
-        :fechaFinalizacion="formData.formDataHistoriaClinica.fechaFinalizacion" 
-        :finalizadoPor="formData.formDataHistoriaClinica.finalizadoPor"
-        :fechaAnulacion="formData.formDataHistoriaClinica.fechaAnulacion"
-        :anuladoPor="formData.formDataHistoriaClinica.anuladoPor"
-        :razonAnulacion="formData.formDataHistoriaClinica.razonAnulacion"
+        :estado="historiaClinicaData.estado" 
+        :fechaFinalizacion="historiaClinicaData.fechaFinalizacion" 
+        :finalizadoPor="historiaClinicaData.finalizadoPor"
+        :fechaAnulacion="historiaClinicaData.fechaAnulacion"
+        :anuladoPor="historiaClinicaData.anuladoPor"
+        :razonAnulacion="historiaClinicaData.razonAnulacion"
         class="mt-1 flex-shrink-0"
       />
       <!-- Empresa -->
