@@ -445,7 +445,7 @@ function advertenciaDm2RangoIntermedio(): AdvertenciaCoherencia {
   return adv(
     'DM2_RANGO_INTERMEDIO',
     'warning',
-    'Valores glucémicos en rango intermedio; la valoración de control debe ser determinada por el médico según metas individuales y contexto clínico.',
+    'Valores glucémicos en rango intermedio; la valoración de control debe ser determinada según metas individuales y contexto clínico.',
     'REVISAR',
   );
 }
@@ -579,9 +579,6 @@ function evaluarDm2(
     if (!tieneLaboratorioDm2(form)) {
       estadoCalculado = 'NO_VALORABLE';
       razon = 'Diagnóstico activo de DM2; sin glucosa ni HbA1c en esta visita.';
-    } else if (glucosaClaramenteDesfavorable(form, cg) || hbaClaramenteDesfavorable(form, ch)) {
-      estadoCalculado = 'NO_CONTROLADA';
-      razon = 'Diagnóstico activo; al menos un analito glucémico en categoría no favorable (orientativo).';
     } else if (
       (cg === undefined || glucosaNormal(cg)) &&
       (ch === undefined || hbaNormal(ch)) &&
@@ -589,14 +586,16 @@ function evaluarDm2(
     ) {
       estadoCalculado = 'CONTROLADA';
       razon = 'Diagnóstico activo; analitos disponibles en categoría favorable (orientativo).';
-    } else if (perfilGlucemicoIntermedioConDx(form, cg, ch)) {
-      // Sin estado persistido «intermedio»: chip NO_VALORABLE, control manual sin auto-persistir.
-      estadoCalculado = 'NO_VALORABLE';
-      razon =
-        'Diagnóstico activo; valores glucémicos en rango intermedio. Valoración de control a criterio médico.';
-      persistirControlAutomatico = false;
-      permisosOpts = { permitirSeleccionManualConNoValorables: true };
-      advertencias.push(advertenciaDm2RangoIntermedio());
+    } else if (glucosaDesfavorable(cg) || hbaDesfavorable(ch)) {
+      estadoCalculado = 'NO_CONTROLADA';
+      if (perfilGlucemicoIntermedioConDx(form, cg, ch)) {
+        razon =
+          'Diagnóstico activo; valores glucémicos en rango intermedio. Valoración de control a criterio médico.';
+        advertencias.push(advertenciaDm2RangoIntermedio());
+      } else {
+        razon =
+          'Diagnóstico activo; al menos un analito glucémico en categoría no favorable (orientativo).';
+      }
     } else {
       estadoCalculado = 'NO_VALORABLE';
       razon = 'Diagnóstico activo; datos de laboratorio no concluyentes para sugerencia de control.';

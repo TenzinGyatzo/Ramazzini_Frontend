@@ -93,7 +93,8 @@ function textoPasoInferior(filaKey) {
   const r = resultadoFila(filaKey);
   if (
     r.diagnosticoActivo &&
-    r.estadoCalculado === 'NO_VALORABLE'
+    r.estadoCalculado === 'NO_VALORABLE' &&
+    !r.controlSeleccionableManualmente
   ) {
     return 'Existe diagnóstico activo, pero no hay datos suficientes en esta visita para valorar control.';
   }
