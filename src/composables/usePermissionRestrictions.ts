@@ -94,6 +94,8 @@ export function usePermissionRestrictions() {
     'trastornosEstadoAnimo',
     'cuestionarioProdromalBreve',
     'trastornoLimitePersonalidad',
+    'eventoSeguimientoCardiometabolico',
+    'informeLongitudinalCardiometabolico',
   ];
 
   // Función para verificar si un usuario puede crear un tipo específico de documento
@@ -146,6 +148,8 @@ export function usePermissionRestrictions() {
       'trastornosEstadoAnimo': 'Cuestionario Trastornos de Estado de Ánimo (MDQ)',
       'cuestionarioProdromalBreve': 'Cuestionario Prodromal Breve',
       'trastornoLimitePersonalidad': 'Cuestionario Trastorno Límite de la Personalidad',
+      'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
+      'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
     };
 
     const documentName = documentNames[documentType] || documentType;

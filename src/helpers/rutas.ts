@@ -28,7 +28,9 @@ const fechaCamposOrigen = {
     'previoEspirometria': 'fechaPrevioEspirometria',
     'recetas': 'fechaReceta',
     'constanciasAptitud': 'fechaConstanciaAptitud',
-    'lesiones': 'fechaReporteLesion'
+    'lesiones': 'fechaReporteLesion',
+    'eventoSeguimientoCardiometabolico': 'fechaEventoSeguimientoCardiometabolico',
+    'informeLongitudinalCardiometabolico': 'fechaInformeLongitudinalCardiometabolico',
 };
 
 // Mapeo de nombres de documentos (DEBEN coincidir con los del backend para Nota Aclaratoria)
@@ -61,7 +63,9 @@ const documentoNombres = {
     'recetas': 'Receta',
     'constanciaAptitud': 'Constancia de Aptitud',
     'constanciasAptitud': 'Constancia de Aptitud',
-    'lesion': 'Lesión'
+    'lesion': 'Lesión',
+    'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
+    'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
 };
 
 // Mapeo de tipos singulares a plurales para buscar en el store
@@ -82,7 +86,9 @@ const tipoSingularAPlural: Record<string, string> = {
     'previoEspirometria': 'previoEspirometria',
     'receta': 'recetas',
     'constanciaAptitud': 'constanciasAptitud',
-    'lesion': 'lesiones'
+    'lesion': 'lesiones',
+    'eventoSeguimientoCardiometabolico': 'eventoSeguimientoCardiometabolico',
+    'informeLongitudinalCardiometabolico': 'informeLongitudinalCardiometabolico',
 };
 
 // Función para normalizar tipo de documento a plural

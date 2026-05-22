@@ -42,7 +42,9 @@ const tipoNombres = {
   'previoEspirometria': 'Previo Espirometría',
   'recetas': 'Receta',
   'constanciasAptitud': 'Constancia de Aptitud',
-  'lesiones': 'Lesión'
+  'lesiones': 'Lesión',
+  'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
+  'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
 };
 
 // Función para cargar información del documento origen

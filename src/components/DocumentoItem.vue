@@ -118,6 +118,8 @@ const obtenerNombreTipoDocumento = (tipo) => {
     'documentoExterno': 'Documento Externo',
     'notaAclaratoria': 'Nota Aclaratoria',
     'lesion': 'Lesión',
+    'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
+    'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
     // Plural
     'antidopings': 'Antidoping',
     'aptitudes': 'Aptitud',
@@ -1672,7 +1674,9 @@ const fechaCamposOrigen = {
     'entrevistasPsicologicas': 'fechaEntrevistaPsicologica',
     'trastornosEstadoAnimo': 'fechaTrastornosEstadoAnimo',
     'cuestionarioProdromalBreve': 'fechaCuestionarioProdromalBreve',
-    'trastornoLimitePersonalidad': 'fechaTrastornoLimitePersonalidad'
+    'trastornoLimitePersonalidad': 'fechaTrastornoLimitePersonalidad',
+    'eventoSeguimientoCardiometabolico': 'fechaEventoSeguimientoCardiometabolico',
+    'informeLongitudinalCardiometabolico': 'fechaInformeLongitudinalCardiometabolico',
 };
 
 // Mapeo de tipos singulares a plurales para buscar en el store
@@ -1696,7 +1700,9 @@ const tipoSingularAPlural = {
     'entrevistaPsicologica': 'entrevistasPsicologicas',
     'trastornosEstadoAnimo': 'trastornosEstadoAnimo',
     'cuestionarioProdromalBreve': 'cuestionarioProdromalBreve',
-    'trastornoLimitePersonalidad': 'trastornoLimitePersonalidad'
+    'trastornoLimitePersonalidad': 'trastornoLimitePersonalidad',
+    'eventoSeguimientoCardiometabolico': 'eventoSeguimientoCardiometabolico',
+    'informeLongitudinalCardiometabolico': 'informeLongitudinalCardiometabolico',
 };
 
 // Función para normalizar tipo de documento a plural

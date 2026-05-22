@@ -32,7 +32,9 @@ const tipoNombres = {
   'historiaOtologica': 'Historia Otológica',
   'previoEspirometria': 'Previo Espirometría',
   'recetas': 'Receta',
-  'constanciasAptitud': 'Constancia de Aptitud'
+  'constanciasAptitud': 'Constancia de Aptitud',
+  'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
+  'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
 };
 
 // Mapeo de campos de fecha para cada tipo de documento
@@ -51,7 +53,9 @@ const fechaCampos = {
   historiaOtologica: "fechaHistoriaOtologica",
   previoEspirometria: "fechaPrevioEspirometria",
   recetas: "fechaReceta",
-  constanciasAptitud: "fechaConstanciaAptitud"
+  constanciasAptitud: "fechaConstanciaAptitud",
+  eventoSeguimientoCardiometabolico: "fechaEventoSeguimientoCardiometabolico",
+  informeLongitudinalCardiometabolico: "fechaInformeLongitudinalCardiometabolico",
 };
 
 // Computed para obtener lista de documentos disponibles (solo FINALIZADOS o ANULADOS)
