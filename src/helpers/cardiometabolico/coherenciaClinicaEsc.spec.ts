@@ -209,7 +209,7 @@ describe('evaluarCoherenciaEsc — DM2', () => {
     expect(r.estadoCalculado).toBe('NO_CONTROLADA');
   });
 
-  it('DM2-08: con dx + glucosa 110 y HbA1c 5.9 → NO_VALORABLE intermedio, selección manual sin auto-persist', () => {
+  it('DM2-08: con dx + glucosa 110 y HbA1c 5.9 → NO_CONTROLADA intermedio con selección manual', () => {
     const r = evaluarCoherenciaEsc(
       form({
         diagnosticosActivos: ['DIABETES_MELLITUS_TIPO_2'],
@@ -221,9 +221,8 @@ describe('evaluarCoherenciaEsc — DM2', () => {
         },
       }),
     ).diabetesMellitusTipo2;
-    expect(r.estadoCalculado).toBe('NO_VALORABLE');
+    expect(r.estadoCalculado).toBe('NO_CONTROLADA');
     expect(r.controlSeleccionableManualmente).toBe(true);
-    expect(r.persistirControlAutomatico).toBe(false);
     expect(r.advertencias.some((a) => a.codigo === 'DM2_RANGO_INTERMEDIO')).toBe(true);
   });
 });
@@ -520,7 +519,7 @@ describe('advertencias y limpieza', () => {
     expect(f.estadoCondiciones?.diabetesMellitusTipo2?.control).toBe('CONTROLADA');
   });
 
-  it('SYNC-05: DM2 intermedio con dx no auto-persiste NO_VALORABLE', () => {
+  it('SYNC-05: DM2 intermedio con dx auto-persiste NO_CONTROLADA', () => {
     const f = form({
       diagnosticosActivos: ['DIABETES_MELLITUS_TIPO_2'],
       laboratorio: {
@@ -531,7 +530,7 @@ describe('advertencias y limpieza', () => {
       },
     });
     sincronizarEstadoControlAutomatico(f);
-    expect(f.estadoCondiciones?.diabetesMellitusTipo2?.control).toBeUndefined();
+    expect(f.estadoCondiciones?.diabetesMellitusTipo2?.control).toBe('NO_CONTROLADA');
   });
 
   it('MARCAR-01: marcarDiagnosticoActivoEsc añade dx y preselecciona control según datos', () => {
