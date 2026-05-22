@@ -510,6 +510,24 @@ const rutasDeletablesDelGrupo = computed(() => {
             pushIfDeletable(receta, ruta);
         });
     }
+    if (props.documents.eventoSeguimientoCardiometabolico) {
+        props.documents.eventoSeguimientoCardiometabolico.forEach(eventoSeguimientoCardiometabolico => {
+            const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
+            const fecha = obtenerFechaDocumento(eventoSeguimientoCardiometabolico) || 'SinFecha';
+            const nombreArchivo = obtenerNombreArchivo(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico', fecha);
+            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+            pushIfDeletable(eventoSeguimientoCardiometabolico, ruta);
+        });
+    }
+    if (props.documents.informeLongitudinalCardiometabolico) {
+        props.documents.informeLongitudinalCardiometabolico.forEach(informeLongitudinalCardiometabolico => {
+            const rutaBase = obtenerRutaDocumento(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico');
+            const fecha = obtenerFechaDocumento(informeLongitudinalCardiometabolico) || 'SinFecha';
+            const nombreArchivo = obtenerNombreArchivo(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico', fecha);
+            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+            pushIfDeletable(informeLongitudinalCardiometabolico, ruta);
+        });
+    }
     return rutas;
 });
 
@@ -1221,7 +1239,9 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                         return props.selectedRoutes.includes(ruta);
                     })()"
                     @eliminarDocumento="$emit('eliminarDocumento', eventoSeguimientoCardiometabolico._id, convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico), 'eventoSeguimientoCardiometabolico')" 
+                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
+                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
                 />
             </div>
         </div>
@@ -1245,7 +1265,9 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                         return props.selectedRoutes.includes(ruta);
                     })()"
                     @eliminarDocumento="$emit('eliminarDocumento', informeLongitudinalCardiometabolico._id, convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico), 'informeLongitudinalCardiometabolico')" 
+                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
+                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
                 />
             </div>
         </div>

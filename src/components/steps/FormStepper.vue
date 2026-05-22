@@ -415,6 +415,10 @@ import {
   indicePasoP5Mdq,
   requierePaso15SituacionesMismoPeriodo,
 } from '@/helpers/trastornosEstadoAnimoSteps';
+import {
+  construirRutaPdfNotaAclaratoria,
+  inicializarNotaAclaratoriaNueva,
+} from '@/helpers/notaAclaratoriaForm';
 
 export default {
   components: { Step1Antidoping, Step2Antidoping, Step1Aptitud, Step2Aptitud, Step3Aptitud, Step4Aptitud, Step5Aptitud, Step6Aptitud, Step7Aptitud, Step8Aptitud, Step9Aptitud, Step10Aptitud, Step11Aptitud, Step1Audiometria, Step2Audiometria, Step3Audiometria, Step4Audiometria, Step5Audiometria, Step6Audiometria, Step7Audiometria, Step1Certificado, Step2Certificado, Step1CertificadoExpedito, Step2CertificadoExpedito, Step3CertificadoExpedito, Step4CertificadoExpedito, Step5CertificadoExpedito, Step6CertificadoExpedito, Step7CertificadoExpedito, Step8CertificadoExpedito, Step1ExamenVista, Step2ExamenVista, Step3ExamenVista, Step4ExamenVista, Step5ExamenVista, Step6ExamenVista, Step7ExamenVista, Step8ExamenVista, Step9ExamenVista, Step1ExploracionFisica, Step2ExploracionFisica, Step3ExploracionFisica, Step4ExploracionFisica, Step5ExploracionFisica, Step6ExploracionFisica, Step7ExploracionFisica, Step8ExploracionFisica, Step9ExploracionFisica, Step10ExploracionFisica, Step11ExploracionFisica, Step12ExploracionFisica, Step13ExploracionFisica, Step14ExploracionFisica, Step15ExploracionFisica, Step16ExploracionFisica, Step17ExploracionFisica, Step18ExploracionFisica, Step19ExploracionFisica, Step20ExploracionFisica, Step21ExploracionFisica, Step22ExploracionFisica, Step23ExploracionFisica, Step24ExploracionFisica, Step25ExploracionFisica, Step26ExploracionFisica, Step27ExploracionFisica, Step28ExploracionFisica, Step29ExploracionFisica, Step30ExploracionFisica, Step31ExploracionFisica, Step1HistoriaClinica, Step2HistoriaClinica, Step3HistoriaClinica, Step4HistoriaClinica, Step5HistoriaClinica, Step6HistoriaClinica, Step7HistoriaClinica, Step8HistoriaClinica, Step9HistoriaClinica, Step10HistoriaClinica, Step11HistoriaClinica, Step12HistoriaClinica, Step13HistoriaClinica, Step14HistoriaClinica, Step15HistoriaClinica, Step16HistoriaClinica, Step17HistoriaClinica, Step18HistoriaClinica, Step19HistoriaClinica, Step20HistoriaClinica, Step21HistoriaClinica, Step22HistoriaClinica, Step23HistoriaClinica, Step24HistoriaClinica, Step25HistoriaClinica, Step26HistoriaClinica, Step27HistoriaClinica, Step28HistoriaClinica, Step29HistoriaClinica, Step30HistoriaClinica, Step31HistoriaClinica, Step32HistoriaClinica, Step33HistoriaClinica, Step34HistoriaClinica, Step35HistoriaClinica, Step36HistoriaClinica, Step37HistoriaClinica, Step38HistoriaClinica, Step39HistoriaClinica, Step40HistoriaClinica, Step41HistoriaClinica, Step42HistoriaClinica, Step43HistoriaClinica, Step44HistoriaClinica, Step45HistoriaClinica, Step46HistoriaClinica, Step1NotaMedica, Step2NotaMedica, Step3NotaMedica, Step4NotaMedica, Step5NotaMedica, Step6NotaMedica, Step7NotaMedica, Step8NotaMedica, Step9NotaMedica, Step10NotaMedica, Step11NotaMedica, Step12NotaMedica, Step13NotaMedica, Step14NotaMedica, Step1NotaAclaratoria, Step1ControlPrenatal, Step2ControlPrenatal, Step3ControlPrenatal, Step4ControlPrenatal, Step5ControlPrenatal, Step6ControlPrenatal, Step7ControlPrenatal, Step8ControlPrenatal, Step9ControlPrenatal, Step10ControlPrenatal, Step11ControlPrenatal, Step12ControlPrenatal, Step13ControlPrenatal, Step14ControlPrenatal, Step15ControlPrenatal, Step16ControlPrenatal, Step17ControlPrenatal, Step18ControlPrenatal, Step19ControlPrenatal, Step20ControlPrenatal, Step21ControlPrenatal, Step22ControlPrenatal, Step23ControlPrenatal, Step24ControlPrenatal, Step25ControlPrenatal, Step26ControlPrenatal, Step27ControlPrenatal, Step28ControlPrenatal, Step29ControlPrenatal, Step30ControlPrenatal, Step31ControlPrenatal, Step32ControlPrenatal, Step33ControlPrenatal, Step34ControlPrenatal, Step35ControlPrenatal, Step36ControlPrenatal, Step37ControlPrenatal, Step38ControlPrenatal, Step39ControlPrenatal, Step40ControlPrenatal, Step41ControlPrenatal, Step42ControlPrenatal, Step43ControlPrenatal, Step44ControlPrenatal, Step45ControlPrenatal, Step46ControlPrenatal, Step47ControlPrenatal, Step48ControlPrenatal, Step49ControlPrenatal, Step50ControlPrenatal, Step51ControlPrenatal, Step52ControlPrenatal, Step53ControlPrenatal, Step54ControlPrenatal, Step55ControlPrenatal, Step56ControlPrenatal, Step57ControlPrenatal, Step58ControlPrenatal, Step59ControlPrenatal, Step60ControlPrenatal, Step61ControlPrenatal, Step62ControlPrenatal, Step63ControlPrenatal, Step64ControlPrenatal, Step65ControlPrenatal, Step66ControlPrenatal, Step67ControlPrenatal, Step68ControlPrenatal, Step69ControlPrenatal, Step70ControlPrenatal, Step71ControlPrenatal, Step72ControlPrenatal, Step73ControlPrenatal, Step74ControlPrenatal, Step75ControlPrenatal, Step76ControlPrenatal, Step77ControlPrenatal, Step78ControlPrenatal, Step79ControlPrenatal, Step80ControlPrenatal, Step81ControlPrenatal, Step82ControlPrenatal, Step83ControlPrenatal, Step84ControlPrenatal, Step85ControlPrenatal, Step86ControlPrenatal, Step87ControlPrenatal, Step88ControlPrenatal, Step89ControlPrenatal, Step1HistoriaOtologica, Step2HistoriaOtologica, Step3HistoriaOtologica, Step4HistoriaOtologica, Step5HistoriaOtologica, Step6HistoriaOtologica, Step7HistoriaOtologica, Step8HistoriaOtologica, Step9HistoriaOtologica, Step10HistoriaOtologica, Step11HistoriaOtologica, Step12HistoriaOtologica, Step13HistoriaOtologica, Step14HistoriaOtologica, Step15HistoriaOtologica, Step16HistoriaOtologica, Step17HistoriaOtologica, Step18HistoriaOtologica, Step19HistoriaOtologica, Step20HistoriaOtologica, Step21HistoriaOtologica, Step22HistoriaOtologica, Step23HistoriaOtologica, Step24HistoriaOtologica, Step25HistoriaOtologica, Step1PrevioEspirometria, Step2PrevioEspirometria, Step3PrevioEspirometria, Step4PrevioEspirometria, Step5PrevioEspirometria, Step6PrevioEspirometria, Step7PrevioEspirometria, Step8PrevioEspirometria, Step9PrevioEspirometria, Step10PrevioEspirometria, Step11PrevioEspirometria, Step12PrevioEspirometria, Step13PrevioEspirometria, Step14PrevioEspirometria, Step15PrevioEspirometria, Step16PrevioEspirometria, Step17PrevioEspirometria, Step18PrevioEspirometria, Step19PrevioEspirometria, Step20PrevioEspirometria, Step21PrevioEspirometria, Step22PrevioEspirometria, Step23PrevioEspirometria, Step24PrevioEspirometria, Step25PrevioEspirometria, Step26PrevioEspirometria, Step27PrevioEspirometria, Step28PrevioEspirometria, Step1Receta, Step2Receta, Step3Receta, Step4Receta, Step1ConstanciaAptitud, Step1Lesion, Step2Lesion, Step3Lesion, Step4Lesion, Step5Lesion, Step6Lesion, Step1EntrevistaPsicologica, Step2EntrevistaPsicologica, Step3EntrevistaPsicologica, Step4EntrevistaPsicologica, Step5EntrevistaPsicologica, Step6EntrevistaPsicologica, Step7EntrevistaPsicologica, Step8EntrevistaPsicologica, Step9EntrevistaPsicologica, Step10EntrevistaPsicologica, Step11EntrevistaPsicologica, Step12EntrevistaPsicologica, Step13EntrevistaPsicologica, Step14EntrevistaPsicologica, Step15EntrevistaPsicologica, Step16EntrevistaPsicologica, Step17EntrevistaPsicologica, Step18EntrevistaPsicologica, Step19EntrevistaPsicologica, Step20EntrevistaPsicologica, Step21EntrevistaPsicologica, Step22EntrevistaPsicologica, Step1TrastornosEstadoAnimo, Step2TrastornosEstadoAnimo, Step3TrastornosEstadoAnimo, Step4TrastornosEstadoAnimo, Step5TrastornosEstadoAnimo, Step6TrastornosEstadoAnimo, Step7TrastornosEstadoAnimo, Step8TrastornosEstadoAnimo, Step9TrastornosEstadoAnimo, Step10TrastornosEstadoAnimo, Step11TrastornosEstadoAnimo, Step12TrastornosEstadoAnimo, Step13TrastornosEstadoAnimo, Step14TrastornosEstadoAnimo, Step15TrastornosEstadoAnimo, Step16TrastornosEstadoAnimo, Step17TrastornosEstadoAnimo, Step18TrastornosEstadoAnimo, Step1CuestionarioProdromalBreve, Step2CuestionarioProdromalBreve, Step3CuestionarioProdromalBreve, Step4CuestionarioProdromalBreve, Step5CuestionarioProdromalBreve, Step6CuestionarioProdromalBreve, Step7CuestionarioProdromalBreve, Step8CuestionarioProdromalBreve, Step9CuestionarioProdromalBreve, Step10CuestionarioProdromalBreve, Step11CuestionarioProdromalBreve, Step12CuestionarioProdromalBreve, Step13CuestionarioProdromalBreve, Step14CuestionarioProdromalBreve, Step15CuestionarioProdromalBreve, Step16CuestionarioProdromalBreve, Step17CuestionarioProdromalBreve, Step18CuestionarioProdromalBreve, Step19CuestionarioProdromalBreve, Step20CuestionarioProdromalBreve, Step21CuestionarioProdromalBreve, Step22CuestionarioProdromalBreve, Step1TrastornoLimitePersonalidad, Step2TrastornoLimitePersonalidad, Step3TrastornoLimitePersonalidad, Step4TrastornoLimitePersonalidad, Step5TrastornoLimitePersonalidad, Step6TrastornoLimitePersonalidad, Step7TrastornoLimitePersonalidad, Step8TrastornoLimitePersonalidad, Step9TrastornoLimitePersonalidad, Step10TrastornoLimitePersonalidad, Step11TrastornoLimitePersonalidad, Step1EventoSeguimientoCardiometabolico, Step2EventoSeguimientoCardiometabolico, Step3EventoSeguimientoCardiometabolico, Step4EventoSeguimientoCardiometabolico, Step5EventoSeguimientoCardiometabolico, Step6EventoSeguimientoCardiometabolico, Step7EventoSeguimientoCardiometabolico, Step8EventoSeguimientoCardiometabolico, Step9EventoSeguimientoCardiometabolico, Step1InformeLongitudinalCardiometabolico, Step2InformeLongitudinalCardiometabolico, Step3InformeLongitudinalCardiometabolico, ModalFaltanCampos, ModalCamposFaltantes, DailyConsentModal },
@@ -491,14 +495,34 @@ export default {
         return tipo;
     };
 
+    const bootstrapNotaAclaratoriaNueva = (opts = {}) => {
+      const empresa = empresas.currentEmpresa?.nombreComercial;
+      const centro = centrosTrabajo.currentCentroTrabajo?.nombreCentro;
+      const trabajadorNombre = trabajadores.currentTrabajador?.nombre;
+      const trabajadorId = trabajadores.currentTrabajadorId;
+
+      if (!empresa || !centro || !trabajadorNombre || !trabajadorId) return;
+
+      inicializarNotaAclaratoriaNueva({
+        form: formData.formDataNotaAclaratoria,
+        trabajadorId,
+        rutaPDF: construirRutaPdfNotaAclaratoria(empresa, centro, trabajadorNombre, trabajadorId),
+        userId: userStore.user?._id,
+        documentoOrigenTipo: opts.documentoOrigenTipo ?? formData.formDataNotaAclaratoria.documentoOrigenTipo,
+        documentoOrigenId: opts.documentoOrigenId ?? formData.formDataNotaAclaratoria.documentoOrigenId,
+        documentoOrigen: opts.documentoOrigen ?? null,
+      });
+    };
+
     const crearNotaAclaratoria = () => {
       const tipoOriginal = documentos.currentTypeOfDocument;
-      const idOriginal = documentos.currentDocument?._id;
+      const documentoOrigen = documentos.currentDocument;
+      const idOriginal = documentoOrigen?._id;
       
       console.log('🚀 Iniciando creación de Nota Aclaratoria:', {
         tipoOriginal,
         idOriginal,
-        currentDocument: documentos.currentDocument
+        currentDocument: documentoOrigen
       });
       
       if (!tipoOriginal || !idOriginal) {
@@ -516,14 +540,17 @@ export default {
         idTrabajador: trabajadores.currentTrabajadorId
       });
       
-      // IMPORTANTE: Establecer los valores en el store ANTES de navegar
-      // Esto asegura que estén disponibles cuando los Steps se monten
-      formData.formDataNotaAclaratoria.documentoOrigenTipo = tipoPlural;
-      formData.formDataNotaAclaratoria.documentoOrigenId = idOriginal;
+      // Step1/Step2 se omiten con skipToStep: inicializar fecha, auditoría y metadatos del origen
+      bootstrapNotaAclaratoriaNueva({
+        documentoOrigenTipo: tipoPlural,
+        documentoOrigenId: idOriginal,
+        documentoOrigen,
+      });
       
       console.log('💾 Valores establecidos en store ANTES de navegar:', {
         documentoOrigenTipo: formData.formDataNotaAclaratoria.documentoOrigenTipo,
-        documentoOrigenId: formData.formDataNotaAclaratoria.documentoOrigenId
+        documentoOrigenId: formData.formDataNotaAclaratoria.documentoOrigenId,
+        fechaNotaAclaratoria: formData.formDataNotaAclaratoria.fechaNotaAclaratoria,
       });
       
       // Limpiar el documento actual antes de navegar para que el nuevo formulario inicie desde el paso 1
@@ -1164,6 +1191,12 @@ export default {
       if (skipToStep) {
         const stepNumber = parseInt(skipToStep, 10);
         if (stepNumber > 0 && stepNumber <= stepsStore.steps.length) {
+          if (documentos.currentTypeOfDocument === 'notaAclaratoria') {
+            bootstrapNotaAclaratoriaNueva({
+              documentoOrigenTipo: route.query.documentoOrigenTipo,
+              documentoOrigenId: route.query.documentoOrigenId,
+            });
+          }
           stepsStore.currentStep = stepNumber;
           console.log(`⏭️ Saltando al paso ${stepNumber} (skipToStep desde query params)`);
           return; // No continuar con el check de documento existente
@@ -1631,6 +1664,9 @@ export default {
       const uid = userStore.user?._id;
       if (uid) {
         datosLimpios = normalizarCamposAuditoriaPayload(datosLimpios, uid);
+        if (!datosLimpios._id && !datosLimpios.createdBy) {
+          datosLimpios.createdBy = uid;
+        }
       }
 
       // console.log('Datos limpios para enviar al backend:', datosLimpios);
@@ -1770,12 +1806,30 @@ export default {
           mensajeError = 'Error de conexión. Verifique su conexión a internet e intente nuevamente.';
           toast.open({ message: mensajeError, type: 'error' });
         }
+        return;
       }
+
+      const tipoDocEnviado = documentos.currentTypeOfDocument;
+      const esCreacionNotaAclaratoria =
+        tipoDocEnviado === 'notaAclaratoria' && !datosLimpios._id;
 
       // Reiniciar el estado del formulario después de enviar
       formData.resetFormData();
 
       documentos.currentTypeOfDocument = null;
+
+      if (esCreacionNotaAclaratoria) {
+        router.push({
+          name: 'expediente-medico',
+          params: {
+            idEmpresa: empresas.currentEmpresaId,
+            idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
+            idTrabajador: trabajadores.currentTrabajadorId,
+          },
+        });
+        return;
+      }
+
       router.back();
     };
 

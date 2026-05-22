@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watchEffect, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watchEffect, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -38,6 +38,10 @@ import {
   ORIENTACION_SIN_HALLAZGO,
   CONCLUSION_SIN_HALLAZGOS,
 } from '@/helpers/conclusionEntrevistaPsicologica';
+import {
+  construirRutaPdfNotaAclaratoria,
+  inicializarNotaAclaratoriaNueva,
+} from '@/helpers/notaAclaratoriaForm';
 
 const route = useRoute();
 const router = useRouter();
@@ -48,7 +52,7 @@ const documentos = useDocumentosStore();
 const formData = useFormDataStore();
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
-const { ensureUserLoaded } = useCurrentUser();
+const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
 const { canCreateDocument, getRestrictionMessage } = useUserPermissions();
 const { documentImmutabilityEnabled } = useRegulatoryPolicy();
 const isFinalized = computed(() => documentos.isFinalized);
@@ -111,12 +115,42 @@ const trabajadorId = ref('');
 const documentoId = ref('');
 const tipoDocumento = ref('');
 
-onMounted(() => {
+const bootstrapNotaAclaratoriaSiCorresponde = () => {
+  const tipo = String(tipoDocumento.value || '');
+  if (tipo !== 'notaAclaratoria' || documentoId.value) return;
+
+  const tieneOrigen =
+    formData.formDataNotaAclaratoria.documentoOrigenTipo &&
+    formData.formDataNotaAclaratoria.documentoOrigenId;
+  const saltaPasos = !!route.query.skipToStep;
+  if (!tieneOrigen && !saltaPasos) return;
+
+  const empresa = empresas.currentEmpresa?.nombreComercial;
+  const centro = centrosTrabajo.currentCentroTrabajo?.nombreCentro;
+  const trabajadorNombre = trabajadores.currentTrabajador?.nombre;
+  const tid = trabajadores.currentTrabajadorId;
+  if (!empresa || !centro || !trabajadorNombre || !tid) return;
+
+  inicializarNotaAclaratoriaNueva({
+    form: formData.formDataNotaAclaratoria,
+    trabajadorId: tid,
+    rutaPDF: construirRutaPdfNotaAclaratoria(empresa, centro, trabajadorNombre, tid),
+    userId: getCurrentUserId(),
+    documentoOrigenTipo: formData.formDataNotaAclaratoria.documentoOrigenTipo,
+    documentoOrigenId: formData.formDataNotaAclaratoria.documentoOrigenId,
+  });
+};
+
+const inicializarDesdeRuta = () => {
   empresaId.value = String(route.params.idEmpresa);
   centroTrabajoId.value = String(route.params.idCentroTrabajo);
   trabajadorId.value = String(route.params.idTrabajador);
   documentoId.value = route.params.idDocumento;
   tipoDocumento.value = route.params.tipoDocumento;
+
+  if (tipoDocumento.value) {
+    documentos.setCurrentTypeOfDocument(String(tipoDocumento.value));
+  }
 
   // Establecer los IDs en los stores
   empresas.currentEmpresaId = empresaId.value;
@@ -127,27 +161,28 @@ onMounted(() => {
   empresas.fetchEmpresaById(empresaId.value);
   centrosTrabajo.fetchCentroTrabajoById(empresaId.value, centroTrabajoId.value);
   trabajadores.fetchTrabajadorById(empresaId.value, centroTrabajoId.value, trabajadorId.value);
-  
-  // IMPORTANTE: Guardar valores que ya pueden estar en el store (establecidos por FormStepper)
-  const documentoOrigenTipoPreexistente = formData.formDataNotaAclaratoria.documentoOrigenTipo;
-  const documentoOrigenIdPreexistente = formData.formDataNotaAclaratoria.documentoOrigenId;
-  
+
+  // Guardar snapshot de nota aclaratoria (FormStepper puede haber inicializado Step1/Step2 antes de navegar)
+  const notaAclaratoriaPreexistente =
+    String(route.params.tipoDocumento) === 'notaAclaratoria'
+      ? { ...formData.formDataNotaAclaratoria }
+      : null;
+
   // IMPORTANTE: Guardar query params ANTES de resetear
   const documentoOrigenTipoTemp = route.query.documentoOrigenTipo;
   const documentoOrigenIdTemp = route.query.documentoOrigenId;
-  
+
   formData.resetFormData();
 
   // Detectar si se viene con un documento origen para nota aclaratoria
-  // Priorizar valores preexistentes (establecidos por FormStepper) sobre query params
   if (tipoDocumento.value === 'notaAclaratoria') {
-    if (documentoOrigenTipoPreexistente && documentoOrigenIdPreexistente) {
-      formData.formDataNotaAclaratoria.documentoOrigenTipo = documentoOrigenTipoPreexistente;
-      formData.formDataNotaAclaratoria.documentoOrigenId = documentoOrigenIdPreexistente;
+    if (notaAclaratoriaPreexistente?.documentoOrigenTipo && notaAclaratoriaPreexistente?.documentoOrigenId) {
+      Object.assign(formData.formDataNotaAclaratoria, notaAclaratoriaPreexistente);
     } else if (documentoOrigenTipoTemp && documentoOrigenIdTemp) {
       formData.formDataNotaAclaratoria.documentoOrigenTipo = String(documentoOrigenTipoTemp);
       formData.formDataNotaAclaratoria.documentoOrigenId = String(documentoOrigenIdTemp);
     }
+    bootstrapNotaAclaratoriaSiCorresponde();
   }
 
   const esInformeCm =
@@ -188,7 +223,7 @@ onMounted(() => {
     documentos.currentDocument = null;
   }
 
-  // Consultar altura disponible para control prenatal (una sola vez al iniciar)
+  // Consultar altura disponible para control prenatal
   if (tipoDocumento.value === 'controlPrenatal') {
     formData.consultarAlturaDisponible(trabajadorId.value)
       .then(({ altura, fuente }) => {
@@ -202,14 +237,13 @@ onMounted(() => {
   // Verificar permisos de usuario para el tipo de documento
   if (tipoDocumento.value && !canCreateDocument(tipoDocumento.value)) {
     console.warn(`Acceso no autorizado: ${tipoDocumento.value}`);
-    // Redireccionar al expediente médico
-    router.push({ 
-      name: "expediente-medico", 
-      params: { 
+    router.push({
+      name: 'expediente-medico',
+      params: {
         idEmpresa: empresaId.value,
         idCentroTrabajo: centroTrabajoId.value,
-        idTrabajador: trabajadorId.value
-      }
+        idTrabajador: trabajadorId.value,
+      },
     });
     return;
   }
@@ -233,16 +267,35 @@ onMounted(() => {
       informeCmDocumentsListas.value = true;
     });
   }
+};
+
+onMounted(() => {
+  inicializarDesdeRuta();
 });
+
+watch(
+  () => [
+    route.params.tipoDocumento,
+    route.params.idDocumento,
+    route.query.documentoOrigenTipo,
+    route.query.documentoOrigenId,
+    route.query.skipToStep,
+  ],
+  () => {
+    inicializarDesdeRuta();
+  },
+);
 
 // Verificar cuando los datos se hayan cargado completamente
 watchEffect(async () => {
+  const tipoActual = String(route.params.tipoDocumento || '');
+  const idDocActual = route.params.idDocumento;
   const empresa = empresas.currentEmpresa?.nombreComercial;
   const centroTrabajo = centrosTrabajo.currentCentroTrabajo?.nombreCentro;
   const trabajadorNombre = trabajadores.currentTrabajador?.nombre;
-  const trabajadorId = trabajadores.currentTrabajadorId;
+  const trabajadorIdVal = trabajadores.currentTrabajadorId;
 
-  if (empresa && centroTrabajo && trabajadorNombre && trabajadorId && tipoDocumento.value) {
+  if (empresa && centroTrabajo && trabajadorNombre && trabajadorIdVal && tipoActual) {
     // Obtener el ID del usuario actual
     const currentUserId = await ensureUserLoaded();
     
@@ -251,7 +304,7 @@ watchEffect(async () => {
       return;
     }
 
-    const rutaBase = `expedientes-medicos/${empresa}/${centroTrabajo}/${trabajadorNombre}_${trabajadorId}/`;
+    const rutaBase = `expedientes-medicos/${empresa}/${centroTrabajo}/${trabajadorNombre}_${trabajadorIdVal}/`;
 
     const documentoMap = {
       antidoping: formData.formDataAntidoping,
@@ -279,20 +332,31 @@ watchEffect(async () => {
       informeLongitudinalCardiometabolico: formData.formDataInformeLongitudinalCardiometabolico,
     };
 
-    const documentoForm = documentoMap[tipoDocumento.value];
+    const documentoForm = documentoMap[tipoActual];
 
     if (documentoForm) {
       documentoForm.updatedBy = currentUserId;
       documentoForm.rutaPDF = rutaBase;
-      if (!documentoId.value) {
+      if (!idDocActual) {
         documentoForm.createdBy = currentUserId;
       } else {
         // Al editar, conservar createdBy original como ID string (el backend devuelve objeto poblado)
         const existing = documentoForm.createdBy;
         documentoForm.createdBy = typeof existing === 'object' && existing?._id ? existing._id : existing;
       }
+
+      if (tipoActual === 'notaAclaratoria' && !idDocActual && route.query.skipToStep) {
+        inicializarNotaAclaratoriaNueva({
+          form: documentoForm,
+          trabajadorId: trabajadorIdVal,
+          rutaPDF: construirRutaPdfNotaAclaratoria(empresa, centroTrabajo, trabajadorNombre, trabajadorIdVal),
+          userId: currentUserId,
+          documentoOrigenTipo: documentoForm.documentoOrigenTipo,
+          documentoOrigenId: documentoForm.documentoOrigenId,
+        });
+      }
     } else {
-      console.error(`Tipo de documento no reconocido: ${tipoDocumento.value}`);
+      console.error(`Tipo de documento no reconocido: ${tipoActual}`);
     }
   }
 });

@@ -311,7 +311,7 @@ const handleAnularDocument = (documentoId, documentoNombre, documentoTipo) => {
 
   if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
     executeIfCanManageDocumentosDiagnostico(logic, 'anular documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad'].includes(tipoSinEspacios)) {
+  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad', 'eventoseguimientocardiometabolico', 'informelongitudinalcardiometabolico'].includes(tipoSinEspacios)) {
     executeIfCanManageOtrosDocumentos(logic, 'anular otros documentos');
   } else if (tipoSinEspacios === 'documentoexterno') {
     executeIfCanManageDocumentosExternos(logic, 'anular documentos externos');
@@ -1650,7 +1650,8 @@ const currentDocumentData = computed(() => {
            props.certificado || props.certificadoExpedito || props.receta || props.documentoExterno ||
            props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica ||
            props.notaAclaratoria || props.controlPrenatal || props.historiaOtologica || props.previoEspirometria || props.lesion ||
-           props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad;
+           props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad ||
+           props.eventoSeguimientoCardiometabolico || props.informeLongitudinalCardiometabolico;
 });
 
 // Mapeo de campos de fecha para buscar documentos origen
@@ -1899,6 +1900,8 @@ const documentoNombre = computed(() => {
     if (props.trastornosEstadoAnimo) return 'Trastornos Estado Ánimo';
     if (props.cuestionarioProdromalBreve) return 'Cuestionario Prodromal Breve';
     if (props.trastornoLimitePersonalidad) return 'Trastorno Límite Personalidad';
+    if (props.eventoSeguimientoCardiometabolico) return 'Evento de Seguimiento Cardiometabólico';
+    if (props.informeLongitudinalCardiometabolico) return 'Informe Longitudinal Cardiometabólico';
     if (props.notaAclaratoria) return 'Nota Aclaratoria';
     if (props.controlPrenatal) return 'Control Prenatal';
     if (props.historiaOtologica) return 'Historia Otológica';
@@ -4533,11 +4536,28 @@ watch(() => props.lesion, (lesion) => {
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Evento Seguimiento Cardiometabolico
                                 </h3>
+                                <BadgeNotaAclaratoria
+                                    v-if="tieneNotasAclaratorias"
+                                    :documentoId="documentoId"
+                                    :documentoTipo="documentoTipo"
+                                    class="hidden sm:flex ml-2"
+                                />
                             </div>
-                            <p class="text-sm text-gray-500 flex items-center">
-                                <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
-                                {{ convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico) }}
-                            </p>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="eventoSeguimientoCardiometabolico.estado"
+                                    :fechaFinalizacion="eventoSeguimientoCardiometabolico.fechaFinalizacion"
+                                    :finalizadoPor="eventoSeguimientoCardiometabolico.finalizadoPor"
+                                    :fechaAnulacion="eventoSeguimientoCardiometabolico.fechaAnulacion"
+                                    :anuladoPor="eventoSeguimientoCardiometabolico.anuladoPor"
+                                    :razonAnulacion="eventoSeguimientoCardiometabolico.razonAnulacion"
+                                />
+                            </div>
                         </div>
 
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
@@ -4617,11 +4637,28 @@ watch(() => props.lesion, (lesion) => {
                                 <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Informe Longitudinal Cardiometabolico
                                 </h3>
+                                <BadgeNotaAclaratoria
+                                    v-if="tieneNotasAclaratorias"
+                                    :documentoId="documentoId"
+                                    :documentoTipo="documentoTipo"
+                                    class="hidden sm:flex ml-2"
+                                />
                             </div>
-                            <p class="text-sm text-gray-500 flex items-center">
-                                <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
-                                {{ convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico) }}
-                            </p>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="informeLongitudinalCardiometabolico.estado"
+                                    :fechaFinalizacion="informeLongitudinalCardiometabolico.fechaFinalizacion"
+                                    :finalizadoPor="informeLongitudinalCardiometabolico.finalizadoPor"
+                                    :fechaAnulacion="informeLongitudinalCardiometabolico.fechaAnulacion"
+                                    :anuladoPor="informeLongitudinalCardiometabolico.anuladoPor"
+                                    :razonAnulacion="informeLongitudinalCardiometabolico.razonAnulacion"
+                                />
+                            </div>
                         </div>
 
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">

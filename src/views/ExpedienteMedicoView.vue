@@ -292,6 +292,8 @@ const documentTypeLabels = {
   lesion: "Reporte de Lesión",
   historiaOtologica: "Historia Otologica",
   previoEspirometria: "Previo Espirometria",
+  eventoSeguimientoCardiometabolico: "Evento de Seguimiento Cardiometabólico",
+  informeLongitudinalCardiometabolico: "Informe Longitudinal Cardiometabólico",
 };
 
 const fetchData = async () => {

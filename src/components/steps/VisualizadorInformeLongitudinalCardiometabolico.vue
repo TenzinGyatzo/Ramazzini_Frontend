@@ -6,6 +6,8 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useStepsStore } from '@/stores/steps';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import {
   calcularEdad,
   calcularAntiguedad,
@@ -66,6 +68,8 @@ const formData = useFormDataStore();
 const documentos = useDocumentosStore();
 const { documentsByYear } = storeToRefs(documentos);
 const steps = useStepsStore();
+const proveedorSaludStore = useProveedorSaludStore();
+const isMX = computed(() => proveedorSaludStore.isMX);
 const isHtmlDark = useHtmlDarkMode();
 
 /**
@@ -1226,12 +1230,26 @@ defineExpose({
   >
     <!-- Encabezado -->
     <div class="w-full space-y-1.5 border-b border-slate-200 pb-3">
-      <p class="text-center text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
-        {{ empresas.currentEmpresa.nombreComercial }}
-      </p>
-      <p class="text-center text-sm sm:text-base font-medium text-slate-600">
-        Informe longitudinal cardiometabólico
-      </p>
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div class="flex-1 min-w-0">
+          <p class="text-center text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
+            {{ empresas.currentEmpresa.nombreComercial }}
+          </p>
+          <p class="text-center text-sm sm:text-base font-medium text-slate-600">
+            Informe longitudinal cardiometabólico
+          </p>
+        </div>
+        <EstadoDocumentoBadgeAlt
+          v-if="isMX"
+          :estado="formData.formDataInformeLongitudinalCardiometabolico.estado"
+          :fechaFinalizacion="formData.formDataInformeLongitudinalCardiometabolico.fechaFinalizacion"
+          :finalizadoPor="formData.formDataInformeLongitudinalCardiometabolico.finalizadoPor"
+          :fechaAnulacion="formData.formDataInformeLongitudinalCardiometabolico.fechaAnulacion"
+          :anuladoPor="formData.formDataInformeLongitudinalCardiometabolico.anuladoPor"
+          :razonAnulacion="formData.formDataInformeLongitudinalCardiometabolico.razonAnulacion"
+          class="flex-shrink-0"
+        />
+      </div>
       <div
         class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs sm:text-sm text-slate-600 cursor-pointer"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md px-2 py-1': steps.currentStep === 1 }"

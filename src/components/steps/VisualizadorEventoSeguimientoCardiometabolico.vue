@@ -4,8 +4,10 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { calcularEdad, calcularAntiguedad, convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
+import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import { DIAGNOSTICO_CARDIOMETABOLICO_OPTS } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
 import {
   claseCssEstadoCondicionEscVista,
@@ -25,6 +27,8 @@ const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const steps = useStepsStore();
+const proveedorSaludStore = useProveedorSaludStore();
+const isMX = computed(() => proveedorSaludStore.isMX);
 
 const esc = computed(() => formData.formDataEventoSeguimientoCardiometabolico);
 
@@ -201,7 +205,17 @@ const goToStep = (stepNumber) => {
     class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
-    <div class="flex flex-wrap w-full gap-4">
+    <div class="flex flex-wrap md:flex-nowrap w-full gap-4 items-center">
+      <EstadoDocumentoBadgeAlt
+        v-if="isMX"
+        :estado="formData.formDataEventoSeguimientoCardiometabolico.estado"
+        :fechaFinalizacion="formData.formDataEventoSeguimientoCardiometabolico.fechaFinalizacion"
+        :finalizadoPor="formData.formDataEventoSeguimientoCardiometabolico.finalizadoPor"
+        :fechaAnulacion="formData.formDataEventoSeguimientoCardiometabolico.fechaAnulacion"
+        :anuladoPor="formData.formDataEventoSeguimientoCardiometabolico.anuladoPor"
+        :razonAnulacion="formData.formDataEventoSeguimientoCardiometabolico.razonAnulacion"
+        class="mt-1 flex-shrink-0"
+      />
       <!-- Empresa -->
       <div class="w-full md:w-2/5">
         <p class="text-center text-base sm:text-lg">

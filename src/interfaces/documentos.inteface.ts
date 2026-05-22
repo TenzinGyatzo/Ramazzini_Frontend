@@ -80,6 +80,9 @@ export interface EventoSeguimientoCardiometabolico {
   estado?: DocumentoEstado;
   fechaFinalizacion?: string;
   finalizadoPor?: string;
+  fechaAnulacion?: string;
+  anuladoPor?: string;
+  razonAnulacion?: string;
   createdBy?: string | UserRef;
   updatedBy?: string | UserRef;
 }
@@ -1181,4 +1184,7 @@ export interface InformeLongitudinalCardiometabolico {
   estado?: DocumentoEstado;
   fechaFinalizacion?: string;
   finalizadoPor?: string;
+  fechaAnulacion?: string;
+  anuladoPor?: string;
+  razonAnulacion?: string;
 }
