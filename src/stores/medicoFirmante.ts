@@ -16,6 +16,8 @@ interface MedicoFirmante {
     tipoPersonalId?: number;
     nombreCredencialAdicional?: string;
     numeroCredencialAdicional?: string;
+    nombreCredencialAdicional2?: string;
+    numeroCredencialAdicional2?: string;
     firma?: {
         data: string;
         contentType: string

@@ -281,6 +281,17 @@ function formatearCampo(campo) {
           </template>
         </template>
 
+        <template v-if="medicoFirmanteStore.medicoFirmante.nombreCredencialAdicional2 && medicoFirmanteStore.medicoFirmante.numeroCredencialAdicional2">
+          <template v-if="proveedorSalud.pais === 'GT'">
+            {{ medicoFirmanteStore.medicoFirmante.nombreCredencialAdicional2 }} No. 
+            <strong>{{ medicoFirmanteStore.medicoFirmante.numeroCredencialAdicional2 }}</strong>.
+          </template>
+          <template v-else>
+            {{ medicoFirmanteStore.medicoFirmante.nombreCredencialAdicional2 }} con número 
+            <strong>{{ medicoFirmanteStore.medicoFirmante.numeroCredencialAdicional2 }}</strong>.
+          </template>
+        </template>
+
       </p>
      </div>
 
