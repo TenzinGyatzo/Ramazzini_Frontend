@@ -98,7 +98,6 @@ const totalDocumentos = computed(() => {
            (props.documents.historiaOtologica?.length || 0) +
            (props.documents.previoEspirometria?.length || 0) +
            (props.documents.recetas?.length || 0) +
-           (props.documents.lesiones?.length || 0) +
            (props.documents.entrevistasPsicologicas?.length || 0) +
            (props.documents.trastornosEstadoAnimo?.length || 0) +
            (props.documents.cuestionarioProdromalBreve?.length || 0) +
@@ -228,16 +227,6 @@ const rutasDelGrupo = computed(() => {
             const rutaBase = obtenerRutaDocumento(notaMedica, 'Nota Medica');
             const fecha = obtenerFechaDocumento(notaMedica) || 'SinFecha';
             const nombreArchivo = obtenerNombreArchivo(notaMedica, 'Nota Medica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.lesiones) {
-        props.documents.lesiones.forEach(lesion => {
-            const rutaBase = obtenerRutaDocumento(lesion, 'Lesion');
-            const fecha = obtenerFechaDocumento(lesion) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(lesion, 'Lesion', fecha);
             const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
             rutas.push(ruta);
         });
@@ -463,15 +452,6 @@ const rutasDeletablesDelGrupo = computed(() => {
             const nombreArchivo = obtenerNombreArchivo(notaMedica, 'Nota Medica', fecha);
             const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
             pushIfDeletable(notaMedica, ruta);
-        });
-    }
-    if (props.documents.lesiones) {
-        props.documents.lesiones.forEach(lesion => {
-            const rutaBase = obtenerRutaDocumento(lesion, 'Lesion');
-            const fecha = obtenerFechaDocumento(lesion) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(lesion, 'Lesion', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(lesion, ruta);
         });
     }
     if (props.documents.controlPrenatal) {
@@ -1003,32 +983,6 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                             return props.selectedRoutes.includes(ruta);
                         })()"
                         @eliminarDocumento="$emit('eliminarDocumento', notaMedica._id, convertirFechaISOaDDMMYYYY(notaMedica.fechaNotaMedica), 'notaMedica')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Lesiones -->
-            <div v-if="documents.lesiones && documents.lesiones.length > 0">
-                <div v-for="(lesion, index) in documents.lesiones" :key="lesion._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
-                    <DocumentoItem
-                        :lesion="lesion"
-                        :documentoId="lesion._id"
-                        :documentoTipo="'lesion'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(lesion, 'Lesion');
-                            const fecha = obtenerFechaDocumento(lesion) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(lesion, 'Lesion', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
-                        @eliminarDocumento="$emit('eliminarDocumento', lesion._id, convertirFechaISOaDDMMYYYY(lesion.fechaReporteLesion || ''), 'lesion')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
                         @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"

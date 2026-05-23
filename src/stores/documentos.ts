@@ -18,7 +18,6 @@ import type {
   PrevioEspirometria,
   Receta,
   ConstanciaAptitud,
-  Lesion,
   EntrevistaPsicologica,
   TrastornosEstadoAnimo,
   CuestionarioProdromalBreve,
@@ -45,7 +44,6 @@ export type DocumentsByYear = {
     previoEspirometria?: PrevioEspirometria[];
     recetas?: Receta[];
     constanciasAptitud?: ConstanciaAptitud[];
-    lesiones?: Lesion[];
     entrevistasPsicologicas?: EntrevistaPsicologica[];
     trastornosEstadoAnimo?: TrastornosEstadoAnimo[];
     cuestionarioProdromalBreve?: CuestionarioProdromalBreve[];
@@ -96,7 +94,6 @@ export const useDocumentosStore = defineStore("documentos", () => {
         previoEspirometria,
         recetas,
         constanciasAptitud,
-        lesiones,
         entrevistasPsicologicas,
         trastornosEstadoAnimo,
         cuestionarioProdromalBreve,
@@ -168,10 +165,6 @@ export const useDocumentosStore = defineStore("documentos", () => {
           console.error("Error al obtener constanciasAptitud", error);
           return { data: [] };
         }),
-        DocumentosAPI.getLesiones(trabajadorId).catch(error => {
-          console.error("Error al obtener lesiones", error);
-          return { data: [] };
-        }),
         DocumentosAPI.getEntrevistaPsicologica(trabajadorId).catch(error => {
           console.error("Error al obtener entrevistasPsicologicas", error);
           return { data: [] };
@@ -216,7 +209,6 @@ export const useDocumentosStore = defineStore("documentos", () => {
         previoEspirometria: Array.isArray(previoEspirometria.data) ? previoEspirometria.data : [],
         recetas: Array.isArray(recetas.data) ? recetas.data : [],
         constanciasAptitud: Array.isArray(constanciasAptitud.data) ? constanciasAptitud.data : [],
-        lesiones: Array.isArray(lesiones.data) ? lesiones.data : [],
         entrevistasPsicologicas: Array.isArray(entrevistasPsicologicas.data) ? entrevistasPsicologicas.data : [],
         trastornosEstadoAnimo: Array.isArray(trastornosEstadoAnimo.data) ? trastornosEstadoAnimo.data : [],
         cuestionarioProdromalBreve: Array.isArray(cuestionarioProdromalBreve.data) ? cuestionarioProdromalBreve.data : [],
@@ -281,7 +273,6 @@ export const useDocumentosStore = defineStore("documentos", () => {
       previoEspirometria: "fechaPrevioEspirometria",
       recetas: "fechaReceta",
       constanciasAptitud: "fechaConstanciaAptitud",
-      lesiones: "fechaReporteLesion",
       entrevistasPsicologicas: "fechaEntrevistaPsicologica",
       trastornosEstadoAnimo: "fechaTrastornosEstadoAnimo",
       cuestionarioProdromalBreve: "fechaCuestionarioProdromalBreve",

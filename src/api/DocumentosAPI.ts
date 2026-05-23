@@ -65,10 +65,6 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/constanciaAptitud`);
     },
 
-    getLesiones(trabajadorId: string) {
-        return api.get(`/expedientes/${trabajadorId}/documentos/lesion`);
-    },
-
     getEntrevistaPsicologica(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/entrevistaPsicologica`);
     },

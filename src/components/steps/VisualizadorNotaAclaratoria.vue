@@ -42,7 +42,6 @@ const tipoNombres = {
   'previoEspirometria': 'Previo Espirometría',
   'recetas': 'Receta',
   'constanciasAptitud': 'Constancia de Aptitud',
-  'lesiones': 'Lesión',
   'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
   'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
 };

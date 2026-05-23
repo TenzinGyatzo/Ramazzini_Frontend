@@ -27,7 +27,6 @@ import VisualizadorHistoriaOtologica from '@/components/steps/VisualizadorHistor
 import VisualizadorPrevioEspirometria from '@/components/steps/VisualizadorPrevioEspirometria.vue';
 import VisualizadorReceta from '@/components/steps/VisualizadorReceta.vue';
 import VisualizadorConstanciaAptitud from '@/components/steps/VisualizadorConstanciaAptitud.vue';
-import VisualizadorReporteLesion from '@/components/steps/VisualizadorReporteLesion.vue';
 import VisualizadorEntrevistaPsicologica from '@/components/steps/VisualizadorEntrevistaPsicologica.vue';
 import VisualizadorTrastornosEstadoAnimo from '@/components/steps/VisualizadorTrastornosEstadoAnimo.vue';
 import VisualizadorCuestionarioProdromalBreve from '@/components/steps/VisualizadorCuestionarioProdromalBreve.vue';
@@ -323,7 +322,6 @@ watchEffect(async () => {
       previoEspirometria: formData.formDataPrevioEspirometria,
       receta: formData.formDataReceta,
       constanciaAptitud: formData.formDataConstanciaAptitud,
-      lesion: formData.formDataLesion,
       entrevistaPsicologica: formData.formDataEntrevistaPsicologica,
       trastornosEstadoAnimo: formData.formDataTrastornosEstadoAnimo,
       cuestionarioProdromalBreve: formData.formDataCuestionarioProdromalBreve,
@@ -1159,18 +1157,6 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           </div>
           <div class="w-full xl:w-2/3 max-w-3xl mx-auto">
             <VisualizadorConstanciaAptitud />
-          </div>
-        </div>
-      </Transition>
-
-      <Transition appear mode="out-in" name="slide-up">  
-        <div v-if="documentos.currentTypeOfDocument === 'lesion'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
-          <div class="w-full xl:w-1/4">
-            <FormStepper />
-          </div>
-          <div class="w-full xl:w-3/4">
-            <VisualizadorReporteLesion />
           </div>
         </div>
       </Transition>

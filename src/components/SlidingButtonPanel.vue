@@ -25,16 +25,15 @@ const documentOrder = {
   "Previo Espirometria": 11,
   "Documento Externo": 12,
   "Nota Medica": 13,
-  "Lesion": 14,
-  "Control Prenatal": 15,
-  "Certificado Expedito": 16,
-  "Receta": 17,
-  "Entrevista Psicologica": 18,
-  "Trastornos Estado Animo": 19,
-  "Cuestionario Prodromal Breve": 20,
-  "Trastorno Limite Personalidad": 21,
-  "Evento Seguimiento Cardiometabolico": 22,
-  "Informe Longitudinal Cardiometabolico": 23,
+  "Control Prenatal": 14,
+  "Certificado Expedito": 15,
+  "Receta": 16,
+  "Entrevista Psicologica": 17,
+  "Trastornos Estado Animo": 18,
+  "Cuestionario Prodromal Breve": 19,
+  "Trastorno Limite Personalidad": 20,
+  "Evento Seguimiento Cardiometabolico": 21,
+  "Informe Longitudinal Cardiometabolico": 22,
 };
 
 // Importante: verificar tipos más específicos ANTES que los genéricos (ej. Certificado Expedito antes de Certificado)
@@ -52,7 +51,6 @@ const getDocumentType = (route) => {
   if (route.includes("Certificado")) return "Certificado";
   if (route.includes("Previo Espirometria")) return "Previo Espirometria";
   if (route.includes("Nota Medica")) return "Nota Medica";
-  if (route.includes("Lesion")) return "Lesion";
   if (route.includes("Control Prenatal")) return "Control Prenatal";
   if (route.includes("Receta")) return "Receta";
   if (route.includes("Entrevista Psicologica")) return "Entrevista Psicologica";

@@ -82,7 +82,7 @@ export function usePermissionRestrictions() {
   };
 
   // Tipos de documentos por categoría de permiso
-  const documentosDiagnostico = ['aptitud', 'constanciaAptitud', 'certificado', 'certificadoExpedito', 'receta', 'notaMedica', 'lesion'];
+  const documentosDiagnostico = ['aptitud', 'constanciaAptitud', 'certificado', 'certificadoExpedito', 'receta', 'notaMedica'];
   const documentosEvaluacion = ['historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'antidoping', 'deteccion'];
   const documentosExternos = ['documentoExterno'];
   const otrosDocumentos = [
@@ -132,7 +132,6 @@ export function usePermissionRestrictions() {
       'certificadoExpedito': 'Certificado Expedito',
       'receta': 'Receta',
       'notaMedica': 'Nota Médica',
-      'lesion': 'Reporte de Lesión',
       'historiaClinica': 'Historia Clínica',
       'exploracionFisica': 'Exploración Física',
       'examenVista': 'Examen de la Vista',

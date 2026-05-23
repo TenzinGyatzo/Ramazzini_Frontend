@@ -289,7 +289,6 @@ const documentTypeLabels = {
   certificado: "Certificado",
   documentoExterno: "Documento Externo",
   notaMedica: "Nota Médica",
-  lesion: "Reporte de Lesión",
   historiaOtologica: "Historia Otologica",
   previoEspirometria: "Previo Espirometria",
   eventoSeguimientoCardiometabolico: "Evento de Seguimiento Cardiometabólico",
@@ -475,7 +474,6 @@ const toggleDeletionMode = () => {
             yearData.certificadosExpedito?.forEach(d => checkDoc(d, 'certificadoExpedito', 'Certificado Expedito'));
             yearData.documentosExternos?.forEach(d => checkDoc(d, 'documentoExterno', 'Documento Externo'));
             yearData.notasMedicas?.forEach(d => checkDoc(d, 'notaMedica', 'Nota Medica'));
-            yearData.lesiones?.forEach(d => checkDoc(d, 'lesion', 'Lesion'));
             yearData.recetas?.forEach(d => checkDoc(d, 'receta', 'Receta'));
             yearData.controlPrenatal?.forEach(d => checkDoc(d, 'controlPrenatal', 'Control Prenatal'));
             yearData.historiaOtologica?.forEach(d => checkDoc(d, 'historiaOtologica', 'Historia Otologica'));
@@ -649,17 +647,6 @@ const handleDeleteSelected = async () => {
                 const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
                 if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(notaMedica)) {
                     documentosAEliminar.push({ id: notaMedica._id, tipo: 'notaMedica' });
-                }
-            });
-
-            // Reportes de Lesión
-            yearData.lesiones?.forEach(lesion => {
-                const rutaBase = obtenerRutaDocumento(lesion, 'Lesion');
-                const fecha = obtenerFechaDocumento(lesion) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(lesion, 'Lesion', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(lesion)) {
-                    documentosAEliminar.push({ id: lesion._id, tipo: 'lesion' });
                 }
             });
 
@@ -860,7 +847,6 @@ const totalDocumentosCreados = computed(() => {
       (yearData.certificados?.length || 0) +
       (yearData.certificadosExpedito?.length || 0) +
       (yearData.notasMedicas?.length || 0) +
-      (yearData.lesiones?.length || 0) +
       (yearData.controlPrenatal?.length || 0) +
       (yearData.historiaOtologica?.length || 0) +
       (yearData.previoEspirometria?.length || 0) +

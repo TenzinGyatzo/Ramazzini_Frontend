@@ -80,10 +80,6 @@ const documentTypes = computed(() => {
     else if (route.includes('Nota Medica')) {
       types.notasMedicas = (types.notasMedicas || 0) + 1;
     }
-    // Reporte de Lesión: "Reporte Lesion dd-mm-aaaa folio.pdf" (verificar antes que fallback documentoExterno)
-    else if (route.includes('Reporte Lesion') || route.includes('Lesion') || route.includes('Lesión')) {
-      types.lesiones = (types.lesiones || 0) + 1;
-    }
     else if (route.includes('Entrevista Psicologica')) {
       types.entrevistasPsicologicas = (types.entrevistasPsicologicas || 0) + 1;
     }
@@ -111,7 +107,7 @@ const documentTypes = computed(() => {
     // Si la ruta no contiene ninguno de los tipos específicos pero tiene extensión, es un documento externo
     else if (!route.includes('Nota Aclaratoria') && !route.includes('Constancia de Aptitud') && !route.includes('Aptitud') && !route.includes('Historia Clinica')
             && !route.includes('Exploracion Fisica') && !route.includes('Examen Vista') && !route.includes('Historia Otologica') && !route.includes('Audiometria') && !route.includes('Antidoping')
-            && !route.includes('Certificado') && !route.includes('Certificado Expedito') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Lesion') && !route.includes('Lesión') && !route.includes('Receta')
+            && !route.includes('Certificado') && !route.includes('Certificado Expedito') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Receta')
             && !route.includes('Entrevista Psicologica') && !route.includes('Trastornos Estado Animo') && !route.includes('Cuestionario Prodromal Breve') && !route.includes('Trastorno Limite Personalidad')
             && !route.includes('Control Prenatal') && !route.includes('Evento Seguimiento Cardiometabolico') && !route.includes('Informe Longitudinal Cardiometabolico')
             && (route.includes('.pdf') || route.includes('.png') || route.includes('.jpg') || route.includes('.jpeg') || route.includes('.doc') || route.includes('.docx'))) {
@@ -227,10 +223,6 @@ const documentTypes = computed(() => {
                       <div v-if="documentTypes.previoEspirometria" class="flex items-center space-x-2">
                         <i class="fas fa-lungs text-sky-600"></i>
                         <span>{{ documentTypes.previoEspirometria }} Previo{{ documentTypes.previoEspirometria !== 1 ? 's' : '' }} Espirometría{{ documentTypes.previoEspirometria !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.lesiones" class="flex items-center space-x-2">
-                        <i class="fas fa-user-injured text-red-600"></i>
-                        <span>{{ documentTypes.lesiones }} Reporte{{ documentTypes.lesiones !== 1 ? 's' : '' }} de Lesión</span>
                       </div>
                       <div v-if="documentTypes.controlPrenatal" class="flex items-center space-x-2">
                         <i class="fas fa-baby text-pink-600"></i>

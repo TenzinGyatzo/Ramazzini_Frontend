@@ -20,7 +20,6 @@ export const useFormDataStore = defineStore('formData', () => {
   const formDataPrevioEspirometria = ref({}); // Estado compartido
   const formDataReceta = ref({}); // Estado compartido
   const formDataConstanciaAptitud = ref({}); // Estado compartido
-  const formDataLesion = ref({}); // Estado compartido
   const formDataEntrevistaPsicologica = ref({}); // Estado compartido
   const formDataTrastornosEstadoAnimo = ref({}); // Estado compartido
   const formDataCuestionarioProdromalBreve = ref({}); // Estado compartido
@@ -85,9 +84,6 @@ export const useFormDataStore = defineStore('formData', () => {
       case 'constanciaAptitud':
         formDataConstanciaAptitud.value = doc;
         break;
-      case 'lesion':
-        formDataLesion.value = { ...documento };
-        break;
       case 'entrevistaPsicologica':
         formDataEntrevistaPsicologica.value = doc;
         break;
@@ -138,7 +134,6 @@ export const useFormDataStore = defineStore('formData', () => {
     formDataPrevioEspirometria.value = {};
     formDataReceta.value = {};
     formDataConstanciaAptitud.value = {};
-    formDataLesion.value = {};
     formDataEntrevistaPsicologica.value = {};
     formDataTrastornosEstadoAnimo.value = {};
     formDataCuestionarioProdromalBreve.value = {};
@@ -184,7 +179,6 @@ export const useFormDataStore = defineStore('formData', () => {
     formDataPrevioEspirometria,
     formDataReceta,
     formDataConstanciaAptitud,
-    formDataLesion,
     formDataEntrevistaPsicologica,
     formDataTrastornosEstadoAnimo,
     formDataCuestionarioProdromalBreve,

@@ -73,7 +73,6 @@ const questionnaireToDocumentType = {
   'historia-otologica': 'historiaOtologica',
   'previo-espirometria': 'previoEspirometria',
   'nota-aclaratoria': 'notaAclaratoria',
-  'lesion': 'lesion',
   'entrevista-psicologica': 'entrevistaPsicologica',
   'trastornos-estado-animo': 'trastornosEstadoAnimo',
   'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
@@ -213,21 +212,6 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
       },
     });
     closeModal();
-  } else if (questionnaireType === 'lesion') {
-    await navigateWithDailyConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'lesion'
-        }
-      },
-    });
-    closeModal();
   } else if (questionnaireType === 'entrevista-psicologica') {
     await navigateWithDailyConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
@@ -355,14 +339,6 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               >
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Nota Aclaratoria
-              </button>
-              <button
-                type="button"
-                @click="handleQuestionnaireSelect('lesion')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Lesión y/o Evento de Violencia
               </button>
               <button type="button" @click="handleQuestionnaireSelect('receta')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-prescription-bottle-medical text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>

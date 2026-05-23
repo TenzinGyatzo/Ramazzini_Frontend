@@ -38,7 +38,7 @@ export interface RegulatoryErrorDetails {
 
   /**
    * Tipo de documento afectado (opcional)
-   * Ejemplos: 'notaMedica', 'historiaClinica', 'lesion'
+   * Ejemplos: 'notaMedica', 'historiaClinica', 'aptitud'
    */
   documentType?: string;
 }

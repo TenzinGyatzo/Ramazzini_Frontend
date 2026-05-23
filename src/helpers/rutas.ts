@@ -28,7 +28,6 @@ const fechaCamposOrigen = {
     'previoEspirometria': 'fechaPrevioEspirometria',
     'recetas': 'fechaReceta',
     'constanciasAptitud': 'fechaConstanciaAptitud',
-    'lesiones': 'fechaReporteLesion',
     'eventoSeguimientoCardiometabolico': 'fechaEventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'fechaInformeLongitudinalCardiometabolico',
 };
@@ -63,7 +62,6 @@ const documentoNombres = {
     'recetas': 'Receta',
     'constanciaAptitud': 'Constancia de Aptitud',
     'constanciasAptitud': 'Constancia de Aptitud',
-    'lesion': 'Lesión',
     'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
     'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
 };
@@ -86,7 +84,6 @@ const tipoSingularAPlural: Record<string, string> = {
     'previoEspirometria': 'previoEspirometria',
     'receta': 'recetas',
     'constanciaAptitud': 'constanciasAptitud',
-    'lesion': 'lesiones',
     'eventoSeguimientoCardiometabolico': 'eventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'informeLongitudinalCardiometabolico',
 };
@@ -178,15 +175,6 @@ export const obtenerNombreArchivo = (documento, tipoDocumento, fecha, documentos
         return `Nota Aclaratoria ${fecha} (${documentoQueAclara}).pdf`;
     }
 
-    // Lesión (GIIS-B013): formato "Reporte Lesion dd-mm-aaaa folio.pdf" (fechaAtencion + folio)
-    if (tipoDocumento === 'Lesion') {
-        const fechaAtencion = documento?.fechaAtencion
-            ? convertirFechaISOaDDMMYYYY(documento.fechaAtencion).replace(/\//g, '-')
-            : fecha?.replace(/\//g, '-') || 'SinFecha';
-        const folio = documento?.folio || '';
-        return `Reporte Lesion ${fechaAtencion} ${folio}.pdf`;
-    }
-    
     return `${tipoDocumento} ${fecha}.pdf`;
 };
 
@@ -208,7 +196,6 @@ export const obtenerFechaDocumento = (documento) => {
         'fechaPrevioEspirometria',
         'fechaReceta',
         'fechaConstanciaAptitud',
-        'fechaReporteLesion',
         'fechaEntrevistaPsicologica',
         'fechaTrastornosEstadoAnimo',
         'fechaCuestionarioProdromalBreve',

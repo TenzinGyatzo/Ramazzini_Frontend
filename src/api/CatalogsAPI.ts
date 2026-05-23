@@ -25,33 +25,6 @@ export default {
     },
 
     /**
-     * Search CIE-10 GIIS catalog (diagnosticos.csv) for lesion/violence reports.
-     * Includes V01-Y98 (external causes).
-     * @param query Search term
-     * @param limit Optional limit
-     * @param sexo Optional sex filter (1=Hombre, 2=Mujer)
-     * @param edad Optional age filter
-     * @param solo4Caracteres If true, return only 4-character codes
-     * @param filterVariant 'afeccion' = Cap V,XIX,O | 'causaExterna' = V01-Y98
-     */
-    searchCIE10GIIS(query, limit?, sexo?, edad?, solo4Caracteres?, filterVariant?) {
-        const params: any = { q: query };
-        if (limit !== undefined) params.limit = limit;
-        if (sexo !== undefined) params.sexo = sexo;
-        if (edad !== undefined) params.edad = edad;
-        if (solo4Caracteres !== undefined) params.solo4Caracteres = solo4Caracteres;
-        if (filterVariant) params.filterVariant = filterVariant;
-        return api.get('/catalogs/cie10-giis/search', { params });
-    },
-
-    /**
-     * Get a single CIE-10 GIIS entry by code (from diagnosticos.csv).
-     */
-    getCIE10GIISByCode(code) {
-        return api.get(`/catalogs/cie10-giis/${encodeURIComponent(code)}`);
-    },
-
-    /**
      * Search CLUES establishments by query string
      * @param query Search term (code or name)
      */

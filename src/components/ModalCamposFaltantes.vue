@@ -39,8 +39,7 @@ const getTipoDocumentoNombre = (tipo: string) => {
     'notaMedica': 'Nota Médica',
     'controlPrenatal': 'Control Prenatal',
     'historiaOtologica': 'Historia Otológica',
-    'previoEspirometria': 'Previo Espirometría',
-    'lesion': 'Lesión'
+    'previoEspirometria': 'Previo Espirometría'
   };
   return nombres[tipo] || tipo;
 };
