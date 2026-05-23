@@ -21,7 +21,9 @@ const formularioMedicoFirmante = ref({
   especialistaSaludTrabajo: "No",
   numeroCedulaEspecialista: "",
   nombreCredencialAdicional: "",
-  numeroCredencialAdicional: ""
+  numeroCredencialAdicional: "",
+  nombreCredencialAdicional2: "",
+  numeroCredencialAdicional2: ""
 });
 
 // Cargar los valores iniciales del médico firmante en el formulario
@@ -35,7 +37,9 @@ watchEffect(() => {
       especialistaSaludTrabajo: medicoFirmante.medicoFirmante.especialistaSaludTrabajo || "No",
       numeroCedulaEspecialista: medicoFirmante.medicoFirmante.numeroCedulaEspecialista || "",
       nombreCredencialAdicional: medicoFirmante.medicoFirmante.nombreCredencialAdicional || "",
-      numeroCredencialAdicional: medicoFirmante.medicoFirmante.numeroCredencialAdicional || ""
+      numeroCredencialAdicional: medicoFirmante.medicoFirmante.numeroCredencialAdicional || "",
+      nombreCredencialAdicional2: medicoFirmante.medicoFirmante.nombreCredencialAdicional2 || "",
+      numeroCredencialAdicional2: medicoFirmante.medicoFirmante.numeroCredencialAdicional2 || ""
     });
   }
 });
@@ -261,7 +265,9 @@ const firmaSrc = computed(() => {
                             <FormKit type="text" :label="proveedorSaludStore.proveedorSalud?.pais === 'MX' ? 'Cédula Profesional' : (proveedorSaludStore.proveedorSalud?.pais === 'GT' ? 'Colegiado Activo' : 'Registro Profesional')" name="numeroCedulaProfesional"
                                 placeholder="Ej. 142988, REG-123456, CRM 123456" validation="cedulaProfesionalValidation" v-model="formularioMedicoFirmante.numeroCedulaProfesional"
                                 :validation-messages="{ cedulaProfesionalValidation: 'El registro debe tener entre 3 y 20 caracteres (letras, números, guiones o espacios).' }" />
-
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <FormKit type="select" label="Especialista en Medicina del Trabajo"
                                 name="especialistaSaludTrabajo" placeholder="¿Es especialista en Medicina del Trabajo"
                                 :options="siONo" v-model="formularioMedicoFirmante.especialistaSaludTrabajo" />
@@ -271,14 +277,26 @@ const firmaSrc = computed(() => {
                                 :disabled="formularioMedicoFirmante.especialistaSaludTrabajo !== 'Si'"
                                 v-model="formularioMedicoFirmante.numeroCedulaEspecialista"
                                 :validation-messages="{ cedulaEspecialistaValidation: 'El registro de especialidad debe tener entre 3 y 20 caracteres (letras, números, guiones o espacios).' }" />
+                        </div>
 
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <FormKit type="text" label="Credencial/Certificación Adicional" name="nombreCredencialAdicional"
-                                placeholder="Ej. Certificado ante Consejo de Medicina del Trabajo, Certificación Internacional"
+                                placeholder="Ej. Registro Estatal de SSA"
                                 v-model="formularioMedicoFirmante.nombreCredencialAdicional" />
 
                             <FormKit type="text" label="Número de Credencial Adicional" name="numeroCredencialAdicional"
                                 placeholder="Ej. 924"
                                 v-model="formularioMedicoFirmante.numeroCredencialAdicional" />
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <FormKit type="text" label="Credencial/Certificación Adicional 2" name="nombreCredencialAdicional2"
+                                placeholder="Ej. Certificado ante Consejo de Medicina del Trabajo, Certificación Internacional"
+                                v-model="formularioMedicoFirmante.nombreCredencialAdicional2" />
+
+                            <FormKit type="text" label="Número de Credencial Adicional 2" name="numeroCredencialAdicional2"
+                                placeholder="Ej. 114254"
+                                v-model="formularioMedicoFirmante.numeroCredencialAdicional2" />
                         </div>
 
                         <!-- Área de arrastrar y soltar para la firma -->
