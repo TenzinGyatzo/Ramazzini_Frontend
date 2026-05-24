@@ -1098,8 +1098,11 @@ export default {
     // Variables para el modal de campos faltantes
     const showCamposFaltantesModal = ref(false);
     const camposFaltantes = ref([]);
+    const isSubmitting = ref(false);
 
     const handleSubmit = async () => {
+      if (isSubmitting.value) return;
+
       let datosLimpios;
 
       // Limpiar datos del formulario según el tipo de documento
@@ -1170,95 +1173,88 @@ export default {
         return; // No continuar con el envío
       }
 
-      // VALIDACIÓN ESPECÍFICA PARA CONSTANCIA DE APTITUD: Verificar que exista una Aptitud al Puesto con una de las 3 opciones de "si aptitud"
-      if (documentos.currentTypeOfDocument === 'constanciaAptitud') {
-        try {
-          const response = await DocumentosAPI.getAptitudes(trabajadores.currentTrabajadorId);
-          const aptitudes = response.data || [];
-          
-          // Opciones válidas de "si aptitud"
-          const opcionesAptitudValidas = [
-            'Apto Sin Restricciones',
-            'Apto Con Precaución',
-            'Apto Con Restricciones'
-          ];
-          
-          // Verificar que exista al menos una aptitud con una de las opciones válidas
-          const existeAptitudValida = aptitudes.some(aptitud => 
-            aptitud.aptitudPuesto && opcionesAptitudValidas.includes(aptitud.aptitudPuesto)
-          );
-          
-          if (!existeAptitudValida) {
-            // Determinar el mensaje según el sexo del trabajador
-            const sexo = trabajadores.currentTrabajador?.sexo || '';
-            const mensaje = sexo === 'Femenino' 
-              ? 'Solo se puede crear esta constancia si la trabajadora es Apta'
-              : 'Solo se puede crear esta constancia si el trabajador es Apto';
-            
-            toast.open({ 
-              message: mensaje, 
-              type: 'error' 
-            });
-            return; // No continuar con el envío
-          }
-        } catch (error) {
-          console.error('Error al validar aptitudes:', error);
-          toast.open({ 
-            message: 'Error al validar las aptitudes. Por favor, intente nuevamente.', 
-            type: 'error' 
-          });
-          return; // No continuar con el envío
-        }
-      }
-
-      // Convertir todas las fechas en los datos al formato ISO
-      datosLimpios =
-        documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico'
-          ? convertirFechasInformeLongitudinalCardiometabolico(datosLimpios)
-          : convertirFechasAISO(datosLimpios);
-
-      if (documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico') {
-        refrescarEventosConcentradosEnInforme(
-          datosLimpios,
-          eventosCmDesdeDocumentsByYear(
-            documentos.documentsByYear,
-            trabajadores.currentTrabajadorId,
-          ),
-        );
-        aplicarIteracionDosAlFormulario(datosLimpios, {
-          preservarJuicioClinicoRiesgo: true,
-          coherenciaCtx: coherenciaCtxDesdeSexo(trabajadores.currentTrabajador?.sexo),
-        });
-        datosLimpios = convertirFechasInformeLongitudinalCardiometabolico(datosLimpios);
-      }
-
-      const uid = userStore.user?._id;
-      if (uid) {
-        datosLimpios = normalizarCamposAuditoriaPayload(datosLimpios, uid);
-      }
-
-      // console.log('Datos limpios para enviar al backend:', datosLimpios);
-
+      isSubmitting.value = true;
       try {
+        // VALIDACIÓN ESPECÍFICA PARA CONSTANCIA DE APTITUD: Verificar que exista una Aptitud al Puesto con una de las 3 opciones de "si aptitud"
+        if (documentos.currentTypeOfDocument === 'constanciaAptitud') {
+          try {
+            const response = await DocumentosAPI.getAptitudes(trabajadores.currentTrabajadorId);
+            const aptitudes = response.data || [];
+
+            const opcionesAptitudValidas = [
+              'Apto Sin Restricciones',
+              'Apto Con Precaución',
+              'Apto Con Restricciones',
+            ];
+
+            const existeAptitudValida = aptitudes.some(
+              (aptitud) =>
+                aptitud.aptitudPuesto && opcionesAptitudValidas.includes(aptitud.aptitudPuesto),
+            );
+
+            if (!existeAptitudValida) {
+              const sexo = trabajadores.currentTrabajador?.sexo || '';
+              const mensaje =
+                sexo === 'Femenino'
+                  ? 'Solo se puede crear esta constancia si la trabajadora es Apta'
+                  : 'Solo se puede crear esta constancia si el trabajador es Apto';
+
+              toast.open({
+                message: mensaje,
+                type: 'error',
+              });
+              return;
+            }
+          } catch (error) {
+            console.error('Error al validar aptitudes:', error);
+            toast.open({
+              message: 'Error al validar las aptitudes. Por favor, intente nuevamente.',
+              type: 'error',
+            });
+            return;
+          }
+        }
+
+        // Convertir todas las fechas en los datos al formato ISO
+        datosLimpios =
+          documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico'
+            ? convertirFechasInformeLongitudinalCardiometabolico(datosLimpios)
+            : convertirFechasAISO(datosLimpios);
+
+        if (documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico') {
+          refrescarEventosConcentradosEnInforme(
+            datosLimpios,
+            eventosCmDesdeDocumentsByYear(
+              documentos.documentsByYear,
+              trabajadores.currentTrabajadorId,
+            ),
+          );
+          aplicarIteracionDosAlFormulario(datosLimpios, {
+            preservarJuicioClinicoRiesgo: true,
+            coherenciaCtx: coherenciaCtxDesdeSexo(trabajadores.currentTrabajador?.sexo),
+          });
+          datosLimpios = convertirFechasInformeLongitudinalCardiometabolico(datosLimpios);
+        }
+
+        const uid = userStore.user?._id;
+        if (uid) {
+          datosLimpios = normalizarCamposAuditoriaPayload(datosLimpios, uid);
+        }
+
         let response;
         if (datosLimpios._id) {
-          // console.log(datosLimpios)
-          
-          // Actualizar el documento
           response = await documentos.updateDocument(
             documentos.currentTypeOfDocument,
             trabajadores.currentTrabajadorId,
             datosLimpios._id,
-            datosLimpios
+            datosLimpios,
           );
           toast.open({ message: 'Documento actualizado exitosamente.' });
         } else {
-
-          // Crear un nuevo documento
           response = await documentos.createDocument(
             documentos.currentTypeOfDocument,
             trabajadores.currentTrabajadorId,
-            datosLimpios
+            datosLimpios,
           );
           toast.open({ message: 'Documento creado exitosamente.' });
         }
@@ -1268,63 +1264,58 @@ export default {
         }
 
         const documentId = response._id;
-
-        // Llamada al backend para generar el informe
         const apiEndpoint = `${import.meta.env.VITE_API_URL}/informes/${documentos.currentTypeOfDocument}/${empresas.currentEmpresaId}/${trabajadores.currentTrabajadorId}/${documentId}/${user.value._id}`;
 
-        let informeResponse;
         if (documentos.currentTypeOfDocument === 'audiometria') {
-          // Para audiometría, obtener la gráfica del store
           const graficaBase64 = formData.formDataAudiometria.graficaAudiometria;
-          
+
           if (graficaBase64) {
-            // Usar POST para enviar la gráfica en el body
-            informeResponse = await axios.post(apiEndpoint, { grafica: graficaBase64 });
+            await axios.post(apiEndpoint, { grafica: graficaBase64 });
           } else {
-            // Usar GET si no hay gráfica
-            informeResponse = await axios.get(apiEndpoint);
+            await axios.get(apiEndpoint);
           }
         } else {
-          informeResponse = await axios.get(apiEndpoint);
+          await axios.get(apiEndpoint);
         }
-        // console.log("Respuesta del backend para el informe:", informeResponse.data);
 
+        formData.resetFormData();
+        documentos.currentTypeOfDocument = null;
+        router.back();
       } catch (error) {
         console.error('Error en el proceso de creación o generación del informe:', error);
-        
-        // Mejorar mensajes de error específicos
+
         let mensajeError = 'Hubo un error, por favor intente nuevamente.';
-        
+
         if (error.response) {
           console.error('Detalles del error (respuesta del backend):', error.response.data);
-          
-          // Mensajes específicos según el tipo de error
+
           if (error.response.status === 400) {
-            mensajeError = 'Los datos enviados no son válidos. Verifique que todos los campos estén completos correctamente.';
+            mensajeError =
+              'Los datos enviados no son válidos. Verifique que todos los campos estén completos correctamente.';
           } else if (error.response.status === 404) {
-            mensajeError = 'No se encontró el recurso solicitado. Verifique que el trabajador y empresa existan.';
+            mensajeError =
+              'No se encontró el recurso solicitado. Verifique que el trabajador y empresa existan.';
           } else if (error.response.status === 500) {
-            mensajeError = 'Error interno del servidor. Por favor, contacte al administrador si el problema persiste.';
+            mensajeError =
+              'Error interno del servidor. Por favor, contacte al administrador si el problema persiste.';
           } else if (error.response.data && error.response.data.message) {
             mensajeError = error.response.data.message;
           }
         } else if (error.code === 'NETWORK_ERROR') {
-          mensajeError = 'Error de conexión. Verifique su conexión a internet e intente nuevamente.';
+          mensajeError =
+            'Error de conexión. Verifique su conexión a internet e intente nuevamente.';
         }
-        
+
         toast.open({ message: mensajeError, type: 'error' });
+      } finally {
+        isSubmitting.value = false;
       }
-
-      // Reiniciar el estado del formulario después de enviar
-      formData.resetFormData();
-
-      documentos.currentTypeOfDocument = null;
-      router.back();
     };
 
     return {
       stepsStore,
       handleSubmit,
+      isSubmitting,
       progressPercentage,
       currentStepDisplay,
       showCamposFaltantesModal,
@@ -1397,10 +1388,17 @@ export default {
         </button>
       </div>
 
-      <button @click="handleSubmit"
-        class="text-xs md:text-sm mt-6 text-gray-500"
+      <button
+        @click="handleSubmit"
+        :disabled="isSubmitting"
+        :aria-busy="isSubmitting"
+        class="text-xs md:text-sm mt-6 text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Guardar cambios
+        <span v-if="isSubmitting" class="inline-flex items-center gap-0.5">
+          Guardando
+          <span class="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+        </span>
+        <span v-else>Guardar cambios</span>
       </button>
     </div>
 
@@ -1426,9 +1424,17 @@ export default {
               class="px-4 py-2 text-xs md:text-base text-white rounded-lg bg-gray-500 hover:bg-gray-600 transition-all duration-300 shadow-md">
               &lt; Anterior
             </button>
-            <button @click="handleSubmit"
-              class="px-4 py-2 text-xs md:text-base rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-transform duration-200 ease-in-out hover:scale-110 glow-animation focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-              Crear PDF
+            <button
+              @click="handleSubmit"
+              :disabled="isSubmitting"
+              :aria-busy="isSubmitting"
+              class="px-4 py-2 text-xs md:text-base rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-transform duration-200 ease-in-out hover:scale-110 glow-animation focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <span v-if="isSubmitting" class="inline-flex items-center gap-0.5">
+                Creando PDF
+                <span class="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+              </span>
+              <span v-else>Crear PDF</span>
             </button>
           </div>
         </div>
@@ -1520,6 +1526,33 @@ button {
 
   100% {
     transform: rotate(360deg);
+  }
+}
+
+.loading-dots span {
+  animation: dot-bounce 1.2s infinite ease-in-out;
+  opacity: 0.3;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes dot-bounce {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
   }
 }
 </style>
