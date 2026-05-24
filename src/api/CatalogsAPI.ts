@@ -164,6 +164,11 @@ export default {
         return api.get(`/catalogs/paises/${catalogKey}`);
     },
 
+    /** Códigos CEX resueltos desde catálogos (tipoPersonal + servicioAtencion) */
+    getCexCatalogCodes() {
+        return api.get('/catalogs/cex/codes');
+    },
+
     /**
      * List all entries from a GIIS catalog (for populating selectors)
      * @param catalogType Catalog type key (e.g. 'cat_sitio_ocurrencia', 'cat_tipo_vialidad')

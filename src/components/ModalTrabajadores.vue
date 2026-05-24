@@ -353,12 +353,12 @@ const handleSubmit = async (data) => {
     }
   }
 
-  // Validar edad mínima: no permitir menores de 15 años
+  // Validar edad mínima: no permitir menores de 18 años
   if (data.fechaNacimiento) {
     const edad = calcularEdad(data.fechaNacimiento);
-    if (edad < 15) {
+    if (edad < 18) {
       toast.open({
-        message: 'No se puede registrar un menor de edad. El trabajador debe tener al menos 15 años cumplidos.',
+        message: 'No se puede registrar un menor de edad. El trabajador debe tener al menos 18 años cumplidos.',
         type: 'error'
       });
       return;
@@ -719,7 +719,6 @@ const cancelarTransferencia = () => {
                 validation="optional|phoneValidation"
                 :validation-messages="{ phoneValidation: 'El número de teléfono debe tener entre 4 y 15 dígitos' }"
                 :value="trabajadores.currentTrabajador?.contactoEmergenciaTelefono || ''" />
-              <div class="lg:col-span-2 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                 <FormKit type="text" label="Número de Empleado" name="numeroEmpleado" placeholder="Sólo números"
                   validation="optional|matches:/^[0-9]*$/"
                   :validation-messages="{
@@ -732,7 +731,6 @@ const cancelarTransferencia = () => {
                     nssValidation: 'Debe tener 4-30 caracteres alfanuméricos'
                   }"
                   maxlength="30" :value="trabajadores.currentTrabajador?.nss || ''" />
-              </div>
               <!-- Folio NOM-024: solo lectura, generado por el sistema para trabajadores nuevos -->
               <div v-if="trabajadores.currentTrabajador?.folio" class="lg:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Folio (Identificador en la UM)</label>

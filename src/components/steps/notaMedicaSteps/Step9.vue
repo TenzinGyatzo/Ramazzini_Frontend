@@ -7,14 +7,23 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import CIE10Autocomplete from '@/components/selectors/CIE10Autocomplete.vue';
 import CIE10ComplementaryDiagnoses from '@/components/selectors/CIE10ComplementaryDiagnoses.vue';
 import { validateCIE10Duplicates, validateCIE10SexAge, extractCIE10Code } from '@/helpers/cie10';
+import {
+  validateDiagnosticoPrincipalSis,
+  fetchMedicoEnfermeraFirmantes,
+} from '@/helpers/notaMedicaDiagnosticosSis';
+import { useConfirmacionDiagnostica } from '@/composables/useConfirmacionDiagnostica';
 import { useNom024Fields } from '@/composables/useNom024Fields';
+import { useUserStore } from '@/stores/user';
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const trabajadores = useTrabajadoresStore();
+const userStore = useUserStore();
 
 const { cie10Required } = useNom024Fields();
+const showSiresUI = computed(() => proveedorSaludStore.showSiresUI);
+const esMujer = computed(() => trabajadores.currentTrabajador?.sexo === 'Femenino');
 
 const codigoCIE10Principal = ref('');
 const codigosCIE10Complementarios = ref([]);
@@ -70,15 +79,6 @@ const requiereCausaExterna = computed(() => {
   return primeraLetra === 'S' || primeraLetra === 'T' || (primeraLetra >= 'V' && primeraLetra <= 'Y');
 });
 
-// Computed: Determinar si requiere confirmación diagnóstica (crónicos/cáncer)
-const requiereConfirmacionDiagnostica = computed(() => {
-  if (!codigoCIE10Principal.value) return false;
-  const codigo = extractCode(codigoCIE10Principal.value).toUpperCase();
-  const esCronico = codigo.startsWith('E11') || codigo.startsWith('I1') || codigo.startsWith('E78');
-  const esCancer = codigo.startsWith('C');
-  return esCronico || esCancer;
-});
-
 // Computed: Edad del trabajador en años (fechaNacimiento vs fechaNotaMedica)
 const edadTrabajador = computed(() => {
   const trabajador = trabajadores.currentTrabajador;
@@ -96,22 +96,20 @@ const edadTrabajador = computed(() => {
   }
 });
 
-// Fe de Erratas: mostrar confirmación diagnóstica 1 solo cuando aplica
-// - edad < 18 y código cáncer (DIA_CAINFANTIL), o
-// - edad >= 20, relacionTemporal=0 y código crónico (DIA_CRONICOS)
-const muestraConfirmacionDiagnostica1 = computed(() => {
-  if (!requiereConfirmacionDiagnostica.value) return false;
-  const codigo = extractCode(codigoCIE10Principal.value).toUpperCase();
-  const esCronico = codigo.startsWith('E11') || codigo.startsWith('I1') || codigo.startsWith('E78');
-  const esCancer = codigo.startsWith('C');
-  const edad = edadTrabajador.value;
-  if (edad === null) return false;
-  if (edad < 18) return esCancer;
-  if (edad >= 20) return relacionTemporal.value === 0 && esCronico;
-  return false; // 18-19 años: no aplica
+const medicoFirmanteRef = ref(null);
+const enfermeraFirmanteRef = ref(null);
+
+const { muestraConfirmacion: muestraConfirmacionDiagnostica1 } = useConfirmacionDiagnostica({
+  slot: 1,
+  codigo: codigoCIE10Principal,
+  edadTrabajador,
+  medicoFirmante: medicoFirmanteRef,
+  enfermeraFirmante: enfermeraFirmanteRef,
+  relacionTemporal,
 });
 
-onMounted(() => {
+onMounted(async () => {
+    await loadFirmantes();
     // Cargar desde documento existente
     if (documentos.currentDocument) {
         codigoCIE10Principal.value = documentos.currentDocument.codigoCIE10Principal || '';
@@ -166,9 +164,13 @@ onMounted(() => {
     
     document.addEventListener('click', relacionTemporalClickOutsideHandler);
     document.addEventListener('keydown', relacionTemporalEscapeKeyHandler);
+
+    scheduleValidatePrincipalSis();
+    validateComplementariesSexAge();
 });
 
 onUnmounted(() => {
+    if (principalSisDebounceTimer) clearTimeout(principalSisDebounceTimer);
     // Guardar en formData
     formDataNotaMedica.codigoCIE10Principal = codigoCIE10Principal.value || '';
     formDataNotaMedica.codigosCIE10Complementarios = codigosCIE10Complementarios.value || [];
@@ -192,8 +194,9 @@ onUnmounted(() => {
 });
 
 // Sincronizar valores con formData
-watch(codigoCIE10Principal, (newValue) => {
-    formDataNotaMedica.codigoCIE10Principal = newValue;
+watch(codigoCIE10Principal, () => {
+    formDataNotaMedica.codigoCIE10Principal = codigoCIE10Principal.value;
+    scheduleValidatePrincipalSis();
 });
 
 watch(codigosCIE10Complementarios, (newValue) => {
@@ -202,6 +205,7 @@ watch(codigosCIE10Complementarios, (newValue) => {
 
 watch(relacionTemporal, (newValue) => {
     formDataNotaMedica.relacionTemporal = newValue ?? undefined;
+    scheduleValidatePrincipalSis();
 });
 
 watch(confirmacionDiagnostica, (newValue) => {
@@ -316,17 +320,62 @@ const complementariesDuplicateError = computed(() => {
   )?.message || null;
 });
 
-// Validación de sexo/edad
-const principalSexAgeError = ref('');
+// Validación DIAGNOSTICO_SIS del diagnóstico principal (inline)
+const principalSisError = ref('');
 const complementariesSexAgeErrors = ref([]);
+let principalSisDebounceTimer = null;
 
-// Función para validar y actualizar mensajes de sexo/edad
-const validateSexAge = async () => {
-  // Resetear errores
-  principalSexAgeError.value = '';
+const loadFirmantes = async () => {
+  const userId = userStore.user?._id;
+  if (!userId) return;
+  const { medicoFirmante, enfermeraFirmante } = await fetchMedicoEnfermeraFirmantes(userId);
+  medicoFirmanteRef.value = medicoFirmante;
+  enfermeraFirmanteRef.value = enfermeraFirmante;
+};
+
+const validatePrincipalSis = async () => {
+  principalSisError.value = '';
+  if (!codigoCIE10Principal.value?.trim()) return;
+
+  const trabajador = trabajadores.currentTrabajador;
+  if (!trabajador) return;
+
+  try {
+    const fechaRef = fechaNotaMedica.value;
+    const result = await validateDiagnosticoPrincipalSis({
+      formData: {
+        codigoCIE10Principal: codigoCIE10Principal.value,
+        relacionTemporal: relacionTemporal.value,
+      },
+      trabajadorSexo: trabajador.sexo || '',
+      trabajadorFechaNacimiento: trabajador.fechaNacimiento
+        ? new Date(trabajador.fechaNacimiento)
+        : fechaRef,
+      fechaNotaMedica: fechaRef,
+      medicoFirmante: medicoFirmanteRef.value,
+      enfermeraFirmante: enfermeraFirmanteRef.value,
+      showSiresUI: showSiresUI.value,
+      esMujer: esMujer.value,
+    });
+    if (!result.ok && result.messageInline) {
+      principalSisError.value = result.messageInline;
+    }
+  } catch (error) {
+    console.error('Error validando diagnóstico principal DIAGNOSTICO_SIS:', error);
+  }
+};
+
+const scheduleValidatePrincipalSis = () => {
+  if (principalSisDebounceTimer) clearTimeout(principalSisDebounceTimer);
+  principalSisDebounceTimer = setTimeout(() => {
+    validatePrincipalSis();
+  }, 350);
+};
+
+// Validación de sexo/edad para complementarios
+const validateComplementariesSexAge = async () => {
   complementariesSexAgeErrors.value = [];
 
-  // Validar solo si hay trabajador disponible
   const trabajador = trabajadores.currentTrabajador;
   if (!trabajador || !trabajador.sexo || !trabajador.fechaNacimiento) {
     return;
@@ -334,24 +383,15 @@ const validateSexAge = async () => {
 
   try {
     const issues = await validateCIE10SexAge({
-      codigoCIE10Principal: codigoCIE10Principal.value,
+      codigoCIE10Principal: null,
       codigosCIE10Complementarios: codigosCIE10Complementarios.value,
-      codigoCIEDiagnostico2: null, // En Step6 no validamos diagnóstico 2
-      codigoCIEDiagnostico3: null, // En Step6 no validamos diagnóstico 3
+      codigoCIEDiagnostico2: null,
+      codigoCIEDiagnostico3: null,
       trabajadorSexo: trabajador.sexo,
       trabajadorFechaNacimiento: new Date(trabajador.fechaNacimiento),
       fechaNotaMedica: fechaNotaMedica.value
     });
 
-    // Procesar issues para diagnóstico principal
-    const principalIssue = issues.find(
-      issue => issue.field === 'codigoCIE10Principal'
-    );
-    if (principalIssue) {
-      principalSexAgeError.value = principalIssue.messageInline;
-    }
-
-    // Procesar issues para complementarios
     const complementariesIssues = issues.filter(
       issue => issue.field === 'codigosCIE10Complementarios'
     );
@@ -359,21 +399,35 @@ const validateSexAge = async () => {
       complementariesSexAgeErrors.value = complementariesIssues.map(issue => issue.messageInline);
     }
   } catch (error) {
-    console.error('Error validando sexo/edad CIE-10:', error);
-    // En caso de error, no mostrar nada (UX neutra)
+    console.error('Error validando sexo/edad CIE-10 complementarios:', error);
   }
 };
 
 // Watchers para recalcular validación cuando cambien los valores
-watch([codigoCIE10Principal, fechaNotaMedica], validateSexAge);
-watch([codigosCIE10Complementarios, fechaNotaMedica], validateSexAge, { deep: true });
+watch(fechaNotaMedica, () => {
+  scheduleValidatePrincipalSis();
+  validateComplementariesSexAge();
+});
+watch(codigosCIE10Complementarios, validateComplementariesSexAge, { deep: true });
 watch(
   () => trabajadores.currentTrabajador?.sexo,
-  validateSexAge
+  () => {
+    scheduleValidatePrincipalSis();
+    validateComplementariesSexAge();
+  }
 );
 watch(
   () => trabajadores.currentTrabajador?.fechaNacimiento,
-  validateSexAge
+  () => {
+    scheduleValidatePrincipalSis();
+    validateComplementariesSexAge();
+  }
+);
+watch(
+  () => userStore.user?._id,
+  () => {
+    loadFirmantes().then(() => scheduleValidatePrincipalSis());
+  }
 );
 </script>
 
@@ -521,12 +575,12 @@ watch(
                     :fechaConsulta="fechaNotaMedica"
                     placeholder="Buscar código diagnóstico principal..."
                 />
-                <!-- Mensaje de error por sexo/edad para diagnóstico principal -->
+                <!-- Mensaje de error DIAGNOSTICO_SIS / sexo-edad para diagnóstico principal -->
                 <Transition name="fade">
-                    <div v-if="principalSexAgeError" class="mt-2">
+                    <div v-if="principalSisError" class="mt-2">
                         <div class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
                             <i class="fas fa-exclamation-triangle mt-0.5"></i>
-                            <span class="flex-1 font-medium">{{ principalSexAgeError }}</span>
+                            <span class="flex-1 font-medium">{{ principalSisError }}</span>
                         </div>
                     </div>
                 </Transition>

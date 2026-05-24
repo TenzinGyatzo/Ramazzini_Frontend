@@ -4,11 +4,23 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import CIE10Autocomplete from '@/components/selectors/CIE10Autocomplete.vue';
-import { validateCIE10Duplicates, validateCIE10SexAge } from '@/helpers/cie10';
+import { validateCIE10Duplicates } from '@/helpers/cie10';
+import {
+  validateDiagnostico3Sis,
+  fetchMedicoEnfermeraFirmantes,
+  tieneComorbilidadDiagRegistrada,
+  isPrimeraVezComorbilidadActiva,
+} from '@/helpers/notaMedicaDiagnosticosSis';
+import { useConfirmacionDiagnostica } from '@/composables/useConfirmacionDiagnostica';
+import { useNom024Fields } from '@/composables/useNom024Fields';
+import { useUserStore } from '@/stores/user';
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
 const trabajadores = useTrabajadoresStore();
+const userStore = useUserStore();
+const { showSiresUI } = useNom024Fields();
+const esMujer = computed(() => trabajadores.currentTrabajador?.sexo === 'Femenino');
 
 // Helper para extraer código CIE-10 del formato "CODE - DESCRIPTION"
 const extractCode = (value) => {
@@ -41,15 +53,6 @@ const fechaNotaMedica = computed(() => {
   return new Date();
 });
 
-// Computed: ¿Requiere confirmación diagnóstica 3? (crónicos/cáncer)
-const requiereConfirmacionDiagnostica3 = computed(() => {
-  if (!codigoCIEDiagnostico3.value) return false;
-  const codigo = extractCode(codigoCIEDiagnostico3.value).toUpperCase();
-  const esCronico = codigo.startsWith('E11') || codigo.startsWith('I1') || codigo.startsWith('E78');
-  const esCancer = codigo.startsWith('C');
-  return esCronico || esCancer;
-});
-
 // Computed: Edad del trabajador en años
 const edadTrabajador = computed(() => {
   const trabajador = trabajadores.currentTrabajador;
@@ -67,22 +70,34 @@ const edadTrabajador = computed(() => {
   }
 });
 
-// Fe de Erratas: mostrar confirmación diagnóstica 3 solo cuando aplica
-const muestraConfirmacionDiagnostica3 = computed(() => {
-  if (!requiereConfirmacionDiagnostica3.value) return false;
-  const codigo = extractCode(codigoCIEDiagnostico3.value).toUpperCase();
-  const esCronico = codigo.startsWith('E11') || codigo.startsWith('I1') || codigo.startsWith('E78');
-  const esCancer = codigo.startsWith('C');
-  const edad = edadTrabajador.value;
-  if (edad === null) return false;
-  if (edad < 18) return esCancer;
-  if (edad >= 20) return primeraVezDiagnostico3.value === 1 && esCronico;
-  return false;
+const medicoFirmanteRef = ref(null);
+const enfermeraFirmanteRef = ref(null);
+
+const { muestraConfirmacion: muestraConfirmacionDiagnostica3 } = useConfirmacionDiagnostica({
+  slot: 3,
+  codigo: codigoCIEDiagnostico3,
+  edadTrabajador,
+  medicoFirmante: medicoFirmanteRef,
+  enfermeraFirmante: enfermeraFirmanteRef,
+  primeraVezDiagnostico: primeraVezDiagnostico3,
 });
 
-onMounted(() => {
+const limpiarComorbilidad3EnStore = () => {
+  delete formDataNotaMedica.primeraVezDiagnostico3;
+  formDataNotaMedica.codigoCIEDiagnostico3 = '';
+  delete formDataNotaMedica.confirmacionDiagnostica3;
+};
+
+onMounted(async () => {
+  await loadFirmantes();
+  if (formDataNotaMedica.primeraVezDiagnostico3 === -1) {
+    delete formDataNotaMedica.primeraVezDiagnostico3;
+  }
   const doc = documentos.currentDocument || formDataNotaMedica;
-  const tieneComorbilidad = !!(doc?.codigoCIEDiagnostico3 || (doc?.primeraVezDiagnostico3 !== undefined && doc?.primeraVezDiagnostico3 !== null));
+  const tieneComorbilidad = tieneComorbilidadDiagRegistrada(
+    doc?.primeraVezDiagnostico3,
+    doc?.codigoCIEDiagnostico3,
+  );
   if (tieneComorbilidad) {
     registrarComorbilidad.value = 1;
   }
@@ -102,13 +117,13 @@ onMounted(() => {
   if (codigoCIEDiagnostico3.value && !formDataNotaMedica.codigoCIEDiagnostico3) {
     formDataNotaMedica.codigoCIEDiagnostico3 = codigoCIEDiagnostico3.value;
   }
+  scheduleValidateDiag3Sis();
 });
 
 onUnmounted(() => {
+  if (diag3SisDebounceTimer) clearTimeout(diag3SisDebounceTimer);
   if (registrarComorbilidad.value === 0) {
-    formDataNotaMedica.primeraVezDiagnostico3 = undefined;
-    formDataNotaMedica.codigoCIEDiagnostico3 = '';
-    formDataNotaMedica.confirmacionDiagnostica3 = undefined;
+    limpiarComorbilidad3EnStore();
   } else {
     const pv = primeraVezDiagnostico3.value;
     formDataNotaMedica.primeraVezDiagnostico3 = pv ?? undefined;
@@ -126,11 +141,14 @@ watch(registrarComorbilidad, (val) => {
     primeraVezDiagnostico3.value = null;
     codigoCIEDiagnostico3.value = '';
     confirmacionDiagnostica3.value = false;
+    limpiarComorbilidad3EnStore();
   }
+  scheduleValidateDiag3Sis();
 });
 
 watch(codigoCIEDiagnostico3, (newValue) => {
   formDataNotaMedica.codigoCIEDiagnostico3 = newValue || '';
+  scheduleValidateDiag3Sis();
 });
 
 watch(confirmacionDiagnostica3, (newValue) => {
@@ -156,6 +174,7 @@ watch(primeraVezDiagnostico3, (newValue) => {
     confirmacionDiagnostica3.value = false;
     formDataNotaMedica.confirmacionDiagnostica3 = undefined;
   }
+  scheduleValidateDiag3Sis();
 });
 
 // Validación de duplicidades CIE-10 para diagnóstico 3
@@ -186,37 +205,74 @@ const diagnostico3EqualsDiagnostico2Error = computed(() => {
   )?.message || null;
 });
 
-const diagnostico3SexAgeError = ref('');
+const diagnostico3SisError = ref('');
+let diag3SisDebounceTimer = null;
 
-const validateSexAge = async () => {
-  diagnostico3SexAgeError.value = '';
+const loadFirmantes = async () => {
+  const userId = userStore.user?._id;
+  if (!userId) return;
+  const { medicoFirmante, enfermeraFirmante } = await fetchMedicoEnfermeraFirmantes(userId);
+  medicoFirmanteRef.value = medicoFirmante;
+  enfermeraFirmanteRef.value = enfermeraFirmante;
+};
+
+const validateDiag3Sis = async () => {
+  diagnostico3SisError.value = '';
+  if (registrarComorbilidad.value === 0) return;
+
+  if (!isPrimeraVezComorbilidadActiva(formDataNotaMedica.primeraVezDiagnostico2)) {
+    diagnostico3SisError.value =
+      'Debe registrar primero el diagnóstico 2 (comorbilidad) antes del diagnóstico 3.';
+    return;
+  }
+
   const trabajador = trabajadores.currentTrabajador;
-  if (!trabajador || !trabajador.sexo || !trabajador.fechaNacimiento) return;
+  if (!trabajador) return;
+
+  const pv = primeraVezDiagnostico3.value;
+  formDataNotaMedica.primeraVezDiagnostico3 = pv ?? undefined;
+
   try {
-    const issues = await validateCIE10SexAge({
-      codigoCIE10Principal: formDataNotaMedica.codigoCIE10Principal,
-      codigosCIE10Complementarios: formDataNotaMedica.codigosCIE10Complementarios,
-      codigoCIEDiagnostico2: formDataNotaMedica.codigoCIEDiagnostico2,
-      codigoCIEDiagnostico3: codigoCIEDiagnostico3.value,
-      trabajadorSexo: trabajador.sexo,
-      trabajadorFechaNacimiento: new Date(trabajador.fechaNacimiento),
-      fechaNotaMedica: fechaNotaMedica.value
+    const result = await validateDiagnostico3Sis({
+      formData: {
+        ...formDataNotaMedica,
+        codigoCIEDiagnostico3: codigoCIEDiagnostico3.value,
+        primeraVezDiagnostico3: pv ?? formDataNotaMedica.primeraVezDiagnostico3,
+      },
+      trabajadorSexo: trabajador.sexo || '',
+      trabajadorFechaNacimiento: trabajador.fechaNacimiento
+        ? new Date(trabajador.fechaNacimiento)
+        : fechaNotaMedica.value,
+      fechaNotaMedica: fechaNotaMedica.value,
+      medicoFirmante: medicoFirmanteRef.value,
+      enfermeraFirmante: enfermeraFirmanteRef.value,
+      showSiresUI: showSiresUI.value,
+      esMujer: esMujer.value,
     });
-    const diagnostico3Issue = issues.find(issue => issue.field === 'codigoCIEDiagnostico3');
-    if (diagnostico3Issue) {
-      diagnostico3SexAgeError.value = diagnostico3Issue.messageInline;
+    if (!result.ok && result.messageInline) {
+      diagnostico3SisError.value = result.messageInline;
     }
   } catch (error) {
-    console.error('Error validando sexo/edad CIE-10:', error);
+    console.error('Error validando diagnóstico 3 DIAGNOSTICO_SIS:', error);
   }
 };
 
-watch([codigoCIEDiagnostico3, fechaNotaMedica], validateSexAge);
-watch(() => formDataNotaMedica.codigoCIE10Principal, validateSexAge);
-watch(() => formDataNotaMedica.codigosCIE10Complementarios, validateSexAge, { deep: true });
-watch(() => formDataNotaMedica.codigoCIEDiagnostico2, validateSexAge);
-watch(() => trabajadores.currentTrabajador?.sexo, validateSexAge);
-watch(() => trabajadores.currentTrabajador?.fechaNacimiento, validateSexAge);
+const scheduleValidateDiag3Sis = () => {
+  if (diag3SisDebounceTimer) clearTimeout(diag3SisDebounceTimer);
+  diag3SisDebounceTimer = setTimeout(() => {
+    validateDiag3Sis();
+  }, 350);
+};
+
+watch(fechaNotaMedica, scheduleValidateDiag3Sis);
+watch(() => formDataNotaMedica.codigoCIE10Principal, scheduleValidateDiag3Sis);
+watch(() => formDataNotaMedica.primeraVezDiagnostico2, scheduleValidateDiag3Sis);
+watch(() => formDataNotaMedica.codigoCIEDiagnostico2, scheduleValidateDiag3Sis);
+watch(() => trabajadores.currentTrabajador?.sexo, scheduleValidateDiag3Sis);
+watch(() => trabajadores.currentTrabajador?.fechaNacimiento, scheduleValidateDiag3Sis);
+watch(() => userStore.user?._id, () => {
+  loadFirmantes().then(() => scheduleValidateDiag3Sis());
+});
 </script>
 
 <template>
@@ -329,10 +385,10 @@ watch(() => trabajadores.currentTrabajador?.fechaNacimiento, validateSexAge);
           Padecimiento distinto al diagnóstico principal y al diagnóstico 2 que también está presente.
         </p>
         <Transition name="fade">
-          <div v-if="diagnostico3SexAgeError" class="mt-2">
+          <div v-if="diagnostico3SisError" class="mt-2">
             <div class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
               <i class="fas fa-exclamation-triangle mt-0.5"></i>
-              <span class="flex-1 font-medium">{{ diagnostico3SexAgeError }}</span>
+              <span class="flex-1 font-medium">{{ diagnostico3SisError }}</span>
             </div>
           </div>
         </Transition>

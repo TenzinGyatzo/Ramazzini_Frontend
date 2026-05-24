@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -8,6 +8,14 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { useNom024Fields } from '@/composables/useNom024Fields';
+import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
+import {
+  isPrimeraVezComorbilidadActiva,
+  tieneComorbilidadDiagRegistrada,
+  fetchMedicoEnfermeraFirmantes,
+} from '@/helpers/notaMedicaDiagnosticosSis';
+import { computeMuestraConfirmacionFlags } from '@/helpers/confirmacionDiagnostica';
+import { useUserStore } from '@/stores/user';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 
 const empresas = useEmpresasStore();
@@ -15,15 +23,25 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const userStore = useUserStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 const { isSIRES } = useNom024Fields();
+const esMujer = computed(() => trabajadores.currentTrabajador?.sexo === 'Femenino');
 
-const stepMap = computed(() => {
-  if (isSIRES.value) {
-    return { genero: 3, antecedentes: 4, exploracion: 5, signos: 6, somatometria: 7, glucemia: 8, diagnostico: 9, comorbilidad2: 10, comorbilidad3: 11, tratamiento: 12, recomendaciones: 13, observaciones: 14 };
-  }
-  return { antecedentes: 3, exploracion: 4, signos: 5, diagnostico: 6, comorbilidad2: 7, comorbilidad3: 8, tratamiento: 9, recomendaciones: 10, observaciones: 11 };
-});
+const stepMap = computed(() =>
+  getNotaMedicaStepMap(isSIRES.value, esMujer.value),
+);
+
+const etiquetasRelacionEmbarazo = {
+  0: 'Primera Vez',
+  1: 'Subsecuente',
+};
+
+const etiquetasTrimestreGestacional = {
+  1: 'Primero',
+  2: 'Segundo',
+  3: 'Tercero',
+};
 
 const etiquetasGenero = {
   0:'No especificado', 1: 'Masculino', 2: 'Femenino', 3: 'Transgénero',
@@ -62,33 +80,57 @@ const extractDescription = (value) => {
   return value.split(' - ').slice(1).join(' - ').trim();
 };
 
-// Computed: Determinar si requiere confirmación diagnóstica (crónicos/cáncer <18)
-// Replica la lógica de Step6.vue
-const requiereConfirmacionDiagnostica = computed(() => {
-  if (!formData.formDataNotaMedica.codigoCIE10Principal) return false;
-  const codigo = extractCode(formData.formDataNotaMedica.codigoCIE10Principal).toUpperCase();
-  const esCronico = codigo.startsWith('E11') || codigo.startsWith('I1');
-  const esCancer = codigo.startsWith('C');
-  return esCronico || esCancer;
+const nm = computed(() => formData.formDataNotaMedica);
+
+// Confirmación diagnóstica: flags normativos (tipoPersonal + catálogo + edad/temporal)
+const muestraConfirmacionDiagnostica1 = ref(false);
+const muestraConfirmacionDiagnostica2 = ref(false);
+const muestraConfirmacionDiagnostica3 = ref(false);
+
+const refreshConfirmacionFlags = async () => {
+  const trabajador = trabajadores.currentTrabajador;
+  if (!trabajador) return;
+  const fechaNota = nm.value.fechaNotaMedica
+    ? new Date(nm.value.fechaNotaMedica)
+    : new Date();
+  const { medicoFirmante, enfermeraFirmante } = await fetchMedicoEnfermeraFirmantes(
+    userStore.user?._id,
+  );
+  const flags = await computeMuestraConfirmacionFlags({
+    formData: nm.value,
+    trabajadorFechaNacimiento: trabajador.fechaNacimiento
+      ? new Date(trabajador.fechaNacimiento)
+      : fechaNota,
+    fechaNotaMedica: fechaNota,
+    medicoFirmante,
+    enfermeraFirmante,
+  });
+  muestraConfirmacionDiagnostica1.value = flags.confirmacion1;
+  muestraConfirmacionDiagnostica2.value = flags.confirmacion2;
+  muestraConfirmacionDiagnostica3.value = flags.confirmacion3;
+};
+
+onMounted(() => {
+  void refreshConfirmacionFlags();
 });
 
-// Computed: Requiere confirmación diagnóstica 2 (misma lógica con codigoCIEDiagnostico2)
-const requiereConfirmacionDiagnostica2 = computed(() => {
-  if (!formData.formDataNotaMedica.codigoCIEDiagnostico2) return false;
-  const codigo = extractCode(formData.formDataNotaMedica.codigoCIEDiagnostico2).toUpperCase();
-  const esCronico = codigo.startsWith('E11') || codigo.startsWith('I1');
-  const esCancer = codigo.startsWith('C');
-  return esCronico || esCancer;
-});
+watch(nm, () => {
+  void refreshConfirmacionFlags();
+}, { deep: true });
 
-// Computed: Requiere confirmación diagnóstica 3 (misma lógica con codigoCIEDiagnostico3)
-const requiereConfirmacionDiagnostica3 = computed(() => {
-  if (!formData.formDataNotaMedica.codigoCIEDiagnostico3) return false;
-  const codigo = extractCode(formData.formDataNotaMedica.codigoCIEDiagnostico3).toUpperCase();
-  const esCronico = codigo.startsWith('E11') || codigo.startsWith('I1');
-  const esCancer = codigo.startsWith('C');
-  return esCronico || esCancer;
-});
+const muestraDiagnostico2 = computed(() =>
+  tieneComorbilidadDiagRegistrada(
+    nm.value.primeraVezDiagnostico2,
+    nm.value.codigoCIEDiagnostico2,
+  ),
+);
+
+const muestraDiagnostico3 = computed(() =>
+  tieneComorbilidadDiagRegistrada(
+    nm.value.primeraVezDiagnostico3,
+    nm.value.codigoCIEDiagnostico3,
+  ),
+);
 
 </script>
 
@@ -262,6 +304,33 @@ const requiereConfirmacionDiagnostica3 = computed(() => {
       </p>
     </div>
 
+    <!-- Embarazo (SIRES + mujer) -->
+    <div
+      v-if="isSIRES && stepMap.embarazo"
+      class="w-full mb-1 cursor-pointer"
+      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.embarazo }"
+      @click="goToStep(stepMap.embarazo)"
+    >
+      <template v-if="formData.formDataNotaMedica.relacionTemporalEmbarazo != null && formData.formDataNotaMedica.relacionTemporalEmbarazo !== -1">
+        <p class="text-justify font-medium mb-1">
+          Relación Temporal Embarazo:
+          <span class="font-light">{{ etiquetasRelacionEmbarazo[formData.formDataNotaMedica.relacionTemporalEmbarazo] || formData.formDataNotaMedica.relacionTemporalEmbarazo }}</span>
+        </p>
+        <p
+          v-if="formData.formDataNotaMedica.trimestreGestacional != null && formData.formDataNotaMedica.trimestreGestacional !== -1"
+          class="text-justify font-medium mb-1"
+        >
+          Trimestre Gestacional:
+          <span class="font-light">{{ etiquetasTrimestreGestacional[formData.formDataNotaMedica.trimestreGestacional] || formData.formDataNotaMedica.trimestreGestacional }}</span>
+        </p>
+      </template>
+      <template v-else>
+        <p class="text-justify font-medium">
+          <span class="text-gray-500 italic font-normal">+ Embarazo</span>
+        </p>
+      </template>
+    </div>
+
     <!-- Diagnóstico Principal -->
     <div 
       v-if="formData.formDataNotaMedica.codigoCIE10Principal || formData.formDataNotaMedica.relacionTemporal !== undefined && formData.formDataNotaMedica.relacionTemporal !== null || (formData.formDataNotaMedica.codigosCIE10Complementarios && formData.formDataNotaMedica.codigosCIE10Complementarios.length > 0) || formData.formDataNotaMedica.confirmacionDiagnostica || formData.formDataNotaMedica.codigoCIECausaExterna || formData.formDataNotaMedica.causaExterna" 
@@ -291,7 +360,7 @@ const requiereConfirmacionDiagnostica3 = computed(() => {
       </p>
 
       <!-- Confirmación Diagnóstica -->
-      <p v-if="requiereConfirmacionDiagnostica && formData.formDataNotaMedica.confirmacionDiagnostica !== undefined" class="text-justify font-medium mb-1">
+      <p v-if="muestraConfirmacionDiagnostica1 && formData.formDataNotaMedica.confirmacionDiagnostica !== undefined" class="text-justify font-medium mb-1">
         Confirmación Diagnóstica: <span class="font-light">{{ formData.formDataNotaMedica.confirmacionDiagnostica ? 'Sí' : 'No' }}</span>
       </p>
 
@@ -309,13 +378,13 @@ const requiereConfirmacionDiagnostica3 = computed(() => {
 
     <!-- Diagnóstico Secundario (Step 7) -->
     <div 
-      v-if="(formData.formDataNotaMedica.primeraVezDiagnostico2 !== undefined && formData.formDataNotaMedica.primeraVezDiagnostico2 !== null) || formData.formDataNotaMedica.codigoCIEDiagnostico2 || (requiereConfirmacionDiagnostica2 && formData.formDataNotaMedica.confirmacionDiagnostica2 !== undefined) || formData.formDataNotaMedica.diagnosticoTexto || formData.formDataNotaMedica.diagnostico" 
+      v-if="muestraDiagnostico2"
       class="w-full mb-1 cursor-pointer" 
       :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.comorbilidad2 }" 
       @click="goToStep(stepMap.comorbilidad2)"
     >
       <!-- Primera vez diagnóstico 2 (0=No, 1=Sí) -->
-      <p v-if="formData.formDataNotaMedica.primeraVezDiagnostico2 !== undefined && formData.formDataNotaMedica.primeraVezDiagnostico2 !== null" class="text-justify font-medium mb-1">
+      <p v-if="isPrimeraVezComorbilidadActiva(formData.formDataNotaMedica.primeraVezDiagnostico2)" class="text-justify font-medium mb-1">
         Primera vez diagnóstico 2: <span class="font-light">{{ formData.formDataNotaMedica.primeraVezDiagnostico2 === 1 ? 'Sí' : 'No' }}</span>
       </p>
 
@@ -325,7 +394,7 @@ const requiereConfirmacionDiagnostica3 = computed(() => {
       </p>
 
       <!-- Confirmación Diagnóstica 2 -->
-      <p v-if="requiereConfirmacionDiagnostica2 && formData.formDataNotaMedica.confirmacionDiagnostica2 !== undefined" class="text-justify font-medium mb-1">
+      <p v-if="muestraConfirmacionDiagnostica2 && formData.formDataNotaMedica.confirmacionDiagnostica2 !== undefined" class="text-justify font-medium mb-1">
         Confirmación Diagnóstica 2: <span class="font-light">{{ formData.formDataNotaMedica.confirmacionDiagnostica2 ? 'Sí' : 'No' }}</span>
       </p>
 
@@ -343,18 +412,18 @@ const requiereConfirmacionDiagnostica3 = computed(() => {
 
     <!-- Diagnóstico 3 (Step 8) -->
     <div 
-      v-if="(formData.formDataNotaMedica.primeraVezDiagnostico3 !== undefined && formData.formDataNotaMedica.primeraVezDiagnostico3 !== null) || formData.formDataNotaMedica.codigoCIEDiagnostico3 || (requiereConfirmacionDiagnostica3 && formData.formDataNotaMedica.confirmacionDiagnostica3 !== undefined)"
+      v-if="muestraDiagnostico3"
       class="w-full mb-1 cursor-pointer"
       :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.comorbilidad3 }"
       @click="goToStep(stepMap.comorbilidad3)"
     >
-      <p v-if="formData.formDataNotaMedica.primeraVezDiagnostico3 !== undefined && formData.formDataNotaMedica.primeraVezDiagnostico3 !== null" class="text-justify font-medium mb-1">
+      <p v-if="isPrimeraVezComorbilidadActiva(formData.formDataNotaMedica.primeraVezDiagnostico3)" class="text-justify font-medium mb-1">
         Primera vez diagnóstico 3: <span class="font-light">{{ formData.formDataNotaMedica.primeraVezDiagnostico3 === 1 ? 'Sí' : 'No' }}</span>
       </p>
       <p v-if="formData.formDataNotaMedica.codigoCIEDiagnostico3" class="text-justify font-medium mb-1">
         Diagnóstico 3 (Comorbilidad clínica): <span class="font-light">{{ extractDescription(formData.formDataNotaMedica.codigoCIEDiagnostico3) || extractCode(formData.formDataNotaMedica.codigoCIEDiagnostico3) }}</span>
       </p>
-      <p v-if="requiereConfirmacionDiagnostica3 && formData.formDataNotaMedica.confirmacionDiagnostica3 !== undefined" class="text-justify font-medium mb-1">
+      <p v-if="muestraConfirmacionDiagnostica3 && formData.formDataNotaMedica.confirmacionDiagnostica3 !== undefined" class="text-justify font-medium mb-1">
         Confirmación Diagnóstica 3: <span class="font-light">{{ formData.formDataNotaMedica.confirmacionDiagnostica3 ? 'Sí' : 'No' }}</span>
       </p>
     </div>

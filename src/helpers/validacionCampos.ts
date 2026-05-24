@@ -5,6 +5,17 @@ import {
   indicePasoP5Mdq,
   requierePaso15SituacionesMismoPeriodo,
 } from '@/helpers/trastornosEstadoAnimoSteps';
+import {
+  getNotaMedicaStepMap,
+  pasoEmbarazo,
+  pasoDiagPrincipal,
+  pasoDiag2,
+  pasoDiag3,
+} from '@/helpers/notaMedicaStepMap';
+import {
+  getRamazziniLetraBlockMessage,
+  getRamazziniLetraFromCatalogKey,
+} from '@/helpers/cie10RamazziniScope';
 
 // Helper para validar campos requeridos según el tipo de documento
 export interface CampoFaltante {
@@ -943,13 +954,11 @@ export function obtenerCamposRequeridos(tipoDocumento: string) {
   return camposRequeridosPorTipo[tipoDocumento] || [];
 }
 
-/** CIE-10: código debe tener exactamente 4 caracteres (sin punto). Ej: S00.0→S000, F41.9→F419 */
+/** CIE-10: CATALOG_KEY de exactamente 4 caracteres alfanuméricos (sin punto). */
 function hasCIE10Exact4Chars(code: string | null | undefined): boolean {
   if (!code || typeof code !== 'string') return false;
-  const c = extractCode(code).trim().toUpperCase();
-  if (!c || !/^[A-Z][0-9]/.test(c)) return false;
-  const withoutDot = c.replace(/\./g, '');
-  return withoutDot.length === 4;
+  const c = extractCode(code).trim().toUpperCase().replace(/\./g, '');
+  return /^[A-Z0-9]{4}$/.test(c);
 }
 
 /** Calcula edad en años entre fecha nacimiento y fecha referencia. */
@@ -966,10 +975,12 @@ function calcularEdad(fechaNacimiento: Date, fechaReferencia: Date): number {
 export function validarNotaMedicaPreSubmit(
   datosFormulario: any,
   trabajador?: { fechaNacimiento?: string | Date } | null,
-  isSIRES: boolean = false
+  isSIRES: boolean = false,
+  esMujer: boolean = false,
 ): { valido: boolean; mensaje?: string; paso?: number } {
   if (!datosFormulario) return { valido: true };
 
+  const stepMap = getNotaMedicaStepMap(isSIRES, esMujer);
   const df = datosFormulario;
   const hoy = new Date();
   hoy.setHours(23, 59, 59, 999);
@@ -1014,7 +1025,42 @@ export function validarNotaMedicaPreSubmit(
     return {
       valido: false,
       mensaje: 'La presión sistólica debe ser mayor o igual a la diastólica',
-      paso: isSIRES ? 6 : 5,
+      paso: stepMap.signos,
+    };
+  }
+
+  return { valido: true };
+}
+
+/** Valida coherencia de campos de embarazo en nota médica SIRES. */
+export function validarNotaMedicaEmbarazo(
+  datosFormulario: any,
+  isSIRES: boolean = false,
+  esMujer: boolean = false,
+): { valido: boolean; mensaje?: string; paso?: number } {
+  if (!datosFormulario || !isSIRES || !esMujer) return { valido: true };
+
+  const paso = pasoEmbarazo(isSIRES, esMujer);
+  if (paso == null) return { valido: true };
+
+  const rt = datosFormulario.relacionTemporalEmbarazo ?? -1;
+  const tg = datosFormulario.trimestreGestacional ?? -1;
+
+  if ((rt === 0 || rt === 1) && ![1, 2, 3].includes(tg)) {
+    return {
+      valido: false,
+      mensaje:
+        'Seleccione el trimestre gestacional cuando registra embarazo (primera vez o subsecuente).',
+      paso,
+    };
+  }
+
+  if (rt === -1 && tg !== -1) {
+    return {
+      valido: false,
+      mensaje:
+        'El trimestre gestacional debe ser "No aplica" cuando no hay embarazo registrado.',
+      paso,
     };
   }
 
@@ -1022,18 +1068,22 @@ export function validarNotaMedicaPreSubmit(
 }
 
 /** Valida que todos los códigos CIE-10 de nota médica tengan exactamente 4 caracteres (sin punto). */
-export function validarNotaMedicaCIEExact4Chars(datosFormulario: any, isSIRES: boolean = false): { valido: boolean; mensaje?: string; paso?: number } {
+export function validarNotaMedicaCIEExact4Chars(
+  datosFormulario: any,
+  isSIRES: boolean = false,
+  esMujer: boolean = false,
+): { valido: boolean; mensaje?: string; paso?: number } {
   if (!datosFormulario) return { valido: true };
 
-  const pasoDiagPrincipal = isSIRES ? 9 : 6;
-  const pasoDiag2 = isSIRES ? 10 : 7;
-  const pasoDiag3 = isSIRES ? 11 : 8;
+  const pasoDiagPrinc = pasoDiagPrincipal(isSIRES, esMujer);
+  const pasoDiagSec2 = pasoDiag2(isSIRES, esMujer);
+  const pasoDiagSec3 = pasoDiag3(isSIRES, esMujer);
 
   const campos: Array<{ valor: any; nombre: string; paso: number }> = [
-    { valor: datosFormulario.codigoCIE10Principal, nombre: 'Diagnóstico principal', paso: pasoDiagPrincipal },
-    { valor: datosFormulario.codigoCIEDiagnostico2, nombre: 'Diagnóstico 2', paso: pasoDiag2 },
-    { valor: datosFormulario.codigoCIEDiagnostico3, nombre: 'Diagnóstico 3', paso: pasoDiag3 },
-    { valor: datosFormulario.codigoCIECausaExterna, nombre: 'Causa externa', paso: pasoDiagPrincipal },
+    { valor: datosFormulario.codigoCIE10Principal, nombre: 'Diagnóstico principal', paso: pasoDiagPrinc },
+    { valor: datosFormulario.codigoCIEDiagnostico2, nombre: 'Diagnóstico 2', paso: pasoDiagSec2 },
+    { valor: datosFormulario.codigoCIEDiagnostico3, nombre: 'Diagnóstico 3', paso: pasoDiagSec3 },
+    { valor: datosFormulario.codigoCIECausaExterna, nombre: 'Causa externa', paso: pasoDiagPrinc },
   ];
 
   for (const { valor, nombre, paso } of campos) {
@@ -1051,7 +1101,62 @@ export function validarNotaMedicaCIEExact4Chars(datosFormulario: any, isSIRES: b
       if (!c) continue;
       const code = typeof c === 'string' ? extractCode(c) : extractCode(String(c));
       if (code && code.trim() && !hasCIE10Exact4Chars(code)) {
-        return { valido: false, mensaje: `Código CIE complementario ${i + 1} debe tener exactamente 4 caracteres`, paso: pasoDiagPrincipal };
+        return { valido: false, mensaje: `Código CIE complementario ${i + 1} debe tener exactamente 4 caracteres`, paso: pasoDiagPrinc };
+      }
+    }
+  }
+
+  return { valido: true };
+}
+
+/** Bloquea series MT (medicina tradicional) y CP (oncología pediátrica) fuera del alcance Ramazzini. */
+export function validarNotaMedicaRamazziniScope(
+  datosFormulario: any,
+  isSIRES: boolean = false,
+  esMujer: boolean = false,
+): { valido: boolean; mensaje?: string; paso?: number } {
+  if (!datosFormulario) return { valido: true };
+
+  const pasoDiagPrinc = pasoDiagPrincipal(isSIRES, esMujer);
+  const pasoDiagSec2 = pasoDiag2(isSIRES, esMujer);
+  const pasoDiagSec3 = pasoDiag3(isSIRES, esMujer);
+
+  const campos: Array<{ valor: any; nombre: string; paso: number }> = [
+    { valor: datosFormulario.codigoCIE10Principal, nombre: 'Diagnóstico principal', paso: pasoDiagPrinc },
+    { valor: datosFormulario.codigoCIEDiagnostico2, nombre: 'Diagnóstico 2', paso: pasoDiagSec2 },
+    { valor: datosFormulario.codigoCIEDiagnostico3, nombre: 'Diagnóstico 3', paso: pasoDiagSec3 },
+  ];
+
+  for (const { valor, nombre, paso } of campos) {
+    if (!valor) continue;
+    const code = typeof valor === 'string' ? extractCode(valor) : extractCode(String(valor));
+    const letra = getRamazziniLetraFromCatalogKey(code);
+    if (letra) {
+      return {
+        valido: false,
+        mensaje: getRamazziniLetraBlockMessage(letra, code.trim().toUpperCase(), nombre),
+        paso,
+      };
+    }
+  }
+
+  const comp = datosFormulario.codigosCIE10Complementarios;
+  if (Array.isArray(comp)) {
+    for (let i = 0; i < comp.length; i++) {
+      const c = comp[i];
+      if (!c) continue;
+      const code = typeof c === 'string' ? extractCode(c) : extractCode(String(c));
+      const letra = getRamazziniLetraFromCatalogKey(code);
+      if (letra) {
+        return {
+          valido: false,
+          mensaje: getRamazziniLetraBlockMessage(
+            letra,
+            code.trim().toUpperCase(),
+            `Código CIE complementario ${i + 1}`,
+          ),
+          paso: pasoDiagPrinc,
+        };
       }
     }
   }

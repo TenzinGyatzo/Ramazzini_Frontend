@@ -30,6 +30,8 @@ export interface CIE10Entry extends CatalogEntry {
   lsex?: string; // Sex restriction
   linf?: number; // Lower age limit
   lsup?: number; // Upper age limit
+  diaCronicos?: boolean;
+  diaCaInfantil?: boolean;
 }
 
 /**

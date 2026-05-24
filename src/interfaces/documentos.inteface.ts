@@ -529,6 +529,11 @@ export interface NotaMedica {
     frecuenciaRespiratoria?: number;
     temperatura?: number;
     saturacionOxigeno?: number;
+    glucemia?: number;
+    tipoMedicion?: number;
+    resultadoObtenidoaTravesde?: number;
+    relacionTemporalEmbarazo?: number;
+    trimestreGestacional?: number;
     diagnosticoTexto?: string;
     tratamiento?: string;
     recomendaciones?: string;

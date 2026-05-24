@@ -1,14 +1,21 @@
 /**
- * Validaciones DIAGNOSTICO_SIS para codigoCIEDiagnostico2 y codigoCIEDiagnostico3 (nota médica).
+ * Validaciones DIAGNOSTICO_SIS para codigoCIEDiagnostico1 (principal) y diag. 2/3 (nota médica).
  * Bloqueo en submit (frontend).
  */
 
 import CatalogsAPI from '@/api/CatalogsAPI';
+import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
+import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
+import { getCexCatalogCodes } from '@/helpers/cexCatalogCodes';
 import {
-  TIPO_PERSONAL_MEDICO_ESPECIALISTA,
-  TIPO_PERSONAL_MEDICO_GENERAL,
-  TIPO_PERSONAL_ENFERMERA,
-} from '@/constants/tipoPersonalDgis';
+  pasoDiagPrincipal,
+  pasoDiag2,
+  pasoDiag3,
+} from '@/helpers/notaMedicaStepMap';
+import {
+  getRamazziniLetraBlockMessage,
+  resolveRamazziniLetraFueraDeAlcance,
+} from '@/helpers/cie10RamazziniScope';
 import {
   extractCIE10Code,
   normalizeCIE10Code,
@@ -22,7 +29,7 @@ export type MedicoFirmanteLike = {
   especialistaSaludTrabajo?: string | boolean;
 } | null;
 
-/** Presencia de enfermera firmante (sin médico) → tipo personal 6 en CEX. */
+/** Presencia de enfermera firmante (sin médico) → tipo personal enfermera en CEX. */
 export type EnfermeraFirmanteLike = Record<string, unknown> | null;
 
 export interface ValidateNotaMedicaDiagnosticosSisParams {
@@ -32,13 +39,17 @@ export interface ValidateNotaMedicaDiagnosticosSisParams {
   fechaNotaMedica: Date;
   medicoFirmante: MedicoFirmanteLike;
   enfermeraFirmante?: EnfermeraFirmanteLike;
-  /** Si true, pasos de diagnóstico 9/11; si false, 6/8 */
+  /** Si true, pasos de diagnóstico según SIRES; si false, flujo corto */
   showSiresUI: boolean;
+  /** Si true, incluye step de embarazo (SIRES + mujer) */
+  esMujer?: boolean;
 }
 
 export interface ValidateNotaMedicaDiagnosticosSisResult {
   ok: boolean;
   messageToast?: string;
+  /** Mensaje corto para mostrar inline en el step */
+  messageInline?: string;
   paso?: number;
 }
 
@@ -57,44 +68,194 @@ function norm4Chars(value: unknown): string {
 }
 
 /** Índice 1-based en el stepper de nota médica: Step10 (diag. 2). */
-function pasoDiag2(showSires: boolean): number {
-  return showSires ? 10 : 7;
+function pasoDiag2Local(showSires: boolean, esMujer = false): number {
+  return pasoDiag2(showSires, esMujer);
 }
 
 /** Índice 1-based: Step11 (diag. 3). */
-function pasoDiag3(showSires: boolean): number {
-  return showSires ? 11 : 8;
+function pasoDiag3Local(showSires: boolean, esMujer = false): number {
+  return pasoDiag3(showSires, esMujer);
 }
 
-function pasoDiagPrincipal(showSires: boolean): number {
-  return showSires ? 9 : 6;
+function pasoDiagPrincipalLocal(showSires: boolean, esMujer = false): number {
+  return pasoDiagPrincipal(showSires, esMujer);
 }
 
 /**
  * Tipo efectivo DGIS para validación LETRA (MT/CP), alineado con
- * backend expedientes/helpers/firmante-helper.ts → getPrestadorDataFromUser:
- * - Médico: especialistaSaludTrabajo === "Si" → 4; en otro caso → 2.
- * - Enfermera (sin médico): 6.
+ * backend expedientes/helpers/firmante-helper.ts → getPrestadorDataFromUser.
  */
-export function resolveEffectiveTipoPersonalDgis(
+export async function resolveEffectiveTipoPersonalDgis(
   medico: MedicoFirmanteLike,
   enfermera: EnfermeraFirmanteLike | undefined,
-): {
+): Promise<{
   source: 'medico_infer' | 'enfermera_infer' | 'none';
   value: number | null;
-} {
+}> {
+  const codes = await getCexCatalogCodes();
   if (medico) {
     const esp = medico.especialistaSaludTrabajo;
     const value =
       esp === 'Si' || esp === true
-        ? TIPO_PERSONAL_MEDICO_ESPECIALISTA
-        : TIPO_PERSONAL_MEDICO_GENERAL;
+        ? codes.tipoPersonal.medicoEspecialista
+        : codes.tipoPersonal.medicoGeneral;
     return { source: 'medico_infer', value };
   }
   if (enfermera && typeof enfermera === 'object') {
-    return { source: 'enfermera_infer', value: TIPO_PERSONAL_ENFERMERA };
+    return {
+      source: 'enfermera_infer',
+      value: codes.tipoPersonal.enfermera,
+    };
   }
   return { source: 'none', value: null };
+}
+
+function normalizeFirmanteApi(body: unknown): Record<string, unknown> | null {
+  if (!body || typeof body !== 'object') return null;
+  const b = body as Record<string, unknown>;
+  if (b._id) return b;
+  if (b.data && typeof b.data === 'object' && (b.data as Record<string, unknown>)._id) {
+    return b.data as Record<string, unknown>;
+  }
+  return null;
+}
+
+/** Obtiene firmante médico o enfermera del usuario (para validar tipoPersonal CEX). */
+export async function fetchMedicoEnfermeraFirmantes(userId: string | undefined): Promise<{
+  medicoFirmante: MedicoFirmanteLike;
+  enfermeraFirmante: EnfermeraFirmanteLike;
+}> {
+  let medicoFirmante: MedicoFirmanteLike = null;
+  let enfermeraFirmante: EnfermeraFirmanteLike = null;
+  if (!userId) return { medicoFirmante, enfermeraFirmante };
+
+  try {
+    const { data: medicoBody } = await MedicoFirmanteAPI.getMedicoFirmanteByUserId(userId);
+    medicoFirmante = normalizeFirmanteApi(medicoBody) as MedicoFirmanteLike;
+  } catch {
+    medicoFirmante = null;
+  }
+  if (!medicoFirmante) {
+    try {
+      const { data: enfBody } = await EnfermeraFirmanteAPI.getEnfermeraFirmanteByUserId(userId);
+      enfermeraFirmante = normalizeFirmanteApi(enfBody) as EnfermeraFirmanteLike;
+    } catch {
+      enfermeraFirmante = null;
+    }
+  }
+  return { medicoFirmante, enfermeraFirmante };
+}
+
+function fail(
+  paso: number,
+  messageToast: string,
+  messageInline?: string,
+): ValidateNotaMedicaDiagnosticosSisResult {
+  return {
+    ok: false,
+    messageToast,
+    messageInline: messageInline ?? messageToast,
+    paso,
+  };
+}
+
+function failPrincipal(
+  paso: number,
+  messageToast: string,
+  messageInline?: string,
+): ValidateNotaMedicaDiagnosticosSisResult {
+  return fail(paso, messageToast, messageInline);
+}
+
+/** -1=no aplica, 0/1=activo (solo validación interna). */
+function normalizePrimeraVez(value: unknown): -1 | 0 | 1 {
+  if (value === 0 || value === 1) return value;
+  return -1;
+}
+
+/** true solo cuando el usuario registró comorbilidad (primera vez 0 o 1). */
+export function isPrimeraVezComorbilidadActiva(value: unknown): value is 0 | 1 {
+  return value === 0 || value === 1;
+}
+
+export function tieneComorbilidadDiagRegistrada(
+  primeraVez: unknown,
+  codigo?: unknown,
+): boolean {
+  if (isPrimeraVezComorbilidadActiva(primeraVez)) return true;
+  const code = typeof codigo === 'string' ? codigo.trim() : '';
+  return code.length > 0;
+}
+
+function limpiarCamposComorbilidadSinRegistrar(
+  formData: Record<string, unknown>,
+  label: '2' | '3',
+): void {
+  const pvKey =
+    label === '2' ? 'primeraVezDiagnostico2' : 'primeraVezDiagnostico3';
+  const codeKey =
+    label === '2' ? 'codigoCIEDiagnostico2' : 'codigoCIEDiagnostico3';
+  const confKey =
+    label === '2' ? 'confirmacionDiagnostica2' : 'confirmacionDiagnostica3';
+
+  delete formData[pvKey];
+  formData[codeKey] = '';
+  delete formData[confKey];
+  if (label === '2') {
+    delete formData.diagnosticoTexto;
+  }
+}
+
+/**
+ * Limpia diag. 2/3 cuando no hay comorbilidad registrada (pv distinto de 0/1).
+ * No persiste -1 en el formulario: ausencia de campo = no aplica.
+ */
+export function normalizeNotaMedicaDiagnosticosPv(
+  formData: Record<string, unknown>,
+): void {
+  if (!isPrimeraVezComorbilidadActiva(formData.primeraVezDiagnostico2)) {
+    limpiarCamposComorbilidadSinRegistrar(formData, '2');
+  }
+  if (!isPrimeraVezComorbilidadActiva(formData.primeraVezDiagnostico3)) {
+    limpiarCamposComorbilidadSinRegistrar(formData, '3');
+  }
+}
+
+async function validateSexAgeForField(
+  params: ValidateNotaMedicaDiagnosticosSisParams,
+  field:
+    | 'codigoCIE10Principal'
+    | 'codigoCIEDiagnostico2'
+    | 'codigoCIEDiagnostico3',
+  codeValue: string | undefined,
+): Promise<ValidateNotaMedicaDiagnosticosSisResult | null> {
+  if (!codeValue?.trim()) return null;
+
+  const sexAgeParams: CIE10SexAgeValidationParams = {
+    trabajadorSexo: params.trabajadorSexo,
+    trabajadorFechaNacimiento: params.trabajadorFechaNacimiento,
+    fechaNotaMedica: params.fechaNotaMedica,
+  };
+  if (field === 'codigoCIE10Principal') {
+    sexAgeParams.codigoCIE10Principal = codeValue;
+  } else if (field === 'codigoCIEDiagnostico2') {
+    sexAgeParams.codigoCIEDiagnostico2 = codeValue;
+  } else {
+    sexAgeParams.codigoCIEDiagnostico3 = codeValue;
+  }
+
+  const issues = await validateCIE10SexAge(sexAgeParams);
+  const issue = issues.find((i) => i.field === field);
+  if (!issue) return null;
+
+  const paso =
+    field === 'codigoCIEDiagnostico3'
+      ? pasoDiag3Local(params.showSiresUI, params.esMujer === true)
+      : field === 'codigoCIEDiagnostico2'
+        ? pasoDiag2Local(params.showSiresUI, params.esMujer === true)
+        : pasoDiagPrincipalLocal(params.showSiresUI, params.esMujer === true);
+
+  return fail(paso, issue.messageToast, issue.messageInline);
 }
 
 async function catalogEntryExists(code: string): Promise<boolean> {
@@ -108,142 +269,296 @@ async function catalogEntryExists(code: string): Promise<boolean> {
   }
 }
 
+function tipoPersonalLabel(code: number, codes: Awaited<ReturnType<typeof getCexCatalogCodes>>): string {
+  if (code === codes.tipoPersonal.medicoGeneral) return 'médica/o general';
+  if (code === codes.tipoPersonal.medicoEspecialista) return 'médica/o especialista';
+  if (code === codes.tipoPersonal.enfermera) return 'enfermera/o';
+  return String(code);
+}
+
+function parseTipoPersonalCeList(raw: unknown): number[] {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((v) => Number(v)).filter((n) => !Number.isNaN(n));
+  }
+  if (typeof raw !== 'string') return [];
+  const trimmed = raw.trim().toUpperCase();
+  if (trimmed === '' || trimmed === 'NO') return [];
+  return trimmed
+    .split(',')
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => !Number.isNaN(n));
+}
+
+function isTipoPersonalAllowedForDiagnostico1(
+  relacionTemporal: unknown,
+  tipoPersonal: number | null,
+  tipoPersonal1VezCe: number[],
+  tipoPersonalSubsecCe: number[],
+): { allowed: boolean; requiresTipoPersonal: boolean } {
+  const rt = typeof relacionTemporal === 'number' ? relacionTemporal : null;
+  if (rt !== 0 && rt !== 1) {
+    return { allowed: true, requiresTipoPersonal: false };
+  }
+  const list = rt === 0 ? tipoPersonal1VezCe : tipoPersonalSubsecCe;
+  if (list.length === 0) {
+    return { allowed: true, requiresTipoPersonal: false };
+  }
+  if (tipoPersonal == null) {
+    return { allowed: false, requiresTipoPersonal: true };
+  }
+  return {
+    allowed: list.includes(tipoPersonal),
+    requiresTipoPersonal: true,
+  };
+}
+
+function failRamazziniLetraScope(
+  paso: number,
+  letra: 'MT' | 'CP',
+  catalogKey: string,
+  contextLabel: string,
+): ValidateNotaMedicaDiagnosticosSisResult {
+  const message = getRamazziniLetraBlockMessage(letra, catalogKey, contextLabel);
+  return fail(paso, message, message);
+}
+
+function checkRamazziniLetraScope(
+  paso: number,
+  catalogKey: string,
+  letra: string | null | undefined,
+  contextLabel: string,
+): ValidateNotaMedicaDiagnosticosSisResult | null {
+  const blocked = resolveRamazziniLetraFueraDeAlcance(catalogKey, letra);
+  if (!blocked) return null;
+  return failRamazziniLetraScope(paso, blocked, catalogKey, contextLabel);
+}
+
+async function validateDiagnostico23Core(
+  params: ValidateNotaMedicaDiagnosticosSisParams,
+  label: '2' | '3',
+  cexCodes: Awaited<ReturnType<typeof getCexCatalogCodes>>,
+  tipoRes: Awaited<ReturnType<typeof resolveEffectiveTipoPersonalDgis>>,
+): Promise<ValidateNotaMedicaDiagnosticosSisResult | null> {
+  const p = params.formData;
+  const paso =
+    label === '2'
+      ? pasoDiag2Local(params.showSiresUI, params.esMujer === true)
+      : pasoDiag3Local(params.showSiresUI, params.esMujer === true);
+  const pvKey = label === '2' ? 'primeraVezDiagnostico2' : 'primeraVezDiagnostico3';
+  const codeKey = label === '2' ? 'codigoCIEDiagnostico2' : 'codigoCIEDiagnostico3';
+  const pv = normalizePrimeraVez(p[pvKey]);
+  const codeRaw = extractCode(p[codeKey]);
+
+  if (pv === -1) {
+    if (codeRaw.trim()) {
+      return fail(
+        paso,
+        `Si el diagnóstico ${label} no aplica (primera vez = No aplica), el código CIE-10 debe estar vacío.`,
+      );
+    }
+    return null;
+  }
+
+  if (
+    label === '3' &&
+    !isPrimeraVezComorbilidadActiva(p.primeraVezDiagnostico2)
+  ) {
+    return fail(
+      paso,
+      'No puede registrar el diagnóstico 3 sin haber registrado antes el diagnóstico 2 (comorbilidad).',
+      'Debe registrar primero el diagnóstico 2 antes del diagnóstico 3.',
+    );
+  }
+
+  if (!codeRaw.trim()) {
+    return fail(
+      paso,
+      `El código CIE-10 diagnóstico ${label} es obligatorio cuando se registra comorbilidad (primera vez 0 o 1).`,
+      `Debe registrar un código CIE-10 para el diagnóstico ${label}.`,
+    );
+  }
+
+  const norm = norm4Chars(codeRaw);
+  if (!norm) {
+    return fail(
+      paso,
+      `Diagnóstico ${label}: el código CIE-10 debe tener exactamente 4 caracteres.`,
+      'El código CIE-10 debe tener exactamente 4 caracteres.',
+    );
+  }
+
+  const exists = await catalogEntryExists(codeRaw);
+  if (!exists) {
+    return fail(
+      paso,
+      `Diagnóstico ${label}: el código ${norm} no está en el catálogo DIAGNOSTICO_SIS.`,
+      `El código ${norm} no está en el catálogo DIAGNOSTICO_SIS.`,
+    );
+  }
+
+  const rule = await findCIE10Rule(norm);
+  const scopeBlock = checkRamazziniLetraScope(
+    paso,
+    norm,
+    rule?.letra,
+    `Diagnóstico ${label}`,
+  );
+  if (scopeBlock) return scopeBlock;
+
+  const sexAge = await validateSexAgeForField(
+    params,
+    codeKey,
+    (p[codeKey] as string) || undefined,
+  );
+  if (sexAge) return sexAge;
+
+  return null;
+}
+
+export async function validateDiagnostico2Sis(
+  params: ValidateNotaMedicaDiagnosticosSisParams,
+): Promise<ValidateNotaMedicaDiagnosticosSisResult> {
+  const cexCodes = await getCexCatalogCodes();
+  const tipoRes = await resolveEffectiveTipoPersonalDgis(
+    params.medicoFirmante,
+    params.enfermeraFirmante,
+  );
+  const result = await validateDiagnostico23Core(params, '2', cexCodes, tipoRes);
+  return result ?? { ok: true };
+}
+
+export async function validateDiagnostico3Sis(
+  params: ValidateNotaMedicaDiagnosticosSisParams,
+): Promise<ValidateNotaMedicaDiagnosticosSisResult> {
+  const cexCodes = await getCexCatalogCodes();
+  const tipoRes = await resolveEffectiveTipoPersonalDgis(
+    params.medicoFirmante,
+    params.enfermeraFirmante,
+  );
+  const result = await validateDiagnostico23Core(params, '3', cexCodes, tipoRes);
+  return result ?? { ok: true };
+}
+
+async function validateDiagnosticoPrincipal(
+  params: ValidateNotaMedicaDiagnosticosSisParams,
+  cexCodes: Awaited<ReturnType<typeof getCexCatalogCodes>>,
+  tipoRes: Awaited<ReturnType<typeof resolveEffectiveTipoPersonalDgis>>,
+): Promise<ValidateNotaMedicaDiagnosticosSisResult | null> {
+  const p = params.formData;
+  const pasoPrinc = pasoDiagPrincipalLocal(params.showSiresUI, params.esMujer === true);
+  const codeRaw = extractCode(p.codigoCIE10Principal);
+  if (!codeRaw.trim()) return null;
+
+  if (params.showSiresUI) {
+    const rt = p.relacionTemporal;
+    if (rt !== 0 && rt !== 1) {
+      return failPrincipal(
+        pasoPrinc,
+        'Debe seleccionar la relación temporal (Primera vez o Subsecuente) para el diagnóstico principal.',
+      );
+    }
+  }
+
+  const norm = norm4Chars(codeRaw);
+  if (!norm) {
+    return failPrincipal(
+      pasoPrinc,
+      'Diagnóstico principal: el código CIE-10 debe tener exactamente 4 caracteres.',
+      'El código CIE-10 debe tener exactamente 4 caracteres.',
+    );
+  }
+
+  const exists = await catalogEntryExists(codeRaw);
+  if (!exists) {
+    return failPrincipal(
+      pasoPrinc,
+      `Diagnóstico principal: el código ${norm} no está en el catálogo DIAGNOSTICO_SIS.`,
+      `El código ${norm} no está en el catálogo DIAGNOSTICO_SIS.`,
+    );
+  }
+
+  const rule = await findCIE10Rule(norm);
+  const scopeBlock = checkRamazziniLetraScope(
+    pasoPrinc,
+    norm,
+    rule?.letra,
+    'Diagnóstico principal',
+  );
+  if (scopeBlock) return scopeBlock;
+
+  if (rule && params.showSiresUI) {
+    const list1 = rule.tipoPersonal1VezCe ?? parseTipoPersonalCeList(rule.tipoPersonal1VezCe);
+    const list2 = rule.tipoPersonalSubsecCe ?? parseTipoPersonalCeList(rule.tipoPersonalSubsecCe);
+    const tpCheck = isTipoPersonalAllowedForDiagnostico1(
+      p.relacionTemporal,
+      tipoRes.value,
+      list1,
+      list2,
+    );
+    if (!tpCheck.allowed) {
+      const temporalLabel = p.relacionTemporal === 1 ? 'subsecuente' : 'primera vez';
+      if (tpCheck.requiresTipoPersonal && tipoRes.value == null) {
+        return failPrincipal(
+          pasoPrinc,
+          `El diagnóstico principal (${norm}) requiere un firmante médico o de enfermería registrado para validar el tipo de personal (${temporalLabel}).`,
+          'El tipo de personal del firmante no puede validarse. Registre un médico o enfermera firmante.',
+        );
+      }
+      return failPrincipal(
+        pasoPrinc,
+        `El tipo de personal (${tipoPersonalLabel(tipoRes.value!, cexCodes)}) no está autorizado para el diagnóstico ${norm} en relación temporal ${temporalLabel}.`,
+        `El tipo de personal (${tipoPersonalLabel(tipoRes.value!, cexCodes)}) no está autorizado para este diagnóstico (${temporalLabel}).`,
+      );
+    }
+  }
+
+  return null;
+}
+
 /**
- * Valida reglas DIAGNOSTICO_SIS para diagnósticos 2 y 3.
+ * Valida solo el diagnóstico principal (codigoCIEDiagnostico1 / codigoCIE10Principal).
+ * Útil para validación inline en Step9 y bloqueo en submit.
+ */
+export async function validateDiagnosticoPrincipalSis(
+  params: ValidateNotaMedicaDiagnosticosSisParams,
+): Promise<ValidateNotaMedicaDiagnosticosSisResult> {
+  const cexCodes = await getCexCatalogCodes();
+  const tipoRes = await resolveEffectiveTipoPersonalDgis(
+    params.medicoFirmante,
+    params.enfermeraFirmante,
+  );
+  const principal = await validateDiagnosticoPrincipal(params, cexCodes, tipoRes);
+  if (principal) return principal;
+
+  const p = params.formData;
+  const codeRaw = extractCode(p.codigoCIE10Principal);
+  if (!codeRaw.trim()) return { ok: true };
+
+  const sexAge = await validateSexAgeForField(
+    params,
+    'codigoCIE10Principal',
+    (p.codigoCIE10Principal as string) || undefined,
+  );
+  if (sexAge) return sexAge;
+
+  return { ok: true };
+}
+
+/**
+ * Valida reglas DIAGNOSTICO_SIS para diagnóstico principal, 2 y 3.
  */
 export async function validateNotaMedicaDiagnosticos2Y3(
   params: ValidateNotaMedicaDiagnosticosSisParams,
 ): Promise<ValidateNotaMedicaDiagnosticosSisResult> {
-  const p = params.formData;
-  const pv2 = p.primeraVezDiagnostico2;
-  const pv3 = p.primeraVezDiagnostico3;
-  const code2 = extractCode(p.codigoCIEDiagnostico2);
-  const code3 = extractCode(p.codigoCIEDiagnostico3);
+  const principalResult = await validateDiagnosticoPrincipalSis(params);
+  if (!principalResult.ok) return principalResult;
 
-  const paso2 = pasoDiag2(params.showSiresUI);
-  const paso3 = pasoDiag3(params.showSiresUI);
+  const diag2Result = await validateDiagnostico2Sis(params);
+  if (!diag2Result.ok) return diag2Result;
 
-  // 1) primeraVez === -1 ⇒ campo vacío
-  if (pv2 === -1 && code2.trim() !== '') {
-    return {
-      ok: false,
-      messageToast:
-        'Si el diagnóstico 2 no aplica (primera vez = No aplica), el código CIE-10 debe estar vacío.',
-      paso: paso2,
-    };
-  }
-  if (pv3 === -1 && code3.trim() !== '') {
-    return {
-      ok: false,
-      messageToast:
-        'Si el diagnóstico 3 no aplica (primera vez = No aplica), el código CIE-10 debe estar vacío.',
-      paso: paso3,
-    };
-  }
-
-  const tipoRes = resolveEffectiveTipoPersonalDgis(
-    params.medicoFirmante,
-    params.enfermeraFirmante,
-  );
-
-  const validateOneDiag = async (
-    label: '2' | '3',
-    codigoRaw: string,
-    primeraVez: unknown,
-  ): Promise<ValidateNotaMedicaDiagnosticosSisResult | null> => {
-    if (!codigoRaw.trim()) return null;
-    if (primeraVez === -1) {
-      return {
-        ok: false,
-        messageToast: `No puede haber código CIE en diagnóstico ${label} cuando primera vez es no aplica.`,
-        paso: label === '2' ? paso2 : paso3,
-      };
-    }
-
-    const norm = norm4Chars(codigoRaw);
-    if (!norm) {
-      return {
-        ok: false,
-        messageToast: `Diagnóstico ${label}: el código CIE-10 debe tener exactamente 4 caracteres.`,
-        paso: label === '2' ? paso2 : paso3,
-      };
-    }
-
-    const exists = await catalogEntryExists(codigoRaw);
-    if (!exists) {
-      return {
-        ok: false,
-        messageToast: `Diagnóstico ${label}: el código ${norm} no está en el catálogo DIAGNOSTICO_SIS.`,
-        paso: label === '2' ? paso2 : paso3,
-      };
-    }
-
-    const rule = await findCIE10Rule(norm);
-    const letra = rule?.letra?.trim().toUpperCase();
-    if (letra === 'MT' || letra === 'CP') {
-      const required =
-        letra === 'MT'
-          ? TIPO_PERSONAL_MEDICO_GENERAL
-          : TIPO_PERSONAL_MEDICO_ESPECIALISTA;
-      if (tipoRes.source === 'none' || tipoRes.value == null) {
-        return {
-          ok: false,
-          messageToast: `El diagnóstico ${label} (${letra}) requiere un firmante médico o de enfermería registrado para validar el tipo de personal.`,
-          paso: label === '2' ? paso2 : paso3,
-        };
-      }
-      if (tipoRes.source === 'enfermera_infer') {
-        return {
-          ok: false,
-          messageToast: `El diagnóstico ${label} (${letra}) requiere firmante médico (tipo personal ${required === TIPO_PERSONAL_MEDICO_GENERAL ? '2 — general' : '4 — especialista'}).`,
-          paso: label === '2' ? paso2 : paso3,
-        };
-      }
-      if (tipoRes.value !== required) {
-        return {
-          ok: false,
-          messageToast: `El diagnóstico ${label} (${letra}) requiere tipo de personal ${required === TIPO_PERSONAL_MEDICO_GENERAL ? '2 (médica/o general)' : '4 (médica/o especialista)'}.`,
-          paso: label === '2' ? paso2 : paso3,
-        };
-      }
-    }
-
-    return null;
-  };
-
-  const r2 = await validateOneDiag('2', code2, pv2);
-  if (r2) return r2;
-  const r3 = await validateOneDiag('3', code3, pv3);
-  if (r3) return r3;
-
-  // Sexo/edad (reutilizar helper existente) — solo códigos presentes
-  const sexAgeParams: CIE10SexAgeValidationParams = {
-    codigoCIE10Principal: (p.codigoCIE10Principal as string) || undefined,
-    codigosCIE10Complementarios: (p.codigosCIE10Complementarios as string[]) || undefined,
-    codigoCIEDiagnostico2: code2.trim() ? (p.codigoCIEDiagnostico2 as string) : undefined,
-    codigoCIEDiagnostico3: code3.trim() ? (p.codigoCIEDiagnostico3 as string) : undefined,
-    trabajadorSexo: params.trabajadorSexo,
-    trabajadorFechaNacimiento: params.trabajadorFechaNacimiento,
-    fechaNotaMedica: params.fechaNotaMedica,
-  };
-
-  const sexAgeIssues = await validateCIE10SexAge(sexAgeParams);
-  if (sexAgeIssues.length > 0) {
-    const first = sexAgeIssues[0];
-    const field = first.field;
-    const pasoPrinc = pasoDiagPrincipal(params.showSiresUI);
-    const paso =
-      field === 'codigoCIEDiagnostico3'
-        ? paso3
-        : field === 'codigoCIEDiagnostico2'
-          ? paso2
-          : pasoPrinc;
-    return {
-      ok: false,
-      messageToast: first.messageToast,
-      paso,
-    };
-  }
+  const diag3Result = await validateDiagnostico3Sis(params);
+  if (!diag3Result.ok) return diag3Result;
 
   return { ok: true };
 }

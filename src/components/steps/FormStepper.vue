@@ -139,6 +139,7 @@ import Step5NotaMedica from '../steps/notaMedicaSteps/Step5.vue';
 import Step6NotaMedica from '../steps/notaMedicaSteps/Step6.vue';
 import Step7NotaMedica from '../steps/notaMedicaSteps/Step7.vue';
 import Step8NotaMedica from '../steps/notaMedicaSteps/Step8.vue';
+import StepEmbarazoNotaMedica from '../steps/notaMedicaSteps/StepEmbarazo.vue';
 import Step9NotaMedica from '../steps/notaMedicaSteps/Step9.vue';
 import Step10NotaMedica from '../steps/notaMedicaSteps/Step10.vue';
 import Step11NotaMedica from '../steps/notaMedicaSteps/Step11.vue';
@@ -386,11 +387,13 @@ import Step3InformeLongitudinalCardiometabolico from '../steps/informeLongitudin
 import ModalFaltanCampos from '../ModalFaltanCampos.vue';
 import ModalCamposFaltantes from '../ModalCamposFaltantes.vue';
 import DailyConsentModal from '../DailyConsentModal.vue';
-import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaPreSubmit } from '@/helpers/validacionCampos';
+import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaRamazziniScope, validarNotaMedicaPreSubmit, validarNotaMedicaEmbarazo } from '@/helpers/validacionCampos';
 import { validateCIE10Duplicates, generateBlockingToastMessage } from '@/helpers/cie10';
-import { validateNotaMedicaDiagnosticos2Y3 } from '@/helpers/notaMedicaDiagnosticosSis';
-import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
-import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
+import { validateNotaMedicaDiagnosticos2Y3, fetchMedicoEnfermeraFirmantes, normalizeNotaMedicaDiagnosticosPv } from '@/helpers/notaMedicaDiagnosticosSis';
+import {
+  normalizeNotaMedicaConfirmacionDiagnostica,
+  validateNotaMedicaConfirmacionDiagnostica,
+} from '@/helpers/confirmacionDiagnostica';
 import { useNom024Fields } from '@/composables/useNom024Fields';
 import { useDailyConsentGate } from '@/composables/useDailyConsentGate';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
@@ -890,6 +893,16 @@ export default {
             { component: Step7NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` },
             { component: Step8NotaMedica, name: `Paso ${notaMedicaSteps.length + 2}` },
           );
+        }
+
+        if (
+          showSiresUI.value &&
+          trabajadores.currentTrabajador?.sexo === 'Femenino'
+        ) {
+          notaMedicaSteps.push({
+            component: StepEmbarazoNotaMedica,
+            name: `Paso ${notaMedicaSteps.length + 1}`,
+          });
         }
 
         notaMedicaSteps.push(
@@ -1401,11 +1414,38 @@ export default {
 
       // VALIDACIÓN CIE-10: Verificar duplicidades para notaMedica
       if (documentos.currentTypeOfDocument === 'notaMedica') {
+        const esMujerNotaMedica =
+          trabajadores.currentTrabajador?.sexo === 'Femenino';
+
+        if (!showSiresUI.value || !esMujerNotaMedica) {
+          formData.formDataNotaMedica.relacionTemporalEmbarazo = -1;
+          formData.formDataNotaMedica.trimestreGestacional = -1;
+        }
+
+        const trabajadorNm = trabajadores.currentTrabajador;
+        normalizeNotaMedicaDiagnosticosPv(formData.formDataNotaMedica);
+
+        const { medicoFirmante: medicoFirmanteConf, enfermeraFirmante: enfermeraFirmanteConf } =
+          await fetchMedicoEnfermeraFirmantes(user.value?._id);
+        const fechaNotaConf = formData.formDataNotaMedica.fechaNotaMedica
+          ? new Date(formData.formDataNotaMedica.fechaNotaMedica)
+          : new Date();
+        await normalizeNotaMedicaConfirmacionDiagnostica(formData.formDataNotaMedica, {
+          trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
+            ? new Date(trabajadorNm.fechaNacimiento)
+            : fechaNotaConf,
+          fechaNotaMedica: fechaNotaConf,
+          medicoFirmante: medicoFirmanteConf,
+          enfermeraFirmante: enfermeraFirmanteConf,
+        });
+
         const cie10Validation = validateCIE10Duplicates({
           codigoCIE10Principal: formData.formDataNotaMedica.codigoCIE10Principal,
           codigosCIE10Complementarios: formData.formDataNotaMedica.codigosCIE10Complementarios,
           codigoCIEDiagnostico2: formData.formDataNotaMedica.codigoCIEDiagnostico2,
-          codigoCIEDiagnostico3: formData.formDataNotaMedica.codigoCIEDiagnostico3
+          codigoCIEDiagnostico3: formData.formDataNotaMedica.codigoCIEDiagnostico3,
+          primeraVezDiagnostico2: formData.formDataNotaMedica.primeraVezDiagnostico2,
+          primeraVezDiagnostico3: formData.formDataNotaMedica.primeraVezDiagnostico3,
         });
         
         if (!cie10Validation.ok && cie10Validation.issues.length > 0) {
@@ -1419,7 +1459,11 @@ export default {
         }
 
         // VALIDACIÓN CIE-10: Códigos deben tener exactamente 4 caracteres
-        const cie4CharsNota = validarNotaMedicaCIEExact4Chars(formData.formDataNotaMedica, showSiresUI.value);
+        const cie4CharsNota = validarNotaMedicaCIEExact4Chars(
+          formData.formDataNotaMedica,
+          showSiresUI.value,
+          esMujerNotaMedica,
+        );
         if (!cie4CharsNota.valido) {
           if (cie4CharsNota.paso) stepsStore.goToStep(cie4CharsNota.paso);
           toast.open({
@@ -1429,61 +1473,94 @@ export default {
           return;
         }
 
-        // DIAGNOSTICO_SIS: primeraVez -1, catálogo, LETRA MT/CP, sexo/edad diag2/diag3
-        const trabajadorNm = trabajadores.currentTrabajador;
-        let medicoFirmante = null;
-        let enfermeraFirmante = null;
-        if (user.value?._id) {
-          const normalizeFirmanteApi = (body) => {
-            if (!body) return null;
-            if (body._id) return body;
-            if (body.data && body.data._id) return body.data;
-            return null;
-          };
-          try {
-            const { data: medicoBody } = await MedicoFirmanteAPI.getMedicoFirmanteByUserId(user.value._id);
-            medicoFirmante = normalizeFirmanteApi(medicoBody);
-          } catch {
-            medicoFirmante = null;
-          }
-          if (!medicoFirmante) {
-            try {
-              const { data: enfBody } = await EnfermeraFirmanteAPI.getEnfermeraFirmanteByUserId(user.value._id);
-              enfermeraFirmante = normalizeFirmanteApi(enfBody);
-            } catch {
-              enfermeraFirmante = null;
-            }
-          }
+        const ramazziniScope = validarNotaMedicaRamazziniScope(
+          formData.formDataNotaMedica,
+          showSiresUI.value,
+          esMujerNotaMedica,
+        );
+        if (!ramazziniScope.valido) {
+          if (ramazziniScope.paso) stepsStore.goToStep(ramazziniScope.paso);
+          toast.open({
+            message: ramazziniScope.mensaje,
+            type: 'error',
+          });
+          return;
         }
+
+        // DIAGNOSTICO_SIS: principal, diag2/diag3 — catálogo, tipoPersonal, sexo/edad
+        try {
         const fechaNotaMedicaSis = formData.formDataNotaMedica.fechaNotaMedica
           ? new Date(formData.formDataNotaMedica.fechaNotaMedica)
           : new Date();
-        try {
-          const sis = await validateNotaMedicaDiagnosticos2Y3({
-            formData: formData.formDataNotaMedica,
-            trabajadorSexo: trabajadorNm?.sexo || '',
-            trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
-              ? new Date(trabajadorNm.fechaNacimiento)
-              : fechaNotaMedicaSis,
-            fechaNotaMedica: fechaNotaMedicaSis,
-            medicoFirmante,
-            enfermeraFirmante,
-            showSiresUI: showSiresUI.value,
+        const sis = await validateNotaMedicaDiagnosticos2Y3({
+          formData: formData.formDataNotaMedica,
+          trabajadorSexo: trabajadorNm?.sexo || '',
+          trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
+            ? new Date(trabajadorNm.fechaNacimiento)
+            : fechaNotaMedicaSis,
+          fechaNotaMedica: fechaNotaMedicaSis,
+          medicoFirmante: medicoFirmanteConf,
+          enfermeraFirmante: enfermeraFirmanteConf,
+          showSiresUI: showSiresUI.value,
+          esMujer: esMujerNotaMedica,
+        });
+        if (!sis.ok) {
+          if (sis.paso) stepsStore.goToStep(sis.paso);
+          toast.open({
+            message: sis.messageToast || 'Validación de diagnósticos no superada.',
+            type: 'error',
           });
-          if (!sis.ok) {
-            if (sis.paso) stepsStore.goToStep(sis.paso);
-            toast.open({ message: sis.messageToast || 'Validación de diagnósticos no superada.', type: 'error' });
-            return;
-          }
+          return;
+        }
+
+        const confirmacion = await validateNotaMedicaConfirmacionDiagnostica({
+          formData: formData.formDataNotaMedica,
+          trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
+            ? new Date(trabajadorNm.fechaNacimiento)
+            : fechaNotaMedicaSis,
+          fechaNotaMedica: fechaNotaMedicaSis,
+          medicoFirmante: medicoFirmanteConf,
+          enfermeraFirmante: enfermeraFirmanteConf,
+          showSiresUI: showSiresUI.value,
+          esMujer: esMujerNotaMedica,
+        });
+        if (!confirmacion.ok) {
+          if (confirmacion.paso) stepsStore.goToStep(confirmacion.paso);
+          toast.open({
+            message: confirmacion.messageToast || 'Validación de confirmación diagnóstica no superada.',
+            type: 'error',
+          });
+          return;
+        }
         } catch (err) {
           console.error('validateNotaMedicaDiagnosticos2Y3:', err);
+          toast.open({
+            message: 'No se pudo validar los diagnósticos CIE-10. Intente de nuevo.',
+            type: 'error',
+          });
+          return;
+        }
+
+        const validacionEmbarazo = validarNotaMedicaEmbarazo(
+          formData.formDataNotaMedica,
+          showSiresUI.value,
+          esMujerNotaMedica,
+        );
+        if (!validacionEmbarazo.valido) {
+          if (validacionEmbarazo.paso) stepsStore.goToStep(validacionEmbarazo.paso);
+          toast.open({
+            message: validacionEmbarazo.mensaje,
+            type: 'error',
+          });
+          return;
         }
 
         // VALIDACIÓN PRE-SUBMIT NOTA MÉDICA: fechas, edad, sistólica/diastólica (CEX NOM-024)
         const validacionNotaMedica = validarNotaMedicaPreSubmit(
           formData.formDataNotaMedica,
           trabajadores.currentTrabajador,
-          showSiresUI.value
+          showSiresUI.value,
+          esMujerNotaMedica,
         );
         if (!validacionNotaMedica.valido) {
           if (validacionNotaMedica.paso) stepsStore.goToStep(validacionNotaMedica.paso);
@@ -1493,6 +1570,10 @@ export default {
           });
           return;
         }
+      }
+
+      if (documentos.currentTypeOfDocument === 'notaMedica') {
+        datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
       }
 
       // VALIDACIÓN PREVIA: Verificar campos requeridos antes de enviar al backend

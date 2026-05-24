@@ -49,7 +49,7 @@ export function normalizeCIE10Code(value: string | null | undefined): string | n
  * Tipo para los issues de validación
  */
 export interface CIE10ValidationIssue {
-  type: 'principal_in_complementaries' | 'complementaries_duplicate' | 'diagnostico2_equals_principal' | 'diagnostico2_equals_complementary' | 'diagnostico3_equals_principal' | 'diagnostico3_equals_complementary' | 'diagnostico3_equals_diagnostico2';
+  type: 'principal_in_complementaries' | 'complementaries_duplicate' | 'diagnostico2_equals_principal' | 'diagnostico2_equals_complementary' | 'diagnostico3_equals_principal' | 'diagnostico3_equals_complementary' | 'diagnostico3_equals_diagnostico2' | 'diagnostico3_sin_diagnostico2';
   code: string;
   message: string;
 }
@@ -70,6 +70,8 @@ export interface CIE10ValidationPayload {
   codigosCIE10Complementarios?: (string | null)[] | null;
   codigoCIEDiagnostico2?: string | null;
   codigoCIEDiagnostico3?: string | null;
+  primeraVezDiagnostico2?: number | null;
+  primeraVezDiagnostico3?: number | null;
 }
 
 /**
@@ -85,13 +87,17 @@ export interface CIE10ValidationPayload {
  * @param payload - Objeto con los códigos CIE-10 a validar
  * @returns Resultado de la validación con issues encontrados
  */
-/** Familia R69 (no especificado): permite repetir diag2/diag3 respecto al principal (DIAGNOSTICO_SIS). */
+/** Familia R69 (no especificado): permite repetir diag2/diag3 respecto al reference. */
 function principalIsR69Family(code: string | null | undefined): boolean {
   if (!code) return false;
   const n = normalizeCIE10Code(code);
   if (!n) return false;
   const w = n.replace(/\./g, '').toUpperCase();
   return w.startsWith('R69');
+}
+
+export function isR69XFamily(code: string | null | undefined): boolean {
+  return principalIsR69Family(code);
 }
 
 export function validateCIE10Duplicates(payload: CIE10ValidationPayload): CIE10ValidationResult {
@@ -106,6 +112,21 @@ export function validateCIE10Duplicates(payload: CIE10ValidationPayload): CIE10V
   const codigosComplementarios = (payload.codigosCIE10Complementarios || [])
     .map(code => normalizeCIE10Code(code))
     .filter((code): code is string => code !== null);
+
+  const pv2Activo =
+    payload.primeraVezDiagnostico2 === 0 || payload.primeraVezDiagnostico2 === 1;
+  const pv3Activo =
+    payload.primeraVezDiagnostico3 === 0 || payload.primeraVezDiagnostico3 === 1;
+
+  // Regla 0: Diagnóstico 3 requiere diagnóstico 2 registrado
+  if (pv3Activo && !pv2Activo) {
+    issues.push({
+      type: 'diagnostico3_sin_diagnostico2',
+      code: codigoDiagnostico3 || '',
+      message:
+        'No puede registrar el diagnóstico 3 sin haber registrado antes el diagnóstico 2 (comorbilidad).',
+    });
+  }
   
   // Regla 1: Verificar si código principal está repetido en complementarios
   if (codigoPrincipal) {
@@ -203,9 +224,12 @@ export function validateCIE10Duplicates(payload: CIE10ValidationPayload): CIE10V
     }
   }
   
-  // Regla 7: Verificar si diagnóstico 3 es igual al diagnóstico 2
+  // Regla 7: Verificar si diagnóstico 3 es igual al diagnóstico 2 (excepción: diag2 familia R69)
   if (codigoDiagnostico3 && codigoDiagnostico2) {
-    if (codigoDiagnostico3 === codigoDiagnostico2) {
+    if (
+      codigoDiagnostico3 === codigoDiagnostico2 &&
+      !isR69XFamily(payload.codigoCIEDiagnostico2)
+    ) {
       issues.push({
         type: 'diagnostico3_equals_diagnostico2',
         code: codigoDiagnostico3,
@@ -243,6 +267,8 @@ export function generateBlockingToastMessage(issue: CIE10ValidationIssue): strin
       return `No puedes continuar: el código ${code} del diagnóstico 3 es igual a un diagnóstico complementario.`;
     case 'diagnostico3_equals_diagnostico2':
       return `No puedes continuar: el código ${code} del diagnóstico 3 es igual al diagnóstico 2.`;
+    case 'diagnostico3_sin_diagnostico2':
+      return 'No puedes continuar: debe registrar primero el diagnóstico 2 (comorbilidad) antes del diagnóstico 3.';
     default:
       return `No puedes continuar: hay un problema con el código CIE-10 ${code}.`;
   }
@@ -274,6 +300,10 @@ export interface CIE10Rule {
   lsup: string | null;
   /** MT / CP — tipo de personal requerido (cat DGIS) */
   letra?: string | null;
+  tipoPersonal1VezCe?: number[];
+  tipoPersonalSubsecCe?: number[];
+  diaCronicos?: boolean;
+  diaCaInfantil?: boolean;
 }
 
 /**
@@ -372,7 +402,7 @@ export function calculateAge(fechaNacimiento: Date, fechaReferencia: Date): numb
  * @param sexo - Sexo del trabajador (puede venir en varios formatos)
  * @returns Sexo normalizado o null si es inválido
  */
-export function normalizeSexo(sexo: string | null | undefined): 'HOMBRE' | 'MUJER' | null {
+export function normalizeSexo(sexo: string | null | undefined): 'HOMBRE' | 'MUJER' | 'INTERSEXUAL' | null {
   if (!sexo) {
     return null;
   }
@@ -398,7 +428,15 @@ export function normalizeSexo(sexo: string | null | undefined): 'HOMBRE' | 'MUJE
     return 'MUJER';
   }
 
-  // Si ya está en formato uppercase
+  if (
+    normalized === 'intersexual' ||
+    normalized === 'otro' ||
+    normalized === 'other' ||
+    normalized === '3'
+  ) {
+    return 'INTERSEXUAL';
+  }
+
   if (normalized === 'HOMBRE' || normalized === 'HOMBRES') {
     return 'HOMBRE';
   }
@@ -436,6 +474,10 @@ export async function findCIE10Rule(code: string): Promise<CIE10Rule | null> {
           linf: entry.linfRaw || null,
           lsup: entry.lsupRaw || null,
           letra: entry.letra ?? null,
+          tipoPersonal1VezCe: entry.tipoPersonal1VezCe,
+          tipoPersonalSubsecCe: entry.tipoPersonalSubsecCe,
+          diaCronicos: entry.diaCronicos ?? false,
+          diaCaInfantil: entry.diaCaInfantil ?? false,
         };
       }
     } catch (error) {
@@ -455,6 +497,10 @@ export async function findCIE10Rule(code: string): Promise<CIE10Rule | null> {
             linf: entry.linfRaw || null,
             lsup: entry.lsupRaw || null,
             letra: entry.letra ?? null,
+            tipoPersonal1VezCe: entry.tipoPersonal1VezCe,
+            tipoPersonalSubsecCe: entry.tipoPersonalSubsecCe,
+            diaCronicos: entry.diaCronicos ?? false,
+            diaCaInfantil: entry.diaCaInfantil ?? false,
           };
         }
       } catch (error) {
@@ -518,9 +564,9 @@ export async function validateCIE10SexAge(
       return;
     }
 
-    // Validar sexo
+    // Validar sexo (intersexual: solo aplica LINF/LSUP)
     let sexoViolation = false;
-    if (rule.lsex && rule.lsex !== 'NO') {
+    if (sexoTrabajador !== 'INTERSEXUAL' && rule.lsex && rule.lsex !== 'NO') {
       if (rule.lsex === 'HOMBRE' && sexoTrabajador !== 'HOMBRE') {
         sexoViolation = true;
       } else if (rule.lsex === 'MUJER' && sexoTrabajador !== 'MUJER') {

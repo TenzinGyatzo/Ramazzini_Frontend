@@ -230,7 +230,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
         </p>
       </div>
       <div class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="frecuenciaRespiratoria">F. Respiratoria (rpm) <span class="text-red-500">*</span></label>
+        <label for="frecuenciaRespiratoria">F. Resp. (rpm) <span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input type="number"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
