@@ -7,6 +7,8 @@ import axios from "axios";
 interface EnfermeraFirmante {
     _id: string;
     nombre: string;
+    primerApellido?: string;
+    segundoApellido?: string;
     sexo?: string;
     tituloProfesional?: string;
     numeroCedulaProfesional?: string;

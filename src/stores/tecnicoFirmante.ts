@@ -6,6 +6,8 @@ import axios from "axios";
 interface TecnicoFirmante {
   _id: string;
   nombre: string;
+  primerApellido?: string;
+  segundoApellido?: string;
   sexo?: string;
   tituloProfesional?: string;
   numeroCedulaProfesional?: string;

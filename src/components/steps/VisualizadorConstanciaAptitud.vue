@@ -5,6 +5,7 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
+import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 
 const empresas = useEmpresasStore();
@@ -124,10 +125,8 @@ const fechaFormateada = computed(() => {
 const nombreCompletoMedico = computed(() => {
   const medico = medicoFirmanteStore.medicoFirmante;
   if (!medico) return 'Nombre del Emisor';
-  
-  const titulo = medico.tituloProfesional || '';
-  const nombre = medico.nombre || '';
-  return `${titulo} ${nombre}`.trim() || 'Nombre del Emisor';
+
+  return formatearTituloYNombreFirmante(medico) || 'Nombre del Emisor';
 });
 
 const cargoEmisor = computed(() => {

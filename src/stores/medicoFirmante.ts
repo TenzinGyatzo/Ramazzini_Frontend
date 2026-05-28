@@ -6,6 +6,8 @@ import axios from "axios";
 interface MedicoFirmante {
     _id: string;
     nombre: string;
+    primerApellido?: string;
+    segundoApellido?: string;
     tituloProfesional?: string;
     numeroCedulaProfesional?: string;
     especialistaSaludTrabajo?: boolean;

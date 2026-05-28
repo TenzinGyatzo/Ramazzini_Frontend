@@ -3,6 +3,7 @@ import { ref, inject, watch, watchEffect, computed } from 'vue';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useRouter, RouterLink } from 'vue-router';
+import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 const enfermeraFirmante = useEnfermeraFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -15,6 +16,8 @@ const isDragOver = ref(false);  // Para el estado de drag and drop
 // Objeto reactivo para el formulario del médico firmante
 const formularioEnfermeraFirmante = ref({
   nombre: "",
+  primerApellido: "",
+  segundoApellido: "",
   sexo: "",
   tituloProfesional: "",
   numeroCedulaProfesional: "",
@@ -27,6 +30,8 @@ watchEffect(() => {
   if (enfermeraFirmante.enfermeraFirmante) {
     Object.assign(formularioEnfermeraFirmante.value, {
       nombre: enfermeraFirmante.enfermeraFirmante.nombre || "",
+      primerApellido: enfermeraFirmante.enfermeraFirmante.primerApellido || "",
+      segundoApellido: enfermeraFirmante.enfermeraFirmante.segundoApellido || "",
       sexo: enfermeraFirmante.enfermeraFirmante.sexo || "",
       tituloProfesional: enfermeraFirmante.enfermeraFirmante.tituloProfesional || "",
       numeroCedulaProfesional: enfermeraFirmante.enfermeraFirmante.numeroCedulaProfesional || "",
@@ -54,6 +59,9 @@ const validateFile = (file) => {
 // Computed Reactivo para el Pie de Página del Enfermera Firmante
 const piePaginaFirmante = computed(() => ({
   nombre: formularioEnfermeraFirmante.value.nombre || "",
+  primerApellido: formularioEnfermeraFirmante.value.primerApellido || "",
+  segundoApellido: formularioEnfermeraFirmante.value.segundoApellido || "",
+  nombreCompleto: formatearTituloYNombreFirmante(formularioEnfermeraFirmante.value),
   tituloProfesional: formularioEnfermeraFirmante.value.tituloProfesional || "",
   numeroCedulaProfesional: formularioEnfermeraFirmante.value.numeroCedulaProfesional || "",
   nombreCredencialAdicional: formularioEnfermeraFirmante.value.nombreCredencialAdicional || "",
@@ -216,28 +224,60 @@ const firmaSrc = computed(() => {
                         incomplete-message="Por favor, valide que los datos sean correctos*" @submit="handleSubmit">
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                          <FormKit type="text" label="Nombre Completo" name="nombre"
-                              placeholder="Ej. Fátima Pérez Galeana" validation="required"
-                              :validation-messages="{ required: 'Este campo es obligatorio' }"
-                              v-model="formularioEnfermeraFirmante.nombre" />
-                              
+                            <FormKit
+                                type="select"
+                                label="Título Profesional"
+                                name="tituloProfesional"
+                                placeholder='Selecciona "Lic. Enfermería." o "Enf."'
+                                :options="titulos"
+                                v-model="formularioEnfermeraFirmante.tituloProfesional"
+                            />
+
+                            <FormKit
+                                type="text"
+                                label="Nombre(s)"
+                                name="nombre"
+                                placeholder="Ej. Fátima"
+                                validation="required"
+                                :validation-messages="{ required: 'Este campo es obligatorio' }"
+                                v-model="formularioEnfermeraFirmante.nombre"
+                            />
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <FormKit
+                                type="text"
+                                label="Primer Apellido"
+                                name="primerApellido"
+                                placeholder="Ej. Pérez"
+                                validation="required"
+                                :validation-messages="{ required: 'Este campo es obligatorio' }"
+                                v-model="formularioEnfermeraFirmante.primerApellido"
+                            />
+
+                            <FormKit
+                                type="text"
+                                label="Segundo Apellido"
+                                name="segundoApellido"
+                                placeholder="Ej. Galeana"
+                                v-model="formularioEnfermeraFirmante.segundoApellido"
+                            />
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                           <FormKit type="select" label="Sexo" name="sexo"
                               placeholder='Selecciona "Masculino" o "Femenino"' 
                               :options="['Masculino', 'Femenino']"
                               validation="required"
                               :validation-messages="{ required: 'Este campo es obligatorio' }"
                               v-model="formularioEnfermeraFirmante.sexo" />
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-
-                            <FormKit type="select" label="Título Profesional" name="tituloProfesional"
-                                placeholder='Selecciona "Lic. Enfermería." o "Enf."' :options="titulos"
-                                v-model="formularioEnfermeraFirmante.tituloProfesional" />
 
                             <FormKit type="text" :label="proveedorSaludStore.proveedorSalud?.pais === 'MX' ? 'Cédula Profesional' : 'Registro Profesional'" name="numeroCedulaProfesional"
                                 placeholder="Ej. 142988, REG-123456, CRM 123456" validation="cedulaProfesionalValidation" v-model="formularioEnfermeraFirmante.numeroCedulaProfesional"
                                 :validation-messages="{ cedulaProfesionalValidation: 'El registro debe tener entre 3 y 20 caracteres (letras, números, guiones o espacios).' }" />
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
 
                             <FormKit type="text" label="Credencial/Certificación Adicional" name="nombreCredencialAdicional"
                                 placeholder="Ej. Certificado ante el CNMMT"
@@ -316,7 +356,7 @@ const firmaSrc = computed(() => {
                                 <div class="w-full max-w-md mt-4 p-4 border rounded-lg bg-gray-50 text-center xl:text-left">                  
                                     <p class="text-sm text-gray-800 space-y-1">
                                         <span class="font-medium" v-if="piePaginaFirmante.nombre">
-                                            {{ piePaginaFirmante.tituloProfesional }} {{ piePaginaFirmante.nombre }}
+                                            {{ piePaginaFirmante.nombreCompleto }}
                                         </span><br v-if="piePaginaFirmante.nombre">
                                         
                                         <span v-if="piePaginaFirmante.numeroCedulaProfesional" class="font-light">
