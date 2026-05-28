@@ -1,4 +1,8 @@
 import { generateClasses } from "@formkit/themes";
+import { calcularEdadPrecisa } from "./src/helpers/dates";
+
+export const FIRMANTE_EDAD_MINIMA = 18;
+export const FIRMANTE_EDAD_MAXIMA = 90;
 
 const rfcValidation = ({ value }) => {
   // Validación flexible para identificadores de empresa (RFC, Registro Patronal, etc.)
@@ -59,6 +63,12 @@ const curpValidation = ({ value }) => {
   return curpRegex.test(value);
 };
 
+const fechaNacimientoFirmanteValidation = ({ value }) => {
+  if (!value) return false;
+  const edad = calcularEdadPrecisa(value);
+  return edad >= FIRMANTE_EDAD_MINIMA && edad <= FIRMANTE_EDAD_MAXIMA;
+};
+
 const config = {
   config: {
     classes: generateClasses({
@@ -97,6 +107,7 @@ const config = {
       cedulaProfesionalValidation,
       cedulaEspecialistaValidation,
       nssValidation,
+      fechaNacimientoFirmanteValidation,
     },
   },
 };

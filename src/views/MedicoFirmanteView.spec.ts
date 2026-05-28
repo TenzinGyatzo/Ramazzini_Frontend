@@ -1,6 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
-import MedicoFirmanteView from './MedicoFirmanteView.vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';

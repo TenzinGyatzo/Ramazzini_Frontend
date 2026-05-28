@@ -1,6 +1,9 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
+import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+
+const { catalogSearchInputAttrs } = useCatalogSearchInput();
 
 const props = defineProps({
   modelValue: {
@@ -148,7 +151,7 @@ const hideResults = () => {
         @blur="hideResults"
         class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
         :placeholder="placeholder"
-        autocomplete="off"
+        v-bind="catalogSearchInputAttrs"
       />
       
       <div v-if="loading" class="absolute right-3 top-3.5">

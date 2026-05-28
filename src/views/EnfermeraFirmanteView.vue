@@ -1,15 +1,41 @@
 <script setup>
-import { ref, inject, watch, watchEffect, computed } from 'vue';
+import { ref, inject, watchEffect, computed } from 'vue';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useRouter, RouterLink } from 'vue-router';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';
+import { useNom024Fields } from '@/composables/useNom024Fields';
+import { useEntidadPaisNacimientoCoherence } from '@/composables/useEntidadPaisNacimientoCoherence';
 import PaisNacimientoAutocomplete from '@/components/selectors/PaisNacimientoAutocomplete.vue';
+import EstadoAutocomplete from '@/components/selectors/EstadoAutocomplete.vue';
+import ResidenciaGeoAutocomplete from '@/components/selectors/ResidenciaGeoAutocomplete.vue';
+import { convertirFechaISOaYYYYMMDD, calcularEdadPrecisa } from '@/helpers/dates';
+import { extractApiErrorMessage } from '@/helpers/apiErrors';
+import {
+  isPaisNacimientoNoEspecificado,
+  PAIS_NACIMIENTO_NO_ESPECIFICADO_FIRMANTE_MESSAGE,
+} from '@/helpers/paisNacimiento';
+import { FIRMANTE_EDAD_MINIMA, FIRMANTE_EDAD_MAXIMA } from '../../formkit.config';
 
 const enfermeraFirmante = useEnfermeraFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const router = useRouter();
-const { curpRequired, showCurpField, isSIRES, isSinRegimen } = useCurpPolicy();
+const {
+  curpRequired,
+  showCurpField,
+  isSIRES,
+  isSinRegimen,
+  paisNacimientoRequired,
+  entidadNacimientoRequired,
+  showEntidadNacimiento,
+  sexoRequired,
+} = useCurpPolicy();
+
+const { geoFieldsRequired } = useNom024Fields();
+
+const entidadResidenciaValue = ref('');
+const municipioResidenciaValue = ref('');
+const localidadResidenciaValue = ref('');
 
 const firmaPreview = ref(null);
 const firmaArchivo = ref(null);
@@ -24,26 +50,57 @@ const formularioEnfermeraFirmante = ref({
   numeroCedulaProfesional: "",
   nombreCredencialAdicional: "",
   numeroCredencialAdicional: "",
-  paisNacimiento: ""
+  paisNacimiento: "",
+  entidadNacimiento: "",
+  fechaNacimiento: ""
 });
 
-// Mantener isMX solo para lógica no-regulatoria (ej: mostrar "Cédula Profesional" vs "Registro Profesional")
+useEntidadPaisNacimientoCoherence(formularioEnfermeraFirmante);
+
+// Mantener isMX solo para lógica no-regulatoria
 const isMX = computed(() => proveedorSaludStore.proveedorSalud?.pais === 'MX');
+
+function formatDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const fechaNacimientoMax = computed(() => {
+  const limite = new Date();
+  limite.setFullYear(limite.getFullYear() - FIRMANTE_EDAD_MINIMA);
+  return formatDateInputValue(limite);
+});
+
+const fechaNacimientoMin = computed(() => {
+  const limite = new Date();
+  limite.setFullYear(limite.getFullYear() - FIRMANTE_EDAD_MAXIMA);
+  return formatDateInputValue(limite);
+});
 
 // Cargar los valores iniciales del enfermera firmante en el formulario
 watchEffect(() => {
-  if (enfermeraFirmante.enfermeraFirmante) {
-    Object.assign(formularioEnfermeraFirmante.value, {
-      nombre: enfermeraFirmante.enfermeraFirmante.nombre || "",
-      curp: enfermeraFirmante.enfermeraFirmante.curp || "",
-      sexo: enfermeraFirmante.enfermeraFirmante.sexo || "",
-      tituloProfesional: enfermeraFirmante.enfermeraFirmante.tituloProfesional || "",
-      numeroCedulaProfesional: enfermeraFirmante.enfermeraFirmante.numeroCedulaProfesional || "",
-      nombreCredencialAdicional: enfermeraFirmante.enfermeraFirmante.nombreCredencialAdicional || "",
-      numeroCredencialAdicional: enfermeraFirmante.enfermeraFirmante.numeroCredencialAdicional || "",
-      paisNacimiento: enfermeraFirmante.enfermeraFirmante.paisNacimiento ?? ""
+  const firmante = enfermeraFirmante.enfermeraFirmante;
+  if (!firmante?._id) return;
+
+  Object.assign(formularioEnfermeraFirmante.value, {
+      nombre: firmante.nombre || "",
+      curp: firmante.curp || "",
+      sexo: firmante.sexo || "",
+      tituloProfesional: firmante.tituloProfesional || "",
+      numeroCedulaProfesional: firmante.numeroCedulaProfesional || "",
+      nombreCredencialAdicional: firmante.nombreCredencialAdicional || "",
+      numeroCredencialAdicional: firmante.numeroCredencialAdicional || "",
+      paisNacimiento: firmante.paisNacimiento ?? "",
+      entidadNacimiento: firmante.entidadNacimiento || "",
+      fechaNacimiento: firmante.fechaNacimiento
+        ? convertirFechaISOaYYYYMMDD(firmante.fechaNacimiento)
+        : ""
     });
-  }
+    entidadResidenciaValue.value = firmante.entidadResidencia || "";
+    municipioResidenciaValue.value = firmante.municipioResidencia || "";
+    localidadResidenciaValue.value = firmante.localidadResidencia || "";
 });
 
 // Función para validar archivo
@@ -143,7 +200,25 @@ const user = ref(
 );
 
 const handleSubmit = async (data) => {
-    // Validación basada en política regulatoria: CURP obligatorio para SIRES_NOM024
+    if (paisNacimientoRequired.value) {
+        const pais = formularioEnfermeraFirmante.value.paisNacimiento;
+        if (pais === "" || pais == null) {
+            toast.open({
+                type: "error",
+                message: "El país de nacimiento es obligatorio",
+            });
+            return;
+        }
+    }
+
+    if (isPaisNacimientoNoEspecificado(formularioEnfermeraFirmante.value.paisNacimiento)) {
+        toast.open({
+            type: "error",
+            message: PAIS_NACIMIENTO_NO_ESPECIFICADO_FIRMANTE_MESSAGE,
+        });
+        return;
+    }
+
     if (curpRequired.value && (!data.curp || data.curp.trim() === '')) {
         toast.open({
             type: "error",
@@ -152,11 +227,92 @@ const handleSubmit = async (data) => {
         return;
     }
 
+    const sexo = data.sexo || formularioEnfermeraFirmante.value.sexo;
+    if (sexoRequired.value && !sexo) {
+        toast.open({
+            type: "error",
+            message: "El sexo es obligatorio para firmantes en régimen SIRES_NOM024",
+        });
+        return;
+    }
+
+    const entidadNacimiento = formularioEnfermeraFirmante.value.entidadNacimiento;
+    if (entidadNacimientoRequired.value && !entidadNacimiento) {
+        toast.open({
+            type: "error",
+            message: "La entidad de nacimiento es obligatoria para firmantes en régimen SIRES_NOM024",
+        });
+        return;
+    }
+
+    if (geoFieldsRequired.value) {
+        if (!entidadResidenciaValue.value) {
+            toast.open({
+                type: "error",
+                message: "La entidad de residencia es obligatoria para firmantes en régimen SIRES_NOM024",
+            });
+            return;
+        }
+        if (!municipioResidenciaValue.value) {
+            toast.open({
+                type: "error",
+                message: "El municipio de residencia es obligatorio para firmantes en régimen SIRES_NOM024",
+            });
+            return;
+        }
+        if (!localidadResidenciaValue.value) {
+            toast.open({
+                type: "error",
+                message: "La localidad de residencia es obligatoria para firmantes en régimen SIRES_NOM024",
+            });
+            return;
+        }
+    }
+
+    const fechaNacimiento = data.fechaNacimiento || formularioEnfermeraFirmante.value.fechaNacimiento;
+    if (!fechaNacimiento) {
+        toast.open({
+            type: "error",
+            message: "La fecha de nacimiento es obligatoria",
+        });
+        return;
+    }
+
+    const edad = calcularEdadPrecisa(fechaNacimiento);
+    if (edad < FIRMANTE_EDAD_MINIMA) {
+        toast.open({
+            type: "error",
+            message: "La enfermera firmante debe tener al menos 18 años cumplidos",
+        });
+        return;
+    }
+    if (edad > FIRMANTE_EDAD_MAXIMA) {
+        toast.open({
+            type: "error",
+            message: "La enfermera firmante no puede tener más de 90 años cumplidos",
+        });
+        return;
+    }
+
     const formData = new FormData();
 
     // Incluir paisNacimiento del selector (no capturado por FormKit)
-    const submitData = { ...data, paisNacimiento: formularioEnfermeraFirmante.value.paisNacimiento };
+    const submitData = {
+      ...data,
+      paisNacimiento: formularioEnfermeraFirmante.value.paisNacimiento,
+      entidadNacimiento: formularioEnfermeraFirmante.value.entidadNacimiento,
+      entidadResidencia: entidadResidenciaValue.value,
+      municipioResidencia: municipioResidenciaValue.value,
+      localidadResidencia: localidadResidenciaValue.value,
+      sexo: sexo || formularioEnfermeraFirmante.value.sexo,
+    };
     if (submitData.paisNacimiento === "" || submitData.paisNacimiento == null) delete submitData.paisNacimiento;
+    if (!submitData.entidadNacimiento) delete submitData.entidadNacimiento;
+    if (!geoFieldsRequired.value) {
+      if (!submitData.entidadResidencia) delete submitData.entidadResidencia;
+      if (!submitData.municipioResidencia) delete submitData.municipioResidencia;
+      if (!submitData.localidadResidencia) delete submitData.localidadResidencia;
+    }
 
     // Agregar solo los campos con valores definidos
     Object.entries(submitData).forEach(([key, value]) => {
@@ -184,25 +340,23 @@ const handleSubmit = async (data) => {
             response = await enfermeraFirmante.createEnfermeraFirmante(formData);
         }
 
-        // Mostrar mensaje de éxito en el toast
-        toast.open({
-            message: response.message,
-        });
-
-        // Usar el ID devuelto por el backend para recargar los datos
-        const idEnfermeraFirmante = response.data._id || enfermeraFirmante.enfermeraFirmante?._id;
-
-        if (idEnfermeraFirmante) {
-            await enfermeraFirmante.loadEnfermeraFirmanteById(idEnfermeraFirmante);
-        } else {
-            console.warn("No se pudo obtener el ID del enfermera firmante. No se cargaron nuevos datos.");
+        if (!response) {
+            return;
         }
+
+        toast.open({
+            type: 'success',
+            message: 'Datos del enfermera firmante guardados correctamente',
+        });
 
     } catch (error) {
         console.error("Error al crear o actualizar el enfermera firmante:", error);
         toast.open({
-            message: error.response?.data?.message || 'Error al guardar los datos del enfermera firmante',
-            type: 'error'
+            message: extractApiErrorMessage(
+                error,
+                'Error al guardar los datos del enfermera firmante',
+            ),
+            type: 'error',
         });
     }
 };
@@ -227,8 +381,8 @@ const firmaSrc = computed(() => {
         <div
             class="relative bg-white text-gray-800 w-full max-w-5xl p-5 sm:p-8 lg:p-10 mt-2 sm:mt-4 rounded-lg shadow-lg mx-auto max-h-none overflow-visible lg:max-h-[82vh] lg:overflow-y-auto">
             <Transition appear name="fade-slow">
-                <div v-if="enfermeraFirmante.loading">
-                    <!-- <h1 class="text-3xl text-center">Cargando medico...</h1> -->
+                <div v-if="enfermeraFirmante.loading && !enfermeraFirmante.enfermeraFirmante" class="py-12 text-center text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
                 </div>
                 <div v-else>
                     <h1 class="text-3xl">Datos del enfermera firmante</h1>
@@ -275,17 +429,42 @@ const firmaSrc = computed(() => {
                           <FormKit type="select" label="Sexo" name="sexo"
                               placeholder='Selecciona "Masculino" o "Femenino"' 
                               :options="['Masculino', 'Femenino']"
-                              validation="required"
+                              :validation="sexoRequired ? 'required' : ''"
                               :validation-messages="{ required: 'Este campo es obligatorio' }"
-                              v-model="formularioEnfermeraFirmante.sexo" />
+                              v-model="formularioEnfermeraFirmante.sexo">
+                              <template #label="{ label }">
+                                  <span>{{ label }} <span v-if="sexoRequired" class="text-red-500">*</span></span>
+                              </template>
+                          </FormKit>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <FormKit type="select" label="Título Profesional" name="tituloProfesional"
                                 placeholder='Selecciona "Lic. Enfermería." o "Enf."' :options="titulos"
                                 v-model="formularioEnfermeraFirmante.tituloProfesional" />
 
+                            <FormKit
+                                type="date"
+                                name="fechaNacimiento"
+                                validation="required|fechaNacimientoFirmanteValidation"
+                                :validation-messages="{
+                                    required: 'La fecha de nacimiento es obligatoria',
+                                    fechaNacimientoFirmanteValidation: 'La fecha debe corresponder a una edad entre 18 y 90 años cumplidos',
+                                }"
+                                :min="fechaNacimientoMin"
+                                :max="fechaNacimientoMax"
+                                v-model="formularioEnfermeraFirmante.fechaNacimiento"
+                            >
+                                <template #label>
+                                    <span class="text-lg font-medium text-gray-700">
+                                        Fecha de nacimiento
+                                        <span class="text-red-500">*</span>
+                                    </span>
+                                </template>
+                            </FormKit>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             <FormKit type="text" :label="proveedorSaludStore.proveedorSalud?.pais === 'MX' ? 'Cédula Profesional' : 'Registro Profesional'" name="numeroCedulaProfesional"
                                 placeholder="Ej. 142988, REG-123456, CRM 123456" validation="cedulaProfesionalValidation" v-model="formularioEnfermeraFirmante.numeroCedulaProfesional"
                                 :validation-messages="{ cedulaProfesionalValidation: 'El registro debe tener entre 3 y 20 caracteres (letras, números, guiones o espacios).' }" />
@@ -297,12 +476,53 @@ const firmaSrc = computed(() => {
                             <FormKit type="text" label="Número de Credencial Adicional" name="numeroCredencialAdicional"
                                 placeholder="Ej. 924"
                                 v-model="formularioEnfermeraFirmante.numeroCredencialAdicional" />
+                        </div>
 
-                            <div class="sm:col-span-2">
-                                <PaisNacimientoAutocomplete
-                                    v-model="formularioEnfermeraFirmante.paisNacimiento"
-                                    label="País de nacimiento"
-                                    placeholder="Buscar por nombre de país..."
+                        <div v-if="!isSIRES" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <PaisNacimientoAutocomplete
+                                v-model="formularioEnfermeraFirmante.paisNacimiento"
+                                label="País de nacimiento"
+                                placeholder="Buscar por nombre de país..."
+                                :required="paisNacimientoRequired"
+                                exclude-no-especificado
+                            />
+                        </div>
+
+                        <div v-if="showEntidadNacimiento" class="mt-4 mb-2">
+                            <h3 class="text-lg font-semibold text-emerald-800 mb-3 border-b border-emerald-100 pb-2">
+                                Identificación NOM-024 (Estandarización)
+                            </h3>
+
+                            <div class="mb-4">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Nacimiento</h4>
+                                <div class="grid gap-3 sm:grid-cols-2">
+                                    <EstadoAutocomplete
+                                        v-model="formularioEnfermeraFirmante.entidadNacimiento"
+                                        label="Entidad de Nacimiento"
+                                        placeholder="Buscar por nombre del estado"
+                                        :required="geoFieldsRequired"
+                                    />
+
+                                    <PaisNacimientoAutocomplete
+                                        v-model="formularioEnfermeraFirmante.paisNacimiento"
+                                        label="País de nacimiento"
+                                        placeholder="Buscar por nombre de país..."
+                                        :required="paisNacimientoRequired"
+                                        exclude-no-especificado
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Residencia</h4>
+                                <ResidenciaGeoAutocomplete
+                                    :estadoResidencia="entidadResidenciaValue"
+                                    :municipioResidencia="municipioResidenciaValue"
+                                    :localidadResidencia="localidadResidenciaValue"
+                                    @update:estadoResidencia="entidadResidenciaValue = $event"
+                                    @update:municipioResidencia="municipioResidenciaValue = $event"
+                                    @update:localidadResidencia="localidadResidenciaValue = $event"
+                                    :required="geoFieldsRequired"
                                 />
                             </div>
                         </div>
@@ -423,8 +643,8 @@ const firmaSrc = computed(() => {
                             </RouterLink>
                             <!-- Botón de Actualizar -->
                             <div class="w-full sm:w-1/2 pr-2">
-                                <FormKit type="submit">
-                                    <span v-if="enfermeraFirmante.loading">Guardando...</span>
+                                <FormKit type="submit" :disabled="enfermeraFirmante.saving">
+                                    <span v-if="enfermeraFirmante.saving">Guardando...</span>
                                     <span v-else>Actualizar Datos</span>
                                 </FormKit>
                             </div>

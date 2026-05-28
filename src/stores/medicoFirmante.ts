@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import MedicoFirmanteAPI from "@/api/MedicoFirmanteAPI";
 import axios from "axios";
+import { unwrapFirmanteRecord } from "@/helpers/unwrapFirmanteRecord";
 
 interface MedicoFirmante {
     _id: string;
@@ -18,6 +19,8 @@ interface MedicoFirmante {
     numeroCredencialAdicional?: string;
     nombreCredencialAdicional2?: string;
     numeroCredencialAdicional2?: string;
+    paisNacimiento?: number;
+    fechaNacimiento?: string;
     firma?: {
         data: string;
         contentType: string
@@ -32,13 +35,14 @@ interface MedicoFirmante {
 // Define el store
 export const useMedicoFirmanteStore = defineStore("medicoFirmante", () => {
     const loading = ref(true);
+    const saving = ref(false);
     const medicoFirmante = ref<MedicoFirmante | null>(null);
 
     async function loadMedicoFirmanteById(idMedicoFirmante: string) {
         try {
             loading.value = true;
             const { data } = await MedicoFirmanteAPI.getMedicoFirmanteById(idMedicoFirmante);
-            medicoFirmante.value = data;
+            medicoFirmante.value = unwrapFirmanteRecord<MedicoFirmante>(data);
         } catch (error) {
             console.error("Error al cargar médico firmante:", error);
         } finally {
@@ -51,7 +55,7 @@ export const useMedicoFirmanteStore = defineStore("medicoFirmante", () => {
             loading.value = true;
     
             const { data } = await MedicoFirmanteAPI.getMedicoFirmanteByUserId(idUser);
-            medicoFirmante.value = data;
+            medicoFirmante.value = unwrapFirmanteRecord<MedicoFirmante>(data);
         } catch (error) {
             // Verificar si el error es de tipo AxiosError
             if (axios.isAxiosError(error)) {
@@ -74,33 +78,44 @@ export const useMedicoFirmanteStore = defineStore("medicoFirmante", () => {
 
     async function createMedicoFirmante(medicoFirmanteData: MedicoFirmante) {
         try {
-            loading.value = true;
+            saving.value = true;
             const { data } = await MedicoFirmanteAPI.createMedicoFirmante(medicoFirmanteData);
-            medicoFirmante.value = data;
-            return data;
+            const firmante = unwrapFirmanteRecord<MedicoFirmante>(data);
+            if (!firmante) {
+                throw new Error("Respuesta inválida al crear médico firmante");
+            }
+            medicoFirmante.value = firmante;
+            return firmante;
         } catch (error) {
-            console.error("Error al cargar médico firmante:", error);
+            console.error("Error al crear médico firmante:", error);
+            throw error;
         } finally {
-            loading.value = false;
+            saving.value = false;
         }
     }
 
     async function updateMedicoFirmanteById(idMedicoFirmante: string, medicoFirmanteData: MedicoFirmante) {
         try {
-            loading.value = true;
+            saving.value = true;
             const { data } = await MedicoFirmanteAPI.updateMedicoFirmanteById(idMedicoFirmante, medicoFirmanteData);
-            medicoFirmante.value = data;
-            return data;
+            const firmante = unwrapFirmanteRecord<MedicoFirmante>(data);
+            if (!firmante) {
+                throw new Error("Respuesta inválida al actualizar médico firmante");
+            }
+            medicoFirmante.value = firmante;
+            return firmante;
         } catch (error) {
-            console.error("Error al cargar médico firmante:", error);
+            console.error("Error al actualizar médico firmante:", error);
+            throw error;
         } finally {
-            loading.value = false;
+            saving.value = false;
         }
     }
 
     return {
         medicoFirmante,
         loading,
+        saving,
         loadMedicoFirmanteById,
         loadMedicoFirmante,
         createMedicoFirmante,

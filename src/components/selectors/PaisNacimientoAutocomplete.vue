@@ -1,6 +1,9 @@
 <script setup>
 import { ref, watch, onMounted, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
+import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+
+const { catalogSearchInputAttrs } = useCatalogSearchInput();
 
 const props = defineProps({
   modelValue: {
@@ -16,6 +19,10 @@ const props = defineProps({
     default: 'Buscar por nombre de país...'
   },
   required: {
+    type: Boolean,
+    default: false
+  },
+  excludeNoEspecificado: {
     type: Boolean,
     default: false
   }
@@ -40,8 +47,21 @@ const showRequiredError = computed(() => {
 
 let debounceTimer = null;
 
+import {
+  PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE,
+  PAIS_NACIMIENTO_NO_ESPECIFICADO_LABEL,
+} from '@/helpers/paisNacimiento';
+
 // Opción centinela: NO ESPECIFICADO (CATALOG_KEY 248 en cat_pais)
-const sentinelOption = { code: '248', description: 'NO ESPECIFICADO' };
+const sentinelOption = {
+  code: PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE,
+  description: PAIS_NACIMIENTO_NO_ESPECIFICADO_LABEL,
+};
+
+function withSentinelOption(items = []) {
+  if (props.excludeNoEspecificado) return items;
+  return [sentinelOption, ...items];
+}
 
 function normalizeModelValue(val) {
   if (val == null || val === '') return '';
@@ -101,12 +121,19 @@ watch(() => props.modelValue, async (newVal) => {
 const loadInitialPaises = async () => {
   loading.value = true;
   try {
-    const { data } = await CatalogsAPI.searchPaises('méxico', 50);
-    results.value = [sentinelOption, ...(data || [])];
+    const { data } = await CatalogsAPI.listCatalog('cat_pais', 500);
+    results.value = withSentinelOption(data || []);
     showResults.value = true;
   } catch (err) {
     console.error('Error al cargar países:', err);
-    results.value = [];
+    try {
+      const { data } = await CatalogsAPI.searchPaises('a', 100);
+      results.value = withSentinelOption(data || []);
+      showResults.value = true;
+    } catch (fallbackErr) {
+      console.error('Error al cargar países (fallback):', fallbackErr);
+      results.value = withSentinelOption([]);
+    }
   } finally {
     loading.value = false;
   }
@@ -123,8 +150,11 @@ const performSearch = async (val) => {
     const { data } = await CatalogsAPI.searchPaises(val, 50);
     const lowerQuery = val.toLowerCase();
     const matchingSentinels = [];
-    if (sentinelOption.code.includes(lowerQuery) ||
-        sentinelOption.description.toLowerCase().includes(lowerQuery)) {
+    if (
+      !props.excludeNoEspecificado &&
+      (sentinelOption.code.includes(lowerQuery) ||
+        sentinelOption.description.toLowerCase().includes(lowerQuery))
+    ) {
       matchingSentinels.push(sentinelOption);
     }
     results.value = [...matchingSentinels, ...(data || [])];
@@ -166,9 +196,9 @@ const selectResult = (result) => {
 };
 
 const onFocus = () => {
-  if (results.value.length === 0 && !query.value) {
+  if (results.value.length === 0) {
     loadInitialPaises();
-  } else if (results.value.length > 0) {
+  } else {
     showResults.value = true;
   }
 };
@@ -197,7 +227,7 @@ const hideResults = () => {
         @blur="hideResults"
         class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
         :placeholder="placeholder"
-        autocomplete="off"
+        v-bind="catalogSearchInputAttrs"
       />
 
       <div v-if="loading" class="absolute right-3 top-3.5">

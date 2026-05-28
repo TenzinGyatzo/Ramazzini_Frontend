@@ -1,8 +1,8 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import EnfermeraFirmanteAPI from "@/api/EnfermeraFirmanteAPI";
-
 import axios from "axios";
+import { unwrapFirmanteRecord } from "@/helpers/unwrapFirmanteRecord";
 
 interface EnfermeraFirmante {
     _id: string;
@@ -13,6 +13,8 @@ interface EnfermeraFirmante {
     numeroCedulaProfesional?: string;
     nombreCredencialAdicional?: string;
     numeroCredencialAdicional?: string;
+    paisNacimiento?: number;
+    fechaNacimiento?: string;
     firma?: {                                                                     
         data: string;
         contentType: string
@@ -23,13 +25,14 @@ interface EnfermeraFirmante {
 // Define el store
 export const useEnfermeraFirmanteStore = defineStore("enfermeraFirmante", () => {
     const loading = ref(true);
+    const saving = ref(false);
     const enfermeraFirmante = ref<EnfermeraFirmante | null>(null);
 
     async function loadEnfermeraFirmanteById(idEnfermeraFirmante: string) {
         try {
             loading.value = true;
             const { data } = await EnfermeraFirmanteAPI.getEnfermeraFirmanteById(idEnfermeraFirmante);
-            enfermeraFirmante.value = data;
+            enfermeraFirmante.value = unwrapFirmanteRecord<EnfermeraFirmante>(data);
         } catch (error) {
             console.error("Error al cargar enfermera firmante:", error);
         } finally {
@@ -42,7 +45,7 @@ export const useEnfermeraFirmanteStore = defineStore("enfermeraFirmante", () => 
             loading.value = true;
     
             const { data } = await EnfermeraFirmanteAPI.getEnfermeraFirmanteByUserId(idUser);
-            enfermeraFirmante.value = data;
+            enfermeraFirmante.value = unwrapFirmanteRecord<EnfermeraFirmante>(data);
         } catch (error) {
             // Verificar si el error es de tipo AxiosError
             if (axios.isAxiosError(error)) {
@@ -65,33 +68,44 @@ export const useEnfermeraFirmanteStore = defineStore("enfermeraFirmante", () => 
 
     async function createEnfermeraFirmante(enfermeraFirmanteData: EnfermeraFirmante) {
         try {
-            loading.value = true;
+            saving.value = true;
             const { data } = await EnfermeraFirmanteAPI.createEnfermeraFirmante(enfermeraFirmanteData);
-            enfermeraFirmante.value = data;
-            return data;
+            const firmante = unwrapFirmanteRecord<EnfermeraFirmante>(data);
+            if (!firmante) {
+                throw new Error("Respuesta inválida al crear enfermera firmante");
+            }
+            enfermeraFirmante.value = firmante;
+            return firmante;
         } catch (error) {
             console.error("Error al crear enfermera firmante:", error);
+            throw error;
         } finally {
-            loading.value = false;
+            saving.value = false;
         }
     }
 
     async function updateEnfermeraFirmanteById(idEnfermeraFirmante: string, enfermeraFirmanteData: EnfermeraFirmante) {
         try {
-            loading.value = true;
+            saving.value = true;
             const { data } = await EnfermeraFirmanteAPI.updateEnfermeraFirmanteById(idEnfermeraFirmante, enfermeraFirmanteData);
-            enfermeraFirmante.value = data;
-            return data;
+            const firmante = unwrapFirmanteRecord<EnfermeraFirmante>(data);
+            if (!firmante) {
+                throw new Error("Respuesta inválida al actualizar enfermera firmante");
+            }
+            enfermeraFirmante.value = firmante;
+            return firmante;
         } catch (error) {
             console.error("Error al actualizar enfermera firmante:", error);
+            throw error;
         } finally {
-            loading.value = false;
+            saving.value = false;
         }
     }
 
     return {
         enfermeraFirmante,
         loading,
+        saving,
         loadEnfermeraFirmanteById,
         loadEnfermeraFirmante,
         createEnfermeraFirmante,

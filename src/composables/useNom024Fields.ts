@@ -26,11 +26,16 @@ export function useNom024Fields() {
     policy.value?.features?.cluesFieldVisible ?? false
   );
 
+  const workerIdentificationImmutable = computed(() =>
+    policy.value?.features?.workerIdentificationImmutable ?? false
+  );
+
   return {
     cie10Required,
     geoFieldsRequired,
     workerCurpRequired,
     cluesFieldVisible,
+    workerIdentificationImmutable,
     isSIRES: computed(() => policy.value?.regime === 'SIRES_NOM024'),
     isSinRegimen: computed(() => policy.value?.regime === 'SIN_REGIMEN'),
   };

@@ -4,12 +4,38 @@ import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useRouter, RouterLink } from 'vue-router';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';
+import { useNom024Fields } from '@/composables/useNom024Fields';
+import { useEntidadPaisNacimientoCoherence } from '@/composables/useEntidadPaisNacimientoCoherence';
 import PaisNacimientoAutocomplete from '@/components/selectors/PaisNacimientoAutocomplete.vue';
+import EstadoAutocomplete from '@/components/selectors/EstadoAutocomplete.vue';
+import ResidenciaGeoAutocomplete from '@/components/selectors/ResidenciaGeoAutocomplete.vue';
+import { convertirFechaISOaYYYYMMDD, calcularEdadPrecisa } from '@/helpers/dates';
+import { extractApiErrorMessage } from '@/helpers/apiErrors';
+import {
+  isPaisNacimientoNoEspecificado,
+  PAIS_NACIMIENTO_NO_ESPECIFICADO_FIRMANTE_MESSAGE,
+} from '@/helpers/paisNacimiento';
+import { FIRMANTE_EDAD_MINIMA, FIRMANTE_EDAD_MAXIMA } from '../../formkit.config';
 
 const medicoFirmante = useMedicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const router = useRouter();
-const { curpRequired, showCurpField, isSIRES, isSinRegimen } = useCurpPolicy();
+const {
+  curpRequired,
+  showCurpField,
+  isSIRES,
+  isSinRegimen,
+  paisNacimientoRequired,
+  entidadNacimientoRequired,
+  showEntidadNacimiento,
+  sexoRequired,
+} = useCurpPolicy();
+
+const { geoFieldsRequired } = useNom024Fields();
+
+const entidadResidenciaValue = ref('');
+const municipioResidenciaValue = ref('');
+const localidadResidenciaValue = ref('');
 
 const firmaPreview = ref(null);
 const firmaArchivo = ref(null);
@@ -19,6 +45,8 @@ const isDragOver = ref(false);  // Para el estado de drag and drop
 const formularioMedicoFirmante = ref({
   nombre: "",
   curp: "",
+  sexo: "",
+  entidadNacimiento: "",
   tituloProfesional: "",
   universidad: "",
   numeroCedulaProfesional: "",
@@ -27,31 +55,62 @@ const formularioMedicoFirmante = ref({
   nombreCredencialAdicional: "",
   numeroCredencialAdicional: "",
   paisNacimiento: "",
+  fechaNacimiento: "",
   nombreCredencialAdicional2: "",
   numeroCredencialAdicional2: ""
 });
 
-// Mantener isMX solo para lógica no-regulatoria (ej: mostrar "Cédula Profesional" vs "Registro Profesional")
+useEntidadPaisNacimientoCoherence(formularioMedicoFirmante);
+
+// Mantener isMX solo para lógica no-regulatoria
 const isMX = computed(() => proveedorSaludStore.proveedorSalud?.pais === 'MX');
+
+function formatDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const fechaNacimientoMax = computed(() => {
+  const limite = new Date();
+  limite.setFullYear(limite.getFullYear() - FIRMANTE_EDAD_MINIMA);
+  return formatDateInputValue(limite);
+});
+
+const fechaNacimientoMin = computed(() => {
+  const limite = new Date();
+  limite.setFullYear(limite.getFullYear() - FIRMANTE_EDAD_MAXIMA);
+  return formatDateInputValue(limite);
+});
 
 // Cargar los valores iniciales del médico firmante en el formulario
 watchEffect(() => {
-  if (medicoFirmante.medicoFirmante) {
-    Object.assign(formularioMedicoFirmante.value, {
-      nombre: medicoFirmante.medicoFirmante.nombre || "",
-      curp: medicoFirmante.medicoFirmante.curp || "",
-      tituloProfesional: medicoFirmante.medicoFirmante.tituloProfesional || "",
-      universidad: medicoFirmante.medicoFirmante.universidad || "",
-      numeroCedulaProfesional: medicoFirmante.medicoFirmante.numeroCedulaProfesional || "",
-      especialistaSaludTrabajo: medicoFirmante.medicoFirmante.especialistaSaludTrabajo || "No",
-      numeroCedulaEspecialista: medicoFirmante.medicoFirmante.numeroCedulaEspecialista || "",
-      nombreCredencialAdicional: medicoFirmante.medicoFirmante.nombreCredencialAdicional || "",
-      numeroCredencialAdicional: medicoFirmante.medicoFirmante.numeroCredencialAdicional || "",
-      paisNacimiento: medicoFirmante.medicoFirmante.paisNacimiento ?? "",
-      nombreCredencialAdicional2: medicoFirmante.medicoFirmante.nombreCredencialAdicional2 || "",
-      numeroCredencialAdicional2: medicoFirmante.medicoFirmante.numeroCredencialAdicional2 || ""
+  const firmante = medicoFirmante.medicoFirmante;
+  if (!firmante?._id) return;
+
+  Object.assign(formularioMedicoFirmante.value, {
+      nombre: firmante.nombre || "",
+      curp: firmante.curp || "",
+      sexo: firmante.sexo || "",
+      entidadNacimiento: firmante.entidadNacimiento || "",
+      tituloProfesional: firmante.tituloProfesional || "",
+      universidad: firmante.universidad || "",
+      numeroCedulaProfesional: firmante.numeroCedulaProfesional || "",
+      especialistaSaludTrabajo: firmante.especialistaSaludTrabajo || "No",
+      numeroCedulaEspecialista: firmante.numeroCedulaEspecialista || "",
+      nombreCredencialAdicional: firmante.nombreCredencialAdicional || "",
+      numeroCredencialAdicional: firmante.numeroCredencialAdicional || "",
+      paisNacimiento: firmante.paisNacimiento ?? "",
+      fechaNacimiento: firmante.fechaNacimiento
+        ? convertirFechaISOaYYYYMMDD(firmante.fechaNacimiento)
+        : "",
+      nombreCredencialAdicional2: firmante.nombreCredencialAdicional2 || "",
+      numeroCredencialAdicional2: firmante.numeroCredencialAdicional2 || ""
     });
-  }
+    entidadResidenciaValue.value = firmante.entidadResidencia || "";
+    municipioResidenciaValue.value = firmante.municipioResidencia || "";
+    localidadResidenciaValue.value = firmante.localidadResidencia || "";
 });
 
 // Función para validar archivo
@@ -162,7 +221,25 @@ const user = ref(
 );
 
 const handleSubmit = async (data) => {
-    // Validación basada en política regulatoria: CURP obligatorio para SIRES_NOM024
+    if (paisNacimientoRequired.value) {
+        const pais = formularioMedicoFirmante.value.paisNacimiento;
+        if (pais === "" || pais == null) {
+            toast.open({
+                type: "error",
+                message: "El país de nacimiento es obligatorio",
+            });
+            return;
+        }
+    }
+
+    if (isPaisNacimientoNoEspecificado(formularioMedicoFirmante.value.paisNacimiento)) {
+        toast.open({
+            type: "error",
+            message: PAIS_NACIMIENTO_NO_ESPECIFICADO_FIRMANTE_MESSAGE,
+        });
+        return;
+    }
+
     if (curpRequired.value && (!data.curp || data.curp.trim() === '')) {
         toast.open({
             type: "error",
@@ -171,11 +248,92 @@ const handleSubmit = async (data) => {
         return;
     }
 
+    const sexo = data.sexo || formularioMedicoFirmante.value.sexo;
+    if (sexoRequired.value && !sexo) {
+        toast.open({
+            type: "error",
+            message: "El sexo es obligatorio para firmantes en régimen SIRES_NOM024",
+        });
+        return;
+    }
+
+    const entidadNacimiento = formularioMedicoFirmante.value.entidadNacimiento;
+    if (entidadNacimientoRequired.value && !entidadNacimiento) {
+        toast.open({
+            type: "error",
+            message: "La entidad de nacimiento es obligatoria para firmantes en régimen SIRES_NOM024",
+        });
+        return;
+    }
+
+    if (geoFieldsRequired.value) {
+        if (!entidadResidenciaValue.value) {
+            toast.open({
+                type: "error",
+                message: "La entidad de residencia es obligatoria para firmantes en régimen SIRES_NOM024",
+            });
+            return;
+        }
+        if (!municipioResidenciaValue.value) {
+            toast.open({
+                type: "error",
+                message: "El municipio de residencia es obligatorio para firmantes en régimen SIRES_NOM024",
+            });
+            return;
+        }
+        if (!localidadResidenciaValue.value) {
+            toast.open({
+                type: "error",
+                message: "La localidad de residencia es obligatoria para firmantes en régimen SIRES_NOM024",
+            });
+            return;
+        }
+    }
+
+    const fechaNacimiento = data.fechaNacimiento || formularioMedicoFirmante.value.fechaNacimiento;
+    if (!fechaNacimiento) {
+        toast.open({
+            type: "error",
+            message: "La fecha de nacimiento es obligatoria",
+        });
+        return;
+    }
+
+    const edad = calcularEdadPrecisa(fechaNacimiento);
+    if (edad < FIRMANTE_EDAD_MINIMA) {
+        toast.open({
+            type: "error",
+            message: "El médico firmante debe tener al menos 18 años cumplidos",
+        });
+        return;
+    }
+    if (edad > FIRMANTE_EDAD_MAXIMA) {
+        toast.open({
+            type: "error",
+            message: "El médico firmante no puede tener más de 90 años cumplidos",
+        });
+        return;
+    }
+
     const formData = new FormData();
 
     // Incluir paisNacimiento del selector (no capturado por FormKit)
-    const submitData = { ...data, paisNacimiento: formularioMedicoFirmante.value.paisNacimiento };
+    const submitData = {
+      ...data,
+      paisNacimiento: formularioMedicoFirmante.value.paisNacimiento,
+      entidadNacimiento: formularioMedicoFirmante.value.entidadNacimiento,
+      entidadResidencia: entidadResidenciaValue.value,
+      municipioResidencia: municipioResidenciaValue.value,
+      localidadResidencia: localidadResidenciaValue.value,
+      sexo: sexo || formularioMedicoFirmante.value.sexo,
+    };
     if (submitData.paisNacimiento === "" || submitData.paisNacimiento == null) delete submitData.paisNacimiento;
+    if (!submitData.entidadNacimiento) delete submitData.entidadNacimiento;
+    if (!geoFieldsRequired.value) {
+      if (!submitData.entidadResidencia) delete submitData.entidadResidencia;
+      if (!submitData.municipioResidencia) delete submitData.municipioResidencia;
+      if (!submitData.localidadResidencia) delete submitData.localidadResidencia;
+    }
 
     // Agregar solo los campos con valores definidos
     Object.entries(submitData).forEach(([key, value]) => {
@@ -197,28 +355,30 @@ const handleSubmit = async (data) => {
 
     try {
         let response;
-        if (medicoFirmante.medicoFirmante._id) {
+        if (medicoFirmante.medicoFirmante?._id) {
             response = await medicoFirmante.updateMedicoFirmanteById(medicoFirmante.medicoFirmante._id, formData);
         } else {
             response = await medicoFirmante.createMedicoFirmante(formData);
         }
 
-        // Mostrar mensaje de éxito en el toast
-        toast.open({
-            message: response.message,
-        });
-
-        // Usar el ID devuelto por el backend para recargar los datos
-        const idMedicoFirmante = response.data._id || medicoFirmante.medicoFirmante._id;
-
-        if (idMedicoFirmante) {
-            await medicoFirmante.loadMedicoFirmanteById(idMedicoFirmante);
-        } else {
-            console.warn("No se pudo obtener el ID del médico firmante. No se cargaron nuevos datos.");
+        if (!response) {
+            return;
         }
+
+        toast.open({
+            type: 'success',
+            message: 'Datos del médico firmante guardados correctamente',
+        });
 
     } catch (error) {
         console.error("Error al crear o actualizar el médico firmante:", error);
+        toast.open({
+            message: extractApiErrorMessage(
+                error,
+                'Error al guardar los datos del médico firmante',
+            ),
+            type: 'error',
+        });
     }
 };
 
@@ -233,7 +393,7 @@ const siONo = ['Si', 'No'];
 const baseURL = import.meta.env.VITE_API_URL || 'https://ramazzini.app';
 
 const firmaSrc = computed(() => {
-  return `${baseURL}/assets/signatories/${medicoFirmante.medicoFirmante.firma?.data}?t=${Date.now()}`;
+  return `${baseURL}/assets/signatories/${medicoFirmante.medicoFirmante?.firma?.data}?t=${Date.now()}`;
 });
 </script>
 
@@ -243,8 +403,8 @@ const firmaSrc = computed(() => {
         <div
             class="relative bg-white text-gray-800 w-full max-w-5xl p-5 sm:p-8 lg:p-10 mt-2 sm:mt-4 rounded-lg shadow-lg mx-auto max-h-none overflow-visible lg:max-h-[82vh] lg:overflow-y-auto">
             <Transition appear name="fade-slow">
-                <div v-if="medicoFirmante.loading">
-                    <!-- <h1 class="text-3xl text-center">Cargando medico...</h1> -->
+                <div v-if="medicoFirmante.loading && !medicoFirmante.medicoFirmante" class="py-12 text-center text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
                 </div>
                 <div v-else>
                     <h1 class="text-3xl">Datos del médico firmante</h1>
@@ -286,23 +446,65 @@ const firmaSrc = computed(() => {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             
                             <FormKit
-                                type="text"
-                                label="Nombre Completo"
-                                name="nombre"
-                                placeholder="Ej. Juan Alfonso Perez Galeana"
-                                validation="required"
-                                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                                v-model="formularioMedicoFirmante.nombre"
+                            type="text"
+                            label="Nombre Completo"
+                            name="nombre"
+                            placeholder="Ej. Juan Alfonso Perez Galeana"
+                            validation="required"
+                            :validation-messages="{ required: 'Este campo es obligatorio' }"
+                            v-model="formularioMedicoFirmante.nombre"
                             />
-    
+
                             <FormKit
-                                type="select"
-                                label="Título Profesional"
-                                name="tituloProfesional"
-                                placeholder='Selecciona "Dr." o "Dra."'
-                                :options="titulos"
-                                v-model="formularioMedicoFirmante.tituloProfesional"
+                            type="select"
+                            name="sexo"
+                            placeholder='Selecciona "Masculino" o "Femenino"'
+                            :options="['Masculino', 'Femenino']"
+                            :validation="sexoRequired ? 'required' : ''"
+                            :validation-messages="{ required: 'Este campo es obligatorio' }"
+                            v-model="formularioMedicoFirmante.sexo"
+                            >
+                                <template #label>
+                                    <span class="text-lg font-medium text-gray-700">
+                                        Sexo
+                                        <span v-if="sexoRequired" class="text-red-500">*</span>
+                                    </span>
+                                </template>
+                            </FormKit>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <FormKit
+                            type="select"
+                            label="Título Profesional"
+                            name="tituloProfesional"
+                            placeholder='Selecciona "Dr." o "Dra."'
+                            :options="titulos"
+                            v-model="formularioMedicoFirmante.tituloProfesional"
                             />
+
+                            <FormKit
+                                type="date"
+                                name="fechaNacimiento"
+                                validation="required|fechaNacimientoFirmanteValidation"
+                                :validation-messages="{
+                                    required: 'La fecha de nacimiento es obligatoria',
+                                    fechaNacimientoFirmanteValidation: 'La fecha debe corresponder a una edad entre 18 y 90 años cumplidos',
+                                }"
+                                :min="fechaNacimientoMin"
+                                :max="fechaNacimientoMax"
+                                v-model="formularioMedicoFirmante.fechaNacimiento"
+                            >
+                                <template #label>
+                                    <span class="text-lg font-medium text-gray-700">
+                                        Fecha de nacimiento
+                                        <span class="text-red-500">*</span>
+                                    </span>
+                                </template>
+                            </FormKit>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             
                             <FormKit
                                 type="text"
@@ -337,14 +539,6 @@ const firmaSrc = computed(() => {
                             <FormKit type="text" label="Número de Credencial Adicional" name="numeroCredencialAdicional"
                                 placeholder="Ej. 924"
                                 v-model="formularioMedicoFirmante.numeroCredencialAdicional" />
-
-                            <div class="sm:col-span-2">
-                                <PaisNacimientoAutocomplete
-                                    v-model="formularioMedicoFirmante.paisNacimiento"
-                                    label="País de nacimiento"
-                                    placeholder="Buscar por nombre de país..."
-                                />
-                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -355,6 +549,55 @@ const firmaSrc = computed(() => {
                             <FormKit type="text" label="Número de Credencial Adicional 2" name="numeroCredencialAdicional2"
                                 placeholder="Ej. 114254"
                                 v-model="formularioMedicoFirmante.numeroCredencialAdicional2" />
+                        </div>
+                        
+                        <div v-if="!isSIRES" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <PaisNacimientoAutocomplete
+                                v-model="formularioMedicoFirmante.paisNacimiento"
+                                label="País de nacimiento"
+                                placeholder="Buscar por nombre de país..."
+                                :required="paisNacimientoRequired"
+                                exclude-no-especificado
+                            />
+                        </div>
+
+                        <div v-if="showEntidadNacimiento" class="mt-4 mb-2">
+                            <h3 class="text-lg font-semibold text-emerald-800 mb-3 border-b border-emerald-100 pb-2">
+                                Identificación NOM-024 (Estandarización)
+                            </h3>
+
+                            <div class="mb-4">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Nacimiento</h4>
+                                <div class="grid gap-3 sm:grid-cols-2">
+                                    <EstadoAutocomplete
+                                        v-model="formularioMedicoFirmante.entidadNacimiento"
+                                        label="Entidad de Nacimiento"
+                                        placeholder="Buscar por nombre del estado"
+                                        :required="geoFieldsRequired"
+                                    />
+
+                                    <PaisNacimientoAutocomplete
+                                        v-model="formularioMedicoFirmante.paisNacimiento"
+                                        label="País de nacimiento"
+                                        placeholder="Buscar por nombre de país..."
+                                        :required="paisNacimientoRequired"
+                                        exclude-no-especificado
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Residencia</h4>
+                                <ResidenciaGeoAutocomplete
+                                    :estadoResidencia="entidadResidenciaValue"
+                                    :municipioResidencia="municipioResidenciaValue"
+                                    :localidadResidencia="localidadResidenciaValue"
+                                    @update:estadoResidencia="entidadResidenciaValue = $event"
+                                    @update:municipioResidencia="municipioResidenciaValue = $event"
+                                    @update:localidadResidencia="localidadResidenciaValue = $event"
+                                    :required="geoFieldsRequired"
+                                />
+                            </div>
                         </div>
 
                         <!-- Área de arrastrar y soltar para la firma -->
@@ -476,8 +719,8 @@ const firmaSrc = computed(() => {
                             </RouterLink>
                             <!-- Botón de Actualizar -->
                             <div class="w-full sm:w-1/2 pr-2">
-                                <FormKit type="submit">
-                                    <span v-if="medicoFirmante.loading">Guardando...</span>
+                                <FormKit type="submit" :disabled="medicoFirmante.saving">
+                                    <span v-if="medicoFirmante.saving">Guardando...</span>
                                     <span v-else>Actualizar Datos</span>
                                 </FormKit>
                             </div>

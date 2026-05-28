@@ -1,6 +1,9 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
+import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+
+const { catalogSearchInputAttrs } = useCatalogSearchInput();
 
 const props = defineProps({
   modelValue: {
@@ -146,7 +149,7 @@ const toTitleCase = (str) => {
           compact ? 'py-1.5 px-2 text-sm' : 'h-12 p-2.5 rounded-lg'
         ]"
         :placeholder="placeholder"
-        autocomplete="off"
+        v-bind="catalogSearchInputAttrs"
       />
 
       <div

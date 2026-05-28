@@ -7,6 +7,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 import { convertirFechaISOaYYYYMMDD, calcularEdad, calcularAntiguedad } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
+import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 import api from '@/lib/axios';
 import EmpresasSelector from './EmpresasSelector.vue';
@@ -14,6 +15,7 @@ import EstadoAutocomplete from './selectors/EstadoAutocomplete.vue';
 import NacionalidadAutocomplete from './selectors/NacionalidadAutocomplete.vue';
 import ResidenciaGeoAutocomplete from './selectors/ResidenciaGeoAutocomplete.vue';
 import { useNom024Fields } from '@/composables/useNom024Fields';
+import { isGenericCurp } from '@/helpers/isGenericCurp';
 
 // Método para formatear la dirección (igual que en CentroTrabajoItem.vue)
 const formatDireccion = (centro) => {
@@ -27,12 +29,91 @@ const formatDireccion = (centro) => {
 
 const toast = inject('toast');
 
+const EDAD_MINIMA_TRABAJADOR = 18;
+const EDAD_MAXIMA_TRABAJADOR = 70;
+
+function formatDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const fechaNacimientoMax = computed(() => {
+  const limite = new Date();
+  limite.setFullYear(limite.getFullYear() - EDAD_MINIMA_TRABAJADOR);
+  return formatDateInputValue(limite);
+});
+
+const fechaNacimientoMin = computed(() => {
+  const limite = new Date();
+  limite.setFullYear(limite.getFullYear() - EDAD_MAXIMA_TRABAJADOR);
+  return formatDateInputValue(limite);
+});
+
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded } = useCurrentUser();
-const { geoFieldsRequired, workerCurpRequired, isSIRES } = useNom024Fields();
+const { geoFieldsRequired, workerCurpRequired, workerIdentificationImmutable, isSIRES } = useNom024Fields();
+
+const isEditingTrabajador = computed(() => !!trabajadores.currentTrabajador?._id);
+
+const hasGenericCurpStored = computed(() =>
+  isGenericCurp(trabajadores.currentTrabajador?.curp),
+);
+
+const isWorkerIdentificationReadOnly = computed(() =>
+  isSIRES.value &&
+  isEditingTrabajador.value &&
+  workerIdentificationImmutable.value,
+);
+
+const isCurpFieldReadOnly = computed(() =>
+  isWorkerIdentificationReadOnly.value && !hasGenericCurpStored.value,
+);
+
+const isCurpConformationReadOnly = computed(() =>
+  isWorkerIdentificationReadOnly.value && !hasGenericCurpStored.value,
+);
+
+const identificationSectionNotice = computed(() => {
+  if (!isWorkerIdentificationReadOnly.value) return '';
+  if (hasGenericCurpStored.value) {
+    return 'Complete la CURP real y los datos de nacimiento; después quedarán bloqueados.';
+  }
+  return 'Los datos de identificación no pueden modificarse tras el registro.';
+});
+
+const WORKER_IMMUTABLE_PAYLOAD_FIELDS = [
+  'curp',
+  'nombre',
+  'primerApellido',
+  'segundoApellido',
+  'fechaNacimiento',
+  'sexo',
+  'entidadNacimiento',
+  'nacionalidad',
+];
+
+function omitImmutableIdentificationFields(payload) {
+  if (!isWorkerIdentificationReadOnly.value) {
+    return payload;
+  }
+
+  const omitSet = new Set(
+    hasGenericCurpStored.value
+      ? ['nacionalidad']
+      : WORKER_IMMUTABLE_PAYLOAD_FIELDS,
+  );
+
+  const result = { ...payload };
+  for (const field of omitSet) {
+    delete result[field];
+  }
+  return result;
+}
 
 const emit = defineEmits(['closeModal', 'openSubscriptionModal'])
 
@@ -219,12 +300,22 @@ watch(() => trabajadores.currentTrabajador, (trabajador) => {
   localidadResidenciaValue.value = trabajador?.localidadResidencia || '';
 }, { immediate: true });
 
-// Al seleccionar un estado mexicano (no NE ni 00), auto-setear nacionalidad MEXICANA
+// Coherencia NOM-024: sincronización bidireccional entidad de nacimiento ↔ nacionalidad
 const ENTIDADES_SIN_AUTO_NACIONALIDAD = ['NE', '00']; // Extranjero, No disponible
 watch(entidadNacimientoValue, (entidad) => {
   if (!entidad) return;
   if (ENTIDADES_SIN_AUTO_NACIONALIDAD.includes(entidad)) return;
-  nacionalidadValue.value = 'MEX';
+  if (nacionalidadValue.value !== 'MEX') nacionalidadValue.value = 'MEX';
+});
+watch(nacionalidadValue, (nacionalidad) => {
+  if (!nacionalidad) return;
+  if (nacionalidad === 'NND') {
+    if (entidadNacimientoValue.value !== '00') entidadNacimientoValue.value = '00';
+  } else if (nacionalidad !== 'MEX') {
+    if (entidadNacimientoValue.value !== 'NE') entidadNacimientoValue.value = 'NE';
+  } else if (ENTIDADES_SIN_AUTO_NACIONALIDAD.includes(entidadNacimientoValue.value)) {
+    entidadNacimientoValue.value = '';
+  }
 });
 
 // Variables para contar trabajadores por centro
@@ -353,12 +444,19 @@ const handleSubmit = async (data) => {
     }
   }
 
-  // Validar edad mínima: no permitir menores de 18 años
+  // Validar rango de edad permitido para registro: 18-70 años
   if (data.fechaNacimiento) {
     const edad = calcularEdad(data.fechaNacimiento);
-    if (edad < 18) {
+    if (edad < EDAD_MINIMA_TRABAJADOR) {
       toast.open({
         message: 'No se puede registrar un menor de edad. El trabajador debe tener al menos 18 años cumplidos.',
+        type: 'error'
+      });
+      return;
+    }
+    if (edad > EDAD_MAXIMA_TRABAJADOR) {
+      toast.open({
+        message: 'No se puede registrar un trabajador mayor de 70 años.',
         type: 'error'
       });
       return;
@@ -401,10 +499,14 @@ const handleSubmit = async (data) => {
     trabajadorData.estadoLaboral = "Activo";
   }
 
+  const payloadToSend = trabajadores.currentTrabajador?._id
+    ? omitImmutableIdentificationFields(trabajadorData)
+    : trabajadorData;
+
   try {
     if (trabajadores.currentTrabajador?._id) {
       // Actualizar Trabajador
-      await trabajadores.updateTrabajador(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId, trabajadores.currentTrabajador._id, trabajadorData);
+      await trabajadores.updateTrabajador(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId, trabajadores.currentTrabajador._id, payloadToSend);
       toast.open({ message: 'Trabajador actualizado', type: 'success' });
     } else {
       // Registrar Trabajador
@@ -416,23 +518,14 @@ const handleSubmit = async (data) => {
     trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
   } catch (error) {
     console.error('Error al crear o actualizar al trabajador:', error);
-    
-    // Extraer el mensaje de error específico del backend
-    let errorMessage = 'Hubo un error al crear o actualizar al trabajador, por favor intente nuevamente.';
-    
-    if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-      // Manejar formato de errores NOM-024 (array de objetos {field, reason})
-      errorMessage = error.response.data.errors.map(e => `${e.field}: ${e.reason}`).join('. ');
-    } else if (error.response?.data?.message) {
-      // Manejar formato estándar de NestJS (string o array de strings)
-      errorMessage = Array.isArray(error.response.data.message) 
-        ? error.response.data.message.join('. ') 
-        : error.response.data.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    toast.open({ message: errorMessage, type: 'error' });
+
+    toast.open({
+      message: extractApiErrorMessage(
+        error,
+        'Hubo un error al crear o actualizar al trabajador, por favor intente nuevamente.',
+      ),
+      type: 'error',
+    });
   }
 };
 
@@ -607,6 +700,12 @@ const cancelarTransferencia = () => {
               <span class="inline sm:hidden"> a otro centro de trabajo</span>
             </button>
           </div>
+          <p
+            v-if="identificationSectionNotice"
+            class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2 mb-3"
+          >
+            {{ identificationSectionNotice }}
+          </p>
           <p class="text-xs text-gray-500 mt-1 mb-3">Los campos con <span class="text-red-500 font-medium">*</span> son obligatorios</p>
           <hr class="mt-2 mb-3">
 
@@ -625,6 +724,7 @@ const cancelarTransferencia = () => {
                     curpValidation: identificadorPersonalValidationMessage 
                   }"
                   maxlength="30"
+                  :disabled="isCurpFieldReadOnly"
                   v-model="curpValue"
                 >
                   <template #label>
@@ -637,7 +737,7 @@ const cancelarTransferencia = () => {
               <div class="flex items-center">
                 <!-- Botón sutil para insertar CURP genérico (solo para MX) -->
                 <button
-                  v-if="paisProveedor === 'MX'"
+                  v-if="paisProveedor === 'MX' && !isCurpFieldReadOnly"
                   type="button"
                   @click.prevent="insertGenericCURP"
                   class="mt-0 mb-4 md:mt-4 md:mb-0 text-xs text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200"
@@ -649,15 +749,18 @@ const cancelarTransferencia = () => {
               </div>
               <FormKit type="text" name="primerApellido" placeholder="Apellido paterno"
                   validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
+                  :disabled="isCurpConformationReadOnly"
                   :value="trabajadores.currentTrabajador?.primerApellido || ''">
                 <template #label>
                   <span class="font-medium text-lg text-gray-700">Primer Apellido<span class="text-red-500">*</span></span>
                 </template>
               </FormKit>
               <FormKit type="text" label="Segundo Apellido" name="segundoApellido" placeholder="Apellido materno"
+                  :disabled="isCurpConformationReadOnly"
                   :value="trabajadores.currentTrabajador?.segundoApellido || ''" />
               <FormKit type="text" name="nombre" placeholder="Nombres del trabajador"
                   validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
+                  :disabled="isCurpConformationReadOnly"
                   :value="trabajadores.currentTrabajador?.nombre || ''">
                 <template #label>
                   <span class="font-medium text-lg text-gray-700">Nombre(s)<span class="text-red-500">*</span></span>
@@ -665,6 +768,9 @@ const cancelarTransferencia = () => {
               </FormKit>
               <FormKit type="date" name="fechaNacimiento" validation="required"
                 :validation-messages="{ required: 'Este campo es obligatorio' }"
+                :min="fechaNacimientoMin"
+                :max="fechaNacimientoMax"
+                :disabled="isCurpConformationReadOnly"
                 :value="convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaNacimiento) || ''">
                 <template #label>
                   <span class="font-medium text-lg text-gray-700">Fecha de Nacimiento<span class="text-red-500">*</span></span>
@@ -673,6 +779,7 @@ const cancelarTransferencia = () => {
               <FormKit type="select" name="sexo" placeholder="-Seleccione un sexo-"
                 :options="['Masculino', 'Femenino']" validation="required"
                 :validation-messages="{ required: 'Este campo es obligatorio' }"
+                :disabled="isCurpConformationReadOnly"
                 :value="trabajadores.currentTrabajador?.sexo || ''">
                 <template #label>
                   <span class="font-medium text-lg text-gray-700">Sexo<span class="text-red-500">*</span></span>
@@ -755,6 +862,7 @@ const cancelarTransferencia = () => {
                       label="Entidad de Nacimiento"
                       placeholder="Buscar por nombre del estado"
                       :required="geoFieldsRequired"
+                      :disabled="isCurpConformationReadOnly"
                     />
                     
                     <NacionalidadAutocomplete
@@ -762,6 +870,7 @@ const cancelarTransferencia = () => {
                       label="Nacionalidad"
                       placeholder="Buscar por nombre de nacionalidad"
                       :required="geoFieldsRequired"
+                      :disabled="isWorkerIdentificationReadOnly"
                     />
                   </div>
                 </div>

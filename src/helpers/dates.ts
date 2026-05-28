@@ -49,6 +49,20 @@ function calcularEdad(dateString: string): number {
   return edad;
 }
 
+function calcularEdadPrecisa(dateString: string): number {
+  const fechaNacimiento = new Date(dateString);
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+  const mesDiff = hoy.getMonth() - fechaNacimiento.getMonth();
+  if (
+    mesDiff < 0 ||
+    (mesDiff === 0 && hoy.getDate() < fechaNacimiento.getDate())
+  ) {
+    edad--;
+  }
+  return edad;
+}
+
 function calcularAntiguedad(dateString: string): string {
   // Si no hay fecha de ingreso, retornar guión
   if (!dateString || dateString === '' || dateString === 'No recuerda') {
@@ -231,6 +245,7 @@ export {
   convertirFechaISOaYYYYMMDD,
   convertirFechaISOaDDMesYYYY,
   calcularEdad,
+  calcularEdadPrecisa,
   calcularAntiguedad,
   formatDateDDMMYYYY,
   formatDateDDMMYYYYHHMMSS,

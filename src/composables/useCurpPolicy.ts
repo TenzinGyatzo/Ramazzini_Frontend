@@ -2,60 +2,59 @@ import { computed } from 'vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 /**
- * Composable para manejar la política de CURP en firmantes
+ * Composable para manejar la política de CURP y campos NOM-024 en firmantes
  * Basado en el régimen regulatorio del proveedor
  */
 export function useCurpPolicy() {
   const proveedorSaludStore = useProveedorSaludStore();
 
-  /**
-   * Indica si CURP es requerido según la política regulatoria
-   */
+  const policy = computed(() => proveedorSaludStore.regulatoryPolicy);
+
   const curpRequired = computed<boolean>(() => {
+    return policy.value?.validation?.curpFirmantes === 'required';
+  });
+
+  const paisNacimientoRequired = computed<boolean>(() => true);
+
+  const entidadNacimientoRequired = computed<boolean>(() => {
     return (
-      proveedorSaludStore.regulatoryPolicy?.validation?.curpFirmantes ===
-      'required'
+      policy.value?.regime === 'SIRES_NOM024' &&
+      policy.value?.validation?.geoFields === 'required'
     );
   });
 
-  /**
-   * Indica si se debe mostrar el campo CURP
-   * - SIRES_NOM024: siempre mostrar (requerido)
-   * - SIN_REGIMEN: mostrar (opcional, pero permitir ingresarlo)
-   */
+  const showEntidadNacimiento = computed<boolean>(() => {
+    return policy.value?.regime === 'SIRES_NOM024';
+  });
+
   const showCurpField = computed<boolean>(() => {
-    const regime = proveedorSaludStore.regulatoryPolicy?.regime;
-    // Mostrar en ambos regímenes, pero con diferentes validaciones
+    const regime = policy.value?.regime;
     return regime === 'SIRES_NOM024' || regime === 'SIN_REGIMEN';
   });
 
-  /**
-   * Reglas de validación para FormKit
-   * Retorna 'required' si CURP es requerido, string vacío si es opcional
-   */
   const curpValidationRules = computed<string>(() => {
     return curpRequired.value ? 'required' : '';
   });
 
-  /**
-   * Indica si el régimen es SIRES_NOM024
-   */
   const isSIRES = computed<boolean>(() => {
-    return proveedorSaludStore.regulatoryPolicy?.regime === 'SIRES_NOM024';
+    return policy.value?.regime === 'SIRES_NOM024';
   });
 
-  /**
-   * Indica si el régimen es SIN_REGIMEN
-   */
   const isSinRegimen = computed<boolean>(() => {
-    return proveedorSaludStore.regulatoryPolicy?.regime === 'SIN_REGIMEN';
+    return policy.value?.regime === 'SIN_REGIMEN';
   });
+
+  const sexoRequired = computed<boolean>(() => isSIRES.value);
 
   return {
     curpRequired,
+    paisNacimientoRequired,
+    entidadNacimientoRequired,
+    showEntidadNacimiento,
     showCurpField,
     curpValidationRules,
     isSIRES,
     isSinRegimen,
+    sexoRequired,
   };
 }

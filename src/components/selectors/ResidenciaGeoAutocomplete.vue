@@ -2,6 +2,10 @@
 import { ref, watch, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import EstadoAutocomplete from './EstadoAutocomplete.vue';
+import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+
+const { catalogSearchInputAttrs: municipioInputAttrs } = useCatalogSearchInput();
+const { catalogSearchInputAttrs: localidadInputAttrs } = useCatalogSearchInput();
 
 const props = defineProps({
   estadoResidencia: {
@@ -253,23 +257,25 @@ const onEstadoChange = async (code) => {
   localidadQuery.value = '';
   municipioSelected.value = null;
   localidadSelected.value = null;
+  municipioResults.value = [];
+  municipioShowResults.value = false;
+  localidadResults.value = [];
+  localidadShowResults.value = false;
   // Resetear estados de blur cuando cambia el estado
   municipioHasBlurred.value = false;
   localidadHasBlurred.value = false;
-  
-  if (code && code !== 'NE' && code !== '00') {
-    await loadMunicipiosForEstado(code);
+
+  if (!code || code === 'NE' || code === '00') {
+    municipiosDisponibles.value = [];
+    return;
   }
+
+  await loadMunicipiosForEstado(code);
 };
 
 // Manejar focus en municipio
 const onMunicipioFocus = () => {
-  // Si no hay resultados y hay un estado seleccionado, cargar todos los municipios
-  if (municipioResults.value.length === 0 && municipioEnabled.value) {
-    loadAllMunicipios();
-  } else if (municipioResults.value.length > 0) {
-    municipioShowResults.value = true;
-  }
+  if (municipioEnabled.value) loadAllMunicipios();
 };
 
 // Manejar cambio de municipio
@@ -281,6 +287,11 @@ const onMunicipioInput = (e) => {
     emit('update:municipioResidencia', '');
     municipioSelected.value = null;
     municipioResults.value = [];
+    emit('update:localidadResidencia', '');
+    localidadQuery.value = '';
+    localidadSelected.value = null;
+    localidadResults.value = [];
+    localidadShowResults.value = false;
     return;
   }
 
@@ -305,6 +316,8 @@ const onMunicipioSelect = (result) => {
   emit('update:localidadResidencia', '');
   localidadQuery.value = '';
   localidadSelected.value = null;
+  localidadResults.value = [];
+  localidadShowResults.value = false;
   localidadHasBlurred.value = false; // Resetear blurred de localidad
   
   // Cargar localidades si no es centinela
@@ -315,12 +328,7 @@ const onMunicipioSelect = (result) => {
 
 // Manejar focus en localidad
 const onLocalidadFocus = () => {
-  // Si no hay resultados y hay un municipio seleccionado, cargar todas las localidades
-  if (localidadResults.value.length === 0 && localidadEnabled.value) {
-    loadAllLocalidades();
-  } else if (localidadResults.value.length > 0) {
-    localidadShowResults.value = true;
-  }
+  if (localidadEnabled.value) loadAllLocalidades();
 };
 
 // Manejar cambio de localidad
@@ -360,10 +368,17 @@ const onLocalidadSelect = (result) => {
   localidadHasBlurred.value = true; // Marcar como blurred cuando se selecciona
 };
 
-// Watch para cargar municipio cuando hay estado inicial
+// Watch para cargar municipio cuando hay estado inicial o cambia externamente
 watch(() => props.estadoResidencia, async (newEstado) => {
+  municipioResults.value = [];
+  localidadResults.value = [];
+  municipioShowResults.value = false;
+  localidadShowResults.value = false;
+
   if (newEstado && newEstado !== 'NE' && newEstado !== '00') {
     await loadMunicipiosForEstado(newEstado);
+  } else {
+    municipiosDisponibles.value = [];
   }
 }, { immediate: true });
 
@@ -464,7 +479,7 @@ const hideLocalidadResults = () => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 dark-mode-input-surface">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 dark-mode-input-surface">
     <!-- Estado Residencia -->
     <div>
       <EstadoAutocomplete
@@ -492,7 +507,7 @@ const hideLocalidadResults = () => {
           @blur="hideMunicipioResults"
           class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="Buscar Municipio"
-          autocomplete="off"
+          v-bind="municipioInputAttrs"
           :disabled="!municipioEnabled"
         />
         
@@ -539,7 +554,7 @@ const hideLocalidadResults = () => {
     </div>
 
     <!-- Localidad Residencia -->
-    <div class="relative sm:col-span-2 2xl:col-span-1">
+    <div class="relative">
       <label class="block font-medium text-lg text-gray-700 mb-1">
         Localidad Residencia
         <span v-if="required" class="text-red-500">*</span>
@@ -554,7 +569,7 @@ const hideLocalidadResults = () => {
           @blur="hideLocalidadResults"
           class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="Buscar por código o nombre de la localidad..."
-          autocomplete="off"
+          v-bind="localidadInputAttrs"
           :disabled="!localidadEnabled"
         />
         

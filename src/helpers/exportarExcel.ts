@@ -27,7 +27,7 @@ export function exportarTrabajadoresDesdeFrontend(trabajadoresFiltrados: any[], 
     
     // Campos de identificación NOM-024
     baseData['Entidad Nacimiento'] = trabajador.entidadNacimiento || '';
-    baseData['Nacionalidad'] = trabajador.nacionalidad || '';
+    baseData['País de Nacimiento'] = trabajador.paisNacimiento ?? '';
     baseData['Entidad Residencia'] = trabajador.entidadResidencia || '';
     baseData['Municipio Residencia'] = trabajador.municipioResidencia || '';
     baseData['Localidad Residencia'] = trabajador.localidadResidencia || '';
