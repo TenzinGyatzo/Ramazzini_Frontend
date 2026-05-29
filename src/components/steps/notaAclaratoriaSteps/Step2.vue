@@ -4,6 +4,10 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { formatDateDDMMYYYY } from '@/helpers/dates';
+import {
+  nombreFirmanteFromReferencia,
+  prefetchNombresFirmantes,
+} from '@/helpers/firmantePorUsuario';
 
 const { formDataNotaAclaratoria } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -15,6 +19,7 @@ const selectedEntry = ref(null);
 const query = ref('');
 const showResults = ref(false);
 const hasBlurred = ref(false);
+const nombresFirmantePorUserId = ref({});
 
 // Mapeo de tipos de documento a nombres legibles
 const tipoNombres = {
@@ -95,26 +100,18 @@ const documentosDisponibles = computed(() => {
         const fechaCreacion = doc.createdAt ? formatDateDDMMYYYY(doc.createdAt) : '';
         const fechaFinalizacion = doc.fechaFinalizacion ? formatDateDDMMYYYY(doc.fechaFinalizacion) : '';
         const fechaAnulacion = doc.fechaAnulacion ? formatDateDDMMYYYY(doc.fechaAnulacion) : '';
-        // finalizadoPor y anuladoPor pueden ser objetos con username/nombre o strings (IDs)
-        const finalizadoPor = typeof doc.finalizadoPor === 'object' 
-          ? (doc.finalizadoPor?.username || doc.finalizadoPor?.nombre || '')
-          : (doc.finalizadoPor || '');
-        const anuladoPor = typeof doc.anuladoPor === 'object'
-          ? (doc.anuladoPor?.username || doc.anuladoPor?.nombre || '')
-          : (doc.anuladoPor || '');
-        
+
         opciones.push({
           value: `${tipoDocumento}|${doc._id}`,
           tipoDocumento,
           documentoId: doc._id,
-          documento: doc, // Guardar el documento completo para referencia
-          // Propiedades para mostrar en el dropdown
+          documento: doc,
           nombreMostrar: nombreMostrar,
           fechaCreacion: fechaCreacion,
           fechaFinalizacion: fechaFinalizacion,
           fechaAnulacion: fechaAnulacion,
-          finalizadoPor: finalizadoPor,
-          anuladoPor: anuladoPor,
+          finalizadoPorRef: doc.finalizadoPor,
+          anuladoPorRef: doc.anuladoPor,
           estado: estado
         });
       });
@@ -125,6 +122,20 @@ const documentosDisponibles = computed(() => {
   return opciones.sort((a, b) => a.nombreMostrar.localeCompare(b.nombreMostrar));
 });
 
+const cargarNombresFirmantes = async () => {
+  const referencias = documentosDisponibles.value.flatMap((opcion) => [
+    opcion.finalizadoPorRef,
+    opcion.anuladoPorRef,
+  ]);
+  nombresFirmantePorUserId.value = await prefetchNombresFirmantes(referencias);
+};
+
+const nombreFinalizadoPor = (opcion) =>
+  nombreFirmanteFromReferencia(opcion.finalizadoPorRef, nombresFirmantePorUserId.value);
+
+const nombreAnuladoPor = (opcion) =>
+  nombreFirmanteFromReferencia(opcion.anuladoPorRef, nombresFirmantePorUserId.value);
+
 onMounted(async () => {
   // Cargar todos los documentos del trabajador
   if (trabajadores.currentTrabajadorId) {
@@ -133,6 +144,7 @@ onMounted(async () => {
 
   // Esperar a que los computed se actualicen después de cargar los documentos
   await nextTick();
+  await cargarNombresFirmantes();
 
   // Si se está editando, cargar el valor existente
   if (documentos.currentDocument) {
@@ -195,6 +207,10 @@ watch(documentosDisponibles, () => {
   }
 }, { deep: true });
 
+watch(documentosDisponibles, () => {
+  cargarNombresFirmantes();
+}, { deep: true });
+
 // Filtrar documentos según query
 const filteredDocumentos = computed(() => {
   if (!query.value || query.value.length < 1) {
@@ -203,12 +219,14 @@ const filteredDocumentos = computed(() => {
   
   const lowerQuery = query.value.toLowerCase();
   return documentosDisponibles.value.filter(opcion => {
+    const finalizadoPor = nombreFinalizadoPor(opcion);
+    const anuladoPor = nombreAnuladoPor(opcion);
     return opcion.nombreMostrar.toLowerCase().includes(lowerQuery) ||
            (opcion.fechaCreacion && opcion.fechaCreacion.toLowerCase().includes(lowerQuery)) ||
            (opcion.fechaFinalizacion && opcion.fechaFinalizacion.toLowerCase().includes(lowerQuery)) ||
            (opcion.fechaAnulacion && opcion.fechaAnulacion.toLowerCase().includes(lowerQuery)) ||
-           (opcion.finalizadoPor && opcion.finalizadoPor.toLowerCase().includes(lowerQuery)) ||
-           (opcion.anuladoPor && opcion.anuladoPor.toLowerCase().includes(lowerQuery));
+           (finalizadoPor && finalizadoPor.toLowerCase().includes(lowerQuery)) ||
+           (anuladoPor && anuladoPor.toLowerCase().includes(lowerQuery));
   });
 });
 
@@ -314,11 +332,15 @@ const hideResults = () => {
                   </p>
                   <p v-if="opcion.fechaFinalizacion" class="text-gray-600">
                     <span class="font-medium">Finalizado:</span> {{ opcion.fechaFinalizacion }}
-                    <span v-if="opcion.finalizadoPor" class="text-gray-500"> (por {{ opcion.finalizadoPor }})</span>
+                  </p>
+                  <p v-if="nombreFinalizadoPor(opcion)" class="text-gray-600">
+                    <span class="font-medium">Finalizado por:</span> {{ nombreFinalizadoPor(opcion) }}
                   </p>
                   <p v-if="opcion.fechaAnulacion" class="text-red-600">
                     <span class="font-medium">Anulado:</span> {{ opcion.fechaAnulacion }}
-                    <span v-if="opcion.anuladoPor" class="text-gray-500"> (por {{ opcion.anuladoPor }})</span>
+                  </p>
+                  <p v-if="nombreAnuladoPor(opcion)" class="text-red-600">
+                    <span class="font-medium">Anulado por:</span> {{ nombreAnuladoPor(opcion) }}
                   </p>
                 </div>
               </div>

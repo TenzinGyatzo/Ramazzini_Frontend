@@ -30,7 +30,9 @@ const goToConfiguration = () => {
 };
 
 const fieldLabels = {
-  nombre: 'Nombre Completo',
+  nombre: 'Nombre(s)',
+  primerApellido: 'Primer Apellido',
+  segundoApellido: 'Segundo Apellido',
   tituloProfesional: 'Título Profesional',
   numeroCedulaProfesional: 'Cédula/Registro Profesional'
 };

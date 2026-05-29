@@ -14,6 +14,7 @@ import { subDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import DescargarInformeDashboard from '@/components/DescargarInformeDashboard.vue';
 import ModalPersonalizarInforme from '@/components/ModalPersonalizarInforme.vue';
+import { formatearNombreFirmante } from '@/helpers/nombres';
 
 const toast = inject('toast');
 const router = useRouter()
@@ -23,6 +24,12 @@ const centrosTrabajoStore = useCentrosTrabajoStore();
 const trabajadoresStore = useTrabajadoresStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
 const informePersonalizacionStore = useInformePersonalizacionStore();
+
+const nombreMedicoFirmanteDashboard = computed(() => {
+  const medico = medicoFirmanteStore.medicoFirmante;
+  if (!medico) return undefined;
+  return formatearNombreFirmante(medico);
+});
 
 const centrosTrabajo = ref([]);
 const centroSeleccionado = ref('Todos')
@@ -3140,7 +3147,7 @@ const tablaCintura = computed(() => {
               :nombre-empresa="empresasStore.currentEmpresa?.nombreComercial"
               :razon-social="empresasStore.currentEmpresa?.razonSocial"
               :titulo-medico-firmante="medicoFirmanteStore.medicoFirmante?.tituloProfesional"
-              :nombre-medico-firmante="medicoFirmanteStore.medicoFirmante?.nombre"
+              :nombre-medico-firmante="nombreMedicoFirmanteDashboard"
               :logo-base64="logoBase64"
               :periodo="periodoReporte"
               :total-trabajadores="totalTrabajadores"

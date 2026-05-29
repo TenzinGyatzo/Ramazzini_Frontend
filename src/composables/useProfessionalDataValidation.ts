@@ -48,7 +48,7 @@ export function useProfessionalDataValidation() {
     if (!firmante) {
       return {
         isValid: false,
-        missingFields: ['nombre', 'tituloProfesional', 'numeroCedulaProfesional'],
+        missingFields: ['nombre', 'primerApellido', 'tituloProfesional', 'numeroCedulaProfesional'],
         routeName,
         firmanteTypeLabel
       };
@@ -56,6 +56,7 @@ export function useProfessionalDataValidation() {
 
     const missingFields: string[] = [];
     if (!firmante.nombre || firmante.nombre.trim() === '') missingFields.push('nombre');
+    if (!firmante.primerApellido || firmante.primerApellido.trim() === '') missingFields.push('primerApellido');
     if (!firmante.tituloProfesional || firmante.tituloProfesional.trim() === '') missingFields.push('tituloProfesional');
     if (!firmante.numeroCedulaProfesional || firmante.numeroCedulaProfesional.trim() === '') missingFields.push('numeroCedulaProfesional');
 

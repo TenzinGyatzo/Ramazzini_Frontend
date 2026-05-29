@@ -10,6 +10,7 @@ import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
+import { resolveNombreFirmantePorReferencia } from '@/helpers/firmantePorUsuario';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -83,17 +84,18 @@ const cargarDocumentoOrigen = async () => {
         tipoMostrar = documento.nombreDocumento;
       }
       
+      const [finalizadoPor, anuladoPor] = await Promise.all([
+        resolveNombreFirmantePorReferencia(documento.finalizadoPor),
+        resolveNombreFirmantePorReferencia(documento.anuladoPor),
+      ]);
+
       documentoOrigenInfo.value = {
         tipo: tipoMostrar,
         fechaCreacion: documento.createdAt ? formatDateDDMMYYYY(documento.createdAt) : '',
         fechaFinalizacion: documento.fechaFinalizacion ? formatDateDDMMYYYY(documento.fechaFinalizacion) : '',
         fechaAnulacion: documento.fechaAnulacion ? formatDateDDMMYYYY(documento.fechaAnulacion) : '',
-        finalizadoPor: typeof documento.finalizadoPor === 'object' 
-          ? (documento.finalizadoPor?.username || documento.finalizadoPor?.nombre || '')
-          : (documento.finalizadoPor || ''),
-        anuladoPor: typeof documento.anuladoPor === 'object'
-          ? (documento.anuladoPor?.username || documento.anuladoPor?.nombre || '')
-          : (documento.anuladoPor || ''),
+        finalizadoPor,
+        anuladoPor,
         razonAnulacion: documento.razonAnulacion || '',
         estado: documento.estado || ''
       };
@@ -211,22 +213,20 @@ const getAlcanceBadgeClasses = (alcance) => {
             
             <div v-if="documentoOrigenInfo.fechaFinalizacion" class="flex items-start gap-2">
               <span class="text-gray-500 font-medium min-w-[120px]">Finalizado:</span>
-              <div class="flex-1">
-                <span class="text-gray-700">{{ documentoOrigenInfo.fechaFinalizacion }}</span>
-                <span v-if="documentoOrigenInfo.finalizadoPor" class="text-gray-600 text-xs ml-2">
-                  (por {{ documentoOrigenInfo.finalizadoPor }})
-                </span>
-              </div>
+              <span class="text-gray-700 flex-1">{{ documentoOrigenInfo.fechaFinalizacion }}</span>
+            </div>
+            <div v-if="documentoOrigenInfo.finalizadoPor" class="flex items-start gap-2">
+              <span class="text-gray-500 font-medium min-w-[120px]">Finalizado por:</span>
+              <span class="text-gray-700 flex-1">{{ documentoOrigenInfo.finalizadoPor }}</span>
             </div>
             
             <div v-if="documentoOrigenInfo.fechaAnulacion" class="flex items-start gap-2">
               <span class="text-red-600 font-medium min-w-[120px]">Anulado:</span>
-              <div class="flex-1">
-                <span class="text-red-700 font-medium">{{ documentoOrigenInfo.fechaAnulacion }}</span>
-                <span v-if="documentoOrigenInfo.anuladoPor" class="text-gray-600 text-xs ml-2">
-                  (por {{ documentoOrigenInfo.anuladoPor }})
-                </span>
-              </div>
+              <span class="text-red-700 font-medium flex-1">{{ documentoOrigenInfo.fechaAnulacion }}</span>
+            </div>
+            <div v-if="documentoOrigenInfo.anuladoPor" class="flex items-start gap-2">
+              <span class="text-red-600 font-medium min-w-[120px]">Anulado por:</span>
+              <span class="text-red-700 flex-1">{{ documentoOrigenInfo.anuladoPor }}</span>
             </div>
             
             <div v-if="documentoOrigenInfo.razonAnulacion" class="flex items-start gap-2 pt-2 border-t border-gray-300">

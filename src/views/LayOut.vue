@@ -178,6 +178,7 @@ const camposPendientesMedico = computed(() => {
   const pendientes: string[] = [];
 
   if (!medico?.nombre) pendientes.push("Nombre");
+  if (!medico?.primerApellido) pendientes.push("Primer Apellido");
   if (!medico?.tituloProfesional) pendientes.push("Título Profesional");
   if (!medico?.numeroCedulaProfesional) pendientes.push("Número de Cédula Profesional");
 
@@ -190,6 +191,7 @@ const camposPendientesEnfermera = computed(() => {
   const pendientes: string[] = [];
 
   if (!enfermera?.nombre) pendientes.push("Nombre");
+  if (!enfermera?.primerApellido) pendientes.push("Primer Apellido");
   if (!enfermera?.sexo) pendientes.push("Sexo");
   if (!enfermera?.tituloProfesional) pendientes.push("Título Profesional");
   if (!enfermera?.numeroCedulaProfesional) pendientes.push("Número de Registro/Cédula Profesional");
@@ -203,6 +205,7 @@ const camposPendientesTecnicoEvaluador = computed(() => {
   const pendientes: string[] = [];
 
   if (!tecnico?.nombre) pendientes.push("Nombre");
+  if (!tecnico?.primerApellido) pendientes.push("Primer Apellido");
   if (!tecnico?.sexo) pendientes.push("Sexo");
   if (!tecnico?.tituloProfesional) pendientes.push("Título Profesional (recomendado)");
   if (!tecnico?.numeroCedulaProfesional) pendientes.push("Registro/Cédula Profesional (recomendado)");
@@ -435,7 +438,7 @@ const mensajeConfiguracion = computed(() => {
   
   // Mensajes para roles de médicos
   if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
-    if ((camposPendientesProveedor.value.length === 4) && (camposPendientesMedico.value.length === 3)) {
+    if ((camposPendientesProveedor.value.length === 4) && (camposPendientesMedico.value.length === 4)) {
       return "Tus informes aún no están configurados correctamente.";
     } else if (camposPendientesProveedor.value.length > 0) {
       return 'Hay campos pendientes en "Mi Negocio".';
@@ -801,7 +804,7 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
     <Transition name="slide-up">
       <div v-if="datosCargados && empresasCargadas && empresas.empresas.length === 0 && isNotificationEmpresasVisible" 
             class="hidden sm:block fixed bottom-6 right-6 z-50 bg-white text-gray-700 border-l-4 border-blue-500 rounded-xl shadow-lg p-4 max-w-sm transform hover:scale-105 transition-transform duration-500 ease-in-out"
-            :class="((camposPendientesProveedor.length === 4) && (camposPendientesMedico.length === 3)) ? 'mb-3' : '-mb-2'"
+            :class="((camposPendientesProveedor.length === 4) && (camposPendientesMedico.length === 4)) ? 'mb-3' : '-mb-2'"
             :style="{ bottom: datosCargados && mostrarMensajePendiente && isNotificationVisible ? '8rem' : '1.5rem' }">
         <div class="flex items-start gap-3">
           <i class="fa-regular fa-lightbulb text-blue-500 text-xl mt-1"></i>

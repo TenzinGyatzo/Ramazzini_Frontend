@@ -16,6 +16,8 @@ import {
   PAIS_NACIMIENTO_NO_ESPECIFICADO_FIRMANTE_MESSAGE,
 } from '@/helpers/paisNacimiento';
 import { FIRMANTE_EDAD_MINIMA, FIRMANTE_EDAD_MAXIMA } from '../../formkit.config';
+import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { useFirmanteIdentificationReadOnly } from '@/composables/useFirmanteIdentificationReadOnly';
 
 const medicoFirmante = useMedicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -33,6 +35,14 @@ const {
 
 const { geoFieldsRequired } = useNom024Fields();
 
+const firmanteRecord = computed(() => medicoFirmante.medicoFirmante);
+const {
+  isCurpFieldReadOnly,
+  isCurpConformationReadOnly,
+  identificationSectionNotice,
+  omitImmutableIdentificationFields,
+} = useFirmanteIdentificationReadOnly(firmanteRecord);
+
 const entidadResidenciaValue = ref('');
 const municipioResidenciaValue = ref('');
 const localidadResidenciaValue = ref('');
@@ -47,6 +57,8 @@ const formularioMedicoFirmante = ref({
   curp: "",
   sexo: "",
   entidadNacimiento: "",
+  primerApellido: "",
+  segundoApellido: "",
   tituloProfesional: "",
   universidad: "",
   numeroCedulaProfesional: "",
@@ -106,7 +118,9 @@ watchEffect(() => {
         ? convertirFechaISOaYYYYMMDD(firmante.fechaNacimiento)
         : "",
       nombreCredencialAdicional2: firmante.nombreCredencialAdicional2 || "",
-      numeroCredencialAdicional2: firmante.numeroCredencialAdicional2 || ""
+      numeroCredencialAdicional2: firmante.numeroCredencialAdicional2 || "",
+      primerApellido: firmante.primerApellido || "",
+      segundoApellido: firmante.segundoApellido || "",
     });
     entidadResidenciaValue.value = firmante.entidadResidencia || "";
     municipioResidenciaValue.value = firmante.municipioResidencia || "";
@@ -131,6 +145,9 @@ const validateFile = (file) => {
 // Computed Reactivo para el Pie de Página del Médico Firmante
 const piePaginaFirmante = computed(() => ({
   nombre: formularioMedicoFirmante.value.nombre || "",
+  primerApellido: formularioMedicoFirmante.value.primerApellido || "",
+  segundoApellido: formularioMedicoFirmante.value.segundoApellido || "",
+  nombreCompleto: formatearTituloYNombreFirmante(formularioMedicoFirmante.value),
   tituloProfesional: formularioMedicoFirmante.value.tituloProfesional || "",
   universidad: formularioMedicoFirmante.value.universidad || "",
   numeroCedulaProfesional: formularioMedicoFirmante.value.numeroCedulaProfesional || "",
@@ -318,7 +335,7 @@ const handleSubmit = async (data) => {
     const formData = new FormData();
 
     // Incluir paisNacimiento del selector (no capturado por FormKit)
-    const submitData = {
+    const submitData = omitImmutableIdentificationFields({
       ...data,
       paisNacimiento: formularioMedicoFirmante.value.paisNacimiento,
       entidadNacimiento: formularioMedicoFirmante.value.entidadNacimiento,
@@ -326,7 +343,7 @@ const handleSubmit = async (data) => {
       municipioResidencia: municipioResidenciaValue.value,
       localidadResidencia: localidadResidenciaValue.value,
       sexo: sexo || formularioMedicoFirmante.value.sexo,
-    };
+    });
     if (submitData.paisNacimiento === "" || submitData.paisNacimiento == null) delete submitData.paisNacimiento;
     if (!submitData.entidadNacimiento) delete submitData.entidadNacimiento;
     if (!geoFieldsRequired.value) {
@@ -410,6 +427,14 @@ const firmaSrc = computed(() => {
                     <h1 class="text-3xl">Datos del médico firmante</h1>
                     <hr class="mt-2 mb-3">
 
+                    <p
+                        v-if="identificationSectionNotice"
+                        class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+                    >
+                        <i class="fas fa-lock mr-1"></i>
+                        {{ identificationSectionNotice }}
+                    </p>
+
                     <FormKit type="form" :actions="false"
                         incomplete-message="Por favor, valide que los datos sean correctos*" @submit="handleSubmit">
 
@@ -420,6 +445,7 @@ const firmaSrc = computed(() => {
                                 name="curp"
                                 placeholder="Ej. GALJ850101HDFRPN09"
                                 maxlength="18"
+                                :disabled="isCurpFieldReadOnly"
                                 :validation="curpRequired ? 'required' : ''"
                                 :validation-messages="curpRequired ? { required: 'El CURP es obligatorio' } : {}"
                                 v-model="formularioMedicoFirmante.curp"
@@ -444,25 +470,59 @@ const firmaSrc = computed(() => {
                         </div>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            
                             <FormKit
-                            type="text"
-                            label="Nombre Completo"
-                            name="nombre"
-                            placeholder="Ej. Juan Alfonso Perez Galeana"
-                            validation="required"
-                            :validation-messages="{ required: 'Este campo es obligatorio' }"
-                            v-model="formularioMedicoFirmante.nombre"
+                                type="select"
+                                label="Título Profesional"
+                                name="tituloProfesional"
+                                placeholder='Selecciona "Dr." o "Dra."'
+                                :options="titulos"
+                                v-model="formularioMedicoFirmante.tituloProfesional"
                             />
 
                             <FormKit
-                            type="select"
-                            name="sexo"
-                            placeholder='Selecciona "Masculino" o "Femenino"'
-                            :options="['Masculino', 'Femenino']"
-                            :validation="sexoRequired ? 'required' : ''"
-                            :validation-messages="{ required: 'Este campo es obligatorio' }"
-                            v-model="formularioMedicoFirmante.sexo"
+                                type="text"
+                                label="Nombre(s)"
+                                name="nombre"
+                                placeholder="Ej. Juan Alfonso"
+                                validation="required"
+                                :disabled="isCurpConformationReadOnly"
+                                :validation-messages="{ required: 'Este campo es obligatorio' }"
+                                v-model="formularioMedicoFirmante.nombre"
+                            />
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <FormKit
+                                type="text"
+                                label="Primer Apellido"
+                                name="primerApellido"
+                                placeholder="Ej. Pérez"
+                                validation="required"
+                                :disabled="isCurpConformationReadOnly"
+                                :validation-messages="{ required: 'Este campo es obligatorio' }"
+                                v-model="formularioMedicoFirmante.primerApellido"
+                            />
+
+                            <FormKit
+                                type="text"
+                                label="Segundo Apellido"
+                                name="segundoApellido"
+                                placeholder="Ej. Galeana"
+                                :disabled="isCurpConformationReadOnly"
+                                v-model="formularioMedicoFirmante.segundoApellido"
+                            />
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <FormKit
+                                type="select"
+                                name="sexo"
+                                placeholder='Selecciona "Masculino" o "Femenino"'
+                                :options="['Masculino', 'Femenino']"
+                                :disabled="isCurpConformationReadOnly"
+                                :validation="sexoRequired ? 'required' : ''"
+                                :validation-messages="{ required: 'Este campo es obligatorio' }"
+                                v-model="formularioMedicoFirmante.sexo"
                             >
                                 <template #label>
                                     <span class="text-lg font-medium text-gray-700">
@@ -471,21 +531,11 @@ const firmaSrc = computed(() => {
                                     </span>
                                 </template>
                             </FormKit>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <FormKit
-                            type="select"
-                            label="Título Profesional"
-                            name="tituloProfesional"
-                            placeholder='Selecciona "Dr." o "Dra."'
-                            :options="titulos"
-                            v-model="formularioMedicoFirmante.tituloProfesional"
-                            />
 
                             <FormKit
                                 type="date"
                                 name="fechaNacimiento"
+                                :disabled="isCurpConformationReadOnly"
                                 validation="required|fechaNacimientoFirmanteValidation"
                                 :validation-messages="{
                                     required: 'La fecha de nacimiento es obligatoria',
@@ -557,15 +607,12 @@ const firmaSrc = computed(() => {
                                 label="País de nacimiento"
                                 placeholder="Buscar por nombre de país..."
                                 :required="paisNacimientoRequired"
+                                :disabled="isCurpConformationReadOnly"
                                 exclude-no-especificado
                             />
                         </div>
 
                         <div v-if="showEntidadNacimiento" class="mt-4 mb-2">
-                            <h3 class="text-lg font-semibold text-emerald-800 mb-3 border-b border-emerald-100 pb-2">
-                                Identificación NOM-024 (Estandarización)
-                            </h3>
-
                             <div class="mb-4">
                                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Nacimiento</h4>
                                 <div class="grid gap-3 sm:grid-cols-2">
@@ -574,6 +621,7 @@ const firmaSrc = computed(() => {
                                         label="Entidad de Nacimiento"
                                         placeholder="Buscar por nombre del estado"
                                         :required="geoFieldsRequired"
+                                        :disabled="isCurpConformationReadOnly"
                                     />
 
                                     <PaisNacimientoAutocomplete
@@ -668,7 +716,7 @@ const firmaSrc = computed(() => {
                                 <div class="w-full max-w-md mt-4 p-4 border rounded-lg bg-gray-50 text-center xl:text-left">                  
                                     <p class="text-sm text-gray-800 space-y-1">
                                         <span class="font-medium" v-if="piePaginaFirmante.nombre">
-                                            {{ piePaginaFirmante.tituloProfesional }} {{ piePaginaFirmante.nombre }}
+                                            {{ piePaginaFirmante.nombreCompleto }}
                                         </span><br v-if="piePaginaFirmante.nombre">
                                         
                                         <span v-if="piePaginaFirmante.numeroCedulaProfesional" class="font-light">
@@ -694,7 +742,7 @@ const firmaSrc = computed(() => {
                             <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
                                 <div v-if="medicoFirmante.medicoFirmante?.firma?.data" class="w-full flex flex-col items-center">
                                     <p class="font-medium text-lg text-gray-700">Firma actual:</p>
-                                    <img :src="firmaSrc" alt="'Firma de ' + medicoFirmante.medicoFirmante.nombre"
+                                    <img :src="firmaSrc" :alt="'Firma de ' + piePaginaFirmante.nombreCompleto"
                                         class="w-40 h-40 sm:w-48 sm:h-48 object-contain mt-2 border-2 border-gray-300 rounded-lg"/>
                                 </div>
 

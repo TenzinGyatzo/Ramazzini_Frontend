@@ -747,6 +747,14 @@ const cancelarTransferencia = () => {
                   Usar CURP genérico <br class="hidden md:block">(desconocido/extranjero)
                 </button>
               </div>
+              <FormKit type="text" name="nombre" placeholder="Nombres del trabajador"
+                  validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
+                  :disabled="isCurpConformationReadOnly"
+                  :value="trabajadores.currentTrabajador?.nombre || ''">
+                <template #label>
+                  <span class="font-medium text-lg text-gray-700">Nombre(s)<span class="text-red-500">*</span></span>
+                </template>
+              </FormKit>
               <FormKit type="text" name="primerApellido" placeholder="Apellido paterno"
                   validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
                   :disabled="isCurpConformationReadOnly"
@@ -758,12 +766,13 @@ const cancelarTransferencia = () => {
               <FormKit type="text" label="Segundo Apellido" name="segundoApellido" placeholder="Apellido materno"
                   :disabled="isCurpConformationReadOnly"
                   :value="trabajadores.currentTrabajador?.segundoApellido || ''" />
-              <FormKit type="text" name="nombre" placeholder="Nombres del trabajador"
-                  validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
-                  :disabled="isCurpConformationReadOnly"
-                  :value="trabajadores.currentTrabajador?.nombre || ''">
+              <FormKit type="select" name="sexo" placeholder="-Seleccione un sexo-"
+                :options="['Masculino', 'Femenino']" validation="required"
+                :validation-messages="{ required: 'Este campo es obligatorio' }"
+                :disabled="isCurpConformationReadOnly"
+                :value="trabajadores.currentTrabajador?.sexo || ''">
                 <template #label>
-                  <span class="font-medium text-lg text-gray-700">Nombre(s)<span class="text-red-500">*</span></span>
+                  <span class="font-medium text-lg text-gray-700">Sexo<span class="text-red-500">*</span></span>
                 </template>
               </FormKit>
               <FormKit type="date" name="fechaNacimiento" validation="required"
@@ -774,15 +783,6 @@ const cancelarTransferencia = () => {
                 :value="convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaNacimiento) || ''">
                 <template #label>
                   <span class="font-medium text-lg text-gray-700">Fecha de Nacimiento<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
-              <FormKit type="select" name="sexo" placeholder="-Seleccione un sexo-"
-                :options="['Masculino', 'Femenino']" validation="required"
-                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                :disabled="isCurpConformationReadOnly"
-                :value="trabajadores.currentTrabajador?.sexo || ''">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Sexo<span class="text-red-500">*</span></span>
                 </template>
               </FormKit>
               <FormKit type="select" name="escolaridad"

@@ -4,9 +4,12 @@ import { formatDateDDMMYYYY } from '@/helpers/dates';
 import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
+import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 interface FirmanteBase {
   nombre: string;
+  primerApellido?: string;
+  segundoApellido?: string;
   tituloProfesional?: string;
 }
 
@@ -58,13 +61,9 @@ const estadoDisplay = computed(() => {
   return props.estado.toUpperCase();
 });
 
-// Función helper para formatear nombre del firmante
 const formatFirmanteNombre = (firmante: Firmante | null | undefined): string | null => {
-  if (!firmante) return null;
-  const titulo = firmante.tituloProfesional?.trim();
-  const nombre = firmante.nombre?.trim();
-  if (!nombre) return null;
-  return titulo ? `${titulo} ${nombre}` : nombre;
+  if (!firmante?.nombre?.trim()) return null;
+  return formatearTituloYNombreFirmante(firmante) || null;
 };
 
 // Función para obtener userId de finalizadoPor/anuladoPor
@@ -94,7 +93,9 @@ const loadFirmanteByUserId = async (userId: string): Promise<Firmante | null> =>
         if (responseData && responseData._id && responseData.nombre) {
           return {
             nombre: responseData.nombre,
-            tituloProfesional: responseData.tituloProfesional
+            primerApellido: responseData.primerApellido,
+            segundoApellido: responseData.segundoApellido,
+            tituloProfesional: responseData.tituloProfesional,
           };
         }
       }

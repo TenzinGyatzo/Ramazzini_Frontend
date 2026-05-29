@@ -25,6 +25,10 @@ const props = defineProps({
   excludeNoEspecificado: {
     type: Boolean,
     default: false
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -225,7 +229,8 @@ const hideResults = () => {
         @input="onInput"
         @focus="onFocus"
         @blur="hideResults"
-        class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+        :disabled="disabled"
+        class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
         :placeholder="placeholder"
         v-bind="catalogSearchInputAttrs"
       />

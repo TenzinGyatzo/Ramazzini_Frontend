@@ -8,6 +8,7 @@ import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
+import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 interface Props {
   documentType: string;
@@ -88,8 +89,7 @@ const elaboradorData = computed(() => {
 
   return {
     tipo,
-    nombre: firmante.nombre || 'No disponible',
-    tituloProfesional: firmante.tituloProfesional || '',
+    nombreLinea: formatearTituloYNombreFirmante(firmante) || 'No disponible',
     cedulaProfesional: firmante.numeroCedulaProfesional 
       ? `Cédula Profesional No. ${firmante.numeroCedulaProfesional}`
       : null,
@@ -122,8 +122,7 @@ const finalizadorData = computed(() => {
 
   return {
     tipo,
-    nombre: firmante.nombre || 'No disponible',
-    tituloProfesional: firmante.tituloProfesional || '',
+    nombreLinea: formatearTituloYNombreFirmante(firmante) || 'No disponible',
     cedulaProfesional: firmante.numeroCedulaProfesional 
       ? `Cédula Profesional No. ${firmante.numeroCedulaProfesional}`
       : null,
@@ -323,7 +322,7 @@ onMounted(() => {
                   <div v-if="elaboradorData" class="space-y-2 text-xs">
                     
                     <div>
-                      <div class="text-gray-900 font-semibold mt-1 text-sm">{{ elaboradorData.tituloProfesional }} {{ elaboradorData.nombre }}</div>
+                      <div class="text-gray-900 font-semibold mt-1 text-sm">{{ elaboradorData.nombreLinea }}</div>
                     </div>
                     
                     <div v-if="elaboradorData.cedulaProfesional">
@@ -353,7 +352,7 @@ onMounted(() => {
                   <div v-if="finalizadorData" class="space-y-2 text-xs">
                     
                     <div>
-                      <div class="text-gray-900 font-semibold mt-1 text-sm"> {{ finalizadorData.tituloProfesional }} {{ finalizadorData.nombre }}</div>
+                      <div class="text-gray-900 font-semibold mt-1 text-sm">{{ finalizadorData.nombreLinea }}</div>
                     </div>
                     
                     <div v-if="finalizadorData.cedulaProfesional">

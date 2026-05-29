@@ -8,6 +8,7 @@ import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
+import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 interface Props {
   documentType: string;
@@ -65,8 +66,7 @@ const finalizadorData = computed(() => {
   const firmante = firmanteFinalizador.value;
   
   return {
-    nombre: firmante.nombre || 'No disponible',
-    tituloProfesional: firmante.tituloProfesional || '',
+    nombreLinea: formatearTituloYNombreFirmante(firmante) || 'No disponible',
     cedulaProfesional: firmante.numeroCedulaProfesional 
       ? `Cédula Profesional No. ${firmante.numeroCedulaProfesional}`
       : null,
@@ -88,8 +88,7 @@ const anuladorData = computed(() => {
   const firmante = firmanteAnulador.value;
   
   return {
-    nombre: firmante.nombre || 'No disponible',
-    tituloProfesional: firmante.tituloProfesional || '',
+    nombreLinea: formatearTituloYNombreFirmante(firmante) || 'No disponible',
     cedulaProfesional: firmante.numeroCedulaProfesional 
       ? `Cédula Profesional No. ${firmante.numeroCedulaProfesional}`
       : null,
@@ -326,7 +325,7 @@ const handleConfirm = async () => {
                   <div v-if="finalizadorData" class="space-y-2 text-xs">
                     
                     <div>
-                      <div class="text-gray-900 font-semibold mt-1 text-sm">{{ finalizadorData.tituloProfesional }} {{ finalizadorData.nombre }}</div>
+                      <div class="text-gray-900 font-semibold mt-1 text-sm">{{ finalizadorData.nombreLinea }}</div>
                     </div>
                     
                     <div v-if="finalizadorData.cedulaProfesional">
@@ -356,7 +355,7 @@ const handleConfirm = async () => {
                   <div v-if="anuladorData" class="space-y-2 text-xs">
                     
                     <div>
-                      <div class="text-gray-900 font-semibold mt-1 text-sm">{{ anuladorData.tituloProfesional }} {{ anuladorData.nombre }}</div>
+                      <div class="text-gray-900 font-semibold mt-1 text-sm">{{ anuladorData.nombreLinea }}</div>
                     </div>
                     
                     <div v-if="anuladorData.cedulaProfesional">

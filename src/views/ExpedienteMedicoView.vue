@@ -25,7 +25,6 @@ import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales
 import DailyConsentModal from '@/components/DailyConsentModal.vue';
 import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
 import { useNavigateWithDailyConsent } from '@/composables/useNavigateWithDailyConsent';
@@ -43,7 +42,8 @@ const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const formData = useFormDataStore();
 const proveedorSaludStore = useProveedorSaludStore();
-const medicoFirmanteStore = useMedicoFirmanteStore();
+const resultadosClinicos = useResultadosClinicosStore();
+
 const { canCreateDocument, getRestrictionMessage, executeIfCanManageDocumentosExternos } =
   usePermissionRestrictions();
 const { validationResult, loadFirmanteData } = useProfessionalDataValidation();
@@ -56,7 +56,6 @@ const {
   handleConsentRegistered,
   handleConsentCancel,
 } = useNavigateWithDailyConsent();
-const resultadosClinicos = useResultadosClinicosStore();
 
 const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);

@@ -10,6 +10,7 @@ import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import { calcularEdad } from '@/helpers/dates';
 import DocumentosAPI from '@/api/DocumentosAPI';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
+import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -18,6 +19,12 @@ const steps = useStepsStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
+
+const nombreCompletoMedico = computed(() => {
+  const medico = medicoFirmanteStore.medicoFirmante;
+  if (!medico) return '';
+  return formatearTituloYNombreFirmante(medico);
+});
 
 const exploracionesFisicas = ref([]);
 const nearestExploracionFisica = ref(null);
@@ -262,7 +269,7 @@ function formatearCampo(campo) {
         </template>
 
         <strong>
-          {{ medicoFirmanteStore.medicoFirmante.tituloProfesional }} {{ medicoFirmanteStore.medicoFirmante.nombre }}
+          {{ nombreCompletoMedico }}
         </strong><span v-if="medicoFirmanteStore.medicoFirmante.especialistaSaludTrabajo === 'Si'">,</span><span v-else>. </span>
 
         <template v-if="medicoFirmanteStore.medicoFirmante.especialistaSaludTrabajo === 'Si'">

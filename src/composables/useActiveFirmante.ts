@@ -2,6 +2,7 @@ import { computed } from 'vue';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
+import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 /**
  * Composable para obtener el firmante activo del usuario actual
@@ -44,33 +45,15 @@ export function useActiveFirmante() {
     return null;
   });
 
-  /**
-   * Obtiene el nombre completo del firmante con título profesional
-   * Formato: {tituloProfesional} + {nombre}
-   * Ejemplo: "Dr. Juan Rodríguez" o "Enf. María García"
-   */
+  /** Título + nombre completo (nombre + apellidos). */
   const firmanteDisplayName = computed(() => {
     const firmanteData = activeFirmante.value;
-    
+
     if (!firmanteData) {
       return 'Profesional no identificado';
     }
-    
-    const { firmante } = firmanteData;
-    const titulo = firmante.tituloProfesional || '';
-    const nombre = firmante.nombre || '';
-    
-    // Si hay título, combinarlo con el nombre
-    if (titulo && nombre) {
-      return `${titulo} ${nombre}`.trim();
-    }
-    
-    // Si solo hay nombre, retornarlo
-    if (nombre) {
-      return nombre;
-    }
-    
-    return 'Profesional no identificado';
+
+    return formatearTituloYNombreFirmante(firmanteData.firmante) || 'Profesional no identificado';
   });
 
   return {

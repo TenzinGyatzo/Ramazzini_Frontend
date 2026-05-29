@@ -8,6 +8,8 @@ interface EnfermeraFirmante {
     _id: string;
     nombre: string;
     curp?: string; // NOM-024: CURP del profesional de salud
+    primerApellido?: string;
+    segundoApellido?: string;
     sexo?: string;
     tituloProfesional?: string;
     numeroCedulaProfesional?: string;
