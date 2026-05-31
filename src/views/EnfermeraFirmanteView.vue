@@ -1,11 +1,12 @@
 <script setup>
-import { ref, inject, watchEffect, computed } from 'vue';
+import { ref, inject, watch, computed, provide } from 'vue';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useRouter, RouterLink } from 'vue-router';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';
 import { useNom024Fields } from '@/composables/useNom024Fields';
 import { useEntidadPaisNacimientoCoherence } from '@/composables/useEntidadPaisNacimientoCoherence';
+import { useResidenciaGeoCoherence, initializeResidenciaGeoFields } from '@/composables/useEntidadPaisResidenciaCoherence';
 import PaisNacimientoAutocomplete from '@/components/selectors/PaisNacimientoAutocomplete.vue';
 import EstadoAutocomplete from '@/components/selectors/EstadoAutocomplete.vue';
 import ResidenciaGeoAutocomplete from '@/components/selectors/ResidenciaGeoAutocomplete.vue';
@@ -43,9 +44,14 @@ const {
   omitImmutableIdentificationFields,
 } = useFirmanteIdentificationReadOnly(firmanteRecord);
 
-const entidadResidenciaValue = ref('');
-const municipioResidenciaValue = ref('');
-const localidadResidenciaValue = ref('');
+const nom024ResidenciaFields = ref({
+  entidadResidencia: '',
+  municipioResidencia: '',
+  localidadResidencia: '',
+  paisResidencia: '',
+});
+
+useResidenciaGeoCoherence(nom024ResidenciaFields);
 
 const firmaPreview = ref(null);
 const firmaArchivo = ref(null);
@@ -91,31 +97,51 @@ const fechaNacimientoMin = computed(() => {
   return formatDateInputValue(limite);
 });
 
-// Cargar los valores iniciales del enfermera firmante en el formulario
-watchEffect(() => {
-  const firmante = enfermeraFirmante.enfermeraFirmante;
-  if (!firmante?._id) return;
+// Sincronizar formulario y residencia cuando cambia el registro cargado (mismo patrón que ModalTrabajadores)
+watch(
+  () => enfermeraFirmante.enfermeraFirmante,
+  (firmante) => {
+    if (firmante?._id) {
+      Object.assign(formularioEnfermeraFirmante.value, {
+        nombre: firmante.nombre || "",
+        curp: firmante.curp || "",
+        sexo: firmante.sexo || "",
+        tituloProfesional: firmante.tituloProfesional || "",
+        numeroCedulaProfesional: firmante.numeroCedulaProfesional || "",
+        nombreCredencialAdicional: firmante.nombreCredencialAdicional || "",
+        numeroCredencialAdicional: firmante.numeroCredencialAdicional || "",
+        paisNacimiento: firmante.paisNacimiento ?? "",
+        entidadNacimiento: firmante.entidadNacimiento || "",
+        fechaNacimiento: firmante.fechaNacimiento
+          ? convertirFechaISOaYYYYMMDD(firmante.fechaNacimiento)
+          : "",
+        primerApellido: firmante.primerApellido || "",
+        segundoApellido: firmante.segundoApellido || "",
+      });
+      nom024ResidenciaFields.value.entidadResidencia = firmante.entidadResidencia || "";
+      nom024ResidenciaFields.value.municipioResidencia = firmante.municipioResidencia || "";
+      nom024ResidenciaFields.value.localidadResidencia = firmante.localidadResidencia || "";
+      nom024ResidenciaFields.value.paisResidencia = firmante.paisResidencia ?? "";
+    } else {
+      nom024ResidenciaFields.value.entidadResidencia = "";
+      nom024ResidenciaFields.value.municipioResidencia = "";
+      nom024ResidenciaFields.value.localidadResidencia = "";
+      nom024ResidenciaFields.value.paisResidencia = "";
+    }
+    initializeResidenciaGeoFields(nom024ResidenciaFields);
+  },
+  { immediate: true },
+);
 
-  Object.assign(formularioEnfermeraFirmante.value, {
-      nombre: firmante.nombre || "",
-      curp: firmante.curp || "",
-      sexo: firmante.sexo || "",
-      tituloProfesional: firmante.tituloProfesional || "",
-      numeroCedulaProfesional: firmante.numeroCedulaProfesional || "",
-      nombreCredencialAdicional: firmante.nombreCredencialAdicional || "",
-      numeroCredencialAdicional: firmante.numeroCredencialAdicional || "",
-      paisNacimiento: firmante.paisNacimiento ?? "",
-      entidadNacimiento: firmante.entidadNacimiento || "",
-      fechaNacimiento: firmante.fechaNacimiento
-        ? convertirFechaISOaYYYYMMDD(firmante.fechaNacimiento)
-        : "",
-      primerApellido: firmante.primerApellido || "",
-      segundoApellido: firmante.segundoApellido || "",
-    });
-    entidadResidenciaValue.value = firmante.entidadResidencia || "";
-    municipioResidenciaValue.value = firmante.municipioResidencia || "";
-    localidadResidenciaValue.value = firmante.localidadResidencia || "";
-});
+const formSubmitAttempted = ref(false);
+provide('formSubmitAttempted', formSubmitAttempted);
+
+const onFormSubmitInvalid = () => {
+  formSubmitAttempted.value = true;
+  setTimeout(() => {
+    formSubmitAttempted.value = false;
+  }, 5000);
+};
 
 // Función para validar archivo
 const validateFile = (file) => {
@@ -217,6 +243,7 @@ const user = ref(
 );
 
 const handleSubmit = async (data) => {
+    formSubmitAttempted.value = false;
     if (paisNacimientoRequired.value) {
         const pais = formularioEnfermeraFirmante.value.paisNacimiento;
         if (pais === "" || pais == null) {
@@ -263,21 +290,28 @@ const handleSubmit = async (data) => {
     }
 
     if (geoFieldsRequired.value) {
-        if (!entidadResidenciaValue.value) {
+        if (!nom024ResidenciaFields.value.paisResidencia && nom024ResidenciaFields.value.paisResidencia !== 0) {
+            toast.open({
+                type: "error",
+                message: "El país de residencia es obligatorio para firmantes en régimen SIRES_NOM024",
+            });
+            return;
+        }
+        if (!nom024ResidenciaFields.value.entidadResidencia) {
             toast.open({
                 type: "error",
                 message: "La entidad de residencia es obligatoria para firmantes en régimen SIRES_NOM024",
             });
             return;
         }
-        if (!municipioResidenciaValue.value) {
+        if (!nom024ResidenciaFields.value.municipioResidencia) {
             toast.open({
                 type: "error",
                 message: "El municipio de residencia es obligatorio para firmantes en régimen SIRES_NOM024",
             });
             return;
         }
-        if (!localidadResidenciaValue.value) {
+        if (!nom024ResidenciaFields.value.localidadResidencia) {
             toast.open({
                 type: "error",
                 message: "La localidad de residencia es obligatoria para firmantes en régimen SIRES_NOM024",
@@ -318,15 +352,17 @@ const handleSubmit = async (data) => {
       ...data,
       paisNacimiento: formularioEnfermeraFirmante.value.paisNacimiento,
       entidadNacimiento: formularioEnfermeraFirmante.value.entidadNacimiento,
-      entidadResidencia: entidadResidenciaValue.value,
-      municipioResidencia: municipioResidenciaValue.value,
-      localidadResidencia: localidadResidenciaValue.value,
+      entidadResidencia: nom024ResidenciaFields.value.entidadResidencia,
+      paisResidencia: nom024ResidenciaFields.value.paisResidencia,
+      municipioResidencia: nom024ResidenciaFields.value.municipioResidencia,
+      localidadResidencia: nom024ResidenciaFields.value.localidadResidencia,
       sexo: sexo || formularioEnfermeraFirmante.value.sexo,
     });
     if (submitData.paisNacimiento === "" || submitData.paisNacimiento == null) delete submitData.paisNacimiento;
     if (!submitData.entidadNacimiento) delete submitData.entidadNacimiento;
     if (!geoFieldsRequired.value) {
       if (!submitData.entidadResidencia) delete submitData.entidadResidencia;
+      if (submitData.paisResidencia === "" || submitData.paisResidencia == null) delete submitData.paisResidencia;
       if (!submitData.municipioResidencia) delete submitData.municipioResidencia;
       if (!submitData.localidadResidencia) delete submitData.localidadResidencia;
     }
@@ -414,7 +450,9 @@ const firmaSrc = computed(() => {
                     </p>
 
                     <FormKit type="form" :actions="false"
-                        incomplete-message="Por favor, valide que los datos sean correctos*" @submit="handleSubmit">
+                        incomplete-message="Por favor, valide que los datos sean correctos*"
+                        @submit="handleSubmit"
+                        @submit-invalid="onFormSubmitInvalid">
 
                         <!-- Campo CURP - Visible según política regulatoria -->
                         <div v-if="showCurpField" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -554,9 +592,6 @@ const firmaSrc = computed(() => {
                         </div>
 
                         <div v-if="showEntidadNacimiento" class="mt-4 mb-2">
-                            <h3 class="text-lg font-semibold text-emerald-800 mb-3 border-b border-emerald-100 pb-2">
-                                Identificación NOM-024 (Estandarización)
-                            </h3>
 
                             <div class="mb-4">
                                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Nacimiento</h4>
@@ -582,14 +617,24 @@ const firmaSrc = computed(() => {
                             <div>
                                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Residencia</h4>
                                 <ResidenciaGeoAutocomplete
-                                    :estadoResidencia="entidadResidenciaValue"
-                                    :municipioResidencia="municipioResidenciaValue"
-                                    :localidadResidencia="localidadResidenciaValue"
-                                    @update:estadoResidencia="entidadResidenciaValue = $event"
-                                    @update:municipioResidencia="municipioResidenciaValue = $event"
-                                    @update:localidadResidencia="localidadResidenciaValue = $event"
+                                    :estadoResidencia="nom024ResidenciaFields.entidadResidencia"
+                                    :municipioResidencia="nom024ResidenciaFields.municipioResidencia"
+                                    :localidadResidencia="nom024ResidenciaFields.localidadResidencia"
+                                    :pais-residencia="nom024ResidenciaFields.paisResidencia"
+                                    @update:estadoResidencia="nom024ResidenciaFields.entidadResidencia = $event"
+                                    @update:municipioResidencia="nom024ResidenciaFields.municipioResidencia = $event"
+                                    @update:localidadResidencia="nom024ResidenciaFields.localidadResidencia = $event"
                                     :required="geoFieldsRequired"
-                                />
+                                >
+                                    <template #pais>
+                                        <PaisNacimientoAutocomplete
+                                            v-model="nom024ResidenciaFields.paisResidencia"
+                                            label="País de residencia"
+                                            placeholder="Buscar por nombre de país..."
+                                            :required="geoFieldsRequired"
+                                        />
+                                    </template>
+                                </ResidenciaGeoAutocomplete>
                             </div>
                         </div>
 

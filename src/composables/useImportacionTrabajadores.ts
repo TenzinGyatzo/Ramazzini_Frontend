@@ -18,7 +18,7 @@ export const useImportacionTrabajadores = () => {
   // 
   // Columnas esperadas en Excel (NOM-024):
   // - Entidad Nacimiento -> entidadNacimiento
-  // - Nacionalidad -> nacionalidad
+  // - País de nacimiento -> paisNacimiento (CATALOG_KEY cat_pais)
   // - Entidad Residencia -> entidadResidencia
   // - Municipio Residencia -> municipioResidencia
   // - Localidad Residencia -> localidadResidencia

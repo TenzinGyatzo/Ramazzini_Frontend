@@ -12,10 +12,16 @@ import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 import api from '@/lib/axios';
 import EmpresasSelector from './EmpresasSelector.vue';
 import EstadoAutocomplete from './selectors/EstadoAutocomplete.vue';
-import NacionalidadAutocomplete from './selectors/NacionalidadAutocomplete.vue';
+import PaisNacimientoAutocomplete from './selectors/PaisNacimientoAutocomplete.vue';
 import ResidenciaGeoAutocomplete from './selectors/ResidenciaGeoAutocomplete.vue';
 import { useNom024Fields } from '@/composables/useNom024Fields';
+import { useEntidadPaisNacimientoCoherence } from '@/composables/useEntidadPaisNacimientoCoherence';
+import { useResidenciaGeoCoherence, initializeResidenciaGeoFields } from '@/composables/useEntidadPaisResidenciaCoherence';
 import { isGenericCurp } from '@/helpers/isGenericCurp';
+import {
+  getWorkerImmutablePayloadFields,
+  isPaisNacimientoReadOnlyForWorker,
+} from '@/helpers/workerPaisNacimientoImmutability';
 
 // Método para formatear la dirección (igual que en CentroTrabajoItem.vue)
 const formatDireccion = (centro) => {
@@ -78,6 +84,13 @@ const isCurpConformationReadOnly = computed(() =>
   isWorkerIdentificationReadOnly.value && !hasGenericCurpStored.value,
 );
 
+const isPaisNacimientoReadOnly = computed(() =>
+  isPaisNacimientoReadOnlyForWorker(
+    trabajadores.currentTrabajador,
+    isWorkerIdentificationReadOnly.value,
+  ),
+);
+
 const identificationSectionNotice = computed(() => {
   if (!isWorkerIdentificationReadOnly.value) return '';
   if (hasGenericCurpStored.value) {
@@ -86,26 +99,13 @@ const identificationSectionNotice = computed(() => {
   return 'Los datos de identificación no pueden modificarse tras el registro.';
 });
 
-const WORKER_IMMUTABLE_PAYLOAD_FIELDS = [
-  'curp',
-  'nombre',
-  'primerApellido',
-  'segundoApellido',
-  'fechaNacimiento',
-  'sexo',
-  'entidadNacimiento',
-  'nacionalidad',
-];
-
 function omitImmutableIdentificationFields(payload) {
   if (!isWorkerIdentificationReadOnly.value) {
     return payload;
   }
 
   const omitSet = new Set(
-    hasGenericCurpStored.value
-      ? ['nacionalidad']
-      : WORKER_IMMUTABLE_PAYLOAD_FIELDS,
+    getWorkerImmutablePayloadFields(trabajadores.currentTrabajador ?? {}),
   );
 
   const result = { ...payload };
@@ -266,17 +266,21 @@ const nom024FieldValidation = computed(() => {
   return geoFieldsRequired.value ? 'required' : 'optional';
 });
 
-// Valores reactivos para campos NOM-024 (fuera de FormKit)
-// Nacionalidad: sin valor por defecto, el usuario debe seleccionar en el autocomplete
-const getDefaultNacionalidad = () => {
-  return trabajadores.currentTrabajador?.nacionalidad || '';
-};
+const nom024NacimientoFields = ref({
+  entidadNacimiento: trabajadores.currentTrabajador?.entidadNacimiento || '',
+  paisNacimiento: trabajadores.currentTrabajador?.paisNacimiento ?? '',
+});
 
-const entidadNacimientoValue = ref(trabajadores.currentTrabajador?.entidadNacimiento || '');
-const nacionalidadValue = ref(getDefaultNacionalidad());
-const entidadResidenciaValue = ref(trabajadores.currentTrabajador?.entidadResidencia || '');
-const municipioResidenciaValue = ref(trabajadores.currentTrabajador?.municipioResidencia || '');
-const localidadResidenciaValue = ref(trabajadores.currentTrabajador?.localidadResidencia || '');
+useEntidadPaisNacimientoCoherence(nom024NacimientoFields);
+
+const nom024ResidenciaFields = ref({
+  entidadResidencia: trabajadores.currentTrabajador?.entidadResidencia || '',
+  municipioResidencia: trabajadores.currentTrabajador?.municipioResidencia || '',
+  localidadResidencia: trabajadores.currentTrabajador?.localidadResidencia || '',
+  paisResidencia: trabajadores.currentTrabajador?.paisResidencia ?? '',
+});
+
+useResidenciaGeoCoherence(nom024ResidenciaFields);
 
 // Ref para el valor del CURP (para poder actualizarlo programáticamente)
 const curpValue = ref(trabajadores.currentTrabajador?.curp || '');
@@ -293,30 +297,14 @@ const insertGenericCURP = () => {
 
 // Watch para sincronizar valores cuando cambia el trabajador actual
 watch(() => trabajadores.currentTrabajador, (trabajador) => {
-  entidadNacimientoValue.value = trabajador?.entidadNacimiento || '';
-  nacionalidadValue.value = trabajador?.nacionalidad || '';
-  entidadResidenciaValue.value = trabajador?.entidadResidencia || '';
-  municipioResidenciaValue.value = trabajador?.municipioResidencia || '';
-  localidadResidenciaValue.value = trabajador?.localidadResidencia || '';
+  nom024NacimientoFields.value.entidadNacimiento = trabajador?.entidadNacimiento || '';
+  nom024NacimientoFields.value.paisNacimiento = trabajador?.paisNacimiento ?? '';
+  nom024ResidenciaFields.value.entidadResidencia = trabajador?.entidadResidencia || '';
+  nom024ResidenciaFields.value.municipioResidencia = trabajador?.municipioResidencia || '';
+  nom024ResidenciaFields.value.localidadResidencia = trabajador?.localidadResidencia || '';
+  nom024ResidenciaFields.value.paisResidencia = trabajador?.paisResidencia ?? '';
+  initializeResidenciaGeoFields(nom024ResidenciaFields);
 }, { immediate: true });
-
-// Coherencia NOM-024: sincronización bidireccional entidad de nacimiento ↔ nacionalidad
-const ENTIDADES_SIN_AUTO_NACIONALIDAD = ['NE', '00']; // Extranjero, No disponible
-watch(entidadNacimientoValue, (entidad) => {
-  if (!entidad) return;
-  if (ENTIDADES_SIN_AUTO_NACIONALIDAD.includes(entidad)) return;
-  if (nacionalidadValue.value !== 'MEX') nacionalidadValue.value = 'MEX';
-});
-watch(nacionalidadValue, (nacionalidad) => {
-  if (!nacionalidad) return;
-  if (nacionalidad === 'NND') {
-    if (entidadNacimientoValue.value !== '00') entidadNacimientoValue.value = '00';
-  } else if (nacionalidad !== 'MEX') {
-    if (entidadNacimientoValue.value !== 'NE') entidadNacimientoValue.value = 'NE';
-  } else if (ENTIDADES_SIN_AUTO_NACIONALIDAD.includes(entidadNacimientoValue.value)) {
-    entidadNacimientoValue.value = '';
-  }
-});
 
 // Variables para contar trabajadores por centro
 const trabajadoresPorCentro = ref({});
@@ -479,11 +467,12 @@ const handleSubmit = async (data) => {
     nss: data.nss,
     curp: data.curp || curpValue.value,
     // NOM-024 Fields (usar valores reactivos si no están en data)
-    entidadNacimiento: data.entidadNacimiento || entidadNacimientoValue.value,
-    nacionalidad: data.nacionalidad || nacionalidadValue.value,
-    entidadResidencia: data.entidadResidencia || entidadResidenciaValue.value,
-    municipioResidencia: data.municipioResidencia || municipioResidenciaValue.value,
-    localidadResidencia: data.localidadResidencia || localidadResidenciaValue.value,
+    entidadNacimiento: data.entidadNacimiento || nom024NacimientoFields.value.entidadNacimiento,
+    paisNacimiento: data.paisNacimiento || nom024NacimientoFields.value.paisNacimiento,
+    entidadResidencia: data.entidadResidencia || nom024ResidenciaFields.value.entidadResidencia,
+    paisResidencia: data.paisResidencia || nom024ResidenciaFields.value.paisResidencia,
+    municipioResidencia: data.municipioResidencia || nom024ResidenciaFields.value.municipioResidencia,
+    localidadResidencia: data.localidadResidencia || nom024ResidenciaFields.value.localidadResidencia,
     idCentroTrabajo: data.idCentroTrabajo,
     createdBy: currentUserId,
     updatedBy: currentUserId
@@ -849,28 +838,25 @@ const cancelarTransferencia = () => {
 
               <!-- NOM-024 Identification Fields (solo visible para SIRES_NOM024) -->
               <div v-if="isSIRES" class="lg:col-span-2 mt-4">
-                <h3 class="text-lg font-semibold text-emerald-800 mb-3 border-b border-emerald-100 pb-2">
-                  Identificación NOM-024 (Estandarización)
-                </h3>
                 
                 <!-- Campos de Nacimiento -->
                 <div class="mb-4">
                   <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Nacimiento</h4>
                   <div class="grid gap-3 sm:grid-cols-2">
                     <EstadoAutocomplete
-                      v-model="entidadNacimientoValue"
+                      v-model="nom024NacimientoFields.entidadNacimiento"
                       label="Entidad de Nacimiento"
                       placeholder="Buscar por nombre del estado"
                       :required="geoFieldsRequired"
                       :disabled="isCurpConformationReadOnly"
                     />
                     
-                    <NacionalidadAutocomplete
-                      v-model="nacionalidadValue"
-                      label="Nacionalidad"
-                      placeholder="Buscar por nombre de nacionalidad"
+                    <PaisNacimientoAutocomplete
+                      v-model="nom024NacimientoFields.paisNacimiento"
+                      label="País de nacimiento"
+                      placeholder="Buscar por nombre de país..."
                       :required="geoFieldsRequired"
-                      :disabled="isWorkerIdentificationReadOnly"
+                      :disabled="isPaisNacimientoReadOnly"
                     />
                   </div>
                 </div>
@@ -879,14 +865,24 @@ const cancelarTransferencia = () => {
                 <div>
                   <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Residencia</h4>
                   <ResidenciaGeoAutocomplete
-                    :estadoResidencia="entidadResidenciaValue"
-                    :municipioResidencia="municipioResidenciaValue"
-                    :localidadResidencia="localidadResidenciaValue"
-                    @update:estadoResidencia="entidadResidenciaValue = $event"
-                    @update:municipioResidencia="municipioResidenciaValue = $event"
-                    @update:localidadResidencia="localidadResidenciaValue = $event"
+                    :estadoResidencia="nom024ResidenciaFields.entidadResidencia"
+                    :municipioResidencia="nom024ResidenciaFields.municipioResidencia"
+                    :localidadResidencia="nom024ResidenciaFields.localidadResidencia"
+                    :pais-residencia="nom024ResidenciaFields.paisResidencia"
+                    @update:estadoResidencia="nom024ResidenciaFields.entidadResidencia = $event"
+                    @update:municipioResidencia="nom024ResidenciaFields.municipioResidencia = $event"
+                    @update:localidadResidencia="nom024ResidenciaFields.localidadResidencia = $event"
                     :required="geoFieldsRequired"
-                  />
+                  >
+                    <template #pais>
+                      <PaisNacimientoAutocomplete
+                        v-model="nom024ResidenciaFields.paisResidencia"
+                        label="País de residencia"
+                        placeholder="Buscar por nombre de país..."
+                        :required="geoFieldsRequired"
+                      />
+                    </template>
+                  </ResidenciaGeoAutocomplete>
                 </div>
               </div>
             </div>
@@ -896,35 +892,42 @@ const cancelarTransferencia = () => {
             <FormKit 
               type="hidden" 
               name="entidadNacimiento" 
-              v-model="entidadNacimientoValue"
+              v-model="nom024NacimientoFields.entidadNacimiento"
               :validation="nom024FieldValidation"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
             />
             <FormKit 
               type="hidden" 
-              name="nacionalidad" 
-              v-model="nacionalidadValue"
+              name="paisNacimiento" 
+              v-model="nom024NacimientoFields.paisNacimiento"
               :validation="nom024FieldValidation"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
             />
             <FormKit 
               type="hidden" 
               name="entidadResidencia" 
-              v-model="entidadResidenciaValue"
+              v-model="nom024ResidenciaFields.entidadResidencia"
+              :validation="nom024FieldValidation"
+              :validation-messages="{ required: 'Este campo es obligatorio' }"
+            />
+            <FormKit 
+              type="hidden" 
+              name="paisResidencia" 
+              v-model="nom024ResidenciaFields.paisResidencia"
               :validation="nom024FieldValidation"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
             />
             <FormKit 
               type="hidden" 
               name="municipioResidencia" 
-              v-model="municipioResidenciaValue"
+              v-model="nom024ResidenciaFields.municipioResidencia"
               :validation="nom024FieldValidation"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
             />
             <FormKit 
               type="hidden" 
               name="localidadResidencia" 
-              v-model="localidadResidenciaValue"
+              v-model="nom024ResidenciaFields.localidadResidencia"
               :validation="nom024FieldValidation"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
             />

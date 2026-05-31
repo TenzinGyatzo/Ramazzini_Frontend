@@ -186,9 +186,6 @@ const firmaSrc = computed(() => `${baseURL}/assets/signatories/${tecnicoFirmante
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <FormKit type="text" label="Nombre(s)" name="nombre" placeholder="Ej. Juan" validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }" v-model="formularioTecnicoFirmante.nombre" />
-              
-
-              <FormKit type="text" label="Nombre(s)" name="nombre" placeholder="Ej. Juan" validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }" v-model="formularioTecnicoFirmante.nombre" />
               <FormKit type="text" label="Primer Apellido" name="primerApellido" placeholder="Ej. Pérez" validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }" v-model="formularioTecnicoFirmante.primerApellido" />
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -202,13 +199,13 @@ const firmaSrc = computed(() => `${baseURL}/assets/signatories/${tecnicoFirmante
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <FormKit type="text" label="Credencial/Certificación Adicional" name="nombreCredencialAdicional" placeholder="Ej. Certificado ante el CNMMT" v-model="formularioTecnicoFirmante.nombreCredencialAdicional" />
               <FormKit type="text" label="Número de Credencial Adicional" name="numeroCredencialAdicional" placeholder="Ej. 924" v-model="formularioTecnicoFirmante.numeroCredencialAdicional" />
-              <div class="sm:col-span-2">
-                <PaisNacimientoAutocomplete
-                  v-model="formularioTecnicoFirmante.paisNacimiento"
-                  label="País de nacimiento"
-                  placeholder="Buscar por nombre de país..."
-                />
-              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <PaisNacimientoAutocomplete
+                v-model="formularioTecnicoFirmante.paisNacimiento"
+                label="País de nacimiento"
+                placeholder="Buscar por nombre de país..."
+              />
             </div>
 
             <!-- Área de arrastrar y soltar para la firma -->

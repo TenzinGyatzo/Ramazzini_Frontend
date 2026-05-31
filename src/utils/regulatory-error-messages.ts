@@ -128,7 +128,7 @@ const FIELD_NAMES: Record<string, string> = {
   entidadResidencia: 'Entidad de residencia',
   municipioResidencia: 'Municipio de residencia',
   localidadResidencia: 'Localidad de residencia',
-  nacionalidad: 'Nacionalidad',
+  paisNacimiento: 'País de nacimiento',
 };
 
 /**

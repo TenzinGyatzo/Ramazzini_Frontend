@@ -54,6 +54,7 @@ let debounceTimer = null;
 import {
   PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE,
   PAIS_NACIMIENTO_NO_ESPECIFICADO_LABEL,
+  sortPaisesForSelector,
 } from '@/helpers/paisNacimiento';
 
 // Opción centinela: NO ESPECIFICADO (CATALOG_KEY 248 en cat_pais)
@@ -62,14 +63,24 @@ const sentinelOption = {
   description: PAIS_NACIMIENTO_NO_ESPECIFICADO_LABEL,
 };
 
-function withSentinelOption(items = []) {
-  if (props.excludeNoEspecificado) return items;
-  return [sentinelOption, ...items];
+function orderPaisesForSelector(items = []) {
+  const merged = props.excludeNoEspecificado
+    ? items
+    : [sentinelOption, ...items];
+  return sortPaisesForSelector(merged, {
+    excludeNoEspecificado: props.excludeNoEspecificado,
+  });
 }
 
 function normalizeModelValue(val) {
   if (val == null || val === '') return '';
   return String(val);
+}
+
+function formatPaisDisplay(entry) {
+  const code = entry?.code != null ? String(entry.code) : '';
+  const description = entry?.description ?? code;
+  return description && code ? `${description} (${code})` : description || code;
 }
 
 onMounted(async () => {
@@ -79,12 +90,12 @@ onMounted(async () => {
       loading.value = true;
       if (val === sentinelOption.code) {
         selectedEntry.value = sentinelOption;
-        query.value = sentinelOption.description;
+        query.value = formatPaisDisplay(sentinelOption);
       } else {
         const { data } = await CatalogsAPI.getPaisByCatalogKey(val);
         if (data) {
           selectedEntry.value = data;
-          query.value = data.description || `${data.code}`;
+          query.value = formatPaisDisplay(data);
         }
       }
     } catch (err) {
@@ -108,12 +119,12 @@ watch(() => props.modelValue, async (newVal) => {
     try {
       if (val === sentinelOption.code) {
         selectedEntry.value = sentinelOption;
-        query.value = sentinelOption.description;
+        query.value = formatPaisDisplay(sentinelOption);
       } else {
         const { data } = await CatalogsAPI.getPaisByCatalogKey(val);
         if (data) {
           selectedEntry.value = data;
-          query.value = data.description || `${data.code}`;
+          query.value = formatPaisDisplay(data);
         }
       }
     } catch (err) {
@@ -126,17 +137,17 @@ const loadInitialPaises = async () => {
   loading.value = true;
   try {
     const { data } = await CatalogsAPI.listCatalog('cat_pais', 500);
-    results.value = withSentinelOption(data || []);
+    results.value = orderPaisesForSelector(data || []);
     showResults.value = true;
   } catch (err) {
     console.error('Error al cargar países:', err);
     try {
       const { data } = await CatalogsAPI.searchPaises('a', 100);
-      results.value = withSentinelOption(data || []);
+      results.value = orderPaisesForSelector(data || []);
       showResults.value = true;
     } catch (fallbackErr) {
       console.error('Error al cargar países (fallback):', fallbackErr);
-      results.value = withSentinelOption([]);
+      results.value = orderPaisesForSelector([]);
     }
   } finally {
     loading.value = false;
@@ -161,7 +172,10 @@ const performSearch = async (val) => {
     ) {
       matchingSentinels.push(sentinelOption);
     }
-    results.value = [...matchingSentinels, ...(data || [])];
+    results.value = orderPaisesForSelector([
+      ...matchingSentinels,
+      ...(data || []),
+    ]);
     showResults.value = true;
   } catch (err) {
     console.error('Error al buscar países:', err);
@@ -190,7 +204,7 @@ const onInput = (e) => {
 
 const selectResult = (result) => {
   selectedEntry.value = result;
-  query.value = result.description;
+  query.value = formatPaisDisplay(result);
   showResults.value = false;
   results.value = [];
   emit('update:modelValue', result.code);

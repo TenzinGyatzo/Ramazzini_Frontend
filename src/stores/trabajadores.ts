@@ -23,7 +23,7 @@ interface Trabajador {
   curp?: string;
   // NOM-024 Person Identification Fields
   entidadNacimiento?: string;
-  nacionalidad?: string;
+  paisNacimiento?: number | string;
   entidadResidencia?: string;
   municipioResidencia?: string;
   localidadResidencia?: string;
@@ -94,7 +94,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
       curp: "",
       // NOM-024 Fields
       entidadNacimiento: "",
-      nacionalidad: "",
+      paisNacimiento: "",
       entidadResidencia: "",
       municipioResidencia: "",
       localidadResidencia: "",

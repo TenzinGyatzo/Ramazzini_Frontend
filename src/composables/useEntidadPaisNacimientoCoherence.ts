@@ -43,7 +43,6 @@ function applyPaisToEntidad(
 
 /**
  * Coherencia NOM-024: sincronización bidireccional entidad de nacimiento ↔ país de nacimiento.
- * Espejo de ModalTrabajadores (nacionalidad ↔ entidadNacimiento).
  *
  * - País 248 (NO ESPECIFICADO) → entidad 00 (No disponible)
  * - País distinto de 142 (México) → entidad NE (Extranjero)

@@ -57,7 +57,6 @@ export enum CatalogType {
   MUNICIPIOS = 'municipios',
   LOCALIDADES = 'localidades',
   CODIGOS_POSTALES = 'codigos_postales',
-  NACIONALIDADES = 'cat_nacionalidades',
   FORMACION_ACADEMICA = 'formacion_academica',
 
   // GIIS-B019 Catalogs (3) - Optional

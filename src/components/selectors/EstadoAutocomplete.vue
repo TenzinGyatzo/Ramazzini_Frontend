@@ -2,6 +2,8 @@
 import { ref, watch, onMounted, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+import { sortEstadosByCode } from '@/helpers/geoCatalogSort';
+import { getResidenciaUiState } from '@/helpers/residenciaGeoRules';
 
 const { catalogSearchInputAttrs } = useCatalogSearchInput();
 
@@ -25,6 +27,14 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  mode: {
+    type: String,
+    default: 'nacimiento'
+  },
+  paisResidencia: {
+    type: [String, Number],
+    default: ''
   }
 });
 
@@ -51,11 +61,37 @@ const showRequiredError = computed(() => {
 // Debounce timer local
 let debounceTimer = null;
 
-// Opciones centinela
+// NE (Renapo) solo aplica en nacimiento; no está en catálogo DGIS.
 const sentinelOptions = [
-  { code: 'NE', description: 'Extranjero' },
-  { code: '00', description: 'No disponible' }
+  { code: 'NE', description: 'Extranjero' }
 ];
+
+const isResidenciaMode = computed(() => props.mode === 'residencia');
+
+const residenciaUiState = computed(() => {
+  if (!isResidenciaMode.value) return null;
+  return getResidenciaUiState({
+    paisResidencia: props.paisResidencia,
+    entidadResidencia: props.modelValue,
+    municipioResidencia: '',
+    localidadResidencia: '',
+  });
+});
+
+const isInputDisabled = computed(
+  () => props.disabled || (residenciaUiState.value?.entidad.locked ?? false),
+);
+
+const filterEstadosForMode = (entries) => {
+  const sorted = sortEstadosByCode(entries || []);
+  if (!isResidenciaMode.value) {
+    return [...sentinelOptions, ...sorted];
+  }
+
+  const allowed = residenciaUiState.value?.entidad.allowedEntidadCodes;
+  if (!allowed) return sorted;
+  return sorted.filter((entry) => allowed.includes(entry.code));
+};
 
 // Cargar datos iniciales si hay un modelValue
 onMounted(async () => {
@@ -112,11 +148,15 @@ watch(() => props.modelValue, async (newVal) => {
 });
 
 const loadAllEstados = async () => {
+  if (isInputDisabled.value) {
+    showResults.value = false;
+    return;
+  }
+
   loading.value = true;
   try {
     const { data } = await CatalogsAPI.getEstados();
-    // Agregar centinelas al inicio
-    results.value = [...sentinelOptions, ...data];
+    results.value = filterEstadosForMode(data);
     showResults.value = true;
   } catch (err) {
     console.error('Error al cargar estados:', err);
@@ -139,12 +179,18 @@ const performSearch = async (val) => {
     
     // Agregar centinelas al inicio de los resultados si la búsqueda coincide
     const lowerQuery = val.toLowerCase();
-    const matchingSentinels = sentinelOptions.filter(s => 
-      s.code.toLowerCase().includes(lowerQuery) || 
-      s.description.toLowerCase().includes(lowerQuery)
-    );
-    
-    results.value = [...matchingSentinels, ...data];
+    const matchingSentinels = isResidenciaMode.value
+      ? []
+      : sentinelOptions.filter(
+          (s) =>
+            s.code.toLowerCase().includes(lowerQuery) ||
+            s.description.toLowerCase().includes(lowerQuery),
+        );
+
+    results.value = filterEstadosForMode([
+      ...matchingSentinels,
+      ...(data || []),
+    ]);
     showResults.value = true;
   } catch (err) {
     console.error('Error al buscar estados:', err);
@@ -155,6 +201,8 @@ const performSearch = async (val) => {
 };
 
 const onInput = (e) => {
+  if (isInputDisabled.value) return;
+
   const val = e.target.value;
   query.value = val;
   
@@ -184,6 +232,8 @@ const selectResult = (result) => {
 };
 
 const onFocus = () => {
+  if (isInputDisabled.value) return;
+
   // Si no hay resultados y no hay query, cargar todos los estados
   if (results.value.length === 0 && !query.value) {
     loadAllEstados();
@@ -214,7 +264,7 @@ const hideResults = () => {
         @input="onInput"
         @focus="onFocus"
         @blur="hideResults"
-        :disabled="disabled"
+        :disabled="isInputDisabled"
         class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
         :placeholder="placeholder"
         v-bind="catalogSearchInputAttrs"
@@ -262,7 +312,12 @@ const hideResults = () => {
 
     <p class="text-xs text-gray-500 mt-1">
       <i class="fas fa-info-circle mr-1"></i>
-      Código INEGI de 2 dígitos. Puede usar "NE" para Extranjero o "00" para No disponible.
+      <template v-if="isResidenciaMode">
+        Residencia GIIS: con México (142) use 00, 99 o entidad federativa; con otro país se fija 88.
+      </template>
+      <template v-else>
+        Código INEGI de 2 dígitos (NE, 00, 01-32, 88, 99). Ordenados por código numérico.
+      </template>
     </p>
   </div>
 </template>

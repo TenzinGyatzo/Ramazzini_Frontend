@@ -24,10 +24,10 @@ Las siguientes columnas fueron agregadas para cumplir con NOM-024-SSA3-2012:
   - Obligatorio para proveedores MX
   - Valores especiales: "NE" (No Especificado), "00" (Nacido en el extranjero)
 
-- **Nacionalidad**: Código de nacionalidad de 3 caracteres (ej. "MEX", "USA")
-  - Campo: `nacionalidad`
+- **País de nacimiento**: CATALOG_KEY numérico de cat_pais (ej. `142` para México, `248` para NO ESPECIFICADO)
+  - Campo: `paisNacimiento`
   - Obligatorio para proveedores MX
-  - Formato: 3 letras mayúsculas
+  - Formato: número entero (CATALOG_KEY del catálogo cat_pais)
 
 - **Entidad Residencia**: Código INEGI de 2 dígitos
   - Campo: `entidadResidencia`
@@ -62,14 +62,14 @@ Las siguientes columnas fueron agregadas para cumplir con NOM-024-SSA3-2012:
 
 2. **Insertar las 5 nuevas columnas** después de "Escolaridad" y antes de "Puesto":
    - Columna I: `Entidad Nacimiento`
-   - Columna J: `Nacionalidad`
+   - Columna J: `País de nacimiento`
    - Columna K: `Entidad Residencia`
    - Columna L: `Municipio Residencia`
    - Columna M: `Localidad Residencia`
 
 3. **Agregar datos de ejemplo** para cada columna:
    - Entidad Nacimiento: `09` (ejemplo: Ciudad de México)
-   - Nacionalidad: `MEX` (ejemplo: Mexicana)
+   - País de nacimiento: `142` (ejemplo: México)
    - Entidad Residencia: `09`
    - Municipio Residencia: `015`
    - Localidad Residencia: `0001`

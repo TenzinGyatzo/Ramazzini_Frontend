@@ -3,6 +3,23 @@ import { ref, watch, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import EstadoAutocomplete from './EstadoAutocomplete.vue';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+import {
+  getMunicipioDisplayCode,
+  sortMunicipiosByCode,
+} from '@/helpers/geoCatalogSort';
+import {
+  getGiisGeoForMunicipioResidencia,
+  getLocalidadSentinelForEntidad,
+  getMunicipioSentinelForEntidad,
+  isEntidadResidenciaEspecial,
+} from '@/helpers/giisResidenciaGeo';
+import {
+  buildLocalidadSentinelOption,
+  buildMunicipioSentinelOption,
+  getResidenciaUiState,
+  isLocalidadGiisSentinel,
+  isMunicipioGiisSentinel,
+} from '@/helpers/residenciaGeoRules';
 
 const { catalogSearchInputAttrs: municipioInputAttrs } = useCatalogSearchInput();
 const { catalogSearchInputAttrs: localidadInputAttrs } = useCatalogSearchInput();
@@ -10,25 +27,32 @@ const { catalogSearchInputAttrs: localidadInputAttrs } = useCatalogSearchInput()
 const props = defineProps({
   estadoResidencia: {
     type: String,
-    default: ''
+    default: '',
   },
   municipioResidencia: {
     type: String,
-    default: ''
+    default: '',
   },
   localidadResidencia: {
     type: String,
-    default: ''
+    default: '',
+  },
+  paisResidencia: {
+    type: [String, Number],
+    default: '',
   },
   required: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-const emit = defineEmits(['update:estadoResidencia', 'update:municipioResidencia', 'update:localidadResidencia']);
+const emit = defineEmits([
+  'update:estadoResidencia',
+  'update:municipioResidencia',
+  'update:localidadResidencia',
+]);
 
-// Estados internos para municipio y localidad
 const municipioQuery = ref('');
 const municipioResults = ref([]);
 const municipioLoading = ref(false);
@@ -42,72 +66,143 @@ const localidadShowResults = ref(false);
 const localidadSelected = ref(null);
 
 const municipiosDisponibles = ref([]);
-
-// Estados para validación
 const municipioHasBlurred = ref(false);
 const localidadHasBlurred = ref(false);
 
-// Intentar obtener el estado de validación del formulario desde el contexto
 const formSubmitAttempted = inject('formSubmitAttempted', ref(false));
 
-// Computed para determinar si debe mostrar error de validación requerida
+const residenciaFields = computed(() => ({
+  paisResidencia: props.paisResidencia,
+  entidadResidencia: props.estadoResidencia,
+  municipioResidencia: props.municipioResidencia,
+  localidadResidencia: props.localidadResidencia,
+}));
+
+const uiState = computed(() => getResidenciaUiState(residenciaFields.value));
+
+const municipioLocked = computed(() => uiState.value.municipio.locked);
+const localidadLocked = computed(() => uiState.value.localidad.locked);
+
 const showMunicipioRequiredError = computed(() => {
-  const isEmpty = !props.municipioResidencia || props.municipioResidencia.trim() === '';
-  return props.required && isEmpty && (municipioHasBlurred.value || formSubmitAttempted.value) && municipioEnabled.value;
+  const isEmpty =
+    !props.municipioResidencia || props.municipioResidencia.trim() === '';
+  return (
+    props.required &&
+    isEmpty &&
+    (municipioHasBlurred.value || formSubmitAttempted.value) &&
+    municipioEnabled.value
+  );
 });
 
 const showLocalidadRequiredError = computed(() => {
-  const isEmpty = !props.localidadResidencia || props.localidadResidencia.trim() === '';
-  return props.required && isEmpty && (localidadHasBlurred.value || formSubmitAttempted.value) && localidadEnabled.value;
+  const isEmpty =
+    !props.localidadResidencia || props.localidadResidencia.trim() === '';
+  return (
+    props.required &&
+    isEmpty &&
+    (localidadHasBlurred.value || formSubmitAttempted.value) &&
+    localidadEnabled.value
+  );
 });
 
-// Centinelas
-const estadoSentinels = [
-  { code: 'NE', description: 'Extranjero' },
-  { code: '00', description: 'No disponible' }
-];
-const municipioSentinel = { code: '000', description: 'No disponible' };
-const localidadSentinel = { code: '0000', description: 'No disponible' };
-
-// Debounce timers
 let municipioDebounceTimer = null;
 let localidadDebounceTimer = null;
 
+const buildMunicipioSentinels = () =>
+  uiState.value.municipio.sentinelCodes.map((code) =>
+    buildMunicipioSentinelOption(code),
+  );
+
+const buildLocalidadSentinels = () =>
+  uiState.value.localidad.sentinelCodes.map((code) =>
+    buildLocalidadSentinelOption(code),
+  );
+
+const resolveMunicipioSentinel = (estadoCode, municipioCode) => {
+  if (isEntidadResidenciaEspecial(estadoCode)) {
+    return getMunicipioSentinelForEntidad(estadoCode);
+  }
+  if (isMunicipioGiisSentinel(municipioCode)) {
+    return buildMunicipioSentinelOption(municipioCode);
+  }
+  return null;
+};
+
+const resolveLocalidadSentinel = (estadoCode, municipioCode, localidadCode) => {
+  if (isEntidadResidenciaEspecial(estadoCode)) {
+    return getLocalidadSentinelForEntidad(estadoCode);
+  }
+  const munGeo = getGiisGeoForMunicipioResidencia(municipioCode);
+  if (munGeo && localidadCode === munGeo.localidad) {
+    return buildLocalidadSentinelOption(localidadCode);
+  }
+  if (isLocalidadGiisSentinel(localidadCode)) {
+    return buildLocalidadSentinelOption(localidadCode);
+  }
+  return null;
+};
+
+const syncLockedMunicipioDisplay = () => {
+  if (!municipioLocked.value || !props.municipioResidencia) return;
+  const sentinel = resolveMunicipioSentinel(
+    props.estadoResidencia,
+    props.municipioResidencia,
+  );
+  if (sentinel) {
+    municipioSelected.value = sentinel;
+    municipioQuery.value = `${sentinel.description} (${sentinel.code})`;
+  }
+};
+
+const syncLockedLocalidadDisplay = () => {
+  if (!localidadLocked.value || !props.localidadResidencia) return;
+  const sentinel = resolveLocalidadSentinel(
+    props.estadoResidencia,
+    props.municipioResidencia,
+    props.localidadResidencia,
+  );
+  if (sentinel) {
+    localidadSelected.value = sentinel;
+    localidadQuery.value = `${sentinel.description} (${sentinel.code})`;
+  }
+};
+
 // Cargar municipios cuando se selecciona un estado
 const loadMunicipiosForEstado = async (estadoCode) => {
-  if (!estadoCode || estadoCode === 'NE' || estadoCode === '00') {
+  if (!estadoCode || isEntidadResidenciaEspecial(estadoCode)) {
     municipiosDisponibles.value = [];
     return;
   }
-  
+
   try {
-    console.log('[ResidenciaGeo] Cargando municipios para estado:', estadoCode);
     const { data } = await CatalogsAPI.getMunicipios(estadoCode);
-    console.log('[ResidenciaGeo] Municipios recibidos:', data?.length || 0);
-    municipiosDisponibles.value = data || [];
+    municipiosDisponibles.value = sortMunicipiosByCode(data || []);
   } catch (err) {
     console.error('Error al cargar municipios:', err);
     municipiosDisponibles.value = [];
   }
 };
 
-// Cargar todos los municipios del estado (para mostrar al hacer focus)
 const loadAllMunicipios = async () => {
-  if (!props.estadoResidencia) {
-    municipioResults.value = [];
-    return;
-  }
-  if (props.estadoResidencia === 'NE' || props.estadoResidencia === '00') {
-    municipioResults.value = [municipioSentinel];
-    municipioShowResults.value = true;
+  if (!props.estadoResidencia || municipioLocked.value) {
+    if (municipioLocked.value) {
+      municipioResults.value = [
+        resolveMunicipioSentinel(
+          props.estadoResidencia,
+          props.municipioResidencia,
+        ) || buildMunicipioSentinelOption(uiState.value.municipio.forcedValue),
+      ].filter(Boolean);
+    }
     return;
   }
 
   municipioLoading.value = true;
   try {
     const { data } = await CatalogsAPI.getMunicipios(props.estadoResidencia);
-    // Agregar centinela al inicio
-    municipioResults.value = [municipioSentinel, ...(data || [])];
+    municipioResults.value = [
+      ...buildMunicipioSentinels(),
+      ...sortMunicipiosByCode(data || []),
+    ];
     municipioShowResults.value = true;
   } catch (err) {
     console.error('Error al cargar municipios:', err);
@@ -117,29 +212,34 @@ const loadAllMunicipios = async () => {
   }
 };
 
-// Cargar todas las localidades del municipio (para mostrar al hacer focus)
 const loadAllLocalidades = async () => {
   if (!props.estadoResidencia || !props.municipioResidencia) {
     localidadResults.value = [];
     return;
   }
-  if (props.municipioResidencia === '000') {
-    localidadResults.value = [localidadSentinel];
-    localidadShowResults.value = true;
-    return;
-  }
-  if (props.estadoResidencia === 'NE' || props.estadoResidencia === '00') {
-    localidadResults.value = [];
+
+  if (localidadLocked.value) {
+    const munGeo = getGiisGeoForMunicipioResidencia(props.municipioResidencia);
+    const forcedCode =
+      uiState.value.localidad.forcedValue ||
+      munGeo?.localidad ||
+      props.localidadResidencia;
+    localidadResults.value = [buildLocalidadSentinelOption(forcedCode)];
+    localidadShowResults.value = false;
+    syncLockedLocalidadDisplay();
     return;
   }
 
-  console.log('[ResidenciaGeo] Cargando localidades para estado:', props.estadoResidencia, 'municipio:', props.municipioResidencia);
   localidadLoading.value = true;
   try {
-    const { data } = await CatalogsAPI.getLocalidades(props.estadoResidencia, props.municipioResidencia);
-    console.log('[ResidenciaGeo] Localidades recibidas:', data?.length || 0, data);
-    // Agregar centinela al inicio
-    localidadResults.value = [localidadSentinel, ...(data || [])];
+    const { data } = await CatalogsAPI.getLocalidades(
+      props.estadoResidencia,
+      props.municipioResidencia,
+    );
+    localidadResults.value = [
+      ...buildLocalidadSentinels(),
+      ...(data || []),
+    ];
     localidadShowResults.value = true;
   } catch (err) {
     console.error('Error al cargar localidades:', err);
@@ -149,51 +249,51 @@ const loadAllLocalidades = async () => {
   }
 };
 
-// Cargar localidades cuando se selecciona un municipio
 const loadLocalidadesForMunicipio = async (estadoCode, municipioCode) => {
-  if (!estadoCode || !municipioCode || estadoCode === 'NE' || estadoCode === '00' || municipioCode === '000') {
+  if (
+    !estadoCode ||
+    !municipioCode ||
+    isEntidadResidenciaEspecial(estadoCode) ||
+    isMunicipioGiisSentinel(municipioCode)
+  ) {
     return;
   }
-  
+
   try {
-    const { data } = await CatalogsAPI.getLocalidades(estadoCode, municipioCode);
-    // No necesitamos guardar esto porque usamos búsqueda
+    await CatalogsAPI.getLocalidades(estadoCode, municipioCode);
   } catch (err) {
     console.error('Error al cargar localidades:', err);
   }
 };
 
-// Buscar municipio
 const searchMunicipio = async (query) => {
-  if (!props.estadoResidencia) {
-    municipioResults.value = [];
-    return;
-  }
-  if (props.estadoResidencia === 'NE' || props.estadoResidencia === '00') {
-    municipioResults.value = [municipioSentinel];
-    municipioShowResults.value = true;
+  if (!props.estadoResidencia || municipioLocked.value) {
+    syncLockedMunicipioDisplay();
     return;
   }
 
   if (!query || query.length < 2) {
-    // Si no hay query, cargar todos los municipios del estado
     await loadAllMunicipios();
     return;
   }
 
   municipioLoading.value = true;
   try {
-    const { data } = await CatalogsAPI.searchMunicipios(props.estadoResidencia, query);
-    
-    // Agregar centinela si coincide
+    const { data } = await CatalogsAPI.searchMunicipios(
+      props.estadoResidencia,
+      query,
+    );
     const lowerQuery = query.toLowerCase();
-    const matchingSentinels = [];
-    if (municipioSentinel.code.includes(lowerQuery) || 
-        municipioSentinel.description.toLowerCase().includes(lowerQuery)) {
-      matchingSentinels.push(municipioSentinel);
-    }
-    
-    municipioResults.value = [...matchingSentinels, ...data];
+    const matchingSentinels = buildMunicipioSentinels().filter(
+      (sentinel) =>
+        sentinel.code.includes(lowerQuery) ||
+        sentinel.description.toLowerCase().includes(lowerQuery),
+    );
+
+    municipioResults.value = [
+      ...matchingSentinels,
+      ...sortMunicipiosByCode(data || []),
+    ];
     municipioShowResults.value = true;
   } catch (err) {
     console.error('Error al buscar municipios:', err);
@@ -203,41 +303,38 @@ const searchMunicipio = async (query) => {
   }
 };
 
-// Buscar localidad
 const searchLocalidad = async (query) => {
   if (!props.estadoResidencia || !props.municipioResidencia) {
     localidadResults.value = [];
     return;
   }
-  if (props.municipioResidencia === '000') {
-    localidadResults.value = [localidadSentinel];
-    localidadShowResults.value = true;
-    return;
-  }
-  if (props.estadoResidencia === 'NE' || props.estadoResidencia === '00') {
-    localidadResults.value = [];
+
+  if (localidadLocked.value) {
+    syncLockedLocalidadDisplay();
     return;
   }
 
   if (!query || query.length < 2) {
-    // Si no hay query, cargar todas las localidades del municipio
     await loadAllLocalidades();
     return;
   }
 
   localidadLoading.value = true;
   try {
-    const { data } = await CatalogsAPI.getLocalidades(props.estadoResidencia, props.municipioResidencia, query);
-    
-    // Agregar centinela si coincide
+    const { data } = await CatalogsAPI.getLocalidades(
+      props.estadoResidencia,
+      props.municipioResidencia,
+      query,
+    );
+
     const lowerQuery = query.toLowerCase();
-    const matchingSentinels = [];
-    if (localidadSentinel.code.includes(lowerQuery) || 
-        localidadSentinel.description.toLowerCase().includes(lowerQuery)) {
-      matchingSentinels.push(localidadSentinel);
-    }
-    
-    localidadResults.value = [...matchingSentinels, ...data];
+    const matchingSentinels = buildLocalidadSentinels().filter(
+      (sentinel) =>
+        sentinel.code.includes(lowerQuery) ||
+        sentinel.description.toLowerCase().includes(lowerQuery),
+    );
+
+    localidadResults.value = [...matchingSentinels, ...(data || [])];
     localidadShowResults.value = true;
   } catch (err) {
     console.error('Error al buscar localidades:', err);
@@ -265,7 +362,7 @@ const onEstadoChange = async (code) => {
   municipioHasBlurred.value = false;
   localidadHasBlurred.value = false;
 
-  if (!code || code === 'NE' || code === '00') {
+  if (!code || isEntidadResidenciaEspecial(code)) {
     municipiosDisponibles.value = [];
     return;
   }
@@ -275,11 +372,14 @@ const onEstadoChange = async (code) => {
 
 // Manejar focus en municipio
 const onMunicipioFocus = () => {
-  if (municipioEnabled.value) loadAllMunicipios();
+  if (!municipioEnabled.value || municipioLocked.value) return;
+  loadAllMunicipios();
 };
 
 // Manejar cambio de municipio
 const onMunicipioInput = (e) => {
+  if (municipioLocked.value) return;
+
   const val = e.target.value;
   municipioQuery.value = val;
   
@@ -307,32 +407,34 @@ const onMunicipioSelect = (result) => {
   municipioShowResults.value = false;
   municipioResults.value = [];
   
-  // Extraer solo el código del municipio (si viene en formato "25-001", extraer "001")
-  const municipioCode = result.code.includes('-') ? result.code.split('-')[1] : result.code;
+  const municipioCode = result.code.includes('-')
+    ? result.code.split('-')[1]
+    : result.code;
   emit('update:municipioResidencia', municipioCode);
-  municipioHasBlurred.value = true; // Marcar como blurred cuando se selecciona
-  
-  // Limpiar localidad
+  municipioHasBlurred.value = true;
+
   emit('update:localidadResidencia', '');
   localidadQuery.value = '';
   localidadSelected.value = null;
   localidadResults.value = [];
   localidadShowResults.value = false;
-  localidadHasBlurred.value = false; // Resetear blurred de localidad
-  
-  // Cargar localidades si no es centinela
-  if (municipioCode !== '000' && props.estadoResidencia) {
+  localidadHasBlurred.value = false;
+
+  if (!isMunicipioGiisSentinel(municipioCode) && props.estadoResidencia) {
     loadLocalidadesForMunicipio(props.estadoResidencia, municipioCode);
   }
 };
 
 // Manejar focus en localidad
 const onLocalidadFocus = () => {
-  if (localidadEnabled.value) loadAllLocalidades();
+  if (!localidadEnabled.value || localidadLocked.value) return;
+  loadAllLocalidades();
 };
 
 // Manejar cambio de localidad
 const onLocalidadInput = (e) => {
+  if (localidadLocked.value) return;
+
   const val = e.target.value;
   localidadQuery.value = val;
   
@@ -375,39 +477,44 @@ watch(() => props.estadoResidencia, async (newEstado) => {
   municipioShowResults.value = false;
   localidadShowResults.value = false;
 
-  if (newEstado && newEstado !== 'NE' && newEstado !== '00') {
+  if (newEstado && !isEntidadResidenciaEspecial(newEstado)) {
     await loadMunicipiosForEstado(newEstado);
   } else {
     municipiosDisponibles.value = [];
   }
 }, { immediate: true });
 
-// Computed para habilitar/deshabilitar campos
-const municipioEnabled = computed(() => {
-  return !!props.estadoResidencia;
-});
+const municipioEnabled = computed(() => !!props.estadoResidencia);
 
-const localidadEnabled = computed(() => {
-  return municipioEnabled.value && !!props.municipioResidencia;
-});
+const localidadEnabled = computed(
+  () => municipioEnabled.value && !!props.municipioResidencia,
+);
 
-// Cargar valores iniciales para municipio y localidad
 const loadInitialMunicipio = async () => {
-  if (props.municipioResidencia && props.estadoResidencia && municipioEnabled.value) {
+  if (
+    props.municipioResidencia &&
+    props.estadoResidencia &&
+    municipioEnabled.value
+  ) {
     try {
-      if (props.municipioResidencia === '000') {
-        municipioSelected.value = municipioSentinel;
-        municipioQuery.value = `${municipioSentinel.description} (${municipioSentinel.code})`;
+      if (isMunicipioGiisSentinel(props.municipioResidencia)) {
+        const sentinel = resolveMunicipioSentinel(
+          props.estadoResidencia,
+          props.municipioResidencia,
+        );
+        if (sentinel) {
+          municipioSelected.value = sentinel;
+          municipioQuery.value = `${sentinel.description} (${sentinel.code})`;
+        }
       } else {
         await loadMunicipiosForEstado(props.estadoResidencia);
-        // Buscar el municipio por código, considerando que puede venir solo el código del municipio
-        const municipio = municipiosDisponibles.value.find(m => {
+        const municipio = municipiosDisponibles.value.find((m) => {
           const munCode = m.code.includes('-') ? m.code.split('-')[1] : m.code;
           return munCode === props.municipioResidencia;
         });
         if (municipio) {
           municipioSelected.value = municipio;
-          municipioQuery.value = `${municipio.description} (${municipio.code})`;
+          municipioQuery.value = `${municipio.description} (${getMunicipioDisplayCode(municipio)})`;
         }
       }
     } catch (err) {
@@ -419,23 +526,31 @@ const loadInitialMunicipio = async () => {
 const loadInitialLocalidad = async () => {
   if (props.localidadResidencia && localidadEnabled.value) {
     try {
-      if (props.localidadResidencia === '0000') {
-        localidadSelected.value = localidadSentinel;
-        localidadQuery.value = `${localidadSentinel.description} (${localidadSentinel.code})`;
+      if (isLocalidadGiisSentinel(props.localidadResidencia)) {
+        const sentinel = resolveLocalidadSentinel(
+          props.estadoResidencia,
+          props.municipioResidencia,
+          props.localidadResidencia,
+        );
+        if (sentinel) {
+          localidadSelected.value = sentinel;
+          localidadQuery.value = `${sentinel.description} (${sentinel.code})`;
+        }
       } else {
-        const { data } = await CatalogsAPI.getLocalidades(props.estadoResidencia, props.municipioResidencia);
-        // Buscar la localidad por código, puede venir en formato "25-001-0001" o solo "0001"
-        const localidad = data?.find(l => {
+        const { data } = await CatalogsAPI.getLocalidades(
+          props.estadoResidencia,
+          props.municipioResidencia,
+        );
+        const localidad = data?.find((l) => {
           let locCode = l.code;
           if (l.code && l.code.includes('-')) {
-            const parts = l.code.split('-');
-            locCode = parts[parts.length - 1];
+            locCode = l.code.split('-').pop();
           }
           return locCode === props.localidadResidencia;
         });
         if (localidad) {
           localidadSelected.value = localidad;
-          localidadQuery.value = `${localidad.description} (${localidad.code})`;
+          localidadQuery.value = `${localidad.description} (${localidad.code.split('-').pop()})`;
         }
       }
     } catch (err) {
@@ -443,6 +558,20 @@ const loadInitialLocalidad = async () => {
     }
   }
 };
+
+watch(
+  () => [
+    props.paisResidencia,
+    props.estadoResidencia,
+    props.municipioResidencia,
+    props.localidadResidencia,
+  ],
+  () => {
+    syncLockedMunicipioDisplay();
+    syncLockedLocalidadDisplay();
+  },
+  { immediate: true },
+);
 
 // Cargar valores iniciales cuando cambian los props
 watch([() => props.municipioResidencia, () => props.estadoResidencia], () => {
@@ -479,20 +608,23 @@ const hideLocalidadResults = () => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 dark-mode-input-surface">
-    <!-- Estado Residencia -->
-    <div>
-      <EstadoAutocomplete
-        :model-value="estadoResidencia"
-        @update:model-value="onEstadoChange"
-        label="Entidad Residencia"
-        placeholder="Buscar por nombre del estado"
-        :required="required"
-      />
-    </div>
+  <div class="space-y-4 dark-mode-input-surface">
+    <!-- Fila 1: Entidad + Municipio -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <EstadoAutocomplete
+          :model-value="estadoResidencia"
+          @update:model-value="onEstadoChange"
+          label="Entidad Residencia"
+          placeholder="Buscar por nombre del estado"
+          :required="required"
+          mode="residencia"
+          :pais-residencia="paisResidencia"
+        />
+      </div>
 
-    <!-- Municipio Residencia -->
-    <div class="relative">
+      <!-- Municipio Residencia -->
+      <div class="relative">
       <label class="block font-medium text-lg text-gray-700 mb-1">
         Municipio Residencia
         <span v-if="required" class="text-red-500">*</span>
@@ -508,7 +640,7 @@ const hideLocalidadResults = () => {
           class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="Buscar Municipio"
           v-bind="municipioInputAttrs"
-          :disabled="!municipioEnabled"
+          :disabled="!municipioEnabled || municipioLocked"
         />
         
         <div v-if="municipioLoading" class="absolute right-3 top-3.5">
@@ -530,7 +662,7 @@ const hideLocalidadResults = () => {
         >
           <div class="flex justify-between items-start">
             <div>
-              <span class="font-bold text-emerald-700 text-sm">{{ result.code }}</span>
+              <span class="font-bold text-emerald-700 text-sm">{{ getMunicipioDisplayCode(result) }}</span>
               <p class="text-gray-800 font-medium leading-tight mt-0.5">{{ result.description }}</p>
             </div>
           </div>
@@ -549,12 +681,15 @@ const hideLocalidadResults = () => {
 
       <p class="text-xs text-gray-500 mt-1">
         <i class="fas fa-info-circle mr-1"></i>
-        Código INEGI de 3 dígitos. Use "000" si no está disponible.
+        Código GIIS de 3 dígitos (999, 998 o catálogo INEGI). Ordenados por código numérico.
       </p>
+      </div>
     </div>
 
-    <!-- Localidad Residencia -->
-    <div class="relative">
+    <!-- Fila 2: Localidad + País -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Localidad Residencia -->
+      <div class="relative">
       <label class="block font-medium text-lg text-gray-700 mb-1">
         Localidad Residencia
         <span v-if="required" class="text-red-500">*</span>
@@ -570,7 +705,7 @@ const hideLocalidadResults = () => {
           class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="Buscar por código o nombre de la localidad..."
           v-bind="localidadInputAttrs"
-          :disabled="!localidadEnabled"
+          :disabled="!localidadEnabled || localidadLocked"
         />
         
         <div v-if="localidadLoading" class="absolute right-3 top-3.5">
@@ -611,8 +746,13 @@ const hideLocalidadResults = () => {
 
       <p class="text-xs text-gray-500 mt-1">
         <i class="fas fa-info-circle mr-1"></i>
-        Código INEGI de 4 dígitos. Use "0000" si no está disponible.
+        Código GIIS de 4 dígitos (9999, 9998 o catálogo INEGI). Ordenados por código numérico.
       </p>
+      </div>
+
+      <div v-if="$slots.pais">
+        <slot name="pais" />
+      </div>
     </div>
   </div>
 </template>

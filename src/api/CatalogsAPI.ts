@@ -127,25 +127,6 @@ export default {
     },
 
     /**
-     * Search nacionalidades by query string (code or description)
-     * @param query Search term
-     * @param limit Optional result limit (default 50, max 100)
-     */
-    searchNacionalidades(query: string, limit?: number) {
-        return api.get(`/catalogs/nacionalidades/search`, {
-            params: { q: query, limit }
-        });
-    },
-
-    /**
-     * Get a single nacionalidad entry by its code
-     * @param code The nacionalidad code (e.g., 'MEX')
-     */
-    getNacionalidadByCode(code: string) {
-        return api.get(`/catalogs/nacionalidades/${code}`);
-    },
-
-    /**
      * Search paises (cat_pais) by query string (CATALOG_KEY or description)
      * @param query Search term
      * @param limit Optional result limit (default 50, max 100)

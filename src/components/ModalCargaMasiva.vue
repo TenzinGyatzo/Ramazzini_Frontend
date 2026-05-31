@@ -305,7 +305,7 @@ const testResumenMixto = async () => {
             <li>• El sistema intentará normalizar los datos para que sean consistentes con el sistema.</li>
             <li>• Las columnas "Número de empleado", "NSS" y "Teléfono" son opcionales. De no requerirse, dejarlas vacías.</li>
             <li>• El NSS debe tener exactamente 11 dígitos.</li>
-            <li>• <strong>Proveedores en México (NOM-024):</strong> Las columnas de identificación geográfica (Entidad Nacimiento, Nacionalidad, Entidad Residencia, Municipio Residencia, Localidad Residencia) son obligatorias y deben usar códigos INEGI.</li>
+            <li>• <strong>Proveedores en México (NOM-024):</strong> Las columnas de identificación geográfica (Entidad Nacimiento, País de nacimiento, Entidad Residencia, Municipio Residencia, Localidad Residencia) son obligatorias y deben usar códigos INEGI/cat_pais.</li>
             <li>• Guarda los cambios y sube el archivo completo.</li>
             <li>• Los trabajadores se importarán automáticamente al sistema.</li>
             <li>• Si requieres asistencia, no dudes en contactarnos vía <span class="text-emerald-600">WhatsApp</span> al número <span class="text-emerald-600">(668) 170 28 50</span>.</li>
