@@ -18,7 +18,7 @@ const categoriaCircunferenciaCintura = ref('Bajo Riesgo');
 
 onMounted(() => {
   // Establecer valores por defecto según el sexo
-  const esHombre = trabajadores.currentTrabajador.sexo === 'Masculino';
+  const esHombre = trabajadores.currentTrabajador.sexo !== 'Femenino';
   const pesoPorDefecto = esHombre ? 80 : 70;
   const alturaPorDefecto = esHombre ? 1.7 : 1.6;
   const circunferenciaPorDefecto = esHombre ? 93 : 79;

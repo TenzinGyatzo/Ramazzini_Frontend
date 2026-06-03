@@ -124,7 +124,7 @@ onMounted(() => {
   } else if (docTieneMediciones) {
     hydrateFromSom(docSom);
   } else {
-    const esHombre = trabajadores.currentTrabajador?.sexo === 'Masculino';
+    const esHombre = trabajadores.currentTrabajador?.sexo !== 'Femenino';
     peso.value = esHombre ? 80 : 70;
     altura.value = esHombre ? 1.7 : 1.6;
     circunferenciaCintura.value = esHombre ? 93 : 79;

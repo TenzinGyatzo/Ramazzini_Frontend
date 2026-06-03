@@ -95,7 +95,7 @@ const filtrosConfig: FiltroConfigItem[] = [
     'Últimos 3 meses', 'Últimos 6 meses', 'Este año', 'Año anterior'
   ]},
   { id: 'puesto', groupId: 'general', label: 'Puesto', opciones: () => puestosUnicos.value },
-  { id: 'sexo', groupId: 'rapidos', label: 'Sexo', opciones: ['Masculino', 'Femenino'] },
+  { id: 'sexo', groupId: 'rapidos', label: 'Sexo', opciones: ['Masculino', 'Femenino', 'Intersexual'] },
   { id: 'aptitud', groupId: 'general', label: 'Aptitud', opciones: [
     'Apto Sin Restricciones', 'Apto Con Precaución', 'Apto Con Restricciones',
     'No Apto', 'Evaluación No Completada', '-'

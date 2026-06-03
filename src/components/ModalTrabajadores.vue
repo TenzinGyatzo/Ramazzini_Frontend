@@ -756,7 +756,7 @@ const cancelarTransferencia = () => {
                   :disabled="isCurpConformationReadOnly"
                   :value="trabajadores.currentTrabajador?.segundoApellido || ''" />
               <FormKit type="select" name="sexo" placeholder="-Seleccione un sexo-"
-                :options="['Masculino', 'Femenino']" validation="required"
+                :options="['Masculino', 'Femenino', 'Intersexual']" validation="required"
                 :validation-messages="{ required: 'Este campo es obligatorio' }"
                 :disabled="isCurpConformationReadOnly"
                 :value="trabajadores.currentTrabajador?.sexo || ''">
@@ -990,7 +990,8 @@ const cancelarTransferencia = () => {
               <!-- Sexo -->
               <div v-if="trabajadores.currentTrabajador?.sexo" class="flex items-center gap-2">
                 <i v-if="trabajadores.currentTrabajador?.sexo === 'Masculino'" class="fas fa-mars text-sky-600"></i>
-                <i v-else class="fas fa-venus text-rose-600"></i>
+                <i v-else-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="fas fa-venus text-rose-600"></i>
+                <span v-else class="text-violet-600 text-base leading-none" aria-hidden="true">⚥</span>
                 <span class="text-emerald-700">{{ trabajadores.currentTrabajador.sexo }}</span>
               </div>
               

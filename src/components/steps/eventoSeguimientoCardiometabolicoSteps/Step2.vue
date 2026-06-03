@@ -72,7 +72,7 @@ function asegurarSomatometriaMinimaParaImc() {
   const fd = formDataEventoSeguimientoCardiometabolico;
   if (!fd.somatometria) fd.somatometria = {};
   const s = fd.somatometria;
-  const esHombre = trabajadores.currentTrabajador?.sexo === 'Masculino';
+  const esHombre = trabajadores.currentTrabajador?.sexo !== 'Femenino';
   const ef = obtenerSomatometriaUltimaExploracionFisica(
     documentos.documentsByYear,
     trabajadores.currentTrabajador?._id,

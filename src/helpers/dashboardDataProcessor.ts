@@ -36,8 +36,10 @@ const gruposEtarios = [
         resultado[grupo] = { Masculino: 0, Femenino: 0 };
       }
   
-      if (sexo === 'Masculino') resultado[grupo].Masculino++;
-      else if (sexo === 'Femenino') resultado[grupo].Femenino++;
+      if (sexo === 'Femenino') resultado[grupo].Femenino++;
+      else if (sexo === 'Masculino' || sexo === 'Intersexual') {
+        resultado[grupo].Masculino++;
+      }
     });
   
     return resultado;
@@ -435,10 +437,10 @@ export function contarPorSexo(data: { sexo: string }[]): { Masculino: number, Fe
   let femenino = 0;
 
   for (const item of data) {
-    if (item.sexo === 'Masculino') {
-      masculino++;
-    } else if (item.sexo === 'Femenino') {
+    if (item.sexo === 'Femenino') {
       femenino++;
+    } else if (item.sexo === 'Masculino' || item.sexo === 'Intersexual') {
+      masculino++;
     }
   }
 

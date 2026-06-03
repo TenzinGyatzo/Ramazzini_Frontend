@@ -1002,10 +1002,11 @@ const añoMasReciente = computed(() => {
                       <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
                         <div v-if="trabajadores.currentTrabajador?.sexo" class="flex items-center gap-2 group relative">
                           <i v-if="trabajadores.currentTrabajador?.sexo === 'Masculino'" class="fas fa-mars text-sky-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
-                          <i v-else class="fas fa-venus text-rose-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
+                          <i v-else-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="fas fa-venus text-rose-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
+                          <span v-else class="text-violet-600 text-sm sm:text-md lg:text-lg xl:text-xl leading-none" aria-hidden="true">⚥</span>
                            <span class="text-item text-sm sm:text-base text-gray-600">
                              <span class="block lg:hidden">{{ trabajadores.currentTrabajador.sexo }}</span>
-                             <span class="hidden lg:block 2xl:hidden">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'M' : 'F' }}</span>
+                             <span class="hidden lg:block 2xl:hidden">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'M' : trabajadores.currentTrabajador.sexo === 'Femenino' ? 'F' : 'I' }}</span>
                              <span class="hidden 2xl:block">{{ trabajadores.currentTrabajador.sexo }}</span>
                            </span>
                         </div>
