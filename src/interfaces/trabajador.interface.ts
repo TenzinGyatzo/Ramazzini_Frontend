@@ -28,4 +28,5 @@ export interface Trabajador {
   createdAt: string;
   updatedAt: string;
   fechaTransferencia?: string;
+  folio?: string;
 }

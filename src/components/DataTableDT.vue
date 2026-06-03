@@ -27,6 +27,7 @@ const mostrarVigenciasLocal = ref(props.mostrarVigencias !== false);
 
 const tablaRef = ref<HTMLElement | null>(null);
 let dataTableInstance: any = null;
+let folioTooltipEl: HTMLDivElement | null = null;
 
 const router = useRouter();
 const empresas = useEmpresasStore();
@@ -50,6 +51,11 @@ const emit = defineEmits<{
 }>();
 
 onMounted(() => {
+  $(document).on('mouseenter', '.folio-tooltip', function () {
+    showFolioTooltip(this as HTMLElement);
+  });
+  $(document).on('mouseleave', '.folio-tooltip', hideFolioTooltip);
+
   // Usar requestAnimationFrame para asegurar que el DOM esté completamente renderizado
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -57,6 +63,46 @@ onMounted(() => {
     });
   });
 });
+
+function getFolioTooltipEl(): HTMLDivElement {
+  if (!folioTooltipEl) {
+    folioTooltipEl = document.createElement('div');
+    folioTooltipEl.className = 'folio-tooltip-floating';
+    folioTooltipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(folioTooltipEl);
+  }
+  return folioTooltipEl;
+}
+
+function showFolioTooltip(target: HTMLElement) {
+  const folio = target.getAttribute('data-folio');
+  if (!folio) return;
+
+  const tip = getFolioTooltipEl();
+  tip.textContent = `Folio UM: ${folio}`;
+  tip.style.display = 'block';
+  tip.style.visibility = 'hidden';
+  tip.style.opacity = '0';
+
+  const rect = target.getBoundingClientRect();
+  const tipHeight = tip.offsetHeight;
+  const tipWidth = tip.offsetWidth;
+  let top = rect.top - tipHeight + 1;
+  if (top < 8) {
+    top = rect.bottom + 6;
+  }
+
+  tip.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - tipWidth - 8))}px`;
+  tip.style.top = `${top}px`;
+  tip.style.visibility = 'visible';
+  tip.style.opacity = '1';
+}
+
+function hideFolioTooltip() {
+  if (!folioTooltipEl) return;
+  folioTooltipEl.style.opacity = '0';
+  folioTooltipEl.style.display = 'none';
+}
 
 function inicializarDataTable() {
   if (!dataTableInstance) {
@@ -141,8 +187,19 @@ function inicializarDataTable() {
             if (primerApellido) nombreCompleto += primerApellido;
             if (segundoApellido) nombreCompleto += segundoApellido ? ' ' + segundoApellido : '';
             if (nombre) nombreCompleto += nombreCompleto ? ' ' + nombre : nombre;
-            
-            return nombreCompleto || 'Sin nombre';
+
+            const displayName = nombreCompleto || 'Sin nombre';
+            const folio = (row.folio || '').trim();
+
+            if (type === 'filter' || type === 'search') {
+              return folio ? `${displayName} ${folio}` : displayName;
+            }
+
+            if (type === 'display' && folio) {
+              return `<span class="folio-tooltip" data-folio="${folio}">${displayName}</span>`;
+            }
+
+            return displayName;
           }
         }, // 3
         { data: 'aptitudResumen.aptitudPuesto', title: 'Aptitud', defaultContent: '-' }, // 4 (antes era 32)
@@ -570,6 +627,12 @@ function inicializarDataTable() {
 }
 
 onBeforeUnmount(() => {
+  $(document).off('mouseenter', '.folio-tooltip');
+  $(document).off('mouseleave', '.folio-tooltip');
+  hideFolioTooltip();
+  folioTooltipEl?.remove();
+  folioTooltipEl = null;
+
   $(document).off('click', '.btn-rt');
   $(document).off('click', '.btn-riesgos');
   $(document).off('click', '.btn-editar');
@@ -1318,4 +1381,28 @@ table.dataTable td:nth-child(6) .flex {
   transform: translateY(0);
 }
 
+</style>
+
+<style>
+.folio-tooltip {
+  cursor: default;
+}
+
+.folio-tooltip-floating {
+  position: fixed;
+  z-index: 10000;
+  display: none;
+  max-width: 280px;
+  padding: 3px 8px;
+  font-size: 0.7rem;
+  line-height: 1.1rem;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
 </style>
