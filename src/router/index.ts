@@ -5,6 +5,7 @@ import axios from "axios";
 import { useUserStore } from "@/stores/user";
 import { usePostHog } from "../composables/usePostHog";
 import { useUserPermissions } from "@/composables/useUserPermissions";
+import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,6 +70,16 @@ const router = createRouter({
           name: "manage-assignments",
           component: () => import("../views/ManageAssignmentsView.vue"),
           meta: { requiresAuth: true, requiresPrincipal: true }
+        },
+        {
+          path: "/admin/catalogos",
+          name: "admin-catalogos",
+          component: () => import("../views/CatalogosAdminView.vue"),
+          meta: {
+            requiresAuth: true,
+            requiresPrincipal: true,
+            requiresCatalogAdmin: true,
+          },
         },
         {
           path: "/productividad-usuarios",
@@ -207,6 +218,7 @@ router.beforeEach((to, from) => {
     const requiresAuth = to.meta.requiresAuth; // Verifica solo la ruta actual
     const requiresAdmin = to.meta.requiresAdmin; // Verifica solo
     const requiresPrincipal = to.meta.requiresPrincipal; // Verifica solo
+    const requiresCatalogAdmin = to.meta.requiresCatalogAdmin;
     const userStore = useUserStore();
 
     try {
@@ -230,6 +242,11 @@ router.beforeEach((to, from) => {
         (!user || (user.role !== "Principal" && user.role !== "Administrador"))
       ) {
         console.warn("Acceso denegado: solo usuarios Principal o Administrador pueden gestionar asignaciones");
+        return next({ name: "inicio" });
+      }
+
+      if (requiresCatalogAdmin && !catalogAdminEnabled) {
+        console.warn("Acceso denegado: administración de catálogos no habilitada");
         return next({ name: "inicio" });
       }
 

@@ -13,6 +13,7 @@ import {
   applyAppTheme,
   readInitialDarkPreference,
 } from "@/theme/appTheme";
+import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
 
 const user = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -1089,6 +1090,19 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-shield-halved text-indigo-500 group-hover:text-indigo-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Gestionar Permisos</span>
+              </div>
+            </RouterLink>
+            <RouterLink
+              v-if="
+                catalogAdminEnabled &&
+                (user.user?.role === 'Principal' || user.user?.role === 'Administrador')
+              "
+              :to="{ name: 'admin-catalogos' }"
+              @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-teal-50 hover:to-teal-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-teal-300 group">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-book text-teal-500 group-hover:text-teal-600 transition-colors duration-200"></i>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Catálogos NOM-024</span>
               </div>
             </RouterLink>
             <RouterLink :to="{ name: 'manage-assignments' }" @click="isMenuOpen = false"

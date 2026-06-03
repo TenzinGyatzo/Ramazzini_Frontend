@@ -50,14 +50,14 @@ export interface CLUESEntry extends CatalogEntry {
  * Catalog type identifiers
  */
 export enum CatalogType {
-  // Base catalogs (9) - Required
+  // Base catalogs (8) - Required
   CIE10 = 'diagnosticos',
   CLUES = 'establecimientos_salud',
   ENTIDADES_FEDERATIVAS = 'enitades_federativas',
   MUNICIPIOS = 'municipios',
   LOCALIDADES = 'localidades',
   CODIGOS_POSTALES = 'codigos_postales',
-  FORMACION_ACADEMICA = 'formacion_academica',
+  ESCOLARIDAD = 'escolaridad',
 
   // GIIS-B019 Catalogs (3) - Optional
   TIPO_PERSONAL = 'cat_tipo_personal',
