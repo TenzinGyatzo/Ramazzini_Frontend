@@ -1,8 +1,7 @@
 <script setup>
-import { ref, reactive, inject, onMounted, watch } from "vue";
-import { useRouter, RouterLink } from "vue-router";
+import { ref, reactive, inject } from "vue";
+import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
-import ModalSuscripcion from "@/components/suscripciones/ModalSuscripcion.vue";
 import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
 import CountrySelect from "@/components/CountrySelect.vue";
 
@@ -10,21 +9,8 @@ const router = useRouter();
 const userStore = useUserStore();
 const toast = inject("toast");
 const registroExitoso = ref(false);
-const showSubscriptionModal = ref(false);
 const showPassword = ref(false);
 
-const user = ref(
-  JSON.parse(localStorage.getItem("user")) || null // Recuperar usuario guardado o establecer null si no existe
-);
-
-const proveedorSalud = ref(
-  JSON.parse(localStorage.getItem("proveedorSalud")) || null // Recuperar usuario guardado o establecer null si no existe
-);
-
-const maxUsuariosPermitidos = proveedorSalud.value?.maxUsuariosPermitidos;
-let usuariosCreados = 0;
-
-// Opciones de roles disponibles
 const roles = [
   { value: "Médico", label: "Médico" },
   { value: "Enfermero/a", label: "Enfermero/a" },
@@ -32,26 +18,17 @@ const roles = [
   { value: "Técnico Evaluador", label: "Técnico Evaluador" },
 ];
 
-onMounted(async () => {
-  const resultado = await userStore.fetchUsersByProveedorId(
-    user.value.idProveedorSalud
-  );
-  usuariosCreados = resultado.data.length;
-});
-
 const formDataUser = reactive({
   username: "",
   email: "",
   phone: "",
-  country: "MX", // Default to Mexico
+  country: "MX",
   password: "",
   role: "",
-  idProveedorSalud: user.value.idProveedorSalud,
 });
 
 const handleSubmit = async () => {
   try {
-    // Crear el payload con todos los campos necesarios
     const userPayload = {
       username: formDataUser.username,
       email: formDataUser.email,
@@ -59,10 +36,9 @@ const handleSubmit = async () => {
       country: formDataUser.country,
       password: formDataUser.password,
       role: formDataUser.role,
-      idProveedorSalud: formDataUser.idProveedorSalud,
     };
 
-    const resultado = await userStore.registerUser(userPayload);
+    const resultado = await userStore.inviteUser(userPayload);
 
     // Verificar si el registro fue exitoso
     if (!resultado.success) {
@@ -92,13 +68,6 @@ const volver = () => {
 </script>
 
 <template>
-  <Transition appear name="fade">
-    <ModalSuscripcion
-      v-if="showSubscriptionModal"
-      @closeModal="showSubscriptionModal = false"
-    />
-  </Transition>
-
   <!-- Formulario Paso 1 -->
   <Transition appear mode="out-in" name="slide-up">
     <div

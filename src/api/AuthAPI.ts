@@ -18,6 +18,10 @@ export default {
     return auth.post("/users/register", userData);
   },
 
+  inviteUser(userData) {
+    return auth.post("/users/invite", userData);
+  },
+
   verifyAccount(token) {
     return auth.get(`/users/verify/${token}`);
   },

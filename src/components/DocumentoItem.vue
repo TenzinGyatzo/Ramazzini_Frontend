@@ -1,5 +1,11 @@
 <script setup>
 import axios from 'axios';
+import { authRequestConfig } from '@/lib/attachAuthToken';
+import {
+    buildClinicalFileUrl,
+    fetchClinicalFileBlob,
+    headClinicalFile,
+} from '@/lib/clinicalFiles';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref } from 'vue';
 import { VPdfViewer, Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
@@ -247,6 +253,17 @@ const editarDocumento = (documentoId, documentoTipo) => {
 // URL base donde se almacenan los documentos
 const BASE_URL = import.meta.env.VITE_API_URL;
 
+const joinClinicalPath = (ruta, nombreArchivo) =>
+    `${ruta}/${nombreArchivo}`.replace(/\/+/g, '/');
+
+const extractRelativeClinicalPath = (urlOrPath) => {
+    if (!urlOrPath || urlOrPath.startsWith('blob:')) return '';
+    const pathStr = urlOrPath.startsWith('http')
+        ? new URL(urlOrPath).pathname
+        : urlOrPath;
+    return pathStr.replace(/^\//, '').replace(/\/+/g, '/');
+};
+
 // Función dinámica para descargar un archivo basado en el documento// Función dinámica para descargar un archivo basado en el documento
 const descargarArchivo = async (documento, tipoDocumento) => {
     try {
@@ -285,11 +302,10 @@ const descargarArchivo = async (documento, tipoDocumento) => {
 
 const descargarYGuardarArchivo = async (ruta, nombreArchivo, nombreArchivoReal) => {
     try {
-        // Usar el nombre real del archivo para construir la URL (el que existe en el servidor)
-        const urlCompleta = `${BASE_URL}/${ruta}/${nombreArchivoReal}`;
-
-        const response = await axios.get(encodeURI(urlCompleta), {
+        const relativePath = joinClinicalPath(ruta, nombreArchivoReal);
+        const response = await axios.get(buildClinicalFileUrl(relativePath), {
             responseType: 'blob',
+            ...authRequestConfig(),
         });
 
         const blob = response.data;
@@ -324,11 +340,27 @@ const showPdfViewer = ref(false);
 const pdfUrl = ref('');
 /** Blob URL del PDF en memoria (src del visor); evita 2ª descarga HTTP. */
 let pdfBlobUrl = null;
+let hoverBlobUrl = null;
+let imageBlobUrl = null;
 
 function revokePdfBlobUrl() {
     if (pdfBlobUrl) {
         URL.revokeObjectURL(pdfBlobUrl);
         pdfBlobUrl = null;
+    }
+}
+
+function revokeHoverBlobUrl() {
+    if (hoverBlobUrl) {
+        URL.revokeObjectURL(hoverBlobUrl);
+        hoverBlobUrl = null;
+    }
+}
+
+function revokeImageBlobUrl() {
+    if (imageBlobUrl) {
+        URL.revokeObjectURL(imageBlobUrl);
+        imageBlobUrl = null;
     }
 }
 
@@ -431,12 +463,8 @@ const localization = {
 
 const buildPdfUrl = (ruta, nombrePDF, updatedAt = null, options = {}) => {
     const { useCacheBuster = true, fallbackToNow = false } = options;
-    // Sanear la ruta y el nombre del archivo para eliminar dobles diagonales
-    const sanitizedRuta = ruta.replace(/\/+/g, '/');
-    const sanitizedNombrePDF = nombrePDF.replace(/\/+/g, '/');
-
-    // Generar la URL de forma explícita usando `new URL`
-    const fullPath = new URL(`${sanitizedRuta}/${sanitizedNombrePDF}`, import.meta.env.VITE_API_URL);
+    const relativePath = joinClinicalPath(ruta, nombrePDF);
+    const fullPath = new URL(buildClinicalFileUrl(relativePath));
 
     if (useCacheBuster) {
         const cacheBuster = updatedAt || (fallbackToNow ? Date.now() : null);
@@ -450,9 +478,13 @@ const buildPdfUrl = (ruta, nombrePDF, updatedAt = null, options = {}) => {
 
 const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
     const fullPath = buildPdfUrl(ruta, nombrePDF, updatedAt, { useCacheBuster: true, fallbackToNow: true });
+    const relativePath = joinClinicalPath(ruta, nombrePDF);
 
     try {
-        const response = await axios.get(fullPath, { responseType: 'blob' }); // Solicitud GET
+        const response = await axios.get(buildClinicalFileUrl(relativePath), {
+            responseType: 'blob',
+            ...authRequestConfig(),
+        });
 
         const contentType = response.headers['content-type'];
 
@@ -938,6 +970,7 @@ const closeHoverPreview = () => {
     hoverPreview.value.src = '';
     hoverPreview.value.pdfAvailable = true;
     hoverPreview.value.isRegenerable = false;
+    revokeHoverBlobUrl();
     // Limpiamos el cache para asegurar que la próxima vez verifique el estado real
     if (hoverPreviewKey.value) {
         previewCache.delete(hoverPreviewKey.value);
@@ -1029,30 +1062,58 @@ const schedulePdfHover = (event, ruta, nombrePDF, updatedAt, title) => {
     clearTimeout(hideTimer);
     clearTimeout(hoverTimer);
 
-    hoverTimer = setTimeout(() => {
-        // Determinar si el documento es regenerable (no es documento externo)
+    hoverTimer = setTimeout(async () => {
         const tipoSinEspacios = props.documentoTipo.toLowerCase().replace(/\s+/g, '');
         const isRegenerable = tipoSinEspacios !== 'documentoexterno';
-        
-        const src = buildPdfUrl(ruta, nombrePDF, updatedAt, { useCacheBuster: true, fallbackToNow: false });
-        // Incluimos pdfDisponible en la key para forzar el refresco cuando cambie el estado
+        const relativePath = joinClinicalPath(ruta, nombrePDF);
         const key = `pdf:${ruta}:${nombrePDF}:${updatedAt || 'no-ts'}:${pdfDisponible.value}`;
         const target = event?.currentTarget || event?.target || event;
-        openHoverPreview(target || event, { 
-            key, 
-            type: 'pdf', 
-            src, 
-            title: title || 'Documento PDF',
-            pdfAvailable: pdfDisponible.value,
-            isRegenerable: isRegenerable,
-            openAction: () => {
-                if (pdfDisponible.value) {
-                    abrirPdf(ruta, nombrePDF, updatedAt);
-                } else if (isRegenerable) {
+
+        if (!pdfDisponible.value && isRegenerable) {
+            openHoverPreview(target || event, {
+                key,
+                type: 'pdf',
+                src: '',
+                title: title || 'Documento PDF',
+                pdfAvailable: false,
+                isRegenerable: true,
+                openAction: () => {
                     mostrarModalPdfEliminado.value = true;
-                }
-            }
-        });
+                },
+            });
+            return;
+        }
+
+        try {
+            const blob = await fetchClinicalFileBlob(relativePath);
+            revokeHoverBlobUrl();
+            hoverBlobUrl = URL.createObjectURL(blob);
+            openHoverPreview(target || event, {
+                key,
+                type: 'pdf',
+                src: hoverBlobUrl,
+                title: title || 'Documento PDF',
+                pdfAvailable: true,
+                isRegenerable,
+                openAction: () => {
+                    abrirPdf(ruta, nombrePDF, updatedAt);
+                },
+            });
+        } catch {
+            openHoverPreview(target || event, {
+                key,
+                type: 'pdf',
+                src: '',
+                title: title || 'Documento PDF',
+                pdfAvailable: false,
+                isRegenerable,
+                openAction: () => {
+                    if (isRegenerable) {
+                        mostrarModalPdfEliminado.value = true;
+                    }
+                },
+            });
+        }
     }, HOVER_DELAY);
 };
 
@@ -1061,38 +1122,58 @@ const scheduleDocumentoExternoHover = (event, documento) => {
     clearTimeout(hideTimer);
     clearTimeout(hoverTimer);
 
-    hoverTimer = setTimeout(() => {
+    hoverTimer = setTimeout(async () => {
         const extension = obtenerExtensionArchivo(documento);
         const isImage = ['png', 'jpg', 'jpeg'].includes(extension);
         const keyBase = documento._id || documento.id || documento.rutaDocumento || documento.nombreDocumento;
         const target = event?.currentTarget || event?.target || event;
         if (isImage) {
-            const src = construirRutaCompleta(documento);
-            if (!src) return;
-            openHoverPreview(target || event, {
-                key: `img:${keyBase}`,
-                type: 'image',
-                src,
-                title: documento.nombreDocumento || 'Imagen'
-            });
+            const rutaCompleta = construirRutaCompleta(documento);
+            if (!rutaCompleta) return;
+            try {
+                const relativePath = extractRelativeClinicalPath(rutaCompleta);
+                const blob = await fetchClinicalFileBlob(relativePath);
+                revokeHoverBlobUrl();
+                hoverBlobUrl = URL.createObjectURL(blob);
+                openHoverPreview(target || event, {
+                    key: `img:${keyBase}`,
+                    type: 'image',
+                    src: hoverBlobUrl,
+                    title: documento.nombreDocumento || 'Imagen',
+                });
+            } catch {
+                // omitir preview si no se puede cargar
+            }
         } else {
             if (!documento.rutaDocumento || !documento.nombreDocumento || !documento.fechaDocumento) return;
             const updatedAt = documento.updatedAt ? new Date(documento.updatedAt).getTime() : null;
             const nombrePDF = `${documento.nombreDocumento} ${convertirFechaISOaDDMMYYYY(documento.fechaDocumento)}.pdf`;
-            const src = buildPdfUrl(documento.rutaDocumento, nombrePDF, updatedAt, { useCacheBuster: true, fallbackToNow: false });
-            openHoverPreview(target || event, {
-                key: `pdf:${keyBase}:${updatedAt || 'no-ts'}:${pdfDisponible.value}`,
-                type: 'pdf',
-                src,
-                title: documento.nombreDocumento || 'Documento PDF',
-                pdfAvailable: pdfDisponible.value,
-                isRegenerable: false,
-                openAction: () => {
-                    if (pdfDisponible.value) {
+            const relativePath = joinClinicalPath(documento.rutaDocumento, nombrePDF);
+            try {
+                const blob = await fetchClinicalFileBlob(relativePath);
+                revokeHoverBlobUrl();
+                hoverBlobUrl = URL.createObjectURL(blob);
+                openHoverPreview(target || event, {
+                    key: `pdf:${keyBase}:${updatedAt || 'no-ts'}:${pdfDisponible.value}`,
+                    type: 'pdf',
+                    src: hoverBlobUrl,
+                    title: documento.nombreDocumento || 'Documento PDF',
+                    pdfAvailable: true,
+                    isRegenerable: false,
+                    openAction: () => {
                         abrirPdf(documento.rutaDocumento, nombrePDF, updatedAt);
-                    }
-                }
-            });
+                    },
+                });
+            } catch {
+                openHoverPreview(target || event, {
+                    key: `pdf:${keyBase}:${updatedAt || 'no-ts'}:false`,
+                    type: 'pdf',
+                    src: '',
+                    title: documento.nombreDocumento || 'Documento PDF',
+                    pdfAvailable: false,
+                    isRegenerable: false,
+                });
+            }
         }
     }, HOVER_DELAY);
 };
@@ -1130,6 +1211,8 @@ onMounted(() => {
 onUnmounted(() => {
     clearTimeout(hoverTimer);
     clearTimeout(hideTimer);
+    revokeHoverBlobUrl();
+    revokeImageBlobUrl();
 });
 
 // Estado para el pan (desplazamiento) de la imagen
@@ -1141,11 +1224,14 @@ const lastImagePosition = ref({ x: 0, y: 0 });
 // Función para abrir el visor de imágenes
 const abrirImagen = async (rutaCompleta) => {
     try {
-        const response = await axios.head(rutaCompleta);
+        const relativePath = extractRelativeClinicalPath(rutaCompleta);
+        const blob = await fetchClinicalFileBlob(relativePath);
 
-        if (response.status === 200 && response.headers['content-type'].startsWith('image/')) {
-            imageUrl.value = rutaCompleta;
-            currentImageUrl.value = rutaCompleta; // Guarda la URL actual para descargar
+        if (blob.type.startsWith('image/')) {
+            revokeImageBlobUrl();
+            imageBlobUrl = URL.createObjectURL(blob);
+            imageUrl.value = imageBlobUrl;
+            currentImageUrl.value = relativePath;
             showImageViewer.value = true;
             
             // Agregar event listeners globales para el arrastre
@@ -1173,6 +1259,7 @@ const abrirImagen = async (rutaCompleta) => {
 const cerrarImagen = () => {
     showImageViewer.value = false;
     imageUrl.value = '';
+    revokeImageBlobUrl();
     imageZoom.value = 0.8; // Mantiene el zoom reducido al cerrar
     rotationAngle.value = 0; // Resetea la rotación al cerrar
     // Resetear posición de la imagen
@@ -1399,7 +1486,11 @@ const descargarPdfActual = async () => {
                 await descargarArchivo(documento, tipoDocumento);
             } else {
                 // Fallback al método original si no se puede identificar el documento
-                const response = await axios.get(currentPdfUrl.value, { responseType: 'blob' });
+                const relativePath = extractRelativeClinicalPath(currentPdfUrl.value);
+                const response = await axios.get(buildClinicalFileUrl(relativePath), {
+                    responseType: 'blob',
+                    ...authRequestConfig(),
+                });
                 const blob = response.data;
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
@@ -1417,8 +1508,9 @@ const descargarPdfActual = async () => {
 };
 
 const imprimirPdfActual = () => {
-    if (currentPdfUrl.value) {
-        const printWindow = window.open(currentPdfUrl.value, '_blank');
+    const urlToPrint = pdfUrl.value || pdfBlobUrl;
+    if (urlToPrint) {
+        const printWindow = window.open(urlToPrint, '_blank');
         if (printWindow) {
             printWindow.onload = () => {
                 printWindow.print();
@@ -1430,13 +1522,14 @@ const imprimirPdfActual = () => {
 const descargarImagenActual = async () => {
     if (currentImageUrl.value) {
         try {
-            // Para documentos externos que son imágenes, usar el nombre original
+            const relativePath = extractRelativeClinicalPath(currentImageUrl.value);
+            const blob = relativePath
+                ? await fetchClinicalFileBlob(relativePath)
+                : await (await fetch(currentImageUrl.value)).blob();
+
             if (props.documentoExterno && props.documentoTipo.toLowerCase().replace(/\s+/g, '') === 'documentoexterno') {
                 const extension = obtenerExtensionArchivo(props.documentoExterno);
                 const nombreArchivo = `${props.documentoExterno.nombreDocumento} ${convertirFechaISOaDDMMYYYY(props.documentoExterno.fechaDocumento)}.${extension}`;
-                
-                const response = await axios.get(currentImageUrl.value, { responseType: 'blob' });
-                const blob = response.data;
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = nombreArchivo;
@@ -1445,9 +1538,6 @@ const descargarImagenActual = async () => {
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
             } else {
-                // Fallback para otros casos
-                const response = await axios.get(currentImageUrl.value, { responseType: 'blob' });
-                const blob = response.data;
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = 'imagen.jpg';
@@ -2040,9 +2130,11 @@ const verificarDisponibilidadPDF = async () => {
 
     try {
       verificandoPDF.value = true;
-      const rutaCompleta = construirRutaCompleta(props.documentoExterno);
-      const response = await axios.head(rutaCompleta);
-      pdfDisponible.value = response.status === 200;
+      const nombreArchivo = `${props.documentoExterno.nombreDocumento} ${convertirFechaISOaDDMMYYYY(props.documentoExterno.fechaDocumento)}${props.documentoExterno.extension}`;
+      const relativePath = props.documentoExterno.rutaDocumento.endsWith(nombreArchivo)
+        ? props.documentoExterno.rutaDocumento
+        : joinClinicalPath(props.documentoExterno.rutaDocumento, nombreArchivo);
+      pdfDisponible.value = await headClinicalFile(relativePath);
     } catch (error) {
       pdfDisponible.value = false;
     } finally {
@@ -2060,11 +2152,10 @@ const verificarDisponibilidadPDF = async () => {
 
   try {
     verificandoPDF.value = true;
-    const rutaCompleta = `${ruta}/${nombre}`.replace(/\/+/g, '/');
-    const urlCompleta = new URL(rutaCompleta, import.meta.env.VITE_API_URL).href;
-    
-    const response = await axios.head(urlCompleta);
-    pdfDisponible.value = response.status === 200 && response.headers['content-type'] === 'application/pdf';
+    const rutaCompleta = joinClinicalPath(ruta, nombre);
+    pdfDisponible.value = await headClinicalFile(rutaCompleta, {
+      contentType: 'application/pdf',
+    });
   } catch (error) {
     pdfDisponible.value = false;
   } finally {

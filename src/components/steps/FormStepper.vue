@@ -1,5 +1,6 @@
 <script>
 import axios from 'axios';
+import { authRequestConfig } from '@/lib/attachAuthToken';
 import { ref, onMounted, onUnmounted, inject, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -1270,12 +1271,12 @@ export default {
           const graficaBase64 = formData.formDataAudiometria.graficaAudiometria;
 
           if (graficaBase64) {
-            await axios.post(apiEndpoint, { grafica: graficaBase64 });
+            await axios.post(apiEndpoint, { grafica: graficaBase64 }, authRequestConfig());
           } else {
-            await axios.get(apiEndpoint);
+            await axios.get(apiEndpoint, authRequestConfig());
           }
         } else {
-          await axios.get(apiEndpoint);
+          await axios.get(apiEndpoint, authRequestConfig());
         }
 
         formData.resetFormData();

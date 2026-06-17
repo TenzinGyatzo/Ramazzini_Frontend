@@ -89,6 +89,15 @@ export const useUserStore = defineStore("user", () => {
         }
     }
 
+    async function inviteUser(userData: Omit<User, '_id' | 'idProveedorSalud'>) {
+        try {
+            const resultado = await AuthAPI.inviteUser(userData);
+            return { success: true, data: resultado };
+        } catch (error) {
+            return { success: false, error };
+        }
+    }
+
     async function fetchUsersByProveedorId(idProveedorSalud: string) {
         try {
             const { data } = await AuthAPI.getUsersByProveedorId(idProveedorSalud);
@@ -135,6 +144,7 @@ export const useUserStore = defineStore("user", () => {
         fetchUser,
         logout,
         registerUser,
+        inviteUser,
         fetchUsersByProveedorId,
         loadUserAssignments,
         hasAccessToEmpresa,

@@ -52,17 +52,19 @@ const router = createRouter({
           path: "/registrar-usuario",
           name: "add-user",
           component: () => import("../views/AddUserView.vue"),
+          meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
           path: "/eliminar-usuarios",
           name: "remove-users",
           component: () => import("../views/RemoveUsersView.vue"),
+          meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
           path: "/gestionar-permisos",
           name: "manage-permissions",
           component: () => import("../views/ManagePermissionsView.vue"),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
           path: "/gestionar-asignaciones",
@@ -74,6 +76,7 @@ const router = createRouter({
           path: "/productividad-usuarios",
           name: "user-productivity",
           component: () => import("../views/UserProductivityView.vue"),
+          meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
           path: "perfil-proveedor",

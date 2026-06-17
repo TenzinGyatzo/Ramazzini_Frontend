@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import axios from 'axios';
+import { authRequestConfig } from '@/lib/attachAuthToken';
+import { headClinicalFile } from '@/lib/clinicalFiles';
 import { inject, ref, onMounted, onUnmounted } from 'vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
 import { exportarGraficaAltaResolucion } from '@/helpers/exportChartImage';
@@ -35,19 +37,17 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleKeyDown);
 });
 
-const esperarQuePDFEsteDisponible = async (url: string, maxIntentos = 10, intervalo = 300) => {
+const esperarQuePDFEsteDisponible = async (relativePath: string, maxIntentos = 10, intervalo = 300) => {
   for (let intento = 0; intento < maxIntentos; intento++) {
-    try {
-      const response = await axios.head(url); // HEAD es más eficiente que GET
-      if (response.status === 200 && response.headers['content-type'] === 'application/pdf') {
-        return true; // ¡PDF listo!
-      }
-    } catch (e) {
-      // No está listo aún
+    const disponible = await headClinicalFile(relativePath, {
+      contentType: 'application/pdf',
+    });
+    if (disponible) {
+      return true;
     }
-    await new Promise(resolve => setTimeout(resolve, intervalo)); // Espera antes del siguiente intento
+    await new Promise(resolve => setTimeout(resolve, intervalo));
   }
-  return false; // No se pudo obtener tras varios intentos
+  return false;
 };
 
 // Función para generar la gráfica de audiometría desde los datos del documento
@@ -253,21 +253,20 @@ const regenerar = async () => {
         const graficaBase64 = await generarGraficaAudiometria(datosAudiometria);
         
         // Enviar la gráfica al backend usando POST
-        await axios.post(apiEndpoint, { grafica: graficaBase64 });
+        await axios.post(apiEndpoint, { grafica: graficaBase64 }, authRequestConfig());
       } catch (error) {
         console.error('Error al obtener datos de audiometría:', error);
         // Si falla, intentar sin gráfica
-        await axios.get(apiEndpoint);
+        await axios.get(apiEndpoint, authRequestConfig());
       }
     } else {
       // Para otros tipos de documento, usar GET normal
-      await axios.get(apiEndpoint);
+      await axios.get(apiEndpoint, authRequestConfig());
     }
 
     const { ruta, nombre } = props.getPdfMetadata();
     const rutaCompleta = `${ruta}/${nombre}`.replace(/\/+/g, '/');
-    const urlCompleta = new URL(rutaCompleta, import.meta.env.VITE_API_URL).href;
-    const disponible = await esperarQuePDFEsteDisponible(urlCompleta);
+    const disponible = await esperarQuePDFEsteDisponible(rutaCompleta);
     if (!disponible) throw new Error("El PDF aún no está disponible.");
 
     toast.open({ message: "El PDF ha sido regenerado correctamente." });
