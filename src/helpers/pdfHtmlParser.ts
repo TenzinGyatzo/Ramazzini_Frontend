@@ -1,4 +1,5 @@
 import type { Content } from 'pdfmake/interfaces';
+import { sanitizeRichHtml } from './sanitizeRichHtml';
 
 /**
  * Verifica si el contenido HTML está realmente vacío
@@ -63,6 +64,8 @@ export function htmlToPdfMakeContent(html: string): Content[] {
   if (!html || html.trim() === '') {
     return [];
   }
+
+  html = sanitizeRichHtml(html);
 
   // Crear un elemento temporal para parsear el HTML
   const tempDiv = document.createElement('div');

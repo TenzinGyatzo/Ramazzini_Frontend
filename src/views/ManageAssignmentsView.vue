@@ -50,9 +50,7 @@ const loading = ref(false);
 const saving = ref(false);
 const hasUnsavedChanges = ref(false);
 
-const user = ref(
-  JSON.parse(localStorage.getItem("user") || 'null')
-);
+const user = computed(() => userStore.user);
 
 // Filtrar usuarios para mostrar solo Médicos, Enfermeros/as, Administrativos y Técnicos Evaluadores
 const usuariosFiltrados = computed(() => {

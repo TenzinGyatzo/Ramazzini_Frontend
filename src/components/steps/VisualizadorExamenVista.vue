@@ -4,6 +4,7 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 
@@ -11,19 +12,13 @@ const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const steps = useStepsStore();
+const proveedorSaludStore = useProveedorSaludStore();
 
 const goToStep = (stepNumber) => {
   steps.goToStep(stepNumber);
 };
 
-// Obtener el país del proveedor de salud
-const proveedorSalud = computed(() => {
-  try {
-    return JSON.parse(localStorage.getItem('proveedorSalud')) || null;
-  } catch {
-    return null;
-  }
-});
+const proveedorSalud = computed(() => proveedorSaludStore.proveedorSalud);
 
 const paisProveedor = computed(() => proveedorSalud.value?.pais || '');
 const esGuatemala = computed(() => paisProveedor.value === 'GT');

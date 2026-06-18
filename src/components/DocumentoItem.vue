@@ -28,7 +28,7 @@ import { ESTADO_CONTROL_CONDICION_OPTS, GRADO_OBESIDAD_OPTS } from '@/helpers/ev
 import ModalPdfEliminado from './ModalPdfEliminado.vue';
 import DocumentHoverPreview from './DocumentHoverPreview.vue';
 import { useUserPermissions } from '@/composables/useUserPermissions';
-import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
+import { useUserStore } from '@/stores/user';
 
 const router = useRouter();
 
@@ -107,7 +107,8 @@ const finDeSuscripcion = proveedorSaludStore.proveedorSalud?.finDeSuscripcion
   ? new Date(proveedorSaludStore.proveedorSalud.finDeSuscripcion)
   : null;
 
-const user = ref(JSON.parse(localStorage.getItem('user') || '{}'));
+const userStore = useUserStore();
+const user = computed(() => userStore.user ?? {});
 
 // Composables de permisos
 const { canCreateDocument } = useUserPermissions();

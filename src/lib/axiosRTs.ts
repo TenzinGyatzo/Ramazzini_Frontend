@@ -1,10 +1,5 @@
-import axios from "axios";
-import { attachAuthToken } from "./attachAuthToken";
+import { createAxiosClient } from './createAxiosClient';
 
-const rt = attachAuthToken(
-  axios.create({
-    baseURL: `${import.meta.env.VITE_API_URL}/riesgos-trabajo`,
-  }),
-);
+const rt = createAxiosClient(`${import.meta.env.VITE_API_URL}/riesgos-trabajo`);
 
 export default rt;

@@ -12,6 +12,7 @@ import ModalEliminar from '@/components/ModalEliminar.vue';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useUserStore } from '@/stores/user';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 
@@ -22,6 +23,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const riesgosTrabajo = useRiesgoTrabajoStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const userStore = useUserStore();
 const route = useRoute();
 const router = useRouter();
 const { canManageCentrosTrabajo, canAccessDashboardSalud, canAccessRiesgosTrabajo } = useUserPermissions();
@@ -160,10 +162,9 @@ const obtenerDatosEmpresa = async () => {
 onMounted(async () => {
   const empresaId = String(route.params.idEmpresa);
   
-  // Cargar proveedor de salud desde localStorage si está disponible
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  if (user?.idProveedorSalud) {
-    await proveedorSaludStore.loadProveedorSalud(user.idProveedorSalud);
+  const idProveedorSalud = userStore.user?.idProveedorSalud;
+  if (idProveedorSalud) {
+    await proveedorSaludStore.loadProveedorSalud(idProveedorSalud);
   } else {
     console.error('No se encontró idProveedorSalud en el usuario');
   }

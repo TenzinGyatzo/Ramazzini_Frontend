@@ -2,11 +2,13 @@
 import { ref, inject, watchEffect, computed } from 'vue';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useUserStore } from '@/stores/user';
 import { useRouter, RouterLink } from 'vue-router';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 const tecnicoFirmante = useTecnicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const userStore = useUserStore();
 const router = useRouter();
 
 const firmaPreview = ref(null);
@@ -95,12 +97,10 @@ const handleDrop = (event) => {
   }
 };
 
-const user = ref(JSON.parse(localStorage.getItem('user')) || null);
-
 const handleSubmit = async (data) => {
   const formData = new FormData();
   Object.entries(data).forEach(([key, value]) => { if (value !== undefined && value !== null && value !== "") { formData.append(key, value); } });
-  formData.append('idUser', user.value._id);
+  formData.append('idUser', userStore.user?._id);
   if (firmaArchivo.value) { formData.append('firma', firmaArchivo.value); }
   try {
     let response;

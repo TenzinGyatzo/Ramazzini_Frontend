@@ -52,21 +52,16 @@ export default {
     },
 
     transferirTrabajador(empresaId: string, centroTrabajoId: string, trabajadorId: string, nuevoCentroId: string) {
-        const token = localStorage.getItem('AUTH_TOKEN');
-        const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
         return api.patch(`/${empresaId}/${centroTrabajoId}/transferir-trabajador/${trabajadorId}`, {
             nuevoCentroId
-        }, { headers });
+        });
     },
 
     getCentrosDisponiblesTransferencia(empresaId: string, centroTrabajoId: string, excluirCentroId?: string, idProveedorSalud?: string) {
         const params: any = {};
         if (excluirCentroId) params.excluirCentroId = excluirCentroId;
         if (idProveedorSalud) params.idProveedorSalud = idProveedorSalud;
-        // Adjuntar token explícitamente para evitar 401 en este endpoint
-        const token = localStorage.getItem('AUTH_TOKEN');
-        const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
-        return api.get(`/${empresaId}/${centroTrabajoId}/centros-disponibles-transferencia`, { params, headers });
+        return api.get(`/${empresaId}/${centroTrabajoId}/centros-disponibles-transferencia`, { params });
     }
 
 }

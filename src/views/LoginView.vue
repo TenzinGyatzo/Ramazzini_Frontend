@@ -13,10 +13,7 @@ const showPassword = ref(false);
 const handleLogin = async () => {
   try {
     const response = await AuthAPI.login(email.value, password.value);
-    const token = response.data.token;
     if (response.status === 200 || response.status === 201) {
-      // Manejar autenticación y redirección
-      localStorage.setItem("AUTH_TOKEN", token);
       router.push("/");
     }
   } catch (error) {

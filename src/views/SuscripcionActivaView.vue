@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, inject } from 'vue';
+import { storeToRefs } from 'pinia';
 import { usePagosStore } from '@/stores/pagosStore';
 import { useUserStore } from '@/stores/user';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -11,6 +12,7 @@ import ModalCancelarSuscripcion from '@/components/suscripciones/ModalCancelarSu
 
 const pagosStore = usePagosStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const { proveedorSalud } = storeToRefs(proveedorSaludStore);
 const router = useRouter();
 
 const toast = inject('toast');
@@ -23,10 +25,6 @@ const historiasDelMes = ref(0);
 // const trabajadoresCreados = ref(0);
 const showCancelModal = ref(false);
 const isCancelling = ref(false); // Estado para manejar la carga
-
-const proveedorSalud = ref(
-  JSON.parse(localStorage.getItem('proveedorSalud') || 'null') || {}
-);
 
 // Función para obtener toda la información necesaria en una sola llamada
 const fetchData = async () => {

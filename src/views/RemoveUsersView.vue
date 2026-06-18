@@ -14,14 +14,10 @@ const showDeleteModal = ref(false);
 const selectedUserId = ref(null);
 const selectedUserUsername = ref(null);
 
-const user = ref(
-  JSON.parse(localStorage.getItem("user")) || null
-)
-
 onMounted(async () => {
-  const resultado = await userStore.fetchUsersByProveedorId(
-    user.value.idProveedorSalud
-  );
+  const idProveedorSalud = userStore.user?.idProveedorSalud;
+  if (!idProveedorSalud) return;
+  const resultado = await userStore.fetchUsersByProveedorId(idProveedorSalud);
   usuarios.value = resultado.data;
 });
 

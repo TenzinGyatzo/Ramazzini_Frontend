@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch, inject, computed } from 'vue';
+import { onUnmounted, ref, watch, inject, computed, watchEffect } from 'vue';
 import EmpresaItem from '@/components/EmpresaItem.vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import GreenButton from '@/components/GreenButton.vue';
@@ -127,28 +127,28 @@ onUnmounted( async () => {
   }
 });
 
-const proveedor = ref(
-    JSON.parse(localStorage.getItem('proveedorSalud') || 'null') // Recuperar usuario guardado o establecer null si no existe
-);
+const proveedor = computed(() => proveedorSalud.proveedorSalud);
 
-const periodoDePruebaFinalizado = proveedor.value?.periodoDePruebaFinalizado; // true or false
-const estadoSuscripcion = proveedor.value?.estadoSuscripcion; // authorized, inactive, cancelled
-const finDeSuscripcion = proveedor.value?.finDeSuscripcion
-  ? new Date(proveedor.value.finDeSuscripcion)
-  : null;
+watchEffect(() => {
+  const p = proveedor.value;
+  if (!p) return;
+  const periodoDePruebaFinalizado = p.periodoDePruebaFinalizado;
+  const estadoSuscripcion = p.estadoSuscripcion;
+  const finDeSuscripcion = p.finDeSuscripcion ? new Date(p.finDeSuscripcion) : null;
 
-if (periodoDePruebaFinalizado && estadoSuscripcion === 'cancelled' && finDeSuscripcion && new Date(finDeSuscripcion) > new Date()) {
-  toast.open({
-    message: `Aún tienes acceso hasta el ${finDeSuscripcion.toLocaleDateString()}.`,
-    type: 'success',
-    onClick: () => router.push({ name: 'subscription' }),
-  });
-  toast.open({
-    message: `Haz clic aquí para renovar tu suscripción.`,
-    type: 'info',
-    onClick: () => router.push({ name: 'subscription' }),
-  });
-}
+  if (periodoDePruebaFinalizado && estadoSuscripcion === 'cancelled' && finDeSuscripcion && finDeSuscripcion > new Date()) {
+    toast.open({
+      message: `Aún tienes acceso hasta el ${finDeSuscripcion.toLocaleDateString()}.`,
+      type: 'success',
+      onClick: () => router.push({ name: 'subscription' }),
+    });
+    toast.open({
+      message: `Haz clic aquí para renovar tu suscripción.`,
+      type: 'info',
+      onClick: () => router.push({ name: 'subscription' }),
+    });
+  }
+});
 </script>
 
 <template>

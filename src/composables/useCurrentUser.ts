@@ -14,21 +14,7 @@ export function useCurrentUser() {
   const isAuthenticated = computed(() => !!userStore.user?._id);
 
   // Función para obtener el ID del usuario, con fallback a localStorage si es necesario
-  const getCurrentUserId = () => {
-    // Primero intentar obtener del store
-    if (userStore.user?._id) {
-      return userStore.user._id;
-    }
-
-    // Fallback a localStorage
-    try {
-      const userFromStorage = JSON.parse(localStorage.getItem('user') || 'null');
-      return userFromStorage?._id || null;
-    } catch (error) {
-      console.error('Error al obtener usuario de localStorage:', error);
-      return null;
-    }
-  };
+  const getCurrentUserId = () => userStore.user?._id || null;
 
   // Función para cargar el usuario si no está disponible
   const ensureUserLoaded = async () => {

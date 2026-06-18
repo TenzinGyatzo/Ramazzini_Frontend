@@ -1,10 +1,5 @@
-import axios from "axios";
-import { attachAuthToken } from "./attachAuthToken";
+import { createAxiosClient } from './createAxiosClient';
 
-const api = attachAuthToken(
-  axios.create({
-    baseURL: `${import.meta.env.VITE_API_URL}/api`,
-  }),
-);
+const api = createAxiosClient(`${import.meta.env.VITE_API_URL}/api`);
 
 export default api;

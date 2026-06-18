@@ -1,13 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useRouter, useRoute } from 'vue-router';
-// import { useUserStore } from '@/stores/user';
-// import { useEmpresasStore } from '@/stores/empresas';	
+import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
-// const userStore = useUserStore();
-// const empresas = useEmpresasStore();
+const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const { proveedorSalud } = storeToRefs(proveedorSaludStore);
+const user = computed(() => userStore.user);
 const router = useRouter();
 const route = useRoute();
 
@@ -17,14 +18,7 @@ const closeModal = () => {
   emit('closeModal');
 };
 
-const user = ref(
-  JSON.parse(localStorage.getItem('user')) || null // Recuperar usuario guardado o establecer null si no existe
-);
 
-// const usuariosCreados = ref(0);
-// const empresasCreadas = ref(0);
-// const empresaConMasTrabajadores = ref(""); // Nombre de la empresa con más trabajadores
-// const trabajadoresCreados = ref(0);
 const historiasDelMes = ref(0);
 const vistaActual = ref(route.name);
   
@@ -33,16 +27,14 @@ onMounted(async () => {
     historiasDelMes.value = await proveedorSaludStore.getHistoriasClinicasDelMes();
 });
 
-const proveedorSalud = ref(
-  JSON.parse(localStorage.getItem('proveedorSalud') || 'null') // Recuperar usuario guardado o establecer null si no existe
+const maxHistoriasPermitidasAlMes = computed(() => proveedorSalud.value?.maxHistoriasPermitidasAlMes);
+const periodoDePruebaFinalizado = computed(() => proveedorSalud.value?.periodoDePruebaFinalizado);
+const estadoSuscripcion = computed(() => proveedorSalud.value?.estadoSuscripcion);
+const finDeSuscripcion = computed(() =>
+  proveedorSalud.value?.finDeSuscripcion
+    ? new Date(proveedorSalud.value.finDeSuscripcion)
+    : null
 );
-
-const maxHistoriasPermitidasAlMes = proveedorSalud.value?.maxHistoriasPermitidasAlMes;
-const periodoDePruebaFinalizado = proveedorSalud.value?.periodoDePruebaFinalizado; // true or false
-const estadoSuscripcion = proveedorSalud.value?.estadoSuscripcion; // authorized, inactive, cancelled
-const finDeSuscripcion = proveedorSalud.value?.finDeSuscripcion
-? new Date(proveedorSalud.value.finDeSuscripcion)
-: null;
 
 const modalContent = computed(() => {
   

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
+import { useUserStore } from '@/stores/user';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useInformePersonalizacionStore } from '@/stores/informePersonalizacion';
 import { clasificarPorEdadYSexo, ordenarPorGrupoEtario, contarPorCategoriaIMC, etiquetasEnfermedades, contarEnfermedadesCronicas, etiquetasAntecedentesReferidos, contarAntecedentesReferidos, etiquetasVisionSinCorreccion, calcularRequierenLentes, contarVisionSinCorreccion, calcularVistaCorregida, calcularDaltonismo, etiquetasAptitudPuesto, etiquetasAptitudPuestoTabla, contarPorAptitudPuesto, calcularCircunferenciaCintura, contarConsultasUltimos30Dias, etiquetasAgentesRiesgo, contarAgentesRiesgo, contarPorSexo, categoriasTensionArterialOrdenadas, contarPorCategoriaTensionArterial, calcularProporcionAudiometria, distribuirResultadosHBC, calcularProporcionResultadosClinicos, distribuirResultadosClinicos, distribuirResultadosClinicosPorCategoriasMultiples, mapToCategoriasMultiples, ordenTipoAlteracionEkg, ordenTipoAlteracionEspirometria, ordenTipoAlteracionRayosX, ordenTipoAlteracionAnalisisLaboratorio, etiquetasTipoAlteracionEkg, etiquetasTipoAlteracionEspirometria, etiquetasTipoAlteracionRayosX, etiquetasTipoAlteracionAnalisisLaboratorio, calcularAnilloTamizajeBipolarTEA, calcularAnilloTamizajeProdromalCPB, calcularBarrasFranjasTamizajeTLP, tablaFranjasTamizajeTLP } from '@/helpers/dashboardDataProcessor';
@@ -22,6 +23,7 @@ const empresasStore = useEmpresasStore();
 const centrosTrabajoStore = useCentrosTrabajoStore();
 const trabajadoresStore = useTrabajadoresStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
+const userStore = useUserStore();
 const informePersonalizacionStore = useInformePersonalizacionStore();
 
 const centrosTrabajo = ref([]);
@@ -205,7 +207,7 @@ const cargarDatos = async (empresaId, inicio, fin) => {
   ]);
 
   // Cargar médico firmante usando el ID del usuario logueado
-  const user = JSON.parse(localStorage.getItem('user')) || null;
+  const user = userStore.user;
   if (user?._id) {
     await medicoFirmanteStore.loadMedicoFirmante(user._id);
   }

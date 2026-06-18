@@ -6,6 +6,7 @@ import 'datatables.net-buttons-dt';
 import 'datatables.net-fixedcolumns-dt';
 import $ from 'jquery';
 import { convertirFechaISOaDDMMYYYY, calcularEdad, calcularAntiguedad, determinarVistaCorregida } from '@/helpers/dates';
+import { escapeHtml } from '@/helpers/escapeHtml';
 import { useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -142,7 +143,11 @@ function inicializarDataTable() {
             if (segundoApellido) nombreCompleto += segundoApellido ? ' ' + segundoApellido : '';
             if (nombre) nombreCompleto += nombreCompleto ? ' ' + nombre : nombre;
             
-            return nombreCompleto || 'Sin nombre';
+            const texto = nombreCompleto || 'Sin nombre';
+            if (type === 'filter' || type === 'sort' || type === 'type') {
+              return texto;
+            }
+            return escapeHtml(texto);
           }
         }, // 3
         { data: 'aptitudResumen.aptitudPuesto', title: 'Aptitud', defaultContent: '-' }, // 4 (antes era 32)
@@ -163,11 +168,11 @@ function inicializarDataTable() {
                         
             return `
               <div class="flex flex-col items-start gap-1">
-                <span class="font-medium ${color}">${estado}</span>
-                ${estado === 'Vigente' ? `<span class="text-xs text-gray-600">${diasRestantes} días restantes</span>` : 
-                  estado === 'Por vencer' ? `<span class="text-xs text-gray-600">${diasRestantes} días restantes</span>` :
-                  estado === 'Vencido' ? `<span class="text-xs text-gray-500">${Math.max(0, diasTranscurridos - 365)} días vencido</span>` :
-                  `<span class="text-xs text-gray-500">${estado}</span>`}
+                <span class="font-medium ${color}">${escapeHtml(estado)}</span>
+                ${estado === 'Vigente' ? `<span class="text-xs text-gray-600">${escapeHtml(String(diasRestantes))} días restantes</span>` : 
+                  estado === 'Por vencer' ? `<span class="text-xs text-gray-600">${escapeHtml(String(diasRestantes))} días restantes</span>` :
+                  estado === 'Vencido' ? `<span class="text-xs text-gray-500">${escapeHtml(String(Math.max(0, diasTranscurridos - 365)))} días vencido</span>` :
+                  `<span class="text-xs text-gray-500">${escapeHtml(estado)}</span>`}
               </div>
             `;
           },
@@ -297,7 +302,7 @@ function inicializarDataTable() {
           render: function (_data, type, row) {
             const etiqueta = row.resultadosClinicosResumen?.espirometria?.etiqueta ?? '-';
             if (type === 'filter') return etiqueta;
-            return etiqueta;
+            return escapeHtml(etiqueta);
           },
           defaultContent: '-'
         }, // 36
@@ -307,7 +312,7 @@ function inicializarDataTable() {
           render: function (_data, type, row) {
             const etiqueta = row.resultadosClinicosResumen?.ekg?.etiqueta ?? '-';
             if (type === 'filter') return etiqueta;
-            return etiqueta;
+            return escapeHtml(etiqueta);
           },
           defaultContent: '-'
         }, // 37
@@ -317,7 +322,7 @@ function inicializarDataTable() {
           render: function (_data, type, row) {
             const etiqueta = row.resultadosClinicosResumen?.rayosX?.etiqueta ?? '-';
             if (type === 'filter') return etiqueta;
-            return etiqueta;
+            return escapeHtml(etiqueta);
           },
           defaultContent: '-'
         }, // 38
@@ -327,11 +332,15 @@ function inicializarDataTable() {
           render: function (_data, type, row) {
             const etiqueta = row.resultadosClinicosResumen?.analisisLaboratorio?.etiqueta ?? '-';
             if (type === 'filter') return etiqueta;
-            return etiqueta;
+            return escapeHtml(etiqueta);
           },
           defaultContent: '-'
         }, // 39
-        { data: 'agentesRiesgoActuales', title: 'Agentes Riesgo', render: d => Array.isArray(d) ? d.join(', ') : '-', defaultContent: '-' }, // 40
+        { data: 'agentesRiesgoActuales', title: 'Agentes Riesgo', render: (d, type) => {
+          const texto = Array.isArray(d) ? d.join(', ') : '-';
+          if (type === 'filter' || type === 'sort' || type === 'type') return texto;
+          return escapeHtml(texto);
+        }, defaultContent: '-' }, // 40
         { data: 'consultaResumen.fechaNotaMedica', title: 'Consultas', render: d => d ? 'Si' : 'No', defaultContent: '-' }, // 41
         { data: 'estadoLaboral', title: 'Estado Laboral' }, // 42
         {
@@ -351,7 +360,7 @@ function inicializarDataTable() {
               <a
                 href="${url}"
                 class="btn-expediente bg-emerald-600 text-white rounded-full px-2 py-1 transition-all duration-300 ease-out transform hover:scale-105 shadow-md hover:shadow-lg hover:bg-emerald-500 hover:text-white hover:border-emerald-700 border-2 border-emerald-600 inline-block"
-                data-id="${row._id}"
+                data-id="${escapeHtml(row._id)}"
               >
                 Expediente
               </a>
@@ -372,7 +381,7 @@ function inicializarDataTable() {
                 <button
                   type="button"
                   class="btn-rt group absolute right-25 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-violet-200 hover:bg-violet-300 text-violet-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-violet-200 hover:border-violet-100 whitespace-nowrap flex items-center overflow-hidden text-sm"
-                  data-id="${row._id}"
+                  data-id="${escapeHtml(row._id)}"
                 >
                   RT
                   <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
@@ -385,7 +394,7 @@ function inicializarDataTable() {
                 <button
                   type="button"
                   class="btn-riesgos group absolute left-12 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-gray-300 hover:bg-amber-400 text-gray-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-gray-300 hover:border-amber-100 whitespace-nowrap flex items-center overflow-hidden"
-                  data-id="${row._id}"
+                  data-id="${escapeHtml(row._id)}"
                 >
                   <i class="fa-solid fa-exclamation-triangle"></i>
                   <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
@@ -402,7 +411,7 @@ function inicializarDataTable() {
                       ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-105 border-sky-100' 
                       : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                   }"
-                  data-id="${row._id}"
+                  data-id="${escapeHtml(row._id)}"
                   title="${canManageTrabajadores ? 'Editar trabajador' : 'No tienes permisos para editar trabajadores'}"
                 >
                   <i class="fa-regular fa-pen-to-square"></i>
@@ -419,7 +428,7 @@ function inicializarDataTable() {
                           ? 'bg-green-100 hover:bg-green-200 text-green-600 hover:scale-105 border-green-100' 
                           : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                       }"
-                        data-id="${row._id}"
+                        data-id="${escapeHtml(row._id)}"
                         title="${canManageTrabajadores ? 'Dar de alta trabajador' : 'No tienes permisos para cambiar estado laboral de trabajadores'}">
                         <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm">Alta</span>
                         <i class="fa-solid fa-person-arrow-up-from-line"></i>
@@ -429,7 +438,7 @@ function inicializarDataTable() {
                           ? 'bg-orange-100 hover:bg-orange-200 text-orange-600 hover:scale-105 border-orange-100' 
                           : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                       }"
-                        data-id="${row._id}"
+                        data-id="${escapeHtml(row._id)}"
                         title="${canManageTrabajadores ? 'Dar de baja trabajador' : 'No tienes permisos para cambiar estado laboral de trabajadores'}">
                         <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm">Baja</span>
                         <i class="fa-solid fa-person-arrow-down-to-line"></i>
@@ -445,8 +454,8 @@ function inicializarDataTable() {
                       ? 'bg-red-100 hover:bg-red-200 text-red-600 hover:scale-105 border-red-100' 
                       : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                   }"
-                  data-id="${row._id}"
-                  data-nombre="${row.nombre}"
+                  data-id="${escapeHtml(row._id)}"
+                  data-nombre="${escapeHtml(row.nombre)}"
                   title="${canManageTrabajadores ? 'Eliminar trabajador' : 'No tienes permisos para eliminar trabajadores'}"
                 >
                   <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm order-1">

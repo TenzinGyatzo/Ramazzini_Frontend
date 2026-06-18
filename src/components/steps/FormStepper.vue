@@ -9,6 +9,7 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useStepsStore } from '@/stores/steps';
 import { useUserStore } from '@/stores/user';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import DocumentosAPI from '@/api/DocumentosAPI';
 
 import Step1Antidoping from '../steps/antidopingSteps/Step1.vue';
@@ -399,6 +400,7 @@ export default {
     const documentos = useDocumentosStore();
     const stepsStore = useStepsStore();
     const userStore = useUserStore();
+    const proveedorSaludStore = useProveedorSaludStore();
     const router = useRouter();
     const route = useRoute();
 
@@ -570,8 +572,7 @@ export default {
         ]);
       } else if (documentos.currentTypeOfDocument === 'examenVista') {
         // Obtener el país del proveedor de salud
-        const proveedorSalud = JSON.parse(localStorage.getItem('proveedorSalud')) || null;
-        const paisProveedor = proveedorSalud?.pais || '';
+        const paisProveedor = proveedorSaludStore.proveedorSalud?.pais || '';
         
         // Steps base (Fecha, AV Lejana, AV Cercana, AV Con Lejana, AV Con Cercana, Ishihara)
         const stepsBase = [
@@ -1087,14 +1088,7 @@ export default {
       return o;
     }
 
-    const user = ref(null);
-    try {
-      const raw = localStorage.getItem('user');
-      user.value = raw ? JSON.parse(raw) : null;
-    } catch {
-      user.value = null;
-    }
-    // console.log('Usuario:', user.value);
+    const user = computed(() => userStore.user);
 
     // Variables para el modal de campos faltantes
     const showCamposFaltantesModal = ref(false);

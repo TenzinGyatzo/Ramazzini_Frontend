@@ -6,12 +6,15 @@ export default {
   },
 
   auth: () => {
-    const token = localStorage.getItem("AUTH_TOKEN");
-    return auth.get("/users/user", {
-      headers: {
-        Authorization: "Bearer " + token,
-      },
-    });
+    return auth.get("/users/user");
+  },
+
+  refresh: () => {
+    return auth.post("/users/refresh");
+  },
+
+  logout: () => {
+    return auth.post("/users/logout");
   },
 
   registerUser(userData) {

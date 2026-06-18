@@ -20,6 +20,7 @@ import { obtenerRutaDocumento, obtenerNombreArchivo, obtenerFechaDocumento } fro
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
 import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
+import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
@@ -36,6 +37,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const formData = useFormDataStore();
+const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const resultadosClinicos = useResultadosClinicosStore();
 const { canCreateDocument, getRestrictionMessage } = useUserPermissions();
@@ -58,10 +60,8 @@ const estadoSuscripcion = ref<string | null>(null);
 const finDeSuscripcion = ref<Date | null>(null);
 const historiasDelMes = ref<number | null>(null);
 
-const user = ref( JSON.parse(localStorage.getItem('user') || '{}') || null );
-
 onMounted(async () => {
-  const idProveedorSalud = user.value?.idProveedorSalud;
+  const idProveedorSalud = userStore.user?.idProveedorSalud;
   if (idProveedorSalud) {
     await proveedorSaludStore.loadProveedorSalud(idProveedorSalud);
 

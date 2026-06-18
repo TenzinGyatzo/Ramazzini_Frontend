@@ -1,27 +1,19 @@
 <script setup>
 import { ref, computed, onMounted, inject } from "vue";
+import { storeToRefs } from "pinia";
 import { usePagosStore } from "@/stores/pagosStore";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
+import { useUserStore } from "@/stores/user";
 import { useHtmlDarkMode } from "@/composables/useHtmlDarkMode";
-// import { useUserStore } from "@/stores/user";
-// import { useEmpresasStore } from "@/stores/empresas";
 import { useRouter } from "vue-router";
 
 const toast = inject('toast');
 
-// Stores
 const pagosStore = usePagosStore();
 const proveedorSaludStore = useProveedorSaludStore();
-// const userStore = useUserStore();
-// const empresasStore = useEmpresasStore();
-
-// Variables de estado
-const user = ref(
-    JSON.parse(localStorage.getItem('user') || 'null') // Recuperar usuario guardado o establecer null si no existe
-);
-const proveedorSalud = ref(
-    JSON.parse(localStorage.getItem('proveedorSalud') || 'null') // Recuperar proveedor de salud guardado o establecer null si no existe
-);
+const userStore = useUserStore();
+const { proveedorSalud } = storeToRefs(proveedorSaludStore);
+const user = computed(() => userStore.user);
 const suscripcionActual = ref({});
 const loading = ref(false);
 const router = useRouter();
@@ -69,9 +61,9 @@ const historiasDelMes = ref(0);
 // const trabajadoresCreados = ref(0); // De la empresa con más trabajadores
 
 onMounted(async () => {
-  // Recargar los datos del proveedor desde el backend
-  const proveedorActualizado = await proveedorSaludStore.getProveedorById(proveedorSalud.value._id);
-  proveedorSalud.value = proveedorActualizado;
+  const idProveedor = proveedorSalud.value?._id;
+  if (!idProveedor) return;
+  await proveedorSaludStore.getProveedorById(idProveedor);
 
   // Obtener historias clínicas del mes
   historiasDelMes.value = await proveedorSaludStore.getHistoriasClinicasDelMes();

@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LayOut from "../views/LayOut.vue";
-import AuthAPI from "@/api/AuthAPI";
 import axios from "axios";
 import { useUserStore } from "@/stores/user";
 import { usePostHog } from "../composables/usePostHog";
@@ -203,8 +202,7 @@ router.beforeEach((to, from) => {
     try {
       if (requiresAuth) {
         await userStore.fetchUser();
-        await AuthAPI.auth();
-        identifyUser(); // ✅ Identificamos al usuario solo si está autenticado
+        identifyUser();
       }
       
       const user = userStore.user;

@@ -2,11 +2,13 @@
 import { ref, inject, watch, watchEffect, computed } from 'vue';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useUserStore } from '@/stores/user';
 import { useRouter, RouterLink } from 'vue-router';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 const medicoFirmante = useMedicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const userStore = useUserStore();
 const router = useRouter();
 
 const firmaPreview = ref(null);
@@ -155,10 +157,6 @@ const handleDrop = (event) => {
   }
 };
 
-const user = ref(
-    JSON.parse(localStorage.getItem('user')) || null // Recuperar usuario guardado o establecer null si no existe
-);
-
 const handleSubmit = async (data) => {
 
     const formData = new FormData();
@@ -170,7 +168,7 @@ const handleSubmit = async (data) => {
         }
     });
 
-    formData.append('idUser', user.value._id);
+    formData.append('idUser', userStore.user?._id);
 
     if (firmaArchivo.value) {
         formData.append('firma', firmaArchivo.value);
