@@ -1,8 +1,8 @@
-import axios from "axios";
+import { createAxiosClient } from './createAxiosClient';
 
-const medicoFirmante = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/medicos-firmantes`,
-});
+const medicoFirmante = createAxiosClient(
+  `${import.meta.env.VITE_API_URL}/medicos-firmantes`,
+);
 
 // Adjuntar el token a todas las solicitudes (requerido para audit y autorización en backend)
 medicoFirmante.interceptors.request.use((config) => {

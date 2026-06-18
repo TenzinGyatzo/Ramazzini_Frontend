@@ -8,15 +8,12 @@ import PermissionStatusCard from '@/components/PermissionStatusCard.vue';
 const toast = inject('toast');
 const userStore = useUserStore();
 const router = useRouter();
+const user = computed(() => userStore.user);
 
 const usuarios = ref([]);
 const loading = ref(false);
 const saving = ref(false);
 const hasUnsavedChanges = ref(false);
-
-const user = ref(
-  JSON.parse(localStorage.getItem("user")) || null
-);
 
 // Filtrar usuarios para mostrar solo Médicos, Enfermeros/as, Administrativos y Técnicos Evaluadores
 const usuariosFiltrados = computed(() => {

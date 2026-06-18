@@ -65,12 +65,7 @@ const handleLogin = async () => {
     const response = await AuthAPI.login(email.value, password.value, {
       loginContext: "PRIMARY_LOGIN",
     });
-    const token = response.data.token;
     if (response.status === 200 || response.status === 201) {
-      localStorage.setItem("AUTH_TOKEN", token);
-      if (response.data.sid) {
-        localStorage.setItem("AUTH_SID", response.data.sid);
-      }
       router.push("/");
     }
   } catch (error) {

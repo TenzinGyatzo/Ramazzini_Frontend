@@ -2,6 +2,7 @@
 import { ref, inject, watch, computed, provide } from 'vue';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useUserStore } from '@/stores/user';
 import { useRouter, RouterLink } from 'vue-router';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';
 import { useNom024Fields } from '@/composables/useNom024Fields';
@@ -22,6 +23,7 @@ import { useFirmanteIdentificationReadOnly } from '@/composables/useFirmanteIden
 
 const enfermeraFirmante = useEnfermeraFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const userStore = useUserStore();
 const router = useRouter();
 const {
   curpRequired,
@@ -238,10 +240,6 @@ const handleDrop = (event) => {
   }
 };
 
-const user = ref(
-    JSON.parse(localStorage.getItem('user')) || null // Recuperar usuario guardado o establecer null si no existe
-);
-
 const handleSubmit = async (data) => {
     formSubmitAttempted.value = false;
     if (paisNacimientoRequired.value) {
@@ -374,7 +372,7 @@ const handleSubmit = async (data) => {
         }
     });
 
-    formData.append('idUser', user.value._id);
+    formData.append('idUser', userStore.user?._id);
 
     if (firmaArchivo.value) {
         formData.append('firma', firmaArchivo.value);

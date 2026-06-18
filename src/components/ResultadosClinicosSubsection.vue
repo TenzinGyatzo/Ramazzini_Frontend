@@ -115,17 +115,6 @@
       </div>
     </div>
   </div>
-  <ConfirmacionEliminar
-    :is-open="isDeleteModalOpen"
-    title="Eliminar resultado clínico"
-    :message="deleteMessage"
-    :fecha="modalFecha"
-    :resultado="modalResultado"
-    :tipo-sangre="modalTipoSangre"
-    :tipo-estudio-label="modalTipoEstudio"
-    @close="closeDeleteModal"
-    @confirm="confirmDelete"
-  />
 </template>
 
 <script setup lang="ts">
@@ -136,10 +125,11 @@ import {
   type ResultadoClinico,
 } from '@/stores/resultadosClinicos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
-import ConfirmacionEliminar from '@/components/ConfirmacionEliminar.vue';
 import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 const toast: any = inject('toast');
+const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 const isHtmlDark = useHtmlDarkMode();
 
 const props = defineProps<{
@@ -153,8 +143,6 @@ const emit = defineEmits<{
 const store = useResultadosClinicosStore();
 const trabajadores = useTrabajadoresStore();
 const expandedId = ref<string | null>(null);
-const isDeleteModalOpen = ref(false);
-const resultadoParaEliminar = ref<ResultadoClinico | null>(null);
 
 const sortedResults = computed(() =>
   [...props.results].sort((a, b) => {
@@ -185,34 +173,37 @@ const emitEdit = (resultado: ResultadoClinico) => {
 };
 
 const openDeleteModal = (resultado: ResultadoClinico) => {
-  resultadoParaEliminar.value = resultado;
-  isDeleteModalOpen.value = true;
-};
-
-const closeDeleteModal = () => {
-  isDeleteModalOpen.value = false;
-  resultadoParaEliminar.value = null;
-};
-
-const confirmDelete = async () => {
-  if (!resultadoParaEliminar.value?._id) return;
-  try {
-    await store.deleteResultado(resultadoParaEliminar.value._id);
-    if (trabajadores.currentTrabajadorId) {
-      await store.fetchResultadosAgrupados(trabajadores.currentTrabajadorId);
-    }
-    toast.open({
-      message: 'Resultado eliminado correctamente',
-      type: 'success',
-    });
-  } catch (error) {
-    toast.open({
-      message: 'Error al eliminar el resultado',
-      type: 'error',
-    });
-  } finally {
-    closeDeleteModal();
-  }
+  requestEliminacion?.({
+    entidad: 'resultadoClinico',
+    identificacion: store.getTipoLabel(resultado.tipoEstudio),
+    detalleContexto: {
+      tipoEstudioLabel: store.getTipoLabel(resultado.tipoEstudio),
+      fecha: formatDate(resultado.fechaEstudio),
+      resultado: resultado.resultadoGlobal
+        ? store.getResultadoLabel(resultado.resultadoGlobal)
+        : '',
+      tipoSangre: resultado.tipoSangre ? getTipoSangreLabel(resultado.tipoSangre) : '',
+    },
+    onConfirm: async () => {
+      if (!resultado._id) return;
+      try {
+        await store.deleteResultado(resultado._id);
+        if (trabajadores.currentTrabajadorId) {
+          await store.fetchResultadosAgrupados(trabajadores.currentTrabajadorId);
+        }
+        toast.open({
+          message: 'Resultado eliminado correctamente',
+          type: 'success',
+        });
+      } catch {
+        toast.open({
+          message: 'Error al eliminar el resultado',
+          type: 'error',
+        });
+        throw new Error('delete-failed');
+      }
+    },
+  });
 };
 
 const getTipoIcon = (tipo?: string) => {
@@ -345,32 +336,6 @@ const getTipoLabel = (tipo?: string) => {
   const option = store.tipoEstudioOptions.find(opt => opt.value === tipo);
   return option?.label || tipo || '';
 };
-
-const deleteMessage = computed(() => {
-  return '¿Deseas eliminar el resultado de ';
-});
-
-const modalFecha = computed(() => {
-  if (!resultadoParaEliminar.value?.fechaEstudio) return '';
-  return formatDate(resultadoParaEliminar.value.fechaEstudio);
-});
-
-const modalResultado = computed(() => {
-  if (!resultadoParaEliminar.value?.resultadoGlobal) return '';
-  return getResultadoLabel(resultadoParaEliminar.value.resultadoGlobal);
-});
-
-const modalTipoSangre = computed(() => {
-  if (resultadoParaEliminar.value?.tipoSangre) {
-    return getTipoSangreLabel(resultadoParaEliminar.value.tipoSangre);
-  }
-  return '';
-});
-
-const modalTipoEstudio = computed(() => {
-  if (!resultadoParaEliminar.value?.tipoEstudio) return '';
-  return getTipoLabel(resultadoParaEliminar.value.tipoEstudio);
-});
 </script>
 
 <style scoped>

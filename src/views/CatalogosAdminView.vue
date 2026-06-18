@@ -6,7 +6,6 @@ import catalogsAdminAPI, {
   type CatalogTypeInfo,
   type CatalogEntryRow,
 } from "@/api/catalogsAdminAPI";
-import ModalEliminar from "@/components/ModalEliminar.vue";
 import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
 
 const toast = inject<{ open: (o: { message: string; type: string }) => void }>("toast");
@@ -244,8 +243,8 @@ function closeDeleteModal() {
   deleteTarget.value = null;
 }
 
-async function onConfirmDelete(...args: string[]) {
-  const idRegistro = args[args.length - 1];
+async function onConfirmDelete() {
+  const idRegistro = deleteTarget.value?.code;
   if (!idRegistro || !selectedType.value) return;
   try {
     await catalogsAdminAPI.deleteEntry(selectedType.value, idRegistro);
@@ -254,6 +253,7 @@ async function onConfirmDelete(...args: string[]) {
         ? "Establecimiento desactivado"
         : "Registro eliminado",
     );
+    closeDeleteModal();
     await loadTypes();
     await loadEntries();
   } catch {
@@ -533,14 +533,35 @@ onMounted(async () => {
     </div>
     </template>
 
-    <ModalEliminar
+    <div
       v-if="showDeleteModal && deleteTarget"
-      :id-registro="deleteTarget.code"
-      :identificacion="deleteIdentificacion"
-      :tipo-registro="deleteTipoRegistro"
-      @close-modal="closeDeleteModal"
-      @confirm-delete="onConfirmDelete"
-    />
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      @mousedown.self="closeDeleteModal"
+    >
+      <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6" @mousedown.stop>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirmar eliminación</h3>
+        <p class="text-sm text-gray-600 mb-6">
+          ¿Eliminar {{ deleteTipoRegistro }} identificado como
+          <strong>"{{ deleteIdentificacion }}"</strong>? Esta acción no se puede deshacer.
+        </p>
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
+            @click="closeDeleteModal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500"
+            @click="onConfirmDelete"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div
       v-if="showForm"

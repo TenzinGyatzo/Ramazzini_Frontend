@@ -75,7 +75,6 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
             const { data } = await ProveedorSaludAPI.getProveedorById(idProveedorSalud);
             proveedorSalud.value = data;
             // console.log("Proveedor Salud desde Store", proveedorSalud.value);
-            localStorage.setItem('proveedorSalud', JSON.stringify(proveedorSalud.value));
         } catch (error) {
             console.error("Error al cargar proveedor de salud:", error);
         } finally {
@@ -277,6 +276,15 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         }
     }
 
+    function clear() {
+        proveedorSalud.value = null;
+        try {
+            localStorage.removeItem('proveedorSalud');
+        } catch {
+            // ignore
+        }
+    }
+
     const isMX = computed(() => proveedorSalud.value?.pais === 'MX');
 
     // Regulatory Policy Computed Properties
@@ -337,6 +345,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         getCantidadHistoriasClinicasById,
         getCantidadNotasMedicasById,
         getAllProveedores,
-        changeRegimenRegulatorio
+        changeRegimenRegulatorio,
+        clear,
     };
 });

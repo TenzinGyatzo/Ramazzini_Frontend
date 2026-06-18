@@ -1,22 +1,9 @@
-import axios, { type AxiosError } from "axios";
+import { type AxiosError } from "axios";
+import { createAxiosClient } from './createAxiosClient';
 import { getToast } from '@/utils/toast';
 import { mapRegulatoryErrorStandalone } from '@/utils/regulatory-error-messages';
 
-const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/api`,
-});
-
-// Adjuntar automáticamente el token a todas las solicitudes
-api.interceptors.request.use((config) => {
-  try {
-    const token = localStorage.getItem('AUTH_TOKEN');
-    if (token) {
-      config.headers = config.headers || {};
-      (config.headers as any).Authorization = `Bearer ${token}`;
-    }
-  } catch {}
-  return config;
-});
+const api = createAxiosClient(`${import.meta.env.VITE_API_URL}/api`);
 
 // Interceptor de respuesta para manejar errores regulatorios
 api.interceptors.response.use(

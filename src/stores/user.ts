@@ -1,8 +1,9 @@
-import { ref, onMounted, computed } from "vue";
+import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import AuthAPI from "@/api/AuthAPI";
 import AssignmentsAPI from "@/api/AssignmentsAPI";
 import { useRouter } from "vue-router";
+import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 
 // Define el tipo para el objeto usuario
 interface User {
@@ -37,31 +38,24 @@ export const useUserStore = defineStore("user", () => {
     const empresasAsignadas = ref<string[]>([]);
     const centrosTrabajoAsignados = ref<string[]>([]);
 
-    // Carga el usuario cuando el componente se monta
-/*     onMounted(async () => {
-        try {
-            const { data } = await AuthAPI.auth();
-            user.value = data; // Asegúrate de que `data` coincide con el tipo User
-            console.log('Usuario', user.value);
+    function clearUser() {
+        user.value = null;
+        empresasAsignadas.value = [];
+        centrosTrabajoAsignados.value = [];
+    }
 
-            // Guardar el usuario en localStorage
-            localStorage.setItem('user', JSON.stringify(user.value));
-        } catch (error) {
-            console.error(error);
-        }
-    }); */
-
-      // Función para cargar el usuario cuando sea necesario
     async function fetchUser() {
-        if (!user.value) {
         try {
             const { data } = await AuthAPI.auth();
             user.value = data;
-            // console.log('Usuario cargado:', user.value);
-            localStorage.setItem('user', JSON.stringify(user.value));
+            try {
+                localStorage.removeItem('user');
+            } catch {
+                // ignore
+            }
         } catch (error) {
             console.error("Error al cargar el usuario:", error);
-        }
+            throw error;
         }
     }
 
@@ -69,24 +63,41 @@ export const useUserStore = defineStore("user", () => {
     const getUsername = computed(() => {
         if (!user.value?.username) return '';
         return user.value.username
-            .split(' ') // Dividir en palabras
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalizar cada palabra
-            .join(' '); // Unirlas de nuevo
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
     });
     
     
     function logout() {
-        user.value = null;
-        localStorage.removeItem("AUTH_TOKEN");
+        clearUser();
+        const proveedorSaludStore = useProveedorSaludStore();
+        proveedorSaludStore.clear();
+        try {
+            localStorage.removeItem('user');
+            localStorage.removeItem('proveedorSalud');
+        } catch {
+            // ignore
+        }
+        AuthAPI.logout().catch(() => {});
         router.push("/login");
     }
 
     async function registerUser(userData: User) {
         try {
             const resultado = await AuthAPI.registerUser(userData);
-            return { success: true, data: resultado }; // Indicador de éxito y datos
+            return { success: true, data: resultado };
         } catch (error) {
-            return { success: false, error }; // Indicador de fallo y error
+            return { success: false, error };
+        }
+    }
+
+    async function inviteUser(userData: Omit<User, '_id' | 'idProveedorSalud'>) {
+        try {
+            const resultado = await AuthAPI.inviteUser(userData);
+            return { success: true, data: resultado };
+        } catch (error) {
+            return { success: false, error };
         }
     }
 
@@ -134,8 +145,10 @@ export const useUserStore = defineStore("user", () => {
         empresasAsignadas,
         centrosTrabajoAsignados,
         fetchUser,
+        clearUser,
         logout,
         registerUser,
+        inviteUser,
         fetchUsersByProveedorId,
         loadUserAssignments,
         hasAccessToEmpresa,

@@ -1,8 +1,8 @@
-import axios from "axios";
+import { createAxiosClient } from './createAxiosClient';
 
-const tecnicoFirmante = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/tecnicos-firmantes`,
-});
+const tecnicoFirmante = createAxiosClient(
+  `${import.meta.env.VITE_API_URL}/tecnicos-firmantes`,
+);
 
 // Adjuntar el token a todas las solicitudes (requerido para audit y autorización en backend)
 tecnicoFirmante.interceptors.request.use((config) => {
@@ -14,5 +14,3 @@ tecnicoFirmante.interceptors.request.use((config) => {
 });
 
 export default tecnicoFirmante;
-
-

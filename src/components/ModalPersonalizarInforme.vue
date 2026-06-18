@@ -151,7 +151,9 @@ import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import RichTextEditor from '@/components/RichTextEditor.vue';
 import RecomendacionesTabla from '@/components/RecomendacionesTabla.vue';
 import { useInformePersonalizacionStore } from '@/stores/informePersonalizacion';
+import { useUserStore } from '@/stores/user';
 import { cleanEmptyHtml } from '@/helpers/pdfHtmlParser';
+import { sanitizeRichHtml } from '@/helpers/sanitizeRichHtml';
 import type { 
   InformePersonalizacion, 
   UpdateInformePersonalizacionDto,
@@ -172,6 +174,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const informePersonalizacionStore = useInformePersonalizacionStore();
+const userStore = useUserStore();
 
 // Estado del modal
 const activeTab = ref<'conclusiones' | 'recomendaciones'>('conclusiones');
@@ -217,9 +220,9 @@ const loadExistingData = async () => {
     
     if (existingData) {
       formData.value = {
-        conclusiones: existingData.conclusiones || '',
+        conclusiones: sanitizeRichHtml(existingData.conclusiones || ''),
         formatoRecomendaciones: existingData.formatoRecomendaciones || 'texto',
-        recomendacionesTexto: existingData.recomendacionesTexto || '',
+        recomendacionesTexto: sanitizeRichHtml(existingData.recomendacionesTexto || ''),
         recomendacionesTabla: existingData.recomendacionesTabla || []
       };
     } else {
@@ -248,11 +251,11 @@ const closeModal = () => {
           try {
             saving.value = true;
 
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const userId = userStore.user?._id;
             
             // Limpiar contenido vacío antes de guardar
-            const conclusionesLimpio = cleanEmptyHtml(formData.value.conclusiones);
-            const recomendacionesTextoLimpio = cleanEmptyHtml(formData.value.recomendacionesTexto);
+            const conclusionesLimpio = cleanEmptyHtml(sanitizeRichHtml(formData.value.conclusiones));
+            const recomendacionesTextoLimpio = cleanEmptyHtml(sanitizeRichHtml(formData.value.recomendacionesTexto));
 
             const updateData: UpdateInformePersonalizacionDto = {
               conclusiones: conclusionesLimpio,
@@ -263,7 +266,7 @@ const closeModal = () => {
               recomendacionesTabla: formData.value.formatoRecomendaciones === 'tabla' 
                 ? formData.value.recomendacionesTabla 
                 : undefined,
-              updatedBy: user._id
+              updatedBy: userId
             };
 
             await informePersonalizacionStore.upsertPersonalizacion(

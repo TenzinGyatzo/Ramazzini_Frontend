@@ -143,13 +143,15 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
 
   async function deleteCentroTrabajoById(
     empresaId: string,
-    centroTrabajoId: string
+    centroTrabajoId: string,
+    deletionPassword?: string,
   ) {
     try {
       loading.value = true;
       await CentrosTrabajoAPI.deleteCentroTrabajoById(
         empresaId,
-        centroTrabajoId
+        centroTrabajoId,
+        deletionPassword,
       );
     } catch (error) {
       // console.log(error);

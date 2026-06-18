@@ -1,13 +1,15 @@
 <script setup>
-import { ref, watch, inject, onMounted } from 'vue';
+import { ref, watch, inject, onMounted, computed } from 'vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useUserStore } from '@/stores/user';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 
 const toast = inject('toast');
 
 const empresas = useEmpresasStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const userStore = useUserStore();
 const { getCurrentUserId, ensureUserLoaded } = useCurrentUser();
 const emit = defineEmits(['closeModal', 'openSubscriptionModal']);
 
@@ -16,21 +18,14 @@ const logotipoPreview = ref(null);  // Para la vista previa de la imagen
 const logotipoArchivo = ref(null);  // Para el archivo cargado
 const isDragOver = ref(false);  // Para el estado de drag and drop
 
-const user = ref(
-    JSON.parse(localStorage.getItem('user')) || null // Recuperar usuario guardado o establecer null si no existe
-);
-
 watch(
-    () => user.user,
-    (user) => {
-        if (user?.idProveedorSalud) {
-            proveedorSaludStore.loadProveedorSalud(user.idProveedorSalud);
-        }
-        if (user?._id){
-          medicoFirmanteStore.loadMedicoFirmante(user._id);
+    () => userStore.user,
+    (currentUser) => {
+        if (currentUser?.idProveedorSalud) {
+            proveedorSaludStore.loadProveedorSalud(currentUser.idProveedorSalud);
         }
     },
-    { immediate: true } // Ejecutar inmediatamente si ya hay datos cargados
+    { immediate: true }
 );
 
 // Función para validar archivo
@@ -114,9 +109,7 @@ const handleDrop = (event) => {
   }
 };
 
-const proveedorSalud = ref(
-    JSON.parse(localStorage.getItem('proveedorSalud')) || null // Recuperar usuario guardado o establecer null si no existe
-);
+const proveedorSalud = computed(() => proveedorSaludStore.proveedorSalud);
 
 // Función para manejar el envío del formulario
 const handleSubmit = async (data) => {

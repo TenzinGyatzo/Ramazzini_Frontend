@@ -2,6 +2,7 @@
 import { ref, inject, watchEffect, computed } from 'vue';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useUserStore } from '@/stores/user';
 import { useRouter, RouterLink } from 'vue-router';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';
 import PaisNacimientoAutocomplete from '@/components/selectors/PaisNacimientoAutocomplete.vue';
@@ -9,6 +10,7 @@ import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 const tecnicoFirmante = useTecnicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const userStore = useUserStore();
 const router = useRouter();
 const { curpRequired, showCurpField, isSIRES, isSinRegimen } = useCurpPolicy();
 
@@ -105,8 +107,6 @@ const handleDrop = (event) => {
   }
 };
 
-const user = ref(JSON.parse(localStorage.getItem('user')) || null);
-
 const handleSubmit = async (data) => {
   // Validación basada en política regulatoria: CURP obligatorio para SIRES_NOM024
   if (curpRequired.value && (!data.curp || data.curp.trim() === '')) {
@@ -121,7 +121,7 @@ const handleSubmit = async (data) => {
   const submitData = { ...data, paisNacimiento: formularioTecnicoFirmante.value.paisNacimiento };
   if (submitData.paisNacimiento === "" || submitData.paisNacimiento == null) delete submitData.paisNacimiento;
   Object.entries(submitData).forEach(([key, value]) => { if (value !== undefined && value !== null && value !== "") { formData.append(key, value); } });
-  formData.append('idUser', user.value._id);
+  formData.append('idUser', userStore.user?._id);
   if (firmaArchivo.value) { formData.append('firma', firmaArchivo.value); }
   try {
     let response;

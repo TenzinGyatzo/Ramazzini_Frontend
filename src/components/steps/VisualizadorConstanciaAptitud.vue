@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
+import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
@@ -15,28 +16,22 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const steps = useStepsStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
+const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 
-const user = ref(
-  JSON.parse(localStorage.getItem('user')) || null
-);
+const user = computed(() => userStore.user);
+const proveedorSalud = computed(() => proveedorSaludStore.proveedorSalud);
 
-const proveedorSalud = ref(
-  JSON.parse(localStorage.getItem('proveedorSalud')) || null
+watch(
+  () => userStore.user,
+  (currentUser) => {
+    if (currentUser?._id) {
+      medicoFirmanteStore.loadMedicoFirmante(currentUser._id);
+    }
+  },
+  { immediate: true }
 );
-
-onMounted(() => {
-  watch(
-    () => user.value?.user,
-    (user) => {
-      if (user?._id) {
-        medicoFirmanteStore.loadMedicoFirmante(user._id);
-      }
-    },
-    { immediate: true }
-  );
-});
 
 const goToStep = (stepNumber) => {
   steps.goToStep(stepNumber);

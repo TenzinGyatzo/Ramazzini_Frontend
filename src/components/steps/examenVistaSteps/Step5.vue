@@ -2,10 +2,12 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 const formDataStore = useFormDataStore();
 const formDataExamenVista = formDataStore.formDataExamenVista;
 const documentos = useDocumentosStore();
+const proveedorSaludStore = useProveedorSaludStore();
 
 const ciegaOI = computed(() => formDataExamenVista.ojoIzquierdoCegueraTotal ?? formDataExamenVista.ojoIzquierdoLejanaCegueraTotal ?? formDataExamenVista.ojoIzquierdoCercanaCegueraTotal ?? false);
 const ciegaOD = computed(() => formDataExamenVista.ojoDerechoCegueraTotal ?? formDataExamenVista.ojoDerechoLejanaCegueraTotal ?? formDataExamenVista.ojoDerechoCercanaCegueraTotal ?? false);
@@ -80,8 +82,8 @@ onMounted(() => {
     conCorreccionCercanaInterpretacion.value = formDataExamenVista.conCorreccionCercanaInterpretacion ?? 'Visión normal';
   }
   // Guatemala: si utilizaAnteojos es Si, pre-cargar usaLentes automáticamente
-  const proveedorSalud = JSON.parse(localStorage.getItem('proveedorSalud')) || null;
-  if (proveedorSalud?.pais === 'GT' && formDataExamenVista.utilizaAnteojos === 'Si') {
+  const paisProveedor = proveedorSaludStore.proveedorSalud?.pais;
+  if (paisProveedor === 'GT' && formDataExamenVista.utilizaAnteojos === 'Si') {
     usaLentes.value = 'Si';
     ojoIzquierdoCercanaConCorreccion.value = ciegaOI.value ? undefined : (formDataExamenVista.ojoIzquierdoCercanaConCorreccion ?? 20);
     ojoDerechoCercanaConCorreccion.value = ciegaOD.value ? undefined : (formDataExamenVista.ojoDerechoCercanaConCorreccion ?? 20);

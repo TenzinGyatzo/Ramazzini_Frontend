@@ -8,6 +8,7 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
+import { sanitizeRichHtml } from '@/helpers/sanitizeRichHtml';
 
 interface Props {
   modelValue?: string;
@@ -57,13 +58,13 @@ onMounted(async () => {
 
     // Establecer contenido inicial
     if (props.modelValue) {
-      quillInstance.root.innerHTML = props.modelValue;
+      quillInstance.root.innerHTML = sanitizeRichHtml(props.modelValue);
     }
 
     // Escuchar cambios
     quillInstance.on('text-change', () => {
       if (quillInstance) {
-        const html = quillInstance.root.innerHTML;
+        const html = sanitizeRichHtml(quillInstance.root.innerHTML);
         emit('update:modelValue', html);
       }
     });
@@ -76,8 +77,11 @@ onMounted(async () => {
 });
 
 watch(() => props.modelValue, (newValue) => {
-  if (quillInstance && newValue !== quillInstance.root.innerHTML) {
-    quillInstance.root.innerHTML = newValue || '';
+  if (quillInstance) {
+    const sanitized = sanitizeRichHtml(newValue);
+    if (sanitized !== quillInstance.root.innerHTML) {
+      quillInstance.root.innerHTML = sanitized;
+    }
   }
 });
 
@@ -95,12 +99,12 @@ onUnmounted(() => {
 
 // Métodos públicos
 const getContent = () => {
-  return quillInstance?.root.innerHTML || '';
+  return sanitizeRichHtml(quillInstance?.root.innerHTML || '');
 };
 
 const setContent = (content: string) => {
   if (quillInstance) {
-    quillInstance.root.innerHTML = content;
+    quillInstance.root.innerHTML = sanitizeRichHtml(content);
   }
 };
 

@@ -108,10 +108,10 @@ export const useEmpresasStore = defineStore("empresas", () => {
     }
   }
 
-  async function deleteEmpresaById(id: string) {
+  async function deleteEmpresaById(id: string, deletionPassword?: string) {
     try {
       loading.value = true;
-      await EmpresasAPI.deleteEmpresaById(id);
+      await EmpresasAPI.deleteEmpresaById(id, deletionPassword);
     } catch (error) {
       // console.log(error);
       throw error;

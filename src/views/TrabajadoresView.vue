@@ -13,7 +13,6 @@ import $ from 'jquery';
 import GreenButton from '@/components/GreenButton.vue';
 import DataTableDT from '@/components/DataTableDT.vue';
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
-import ModalEliminar from '@/components/ModalEliminar.vue';
 import ModalCargaMasiva from '@/components/ModalCargaMasiva.vue';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
@@ -25,9 +24,12 @@ import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import type { Trabajador } from '../interfaces/trabajador.interface';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
+import type { EntidadEliminable } from '@/config/eliminacion';
 
 // 2. Stores, rutas y helpers
 const toast: any = inject('toast');
+const requestEliminacionGlobal = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
@@ -39,25 +41,11 @@ const { executeIfCanManageTrabajadores } = usePermissionRestrictions();
 
 // 3. Refs y estado reactivo
 const showModal = ref(false);
-const showDeleteModal = ref(false);
-const deleteConfig = ref<{
-  tipo: string;
-  id: string | null;
-  descripcion: string;
-  onConfirm: ((id: string) => Promise<void>) | null;
-}>({
-  tipo: '',
-  id: null,
-  descripcion: '',
-  onConfirm: null
-});
 const showImportModal = ref(false);
 const showSubscriptionModal = ref(false);
 const showRTsModal = ref(false);
 const showRisksModal = ref(false);
 
-const selectedTrabajadorId = ref<string | null>(null);
-const selectedTrabajadorNombre = ref<string | null>(null);
 const dataTableRef = ref();
 const mostrarFiltros = ref(false);
 const filtrosAplicados = reactive(new Set<string>());
@@ -432,30 +420,32 @@ const openModalInternal = async (empresa: Empresa | null = null, centroTrabajo: 
 
 const closeModal = () => showModal.value = false;
 
-const solicitarEliminacion = (tipo, id, descripcion, onConfirm) => {
-  deleteConfig.value = { tipo, id, descripcion, onConfirm };
-  showDeleteModal.value = true;
+const TIPO_A_ENTIDAD: Record<string, EntidadEliminable> = {
+  Trabajador: 'trabajador',
+  'Riesgo de Trabajo': 'riesgoTrabajo',
+};
+
+const solicitarEliminacion = (
+  tipo: string,
+  id: string,
+  descripcion: string,
+  onConfirm: (id: string, password?: string) => Promise<void>,
+) => {
+  const entidad = TIPO_A_ENTIDAD[tipo] ?? 'trabajador';
+  requestEliminacionGlobal?.({
+    entidad,
+    identificacion: descripcion,
+    onConfirm: async (password) => {
+      try {
+        await onConfirm(id, password);
+      } catch (err) {
+        toast.open({ message: `Error al eliminar ${tipo}`, type: 'error' });
+        throw err;
+      }
+    },
+  });
 };
 provide('solicitarEliminacion', solicitarEliminacion);
-
-const confirmarEliminacion = async () => {
-  try {
-    if (typeof deleteConfig.value.onConfirm === 'function'&& deleteConfig.value.id) {
-      await deleteConfig.value.onConfirm(deleteConfig.value.id);
-    }
-  } catch (err) {
-    toast.open({ message: `Error al eliminar ${deleteConfig.value.tipo}`, type: 'error' });
-  } finally {
-    showDeleteModal.value = false;
-    deleteConfig.value = { tipo: '', id: null, descripcion: '', onConfirm: null };
-  }
-};
-
-const toggleDeleteModal = (id: string | null = null, nombre: string | null = null) => {
-  showDeleteModal.value = !showDeleteModal.value;
-  selectedTrabajadorId.value = id;
-  selectedTrabajadorNombre.value = nombre;
-};
 
 const openRTsModal = async (empresa: Empresa | null, centro: CentroTrabajo | null, trabajador: Trabajador | null) => {
   showRTsModal.value = false;
@@ -501,9 +491,19 @@ const exportTrabajadores = async () => {
   }
 };
 
-const deleteTrabajadorById = async (empresaId: string, centroTrabajoId: string, trabajadorId: string) => {
+const deleteTrabajadorById = async (
+  empresaId: string,
+  centroTrabajoId: string,
+  trabajadorId: string,
+  deletionPassword?: string,
+) => {
   try {
-    await trabajadores.deleteTrabajadorById(empresaId, centroTrabajoId, trabajadorId);
+    await trabajadores.deleteTrabajadorById(
+      empresaId,
+      centroTrabajoId,
+      trabajadorId,
+      deletionPassword,
+    );
     toast.open({ message: 'Trabajador eliminado con éxito' });
     await trabajadores.fetchTrabajadoresConHistoria(empresaId, centroTrabajoId);
     trabajadores.resetCurrentTrabajador();
@@ -513,14 +513,14 @@ const deleteTrabajadorById = async (empresaId: string, centroTrabajoId: string, 
   }
 };
 
-const eliminarTrabajador = async (trabajadorId: string) => {
+const eliminarTrabajador = async (trabajadorId: string, deletionPassword?: string) => {
   try {
     const empresaId = empresas.currentEmpresaId;
     const centroTrabajoId = centrosTrabajo.currentCentroTrabajoId;
 
     if (!empresaId || !centroTrabajoId) throw new Error('Faltan datos');
 
-    await deleteTrabajadorById(empresaId, centroTrabajoId, trabajadorId);
+    await deleteTrabajadorById(empresaId, centroTrabajoId, trabajadorId, deletionPassword);
   } catch (err) {
     toast.open({ message: 'Error al eliminar trabajador', type: 'error' });
   }
@@ -778,17 +778,6 @@ const toggleVigencias = () => {
 
       <Transition appear name="fade">
         <ModalSuscripcion v-if="showSubscriptionModal" @closeModal="showSubscriptionModal = false" />
-      </Transition>
-
-      <Transition appear name="fade">
-        <ModalEliminar
-          v-if="showDeleteModal"
-          :idRegistro="deleteConfig.id ?? ''"
-          :identificacion="deleteConfig.descripcion"
-          :tipoRegistro="deleteConfig.tipo"
-          @closeModal="showDeleteModal = false"
-          @confirmDelete="confirmarEliminacion"
-        />
       </Transition>
 
       <Transition appear name="fade">

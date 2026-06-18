@@ -12,6 +12,7 @@ import {
   ESTADO_SEGUIMIENTO_PROGRAMADO_OPTS,
   MOTIVO_SEGUIMIENTO_PROGRAMADO_OPTS,
 } from '@/constants/seguimientoProgramadoCardiometabolicoOpts';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 const props = defineProps<{
   visible: boolean;
@@ -21,6 +22,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>();
 
 const toast = inject('toast') as { open: (o: { message: string; type?: string }) => void } | undefined;
+const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 
 const trabajadores = useTrabajadoresStore();
 const { ensureUserLoaded } = useCurrentUser();
@@ -242,17 +244,24 @@ async function saveRecord(): Promise<void> {
 async function removeRecord(item: SeguimientoProgramadoCardiometabolico): Promise<void> {
   const id = tid.value;
   if (!id) return;
-  const ok = window.confirm('¿Eliminar este seguimiento programado? Esta acción no se puede deshacer.');
-  if (!ok) return;
-  try {
-    await SeguimientoProgramadoCardiometabolicoAPI.remove(id, item._id);
-    toast?.open({ message: 'Registro eliminado.', type: 'success' });
-    if (editingId.value === item._id) cancelEdit();
-    await loadList();
-  } catch (e) {
-    console.error(e);
-    toast?.open({ message: 'No se pudo eliminar el registro.', type: 'error' });
-  }
+
+  const etiqueta = `${item.estado} — ${fechaDisplay(item.fechaProgramada)}`;
+  requestEliminacion?.({
+    entidad: 'seguimientoProgramado',
+    identificacion: etiqueta,
+    onConfirm: async () => {
+      try {
+        await SeguimientoProgramadoCardiometabolicoAPI.remove(id, item._id);
+        toast?.open({ message: 'Registro eliminado.', type: 'success' });
+        if (editingId.value === item._id) cancelEdit();
+        await loadList();
+      } catch (e) {
+        console.error(e);
+        toast?.open({ message: 'No se pudo eliminar el registro.', type: 'error' });
+        throw e;
+      }
+    },
+  });
 }
 
 function estadoBadgeClass(estado: string): string {

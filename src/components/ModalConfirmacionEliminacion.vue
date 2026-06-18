@@ -1,5 +1,6 @@
-<script setup>
-import { ref, computed } from 'vue';
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue';
+import { useVerificacionEliminacion } from '@/composables/useVerificacionEliminacion';
 
 const props = defineProps({
   isVisible: {
@@ -11,31 +12,60 @@ const props = defineProps({
     required: true,
   },
   selectedRoutes: {
-    type: Array,
+    type: Array as () => string[],
     required: true,
+  },
+  nivel: {
+    type: String as () => 'simple' | 'moderado',
+    default: 'simple',
   },
 });
 
 const emit = defineEmits(['confirm', 'cancel']);
 
 const isConfirming = ref(false);
+const {
+  password,
+  error,
+  verifying,
+  verificar,
+  reset,
+} = useVerificacionEliminacion();
+
+watch(
+  () => props.isVisible,
+  (visible) => {
+    if (!visible) reset();
+  },
+);
+
+const requierePassword = computed(() => props.nivel === 'moderado');
+const isBusy = computed(() => isConfirming.value || verifying.value);
 
 const handleConfirm = async () => {
+  if (isBusy.value) return;
+
+  if (requierePassword.value) {
+    const passwordOk = await verificar();
+    if (!passwordOk) return;
+  }
+
   isConfirming.value = true;
   try {
-    await emit('confirm');
+    emit('confirm');
   } finally {
     isConfirming.value = false;
   }
 };
 
 const handleCancel = () => {
+  reset();
   emit('cancel');
 };
 
 // Computed para mostrar información de los documentos seleccionados
-const documentTypes = computed(() => {
-  const types = {};
+const documentTypes = computed<Record<string, number>>(() => {
+  const types: Record<string, number> = {};
 
   props.selectedRoutes.forEach(route => {
     if (route.includes('Nota Aclaratoria')) {
@@ -258,6 +288,21 @@ const documentTypes = computed(() => {
                       </div>
                     </div>
                   </div>
+
+                  <div v-if="requierePassword" class="mt-4 space-y-1">
+                    <label class="block text-xs font-medium text-gray-700">
+                      Confirma tu contraseña
+                    </label>
+                    <input
+                      v-model="password"
+                      type="password"
+                      autocomplete="current-password"
+                      class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      placeholder="Tu contraseña"
+                      @keyup.enter="handleConfirm"
+                    />
+                    <p v-if="error" class="text-xs text-red-600">{{ error }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -268,17 +313,17 @@ const documentTypes = computed(() => {
             <button
               type="button"
               @click="handleConfirm"
-              :disabled="isConfirming"
+              :disabled="isBusy"
               class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <i v-if="isConfirming" class="fas fa-spinner fa-spin mr-2"></i>
+              <i v-if="isBusy" class="fas fa-spinner fa-spin mr-2"></i>
               <i v-else class="fas fa-trash-alt mr-2"></i>
-              {{ isConfirming ? 'Eliminando...' : 'Sí, eliminar' }}
+              {{ isBusy ? 'Eliminando...' : 'Sí, eliminar' }}
             </button>
             <button
               type="button"
               @click="handleCancel"
-              :disabled="isConfirming"
+              :disabled="isBusy"
               class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar

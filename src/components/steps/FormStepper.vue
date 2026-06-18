@@ -1,5 +1,6 @@
 <script>
 import axios from 'axios';
+import { authRequestConfig } from '@/lib/attachAuthToken';
 import { ref, onMounted, onUnmounted, inject, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -743,8 +744,7 @@ export default {
         ]);
       } else if (documentos.currentTypeOfDocument === 'examenVista') {
         // Obtener el país del proveedor de salud
-        const proveedorSalud = JSON.parse(localStorage.getItem('proveedorSalud')) || null;
-        const paisProveedor = proveedorSalud?.pais || '';
+        const paisProveedor = proveedorSaludStore.proveedorSalud?.pais || '';
         
         // Steps base (Fecha, AV Lejana, AV Cercana, AV Con Lejana, AV Con Cercana, Ishihara)
         const stepsBase = [
@@ -1336,14 +1336,7 @@ export default {
       return o;
     }
 
-    const user = ref(null);
-    try {
-      const raw = localStorage.getItem('user');
-      user.value = raw ? JSON.parse(raw) : null;
-    } catch {
-      user.value = null;
-    }
-    // console.log('Usuario:', user.value);
+    const user = computed(() => userStore.user);
 
     // Variables para el modal de campos faltantes
     const showCamposFaltantesModal = ref(false);
@@ -1708,12 +1701,12 @@ export default {
           const graficaBase64 = formData.formDataAudiometria.graficaAudiometria;
 
           if (graficaBase64) {
-            await axios.post(apiEndpoint, { grafica: graficaBase64 });
+            await axios.post(apiEndpoint, { grafica: graficaBase64 }, authRequestConfig());
           } else {
-            await axios.get(apiEndpoint);
+            await axios.get(apiEndpoint, authRequestConfig());
           }
         } else {
-          await axios.get(apiEndpoint);
+          await axios.get(apiEndpoint, authRequestConfig());
         }
 
         const tipoDocEnviado = documentos.currentTypeOfDocument;

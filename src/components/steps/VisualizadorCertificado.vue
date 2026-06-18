@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { formatDateDDMMYYYY } from '@/helpers/dates';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -10,6 +10,7 @@ import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import { calcularEdad } from '@/helpers/dates';
 import DocumentosAPI from '@/api/DocumentosAPI';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
+import { useUserStore } from '@/stores/user';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 
 const empresas = useEmpresasStore();
@@ -17,6 +18,7 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const steps = useStepsStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
+const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 
@@ -32,26 +34,18 @@ const nearestExploracionFisica = ref(null);
 const examenesVista = ref([]);
 const nearestExamenVista = ref(null);
 
-const user = ref(
-    JSON.parse(localStorage.getItem('user')) || null // Recuperar usuario guardado o establecer null si no existe
-);
+const user = computed(() => userStore.user);
+const proveedorSalud = computed(() => proveedorSaludStore.proveedorSalud);
 
-const proveedorSalud = ref (
-    JSON.parse(localStorage.getItem('proveedorSalud')) || null
+watch(
+  () => userStore.user,
+  (currentUser) => {
+    if (currentUser?._id) {
+      medicoFirmanteStore.loadMedicoFirmante(currentUser._id);
+    }
+  },
+  { immediate: true }
 );
-
-onMounted(() => {
-    // Escucha los cambios en el usuario para cargar proveedor de salud
-    watch(
-        () => user.user,
-        (user) => {
-            if (user?._id){
-              medicoFirmanteStore.loadMedicoFirmante(user._id);
-            }
-        },
-        { immediate: true } // Ejecutar inmediatamente si ya hay datos cargados
-    );
-});
 
 onMounted(async () => {
   try {

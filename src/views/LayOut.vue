@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch, computed, onBeforeUnmount } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed, onBeforeUnmount, provide } from "vue";
 import { useUserStore } from "@/stores/user";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { useMedicoFirmanteStore } from "@/stores/medicoFirmante";
@@ -14,6 +14,24 @@ import {
   readInitialDarkPreference,
 } from "@/theme/appTheme";
 import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
+import ModalEliminacion from "@/components/ModalEliminacion.vue";
+import { useEliminacion } from "@/composables/useEliminacion";
+
+const {
+  isOpen: eliminacionOpen,
+  isConfirming: eliminacionConfirming,
+  nivel: eliminacionNivel,
+  tipoRegistro: eliminacionTipoRegistro,
+  identificacion: eliminacionIdentificacion,
+  textoConfirmacionEsperado: eliminacionTextoConfirmacion,
+  detalleContexto: eliminacionDetalleContexto,
+  mensajePersonalizado: eliminacionMensajePersonalizado,
+  requestEliminacion,
+  confirmarEliminacion,
+  cancelarEliminacion,
+} = useEliminacion();
+
+provide("requestEliminacion", requestEliminacion);
 
 const user = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -1239,6 +1257,21 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
     </div>
   </div>
   -->
+
+  <Teleport to="body">
+    <ModalEliminacion
+      :is-visible="eliminacionOpen"
+      :nivel="eliminacionNivel"
+      :tipo-registro="eliminacionTipoRegistro"
+      :identificacion="eliminacionIdentificacion"
+      :texto-confirmacion-esperado="eliminacionTextoConfirmacion"
+      :detalle-contexto="eliminacionDetalleContexto"
+      :mensaje-personalizado="eliminacionMensajePersonalizado"
+      :is-confirming="eliminacionConfirming"
+      @confirm="confirmarEliminacion"
+      @cancel="cancelarEliminacion"
+    />
+  </Teleport>
 
 </template>
 

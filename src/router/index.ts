@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LayOut from "../views/LayOut.vue";
-import AuthAPI from "@/api/AuthAPI";
 import axios from "axios";
 import { useUserStore } from "@/stores/user";
 import { usePostHog } from "../composables/usePostHog";
@@ -53,17 +52,19 @@ const router = createRouter({
           path: "/registrar-usuario",
           name: "add-user",
           component: () => import("../views/AddUserView.vue"),
+          meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
           path: "/eliminar-usuarios",
           name: "remove-users",
           component: () => import("../views/RemoveUsersView.vue"),
+          meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
           path: "/gestionar-permisos",
           name: "manage-permissions",
           component: () => import("../views/ManagePermissionsView.vue"),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
           path: "/gestionar-asignaciones",
@@ -85,6 +86,7 @@ const router = createRouter({
           path: "/productividad-usuarios",
           name: "user-productivity",
           component: () => import("../views/UserProductivityView.vue"),
+          meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
           path: "perfil-proveedor",
@@ -224,8 +226,7 @@ router.beforeEach((to, from) => {
     try {
       if (requiresAuth) {
         await userStore.fetchUser();
-        await AuthAPI.auth();
-        identifyUser(); // ✅ Identificamos al usuario solo si está autenticado
+        identifyUser();
       }
       
       const user = userStore.user;

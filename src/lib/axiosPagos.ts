@@ -1,7 +1,5 @@
-import axios from "axios";
+import { createAxiosClient } from './createAxiosClient';
 
-const pagos = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/pagos`,
-});
+const pagos = createAxiosClient(`${import.meta.env.VITE_API_URL}/pagos`);
 
 export default pagos;

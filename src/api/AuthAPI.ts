@@ -16,16 +16,23 @@ export default {
   },
 
   auth: () => {
-    const token = localStorage.getItem("AUTH_TOKEN");
-    return auth.get("/users/user", {
-      headers: {
-        Authorization: "Bearer " + token,
-      },
-    });
+    return auth.get("/users/user");
+  },
+
+  refresh: () => {
+    return auth.post("/users/refresh");
+  },
+
+  logout: () => {
+    return auth.post("/users/logout");
   },
 
   registerUser(userData) {
     return auth.post("/users/register", userData);
+  },
+
+  inviteUser(userData) {
+    return auth.post("/users/invite", userData);
   },
 
   verifyAccount(token) {
@@ -48,7 +55,15 @@ export default {
     return auth.get(`/users/get-users/${idProveedorSalud}`);
   },
 
-  removeUserByEmail(email) {
-    return auth.delete(`/users/delete-user/${email}`);
+  removeUserByEmail(email: string, deletionPassword?: string) {
+    return auth.delete(`/users/delete-user/${email}`, {
+      headers: deletionPassword
+        ? { 'X-Deletion-Password': deletionPassword }
+        : undefined,
+    });
+  },
+
+  verifyCurrentPassword(password: string) {
+    return auth.post('/users/verify-password', { password });
   },
 };

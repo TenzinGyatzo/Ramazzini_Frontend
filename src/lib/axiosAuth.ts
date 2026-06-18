@@ -1,8 +1,6 @@
-import axios from "axios";
+import { createAxiosClient } from './createAxiosClient';
 
-const auth = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/auth`,
-});
+const auth = createAxiosClient(`${import.meta.env.VITE_API_URL}/auth`);
 
 // Adjuntar automáticamente el token a todas las solicitudes (auth/users, permisos, etc.)
 auth.interceptors.request.use((config) => {

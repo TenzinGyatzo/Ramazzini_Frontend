@@ -10,7 +10,6 @@ import GreenButton from '@/components/GreenButton.vue';
 import SliderButton from '@/components/SliderButton.vue';
 import ModalCargaDocumentoExterno from '@/components/ModalCargaDocumentoExterno.vue';
 import ModalUpdateDocumentoExterno from '@/components/ModalUpdateDocumentoExterno.vue';
-import ModalEliminar from '@/components/ModalEliminar.vue';
 import GrupoDocumentos from '@/components/GrupoDocumentos.vue';
 import SlidingButtonPanel from '@/components/SlidingButtonPanel.vue';
 import DeletionButtonPanel from '@/components/DeletionButtonPanel.vue';
@@ -24,6 +23,7 @@ import ModalAnularDocumento from '@/components/modals/ModalAnularDocumento.vue';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
 import DailyConsentModal from '@/components/DailyConsentModal.vue';
 import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
+import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
@@ -31,8 +31,10 @@ import { useNavigateWithDailyConsent } from '@/composables/useNavigateWithDailyC
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
 import ResultadosClinicosPanel from '@/components/ResultadosClinicosPanel.vue';
 import ResultadosClinicosSubsection from '@/components/ResultadosClinicosSubsection.vue';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 const toast: any = inject('toast');
+const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 
 const route = useRoute();
 const router = useRouter();
@@ -41,6 +43,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const formData = useFormDataStore();
+const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const resultadosClinicos = useResultadosClinicosStore();
 
@@ -60,7 +63,6 @@ const {
 const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);
 const showSubscriptionModal = ref(false);
-const showDeleteModal = ref(false);
 const showFinalizeModal = ref(false);
 const showAnularModal = ref(false);
 const showCuestionariosModal = ref(false);
@@ -77,10 +79,8 @@ const estadoSuscripcion = ref<string | null>(null);
 const finDeSuscripcion = ref<Date | null>(null);
 const historiasDelMes = ref<number | null>(null);
 
-const user = ref( JSON.parse(localStorage.getItem('user') || '{}') || null );
-
 onMounted(async () => {
-  const idProveedorSalud = user.value?.idProveedorSalud;
+  const idProveedorSalud = userStore.user?.idProveedorSalud;
   if (idProveedorSalud) {
     await proveedorSaludStore.loadProveedorSalud(idProveedorSalud);
 
@@ -158,22 +158,36 @@ const openSeguimientoProgramadoModal = () => {
   showSeguimientoProgramadoModal.value = true;
 };
 
-const toggleDeleteModal = (
-  documentId: string | null = null,
-  documentName: string = 'Sin nombre',
-  documentType: string | null = null
+const solicitarEliminacionDocumento = (
+  documentId: string,
+  documentName: string,
+  documentType: string,
 ) => {
-  showDeleteModal.value = !showDeleteModal.value;
-
-  if (!showDeleteModal.value) {
-    selectedDocumentId.value = null;
-    selectedDocumentName.value = '';
-    selectedDocumentType.value = null;
-  } else {
-    selectedDocumentId.value = documentId;
-    selectedDocumentName.value = documentName;
-    selectedDocumentType.value = documentType;
-  }
+  requestEliminacion?.({
+    entidad: 'documentoExpediente',
+    identificacion: documentName,
+    onConfirm: async () => {
+      try {
+        await documentos.deleteDocumentById(
+          documentType,
+          trabajadores.currentTrabajadorId!,
+          documentId,
+        );
+        toast.open({ message: 'Documento eliminado exitosamente.' });
+        await Promise.all([
+          documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
+          resultadosClinicos.fetchResultadosAgrupados(trabajadores.currentTrabajadorId!),
+        ]);
+      } catch (error) {
+        console.log('Error al eliminar el documento:', error);
+        toast.open({
+          message: 'Error al eliminar, por favor intente nuevamente.',
+          type: 'error',
+        });
+        throw error;
+      }
+    },
+  });
 };
 
 const toggleFinalizeModal = (
@@ -231,29 +245,6 @@ const handleAnularDocument = async (razonAnulacion: string) => {
     console.error("Error al anular el documento:", error);
     const message = error.response?.data?.message || "Error al anular el documento, por favor intente nuevamente.";
     toast.open({ message, type: "error" });
-  }
-};
-
-const handleDeleteDocument = async () => {
-  if (!selectedDocumentId.value || !selectedDocumentType.value) return;
-
-  try {
-    await documentos.deleteDocumentById(
-      selectedDocumentType.value,
-      trabajadores.currentTrabajadorId!,
-      selectedDocumentId.value
-    );
-
-  toast.open({ message: "Documento eliminado exitosamente." });
-
-  toggleDeleteModal();
-  await Promise.all([
-    documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
-    resultadosClinicos.fetchResultadosAgrupados(trabajadores.currentTrabajadorId!)
-  ]);
-  } catch (error) {
-    console.log("Error al eliminar el documento:", error);
-    toast.open({ message: "Error al eliminar, por favor intente nuevamente.", type: "error" });
   }
 };
 
@@ -902,12 +893,6 @@ const añoMasReciente = computed(() => {
       </Transition>
 
       <Transition appear name="fade">
-        <ModalEliminar v-if="showDeleteModal && selectedDocumentId && selectedDocumentType" :idRegistro="selectedDocumentId"
-          :identificacion="selectedDocumentName" :tipoRegistro="documentTypeLabels[selectedDocumentType]"
-          @closeModal="toggleDeleteModal" @confirmDelete="handleDeleteDocument" />
-      </Transition>
-
-      <Transition appear name="fade">
         <ModalFinalizarDocumento v-if="showFinalizeModal && selectedDocumentId && selectedDocumentType" 
           :documentId="selectedDocumentId"
           :documentType="selectedDocumentType"
@@ -1302,7 +1287,7 @@ const añoMasReciente = computed(() => {
                     :documents="documentosPorAnio[year] || {}"
                     :year="String(year)"
                     :trabajador="trabajadores.currentTrabajador || {}"
-                    @eliminarDocumento="toggleDeleteModal"
+                    @eliminarDocumento="solicitarEliminacionDocumento"
                     @abrirModalAnular="toggleAnularModal"
                     @abrirModalFinalizar="toggleFinalizeModal"
                     @abrirModalUpdate="toggleDocumentoExternoUpdateModal"

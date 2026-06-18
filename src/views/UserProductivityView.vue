@@ -43,9 +43,7 @@ const ultimaActividadGlobal = computed(() => {
   }
 });
 
-const user = ref(
-  JSON.parse(localStorage.getItem("user")) || null
-);
+const user = computed(() => userStore.user);
 
 // Verificar si el usuario actual es el administrador
 const esAdministrador = computed(() => {

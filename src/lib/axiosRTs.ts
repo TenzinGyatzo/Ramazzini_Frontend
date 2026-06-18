@@ -1,8 +1,5 @@
-import axios from "axios";
+import { createAxiosClient } from './createAxiosClient';
 
-const rt = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/riesgos-trabajo`,
-});
+const rt = createAxiosClient(`${import.meta.env.VITE_API_URL}/riesgos-trabajo`);
 
 export default rt;
-  

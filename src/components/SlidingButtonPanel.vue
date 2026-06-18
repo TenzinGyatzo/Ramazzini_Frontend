@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import axios from "axios";
+import { authRequestConfig } from "@/lib/attachAuthToken";
 import { useTrabajadoresStore } from "@/stores/trabajadores";
 import ModalFaltanPdfs from "./ModalFaltanPdfs.vue";
 
@@ -100,7 +101,7 @@ const handleClick = async () => {
     const response = await axios.post(
       `${import.meta.env.VITE_API_URL}/document-merger/merge`,
       { filePaths: orderedRoutes },
-      { responseType: 'blob' }
+      { responseType: 'blob', ...authRequestConfig() }
     );
     const blob = new Blob([response.data], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);

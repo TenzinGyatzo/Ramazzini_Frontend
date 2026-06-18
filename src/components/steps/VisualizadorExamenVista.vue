@@ -20,14 +20,7 @@ const goToStep = (stepNumber) => {
   steps.goToStep(stepNumber);
 };
 
-// Obtener el país del proveedor de salud
-const proveedorSalud = computed(() => {
-  try {
-    return JSON.parse(localStorage.getItem('proveedorSalud')) || null;
-  } catch {
-    return null;
-  }
-});
+const proveedorSalud = computed(() => proveedorSaludStore.proveedorSalud);
 
 const paisProveedor = computed(() => proveedorSalud.value?.pais || '');
 const esGuatemala = computed(() => paisProveedor.value === 'GT');
