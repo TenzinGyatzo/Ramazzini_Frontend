@@ -10,7 +10,6 @@ import GreenButton from '@/components/GreenButton.vue';
 import SliderButton from '@/components/SliderButton.vue';
 import ModalCargaDocumentoExterno from '@/components/ModalCargaDocumentoExterno.vue';
 import ModalUpdateDocumentoExterno from '@/components/ModalUpdateDocumentoExterno.vue';
-import ModalEliminar from '@/components/ModalEliminar.vue';
 import GrupoDocumentos from '@/components/GrupoDocumentos.vue';
 import SlidingButtonPanel from '@/components/SlidingButtonPanel.vue';
 import DeletionButtonPanel from '@/components/DeletionButtonPanel.vue';
@@ -27,8 +26,10 @@ import { usePermissionRestrictions } from '@/composables/usePermissionRestrictio
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
 import ResultadosClinicosPanel from '@/components/ResultadosClinicosPanel.vue';
 import ResultadosClinicosSubsection from '@/components/ResultadosClinicosSubsection.vue';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 const toast: any = inject('toast');
+const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 
 const route = useRoute();
 const router = useRouter();
@@ -46,13 +47,9 @@ const { executeIfCanManageDocumentosExternos } = usePermissionRestrictions();
 const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);
 const showSubscriptionModal = ref(false);
-const showDeleteModal = ref(false);
 const showCuestionariosModal = ref(false);
 const showSeguimientoProgramadoModal = ref(false);
 const showResultadosClinicosPanel = ref(false);
-const selectedDocumentId = ref<string | null>(null);
-const selectedDocumentName = ref<string>('');
-const selectedDocumentType = ref<string | null>(null);
 const selectedRoutes = ref<string[]>([]);
 const isDeletionMode = ref(false);
 const periodoDePruebaFinalizado = ref<boolean | null>(null);
@@ -136,45 +133,36 @@ const openSeguimientoProgramadoModal = () => {
   showSeguimientoProgramadoModal.value = true;
 };
 
-const toggleDeleteModal = (
-  documentId: string | null = null,
-  documentName: string = 'Sin nombre',
-  documentType: string | null = null
+const solicitarEliminacionDocumento = (
+  documentId: string,
+  documentName: string,
+  documentType: string,
 ) => {
-  showDeleteModal.value = !showDeleteModal.value;
-
-  if (!showDeleteModal.value) {
-    selectedDocumentId.value = null;
-    selectedDocumentName.value = '';
-    selectedDocumentType.value = null;
-  } else {
-    selectedDocumentId.value = documentId;
-    selectedDocumentName.value = documentName;
-    selectedDocumentType.value = documentType;
-  }
-};
-
-const handleDeleteDocument = async () => {
-  if (!selectedDocumentId.value || !selectedDocumentType.value) return;
-
-  try {
-    await documentos.deleteDocumentById(
-      selectedDocumentType.value,
-      trabajadores.currentTrabajadorId!,
-      selectedDocumentId.value
-    );
-
-  toast.open({ message: "Documento eliminado exitosamente." });
-
-  toggleDeleteModal();
-  await Promise.all([
-    documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
-    resultadosClinicos.fetchResultadosAgrupados(trabajadores.currentTrabajadorId!)
-  ]);
-  } catch (error) {
-    console.log("Error al eliminar el documento:", error);
-    toast.open({ message: "Error al eliminar, por favor intente nuevamente.", type: "error" });
-  }
+  requestEliminacion?.({
+    entidad: 'documentoExpediente',
+    identificacion: documentName,
+    onConfirm: async () => {
+      try {
+        await documentos.deleteDocumentById(
+          documentType,
+          trabajadores.currentTrabajadorId!,
+          documentId,
+        );
+        toast.open({ message: 'Documento eliminado exitosamente.' });
+        await Promise.all([
+          documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
+          resultadosClinicos.fetchResultadosAgrupados(trabajadores.currentTrabajadorId!),
+        ]);
+      } catch (error) {
+        console.log('Error al eliminar el documento:', error);
+        toast.open({
+          message: 'Error al eliminar, por favor intente nuevamente.',
+          type: 'error',
+        });
+        throw error;
+      }
+    },
+  });
 };
 
 const documentTypeLabels = {
@@ -716,12 +704,6 @@ const añoMasReciente = computed(() => {
       </Transition>
 
       <Transition appear name="fade">
-        <ModalEliminar v-if="showDeleteModal && selectedDocumentId && selectedDocumentType" :idRegistro="selectedDocumentId"
-          :identificacion="selectedDocumentName" :tipoRegistro="documentTypeLabels[selectedDocumentType]"
-          @closeModal="toggleDeleteModal" @confirmDelete="handleDeleteDocument" />
-      </Transition>
-
-      <Transition appear name="fade">
         <ModalCuestionarios
           v-if="showCuestionariosModal"
           @closeModal="toggleCuestionariosModal"
@@ -1077,7 +1059,7 @@ const añoMasReciente = computed(() => {
                     :documents="documentosPorAnio[year] || {}"
                     :year="String(year)"
                     :trabajador="trabajadores.currentTrabajador || {}"
-                    @eliminarDocumento="toggleDeleteModal"
+                    @eliminarDocumento="solicitarEliminacionDocumento"
                     @abrirModalUpdate="toggleDocumentoExternoUpdateModal"
                     @openSubscriptionModal="showSubscriptionModal = true"
                     :toggleRouteSelection="toggleRouteSelection"

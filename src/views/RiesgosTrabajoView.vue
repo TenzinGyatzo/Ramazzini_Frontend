@@ -13,8 +13,8 @@ import { startOfMonth, endOfMonth, subMonths, subDays, startOfYear, endOfYear, s
 import GreenButton from '@/components/GreenButton.vue';
 import { exportarRiesgosTrabajoDesdeFrontend } from '@/helpers/exportarExcel';
 import ModalRTs from '@/components/ModalRTs.vue';
-import ModalEliminar from '@/components/ModalEliminar.vue';
 import RiesgosTrabajoDataTable from '@/components/RiesgosTrabajoDataTable.vue';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 /* =====================
    Variables y Stores
@@ -32,14 +32,14 @@ const riesgosEmpresa = ref<RiesgoTrabajo[]>([]);
 const centrosAbiertos = ref<Record<string, boolean>>({});
 
 const showRTsModal = ref(false);
-const showDeleteModal = ref(false);
 
 // Toggle para cambiar entre vista de tarjetas y tabla
 const vistaActual = ref<'tarjetas' | 'tabla'>('tarjetas');
 const mostrarTipScroll = ref(false)
 const esRestauracionLocalStorage = ref(false)
 
-const toast = inject('toast') as any; // Inyectamos el servicio de toast para notificaciones
+const toast = inject('toast') as any;
+const requestEliminacionGlobal = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 
 /* =====================
    Filtros Reactivos Mejorados
@@ -703,53 +703,32 @@ function actualizarRiesgoLocalmente(riesgoActualizado: RiesgoTrabajo) {
   nextTick(() => verificarOverflow(riesgoActualizado._id));
 }
 
-const deleteConfig = ref<{
-  tipo: string;
-  id: string | null;
-  descripcion: string;
-  onConfirm: ((id: string) => Promise<void>) | null;
-}>({
-  tipo: '',
-  id: null,
-  descripcion: '',
-  onConfirm: null
-});
-
-const solicitarEliminacion = (tipo: string, id: string, descripcion: string, onConfirm: (id: string) => Promise<void>) => {
-  deleteConfig.value = { tipo, id, descripcion, onConfirm };
-  showDeleteModal.value = true;
+const solicitarEliminacion = (
+  tipo: string,
+  id: string,
+  descripcion: string,
+  onConfirm: (id: string) => Promise<void>,
+) => {
+  requestEliminacionGlobal?.({
+    entidad: 'riesgoTrabajo',
+    identificacion: descripcion,
+    onConfirm: async () => {
+      try {
+        await onConfirm(id);
+      } catch (err) {
+        toast.open({ message: `Error al eliminar ${tipo}`, type: 'error' });
+        throw err;
+      }
+    },
+  });
 };
+
+provide('solicitarEliminacion', solicitarEliminacion);
 
 function eliminarRiesgoLocalmente(id: string) {
   riesgosEmpresa.value = riesgosEmpresa.value.filter(r => r._id !== id);
   riesgosOriginales.value = riesgosOriginales.value.filter(r => r._id !== id);
 }
-
-const confirmarEliminacion = async () => {
-  try {
-    const idEliminado = deleteConfig.value.id;
-    if (typeof deleteConfig.value.onConfirm === 'function' && idEliminado) {
-      await deleteConfig.value.onConfirm(idEliminado);
-
-      // ✅ Actualiza lista de RTs global
-      eliminarRiesgoLocalmente(idEliminado);
-
-      // ✅ Actualiza el trabajador actual manualmente
-      if (trabajadoresStore.currentTrabajador?.riesgosTrabajo) {
-        trabajadoresStore.currentTrabajador.riesgosTrabajo =
-          trabajadoresStore.currentTrabajador.riesgosTrabajo.filter(rt => rt._id !== idEliminado);
-      }
-    }
-
-  } catch (err) {
-    toast.open({ message: `Error al eliminar ${deleteConfig.value.tipo}`, type: 'error' });
-  } finally {
-    showDeleteModal.value = false;
-    deleteConfig.value = { tipo: '', id: null, descripcion: '', onConfirm: null };
-  }
-};
-
-provide('solicitarEliminacion', solicitarEliminacion);
 
 async function eliminarRTDesdeVista(trabajadorId: string, riesgoTrabajoId: string) {
   try {
@@ -799,17 +778,6 @@ const mostrarTipScrollLateral = () => {
           @closeModal="showRTsModal = false"
           @riesgoActualizado="actualizarRiesgoLocalmente"
           @riesgoCreado="agregarRiesgoLocalmente"
-        />
-      </Transition>
-
-      <Transition appear name="fade">
-        <ModalEliminar
-          v-if="showDeleteModal"
-          :id-registro="deleteConfig.id || ''"
-          :identificacion="deleteConfig.descripcion"
-          :tipo-registro="deleteConfig.tipo"
-          @closeModal="showDeleteModal = false"
-          @confirmDelete="confirmarEliminacion"
         />
       </Transition>
       

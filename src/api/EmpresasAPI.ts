@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import { deletionPasswordHeaders } from "@/utils/deletionAuth";
 
 export default {
   getEmpresas(idProveedorSalud: string, userId?: string) { 
@@ -32,8 +33,10 @@ export default {
     return api.get(`/${empresaId}/riesgos-trabajo`);
   },
 
-  deleteEmpresaById(empresaId: string) {
-    return api.delete(`/eliminar-empresa/${empresaId}`);
+  deleteEmpresaById(empresaId: string, deletionPassword?: string) {
+    return api.delete(`/eliminar-empresa/${empresaId}`, {
+      headers: deletionPasswordHeaders(deletionPassword),
+    });
   },
 
 };

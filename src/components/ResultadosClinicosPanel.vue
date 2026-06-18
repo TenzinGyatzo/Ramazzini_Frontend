@@ -733,18 +733,6 @@
       </div>
     </Transition>
 
-      <ConfirmacionEliminar
-        :is-open="isDeleteModalOpen"
-        title="Eliminar resultado clínico"
-        :message="deleteMessage"
-        :fecha="modalFecha"
-        :resultado="modalResultado"
-        :tipo-sangre="modalTipoSangre"
-        :tipo-estudio-label="modalTipoEstudio"
-        @close="closeDeleteModal"
-        @confirm="confirmDeleteResultado"
-      />
-
       <SelectorDocumentoExterno
         :is-open="showSelectorDocumento"
         :trabajador-id="trabajadorId"
@@ -908,9 +896,9 @@ import { useResultadosClinicosStore, type ResultadoClinico } from '@/stores/resu
 import type { DocumentoExterno } from '@/interfaces/documentos.inteface';
 import { useDocumentosStore } from '@/stores/documentos';
 import { convertirFechaISOaDDMMYYYY, formatDateYYYYMMDD } from '@/helpers/dates';
-import ConfirmacionEliminar from '@/components/ConfirmacionEliminar.vue';
 import SelectorDocumentoExterno from '@/components/SelectorDocumentoExterno.vue';
 import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -922,6 +910,7 @@ const emit = defineEmits<{
 }>();
 
 const toast: any = inject('toast');
+const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 const store = useResultadosClinicosStore();
 const documentos = useDocumentosStore();
 const isHtmlDark = useHtmlDarkMode();
@@ -946,8 +935,6 @@ const formData = ref<Partial<ResultadoClinico>>({
   documentoExterno: undefined,
 });
 
-const isDeleteModalOpen = ref(false);
-const resultadoParaEliminar = ref<ResultadoClinico | null>(null);
 const showSelectorDocumento = ref(false);
 const previousDocumentoId = ref<string | undefined>(undefined);
 const pendingDesvincularDocumento = ref(false);
@@ -1324,34 +1311,71 @@ const handleEdit = (item: ResultadoClinico) => {
   currentStep.value = 'form';
 };
 
+const ejecutarEliminacionResultado = async (item: ResultadoClinico) => {
+  if (!item._id) return;
+  await store.deleteResultado(item._id);
+  await store.fetchResultadosAgrupados(props.trabajadorId);
+  toast.open({
+    message: 'Resultado eliminado correctamente',
+    type: 'success',
+  });
+
+  if (isEditing.value && editingId.value === item._id) {
+    isEditing.value = false;
+    editingId.value = null;
+    store.setCurrent(null);
+    resetForm();
+    currentStep.value = 'select';
+    handleClose();
+  }
+};
+
+const solicitarEliminacionResultado = (item: ResultadoClinico) => {
+  requestEliminacion?.({
+    entidad: 'resultadoClinico',
+    identificacion: getTipoLabel(item.tipoEstudio),
+    detalleContexto: {
+      tipoEstudioLabel: getTipoLabel(item.tipoEstudio),
+      fecha: item.fechaEstudio ? formatDate(item.fechaEstudio) : '',
+      resultado: item.resultadoGlobal ? getResultadoLabel(item.resultadoGlobal) : '',
+      tipoSangre: item.tipoSangre ? getTipoSangreLabel(item.tipoSangre) : '',
+    },
+    onConfirm: async () => {
+      try {
+        await ejecutarEliminacionResultado(item);
+      } catch {
+        toast.open({
+          message: 'Error al eliminar el resultado',
+          type: 'error',
+        });
+        throw new Error('delete-failed');
+      }
+    },
+  });
+};
+
 const handleDelete = (item: ResultadoClinico) => {
-  resultadoParaEliminar.value = item;
-  isDeleteModalOpen.value = true;
+  solicitarEliminacionResultado(item);
 };
 
 const handleDeleteFromEdit = async () => {
-  // Obtener el resultado actual que se está editando
-  // Primero intentar usar store.current (más eficiente)
   if (store.current && store.current._id) {
-    resultadoParaEliminar.value = store.current;
-    isDeleteModalOpen.value = true;
+    solicitarEliminacionResultado(store.current);
     return;
   }
 
-  // Si no está en store.current, buscar por editingId
   if (editingId.value) {
     try {
       const resultado = await store.fetchResultadoById(editingId.value);
       if (resultado) {
-        resultadoParaEliminar.value = resultado;
-        isDeleteModalOpen.value = true;
+        solicitarEliminacionResultado(resultado);
       } else {
         toast.open({
           message: 'No se puede eliminar: resultado no encontrado',
           type: 'error',
         });
       }
-    } catch (error) {
+    } catch {
       toast.open({
         message: 'Error al obtener el resultado para eliminar',
         type: 'error',
@@ -1362,41 +1386,6 @@ const handleDeleteFromEdit = async () => {
       message: 'No se puede eliminar: resultado no encontrado',
       type: 'error',
     });
-  }
-};
-
-const closeDeleteModal = () => {
-  isDeleteModalOpen.value = false;
-  resultadoParaEliminar.value = null;
-};
-
-const confirmDeleteResultado = async () => {
-  if (!resultadoParaEliminar.value?._id) return;
-  try {
-    await store.deleteResultado(resultadoParaEliminar.value._id);
-    await store.fetchResultadosAgrupados(props.trabajadorId);
-    toast.open({
-      message: 'Resultado eliminado correctamente',
-      type: 'success',
-    });
-    
-    // Si se estaba editando el resultado eliminado, cerrar el panel y resetear
-    if (isEditing.value && editingId.value === resultadoParaEliminar.value._id) {
-      isEditing.value = false;
-      editingId.value = null;
-      store.setCurrent(null);
-      resetForm();
-      currentStep.value = 'select';
-      // Cerrar el panel completamente
-      handleClose();
-    }
-  } catch (error) {
-    toast.open({
-      message: 'Error al eliminar el resultado',
-      type: 'error',
-    });
-  } finally {
-    closeDeleteModal();
   }
 };
 
@@ -1610,35 +1599,6 @@ const getTipoLabel = (tipo?: string) => {
   const option = store.tipoEstudioOptions.find(opt => opt.value === tipo);
   return option?.label || tipo || '';
 };
-
-const deleteMessage = computed(() => {
-  if (!resultadoParaEliminar.value) {
-    return '¿Deseas eliminar este resultado clínico?';
-  }
-  return '¿Deseas eliminar el resultado de ';
-});
-
-const modalFecha = computed(() => {
-  if (!resultadoParaEliminar.value?.fechaEstudio) return '';
-  return formatDate(resultadoParaEliminar.value.fechaEstudio);
-});
-
-const modalResultado = computed(() => {
-  if (!resultadoParaEliminar.value?.resultadoGlobal) return '';
-  return getResultadoLabel(resultadoParaEliminar.value.resultadoGlobal);
-});
-
-const modalTipoSangre = computed(() => {
-  if (resultadoParaEliminar.value?.tipoSangre) {
-    return getTipoSangreLabel(resultadoParaEliminar.value.tipoSangre);
-  }
-  return '';
-});
-
-const modalTipoEstudio = computed(() => {
-  if (!resultadoParaEliminar.value?.tipoEstudio) return '';
-  return getTipoLabel(resultadoParaEliminar.value.tipoEstudio);
-});
 
 const getResultadoLabel = (resultado?: string) => {
   const option = store.resultadoGlobalOptions.find(opt => opt.value === resultado);

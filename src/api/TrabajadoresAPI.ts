@@ -1,5 +1,6 @@
 import type { Trabajador } from '@/interfaces/trabajador.interface';
 import api from '@/lib/axios'
+import { deletionPasswordHeaders } from '@/utils/deletionAuth'
 
 export default {
     getTrabajadores(empresaId: string, centroTrabajoId: string) {
@@ -38,8 +39,10 @@ export default {
         return api.post(`/${empresaId}/${centroTrabajoId}/importar-trabajadores`, formData)
     },
 
-    deleteTrabajadorById(empresaId: string, centroTrabajoId: string, trabajadorId: string) {
-        return api.delete(`/${empresaId}/${centroTrabajoId}/eliminar-trabajador/${trabajadorId}`)
+    deleteTrabajadorById(empresaId: string, centroTrabajoId: string, trabajadorId: string, deletionPassword?: string) {
+        return api.delete(`/${empresaId}/${centroTrabajoId}/eliminar-trabajador/${trabajadorId}`, {
+            headers: deletionPasswordHeaders(deletionPassword),
+        })
     },
 
     exportTrabajadores(empresaId: string, centroTrabajoId: string) {

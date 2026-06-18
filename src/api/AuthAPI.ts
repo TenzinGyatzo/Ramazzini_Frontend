@@ -45,7 +45,15 @@ export default {
     return auth.get(`/users/get-users/${idProveedorSalud}`);
   },
 
-  removeUserByEmail(email) {
-    return auth.delete(`/users/delete-user/${email}`);
+  removeUserByEmail(email: string, deletionPassword?: string) {
+    return auth.delete(`/users/delete-user/${email}`, {
+      headers: deletionPassword
+        ? { 'X-Deletion-Password': deletionPassword }
+        : undefined,
+    });
+  },
+
+  verifyCurrentPassword(password: string) {
+    return auth.post('/users/verify-password', { password });
   },
 };

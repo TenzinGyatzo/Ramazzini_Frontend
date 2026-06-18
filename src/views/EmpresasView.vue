@@ -4,15 +4,17 @@ import EmpresaItem from '@/components/EmpresaItem.vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import GreenButton from '@/components/GreenButton.vue';
 import ModalEmpresas from '@/components/ModalEmpresas.vue';
-import ModalEliminar from '@/components/ModalEliminar.vue';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useRouter } from 'vue-router';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
+import CentrosTrabajoAPI from '@/api/CentrosTrabajoAPI';
 
 const toast: any = inject('toast');
+const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 
 const empresas = useEmpresasStore();
 const proveedorSalud = useProveedorSaludStore();
@@ -21,9 +23,6 @@ const { canManageEmpresas } = useUserPermissions();
 const { executeIfCanManageEmpresas } = usePermissionRestrictions();
 
 const showModal = ref(false);
-const showDeleteModal = ref(false);
-const selectedEmpresaId = ref<string | null>(null);
-const selectedEmpresaNombre = ref<string | null>(null);
 const showSubscriptionModal = ref(false);
 
 const busqueda = ref('');
@@ -78,33 +77,42 @@ const closeModal = () => {
   showModal.value = false;
 };
 
-const toggleDeleteModal = (idEmpresa: string | null = null, nombreComercial: string | null = null) => {
-  showDeleteModal.value = !showDeleteModal.value;
-  selectedEmpresaId.value = idEmpresa;
-  selectedEmpresaNombre.value = nombreComercial;
-};
-
-const deleteEmpresaById = async (id: string) => {
+const solicitarEliminacionEmpresa = async (idEmpresa: string, nombreComercial: string) => {
+  let cantidadCentros = 0;
   try {
-    toast.open({ 
-      message: `Eliminando empresa ${selectedEmpresaNombre.value}...`, 
-      type: "info" 
-    });
-    
-    // Esperamos a que la empresa sea eliminada
-    await empresas.deleteEmpresaById(id);
-
-    toast.open({ message: 'Empresa eliminada con éxito' });
-
-    // Una vez eliminada, volvemos a hacer fetch para actualizar la lista
-    await empresas.fetchEmpresas(proveedorSalud.proveedorSalud!._id);
-
-    empresas.resetCurrentEmpresa();
-    
+    const { data } = await CentrosTrabajoAPI.getCentrosTrabajo(idEmpresa);
+    cantidadCentros = Array.isArray(data) ? data.length : 0;
   } catch (error) {
-    console.log('Error al eliminar la empresa:', error);
-    toast.open({ message: 'Error al eliminar la empresa. Algunos documentos no se pudieron eliminar. Elimínalos directamente y vuelve a intentarlo', type: 'error' });
+    console.error('Error al obtener centros de la empresa:', error);
+    cantidadCentros = 1;
   }
+
+  requestEliminacion?.({
+    entidad: 'empresa',
+    identificacion: nombreComercial,
+    textoConfirmacion: cantidadCentros > 0 ? nombreComercial : undefined,
+    contextoNivel: { cantidadCentros },
+    onConfirm: async (password) => {
+      try {
+        toast.open({
+          message: `Eliminando empresa ${nombreComercial}...`,
+          type: 'info',
+        });
+        await empresas.deleteEmpresaById(idEmpresa, password);
+        toast.open({ message: 'Empresa eliminada con éxito' });
+        await empresas.fetchEmpresas(proveedorSalud.proveedorSalud!._id);
+        empresas.resetCurrentEmpresa();
+      } catch (error) {
+        console.log('Error al eliminar la empresa:', error);
+        toast.open({
+          message:
+            'Error al eliminar la empresa. Algunos documentos no se pudieron eliminar. Elimínalos directamente y vuelve a intentarlo',
+          type: 'error',
+        });
+        throw error;
+      }
+    },
+  });
 };
 
 watch(
@@ -161,12 +169,6 @@ watchEffect(() => {
       <Transition appear name="fade">
         <ModalSuscripcion v-if="showSubscriptionModal" 
           @closeModal="showSubscriptionModal = false"/>
-      </Transition>
-
-      <Transition appear name="fade">
-        <ModalEliminar v-if="showDeleteModal && selectedEmpresaId && selectedEmpresaNombre" :idRegistro="selectedEmpresaId"
-          :identificacion="selectedEmpresaNombre" tipoRegistro="Empresa" @closeModal="toggleDeleteModal"
-          @confirmDelete="deleteEmpresaById" />
       </Transition>
 
       <div class="p-5 grid gap-5">
@@ -344,7 +346,7 @@ watchEffect(() => {
             <!-- Si hay empresas, mostramos los items -->
             <div v-else class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
               <EmpresaItem v-for="empresa in empresasFiltradas" :key="empresa._id" :empresa="empresa"
-                @editarEmpresa="openModal" @eliminarEmpresa="toggleDeleteModal" />
+                @editarEmpresa="openModal" @eliminarEmpresa="solicitarEliminacionEmpresa" />
             </div>
           </div>
         </Transition>

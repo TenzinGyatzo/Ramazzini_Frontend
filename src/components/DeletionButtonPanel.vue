@@ -1,18 +1,12 @@
-<script setup>
-import { ref, watch } from "vue";
+<script setup lang="ts">
+import { ref, watch, computed } from "vue";
 import ModalConfirmacionEliminacion from "./ModalConfirmacionEliminacion.vue";
+import { resolverNivel } from "@/config/eliminacion";
 
-// Props
-const props = defineProps({
-  selectedRoutes: {
-    type: Array,
-    required: true,
-  },
-  isDeletionMode: {
-    type: Boolean,
-    required: true,
-  },
-});
+const props = defineProps<{
+  selectedRoutes: string[];
+  isDeletionMode: boolean;
+}>();
 
 const emit = defineEmits(['deleteSelected']);
 
@@ -20,9 +14,14 @@ const isVisible = ref(false);
 const loading = ref(false);
 const showConfirmModal = ref(false);
 
+const nivelEliminacion = computed<'simple' | 'moderado'>(() => {
+  const nivel = resolverNivel('documentosMasivos', { cantidad: props.selectedRoutes.length });
+  return nivel === 'moderado' ? 'moderado' : 'simple';
+});
+
 // Watch para mostrar/ocultar el panel
 watch(
-  () => [props.selectedRoutes.length, props.isDeletionMode],
+  () => [props.selectedRoutes.length, props.isDeletionMode] as const,
   ([routesLength, deletionMode]) => {
     if (routesLength > 0 && deletionMode) {
       isVisible.value = true;
@@ -59,6 +58,7 @@ const handleCancelDelete = () => {
     :isVisible="showConfirmModal"
     :selectedCount="selectedRoutes.length"
     :selectedRoutes="selectedRoutes"
+    :nivel="nivelEliminacion"
     @confirm="handleConfirmDelete"
     @cancel="handleCancelDelete"
   />

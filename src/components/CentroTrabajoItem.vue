@@ -22,7 +22,7 @@ const props = defineProps({
 
 const emit = defineEmits<{
     (event: 'editarCentro', empresa: Empresa, centro: CentroTrabajo): void;
-    (event: 'eliminarCentro', id: string, nombreCentro: string): void;
+    (event: 'eliminarCentro', id: string, nombreCentro: string, cantidadTrabajadores: number): void;
 }>();
 
 const handleEditarCentro = (empresa: Empresa, centro: CentroTrabajo) => {
@@ -34,8 +34,7 @@ const handleEditarCentro = (empresa: Empresa, centro: CentroTrabajo) => {
 
 const handleEliminarCentro = (id: string, nombreCentro: string) => {
     executeIfCanManageCentrosTrabajo(() => {
-        // Emitir evento solo si tiene permisos
-        emit('eliminarCentro', id, nombreCentro);
+        emit('eliminarCentro', id, nombreCentro, numeroTrabajadores.value);
     }, 'eliminar centros de trabajo');
 };
 

@@ -273,14 +273,16 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
   async function deleteTrabajadorById(
     empresaId: string,
     centroTrabajoId: string,
-    trabajadorId: string
+    trabajadorId: string,
+    deletionPassword?: string,
   ) {
     try {
       loading.value = true;
       await TrabajadoresAPI.deleteTrabajadorById(
         empresaId,
         centroTrabajoId,
-        trabajadorId
+        trabajadorId,
+        deletionPassword,
       );
     } catch (error) {
       // console.log(error);

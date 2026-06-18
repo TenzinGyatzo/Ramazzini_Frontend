@@ -8,7 +8,7 @@ import { ref, onMounted, inject, computed } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import GreenButton from '@/components/GreenButton.vue';
 import ModalCentros from '@/components/ModalCentros.vue';
-import ModalEliminar from '@/components/ModalEliminar.vue';
+import type { EliminacionRequest } from '@/composables/useEliminacion';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
@@ -17,6 +17,7 @@ import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 
 const toast: any = inject('toast');
+const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -30,9 +31,6 @@ const { canManageCentrosTrabajo, canAccessDashboardSalud, canAccessRiesgosTrabaj
 const { executeIfCanManageCentrosTrabajo } = usePermissionRestrictions();
 
 const showModal = ref(false);
-const showDeleteModal = ref(false);
-const selectedCentroTrabajoId = ref<string | null>(null);
-const selectedCentroTrabajoNombre = ref<string | null>(null);
 const totalTrabajadores = ref(0);
 const loadingTrabajadores = ref(false);
 const tieneRiesgosTrabajo = ref(false);
@@ -82,36 +80,39 @@ const closeModal = async () => {
   await obtenerDatosEmpresa();
 };
 
-const toggleDeleteModal = (idCentroTrabajo: string | null = null, nombreCentro: string | null = null) => {
-  showDeleteModal.value = !showDeleteModal.value;
-  selectedCentroTrabajoId.value = idCentroTrabajo;
-  selectedCentroTrabajoNombre.value = nombreCentro;
-};
-
-const deleteCentroTrabajoById = async (empresaId: string, centroTrabajoId: string) => {
-  try {
-    toast.open({ 
-      message: `Eliminando centro de trabajo ${selectedCentroTrabajoNombre.value}...`, 
-      type: "info" 
-    });
-    
-    // Esperamos a que el centro de trabajo sea eliminado
-    await centrosTrabajo.deleteCentroTrabajoById(empresaId, centroTrabajoId);
-
-    toast.open({ message: 'Centro de trabajo eliminado con éxito' });
-
-    // Una vez eliminada, volvemos a hacer fetch para actualizar la lista
-    await centrosTrabajo.fetchCentrosTrabajo(String(route.params.idEmpresa));
-
-    centrosTrabajo.resetCurrentCentroTrabajo();
-    
-    // Actualizar el conteo de trabajadores y riesgos
-    await obtenerDatosEmpresa();
-    
-  } catch (error) {
-    console.error('Error al eliminar el centro de trabajo', error);
-    toast.open({ message: 'Hubo un error. Algunos documentos no se pudieron eliminar. Elimínalos directamente y vuelve a intentarlo', type: 'error' });
-  }
+const solicitarEliminacionCentro = (
+  idCentroTrabajo: string,
+  nombreCentro: string,
+  cantidadTrabajadores = 0,
+) => {
+  const empresaId = empresas.currentEmpresaId ?? String(route.params.idEmpresa);
+  requestEliminacion?.({
+    entidad: 'centroTrabajo',
+    identificacion: nombreCentro,
+    textoConfirmacion: cantidadTrabajadores > 0 ? nombreCentro : undefined,
+    contextoNivel: { cantidadTrabajadores },
+    onConfirm: async (password) => {
+      try {
+        toast.open({
+          message: `Eliminando centro de trabajo ${nombreCentro}...`,
+          type: 'info',
+        });
+        await centrosTrabajo.deleteCentroTrabajoById(empresaId, idCentroTrabajo, password);
+        toast.open({ message: 'Centro de trabajo eliminado con éxito' });
+        await centrosTrabajo.fetchCentrosTrabajo(String(route.params.idEmpresa));
+        centrosTrabajo.resetCurrentCentroTrabajo();
+        await obtenerDatosEmpresa();
+      } catch (error) {
+        console.error('Error al eliminar el centro de trabajo', error);
+        toast.open({
+          message:
+            'Hubo un error. Algunos documentos no se pudieron eliminar. Elimínalos directamente y vuelve a intentarlo',
+          type: 'error',
+        });
+        throw error;
+      }
+    },
+  });
 };
 
 // Función para obtener trabajadores y riesgos de trabajo en paralelo
@@ -189,12 +190,6 @@ onMounted(async () => {
     <div>
       <Transition appear name="fade">
         <ModalCentros v-if="showModal" @closeModal="closeModal" />
-      </Transition>
-
-      <Transition appear name="fade">
-        <ModalEliminar v-if="showDeleteModal && selectedCentroTrabajoId && selectedCentroTrabajoNombre"
-          :idRegistro="selectedCentroTrabajoId" :identificacion="selectedCentroTrabajoNombre"
-          tipoRegistro="Centro de Trabajo" @closeModal="toggleDeleteModal" @confirmDelete="deleteCentroTrabajoById" />
       </Transition>
 
       <div class="min-h-screen">
@@ -325,7 +320,7 @@ onMounted(async () => {
                   <div v-for="centro in centrosTrabajo.centrosTrabajo" :key="centro._id">
                     <CentroTrabajoItem :centro="centro"
                     :empresa="empresas.currentEmpresa" class="mb-2" @editarCentro="openModal"
-                    @eliminarCentro="toggleDeleteModal" />
+                    @eliminarCentro="solicitarEliminacionCentro" />
                   </div>
                 </div>
 
