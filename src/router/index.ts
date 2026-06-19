@@ -192,7 +192,7 @@ const router = createRouter({
           path: "/auditoria",
           name: "auditoria",
           component: () => import("@/views/AuditoriaView.vue"),
-          meta: { requiresAuth: true },
+          meta: { requiresAuth: true, requiresPrincipalOnly: true },
         }
       ],
     },
@@ -220,6 +220,7 @@ router.beforeEach((to, from) => {
     const requiresAuth = to.meta.requiresAuth; // Verifica solo la ruta actual
     const requiresAdmin = to.meta.requiresAdmin; // Verifica solo
     const requiresPrincipal = to.meta.requiresPrincipal; // Verifica solo
+    const requiresPrincipalOnly = to.meta.requiresPrincipalOnly;
     const requiresCatalogAdmin = to.meta.requiresCatalogAdmin;
     const userStore = useUserStore();
 
@@ -234,6 +235,12 @@ router.beforeEach((to, from) => {
       // Validar si requiere ser admin y no lo es
       if (requiresAdmin && (!user || user.role !== "Administrador")) {
         console.warn("Acceso denegado: no eres administrador");
+        return next({ name: "inicio" });
+      }
+
+      // Validar si requiere rol Principal exclusivamente (p. ej. auditoría)
+      if (requiresPrincipalOnly && (!user || user.role !== "Principal")) {
+        console.warn("Acceso denegado: solo usuarios Principal pueden acceder");
         return next({ name: "inicio" });
       }
 

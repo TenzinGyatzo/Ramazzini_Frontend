@@ -76,6 +76,13 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
   const currentTrabajadorId = ref<string>();
   const currentTrabajador = ref<Trabajador>();
 
+  // Secuencias para descartar respuestas obsoletas (anti-race al navegar entre centros).
+  let listadoSeq = 0;
+
+  function resetTrabajadores() {
+    trabajadores.value = [];
+  }
+
   function resetCurrentTrabajador() {
     currentTrabajador.value = {
       _id: "",
@@ -111,33 +118,49 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
   }
 
   async function fetchTrabajadores(empresaId: string, centroTrabajoId: string) {
+    const seq = ++listadoSeq;
     try {
       loading.value = true;
       const { data } = await TrabajadoresAPI.getTrabajadores(
         empresaId,
         centroTrabajoId
       );
-      trabajadores.value = data;
+      // Descartar si una petición más reciente ya tomó el control.
+      if (seq !== listadoSeq) return data;
+      trabajadores.value = Array.isArray(data) ? data : [];
       return data;
     } catch (error) {
       // console.log(error);
       throw error;
     } finally {
-      loading.value = false;
+      if (seq === listadoSeq) loading.value = false;
+    }
+  }
+
+  /** Cuenta trabajadores de un centro sin mutar el listado del store. */
+  async function countTrabajadoresPorCentro(empresaId: string, centroTrabajoId: string): Promise<number> {
+    try {
+      const { data } = await TrabajadoresAPI.getTrabajadoresCount(empresaId, centroTrabajoId);
+      return data?.count ?? 0;
+    } catch {
+      return 0;
     }
   }
 
   async function fetchTrabajadoresConHistoria(empresaId: string, centroTrabajoId: string) {
+    const seq = ++listadoSeq;
     try {
       loading.value = true;
       const { data } = await TrabajadoresAPI.getTrabajadoresConHistoria(empresaId, centroTrabajoId);
-      trabajadores.value = data;
+      // Descartar si una petición más reciente ya tomó el control.
+      if (seq !== listadoSeq) return data;
+      trabajadores.value = Array.isArray(data) ? data : [];
       return data;
     } catch (error) {
       console.error('Error al obtener trabajadores con historia clínica', error);
       throw error;
     } finally {
-      loading.value = false;
+      if (seq === listadoSeq) loading.value = false;
     }
   }  
 
@@ -192,7 +215,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     empresaId: string,
     centroTrabajoId: string,
     trabajadorId: string
-  ) {
+  ): Promise<{ data: Trabajador; redirectedFrom?: string }> {
     try {
       loadingOnSidebar.value = true;
       loadingModal.value = true;
@@ -202,9 +225,20 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
         trabajadorId
       );
       currentTrabajador.value = data;
-      currentTrabajadorId.value = trabajadorId;
-    } catch (error) {
+      currentTrabajadorId.value = data?._id?.toString() ?? trabajadorId;
+      return { data };
+    } catch (error: any) {
+      const redirectTo = error?.response?.data?.redirectTo;
+      if (error?.response?.status === 410 && redirectTo) {
+        const result = await fetchTrabajadorById(
+          empresaId,
+          centroTrabajoId,
+          redirectTo,
+        );
+        return { ...result, redirectedFrom: trabajadorId };
+      }
       console.log(error);
+      throw error;
     } finally {
       loadingOnSidebar.value = false;
       loadingModal.value = false;
@@ -218,13 +252,13 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
   ) {
     try {
       loading.value = true;
-      await TrabajadoresAPI.createTrabajador(
+      const { data } = await TrabajadoresAPI.createTrabajador(
         empresaId,
         centroTrabajoId,
         trabajadorData
       );
+      return data;
     } catch (error) {
-      // console.log(error);
       throw error;
     } finally {
       loading.value = false;
@@ -361,7 +395,9 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     currentTrabajadorId,
     currentTrabajador,
     resetCurrentTrabajador,
+    resetTrabajadores,
     fetchTrabajadores,
+    countTrabajadoresPorCentro,
     fetchTrabajadoresConHistoria,
     fetchRiesgosTrabajoPorEmpresa,
     fetchSexosYFechasNacimientoActivos,

@@ -34,6 +34,8 @@ const showModal = ref(false);
 const totalTrabajadores = ref(0);
 const loadingTrabajadores = ref(false);
 const tieneRiesgosTrabajo = ref(false);
+// Compuerta de carga única: evita mostrar centros/empresa de una navegación previa.
+const cargandoVista = ref(true);
 
 // Computed para verificar si el proveedor de salud es de México
 const esProveedorMexicano = computed(() => {
@@ -125,12 +127,14 @@ const obtenerDatosEmpresa = async () => {
 
   loadingTrabajadores.value = true;
   try {
-    // Ejecutar ambos fetch en paralelo para mayor eficiencia
-    const [resultadosTrabajadores, riesgosEmpresa] = await Promise.all([
-      // Obtener trabajadores de todos los centros en paralelo
+    // Ejecutar ambos fetch en paralelo para mayor eficiencia.
+    // El conteo NO usa fetchTrabajadores (que sobrescribe el listado del store
+    // compartido y provocaba parpadeos en la vista de trabajadores); usa un
+    // endpoint de conteo ligero que no muta el estado.
+    const [conteosPorCentro, riesgosEmpresa] = await Promise.all([
       Promise.all(
-        centrosTrabajo.centrosTrabajo.map(centro => 
-          trabajadores.fetchTrabajadores(empresas.currentEmpresa!._id, centro._id)
+        centrosTrabajo.centrosTrabajo.map(centro =>
+          trabajadores.countTrabajadoresPorCentro(empresas.currentEmpresa!._id, centro._id)
         )
       ),
       // Obtener riesgos de trabajo de la empresa
@@ -138,9 +142,7 @@ const obtenerDatosEmpresa = async () => {
     ]);
     
     // Calcular el total de trabajadores
-    const total = resultadosTrabajadores.reduce((sum, trabajadoresCentro) => {
-      return sum + (Array.isArray(trabajadoresCentro) ? trabajadoresCentro.length : 0);
-    }, 0);
+    const total = conteosPorCentro.reduce((sum, n) => sum + (typeof n === 'number' ? n : 0), 0);
     
     totalTrabajadores.value = total;
     
@@ -162,25 +164,39 @@ const obtenerDatosEmpresa = async () => {
 
 onMounted(async () => {
   const empresaId = String(route.params.idEmpresa);
-  
+
+  // Limpiar estado de una navegación previa para evitar el "flash" de datos viejos.
+  cargandoVista.value = true;
+  centrosTrabajo.resetCentrosTrabajo();
+  trabajadores.resetTrabajadores();
+  totalTrabajadores.value = 0;
+  tieneRiesgosTrabajo.value = false;
+
   const idProveedorSalud = userStore.user?.idProveedorSalud;
-  if (idProveedorSalud) {
-    await proveedorSaludStore.loadProveedorSalud(idProveedorSalud);
-  } else {
-    console.error('No se encontró idProveedorSalud en el usuario');
+
+  try {
+    // Todas las llamadas independientes en paralelo (el proveedor de salud ya
+    // no bloquea el render de los centros).
+    await Promise.all([
+      centrosTrabajo.fetchCentrosTrabajo(empresaId),
+      (async () => {
+        empresas.currentEmpresaId = empresaId;
+        await empresas.fetchEmpresaById(empresaId);
+      })(),
+      idProveedorSalud
+        ? proveedorSaludStore.loadProveedorSalud(idProveedorSalud)
+        : Promise.resolve(),
+    ]);
+
+    // Guard anti-race: si el usuario ya navegó a otra empresa, no aplicar.
+    if (String(route.params.idEmpresa) !== empresaId) return;
+  } finally {
+    if (String(route.params.idEmpresa) === empresaId) {
+      cargandoVista.value = false;
+    }
   }
-  
-  // Ejecutar en paralelo las llamadas que no dependen entre sí
-  const [centrosResult] = await Promise.all([
-    centrosTrabajo.fetchCentrosTrabajo(empresaId),
-    // Setear el ID de empresa actual en el store y obtener datos de la empresa
-    (async () => {
-      empresas.currentEmpresaId = empresaId;
-      await empresas.fetchEmpresaById(empresaId);
-    })()
-  ]);
-  
-  // Obtener trabajadores y riesgos de trabajo en paralelo
+
+  // Conteos (no bloquea el render principal de la lista de centros).
   await obtenerDatosEmpresa();
 });
 </script>
@@ -307,7 +323,7 @@ onMounted(async () => {
           <!-- Contenido principal -->
           <div class="py-2">
             <Transition appear mode="out-in" name="slide-up">
-              <div v-if="!empresas.currentEmpresa" class="text-center py-20">
+              <div v-if="cargandoVista || !empresas.currentEmpresa" class="text-center py-20">
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
                   <i class="fa-solid fa-building text-2xl text-emerald-600"></i>
                 </div>

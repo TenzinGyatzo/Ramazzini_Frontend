@@ -25,6 +25,13 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
   const currentCentroTrabajoId = ref<string>();
   const currentCentroTrabajo = ref<CentroTrabajo>();
 
+  // Secuencia para descartar respuestas obsoletas al navegar entre empresas.
+  let listadoSeq = 0;
+
+  function resetCentrosTrabajo() {
+    centrosTrabajo.value = [];
+  }
+
   function resetCurrentCentroTrabajo() {
     currentCentroTrabajo.value = {
       _id: "",
@@ -43,6 +50,11 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
   }
 
   async function fetchCentrosTrabajo(empresaId: string) {
+    const seq = ++listadoSeq;
+    const aplicar = (valor: CentroTrabajo[]) => {
+      // Solo aplicar si esta sigue siendo la petición más reciente.
+      if (seq === listadoSeq) centrosTrabajo.value = valor;
+    };
     try {
       loading.value = true;
       const userStore = useUserStore();
@@ -50,7 +62,7 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
       // Si el usuario es Principal o tiene acceso completo, cargar todos los centros
       if (userStore.isPrincipal() || userStore.user?.permisos?.accesoCompletoEmpresasCentros) {
         const { data } = await CentrosTrabajoAPI.getCentrosTrabajo(empresaId);
-        centrosTrabajo.value = data;
+        aplicar(data);
         return data;
       }
       
@@ -69,19 +81,19 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
           centrosAsignados.includes(centro._id)
         );
         
-        centrosTrabajo.value = centrosFiltrados;
+        aplicar(centrosFiltrados);
         return centrosFiltrados;
       }
       
       // Si no hay usuario, retornar array vacío
-      centrosTrabajo.value = [];
+      aplicar([]);
       return [];
     } catch (error) {
       console.log(error);
-      centrosTrabajo.value = [];
+      aplicar([]);
       return [];
     } finally {
-      loading.value = false;
+      if (seq === listadoSeq) loading.value = false;
     }
   }
 
@@ -168,6 +180,7 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
     currentCentroTrabajoId,
     currentCentroTrabajo,
     resetCurrentCentroTrabajo,
+    resetCentrosTrabajo,
     fetchCentrosTrabajo,
     fetchCentroTrabajoById,
     createCentroTrabajo,

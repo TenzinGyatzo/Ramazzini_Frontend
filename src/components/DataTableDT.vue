@@ -46,6 +46,7 @@ const emit = defineEmits<{
   (e: 'editar', trabajador: any): void;
   (e: 'toggle-estado-laboral', trabajador: any): void;
   (e: 'eliminar', payload: { id: string; nombre: string }): void;
+  (e: 'fusionar-duplicado', trabajadorId: string): void;
   (e: 'actualizando-tabla', actualizando: boolean): void;
   (e: 'toggle-leyenda', mostrar: boolean): void;
   (e: 'toggle-vigencias', mostrar: boolean): void;
@@ -200,7 +201,15 @@ function inicializarDataTable() {
             }
 
             if (type === 'display' && folio) {
-              return `<span class="folio-tooltip" data-folio="${escapeHtml(folio)}">${escapeHtml(texto)}</span>`;
+              let html = `<span class="folio-tooltip" data-folio="${escapeHtml(folio)}">${escapeHtml(texto)}</span>`;
+              if (row.tieneDuplicadoPendiente) {
+                html += ` <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 ml-1" title="Posible duplicado">Dup.</span>`;
+              }
+              return html;
+            }
+
+            if (type === 'display' && row.tieneDuplicadoPendiente) {
+              return `${escapeHtml(texto)} <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 ml-1">Dup.</span>`;
             }
 
             return escapeHtml(texto);
@@ -446,7 +455,20 @@ function inicializarDataTable() {
                 </button>
                 ` : ''}
 
-              <!-- Riesgos -->
+              <!-- Riesgos / Fusionar (mutuamente excluyentes) -->
+                ${canManageTrabajadores && row.tieneDuplicadoPendiente ? `
+                <button
+                  type="button"
+                  class="btn-fusionar group absolute left-12 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-amber-200 whitespace-nowrap flex items-center overflow-hidden text-sm"
+                  data-id="${escapeHtml(row._id)}"
+                  title="Fusionar posible duplicado"
+                >
+                  <i class="fa-solid fa-object-group"></i>
+                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
+                    Fusionar
+                  </span>
+                </button>
+                ` : `
                 <button
                   type="button"
                   class="btn-riesgos group absolute left-12 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-gray-300 hover:bg-amber-400 text-gray-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-gray-300 hover:border-amber-100 whitespace-nowrap flex items-center overflow-hidden"
@@ -457,6 +479,7 @@ function inicializarDataTable() {
                     Agentes de Riesgo
                   </span>
                 </button>
+                `}
 
               <!-- Editar -->
                 <button
@@ -584,6 +607,15 @@ function inicializarDataTable() {
       }
     });
 
+    $(document).on('click', '.btn-fusionar', function () {
+      const id = $(this).data('id');
+      if (id) {
+        executeIfCanManageTrabajadores(() => {
+          emit('fusionar-duplicado', String(id));
+        }, 'fusionar trabajadores');
+      }
+    });
+
     $(document).on('click', '.btn-editar', function () {
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
@@ -643,6 +675,7 @@ onBeforeUnmount(() => {
 
   $(document).off('click', '.btn-rt');
   $(document).off('click', '.btn-riesgos');
+  $(document).off('click', '.btn-fusionar');
   $(document).off('click', '.btn-editar');
   $(document).off('click', '.btn-alta-baja');
   $(document).off('click', '.btn-eliminar');
@@ -915,6 +948,10 @@ watch(
     );
     dataTableInstance.column(1).visible(tieneNumeroEmpleado);
     aplicarTodosLosFiltrosDesdeLocalStorage();
+    // Recalcular anchos tras reinyectar el dataset para evitar columnas mal dimensionadas.
+    requestAnimationFrame(() => {
+      dataTableInstance?.columns.adjust();
+    });
   }
 );
 

@@ -9,6 +9,10 @@ export default {
 
     getTrabajadoresConHistoria(empresaId: string, centroTrabajoId: string) {
         return api.get(`/${empresaId}/${centroTrabajoId}/trabajadores-con-historia`);
+    },
+
+    getTrabajadoresCount(empresaId: string, centroTrabajoId: string) {
+        return api.get<{ count: number }>(`/${empresaId}/${centroTrabajoId}/trabajadores-count`);
     }, 
     
     getSexosYFechasNacimientoActivos(empresaId: string, centroTrabajoId: string) {
@@ -65,6 +69,38 @@ export default {
         if (excluirCentroId) params.excluirCentroId = excluirCentroId;
         if (idProveedorSalud) params.idProveedorSalud = idProveedorSalud;
         return api.get(`/${empresaId}/${centroTrabajoId}/centros-disponibles-transferencia`, { params });
-    }
+    },
+
+    getDuplicadosPendientes(empresaId: string, centroTrabajoId: string) {
+        return api.get(`/${empresaId}/${centroTrabajoId}/duplicados-pendientes`);
+    },
+
+    getDuplicadosDeTrabajador(empresaId: string, centroTrabajoId: string, trabajadorId: string) {
+        return api.get(`/${empresaId}/${centroTrabajoId}/trabajadores/${trabajadorId}/duplicados`);
+    },
+
+    getFusionPreview(empresaId: string, centroTrabajoId: string, destinoId: string, fuenteId: string) {
+        return api.get(`/${empresaId}/${centroTrabajoId}/trabajadores/fusion-preview`, {
+            params: { destinoId, fuenteId },
+        });
+    },
+
+    descartarDuplicado(empresaId: string, centroTrabajoId: string, alertId: string) {
+        return api.patch(`/${empresaId}/${centroTrabajoId}/duplicados/${alertId}/descartar`, {});
+    },
+
+    fusionarTrabajadores(
+        empresaId: string,
+        centroTrabajoId: string,
+        payload: {
+            trabajadorDestinoId: string;
+            trabajadorFuenteId: string;
+            confirmacion: boolean;
+            numeroEmpleadoResuelto?: string;
+            migrarArchivos?: boolean;
+        },
+    ) {
+        return api.post(`/${empresaId}/${centroTrabajoId}/fusionar-trabajadores`, payload);
+    },
 
 }

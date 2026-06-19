@@ -18,6 +18,8 @@ import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalRTs from '@/components/ModalRTs.vue';
 import ModalResumenImportacion from '@/components/ModalResumenImportacion.vue';
+import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
+import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 
 import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
@@ -45,6 +47,79 @@ const showImportModal = ref(false);
 const showSubscriptionModal = ref(false);
 const showRTsModal = ref(false);
 const showRisksModal = ref(false);
+const showFusionModal = ref(false);
+const fusionTrabajadorA = ref('');
+const fusionTrabajadorB = ref('');
+const filtroSoloDuplicados = ref(false);
+const duplicadosPendientes = ref<any[]>([]);
+// Compuerta de carga única: trabajadores + alertas se resuelven antes de mostrar
+// la tabla o el banner de duplicados, evitando parpadeos y estados intermedios.
+const cargandoVista = ref(true);
+
+const conteoDuplicados = computed(() => {
+  const list = Array.isArray(trabajadores.trabajadores) ? trabajadores.trabajadores : [];
+  return list.filter((t: any) => t.tieneDuplicadoPendiente).length;
+});
+
+const trabajadoresParaTabla = computed(() => {
+  const list = Array.isArray(trabajadores.trabajadores) ? trabajadores.trabajadores : [];
+  if (!filtroSoloDuplicados.value) return list;
+  return list.filter((t: any) => t.tieneDuplicadoPendiente);
+});
+
+async function cargarDuplicadosPendientes() {
+  if (!canManageTrabajadores.value) return;
+  try {
+    const { data } = await TrabajadoresAPI.getDuplicadosPendientes(
+      empresas.currentEmpresaId,
+      centrosTrabajo.currentCentroTrabajoId,
+    );
+    duplicadosPendientes.value = Array.isArray(data) ? data : [];
+  } catch {
+    duplicadosPendientes.value = [];
+  }
+}
+
+function abrirFusion(trabajadorId: string, candidatoId: string) {
+  executeIfCanManageTrabajadores(() => {
+    fusionTrabajadorA.value = trabajadorId;
+    fusionTrabajadorB.value = candidatoId;
+    showFusionModal.value = true;
+  }, 'fusionar trabajadores');
+}
+
+function onRevisarDuplicadosImportacion() {
+  modalResumenImportacion.hideModal();
+  filtroSoloDuplicados.value = true;
+  cargarDuplicadosPendientes();
+  trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
+}
+
+async function abrirFusionDesdeListado(trabajadorId: string) {
+  executeIfCanManageTrabajadores(async () => {
+    try {
+      const { data } = await TrabajadoresAPI.getDuplicadosDeTrabajador(
+        empresas.currentEmpresaId,
+        centrosTrabajo.currentCentroTrabajoId,
+        trabajadorId,
+      );
+      const candidatos = Array.isArray(data) ? data : [];
+      if (!candidatos.length) {
+        toast?.open({ message: 'No hay candidatos de duplicado para este trabajador', type: 'warning' });
+        return;
+      }
+      abrirFusion(trabajadorId, candidatos[0].trabajadorId);
+    } catch {
+      toast?.open({ message: 'No se pudieron cargar los duplicados', type: 'error' });
+    }
+  }, 'fusionar trabajadores');
+}
+
+function onFusionCompletada() {
+  showFusionModal.value = false;
+  cargarDuplicadosPendientes();
+  trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
+}
 
 const dataTableRef = ref();
 const mostrarFiltros = ref(false);
@@ -286,16 +361,33 @@ onMounted(async () => {
   const centroTrabajoId = String(route.params.idCentroTrabajo);
   const guardado = localStorage.getItem('mostrarFiltros');
 
+  // Limpiar el listado compartido para no mostrar datos de una vista previa
+  // (p. ej. los conteos de la vista de centros) mientras carga.
+  cargandoVista.value = true;
+  trabajadores.resetTrabajadores();
+
   // Iniciar la carga con un delay mínimo para garantizar que el spinner se muestre
   empresas.currentEmpresaId = empresaId;
   centrosTrabajo.currentCentroTrabajoId = centroTrabajoId;
 
   const inicioCarga = Date.now();
+  // Trabajadores y alertas de duplicado se resuelven juntos: el banner y la
+  // tabla solo se renderizan cuando ambos están listos (una sola fuente de verdad).
   await Promise.all([
     trabajadores.fetchTrabajadoresConHistoria(empresaId, centroTrabajoId),
     empresas.fetchEmpresaById(empresaId),
     centrosTrabajo.fetchCentroTrabajoById(empresaId, centroTrabajoId),
+    cargarDuplicadosPendientes(),
   ]);
+
+  // Guard anti-race: si el usuario navegó a otro centro, abortar.
+  if (
+    String(route.params.idEmpresa) !== empresaId ||
+    String(route.params.idCentroTrabajo) !== centroTrabajoId
+  ) {
+    return;
+  }
+  cargandoVista.value = false;
   // logCarga('fetchParalelo trabajadores+empresa+centro', {
   //   duracionMs: roundMs(performance.now() - tFetch),
   //   registros: trabajadores.trabajadores.length,
@@ -521,6 +613,10 @@ const eliminarTrabajador = async (trabajadorId: string, deletionPassword?: strin
     if (!empresaId || !centroTrabajoId) throw new Error('Faltan datos');
 
     await deleteTrabajadorById(empresaId, centroTrabajoId, trabajadorId, deletionPassword);
+    // Refrescar el listado y las alertas: si el eliminado era un duplicado,
+    // el registro que permanece ya no debe quedar marcado.
+    await trabajadores.fetchTrabajadoresConHistoria(empresaId, centroTrabajoId);
+    await cargarDuplicadosPendientes();
   } catch (err) {
     toast.open({ message: 'Error al eliminar trabajador', type: 'error' });
   }
@@ -742,7 +838,8 @@ function aplicarFiltrosDesdeQuery(query: RouteLocationNormalizedLoaded['query'])
 
 // 8. Computadas
 const puestosUnicos = computed(() => {
-  const puestos = trabajadores.trabajadores.map(t => t.puesto).filter(Boolean);
+  const list = Array.isArray(trabajadores.trabajadores) ? trabajadores.trabajadores : [];
+  const puestos = list.map(t => t.puesto).filter(Boolean);
   return [...new Set(puestos)].sort();
 });
 
@@ -789,7 +886,8 @@ const toggleVigencias = () => {
           v-if="modalResumenImportacion.isVisible" 
           :isVisible="modalResumenImportacion.isVisible"
           :resumen="modalResumenImportacion.resumen || { message: '', data: [], totalProcessed: 0, successful: 0, failed: 0 }"
-          @close="modalResumenImportacion.hideModal" 
+          @close="modalResumenImportacion.hideModal"
+          @revisar-duplicados="onRevisarDuplicadosImportacion"
         />
       </Transition>
 
@@ -800,6 +898,47 @@ const toggleVigencias = () => {
       <Transition appear name="fade">
         <ModalRiesgos v-if="showRisksModal" @closeModal="closeRisksModal" />
       </Transition>
+
+      <ModalFusionTrabajadores
+        v-if="showFusionModal && fusionTrabajadorA && fusionTrabajadorB"
+        :trabajador-a-id="fusionTrabajadorA"
+        :trabajador-b-id="fusionTrabajadorB"
+        @close="showFusionModal = false"
+        @fused="onFusionCompletada"
+      />
+
+      <div
+        v-if="!cargandoVista && conteoDuplicados > 0 && canManageTrabajadores"
+        class="mb-4 p-4 rounded-xl border border-amber-200 bg-amber-50 flex flex-wrap items-center justify-between gap-3"
+      >
+        <p class="text-sm text-amber-900">
+          <strong>{{ conteoDuplicados }}</strong> trabajador(es) con posible duplicado pendiente de revisión.
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+          <label
+            v-if="conteoDuplicados > 0"
+            class="inline-flex items-center gap-2 text-sm text-amber-900 cursor-pointer"
+          >
+            <input
+              v-model="filtroSoloDuplicados"
+              type="checkbox"
+              class="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+            />
+            Solo duplicados
+          </label>
+          <button
+            v-if="duplicadosPendientes.length"
+            type="button"
+            class="text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+            @click="abrirFusion(
+              String(duplicadosPendientes[0].trabajadorId?._id || duplicadosPendientes[0].trabajadorId),
+              String(duplicadosPendientes[0].candidatoId?._id || duplicadosPendientes[0].candidatoId),
+            )"
+          >
+            Revisar duplicados
+          </button>
+        </div>
+      </div>
 
       <!-- Encabezado de acciones -->
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 xl:p-6 mb-4 transition-all duration-500 ease-in-out">
@@ -1109,7 +1248,7 @@ const toggleVigencias = () => {
 
       <!-- Tabla o mensaje de carga -->
       <Transition appear mode="out-in" name="slide-up">
-        <div v-if="trabajadores.loading" class="text-center py-20">
+        <div v-if="cargandoVista || trabajadores.loading || !mostrarTabla" class="text-center py-20">
           <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
             <i class="empresa-item-placeholder-icon fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
           </div>
@@ -1120,7 +1259,7 @@ const toggleVigencias = () => {
           <!-- DataTable (siempre visible, pero vacía si no hay trabajadores) -->
           <DataTableDT
             ref="dataTableRef"
-            :rows="trabajadores.trabajadores || []"
+            :rows="trabajadoresParaTabla || []"
             :mostrarColumnasOcultas="mostrarColumnasOcultas"
             :mostrarLeyenda="mostrarLeyenda"
             :mostrar-vigencias="mostrarVigencias"
@@ -1132,6 +1271,7 @@ const toggleVigencias = () => {
             @editar="openModal(empresas.currentEmpresa, centrosTrabajo.currentCentroTrabajo, $event)"
             @toggle-estado-laboral="toggleEstadoLaboral($event)"
             @eliminar="solicitarEliminacion('Trabajador', $event.id, $event.nombre, eliminarTrabajador)"
+            @fusionar-duplicado="abrirFusionDesdeListado($event)"
             @actualizando-tabla="actualizandoTabla = $event"
             @toggle-leyenda="mostrarLeyenda = $event"
             @toggle-vigencias="mostrarVigencias = $event"

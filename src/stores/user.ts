@@ -76,6 +76,7 @@ export const useUserStore = defineStore("user", () => {
         try {
             localStorage.removeItem('user');
             localStorage.removeItem('proveedorSalud');
+            localStorage.removeItem('AUTH_SID');
         } catch {
             // ignore
         }

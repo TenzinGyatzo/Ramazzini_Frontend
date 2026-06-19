@@ -157,6 +157,22 @@
                 Se importaron exitosamente {{ resumen.successful }} trabajadores.
               </p>
             </div>
+
+            <div
+              v-if="duplicadosEnImportacion > 0"
+              class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3"
+            >
+              <p class="text-sm text-amber-900">
+                <strong>{{ duplicadosEnImportacion }}</strong> registro(s) importado(s) con posible duplicado detectado.
+              </p>
+              <button
+                type="button"
+                class="text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+                @click="emit('revisar-duplicados')"
+              >
+                Revisar duplicados pendientes
+              </button>
+            </div>
           </div>
 
           <!-- Tab: Errores -->
@@ -299,6 +315,11 @@
                         </div>
                         <div v-else>
                           <span class="font-medium">NSS:</span> -
+                        </div>
+                        <div v-if="success.posibleDuplicado" class="sm:col-span-2 mt-2 p-2 rounded bg-amber-100 text-amber-900">
+                          <span class="font-medium">Posible duplicado ({{ success.posibleDuplicado.criterio }}):</span>
+                          {{ success.posibleDuplicado.trabajador?.nombre }}
+                          {{ success.posibleDuplicado.trabajador?.primerApellido }}
                         </div>
                       </div>
                     </div>
@@ -460,6 +481,11 @@ interface ImportResult {
   worker?: any
   error?: string
   validationErrors?: string[]
+  posibleDuplicado?: {
+    trabajadorId: string
+    criterio: string
+    trabajador?: { nombre?: string; primerApellido?: string }
+  }
 }
 
 interface ImportResumen {
@@ -500,6 +526,7 @@ interface Props {
 
 interface Emits {
   (e: 'close'): void
+  (e: 'revisar-duplicados'): void
 }
 
 const props = defineProps<Props>()
@@ -511,6 +538,10 @@ const porcentajeExitoso = computed(() => {
   if (props.resumen.totalProcessed === 0) return 0
   return Math.round((props.resumen.successful / props.resumen.totalProcessed) * 100)
 })
+
+const duplicadosEnImportacion = computed(
+  () => props.resumen.data.filter((r) => r.success && r.posibleDuplicado).length,
+)
 
 const trabajadoresConNormalizaciones = computed((): TrabajadorConNormalizacion[] => {  
   const trabajadoresExitosos = props.resumen.data.filter(r => r.success);

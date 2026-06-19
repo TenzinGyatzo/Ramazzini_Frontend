@@ -1,6 +1,7 @@
 <script setup>
 import { ref, inject, computed, watch, watchEffect } from "vue";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
+import { useUserStore } from "@/stores/user";
 import { useRouter, RouterLink } from "vue-router";
 import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
 import CountrySelect from "@/components/CountrySelect.vue";
@@ -11,6 +12,7 @@ import { useNom024Fields } from "@/composables/useNom024Fields";
 import ChangeRegimenModal from "@/components/onboarding/ChangeRegimenModal.vue";
 
 const proveedorSalud = useProveedorSaludStore();
+const userStore = useUserStore();
 const router = useRouter();
 
 const logotipoPreview = ref(null);
@@ -25,6 +27,9 @@ const isMX = computed(() => formulario.value.pais === 'MX');
 const { cluesFieldVisible } = useNom024Fields();
 
 const showChangeRegimenModal = ref(false);
+const canChangeRegimenRegulatorio = computed(
+  () => userStore.user?.role === 'Principal',
+);
 
 // Objeto reactivo para el formulario
 const formulario = ref({
@@ -650,8 +655,8 @@ const logoSrc = computed(() => {
                   </p>
                 </div>
 
-                <!-- Si es SIN_REGIMEN: mostrar CTA para upgrade -->
-                <div v-if="proveedorSalud.isSinRegimen">
+                <!-- Si es SIN_REGIMEN: mostrar CTA para upgrade (solo Principal) -->
+                <div v-if="proveedorSalud.isSinRegimen && canChangeRegimenRegulatorio">
                   <button 
                     @click="showChangeRegimenModal = true"
                     type="button"
@@ -660,6 +665,12 @@ const logoSrc = computed(() => {
                     Activar SIRES (NOM-024-SSA3-2012)
                   </button>
                 </div>
+                <p
+                  v-else-if="proveedorSalud.isSinRegimen"
+                  class="text-sm text-gray-500"
+                >
+                  Solo el usuario principal puede activar SIRES.
+                </p>
 
                 <!-- Si es SIRES: mostrar estado y bloqueo de downgrade -->
                 <div v-else-if="proveedorSalud.isSIRES">

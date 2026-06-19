@@ -22,6 +22,11 @@ import {
   getWorkerImmutablePayloadFields,
   isPaisNacimientoReadOnlyForWorker,
 } from '@/helpers/workerPaisNacimientoImmutability';
+import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
+
+const posibleDuplicadoRegistro = ref(null);
+const showFusionModal = ref(false);
+const nuevoTrabajadorId = ref('');
 
 // Método para formatear la dirección (igual que en CentroTrabajoItem.vue)
 const formatDireccion = (centro) => {
@@ -498,9 +503,24 @@ const handleSubmit = async (data) => {
       await trabajadores.updateTrabajador(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId, trabajadores.currentTrabajador._id, payloadToSend);
       toast.open({ message: 'Trabajador actualizado', type: 'success' });
     } else {
-      // Registrar Trabajador
-      await trabajadores.createTrabajador(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId, trabajadorData);
-      
+      const response = await trabajadores.createTrabajador(
+        empresas.currentEmpresaId,
+        centrosTrabajo.currentCentroTrabajoId,
+        trabajadorData,
+      );
+      if (response?.posibleDuplicado) {
+        posibleDuplicadoRegistro.value = response.posibleDuplicado;
+        nuevoTrabajadorId.value = response.data?._id;
+        toast.open({
+          message: `Trabajador registrado. Posible duplicado detectado (${response.posibleDuplicado.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM'}).`,
+          type: 'warning',
+        });
+        trabajadores.fetchTrabajadoresConHistoria(
+          empresas.currentEmpresaId,
+          centrosTrabajo.currentCentroTrabajoId,
+        );
+        return;
+      }
       toast.open({ message: 'Trabajador registrado exitosamente', type: 'success' });
     }
     emit('closeModal');
@@ -518,10 +538,43 @@ const handleSubmit = async (data) => {
   }
 };
 
-// Limpiar la vista previa cuando se cierre el modal
 const closeModal = () => {
+  posibleDuplicadoRegistro.value = null;
+  showFusionModal.value = false;
   emit('closeModal');
 };
+
+async function descartarDuplicadoAlta() {
+  const alertId = posibleDuplicadoRegistro.value?.alertId;
+  try {
+    if (alertId) {
+      await TrabajadoresAPI.descartarDuplicado(
+        empresas.currentEmpresaId,
+        centrosTrabajo.currentCentroTrabajoId,
+        alertId,
+      );
+    }
+    posibleDuplicadoRegistro.value = null;
+    toast.open({ message: 'Registrado como trabajador distinto', type: 'info' });
+    emit('closeModal');
+    trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
+  } catch (error) {
+    toast.open({
+      message: extractApiErrorMessage(error, 'No se pudo descartar la alerta de duplicado'),
+      type: 'error',
+    });
+  }
+}
+
+function abrirFusionDesdeAlta() {
+  showFusionModal.value = true;
+}
+
+function onFusionCompletada() {
+  posibleDuplicadoRegistro.value = null;
+  showFusionModal.value = false;
+  emit('closeModal');
+}
 
 // Función para transferir trabajador a otro centro de trabajo (render inmediato + carga en bg)
 const transferirTrabajador = async () => {
@@ -695,6 +748,40 @@ const cancelarTransferencia = () => {
           >
             {{ identificationSectionNotice }}
           </p>
+          <div
+            v-if="posibleDuplicadoRegistro"
+            class="mb-4 p-4 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900"
+          >
+            <p class="font-medium">
+              Posible duplicado detectado
+              ({{ posibleDuplicadoRegistro.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM' }})
+            </p>
+            <p class="mt-1">
+              Coincide con:
+              {{ formatNombreCompleto(
+                posibleDuplicadoRegistro.trabajador?.primerApellido,
+                posibleDuplicadoRegistro.trabajador?.segundoApellido,
+                posibleDuplicadoRegistro.trabajador?.nombre,
+              ) }}
+              — Folio {{ posibleDuplicadoRegistro.trabajador?.folio || 'N/D' }}
+            </p>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <button
+                type="button"
+                class="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-xs hover:bg-emerald-700"
+                @click="abrirFusionDesdeAlta"
+              >
+                Fusionar ahora
+              </button>
+              <button
+                type="button"
+                class="px-3 py-1.5 rounded-md border border-gray-300 text-xs hover:bg-white"
+                @click="descartarDuplicadoAlta"
+              >
+                Es otro trabajador
+              </button>
+            </div>
+          </div>
           <p class="text-xs text-gray-500 mt-1 mb-3">Los campos con <span class="text-red-500 font-medium">*</span> son obligatorios</p>
           <hr class="mt-2 mb-3">
 
@@ -1189,6 +1276,15 @@ const cancelarTransferencia = () => {
       </div>
     </Transition>
   </div>
+
+  <ModalFusionTrabajadores
+    v-if="showFusionModal && posibleDuplicadoRegistro && nuevoTrabajadorId"
+    :trabajador-a-id="nuevoTrabajadorId"
+    :trabajador-b-id="posibleDuplicadoRegistro.trabajadorId"
+    :posible-duplicado="posibleDuplicadoRegistro"
+    @close="showFusionModal = false"
+    @fused="onFusionCompletada"
+  />
 </template>
 
 

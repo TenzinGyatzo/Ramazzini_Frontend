@@ -5,10 +5,8 @@ import auditAPI from "@/api/auditAPI";
 import type { AuditEventItem } from "@/api/auditAPI";
 
 const userStore = useUserStore();
-const isPrincipalOrAdmin = computed(
-  () =>
-    userStore.user?.role === "Principal" ||
-    userStore.user?.role === "Administrador"
+const isPrincipal = computed(
+  () => userStore.user?.role === "Principal"
 );
 
 const loading = ref(false);
@@ -143,12 +141,12 @@ async function verifyAudit() {
     <p class="subtitle">Consulta de eventos por expediente, actor y fecha (NOM-024).</p>
 
     <div
-      v-if="!isPrincipalOrAdmin"
+      v-if="!isPrincipal"
       class="rounded-lg bg-red-50 border border-red-200 p-4 text-red-800"
     >
       <p class="font-medium">Sin permiso</p>
       <p class="text-sm mt-1">
-        Solo usuarios con rol Principal o Administrador pueden usar Auditoria.
+        Solo usuarios con rol Principal pueden usar Auditoria.
       </p>
     </div>
 

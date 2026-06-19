@@ -2,19 +2,20 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useSessionLockStore } from '@/stores/sessionLock';
 
 export function useSessionTimeout() {
   const route = useRoute();
   const userStore = useUserStore();
   const proveedorSaludStore = useProveedorSaludStore();
+  const sessionLockStore = useSessionLockStore();
   
   // Estado de bloqueo
   const isLocked = ref(false);
   const lockedAt = ref<string | null>(null);
   
-  // Configuración del timeout: 30 segundos para pruebas (30000ms)
-  // Cambiar a 15 minutos (900000ms) para producción
-  const TIMEOUT_MS = 900000; 
+  const TIMEOUT_MS =
+    Number(import.meta.env.VITE_SIRES_SESSION_INACTIVITY_MS) || 900_000;
   
   let timeoutId: number | null = null;
 
@@ -143,6 +144,15 @@ export function useSessionTimeout() {
       lockedAt.value = null;
     }
   });
+
+  watch(
+    () => sessionLockStore.lockRequested,
+    () => {
+      if (sessionLockStore.lockRequested > 0) {
+        lockSession();
+      }
+    },
+  );
 
   return {
     isLocked,

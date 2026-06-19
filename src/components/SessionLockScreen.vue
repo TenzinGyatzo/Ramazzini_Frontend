@@ -78,6 +78,14 @@ const handleUnlock = async () => {
       unlockedAt: new Date().toISOString(),
     });
     if (response.status === 200 || response.status === 201) {
+      const sid = response.data?.sid;
+      if (typeof sid === "string" && sid) {
+        try {
+          localStorage.setItem("AUTH_SID", sid);
+        } catch {
+          // ignore
+        }
+      }
       password.value = "";
       emit('unlock');
     }

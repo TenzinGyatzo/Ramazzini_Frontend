@@ -291,22 +291,46 @@ const fetchData = async () => {
   const trabajadorId = String(route.params.idTrabajador);
 
   try {
+    const trabajadorResult = await trabajadores.fetchTrabajadorById(
+      empresaId,
+      centroTrabajoId,
+      trabajadorId,
+    );
+
+    const resolvedTrabajadorId =
+      trabajadorResult.data?._id?.toString() ?? trabajadorId;
+
+    if (trabajadorResult.redirectedFrom) {
+      toast?.open({
+        message: 'Este trabajador fue fusionado. Se abrió el expediente unificado.',
+        type: 'info',
+      });
+      await router.replace({
+        name: 'expediente-medico',
+        params: {
+          idEmpresa: empresaId,
+          idCentroTrabajo: centroTrabajoId,
+          idTrabajador: resolvedTrabajadorId,
+        },
+      });
+      return;
+    }
+
     await Promise.all([
-      documentos.fetchAllDocuments(trabajadorId),
-      resultadosClinicos.fetchResultadosAgrupados(trabajadorId),
+      documentos.fetchAllDocuments(resolvedTrabajadorId),
+      resultadosClinicos.fetchResultadosAgrupados(resolvedTrabajadorId),
       empresas.fetchEmpresaById(empresaId),
       centrosTrabajo.fetchCentroTrabajoById(empresaId, centroTrabajoId),
-      trabajadores.fetchTrabajadorById(empresaId, centroTrabajoId, trabajadorId)
     ]);
 
     empresas.currentEmpresaId = empresaId;
     centrosTrabajo.currentCentroTrabajoId = centroTrabajoId;
-    trabajadores.currentTrabajadorId = trabajadorId;
+    trabajadores.currentTrabajadorId = resolvedTrabajadorId;
 
     formData.resetFormData();
   } catch (error) {
     console.error("Error al cargar datos:", error);
-  } 
+  }
 };
 
 onMounted(fetchData);
