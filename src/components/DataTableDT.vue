@@ -7,7 +7,7 @@ import 'datatables.net-fixedcolumns-dt';
 import $ from 'jquery';
 import { convertirFechaISOaDDMMYYYY, calcularEdad, calcularAntiguedad, determinarVistaCorregida } from '@/helpers/dates';
 import { escapeHtml } from '@/helpers/escapeHtml';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
@@ -31,6 +31,7 @@ let dataTableInstance: any = null;
 let folioTooltipEl: HTMLDivElement | null = null;
 
 const router = useRouter();
+const route = useRoute();
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const { canManageTrabajadores, executeIfCanManageTrabajadores, executeIfCanAccessRiesgosTrabajo } = usePermissionRestrictions();
@@ -415,9 +416,11 @@ function inicializarDataTable() {
             const url = router.resolve({
               name: 'expediente-medico',
               params: {
-                idEmpresa: empresas.currentEmpresaId,
-                idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-                idTrabajador: row._id
+                idEmpresa: String(route.params.idEmpresa ?? empresas.currentEmpresaId ?? ''),
+                idCentroTrabajo: String(
+                  route.params.idCentroTrabajo ?? centrosTrabajo.currentCentroTrabajoId ?? '',
+                ),
+                idTrabajador: String(row._id),
               }
             }).href;
 

@@ -22,11 +22,13 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
   const centrosTrabajo = ref<CentroTrabajo[]>([]);
   const loading = ref(true);
   const loadingModal = ref(false);
+  const loadingDetail = ref(false);
   const currentCentroTrabajoId = ref<string>();
   const currentCentroTrabajo = ref<CentroTrabajo>();
 
   // Secuencia para descartar respuestas obsoletas al navegar entre empresas.
   let listadoSeq = 0;
+  let detailSeq = 0;
 
   function resetCentrosTrabajo() {
     centrosTrabajo.value = [];
@@ -101,20 +103,24 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
     empresaId: string,
     centroTrabajoId: string
   ) {
+    const seq = ++detailSeq;
     try {
-      loading.value = true;
+      loadingDetail.value = true;
       loadingModal.value = true;
       const { data } = await CentrosTrabajoAPI.getCentroTrabajoById(
         empresaId,
         centroTrabajoId
       );
+      if (seq !== detailSeq) return;
       currentCentroTrabajo.value = data;
-      currentCentroTrabajoId.value = centroTrabajoId;
+      currentCentroTrabajoId.value = data?._id?.toString() ?? centroTrabajoId;
     } catch (error) {
       console.log(error);
     } finally {
-      loading.value = false;
-      loadingModal.value = false;
+      if (seq === detailSeq) {
+        loadingDetail.value = false;
+        loadingModal.value = false;
+      }
     }
   }
 
@@ -176,6 +182,7 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
   return {
     loading,
     loadingModal,
+    loadingDetail,
     centrosTrabajo,
     currentCentroTrabajoId,
     currentCentroTrabajo,

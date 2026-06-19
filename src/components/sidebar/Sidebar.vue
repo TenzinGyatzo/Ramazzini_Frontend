@@ -1,16 +1,18 @@
 <script lang="ts" setup>
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted, computed, inject } from 'vue';
 import SidebarLink from './SidebarLink.vue';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useDocumentosStore } from '@/stores/documentos';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useRiesgoTrabajoStore } from '@/stores/riesgosTrabajo';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 
 const route = useRoute();
+const router = useRouter();
+const toast: any = inject('toast');
 const sidebar = useSidebarStore();
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -22,10 +24,28 @@ const isMounted = ref(false);
 const hasVisitedDashboard = ref(false);
 const hasVisitedRiesgosTrabajo = ref(false);
 
+async function syncRouteState(params: typeof route.params) {
+  const { redirectedTrabajadorId } = await sidebar.initializeState(params);
+
+  if (redirectedTrabajadorId && route.name === 'expediente-medico') {
+    toast?.open({
+      message: 'Este trabajador fue fusionado. Se abrió el expediente unificado.',
+      type: 'info',
+    });
+    await router.replace({
+      name: 'expediente-medico',
+      params: {
+        idEmpresa: params.idEmpresa,
+        idCentroTrabajo: params.idCentroTrabajo,
+        idTrabajador: redirectedTrabajadorId,
+      },
+    });
+  }
+}
+
 onMounted(async () => {
   try {
-    const { idEmpresa, idCentroTrabajo, idTrabajador, tipoDocumento } = route.params;
-    await sidebar.initializeState({ idEmpresa, idCentroTrabajo, idTrabajador, tipoDocumento });
+    await syncRouteState(route.params);
     isMounted.value = true;
   } catch (error) {
     console.error('Error inicializando el estado:', error);
@@ -34,7 +54,7 @@ onMounted(async () => {
 
 watch(() => route.params, async (newParams) => {
   try {
-    await sidebar.initializeState(newParams);
+    await syncRouteState(newParams);
   } catch (error) {
     console.error('Error al actualizar estado con route.params:', error);
   }
@@ -55,30 +75,6 @@ watch(() => empresas.currentEmpresaId, (newEmpresaId, oldEmpresaId) => {
   if (newEmpresaId !== oldEmpresaId) {
     hasVisitedDashboard.value = false;
     hasVisitedRiesgosTrabajo.value = false;
-  }
-});
-
-watch(() => empresas.currentEmpresa, (newEmpresa, oldEmpresa) => {
-  if (newEmpresa?._id !== oldEmpresa?._id) {
-    // Si currentEmpresa cambia, reinicia centrosTrabajo y trabajadores
-    centrosTrabajo.resetCurrentCentroTrabajo();
-    trabajadores.resetCurrentTrabajador();
-    documentos.resetCurrentTypeOfDocument();
-  }
-});
-
-watch(() => centrosTrabajo.currentCentroTrabajo, (newCentro, oldCentro) => {
-  if (newCentro?._id !== oldCentro?._id) {
-    // Si currentCentroTrabajo cambia, reinicia trabajadores
-    trabajadores.resetCurrentTrabajador();
-    documentos.resetCurrentTypeOfDocument();
-  }
-});
-
-watch(() => trabajadores.currentTrabajador, (newTrabajador, oldTrabajador) => {
-  if (newTrabajador?._id !== oldTrabajador?._id) {
-    // Si currentCentroTrabajo cambia, reinicia trabajadores
-    documentos.resetCurrentTypeOfDocument();
   }
 });
 

@@ -286,46 +286,14 @@ const documentTypeLabels = {
 };
 
 const fetchData = async () => {
-  const empresaId = String(route.params.idEmpresa);
-  const centroTrabajoId = String(route.params.idCentroTrabajo);
-  const trabajadorId = String(route.params.idTrabajador);
+  const trabajadorId = String(route.params.idTrabajador ?? '');
+  if (!trabajadorId) return;
 
   try {
-    const trabajadorResult = await trabajadores.fetchTrabajadorById(
-      empresaId,
-      centroTrabajoId,
-      trabajadorId,
-    );
-
-    const resolvedTrabajadorId =
-      trabajadorResult.data?._id?.toString() ?? trabajadorId;
-
-    if (trabajadorResult.redirectedFrom) {
-      toast?.open({
-        message: 'Este trabajador fue fusionado. Se abrió el expediente unificado.',
-        type: 'info',
-      });
-      await router.replace({
-        name: 'expediente-medico',
-        params: {
-          idEmpresa: empresaId,
-          idCentroTrabajo: centroTrabajoId,
-          idTrabajador: resolvedTrabajadorId,
-        },
-      });
-      return;
-    }
-
     await Promise.all([
-      documentos.fetchAllDocuments(resolvedTrabajadorId),
-      resultadosClinicos.fetchResultadosAgrupados(resolvedTrabajadorId),
-      empresas.fetchEmpresaById(empresaId),
-      centrosTrabajo.fetchCentroTrabajoById(empresaId, centroTrabajoId),
+      documentos.fetchAllDocuments(trabajadorId),
+      resultadosClinicos.fetchResultadosAgrupados(trabajadorId),
     ]);
-
-    empresas.currentEmpresaId = empresaId;
-    centrosTrabajo.currentCentroTrabajoId = centroTrabajoId;
-    trabajadores.currentTrabajadorId = resolvedTrabajadorId;
 
     formData.resetFormData();
   } catch (error) {
@@ -984,7 +952,7 @@ const añoMasReciente = computed(() => {
         <!-- Header principal con información del trabajador -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden mb-4">
           <div class="p-6">
-            <Transition appear mode="out-in" name="slide-up">
+            <Transition appear name="slide-up">
               <div v-if="trabajadores.currentTrabajador" class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                 
                 <!-- Información del trabajador -->

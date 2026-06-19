@@ -78,6 +78,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
 
   // Secuencias para descartar respuestas obsoletas (anti-race al navegar entre centros).
   let listadoSeq = 0;
+  let detailSeq = 0;
 
   function resetTrabajadores() {
     trabajadores.value = [];
@@ -211,37 +212,62 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     }
   }
 
+  async function fetchTrabajadorByIdInternal(
+    empresaId: string,
+    centroTrabajoId: string,
+    trabajadorId: string,
+    seq: number,
+    redirectedFrom?: string,
+  ): Promise<{ data: Trabajador; redirectedFrom?: string }> {
+    try {
+      const { data } = await TrabajadoresAPI.getTrabajadorById(
+        empresaId,
+        centroTrabajoId,
+        trabajadorId,
+      );
+      if (seq === detailSeq) {
+        currentTrabajador.value = data;
+        currentTrabajadorId.value = data?._id?.toString() ?? trabajadorId;
+      }
+      return { data, redirectedFrom };
+    } catch (error: any) {
+      const redirectTo = error?.response?.data?.redirectTo;
+      if (error?.response?.status === 410 && redirectTo) {
+        return fetchTrabajadorByIdInternal(
+          empresaId,
+          centroTrabajoId,
+          redirectTo,
+          seq,
+          trabajadorId,
+        );
+      }
+      throw error;
+    }
+  }
+
   async function fetchTrabajadorById(
     empresaId: string,
     centroTrabajoId: string,
     trabajadorId: string
   ): Promise<{ data: Trabajador; redirectedFrom?: string }> {
+    const seq = ++detailSeq;
     try {
       loadingOnSidebar.value = true;
       loadingModal.value = true;
-      const { data } = await TrabajadoresAPI.getTrabajadorById(
+      return await fetchTrabajadorByIdInternal(
         empresaId,
         centroTrabajoId,
-        trabajadorId
+        trabajadorId,
+        seq,
       );
-      currentTrabajador.value = data;
-      currentTrabajadorId.value = data?._id?.toString() ?? trabajadorId;
-      return { data };
-    } catch (error: any) {
-      const redirectTo = error?.response?.data?.redirectTo;
-      if (error?.response?.status === 410 && redirectTo) {
-        const result = await fetchTrabajadorById(
-          empresaId,
-          centroTrabajoId,
-          redirectTo,
-        );
-        return { ...result, redirectedFrom: trabajadorId };
-      }
+    } catch (error) {
       console.log(error);
       throw error;
     } finally {
-      loadingOnSidebar.value = false;
-      loadingModal.value = false;
+      if (seq === detailSeq) {
+        loadingOnSidebar.value = false;
+        loadingModal.value = false;
+      }
     }
   }
 
