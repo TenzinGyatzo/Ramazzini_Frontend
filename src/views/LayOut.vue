@@ -1040,7 +1040,7 @@ const isHomeRoute = computed(() => route.name === 'inicio');
             </a>
 
             <!-- Auditoría (NOM-024) -->
-            <a v-if="user.user?.role === 'Principal'"
+            <a v-if="user.user?.role === 'Principal' && proveedorSaludStore.auditTrailEnabled"
                @click="router.push({ name: 'auditoria' })"
                class="block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 border-gray-200 hover:border-blue-300">
               <div class="flex items-center gap-3">
@@ -1083,6 +1083,7 @@ const isHomeRoute = computed(() => route.name === 'inicio');
             <RouterLink
               v-if="
                 catalogAdminEnabled &&
+                proveedorSaludStore.isSIRES &&
                 (user.user?.role === 'Principal' || user.user?.role === 'Administrador')
               "
               :to="{ name: 'admin-catalogos' }"

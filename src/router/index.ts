@@ -5,6 +5,7 @@ import { useUserStore } from "@/stores/user";
 import { usePostHog } from "../composables/usePostHog";
 import { useUserPermissions } from "@/composables/useUserPermissions";
 import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
+import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import {
   startNavigationProgress,
   finishNavigationProgress,
@@ -196,7 +197,7 @@ const router = createRouter({
           path: "/auditoria",
           name: "auditoria",
           component: () => import("@/views/AuditoriaView.vue"),
-          meta: { requiresAuth: true, requiresPrincipalOnly: true },
+          meta: { requiresAuth: true, requiresPrincipalOnly: true, requiresSiresAudit: true },
         }
       ],
     },
@@ -227,8 +228,10 @@ router.beforeEach((to, from) => {
     const requiresAdmin = to.meta.requiresAdmin; // Verifica solo
     const requiresPrincipal = to.meta.requiresPrincipal; // Verifica solo
     const requiresPrincipalOnly = to.meta.requiresPrincipalOnly;
+    const requiresSiresAudit = to.meta.requiresSiresAudit;
     const requiresCatalogAdmin = to.meta.requiresCatalogAdmin;
     const userStore = useUserStore();
+    const proveedorSaludStore = useProveedorSaludStore();
 
     try {
       if (requiresAuth) {
@@ -261,6 +264,25 @@ router.beforeEach((to, from) => {
 
       if (requiresCatalogAdmin && !catalogAdminEnabled) {
         console.warn("Acceso denegado: administración de catálogos no habilitada");
+        return next({ name: "inicio" });
+      }
+
+      const needsSiresPolicy =
+        requiresSiresAudit ||
+        (requiresCatalogAdmin && catalogAdminEnabled);
+      if (needsSiresPolicy && user?.idProveedorSalud) {
+        if (!proveedorSaludStore.isProveedorLoaded) {
+          await proveedorSaludStore.loadProveedorSalud(user.idProveedorSalud);
+        }
+      }
+
+      if (requiresSiresAudit && !proveedorSaludStore.isSIRES) {
+        console.warn("Acceso denegado: auditoría solo disponible para proveedores SIRES");
+        return next({ name: "inicio" });
+      }
+
+      if (requiresCatalogAdmin && catalogAdminEnabled && !proveedorSaludStore.isSIRES) {
+        console.warn("Acceso denegado: catálogos admin solo disponible para proveedores SIRES");
         return next({ name: "inicio" });
       }
 

@@ -7,9 +7,11 @@ import catalogsAdminAPI, {
   type CatalogEntryRow,
 } from "@/api/catalogsAdminAPI";
 import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
+import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 
 const toast = inject<{ open: (o: { message: string; type: string }) => void }>("toast");
 const userStore = useUserStore();
+const proveedorSaludStore = useProveedorSaludStore();
 const router = useRouter();
 
 const LARGE_CATALOG_THRESHOLD = 50000;
@@ -335,6 +337,10 @@ onMounted(async () => {
   }
   const role = userStore.user?.role;
   if (role !== "Principal" && role !== "Administrador") {
+    router.push({ name: "inicio" });
+    return;
+  }
+  if (!proveedorSaludStore.isSIRES) {
     router.push({ name: "inicio" });
     return;
   }

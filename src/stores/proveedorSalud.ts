@@ -22,6 +22,7 @@ export interface RegulatoryPolicy {
         notaAclaratoriaEnabled: boolean;
         cluesFieldVisible: boolean; // CLUES visible solo en SIRES
         dailyConsentEnabled: boolean; // Consentimiento diario habilitado solo en SIRES
+        auditTrailEnabled: boolean; // Trail de auditoría NOM-024
     };
     validation: {
         curpFirmantes: 'required' | 'optional';
@@ -324,6 +325,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     const giisExportEnabled = computed(() => regulatoryPolicy.value?.features.giisExportEnabled ?? false);
     const cluesFieldVisible = computed(() => regulatoryPolicy.value?.features.cluesFieldVisible ?? false);
     const dailyConsentEnabled = computed(() => regulatoryPolicy.value?.features.dailyConsentEnabled ?? false);
+    const auditTrailEnabled = computed(() => regulatoryPolicy.value?.features.auditTrailEnabled ?? false);
     
     // Helpers basados en policy - Validations
     const curpFirmantesRequired = computed(() => regulatoryPolicy.value?.validation.curpFirmantes === 'required');
@@ -351,6 +353,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         giisExportEnabled,
         cluesFieldVisible,
         dailyConsentEnabled,
+        auditTrailEnabled,
         // Validations
         curpFirmantesRequired,
         workerCurpRequired,

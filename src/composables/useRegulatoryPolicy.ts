@@ -1,5 +1,6 @@
 import { computed } from 'vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { catalogAdminEnabled } from '@/composables/useCatalogAdminFeature';
 
 /**
  * Composable para manejar la política regulatoria
@@ -82,6 +83,20 @@ export function useRegulatoryPolicy() {
     proveedorSaludStore.dailyConsentEnabled
   );
 
+  /**
+   * Indica si el trail de auditoría NOM-024 está habilitado
+   */
+  const auditTrailEnabled = computed<boolean>(() =>
+    proveedorSaludStore.auditTrailEnabled
+  );
+
+  /**
+   * Administración de catálogos: env flag AND régimen SIRES
+   */
+  const canAccessCatalogAdmin = computed<boolean>(() =>
+    catalogAdminEnabled && isSIRES.value
+  );
+
   // ========== VALIDATIONS ==========
 
   /**
@@ -124,6 +139,8 @@ export function useRegulatoryPolicy() {
     cluesFieldVisible,
     showSiresUI,
     dailyConsentEnabled,
+    auditTrailEnabled,
+    canAccessCatalogAdmin,
     // Validations
     curpFirmantesRequired,
     workerCurpRequired,

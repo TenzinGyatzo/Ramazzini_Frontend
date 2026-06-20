@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useUserStore } from "@/stores/user";
+import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import auditAPI from "@/api/auditAPI";
 import type { AuditEventItem } from "@/api/auditAPI";
 
 const userStore = useUserStore();
+const proveedorSaludStore = useProveedorSaludStore();
 const isPrincipal = computed(
   () => userStore.user?.role === "Principal"
+);
+const auditTrailEnabled = computed(
+  () => proveedorSaludStore.auditTrailEnabled
 );
 
 const loading = ref(false);
@@ -148,6 +153,13 @@ async function verifyAudit() {
       <p class="text-sm mt-1">
         Solo usuarios con rol Principal pueden usar Auditoria.
       </p>
+    </div>
+    <div
+      v-else-if="!auditTrailEnabled"
+      class="rounded-lg bg-amber-50 border border-amber-200 p-4 text-amber-800"
+    >
+      <p class="font-medium">Auditoría solo disponible para proveedores SIRES</p>
+      <p class="text-sm mt-1">Su proveedor no está en régimen SIRES (NOM-024).</p>
     </div>
 
     <template v-else>
