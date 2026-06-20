@@ -1274,17 +1274,23 @@ const añoMasReciente = computed(() => {
 
         <!-- Contenido principal de documentos -->
         <div>
-          <Transition appear mode="out-in" name="slide-up">
-            <div v-if="documentos.loading && !yearsWithRecords.length" class="text-center py-20">
+          <Transition appear mode="out-in" name="expediente-swap">
+            <div
+              v-if="documentos.loading && !yearsWithRecords.length"
+              key="docs-loading"
+              class="text-center py-20"
+            >
               <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
                 <i class="fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
               </div>
               <h2 class="text-xl font-semibold text-gray-700 mb-2">Cargando documentos...</h2>
               <p class="text-gray-500">Obteniendo el historial médico del trabajador</p>
             </div>
-            
-            <div v-else>
-              <div v-if="yearsWithRecords.length" class="space-y-6">
+
+            <div v-else key="docs-content">
+              <Transition appear mode="out-in" name="slide-up">
+                <div>
+                  <div v-if="yearsWithRecords.length" class="space-y-6">
                 <div
                   v-for="year in yearsWithRecords"
                   :key="`year-${year}-${resultadosPorAnio[year]?.length || 0}`"
@@ -1387,6 +1393,8 @@ const añoMasReciente = computed(() => {
                   </div>
                 </div>
               </div>
+                </div>
+              </Transition>
             </div>
           </Transition>
         </div>
@@ -1419,29 +1427,40 @@ const añoMasReciente = computed(() => {
   opacity: 0;
 }
 
-.slide-up-enter-active,
+/* Transición rápida: pantalla de carga ↔ contenido de documentos */
+.expediente-swap-leave-active {
+  transition: opacity 0.1s ease;
+}
+
+.expediente-swap-leave-to {
+  opacity: 0;
+}
+
+.expediente-swap-enter-active {
+  transition: opacity 0.1s ease;
+}
+
+.expediente-swap-enter-from {
+  opacity: 0;
+}
+
+/* Misma velocidad que LayOut.vue / EmpresasView / CentrosTrabajoView */
+.slide-up-enter-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .slide-up-leave-active {
-  transition: all 0.4s ease-out;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-up-enter-from {
   opacity: 0;
-  transform: translateY(20px);
-}
-
-.slide-up-enter-to {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.slide-up-leave-from {
-  opacity: 1;
-  transform: translateY(0);
+  transform: translateY(30px);
 }
 
 .slide-up-leave-to {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateY(-30px);
 }
 
 .slide-down-enter-active,
