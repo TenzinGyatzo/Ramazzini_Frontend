@@ -87,6 +87,27 @@ describe('normalizeNotaMedicaDiagnosticosPv', () => {
     expect(form.codigoCIEDiagnostico2).toBe('A000');
     expect(form.confirmacionDiagnostica2).toBe(true);
   });
+
+  it('SIN_REGIMEN: conserva código CIE sin primeraVez y elimina pv', () => {
+    const form: Record<string, unknown> = {
+      primeraVezDiagnostico2: undefined,
+      codigoCIEDiagnostico2: 'A000',
+      confirmacionDiagnostica2: false,
+    };
+    normalizeNotaMedicaDiagnosticosPv(form, false);
+    expect(form.codigoCIEDiagnostico2).toBe('A000');
+    expect(form.primeraVezDiagnostico2).toBeUndefined();
+    expect(form.confirmacionDiagnostica2).toBeUndefined();
+  });
+
+  it('SIN_REGIMEN: limpia diag2 cuando no hay código ni primeraVez', () => {
+    const form: Record<string, unknown> = {
+      codigoCIEDiagnostico2: '',
+    };
+    normalizeNotaMedicaDiagnosticosPv(form, false);
+    expect(form.codigoCIEDiagnostico2).toBe('');
+    expect(form.primeraVezDiagnostico2).toBeUndefined();
+  });
 });
 
 describe('validateDiagnostico2Sis / validateDiagnostico3Sis', () => {
@@ -135,13 +156,51 @@ describe('validateDiagnostico2Sis / validateDiagnostico3Sis', () => {
     expect(fail.messageInline).toMatch(/oncología pediátrica|medicina del trabajo/i);
   });
 
-  it('bloquea diag3 si no hay comorbilidad 2 registrada', async () => {
+  it('bloquea diag3 si no hay comorbilidad 2 registrada (SIRES)', async () => {
     const result = await validateDiagnostico3Sis({
       ...baseParams,
       formData: {
         codigoCIE10Principal: 'A000',
         primeraVezDiagnostico3: 1,
         codigoCIEDiagnostico3: 'B000',
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.messageInline).toMatch(/diagnóstico 2/i);
+  });
+
+  it('SIN_REGIMEN: permite diag2 solo con código CIE', async () => {
+    const result = await validateDiagnostico2Sis({
+      ...baseParams,
+      showSiresUI: false,
+      formData: {
+        codigoCIEDiagnostico2: 'A000',
+        codigoCIE10Principal: 'B001',
+      },
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('SIN_REGIMEN: permite diag3 si diag2 tiene código sin primeraVez', async () => {
+    const result = await validateDiagnostico3Sis({
+      ...baseParams,
+      showSiresUI: false,
+      formData: {
+        codigoCIE10Principal: 'A000',
+        codigoCIEDiagnostico2: 'B001',
+        codigoCIEDiagnostico3: 'C001',
+      },
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('SIN_REGIMEN: bloquea diag3 sin diag2 registrado', async () => {
+    const result = await validateDiagnostico3Sis({
+      ...baseParams,
+      showSiresUI: false,
+      formData: {
+        codigoCIE10Principal: 'A000',
+        codigoCIEDiagnostico3: 'C001',
       },
     });
     expect(result.ok).toBe(false);

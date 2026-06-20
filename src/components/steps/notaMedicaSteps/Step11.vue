@@ -12,14 +12,15 @@ import {
   isPrimeraVezComorbilidadActiva,
 } from '@/helpers/notaMedicaDiagnosticosSis';
 import { useConfirmacionDiagnostica } from '@/composables/useConfirmacionDiagnostica';
-import { useNom024Fields } from '@/composables/useNom024Fields';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
 const trabajadores = useTrabajadoresStore();
 const userStore = useUserStore();
-const { showSiresUI } = useNom024Fields();
+const proveedorSaludStore = useProveedorSaludStore();
+const showSiresUI = computed(() => proveedorSaludStore.showSiresUI);
 const esMujer = computed(() => trabajadores.currentTrabajador?.sexo === 'Femenino');
 
 // Helper para extraer código CIE-10 del formato "CODE - DESCRIPTION"
@@ -125,8 +126,12 @@ onUnmounted(() => {
   if (registrarComorbilidad.value === 0) {
     limpiarComorbilidad3EnStore();
   } else {
-    const pv = primeraVezDiagnostico3.value;
-    formDataNotaMedica.primeraVezDiagnostico3 = pv ?? undefined;
+    if (showSiresUI.value) {
+      const pv = primeraVezDiagnostico3.value;
+      formDataNotaMedica.primeraVezDiagnostico3 = pv ?? undefined;
+    } else {
+      delete formDataNotaMedica.primeraVezDiagnostico3;
+    }
     formDataNotaMedica.codigoCIEDiagnostico3 = codigoCIEDiagnostico3.value || '';
     if (muestraConfirmacionDiagnostica3.value) {
       formDataNotaMedica.confirmacionDiagnostica3 = confirmacionDiagnostica3.value;
@@ -220,7 +225,13 @@ const validateDiag3Sis = async () => {
   diagnostico3SisError.value = '';
   if (registrarComorbilidad.value === 0) return;
 
-  if (!isPrimeraVezComorbilidadActiva(formDataNotaMedica.primeraVezDiagnostico2)) {
+  const diag2Registrado = showSiresUI.value
+    ? isPrimeraVezComorbilidadActiva(formDataNotaMedica.primeraVezDiagnostico2)
+    : tieneComorbilidadDiagRegistrada(
+        formDataNotaMedica.primeraVezDiagnostico2,
+        formDataNotaMedica.codigoCIEDiagnostico2,
+      );
+  if (!diag2Registrado) {
     diagnostico3SisError.value =
       'Debe registrar primero el diagnóstico 2 (comorbilidad) antes del diagnóstico 3.';
     return;
@@ -230,7 +241,9 @@ const validateDiag3Sis = async () => {
   if (!trabajador) return;
 
   const pv = primeraVezDiagnostico3.value;
-  formDataNotaMedica.primeraVezDiagnostico3 = pv ?? undefined;
+  if (showSiresUI.value) {
+    formDataNotaMedica.primeraVezDiagnostico3 = pv ?? undefined;
+  }
 
   try {
     const result = await validateDiagnostico3Sis({
@@ -326,8 +339,8 @@ watch(() => userStore.user?._id, () => {
 
     <!-- Bloques visibles solo cuando registrarComorbilidad === Sí -->
     <div v-if="registrarComorbilidad === 1" class="space-y-6">
-      <!-- 1. Primera vez diagnóstico 3 (0=No, 1=Si) -->
-      <div>
+      <!-- Primera vez diagnóstico 3 (SIRES_NOM024) -->
+      <div v-if="showSiresUI">
         <h3 class="text-base font-medium text-gray-700 mb-2">
           Primera vez diagnóstico 3 <span class="text-red-500">*</span>
         </h3>

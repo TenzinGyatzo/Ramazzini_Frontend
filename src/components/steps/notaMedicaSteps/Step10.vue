@@ -11,14 +11,15 @@ import {
   tieneComorbilidadDiagRegistrada,
 } from '@/helpers/notaMedicaDiagnosticosSis';
 import { useConfirmacionDiagnostica } from '@/composables/useConfirmacionDiagnostica';
-import { useNom024Fields } from '@/composables/useNom024Fields';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
 const trabajadores = useTrabajadoresStore();
 const userStore = useUserStore();
-const { showSiresUI } = useNom024Fields();
+const proveedorSaludStore = useProveedorSaludStore();
+const showSiresUI = computed(() => proveedorSaludStore.showSiresUI);
 const esMujer = computed(() => trabajadores.currentTrabajador?.sexo === 'Femenino');
 
 // Helper para extraer código CIE-10 del formato "CODE - DESCRIPTION"
@@ -133,8 +134,12 @@ onUnmounted(() => {
   if (registrarComorbilidad.value === 0) {
     limpiarComorbilidad2EnStore();
   } else {
-    const pv = primeraVezDiagnostico2.value;
-    formDataNotaMedica.primeraVezDiagnostico2 = pv ?? undefined;
+    if (showSiresUI.value) {
+      const pv = primeraVezDiagnostico2.value;
+      formDataNotaMedica.primeraVezDiagnostico2 = pv ?? undefined;
+    } else {
+      delete formDataNotaMedica.primeraVezDiagnostico2;
+    }
     formDataNotaMedica.codigoCIEDiagnostico2 = codigoCIEDiagnostico2.value || '';
     if (muestraConfirmacionDiagnostica2.value) {
       formDataNotaMedica.confirmacionDiagnostica2 = confirmacionDiagnostica2.value;
@@ -233,7 +238,9 @@ const validateDiag2Sis = async () => {
   if (!trabajador) return;
 
   const pv = primeraVezDiagnostico2.value;
-  formDataNotaMedica.primeraVezDiagnostico2 = pv ?? undefined;
+  if (showSiresUI.value) {
+    formDataNotaMedica.primeraVezDiagnostico2 = pv ?? undefined;
+  }
 
   try {
     const result = await validateDiagnostico2Sis({
@@ -328,8 +335,8 @@ watch(() => userStore.user?._id, () => {
 
     <!-- Bloques visibles solo cuando registrarComorbilidad === Sí -->
     <div v-if="registrarComorbilidad === 1" class="space-y-6">
-      <!-- 1. Primera vez diagnóstico 2 (0=No, 1=Si) -->
-      <div>
+      <!-- Primera vez diagnóstico 2 (SIRES_NOM024) -->
+      <div v-if="showSiresUI">
         <h3 class="text-base font-medium text-gray-700 mb-2">
           Primera vez diagnóstico 2 <span class="text-red-500">*</span>
         </h3>

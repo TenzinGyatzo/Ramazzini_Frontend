@@ -207,17 +207,38 @@ function limpiarCamposComorbilidadSinRegistrar(
 }
 
 /**
- * Limpia diag. 2/3 cuando no hay comorbilidad registrada (pv distinto de 0/1).
- * No persiste -1 en el formulario: ausencia de campo = no aplica.
+ * Limpia diag. 2/3 cuando no hay comorbilidad registrada.
+ * SIRES: requiere primeraVez 0/1. SIN_REGIMEN: basta código CIE-10.
  */
 export function normalizeNotaMedicaDiagnosticosPv(
   formData: Record<string, unknown>,
+  showSiresUI = true,
 ): void {
-  if (!isPrimeraVezComorbilidadActiva(formData.primeraVezDiagnostico2)) {
+  const diag2Activo = showSiresUI
+    ? isPrimeraVezComorbilidadActiva(formData.primeraVezDiagnostico2)
+    : tieneComorbilidadDiagRegistrada(
+        formData.primeraVezDiagnostico2,
+        formData.codigoCIEDiagnostico2,
+      );
+  const diag3Activo = showSiresUI
+    ? isPrimeraVezComorbilidadActiva(formData.primeraVezDiagnostico3)
+    : tieneComorbilidadDiagRegistrada(
+        formData.primeraVezDiagnostico3,
+        formData.codigoCIEDiagnostico3,
+      );
+
+  if (!diag2Activo) {
     limpiarCamposComorbilidadSinRegistrar(formData, '2');
+  } else if (!showSiresUI) {
+    delete formData.primeraVezDiagnostico2;
+    delete formData.confirmacionDiagnostica2;
   }
-  if (!isPrimeraVezComorbilidadActiva(formData.primeraVezDiagnostico3)) {
+
+  if (!diag3Activo) {
     limpiarCamposComorbilidadSinRegistrar(formData, '3');
+  } else if (!showSiresUI) {
+    delete formData.primeraVezDiagnostico3;
+    delete formData.confirmacionDiagnostica3;
   }
 }
 
@@ -350,7 +371,25 @@ async function validateDiagnostico23Core(
   const pv = normalizePrimeraVez(p[pvKey]);
   const codeRaw = extractCode(p[codeKey]);
 
-  if (pv === -1) {
+  if (!params.showSiresUI) {
+    if (!codeRaw.trim()) {
+      return null;
+    }
+
+    if (
+      label === '3' &&
+      !tieneComorbilidadDiagRegistrada(
+        p.primeraVezDiagnostico2,
+        p.codigoCIEDiagnostico2,
+      )
+    ) {
+      return fail(
+        paso,
+        'No puede registrar el diagnóstico 3 sin haber registrado antes el diagnóstico 2 (comorbilidad).',
+        'Debe registrar primero el diagnóstico 2 antes del diagnóstico 3.',
+      );
+    }
+  } else if (pv === -1) {
     if (codeRaw.trim()) {
       return fail(
         paso,
@@ -361,6 +400,7 @@ async function validateDiagnostico23Core(
   }
 
   if (
+    params.showSiresUI &&
     label === '3' &&
     !isPrimeraVezComorbilidadActiva(p.primeraVezDiagnostico2)
   ) {
@@ -372,11 +412,10 @@ async function validateDiagnostico23Core(
   }
 
   if (!codeRaw.trim()) {
-    return fail(
-      paso,
-      `El código CIE-10 diagnóstico ${label} es obligatorio cuando se registra comorbilidad (primera vez 0 o 1).`,
-      `Debe registrar un código CIE-10 para el diagnóstico ${label}.`,
-    );
+    const msg = params.showSiresUI
+      ? `El código CIE-10 diagnóstico ${label} es obligatorio cuando se registra comorbilidad (primera vez 0 o 1).`
+      : `Debe registrar un código CIE-10 para el diagnóstico ${label}.`;
+    return fail(paso, msg, msg);
   }
 
   const norm = norm4Chars(codeRaw);

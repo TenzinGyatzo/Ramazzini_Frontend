@@ -5,12 +5,15 @@ import { convertirYYYYMMDDaISO, convertirFechaISOaYYYYMMDD, convertirFechaISOaDD
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { validarFechaDocumentoNoFutura } from '@/helpers/validacionCampos';
 
 const toast = inject('toast');
 
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const resultadosClinicosStore = useResultadosClinicosStore();
+const proveedorSaludStore = useProveedorSaludStore();
 
 // Emit para cerrar modal y actualizar datos
 const emit = defineEmits(['closeModalUpdate', 'updateData', 'abrirResultados']);
@@ -147,6 +150,15 @@ watch(
 const handleSubmit = async () => {
   // Prevenir edición si el documento está bloqueado (finalizado o anulado)
   if (isBloqueado.value) {
+    return;
+  }
+
+  const validacionFecha = validarFechaDocumentoNoFutura(
+    fechaDocumento.value,
+    proveedorSaludStore.showSiresUI,
+  );
+  if (!validacionFecha.valido) {
+    toast.open({ message: validacionFecha.mensaje, type: 'error' });
     return;
   }
 

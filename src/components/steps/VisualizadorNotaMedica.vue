@@ -339,8 +339,8 @@ const muestraDiagnostico3 = computed(() =>
       @click="goToStep(stepMap.diagnostico)"
     >
     
-      <!-- Relación Temporal -->
-      <p v-if="formData.formDataNotaMedica.relacionTemporal !== undefined && formData.formDataNotaMedica.relacionTemporal !== null" class="text-justify font-medium mb-1">
+      <!-- Relación Temporal (SIRES) -->
+      <p v-if="isSIRES && formData.formDataNotaMedica.relacionTemporal !== undefined && formData.formDataNotaMedica.relacionTemporal !== null" class="text-justify font-medium mb-1">
         Relación Temporal: <span class="font-light">{{ formData.formDataNotaMedica.relacionTemporal === 0 ? 'Primera Vez' : 'Subsecuente' }}</span>
       </p>
 
@@ -383,8 +383,8 @@ const muestraDiagnostico3 = computed(() =>
       :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.comorbilidad2 }" 
       @click="goToStep(stepMap.comorbilidad2)"
     >
-      <!-- Primera vez diagnóstico 2 (0=No, 1=Sí) -->
-      <p v-if="isPrimeraVezComorbilidadActiva(formData.formDataNotaMedica.primeraVezDiagnostico2)" class="text-justify font-medium mb-1">
+      <!-- Primera vez diagnóstico 2 (SIRES) -->
+      <p v-if="isSIRES && isPrimeraVezComorbilidadActiva(formData.formDataNotaMedica.primeraVezDiagnostico2)" class="text-justify font-medium mb-1">
         Primera vez diagnóstico 2: <span class="font-light">{{ formData.formDataNotaMedica.primeraVezDiagnostico2 === 1 ? 'Sí' : 'No' }}</span>
       </p>
 
@@ -417,7 +417,7 @@ const muestraDiagnostico3 = computed(() =>
       :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.comorbilidad3 }"
       @click="goToStep(stepMap.comorbilidad3)"
     >
-      <p v-if="isPrimeraVezComorbilidadActiva(formData.formDataNotaMedica.primeraVezDiagnostico3)" class="text-justify font-medium mb-1">
+      <p v-if="isSIRES && isPrimeraVezComorbilidadActiva(formData.formDataNotaMedica.primeraVezDiagnostico3)" class="text-justify font-medium mb-1">
         Primera vez diagnóstico 3: <span class="font-light">{{ formData.formDataNotaMedica.primeraVezDiagnostico3 === 1 ? 'Sí' : 'No' }}</span>
       </p>
       <p v-if="formData.formDataNotaMedica.codigoCIEDiagnostico3" class="text-justify font-medium mb-1">

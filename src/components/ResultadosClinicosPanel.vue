@@ -895,7 +895,9 @@ import { VPdfViewer, Locales, useLicense } from '@vue-pdf-viewer/viewer';
 import { useResultadosClinicosStore, type ResultadoClinico } from '@/stores/resultadosClinicos';
 import type { DocumentoExterno } from '@/interfaces/documentos.inteface';
 import { useDocumentosStore } from '@/stores/documentos';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { convertirFechaISOaDDMMYYYY, formatDateYYYYMMDD } from '@/helpers/dates';
+import { validarFechaDocumentoNoFutura } from '@/helpers/validacionCampos';
 import SelectorDocumentoExterno from '@/components/SelectorDocumentoExterno.vue';
 import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 import type { EliminacionRequest } from '@/composables/useEliminacion';
@@ -913,6 +915,7 @@ const toast: any = inject('toast');
 const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 const store = useResultadosClinicosStore();
 const documentos = useDocumentosStore();
+const proveedorSaludStore = useProveedorSaludStore();
 const isHtmlDark = useHtmlDarkMode();
 
 const currentStep = ref<'select' | 'form'>('select');
@@ -1391,6 +1394,18 @@ const handleDeleteFromEdit = async () => {
 
 const handleSubmit = async () => {
   try {
+    const validacionFecha = validarFechaDocumentoNoFutura(
+      formData.value.fechaEstudio,
+      proveedorSaludStore.showSiresUI,
+    );
+    if (!validacionFecha.valido) {
+      toast.open({
+        message: validacionFecha.mensaje,
+        type: 'error',
+      });
+      return;
+    }
+
     // Validaciones adicionales
     if (formData.value.tipoEstudio !== 'TIPO_SANGRE' && formData.value.resultadoGlobal === 'ANORMAL') {
       if (formData.value.tipoEstudio === 'ESPIROMETRIA' && !formData.value.tipoAlteracionEspirometria) {

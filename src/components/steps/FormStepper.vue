@@ -388,7 +388,7 @@ import Step3InformeLongitudinalCardiometabolico from '../steps/informeLongitudin
 import ModalFaltanCampos from '../ModalFaltanCampos.vue';
 import ModalCamposFaltantes from '../ModalCamposFaltantes.vue';
 import DailyConsentModal from '../DailyConsentModal.vue';
-import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaRamazziniScope, validarNotaMedicaPreSubmit, validarNotaMedicaEmbarazo } from '@/helpers/validacionCampos';
+import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaRamazziniScope, validarNotaMedicaPreSubmit, validarNotaMedicaEmbarazo, validarFechaDocumentoPreSubmit } from '@/helpers/validacionCampos';
 import { validateCIE10Duplicates, generateBlockingToastMessage } from '@/helpers/cie10';
 import { validateNotaMedicaDiagnosticos2Y3, fetchMedicoEnfermeraFirmantes, normalizeNotaMedicaDiagnosticosPv } from '@/helpers/notaMedicaDiagnosticosSis';
 import {
@@ -1418,8 +1418,15 @@ export default {
           formData.formDataNotaMedica.trimestreGestacional = -1;
         }
 
+        if (!showSiresUI.value) {
+          delete formData.formDataNotaMedica.relacionTemporal;
+        }
+
         const trabajadorNm = trabajadores.currentTrabajador;
-        normalizeNotaMedicaDiagnosticosPv(formData.formDataNotaMedica);
+        normalizeNotaMedicaDiagnosticosPv(
+          formData.formDataNotaMedica,
+          showSiresUI.value,
+        );
 
         const { medicoFirmante: medicoFirmanteConf, enfermeraFirmante: enfermeraFirmanteConf } =
           await fetchMedicoEnfermeraFirmantes(user.value?._id);
@@ -1572,12 +1579,37 @@ export default {
         datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
       }
 
+      // VALIDACIÓN E1 SIRES: fecha no futura para documentos del wizard (excepto notaMedica, validada abajo)
+      if (
+        showSiresUI.value &&
+        documentos.currentTypeOfDocument &&
+        documentos.currentTypeOfDocument !== 'notaMedica'
+      ) {
+        const validacionFecha = validarFechaDocumentoPreSubmit(
+          documentos.currentTypeOfDocument,
+          datosLimpios,
+          showSiresUI.value,
+        );
+        if (!validacionFecha.valido) {
+          if (validacionFecha.paso) stepsStore.goToStep(validacionFecha.paso);
+          toast.open({
+            message: validacionFecha.mensaje,
+            type: 'error',
+          });
+          return;
+        }
+      }
+
       // VALIDACIÓN PREVIA: Verificar campos requeridos antes de enviar al backend
       // Incluye codigoCIE10Principal que es obligatorio para todos los regímenes
       const validacion = validarCamposRequeridos(
         documentos.currentTypeOfDocument, 
         datosLimpios,
-        { cie10Required: cie10Required.value }
+        {
+          cie10Required: cie10Required.value,
+          showSiresUI: showSiresUI.value,
+          esMujer: trabajadores.currentTrabajador?.sexo === 'Femenino',
+        }
       );
       
       if (!validacion.esValido) {

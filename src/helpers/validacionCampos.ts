@@ -901,7 +901,7 @@ const camposRequeridosPorTipo: Record<string, Array<{
 export function validarCamposRequeridos(
   tipoDocumento: string,
   datosFormulario: any,
-  options?: { cie10Required?: boolean }
+  options?: { cie10Required?: boolean; showSiresUI?: boolean; esMujer?: boolean }
 ): ValidacionResultado {
   let camposRequeridos = camposRequeridosPorTipo[tipoDocumento];
 
@@ -917,6 +917,29 @@ export function validarCamposRequeridos(
     camposRequeridos = camposRequeridos.filter(
       campo => campo.campo !== 'codigoCIE10Principal'
     );
+  }
+
+  if (tipoDocumento === 'notaMedica' && options?.showSiresUI === false) {
+    camposRequeridos = camposRequeridos.filter(
+      (campo) => campo.campo !== 'relacionTemporal',
+    );
+  }
+
+  if (tipoDocumento === 'notaMedica' && options?.showSiresUI !== undefined) {
+    const stepMap = getNotaMedicaStepMap(
+      options.showSiresUI,
+      options.esMujer ?? false,
+    );
+    camposRequeridos = camposRequeridos.map((campo) => {
+      if (
+        campo.campo === 'codigoCIE10Principal' ||
+        campo.campo === 'relacionTemporal' ||
+        campo.campo === 'codigoCIECausaExterna'
+      ) {
+        return { ...campo, paso: stepMap.diagnostico };
+      }
+      return campo;
+    });
   }
 
   const camposFaltantes: CampoFaltante[] = [];
@@ -971,6 +994,78 @@ function calcularEdad(fechaNacimiento: Date, fechaReferencia: Date): number {
   return Math.max(0, edad);
 }
 
+/** Mapa tipo documento (FormStepper) → campo fecha. Alineado con backend dateFields. */
+export const DOCUMENT_TYPE_DATE_FIELDS: Record<string, string> = {
+  antidoping: 'fechaAntidoping',
+  aptitud: 'fechaAptitudPuesto',
+  audiometria: 'fechaAudiometria',
+  certificado: 'fechaCertificado',
+  certificadoExpedito: 'fechaCertificadoExpedito',
+  documentoExterno: 'fechaDocumento',
+  examenVista: 'fechaExamenVista',
+  exploracionFisica: 'fechaExploracionFisica',
+  historiaClinica: 'fechaHistoriaClinica',
+  notaMedica: 'fechaNotaMedica',
+  notaAclaratoria: 'fechaNotaAclaratoria',
+  controlPrenatal: 'fechaInicioControlPrenatal',
+  historiaOtologica: 'fechaHistoriaOtologica',
+  previoEspirometria: 'fechaPrevioEspirometria',
+  receta: 'fechaReceta',
+  constanciaAptitud: 'fechaConstanciaAptitud',
+  entrevistaPsicologica: 'fechaEntrevistaPsicologica',
+  trastornosEstadoAnimo: 'fechaTrastornosEstadoAnimo',
+  cuestionarioProdromalBreve: 'fechaCuestionarioProdromalBreve',
+  trastornoLimitePersonalidad: 'fechaTrastornoLimitePersonalidad',
+  eventoSeguimientoCardiometabolico: 'fechaEventoSeguimientoCardiometabolico',
+  informeLongitudinalCardiometabolico: 'fechaInformeLongitudinalCardiometabolico',
+};
+
+/** Valida que la fecha no sea futura (solo aplica en régimen SIRES). */
+export function validarFechaDocumentoNoFutura(
+  fecha: string | Date | null | undefined,
+  isSIRES: boolean,
+): { valido: boolean; mensaje?: string } {
+  if (!isSIRES || !fecha) return { valido: true };
+
+  const fechaDoc = new Date(fecha);
+  if (isNaN(fechaDoc.getTime())) return { valido: true };
+
+  const hoy = new Date();
+  hoy.setHours(23, 59, 59, 999);
+
+  if (fechaDoc > hoy) {
+    return {
+      valido: false,
+      mensaje: 'La fecha no puede ser posterior al día de hoy',
+    };
+  }
+
+  return { valido: true };
+}
+
+/** Pre-submit E1 genérico para documentos del wizard (SIRES). */
+export function validarFechaDocumentoPreSubmit(
+  documentType: string,
+  datosFormulario: Record<string, unknown> | null | undefined,
+  isSIRES: boolean,
+): { valido: boolean; mensaje?: string; paso?: number } {
+  if (!isSIRES || !datosFormulario) return { valido: true };
+
+  const campoFecha = DOCUMENT_TYPE_DATE_FIELDS[documentType];
+  if (!campoFecha) return { valido: true };
+
+  const validacion = validarFechaDocumentoNoFutura(
+    datosFormulario[campoFecha] as string | Date | null | undefined,
+    isSIRES,
+  );
+
+  if (!validacion.valido) {
+    return { valido: false, mensaje: validacion.mensaje, paso: 1 };
+  }
+
+  return { valido: true };
+}
+
 /** Valida reglas pre-submit de nota médica (CEX NOM-024). Fechas, edad, sistólica/diastólica. */
 export function validarNotaMedicaPreSubmit(
   datosFormulario: any,
@@ -1009,8 +1104,8 @@ export function validarNotaMedicaPreSubmit(
     }
   }
 
-  // 3. fechaNotaMedica no puede ser futura
-  if (fechaNotaMedica && fechaNotaMedica > hoy) {
+  // 3. fechaNotaMedica no puede ser futura (solo SIRES)
+  if (isSIRES && fechaNotaMedica && fechaNotaMedica > hoy) {
     return {
       valido: false,
       mensaje: 'La fecha de consulta no puede ser posterior al día de hoy',

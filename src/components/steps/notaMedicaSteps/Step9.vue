@@ -174,7 +174,11 @@ onUnmounted(() => {
     // Guardar en formData
     formDataNotaMedica.codigoCIE10Principal = codigoCIE10Principal.value || '';
     formDataNotaMedica.codigosCIE10Complementarios = codigosCIE10Complementarios.value || [];
-    formDataNotaMedica.relacionTemporal = relacionTemporal.value ?? undefined;
+    if (showSiresUI.value) {
+        formDataNotaMedica.relacionTemporal = relacionTemporal.value ?? undefined;
+    } else {
+        delete formDataNotaMedica.relacionTemporal;
+    }
     // Guardar confirmacionDiagnostica solo si aplica (Fe de Erratas)
     if (muestraConfirmacionDiagnostica1.value) {
         formDataNotaMedica.confirmacionDiagnostica = confirmacionDiagnostica.value;
@@ -204,6 +208,10 @@ watch(codigosCIE10Complementarios, (newValue) => {
 }, { deep: true });
 
 watch(relacionTemporal, (newValue) => {
+    if (!showSiresUI.value) {
+        delete formDataNotaMedica.relacionTemporal;
+        return;
+    }
     formDataNotaMedica.relacionTemporal = newValue ?? undefined;
     scheduleValidatePrincipalSis();
 });
@@ -434,9 +442,10 @@ watch(
 <template>
     <div class="space-y-6">
 
-        <!-- 3. Relación Temporal (NOM-024 GIIS-B015) - Tamaño más mesurado -->
-        <div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-4 uppercase">Diagnóstico Principal</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4 uppercase">Diagnóstico Principal</h2>
+
+        <!-- Relación Temporal (SIRES_NOM024) -->
+        <div v-if="showSiresUI">
             <div class="flex items-center gap-2 mb-2">
                 <h3 class="text-base font-medium text-gray-700">
                     Relación Temporal <span v-if="cie10Required" class="text-red-500">*</span>

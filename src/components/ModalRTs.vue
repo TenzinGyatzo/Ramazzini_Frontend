@@ -5,8 +5,10 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useRiesgoTrabajoStore } from '@/stores/riesgosTrabajo';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { calcularAntiguedad, calcularEdad } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
+import { validarFechaDocumentoNoFutura } from '@/helpers/validacionCampos';
 
 const toast = inject('toast');
 const emit = defineEmits(['closeModal', 'riesgoCreado','riesgoActualizado']);
@@ -16,6 +18,7 @@ const empresasStore = useEmpresasStore();
 const centrosTrabajoStore = useCentrosTrabajoStore();
 const trabajadoresStore = useTrabajadoresStore();
 const riesgosTrabajoStore = useRiesgoTrabajoStore();
+const proveedorSaludStore = useProveedorSaludStore();
 
 const riesgosTrabajo = computed(() => trabajadoresStore.currentTrabajador?.riesgosTrabajo || []);
 
@@ -46,6 +49,15 @@ const handleSubmit = async () => {
 
     const trabajadorId = trabajadoresStore.currentTrabajador?._id;
     if (!trabajadorId) return;
+
+    const validacionFecha = validarFechaDocumentoNoFutura(
+      rtEnEdicion.value?.fechaRiesgo,
+      proveedorSaludStore.showSiresUI,
+    );
+    if (!validacionFecha.valido) {
+      toast.open({ message: validacionFecha.mensaje, type: 'error' });
+      return;
+    }
 
     const payload = limpiarCamposOpcionales(rtEnEdicion.value);
 
