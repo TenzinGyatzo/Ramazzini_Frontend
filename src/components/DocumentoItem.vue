@@ -7,8 +7,13 @@ import {
     headClinicalFile,
 } from '@/lib/clinicalFiles';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
-import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref } from 'vue';
-import { VPdfViewer, Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref, defineAsyncComponent } from 'vue';
+import { Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
+import { enqueuePdfAvailabilityCheck } from '@/composables/usePdfAvailabilityQueue';
+
+const VPdfViewer = defineAsyncComponent(() =>
+  import('@vue-pdf-viewer/viewer').then((mod) => mod.VPdfViewer),
+);
 import { useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -2479,7 +2484,8 @@ const manejarRegeneracionDesdePadre = async () => {
   mostrarModalPdfEliminado.value = false;     // Cierra el modal
   // Verificar disponibilidad después de regenerar
   setTimeout(() => {
-    verificarDisponibilidadPDF();
+    pdfCheckScheduled = false;
+    schedulePdfCheck();
   }, 1000); // Pequeño delay para asegurar que el PDF se haya generado
 };
 
@@ -2560,11 +2566,16 @@ const verificarDisponibilidadPDF = async () => {
 const documentoItemRef = ref(null);
 let pdfVisibilityObserver = null;
 let pdfCheckScheduled = false;
+let pdfVisibleInViewport = false;
+
+const runPdfAvailabilityCheck = () => {
+  enqueuePdfAvailabilityCheck(() => verificarDisponibilidadPDF());
+};
 
 const schedulePdfCheck = () => {
-  if (pdfCheckScheduled) return;
+  if (pdfCheckScheduled || !pdfVisibleInViewport) return;
   pdfCheckScheduled = true;
-  verificarDisponibilidadPDF();
+  runPdfAvailabilityCheck();
 };
 
 // Verificar disponibilidad al montar el componente (diferido hasta viewport visible)
@@ -2575,6 +2586,7 @@ onMounted(() => {
     pdfVisibilityObserver = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
+          pdfVisibleInViewport = true;
           schedulePdfCheck();
           pdfVisibilityObserver?.disconnect();
           pdfVisibilityObserver = null;
@@ -2584,6 +2596,7 @@ onMounted(() => {
     );
     pdfVisibilityObserver.observe(documentoItemRef.value);
   } else {
+    pdfVisibleInViewport = true;
     schedulePdfCheck();
   }
 });
@@ -2597,7 +2610,7 @@ onUnmounted(() => {
 // Watcher para verificar disponibilidad cuando cambien las props
 watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico], () => {
   pdfCheckScheduled = false;
-  verificarDisponibilidadPDF();
+  schedulePdfCheck();
 }, { deep: true });
 
 </script>

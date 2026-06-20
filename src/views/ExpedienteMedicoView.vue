@@ -11,6 +11,7 @@ import SliderButton from '@/components/SliderButton.vue';
 import ModalCargaDocumentoExterno from '@/components/ModalCargaDocumentoExterno.vue';
 import ModalUpdateDocumentoExterno from '@/components/ModalUpdateDocumentoExterno.vue';
 import GrupoDocumentos from '@/components/GrupoDocumentos.vue';
+import LazyMountWhenVisible from '@/components/LazyMountWhenVisible.vue';
 import SlidingButtonPanel from '@/components/SlidingButtonPanel.vue';
 import DeletionButtonPanel from '@/components/DeletionButtonPanel.vue';
 import { calcularEdad, calcularAntiguedad } from '@/helpers/dates';
@@ -293,10 +294,10 @@ const fetchData = async (force = false) => {
   if (!force && trabajadorId === lastFetchedTrabajadorId.value) return;
 
   try {
-    await Promise.all([
-      documentos.fetchAllDocuments(trabajadorId),
-      resultadosClinicos.fetchResultadosAgrupados(trabajadorId),
-    ]);
+    await documentos.fetchAllDocuments(trabajadorId);
+    resultadosClinicos.fetchResultadosAgrupados(trabajadorId).catch((error) => {
+      console.error('Error al cargar resultados clínicos:', error);
+    });
 
     lastFetchedTrabajadorId.value = trabajadorId;
     formData.resetFormData();
@@ -1292,10 +1293,11 @@ const añoMasReciente = computed(() => {
                 <div>
                   <div v-if="yearsWithRecords.length" class="space-y-6">
                 <div
-                  v-for="year in yearsWithRecords"
+                  v-for="(year, yearIndex) in yearsWithRecords"
                   :key="`year-${year}-${resultadosPorAnio[year]?.length || 0}`"
                   class="space-y-4"
                 >
+                  <LazyMountWhenVisible :eager="yearIndex === 0">
                   <GrupoDocumentos
                     :documents="documentosPorAnio[year] || {}"
                     :year="String(year)"
@@ -1318,6 +1320,7 @@ const añoMasReciente = computed(() => {
                       />
                     </template>
                   </GrupoDocumentos>
+                  </LazyMountWhenVisible>
                 </div>
               </div>
 

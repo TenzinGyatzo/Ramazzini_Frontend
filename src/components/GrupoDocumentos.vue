@@ -107,409 +107,76 @@ const totalDocumentos = computed(() => {
     );
 });
 
-// Obtener todas las rutas de documentos de este grupo específico
-const rutasDelGrupo = computed(() => {
+function construirRutaDocumento(
+    doc: { _id: string },
+    tipoLabel: string,
+    store?: ReturnType<typeof useDocumentosStore>,
+) {
+    const rutaBase = obtenerRutaDocumento(doc, tipoLabel);
+    const fecha = obtenerFechaDocumento(doc) || 'SinFecha';
+    const nombreArchivo = store
+        ? obtenerNombreArchivo(doc, tipoLabel, fecha, store)
+        : obtenerNombreArchivo(doc, tipoLabel, fecha);
+    return `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+}
+
+const documentoRutasInfo = computed(() => {
+    const map = new Map<string, string>();
     const rutas: string[] = [];
+    const rutasDeletables: string[] = [];
 
-    if (props.documents.notasAclaratorias) {
-        props.documents.notasAclaratorias.forEach(notaAclaratoria => {
-            const rutaBase = obtenerRutaDocumento(notaAclaratoria, 'Nota Aclaratoria');
-            const fecha = obtenerFechaDocumento(notaAclaratoria) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(notaAclaratoria, 'Nota Aclaratoria', fecha, documentosStore);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
+    const pushDoc = (doc: { _id?: string; estado?: string }, tipoLabel: string, store?: ReturnType<typeof useDocumentosStore>) => {
+        if (!doc._id) return;
+        const ruta = construirRutaDocumento(doc as { _id: string }, tipoLabel, store);
+        map.set(doc._id, ruta);
+        rutas.push(ruta);
+        if (!isDocumentoInmutable(doc)) {
+            rutasDeletables.push(ruta);
+        }
+    };
 
-    if (props.documents.constanciasAptitud) {
-        props.documents.constanciasAptitud.forEach(constanciaAptitud => {
-            const rutaBase = obtenerRutaDocumento(constanciaAptitud, 'Constancia de Aptitud');
-            const fecha = obtenerFechaDocumento(constanciaAptitud) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(constanciaAptitud, 'Constancia de Aptitud', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
+    props.documents.notasAclaratorias?.forEach((doc) => pushDoc(doc, 'Nota Aclaratoria', documentosStore));
+    props.documents.constanciasAptitud?.forEach((doc) => pushDoc(doc, 'Constancia de Aptitud'));
+    props.documents.aptitudes?.forEach((doc) => pushDoc(doc, 'Aptitud'));
+    props.documents.historiasClinicas?.forEach((doc) => pushDoc(doc, 'Historia Clinica'));
+    props.documents.exploracionesFisicas?.forEach((doc) => pushDoc(doc, 'Exploracion Fisica'));
+    props.documents.examenesVista?.forEach((doc) => pushDoc(doc, 'Examen Vista'));
+    props.documents.audiometrias?.forEach((doc) => pushDoc(doc, 'Audiometria'));
+    props.documents.antidopings?.forEach((doc) => pushDoc(doc, 'Antidoping'));
+    props.documents.certificados?.forEach((doc) => pushDoc(doc, 'Certificado'));
+    props.documents.certificadosExpedito?.forEach((doc) => pushDoc(doc, 'Certificado Expedito'));
+    props.documents.documentosExternos?.forEach((doc) => pushDoc(doc, 'Documento Externo'));
+    props.documents.notasMedicas?.forEach((doc) => pushDoc(doc, 'Nota Medica'));
+    props.documents.controlPrenatal?.forEach((doc) => pushDoc(doc, 'Control Prenatal'));
+    props.documents.historiaOtologica?.forEach((doc) => pushDoc(doc, 'Historia Otologica'));
+    props.documents.previoEspirometria?.forEach((doc) => pushDoc(doc, 'Previo Espirometria'));
+    props.documents.recetas?.forEach((doc) => pushDoc(doc, 'Receta'));
+    props.documents.entrevistasPsicologicas?.forEach((doc) => pushDoc(doc, 'Entrevista Psicologica'));
+    props.documents.trastornosEstadoAnimo?.forEach((doc) => pushDoc(doc, 'Trastornos Estado Animo'));
+    props.documents.cuestionarioProdromalBreve?.forEach((doc) => pushDoc(doc, 'Cuestionario Prodromal Breve'));
+    props.documents.trastornoLimitePersonalidad?.forEach((doc) => pushDoc(doc, 'Trastorno Limite Personalidad'));
+    props.documents.eventoSeguimientoCardiometabolico?.forEach((doc) => pushDoc(doc, 'Evento Seguimiento Cardiometabolico'));
+    props.documents.informeLongitudinalCardiometabolico?.forEach((doc) => pushDoc(doc, 'Informe Longitudinal Cardiometabólico'));
 
-    if (props.documents.aptitudes) {
-        props.documents.aptitudes.forEach(aptitud => {
-            const rutaBase = obtenerRutaDocumento(aptitud, 'Aptitud');
-            const fecha = obtenerFechaDocumento(aptitud) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(aptitud, 'Aptitud', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.historiasClinicas) {
-        props.documents.historiasClinicas.forEach(historiaClinica => {
-            const rutaBase = obtenerRutaDocumento(historiaClinica, 'Historia Clinica');
-            const fecha = obtenerFechaDocumento(historiaClinica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(historiaClinica, 'Historia Clinica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.exploracionesFisicas) {
-        props.documents.exploracionesFisicas.forEach(exploracionFisica => {
-            const rutaBase = obtenerRutaDocumento(exploracionFisica, 'Exploracion Fisica');
-            const fecha = obtenerFechaDocumento(exploracionFisica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(exploracionFisica, 'Exploracion Fisica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.examenesVista) {
-        props.documents.examenesVista.forEach(examenVista => {
-            const rutaBase = obtenerRutaDocumento(examenVista, 'Examen Vista');
-            const fecha = obtenerFechaDocumento(examenVista) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(examenVista, 'Examen Vista', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.audiometrias) {
-        props.documents.audiometrias.forEach(audiometria => {
-            const rutaBase = obtenerRutaDocumento(audiometria, 'Audiometria');
-            const fecha = obtenerFechaDocumento(audiometria) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(audiometria, 'Audiometria', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.antidopings) {
-        props.documents.antidopings.forEach(antidoping => {
-            const rutaBase = obtenerRutaDocumento(antidoping, 'Antidoping');
-            const fecha = obtenerFechaDocumento(antidoping) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(antidoping, 'Antidoping', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.certificados) {
-        props.documents.certificados.forEach(certificado => {
-            const rutaBase = obtenerRutaDocumento(certificado, 'Certificado');
-            const fecha = obtenerFechaDocumento(certificado) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(certificado, 'Certificado', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.certificadosExpedito) {
-
-        props.documents.certificadosExpedito.forEach(certificadoExpedito => {
-            const rutaBase = obtenerRutaDocumento(certificadoExpedito, 'Certificado Expedito');
-            const fecha = obtenerFechaDocumento(certificadoExpedito) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(certificadoExpedito, 'Certificado Expedito', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.documentosExternos) {
-        props.documents.documentosExternos.forEach(documentoExterno => {
-            const rutaBase = obtenerRutaDocumento(documentoExterno, 'Documento Externo');
-            const fecha = obtenerFechaDocumento(documentoExterno) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(documentoExterno, 'Documento Externo', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.notasMedicas) {
-        props.documents.notasMedicas.forEach(notaMedica => {
-            const rutaBase = obtenerRutaDocumento(notaMedica, 'Nota Medica');
-            const fecha = obtenerFechaDocumento(notaMedica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(notaMedica, 'Nota Medica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.controlPrenatal) {
-        props.documents.controlPrenatal.forEach(controlPrenatal => {
-            const rutaBase = obtenerRutaDocumento(controlPrenatal, 'Control Prenatal');
-            const fecha = obtenerFechaDocumento(controlPrenatal) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(controlPrenatal, 'Control Prenatal', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.historiaOtologica) {
-        props.documents.historiaOtologica.forEach(historiaOtologica => {
-            const rutaBase = obtenerRutaDocumento(historiaOtologica, 'Historia Otologica');
-            const fecha = obtenerFechaDocumento(historiaOtologica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(historiaOtologica, 'Historia Otologica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.previoEspirometria) {
-        props.documents.previoEspirometria.forEach(previoEspirometria => {
-            const rutaBase = obtenerRutaDocumento(previoEspirometria, 'Previo Espirometria');
-            const fecha = obtenerFechaDocumento(previoEspirometria) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(previoEspirometria, 'Previo Espirometria', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.recetas) {
-        props.documents.recetas.forEach(receta => {
-            const rutaBase = obtenerRutaDocumento(receta, 'Receta');
-            const fecha = obtenerFechaDocumento(receta) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(receta, 'Receta', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.entrevistasPsicologicas) {
-        props.documents.entrevistasPsicologicas.forEach(entrevistaPsicologica => {
-            const rutaBase = obtenerRutaDocumento(entrevistaPsicologica, 'Entrevista Psicologica');
-            const fecha = obtenerFechaDocumento(entrevistaPsicologica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(entrevistaPsicologica, 'Entrevista Psicologica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.trastornosEstadoAnimo) {
-        props.documents.trastornosEstadoAnimo.forEach(trastornosEstadoAnimo => {
-            const rutaBase = obtenerRutaDocumento(trastornosEstadoAnimo, 'Trastornos Estado Animo');
-            const fecha = obtenerFechaDocumento(trastornosEstadoAnimo) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(trastornosEstadoAnimo, 'Trastornos Estado Animo', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.cuestionarioProdromalBreve) {
-        props.documents.cuestionarioProdromalBreve.forEach(cuestionarioProdromalBreve => {
-            const rutaBase = obtenerRutaDocumento(cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve');
-            const fecha = obtenerFechaDocumento(cuestionarioProdromalBreve) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.trastornoLimitePersonalidad) {
-        props.documents.trastornoLimitePersonalidad.forEach(trastornoLimitePersonalidad => {
-            const rutaBase = obtenerRutaDocumento(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad');
-            const fecha = obtenerFechaDocumento(trastornoLimitePersonalidad) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.eventoSeguimientoCardiometabolico) {
-        props.documents.eventoSeguimientoCardiometabolico.forEach(eventoSeguimientoCardiometabolico => {
-            const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
-            const fecha = obtenerFechaDocumento(eventoSeguimientoCardiometabolico) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-
-    if (props.documents.informeLongitudinalCardiometabolico) {
-        props.documents.informeLongitudinalCardiometabolico.forEach(informeLongitudinalCardiometabolico => {
-            const rutaBase = obtenerRutaDocumento(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabólico');
-            const fecha = obtenerFechaDocumento(informeLongitudinalCardiometabolico) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabólico', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            rutas.push(ruta);
-        });
-    }
-    return rutas;
+    return { map, rutas, rutasDeletables };
 });
 
-// Rutas de documentos eliminables (excluye FINALIZADO/ANULADO cuando documentImmutabilityEnabled)
+const rutasPorDocumentoId = computed(() => documentoRutasInfo.value.map);
+
+const rutasDelGrupo = computed(() => documentoRutasInfo.value.rutas);
+
 const rutasDeletablesDelGrupo = computed(() => {
     if (!props.isDeletionMode || !documentImmutabilityEnabled.value) {
         return rutasDelGrupo.value;
     }
-    const rutas: string[] = [];
-    const pushIfDeletable = (doc: { estado?: string }, ruta: string) => {
-        if (!isDocumentoInmutable(doc)) {
-            rutas.push(ruta);
-        }
-    };
-
-    if (props.documents.notasAclaratorias) {
-        props.documents.notasAclaratorias.forEach(notaAclaratoria => {
-            const rutaBase = obtenerRutaDocumento(notaAclaratoria, 'Nota Aclaratoria');
-            const fecha = obtenerFechaDocumento(notaAclaratoria) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(notaAclaratoria, 'Nota Aclaratoria', fecha, documentosStore);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(notaAclaratoria, ruta);
-        });
-    }
-    if (props.documents.constanciasAptitud) {
-        props.documents.constanciasAptitud.forEach(constanciaAptitud => {
-            const rutaBase = obtenerRutaDocumento(constanciaAptitud, 'Constancia de Aptitud');
-            const fecha = obtenerFechaDocumento(constanciaAptitud) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(constanciaAptitud, 'Constancia de Aptitud', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(constanciaAptitud, ruta);
-        });
-    }
-    if (props.documents.aptitudes) {
-        props.documents.aptitudes.forEach(aptitud => {
-            const rutaBase = obtenerRutaDocumento(aptitud, 'Aptitud');
-            const fecha = obtenerFechaDocumento(aptitud) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(aptitud, 'Aptitud', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(aptitud, ruta);
-        });
-    }
-    if (props.documents.historiasClinicas) {
-        props.documents.historiasClinicas.forEach(historiaClinica => {
-            const rutaBase = obtenerRutaDocumento(historiaClinica, 'Historia Clinica');
-            const fecha = obtenerFechaDocumento(historiaClinica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(historiaClinica, 'Historia Clinica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(historiaClinica, ruta);
-        });
-    }
-    if (props.documents.exploracionesFisicas) {
-        props.documents.exploracionesFisicas.forEach(exploracionFisica => {
-            const rutaBase = obtenerRutaDocumento(exploracionFisica, 'Exploracion Fisica');
-            const fecha = obtenerFechaDocumento(exploracionFisica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(exploracionFisica, 'Exploracion Fisica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(exploracionFisica, ruta);
-        });
-    }
-    if (props.documents.examenesVista) {
-        props.documents.examenesVista.forEach(examenVista => {
-            const rutaBase = obtenerRutaDocumento(examenVista, 'Examen Vista');
-            const fecha = obtenerFechaDocumento(examenVista) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(examenVista, 'Examen Vista', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(examenVista, ruta);
-        });
-    }
-    if (props.documents.audiometrias) {
-        props.documents.audiometrias.forEach(audiometria => {
-            const rutaBase = obtenerRutaDocumento(audiometria, 'Audiometria');
-            const fecha = obtenerFechaDocumento(audiometria) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(audiometria, 'Audiometria', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(audiometria, ruta);
-        });
-    }
-    if (props.documents.antidopings) {
-        props.documents.antidopings.forEach(antidoping => {
-            const rutaBase = obtenerRutaDocumento(antidoping, 'Antidoping');
-            const fecha = obtenerFechaDocumento(antidoping) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(antidoping, 'Antidoping', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(antidoping, ruta);
-        });
-    }
-    if (props.documents.certificados) {
-        props.documents.certificados.forEach(certificado => {
-            const rutaBase = obtenerRutaDocumento(certificado, 'Certificado');
-            const fecha = obtenerFechaDocumento(certificado) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(certificado, 'Certificado', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(certificado, ruta);
-        });
-    }
-    if (props.documents.certificadosExpedito) {
-        props.documents.certificadosExpedito.forEach(certificadoExpedito => {
-            const rutaBase = obtenerRutaDocumento(certificadoExpedito, 'Certificado Expedito');
-            const fecha = obtenerFechaDocumento(certificadoExpedito) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(certificadoExpedito, 'Certificado Expedito', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(certificadoExpedito, ruta);
-        });
-    }
-    if (props.documents.documentosExternos) {
-        props.documents.documentosExternos.forEach(documentoExterno => {
-            const rutaBase = obtenerRutaDocumento(documentoExterno, 'Documento Externo');
-            const fecha = obtenerFechaDocumento(documentoExterno) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(documentoExterno, 'Documento Externo', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(documentoExterno, ruta);
-        });
-    }
-    if (props.documents.notasMedicas) {
-        props.documents.notasMedicas.forEach(notaMedica => {
-            const rutaBase = obtenerRutaDocumento(notaMedica, 'Nota Medica');
-            const fecha = obtenerFechaDocumento(notaMedica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(notaMedica, 'Nota Medica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(notaMedica, ruta);
-        });
-    }
-    if (props.documents.controlPrenatal) {
-        props.documents.controlPrenatal.forEach(controlPrenatal => {
-            const rutaBase = obtenerRutaDocumento(controlPrenatal, 'Control Prenatal');
-            const fecha = obtenerFechaDocumento(controlPrenatal) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(controlPrenatal, 'Control Prenatal', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(controlPrenatal, ruta);
-        });
-    }
-    if (props.documents.historiaOtologica) {
-        props.documents.historiaOtologica.forEach(historiaOtologica => {
-            const rutaBase = obtenerRutaDocumento(historiaOtologica, 'Historia Otologica');
-            const fecha = obtenerFechaDocumento(historiaOtologica) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(historiaOtologica, 'Historia Otologica', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(historiaOtologica, ruta);
-        });
-    }
-    if (props.documents.previoEspirometria) {
-        props.documents.previoEspirometria.forEach(previoEspirometria => {
-            const rutaBase = obtenerRutaDocumento(previoEspirometria, 'Previo Espirometria');
-            const fecha = obtenerFechaDocumento(previoEspirometria) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(previoEspirometria, 'Previo Espirometria', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(previoEspirometria, ruta);
-        });
-    }
-    if (props.documents.recetas) {
-        props.documents.recetas.forEach(receta => {
-            const rutaBase = obtenerRutaDocumento(receta, 'Receta');
-            const fecha = obtenerFechaDocumento(receta) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(receta, 'Receta', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(receta, ruta);
-        });
-    }
-    if (props.documents.eventoSeguimientoCardiometabolico) {
-        props.documents.eventoSeguimientoCardiometabolico.forEach(eventoSeguimientoCardiometabolico => {
-            const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
-            const fecha = obtenerFechaDocumento(eventoSeguimientoCardiometabolico) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(eventoSeguimientoCardiometabolico, ruta);
-        });
-    }
-    if (props.documents.informeLongitudinalCardiometabolico) {
-        props.documents.informeLongitudinalCardiometabolico.forEach(informeLongitudinalCardiometabolico => {
-            const rutaBase = obtenerRutaDocumento(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico');
-            const fecha = obtenerFechaDocumento(informeLongitudinalCardiometabolico) || 'SinFecha';
-            const nombreArchivo = obtenerNombreArchivo(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico', fecha);
-            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-            pushIfDeletable(informeLongitudinalCardiometabolico, ruta);
-        });
-    }
-    return rutas;
+    return documentoRutasInfo.value.rutasDeletables;
 });
+
+const isDocumentoSelected = (documentoId: string | undefined) => {
+    if (!documentoId) return false;
+    const ruta = rutasPorDocumentoId.value.get(documentoId);
+    return ruta ? props.selectedRoutes.includes(ruta) : false;
+};
 
 // Calcular cuántos documentos de este grupo están seleccionados
 const documentosSeleccionadosDelGrupo = computed(() => {
@@ -655,20 +322,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.notasAclaratorias && documents.notasAclaratorias.length > 0">
                 <div v-for="(notaAclaratoria, index) in documents.notasAclaratorias" :key="notaAclaratoria._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :notaAclaratoria="notaAclaratoria"
                         :documentoId="notaAclaratoria._id"
                         :documentoTipo="'notaAclaratoria'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(notaAclaratoria, 'Nota Aclaratoria');
-                            const fecha = obtenerFechaDocumento(notaAclaratoria) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(notaAclaratoria, 'Nota Aclaratoria', fecha, documentosStore);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(notaAclaratoria._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', notaAclaratoria._id, convertirFechaISOaDDMMYYYY(notaAclaratoria.fechaNotaAclaratoria), 'notaAclaratoria')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -681,20 +342,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.constanciasAptitud && documents.constanciasAptitud.length > 0">
                 <div v-for="(constanciaAptitud, index) in documents.constanciasAptitud" :key="constanciaAptitud._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :constanciaAptitud="constanciaAptitud"
                         :documentoId="constanciaAptitud._id"
                         :documentoTipo="'constanciaAptitud'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(constanciaAptitud, 'Constancia de Aptitud');
-                            const fecha = obtenerFechaDocumento(constanciaAptitud) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(constanciaAptitud, 'Constancia de Aptitud', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(constanciaAptitud._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', constanciaAptitud._id, convertirFechaISOaDDMMYYYY(constanciaAptitud.fechaConstanciaAptitud), 'constanciaAptitud')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -707,20 +362,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.aptitudes && documents.aptitudes.length > 0">
                 <div v-for="(aptitud, index) in documents.aptitudes" :key="aptitud._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :aptitud="aptitud"
                         :documentoId="aptitud._id"
                         :documentoTipo="'aptitud'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(aptitud, 'Aptitud');
-                            const fecha = obtenerFechaDocumento(aptitud) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(aptitud, 'Aptitud', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(aptitud._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', aptitud._id, convertirFechaISOaDDMMYYYY(aptitud.fechaAptitudPuesto), 'aptitud')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -733,20 +382,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.historiasClinicas && documents.historiasClinicas.length > 0">
                 <div v-for="(historiaClinica, index) in documents.historiasClinicas" :key="historiaClinica._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :historiaClinica="historiaClinica"
                         :documentoId="historiaClinica._id"
                         :documentoTipo="'historiaClinica'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(historiaClinica, 'Historia Clinica');
-                            const fecha = obtenerFechaDocumento(historiaClinica) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(historiaClinica, 'Historia Clinica', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(historiaClinica._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', historiaClinica._id, convertirFechaISOaDDMMYYYY(historiaClinica.fechaHistoriaClinica), 'historiaClinica')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -759,20 +402,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.exploracionesFisicas && documents.exploracionesFisicas.length > 0">
                 <div v-for="(exploracionFisica, index) in documents.exploracionesFisicas" :key="exploracionFisica._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :exploracionFisica="exploracionFisica"
                         :documentoId="exploracionFisica._id"
                         :documentoTipo="'exploracionFisica'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(exploracionFisica, 'Exploracion Fisica');
-                            const fecha = obtenerFechaDocumento(exploracionFisica) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(exploracionFisica, 'Exploracion Fisica', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(exploracionFisica._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', exploracionFisica._id, convertirFechaISOaDDMMYYYY(exploracionFisica.fechaExploracionFisica), 'exploracionFisica')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -785,20 +422,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.examenesVista && documents.examenesVista.length > 0">
                 <div v-for="(examenVista, index) in documents.examenesVista" :key="examenVista._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :examenVista="examenVista"
                         :documentoId="examenVista._id"
                         :documentoTipo="'examenVista'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(examenVista, 'Examen Vista');
-                            const fecha = obtenerFechaDocumento(examenVista) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(examenVista, 'Examen Vista', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(examenVista._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', examenVista._id, convertirFechaISOaDDMMYYYY(examenVista.fechaExamenVista), 'examenVista')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -811,20 +442,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.historiaOtologica && documents.historiaOtologica.length > 0">
                 <div v-for="(historiaOtologica, index) in documents.historiaOtologica" :key="historiaOtologica._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :historiaOtologica="historiaOtologica"
                         :documentoId="historiaOtologica._id"
                         :documentoTipo="'historiaOtologica'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(historiaOtologica, 'Historia Otologica');
-                            const fecha = obtenerFechaDocumento(historiaOtologica) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(historiaOtologica, 'Historia Otologica', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(historiaOtologica._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', historiaOtologica._id, convertirFechaISOaDDMMYYYY(historiaOtologica.fechaHistoriaOtologica), 'historiaOtologica')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -837,20 +462,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.audiometrias && documents.audiometrias.length > 0">
                 <div v-for="(audiometria, index) in documents.audiometrias" :key="audiometria._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :audiometria="audiometria"
                         :documentoId="audiometria._id"
                         :documentoTipo="'audiometria'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(audiometria, 'Audiometria');
-                            const fecha = obtenerFechaDocumento(audiometria) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(audiometria, 'Audiometria', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(audiometria._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', audiometria._id, convertirFechaISOaDDMMYYYY(audiometria.fechaAudiometria), 'audiometria')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -863,20 +482,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.antidopings && documents.antidopings.length > 0">
                 <div v-for="(antidoping, index) in documents.antidopings" :key="antidoping._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :antidoping="antidoping"
                         :documentoId="antidoping._id"
                         :documentoTipo="'antidoping'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(antidoping, 'Antidoping');
-                            const fecha = obtenerFechaDocumento(antidoping) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(antidoping, 'Antidoping', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(antidoping._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', antidoping._id, convertirFechaISOaDDMMYYYY(antidoping.fechaAntidoping), 'antidoping')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -889,20 +502,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.certificados && documents.certificados.length > 0">
                 <div v-for="(certificado, index) in documents.certificados" :key="certificado._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :certificado="certificado"
                         :documentoId="certificado._id"
                         :documentoTipo="'certificado'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(certificado, 'Certificado');
-                            const fecha = obtenerFechaDocumento(certificado) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(certificado, 'Certificado', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(certificado._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', certificado._id, convertirFechaISOaDDMMYYYY(certificado.fechaCertificado), 'certificado')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -915,20 +522,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.previoEspirometria && documents.previoEspirometria.length > 0">
                 <div v-for="(previoEspirometria, index) in documents.previoEspirometria" :key="previoEspirometria._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :previoEspirometria="previoEspirometria"
                         :documentoId="previoEspirometria._id"
                         :documentoTipo="'previoEspirometria'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(previoEspirometria, 'Previo Espirometria');
-                            const fecha = obtenerFechaDocumento(previoEspirometria) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(previoEspirometria, 'Previo Espirometria', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(previoEspirometria._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', previoEspirometria._id, convertirFechaISOaDDMMYYYY(previoEspirometria.fechaPrevioEspirometria), 'previoEspirometria')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -941,20 +542,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.documentosExternos && documents.documentosExternos.length > 0">
                 <div v-for="(documentoExterno, index) in documents.documentosExternos" :key="documentoExterno._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :documentoExterno="documentoExterno"
                         :documentoId="documentoExterno._id"
                         :documentoTipo="'documentoExterno'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(documentoExterno, 'Documento Externo');
-                            const fecha = obtenerFechaDocumento(documentoExterno) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(documentoExterno, 'Documento Externo', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(documentoExterno._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', documentoExterno._id, convertirFechaISOaDDMMYYYY(documentoExterno.fechaDocumento), 'documentoExterno')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @abrirModalUpdate="$emit('abrirModalUpdate')"
@@ -968,20 +563,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.notasMedicas && documents.notasMedicas.length > 0">
                 <div v-for="(notaMedica, index) in documents.notasMedicas" :key="notaMedica._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :notaMedica="notaMedica"
                         :documentoId="notaMedica._id"
                         :documentoTipo="'notaMedica'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(notaMedica, 'Nota Medica');
-                            const fecha = obtenerFechaDocumento(notaMedica) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(notaMedica, 'Nota Medica', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(notaMedica._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', notaMedica._id, convertirFechaISOaDDMMYYYY(notaMedica.fechaNotaMedica), 'notaMedica')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -994,20 +583,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <div v-if="documents.controlPrenatal && documents.controlPrenatal.length > 0">
                 <div v-for="(controlPrenatal, index) in documents.controlPrenatal" :key="controlPrenatal._id"
                      class="transition-all duration-200 hover:bg-gray-50"
-                     :style="{ animationDelay: `${index * 50}ms` }">
+>
                     <DocumentoItem
                         :controlPrenatal="controlPrenatal"
                         :documentoId="controlPrenatal._id"
                         :documentoTipo="'controlPrenatal'"
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
-                        :isSelected="(() => {
-                            const rutaBase = obtenerRutaDocumento(controlPrenatal, 'Control Prenatal');
-                            const fecha = obtenerFechaDocumento(controlPrenatal) || 'SinFecha';
-                            const nombreArchivo = obtenerNombreArchivo(controlPrenatal, 'Control Prenatal', fecha);
-                            const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                            return props.selectedRoutes.includes(ruta);
-                        })()"
+                        :isSelected="isDocumentoSelected(controlPrenatal._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', controlPrenatal._id, convertirFechaISOaDDMMYYYY(controlPrenatal.fechaInicioControlPrenatal), 'controlPrenatal')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -1022,20 +605,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         <div v-if="documents.certificadosExpedito && documents.certificadosExpedito.length > 0">
             <div v-for="(certificadoExpedito, index) in documents.certificadosExpedito" :key="certificadoExpedito._id"
                     class="transition-all duration-200 hover:bg-gray-50"
-                    :style="{ animationDelay: `${index * 50}ms` }">
+>
                 <DocumentoItem
                     :certificadoExpedito="certificadoExpedito"
                     :documentoId="certificadoExpedito._id"
                     :documentoTipo="'certificadoExpedito'"
                     :toggleRouteSelection="toggleRouteSelection"
                     :isDeletionMode="isDeletionMode"
-                    :isSelected="(() => {
-                        const rutaBase = obtenerRutaDocumento(certificadoExpedito, 'Certificado Expedito');
-                        const fecha = obtenerFechaDocumento(certificadoExpedito) || 'SinFecha';
-                        const nombreArchivo = obtenerNombreArchivo(certificadoExpedito, 'Certificado Expedito', fecha);
-                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                        return props.selectedRoutes.includes(ruta);
-                    })()"
+                    :isSelected="isDocumentoSelected(certificadoExpedito._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', certificadoExpedito._id, convertirFechaISOaDDMMYYYY(certificadoExpedito.fechaCertificadoExpedito), 'certificadoExpedito')"
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -1048,20 +625,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         <div v-if="documents.recetas && documents.recetas.length > 0">
             <div v-for="(receta, index) in documents.recetas" :key="receta._id"
                  class="transition-all duration-200 hover:bg-gray-50"
-                 :style="{ animationDelay: `${index * 50}ms` }">
+>
                 <DocumentoItem
                     :receta="receta"
                     :documentoId="receta._id"
                     :documentoTipo="'receta'"
                     :toggleRouteSelection="toggleRouteSelection"
                     :isDeletionMode="isDeletionMode"
-                    :isSelected="(() => {
-                        const rutaBase = obtenerRutaDocumento(receta, 'Receta');
-                        const fecha = obtenerFechaDocumento(receta) || 'SinFecha';
-                        const nombreArchivo = obtenerNombreArchivo(receta, 'Receta', fecha);
-                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                        return props.selectedRoutes.includes(ruta);
-                    })()"
+                    :isSelected="isDocumentoSelected(receta._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', receta._id, convertirFechaISOaDDMMYYYY(receta.fechaReceta), 'receta')"
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -1074,20 +645,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         <div v-if="documents.entrevistasPsicologicas && documents.entrevistasPsicologicas.length > 0">
             <div v-for="(entrevistaPsicologica, index) in documents.entrevistasPsicologicas" :key="entrevistaPsicologica._id"
                  class="transition-all duration-200 hover:bg-gray-50"
-                 :style="{ animationDelay: `${index * 50}ms` }">
+>
                 <DocumentoItem
                     :entrevistaPsicologica="entrevistaPsicologica"
                     :documentoId="entrevistaPsicologica._id"
                     :documentoTipo="'entrevistaPsicologica'"
                     :toggleRouteSelection="toggleRouteSelection"
                     :isDeletionMode="isDeletionMode"
-                    :isSelected="(() => {
-                        const rutaBase = obtenerRutaDocumento(entrevistaPsicologica, 'Entrevista Psicologica');
-                        const fecha = obtenerFechaDocumento(entrevistaPsicologica) || 'SinFecha';
-                        const nombreArchivo = obtenerNombreArchivo(entrevistaPsicologica, 'Entrevista Psicologica', fecha);
-                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                        return props.selectedRoutes.includes(ruta);
-                    })()"
+                    :isSelected="isDocumentoSelected(entrevistaPsicologica._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', entrevistaPsicologica._id, convertirFechaISOaDDMMYYYY(entrevistaPsicologica.fechaEntrevistaPsicologica), 'entrevistaPsicologica')"
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -1100,20 +665,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         <div v-if="documents.trastornosEstadoAnimo && documents.trastornosEstadoAnimo.length > 0">
             <div v-for="(trastornosEstadoAnimo, index) in documents.trastornosEstadoAnimo" :key="trastornosEstadoAnimo._id"
                  class="transition-all duration-200 hover:bg-gray-50"
-                 :style="{ animationDelay: `${index * 50}ms` }">
+>
                 <DocumentoItem
                     :trastornosEstadoAnimo="trastornosEstadoAnimo"
                     :documentoId="trastornosEstadoAnimo._id"
                     :documentoTipo="'trastornosEstadoAnimo'"
                     :toggleRouteSelection="toggleRouteSelection"
                     :isDeletionMode="isDeletionMode"
-                    :isSelected="(() => {
-                        const rutaBase = obtenerRutaDocumento(trastornosEstadoAnimo, 'Trastornos Estado Animo');
-                        const fecha = obtenerFechaDocumento(trastornosEstadoAnimo) || 'SinFecha';
-                        const nombreArchivo = obtenerNombreArchivo(trastornosEstadoAnimo, 'Trastornos Estado Animo', fecha);
-                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                        return props.selectedRoutes.includes(ruta);
-                    })()"
+                    :isSelected="isDocumentoSelected(trastornosEstadoAnimo._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', trastornosEstadoAnimo._id, convertirFechaISOaDDMMYYYY(trastornosEstadoAnimo.fechaTrastornosEstadoAnimo), 'trastornosEstadoAnimo')"
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -1126,20 +685,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         <div v-if="documents.cuestionarioProdromalBreve && documents.cuestionarioProdromalBreve.length > 0">
             <div v-for="(cuestionarioProdromalBreve, index) in documents.cuestionarioProdromalBreve" :key="cuestionarioProdromalBreve._id"
                  class="transition-all duration-200 hover:bg-gray-50"
-                 :style="{ animationDelay: `${index * 50}ms` }">
+>
                 <DocumentoItem
                     :cuestionarioProdromalBreve="cuestionarioProdromalBreve"
                     :documentoId="cuestionarioProdromalBreve._id"
                     :documentoTipo="'cuestionarioProdromalBreve'"
                     :toggleRouteSelection="toggleRouteSelection"
                     :isDeletionMode="isDeletionMode"
-                    :isSelected="(() => {
-                        const rutaBase = obtenerRutaDocumento(cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve');
-                        const fecha = obtenerFechaDocumento(cuestionarioProdromalBreve) || 'SinFecha';
-                        const nombreArchivo = obtenerNombreArchivo(cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve', fecha);
-                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                        return props.selectedRoutes.includes(ruta);
-                    })()"
+                    :isSelected="isDocumentoSelected(cuestionarioProdromalBreve._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', cuestionarioProdromalBreve._id, convertirFechaISOaDDMMYYYY(cuestionarioProdromalBreve.fechaCuestionarioProdromalBreve), 'cuestionarioProdromalBreve')"
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -1152,20 +705,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         <div v-if="documents.trastornoLimitePersonalidad && documents.trastornoLimitePersonalidad.length > 0">
             <div v-for="(trastornoLimitePersonalidad, index) in documents.trastornoLimitePersonalidad" :key="trastornoLimitePersonalidad._id"
                  class="transition-all duration-200 hover:bg-gray-50"
-                 :style="{ animationDelay: `${index * 50}ms` }">
+>
                 <DocumentoItem
                     :trastornoLimitePersonalidad="trastornoLimitePersonalidad"
                     :documentoId="trastornoLimitePersonalidad._id"
                     :documentoTipo="'trastornoLimitePersonalidad'"
                     :toggleRouteSelection="toggleRouteSelection"
                     :isDeletionMode="isDeletionMode"
-                    :isSelected="(() => {
-                        const rutaBase = obtenerRutaDocumento(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad');
-                        const fecha = obtenerFechaDocumento(trastornoLimitePersonalidad) || 'SinFecha';
-                        const nombreArchivo = obtenerNombreArchivo(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad', fecha);
-                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                        return props.selectedRoutes.includes(ruta);
-                    })()"
+                    :isSelected="isDocumentoSelected(trastornoLimitePersonalidad._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', trastornoLimitePersonalidad._id, convertirFechaISOaDDMMYYYY(trastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad), 'trastornoLimitePersonalidad')"
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -1178,20 +725,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         <div v-if="documents.eventoSeguimientoCardiometabolico && documents.eventoSeguimientoCardiometabolico.length > 0">
             <div v-for="(eventoSeguimientoCardiometabolico, index) in documents.eventoSeguimientoCardiometabolico" :key="eventoSeguimientoCardiometabolico._id"
                  class="transition-all duration-200 hover:bg-gray-50"
-                 :style="{ animationDelay: `${index * 50}ms` }">
+>
                 <DocumentoItem 
                     :eventoSeguimientoCardiometabolico="eventoSeguimientoCardiometabolico" 
                     :documentoId="eventoSeguimientoCardiometabolico._id" 
                     :documentoTipo="'eventoSeguimientoCardiometabolico'" 
                     :toggleRouteSelection="toggleRouteSelection"
                     :isDeletionMode="isDeletionMode"
-                    :isSelected="(() => {
-                        const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
-                        const fecha = obtenerFechaDocumento(eventoSeguimientoCardiometabolico) || 'SinFecha';
-                        const nombreArchivo = obtenerNombreArchivo(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico', fecha);
-                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                        return props.selectedRoutes.includes(ruta);
-                    })()"
+                    :isSelected="isDocumentoSelected(eventoSeguimientoCardiometabolico._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', eventoSeguimientoCardiometabolico._id, convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico), 'eventoSeguimientoCardiometabolico')" 
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
@@ -1204,20 +745,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         <div v-if="documents.informeLongitudinalCardiometabolico && documents.informeLongitudinalCardiometabolico.length > 0">
             <div v-for="(informeLongitudinalCardiometabolico, index) in documents.informeLongitudinalCardiometabolico" :key="informeLongitudinalCardiometabolico._id"
                  class="transition-all duration-200 hover:bg-gray-50"
-                 :style="{ animationDelay: `${index * 50}ms` }">
+>
                 <DocumentoItem 
                     :informeLongitudinalCardiometabolico="informeLongitudinalCardiometabolico" 
                     :documentoId="informeLongitudinalCardiometabolico._id" 
                     :documentoTipo="'informeLongitudinalCardiometabolico'" 
                     :toggleRouteSelection="toggleRouteSelection"
                     :isDeletionMode="isDeletionMode"
-                    :isSelected="(() => {
-                        const rutaBase = obtenerRutaDocumento(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico');
-                        const fecha = obtenerFechaDocumento(informeLongitudinalCardiometabolico) || 'SinFecha';
-                        const nombreArchivo = obtenerNombreArchivo(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico', fecha);
-                        const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                        return props.selectedRoutes.includes(ruta);
-                    })()"
+                    :isSelected="isDocumentoSelected(informeLongitudinalCardiometabolico._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', informeLongitudinalCardiometabolico._id, convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico), 'informeLongitudinalCardiometabolico')" 
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
