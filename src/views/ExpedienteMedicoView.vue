@@ -31,6 +31,7 @@ import { useNavigateWithDailyConsent } from '@/composables/useNavigateWithDailyC
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
 import ResultadosClinicosPanel from '@/components/ResultadosClinicosPanel.vue';
 import ResultadosClinicosSubsection from '@/components/ResultadosClinicosSubsection.vue';
+import ExpedienteHeaderSkeleton from '@/components/skeletons/ExpedienteHeaderSkeleton.vue';
 import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 const toast: any = inject('toast');
@@ -78,6 +79,7 @@ const periodoDePruebaFinalizado = ref<boolean | null>(null);
 const estadoSuscripcion = ref<string | null>(null);
 const finDeSuscripcion = ref<Date | null>(null);
 const historiasDelMes = ref<number | null>(null);
+const lastFetchedTrabajadorId = ref('');
 
 onMounted(async () => {
   const idProveedorSalud = userStore.user?.idProveedorSalud;
@@ -285,9 +287,10 @@ const documentTypeLabels = {
   informeLongitudinalCardiometabolico: "Informe Longitudinal Cardiometabólico",
 };
 
-const fetchData = async () => {
+const fetchData = async (force = false) => {
   const trabajadorId = String(route.params.idTrabajador ?? '');
   if (!trabajadorId) return;
+  if (!force && trabajadorId === lastFetchedTrabajadorId.value) return;
 
   try {
     await Promise.all([
@@ -295,6 +298,7 @@ const fetchData = async () => {
       resultadosClinicos.fetchResultadosAgrupados(trabajadorId),
     ]);
 
+    lastFetchedTrabajadorId.value = trabajadorId;
     formData.resetFormData();
   } catch (error) {
     console.error("Error al cargar datos:", error);
@@ -311,7 +315,7 @@ watch(
 );
 
 const documentosPorAnio = computed(() => documentos.documentsByYear);
-const resultadosPorAnio = computed(() => ({ ...resultadosClinicos.resultsByYear }));
+const resultadosPorAnio = computed(() => resultadosClinicos.resultsByYear);
 const yearsWithRecords = computed(() => {
   const años = new Set<string>();
   if (documentosPorAnio.value) {
@@ -808,10 +812,19 @@ const handleDeleteSelected = async () => {
     }
 };
 
-const logotipoPendiente = computed(() => {
-  const proveedor = proveedorSaludStore.proveedorSalud;
-  return !proveedor?.logotipoEmpresa?.data;
+const expedienteHeaderLoading = computed(() => {
+  const idTrabajador = String(route.params.idTrabajador ?? '');
+  if (!idTrabajador) return false;
+
+  if (trabajadores.loadingOnSidebar) return true;
+
+  const trabajadorId = String(trabajadores.currentTrabajadorId ?? '');
+  const trabajador = trabajadores.currentTrabajador;
+
+  return !trabajador || trabajadorId !== idTrabajador;
 });
+
+const logotipoPendiente = computed(() => proveedorSaludStore.logotipoPendiente);
 
 // Computed para el total de documentos creados (sin documentos externos)
 const totalDocumentosCreados = computed(() => {
@@ -873,13 +886,13 @@ const añoMasReciente = computed(() => {
 
       <Transition appear name="fade">
         <ModalCargaDocumentoExterno v-if="showDocumentoExternoModal"
-          @closeDocumentoExternoModal="toggleDocumentoExternoModal" @updateData="fetchData" />
+          @closeDocumentoExternoModal="toggleDocumentoExternoModal" @updateData="() => fetchData(true)" />
       </Transition>
 
       <Transition appear name="fade">
         <ModalUpdateDocumentoExterno v-if="showDocumentoExternoUpdateModal"
           @closeModalUpdate="toggleDocumentoExternoUpdateModal" 
-          @updateData="fetchData"
+          @updateData="() => fetchData(true)"
           @abrirResultados="showResultadosClinicosPanel = true"
         />
       </Transition>
@@ -951,9 +964,12 @@ const añoMasReciente = computed(() => {
 
         <!-- Header principal con información del trabajador -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden mb-4">
-          <div class="p-6">
-            <Transition appear name="slide-up">
-              <div v-if="trabajadores.currentTrabajador" class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div class="p-6 min-h-[7.5rem]">
+            <ExpedienteHeaderSkeleton v-if="expedienteHeaderLoading" />
+            <div
+              v-else-if="trabajadores.currentTrabajador"
+              class="flex flex-col lg:flex-row lg:items-center lg:justify-between"
+            >
                 
                 <!-- Información del trabajador -->
                 <div class="flex items-center gap-4 sm:mb-4 lg:mb-0">
@@ -1052,7 +1068,6 @@ const añoMasReciente = computed(() => {
                   </div>
                 </div>
               </div>
-            </Transition>
           </div>
         </div>
 

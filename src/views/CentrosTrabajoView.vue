@@ -4,7 +4,7 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useRiesgoTrabajoStore } from '@/stores/riesgosTrabajo';
-import { ref, onMounted, inject, computed } from 'vue';
+import { ref, inject, computed, watch } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import GreenButton from '@/components/GreenButton.vue';
 import ModalCentros from '@/components/ModalCentros.vue';
@@ -34,7 +34,7 @@ const showModal = ref(false);
 const totalTrabajadores = ref(0);
 const loadingTrabajadores = ref(false);
 const tieneRiesgosTrabajo = ref(false);
-// Compuerta de carga única: evita mostrar centros/empresa de una navegación previa.
+const conteosTrabajadoresPorCentro = ref<Record<string, number>>({});
 const cargandoVista = ref(true);
 
 // Computed para verificar si el proveedor de salud es de México
@@ -122,83 +122,102 @@ const obtenerDatosEmpresa = async () => {
   if (!empresas.currentEmpresa || centrosTrabajo.centrosTrabajo.length === 0) {
     totalTrabajadores.value = 0;
     tieneRiesgosTrabajo.value = false;
+    conteosTrabajadoresPorCentro.value = {};
     return;
   }
 
   loadingTrabajadores.value = true;
   try {
-    // Ejecutar ambos fetch en paralelo para mayor eficiencia.
-    // El conteo NO usa fetchTrabajadores (que sobrescribe el listado del store
-    // compartido y provocaba parpadeos en la vista de trabajadores); usa un
-    // endpoint de conteo ligero que no muta el estado.
     const [conteosPorCentro, riesgosEmpresa] = await Promise.all([
       Promise.all(
         centrosTrabajo.centrosTrabajo.map(centro =>
           trabajadores.countTrabajadoresPorCentro(empresas.currentEmpresa!._id, centro._id)
         )
       ),
-      // Obtener riesgos de trabajo de la empresa
       trabajadores.fetchRiesgosTrabajoPorEmpresa(empresas.currentEmpresa._id)
     ]);
-    
-    // Calcular el total de trabajadores
+
+    const conteos: Record<string, number> = {};
+    centrosTrabajo.centrosTrabajo.forEach((centro, index) => {
+      const conteo = conteosPorCentro[index];
+      conteos[centro._id] = typeof conteo === 'number' ? conteo : 0;
+    });
+    conteosTrabajadoresPorCentro.value = conteos;
+
     const total = conteosPorCentro.reduce((sum, n) => sum + (typeof n === 'number' ? n : 0), 0);
-    
     totalTrabajadores.value = total;
-    
-    // Verificar riesgos de trabajo
+
     if (total === 0) {
       tieneRiesgosTrabajo.value = false;
     } else {
       const tieneRiesgos = riesgosEmpresa && Array.isArray(riesgosEmpresa) && riesgosEmpresa.length > 0;
       tieneRiesgosTrabajo.value = tieneRiesgos;
     }
-  } catch (error) {
-    // console.error('Error al obtener datos de la empresa:', error);
+  } catch {
     totalTrabajadores.value = 0;
     tieneRiesgosTrabajo.value = false;
+    conteosTrabajadoresPorCentro.value = {};
   } finally {
     loadingTrabajadores.value = false;
   }
 };
 
-onMounted(async () => {
-  const empresaId = String(route.params.idEmpresa);
-
-  // Limpiar estado de una navegación previa para evitar el "flash" de datos viejos.
+const cargarVista = async (empresaId: string) => {
   cargandoVista.value = true;
-  centrosTrabajo.resetCentrosTrabajo();
-  trabajadores.resetTrabajadores();
-  totalTrabajadores.value = 0;
-  tieneRiesgosTrabajo.value = false;
+  empresas.currentEmpresaId = empresaId;
+
+  const empresaCached = empresas.empresas.find((e) => e._id === empresaId);
+  if (empresaCached) {
+    empresas.currentEmpresa = empresaCached;
+  }
 
   const idProveedorSalud = userStore.user?.idProveedorSalud;
+  if (idProveedorSalud && !proveedorSaludStore.proveedorSalud) {
+    proveedorSaludStore.loadProveedorSalud(idProveedorSalud);
+  }
 
   try {
-    // Todas las llamadas independientes en paralelo (el proveedor de salud ya
-    // no bloquea el render de los centros).
     await Promise.all([
       centrosTrabajo.fetchCentrosTrabajo(empresaId),
-      (async () => {
-        empresas.currentEmpresaId = empresaId;
-        await empresas.fetchEmpresaById(empresaId);
-      })(),
-      idProveedorSalud
-        ? proveedorSaludStore.loadProveedorSalud(idProveedorSalud)
-        : Promise.resolve(),
+      empresaCached ? Promise.resolve() : empresas.fetchEmpresaById(empresaId),
     ]);
 
-    // Guard anti-race: si el usuario ya navegó a otra empresa, no aplicar.
     if (String(route.params.idEmpresa) !== empresaId) return;
+
+    obtenerDatosEmpresa();
+  } catch {
+    // fetchCentrosTrabajo ya maneja el estado vacío en el store
   } finally {
     if (String(route.params.idEmpresa) === empresaId) {
+      if (centrosTrabajo.centrosTrabajo.length > 0) {
+        loadingTrabajadores.value = true;
+      }
       cargandoVista.value = false;
     }
   }
+};
 
-  // Conteos (no bloquea el render principal de la lista de centros).
-  await obtenerDatosEmpresa();
-});
+watch(
+  () => route.params.idEmpresa,
+  (idEmpresa, idAnterior) => {
+    if (!idEmpresa) return;
+
+    const empresaId = String(idEmpresa);
+    const centrosDeOtraEmpresa =
+      centrosTrabajo.centrosTrabajo.length > 0 &&
+      centrosTrabajo.centrosTrabajo.some((c) => c.idEmpresa !== empresaId);
+
+    if ((idAnterior && idAnterior !== idEmpresa) || centrosDeOtraEmpresa) {
+      centrosTrabajo.resetCentrosTrabajo();
+      conteosTrabajadoresPorCentro.value = {};
+      totalTrabajadores.value = 0;
+      tieneRiesgosTrabajo.value = false;
+    }
+
+    cargarVista(empresaId);
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -322,26 +341,36 @@ onMounted(async () => {
 
           <!-- Contenido principal -->
           <div class="py-2">
-            <Transition appear mode="out-in" name="slide-up">
-              <div v-if="cargandoVista || !empresas.currentEmpresa" class="text-center py-20">
+            <Transition appear mode="out-in" name="centros-swap">
+              <div v-if="cargandoVista" key="centros-loading" class="text-center py-20">
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
                   <i class="fa-solid fa-building text-2xl text-emerald-600"></i>
                 </div>
-                <p class="text-gray-600 text-lg">Cargando información de la empresa...</p>
+                <p class="text-gray-600 text-lg">Cargando centros de trabajo...</p>
               </div>
 
-              <div v-else>
-                <!-- Lista de áreas -->
-                <div v-if="empresas.currentEmpresa && centrosTrabajo.centrosTrabajo.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div v-for="centro in centrosTrabajo.centrosTrabajo" :key="centro._id">
-                    <CentroTrabajoItem :centro="centro"
-                    :empresa="empresas.currentEmpresa" class="mb-2" @editarCentro="openModal"
-                    @eliminarCentro="solicitarEliminacionCentro" />
-                  </div>
-                </div>
+              <div v-else key="centros-content">
+                <Transition appear mode="out-in" name="slide-up">
+                  <div>
+                    <div
+                      v-if="empresas.currentEmpresa && centrosTrabajo.centrosTrabajo.length > 0"
+                      class="grid grid-cols-1 lg:grid-cols-2 gap-4"
+                    >
+                      <div v-for="centro in centrosTrabajo.centrosTrabajo" :key="centro._id">
+                        <CentroTrabajoItem
+                          :centro="centro"
+                          :empresa="empresas.currentEmpresa"
+                          :numero-trabajadores="conteosTrabajadoresPorCentro[centro._id] ?? 0"
+                          :contando-trabajadores="loadingTrabajadores"
+                          class="mb-2"
+                          @editarCentro="openModal"
+                          @eliminarCentro="solicitarEliminacionCentro"
+                        />
+                      </div>
+                    </div>
 
-                <!-- Estado vacío con explicación -->
-                <div v-else class="text-center">
+                    <!-- Estado vacío con explicación -->
+                    <div v-else class="text-center">
                   <div class="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full">
                     <i class="fa-solid fa-building text-6xl text-gray-400"></i>
                   </div>
@@ -440,8 +469,8 @@ onMounted(async () => {
                     title="Crear el primer centro de trabajo"
                   />
                 </div>
-
-
+                  </div>
+                </Transition>
               </div>
             </Transition>
           </div>
@@ -452,7 +481,42 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Animaciones para las transiciones */
+/* Transición rápida solo para la pantalla de carga ↔ contenido */
+.centros-swap-leave-active {
+  transition: opacity 0.1s ease;
+}
+
+.centros-swap-leave-to {
+  opacity: 0;
+}
+
+.centros-swap-enter-active {
+  transition: opacity 0.1s ease;
+}
+
+.centros-swap-enter-from {
+  opacity: 0;
+}
+
+/* Misma velocidad que LayOut.vue / EmpresasView (no 0.4s) */
+.slide-up-enter-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -461,31 +525,6 @@ onMounted(async () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.4s ease-out;
-}
-
-.slide-up-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.slide-up-enter-to {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.slide-up-leave-from {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.slide-up-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
 }
 
 /* Animación personalizada para el icono de carga */

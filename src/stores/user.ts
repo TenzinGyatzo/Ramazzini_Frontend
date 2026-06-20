@@ -37,26 +37,43 @@ export const useUserStore = defineStore("user", () => {
     const user = ref<User | null>(null);
     const empresasAsignadas = ref<string[]>([]);
     const centrosTrabajoAsignados = ref<string[]>([]);
+    let fetchUserPromise: Promise<void> | null = null;
 
     function clearUser() {
         user.value = null;
         empresasAsignadas.value = [];
         centrosTrabajoAsignados.value = [];
+        fetchUserPromise = null;
     }
 
-    async function fetchUser() {
-        try {
-            const { data } = await AuthAPI.auth();
-            user.value = data;
-            try {
-                localStorage.removeItem('user');
-            } catch {
-                // ignore
-            }
-        } catch (error) {
-            console.error("Error al cargar el usuario:", error);
-            throw error;
+    async function fetchUser(force = false) {
+        if (!force && user.value) {
+            return;
         }
+
+        if (fetchUserPromise) {
+            return fetchUserPromise;
+        }
+
+        fetchUserPromise = (async () => {
+            try {
+                const { data } = await AuthAPI.auth();
+                user.value = data;
+                try {
+                    localStorage.removeItem('user');
+                } catch {
+                    // ignore
+                }
+            } catch (error) {
+                user.value = null;
+                console.error("Error al cargar el usuario:", error);
+                throw error;
+            } finally {
+                fetchUserPromise = null;
+            }
+        })();
+
+        return fetchUserPromise;
     }
 
     // Computed para obtener el nombre de usuario

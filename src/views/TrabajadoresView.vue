@@ -19,6 +19,7 @@ import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalRTs from '@/components/ModalRTs.vue';
 import ModalResumenImportacion from '@/components/ModalResumenImportacion.vue';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
+import TrabajadoresHeaderSkeleton from '@/components/skeletons/TrabajadoresHeaderSkeleton.vue';
 import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 
 import type { Empresa } from '@/interfaces/empresa.interface';
@@ -55,6 +56,7 @@ const duplicadosPendientes = ref<any[]>([]);
 // Compuerta de carga única: trabajadores + alertas se resuelven antes de mostrar
 // la tabla o el banner de duplicados, evitando parpadeos y estados intermedios.
 const cargandoVista = ref(true);
+const headerContextoLoading = ref(true);
 
 const conteoDuplicados = computed(() => {
   const list = Array.isArray(trabajadores.trabajadores) ? trabajadores.trabajadores : [];
@@ -355,6 +357,38 @@ const hayFiltrosActivos = computed(() => filtrosAplicados.size > 0);
  * };
  */
 
+async function cargarContextoHeader(empresaId: string, centroTrabajoId: string) {
+  empresas.currentEmpresaId = empresaId;
+  centrosTrabajo.currentCentroTrabajoId = centroTrabajoId;
+
+  const empresaCached = empresas.empresas.find((e) => e._id === empresaId);
+  if (empresaCached) {
+    empresas.currentEmpresa = empresaCached;
+  }
+
+  const centroCached = centrosTrabajo.centrosTrabajo.find((c) => c._id === centroTrabajoId);
+  if (centroCached?.nombreCentro) {
+    centrosTrabajo.currentCentroTrabajo = centroCached;
+    headerContextoLoading.value = false;
+  }
+
+  try {
+    await Promise.all([
+      centroCached?.nombreCentro
+        ? Promise.resolve()
+        : centrosTrabajo.fetchCentroTrabajoById(empresaId, centroTrabajoId),
+      empresaCached ? Promise.resolve() : empresas.fetchEmpresaById(empresaId),
+    ]);
+  } finally {
+    if (
+      String(route.params.idEmpresa) === empresaId &&
+      String(route.params.idCentroTrabajo) === centroTrabajoId
+    ) {
+      headerContextoLoading.value = false;
+    }
+  }
+}
+
 // 5. Ciclo de vida
 onMounted(async () => {
   const empresaId = String(route.params.idEmpresa);
@@ -364,19 +398,16 @@ onMounted(async () => {
   // Limpiar el listado compartido para no mostrar datos de una vista previa
   // (p. ej. los conteos de la vista de centros) mientras carga.
   cargandoVista.value = true;
+  headerContextoLoading.value = true;
   trabajadores.resetTrabajadores();
 
-  // Iniciar la carga con un delay mínimo para garantizar que el spinner se muestre
-  empresas.currentEmpresaId = empresaId;
-  centrosTrabajo.currentCentroTrabajoId = centroTrabajoId;
-
   const inicioCarga = Date.now();
-  // Trabajadores y alertas de duplicado se resuelven juntos: el banner y la
-  // tabla solo se renderizan cuando ambos están listos (una sola fuente de verdad).
+  const contextoPromise = cargarContextoHeader(empresaId, centroTrabajoId);
+
+  // Trabajadores y alertas de duplicado se resuelven juntos; el header usa contextoPromise aparte.
   await Promise.all([
     trabajadores.fetchTrabajadoresConHistoria(empresaId, centroTrabajoId),
-    empresas.fetchEmpresaById(empresaId),
-    centrosTrabajo.fetchCentroTrabajoById(empresaId, centroTrabajoId),
+    contextoPromise,
     cargarDuplicadosPendientes(),
   ]);
 
@@ -944,7 +975,9 @@ const toggleVigencias = () => {
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 xl:p-6 mb-4 transition-all duration-500 ease-in-out">
         <div class="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4 xl:gap-6 transition-all duration-500 ease-in-out">
           <!-- Información con logotipo -->
-          <div class="flex items-center gap-4 flex-1 transition-all duration-500 ease-in-out">
+          <TrabajadoresHeaderSkeleton v-if="headerContextoLoading" />
+
+          <div v-else class="flex items-center gap-4 flex-1 transition-all duration-500 ease-in-out min-w-0">
             <!-- Logo o placeholder -->
             <div class="flex-shrink-0 transition-all duration-500 ease-in-out">
               <img

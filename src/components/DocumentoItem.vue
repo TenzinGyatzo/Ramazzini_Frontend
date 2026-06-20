@@ -2056,15 +2056,6 @@ const handleKeyDown = (event) => {
     }
 };
 
-onMounted(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    verificarDisponibilidadPDF();
-});
-
-onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeyDown);
-});
-
 ////////////////////////////////////////////
 // Estado para la anchura de la ventana
 const windowWidth = ref(window.innerWidth);
@@ -2566,14 +2557,46 @@ const verificarDisponibilidadPDF = async () => {
   }
 };
 
-// Verificar disponibilidad al montar el componente
+const documentoItemRef = ref(null);
+let pdfVisibilityObserver = null;
+let pdfCheckScheduled = false;
+
+const schedulePdfCheck = () => {
+  if (pdfCheckScheduled) return;
+  pdfCheckScheduled = true;
+  verificarDisponibilidadPDF();
+};
+
+// Verificar disponibilidad al montar el componente (diferido hasta viewport visible)
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
-  verificarDisponibilidadPDF();
+
+  if (typeof IntersectionObserver !== 'undefined' && documentoItemRef.value) {
+    pdfVisibilityObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          schedulePdfCheck();
+          pdfVisibilityObserver?.disconnect();
+          pdfVisibilityObserver = null;
+        }
+      },
+      { rootMargin: '100px' },
+    );
+    pdfVisibilityObserver.observe(documentoItemRef.value);
+  } else {
+    schedulePdfCheck();
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+  pdfVisibilityObserver?.disconnect();
+  pdfVisibilityObserver = null;
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
 watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico], () => {
+  pdfCheckScheduled = false;
   verificarDisponibilidadPDF();
 }, { deep: true });
 
@@ -2598,6 +2621,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
     <!-- Items de documentos -->
     <div
+        ref="documentoItemRef"
         class="documento-item group relative bg-white border rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer overflow-hidden"
         :class="{
             'hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50': !isDeletionMode,

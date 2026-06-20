@@ -55,12 +55,13 @@ describe('useUserStore (H-11)', () => {
     expect(store.user).toEqual(mockUser);
   });
 
-  it('cada fetchUser revalida contra la API', async () => {
+  it('fetchUser usa caché en memoria y solo revalida con force', async () => {
     vi.mocked(AuthAPI.auth).mockResolvedValue({ data: mockUser });
 
     const store = useUserStore();
     await store.fetchUser();
     await store.fetchUser();
+    await store.fetchUser(true);
 
     expect(AuthAPI.auth).toHaveBeenCalledTimes(2);
   });

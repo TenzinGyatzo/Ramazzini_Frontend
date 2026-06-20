@@ -287,6 +287,29 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
 
     const isMX = computed(() => proveedorSalud.value?.pais === 'MX');
 
+    const isProveedorLoaded = computed(
+        () => !loading.value && proveedorSalud.value !== null,
+    );
+
+    const logotipoPendiente = computed(() => {
+        if (!isProveedorLoaded.value) return false;
+        return !proveedorSalud.value!.logotipoEmpresa?.data;
+    });
+
+    const camposPendientesProveedor = computed(() => {
+        if (!isProveedorLoaded.value) return [] as string[];
+
+        const proveedor = proveedorSalud.value!;
+        const pendientes: string[] = [];
+
+        if (!proveedor.estado) pendientes.push('Estado');
+        if (!proveedor.municipio) pendientes.push('Municipio');
+        if (!proveedor.direccion) pendientes.push('Dirección');
+        if (!proveedor.telefono) pendientes.push('Teléfono');
+
+        return pendientes;
+    });
+
     // Regulatory Policy Computed Properties
     const regimenRegulatorio = computed(() => proveedorSalud.value?.regimenRegulatorio);
     const regulatoryPolicy = computed(() => proveedorSalud.value?.regulatoryPolicy);
@@ -311,6 +334,9 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     return {
         proveedorSalud,
         loading,
+        isProveedorLoaded,
+        logotipoPendiente,
+        camposPendientesProveedor,
         isMX,
         // Regulatory Policy
         regimenRegulatorio,

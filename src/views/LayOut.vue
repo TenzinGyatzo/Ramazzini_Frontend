@@ -80,6 +80,12 @@ const isNotificationEmpresasVisible = ref(false);
 const guiaConfiguracionInicialURL = "https://scribehow.com/shared/Configuracion_de_Informes__qSuHpPxtSnKc8JTaObgY7Q?referrer=workspace"
 const guiaRegistrarClientesURL = "https://scribehow.com/shared/Agregar_Clientes_y_Centros_de_Trabajo__32Haet8BQy6oFUDacWcbWg?referrer=documents"
 
+const LOGO_ASSETS = [
+  '/img/logosRamazzini/RamazziniBrand.png',
+  '/img/logosRamazzini/RamazziniLogoNoBg.png',
+  '/img/logosRamazzini/RamazziniLogoClaroNoBg.png',
+];
+
 // Función para cerrar el menú si se hace clic fuera
 const handleClickOutside = (event: MouseEvent) => {
   if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
@@ -102,6 +108,11 @@ const closeNotificationEmpresas = () => {
 
 onMounted(() => {
   syncThemeFromEnvironment();
+
+  LOGO_ASSETS.forEach((src) => {
+    const img = new Image();
+    img.src = src;
+  });
 
   watch(
     () => user.user,
@@ -173,23 +184,12 @@ watch(
 );
 
 // Verificar si falta el logotipo de la empresa
-const logotipoPendiente = computed(() => {
-  const proveedor = proveedorSaludStore.proveedorSalud;
-  return !proveedor?.logotipoEmpresa?.data;
-});
+const logotipoPendiente = computed(() => proveedorSaludStore.logotipoPendiente);
 
-// Computed para verificar los campos pendientes en Proveedor de Salud
-const camposPendientesProveedor = computed(() => {
-  const proveedor = proveedorSaludStore.proveedorSalud;
-  const pendientes: string[] = [];
-
-  if (!proveedor?.estado) pendientes.push("Estado");
-  if (!proveedor?.municipio) pendientes.push("Municipio");
-  if (!proveedor?.direccion) pendientes.push("Dirección");
-  if (!proveedor?.telefono) pendientes.push("Teléfono");
-
-  return pendientes;
-});
+// Campos pendientes en Proveedor de Salud (desde store, con guard de carga)
+const camposPendientesProveedor = computed(
+  () => proveedorSaludStore.camposPendientesProveedor,
+);
 
 // Computed para verificar los campos pendientes en Médico Firmante
 const camposPendientesMedico = computed(() => {
@@ -238,73 +238,37 @@ const mostrarTooltipMedico = computed(() => camposPendientesMedico.value.length 
 const mostrarTooltipEnfermera = computed(() => camposPendientesEnfermera.value.length > 0);
 const mostrarTooltipTecnicoEvaluador = computed(() => camposPendientesTecnicoEvaluador.value.length > 0);
 
-// Controlar la aparición de las notificaciones con delay
-const mostrarNotificacionLogotipo = ref(false);
-const mostrarNotificacionCampos = ref(false);
-
-// Verificar y actualizar las notificaciones
-watch(
-  () => logotipoPendiente.value,
-  (newVal) => {
-    mostrarNotificacionLogotipo.value = newVal;
-  }
+// Badges del engrane: solo tras cargar datos del proveedor
+const mostrarNotificacionLogotipo = computed(
+  () => datosCargados.value && proveedorSaludStore.logotipoPendiente,
 );
 
-watch(
-  () => {
-    const userRole = user.user?.role;
-    
-    // Para roles de médicos
-    if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
-      return camposPendientesProveedor.value.length > 0 || camposPendientesMedico.value.length > 0;
-    }
-    
-    // Para rol de enfermera
-    if (userRole === 'Enfermero/a') {
-      return camposPendientesEnfermera.value.length > 0;
-    }
-    
-    // Para rol de técnico evaluador
-    if (userRole === 'Técnico Evaluador') {
-      return camposPendientesTecnicoEvaluador.value.length > 0;
-    }
-    
-    return false;
-  },
-  (newVal) => {
-    mostrarNotificacionCampos.value = newVal;
-  }
-);
+const mostrarNotificacionCampos = computed(() => {
+  if (!datosCargados.value) return false;
 
-onMounted(() => {
-  setTimeout(() => {
-    if (logotipoPendiente.value) {
-      mostrarNotificacionLogotipo.value = true;
-    }
-    
-    const userRole = user.user?.role;
-    
-    // Para roles de médicos
-    if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
-      if (camposPendientesProveedor.value.length > 0 || camposPendientesMedico.value.length > 0) {
-        mostrarNotificacionCampos.value = true;
-      }
-    }
-    
-    // Para rol de enfermera
-    if (userRole === 'Enfermero/a') {
-      if (camposPendientesEnfermera.value.length > 0) {
-        mostrarNotificacionCampos.value = true;
-      }
-    }
-    
-    // Para rol de técnico evaluador
-    if (userRole === 'Técnico Evaluador') {
-      if (camposPendientesTecnicoEvaluador.value.length > 0) {
-        mostrarNotificacionCampos.value = true;
-      }
-    }
-  }, 1200);
+  const userRole = user.user?.role;
+
+  if (
+    userRole === 'Administrador' ||
+    userRole === 'Principal' ||
+    userRole === 'Secundario' ||
+    userRole === 'Médico'
+  ) {
+    return (
+      proveedorSaludStore.camposPendientesProveedor.length > 0 ||
+      camposPendientesMedico.value.length > 0
+    );
+  }
+
+  if (userRole === 'Enfermero/a') {
+    return camposPendientesEnfermera.value.length > 0;
+  }
+
+  if (userRole === 'Técnico Evaluador') {
+    return camposPendientesTecnicoEvaluador.value.length > 0;
+  }
+
+  return false;
 });
 
 // Control de animación
@@ -603,17 +567,6 @@ watch([datosCargados, logotipoPendiente, camposPendientesProveedor, camposPendie
       isNotificationVisible.value = true;
     }, 1000);
   }
-  
-  // Actualizar mostrarNotificacionCampos según el rol
-  if (nuevosDatosCargados) {
-    if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
-      mostrarNotificacionCampos.value = nuevosCamposProveedor.length > 0 || nuevosCamposMedico.length > 0;
-    } else if (userRole === 'Enfermero/a') {
-      mostrarNotificacionCampos.value = nuevosCamposEnfermera.length > 0;
-    } else if (userRole === 'Técnico Evaluador') {
-      mostrarNotificacionCampos.value = nuevosCamposTecnico.length > 0;
-    }
-  }
 });
 
 // Watcher para mostrar la notificación cuando no hay empresas registradas
@@ -721,6 +674,8 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
   }
 });
 
+const isHomeRoute = computed(() => route.name === 'inicio');
+
 </script>
 
 <template>
@@ -735,27 +690,43 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
       class="max-h-full max-w-full object-contain p-2">
     </div>
 
-    <!-- Transición para el logo de Ramazzini -->
-    <Transition appear mode="out-in" name="slide-up">
-      <RouterLink v-if="route.path === '/'" 
+    <!-- Logo Ramazzini: tamaño/posición original por ruta; v-show evita remontaje; aspect-ratio evita CLS al cargar img -->
+    <div class="layout-logo-region flex w-full flex-shrink-0 justify-center">
+      <RouterLink
+        v-show="isHomeRoute"
         :to="{ name: 'inicio' }"
-        class="layout-nav-link block w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 2xl:w-1/8 mt-14 cursor-pointer transform hover:scale-105 transition-transform duration-300 ease logo-transition">
-        <img src="/img/logosRamazzini/RamazziniBrand.png" alt="Ramazzini-Logo" class="w-full drop-shadow-lg" />
+        class="layout-nav-link logo-transition mt-14 block aspect-[1397/1403] w-1/2 transform cursor-pointer transition-transform duration-300 ease hover:scale-105 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 2xl:w-1/8"
+      >
+        <img
+          src="/img/logosRamazzini/RamazziniBrand.png"
+          alt="Ramazzini-Logo"
+          width="1397"
+          height="1403"
+          decoding="async"
+          fetchpriority="high"
+          class="block h-auto w-full drop-shadow-lg"
+        />
       </RouterLink>
-      <RouterLink v-else 
+
+      <RouterLink
+        v-show="!isHomeRoute"
         :to="{ name: 'inicio' }"
-        class="layout-nav-link block w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 2xl:w-1/6 mt-3 mb-5 cursor-pointer transform hover:scale-105 transition-transform duration-300 ease logo-transition">
+        class="layout-nav-link logo-transition mb-5 mt-3 block aspect-[5210/1403] w-2/3 transform cursor-pointer transition-transform duration-300 ease hover:scale-105 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 2xl:w-1/6"
+      >
         <img
           :src="isDarkMode ? '/img/logosRamazzini/RamazziniLogoClaroNoBg.png' : '/img/logosRamazzini/RamazziniLogoNoBg.png'"
           alt="Ramazzini-Logo"
-          class="w-full drop-shadow-lg"
+          width="5210"
+          height="1403"
+          decoding="async"
+          class="block h-auto w-full drop-shadow-lg"
         />
       </RouterLink>
-    </Transition>
+    </div>
 
-    <!-- Contenido principal -->
-    <Transition appear mode="out-in" name="slide-up">
-      <div v-if="route.path === '/' || route.path === '/login'" class="flex flex-col items-center mx-auto">
+    <!-- Contenido principal: inicio solo anima entrada; desmontaje instantáneo al navegar -->
+    <Transition appear name="slide-up-in-only" @leave="(_, done) => done()">
+      <div v-if="isHomeRoute" class="mx-auto flex w-full flex-col items-center">
         <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl py-5 text-center text-slate-700 font-medium bg-gradient-to-r from-slate-700 to-gray-600 bg-clip-text text-transparent">
           Ramazzini
         </h1>
@@ -768,29 +739,28 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
         <div class="grid gap-4 w-full max-w-md mt-2">
           <RouterLink
             :to="{ name: 'empresas' }"
-            class="layout-nav-link block w-full text-center text-lg sm:text-xl md:text-2xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white uppercase rounded-xl px-6 py-3 transition-all duration-300 ease transform hover:scale-105 shadow-lg hover:shadow-xl font-medium tracking-wide button-transition">
+            class="layout-nav-link button-transition block w-full transform rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-3 text-center text-lg font-medium uppercase tracking-wide text-white shadow-lg transition-all duration-300 ease hover:scale-105 hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl sm:text-xl md:text-2xl">
             VER MIS CLIENTES
           </RouterLink>
 
           <div class="flex justify-center">
             <a href="/login">
-              <Transition name="button-transition">
-                <button
-                  class="text-sm sm:text-base md:text-lg border-2 border-gray-300 hover:bg-red-600 text-gray-800 uppercase rounded-lg px-4 py-1 transition-all duration-300 ease transform hover:scale-105 shadow-md hover:shadow-lg hover:text-gray-200 button-transition"
-                  @click="user.logout">
-                  <i class="fa-solid fa-sign-out-alt mr-3"></i>
-                  CERRAR SESIÓN
-                </button>
-              </Transition>
+              <button
+                class="button-transition transform rounded-lg border-2 border-gray-300 px-4 py-1 text-sm uppercase text-gray-800 shadow-md transition-all duration-300 ease hover:scale-105 hover:bg-red-600 hover:text-gray-200 hover:shadow-lg sm:text-base md:text-lg"
+                @click="user.logout">
+                <i class="fa-solid fa-sign-out-alt mr-3"></i>
+                CERRAR SESIÓN
+              </button>
             </a>
           </div>
         </div>
       </div>
-
-      <div v-else class="w-full max-w-screen-2xl">
-        <RouterView />
-      </div>
     </Transition>
+
+    <!-- RouterView después de inicio en el DOM para quedar encima si hubiera un frame de solapamiento -->
+    <div v-if="!isHomeRoute" class="relative z-10 w-full max-w-screen-2xl">
+      <RouterView />
+    </div>
 
     <!-- Notificaciones separadas con transiciones independientes -->
     
@@ -1412,11 +1382,11 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
 
 /* Transiciones mejoradas */
 .slide-up-enter-active {
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-up-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-up-enter-from {
@@ -1427,6 +1397,16 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
 .slide-up-leave-to {
   opacity: 0;
   transform: translateY(-30px);
+}
+
+/* Inicio: misma entrada que slide-up, sin animación de salida al navegar */
+.slide-up-in-only-enter-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-in-only-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
 }
 
 .fade-enter-active,

@@ -5,6 +5,10 @@ import { useUserStore } from "@/stores/user";
 import { usePostHog } from "../composables/usePostHog";
 import { useUserPermissions } from "@/composables/useUserPermissions";
 import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
+import {
+  startNavigationProgress,
+  finishNavigationProgress,
+} from "@/composables/useNavigationProgress";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -202,6 +206,7 @@ const router = createRouter({
 const { posthog, identifyUser } = usePostHog(); // Inicializamos PostHog
 
 router.afterEach((to, from) => {
+  finishNavigationProgress();
   posthog.capture('$pageview', {
     path: to.fullPath,
     name: to.name,
@@ -211,6 +216,7 @@ router.afterEach((to, from) => {
 router.beforeEach((to, from) => {
   if (from.path !== to.path) {
     posthog.capture('$pageleave')
+    startNavigationProgress();
   }
 })
 

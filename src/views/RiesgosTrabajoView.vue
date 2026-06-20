@@ -63,6 +63,7 @@ const secuelasSeleccionadas = ref<string>('todos');
 const busquedaTexto = ref<string>("");
 const riesgosOriginales = ref<RiesgoTrabajo[]>([]);
 const inputBusqueda = ref<HTMLInputElement | null>(null);
+let busquedaDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Función para actualizar el estado de los filtros
 function actualizarEstadoFiltro(id: string, valor: string) {
@@ -286,6 +287,15 @@ function cumpleRangoDiasIncapacidad(dias: number, rango: string): boolean {
   return dias >= inicio && dias <= fin;
 }
 
+function limpiarBusqueda() {
+  if (busquedaDebounceTimer) {
+    clearTimeout(busquedaDebounceTimer);
+    busquedaDebounceTimer = null;
+  }
+  busquedaTexto.value = '';
+  filtrarPorBusqueda();
+}
+
 function filtrarPorBusqueda() {
   const texto = busquedaTexto.value.trim().toLowerCase();
 
@@ -351,13 +361,18 @@ function filtrarPorBusqueda() {
   }
 }
 
-watch(busquedaTexto, (newVal, oldVal) => {
-  // Ejecutar la función de filtrado cuando cambie el texto de búsqueda
-  filtrarPorBusqueda();
-  
-  if (inputBusqueda.value) {
-    inputBusqueda.value.focus();
+watch(busquedaTexto, () => {
+  if (busquedaDebounceTimer) {
+    clearTimeout(busquedaDebounceTimer);
   }
+
+  busquedaDebounceTimer = setTimeout(() => {
+    filtrarPorBusqueda();
+
+    if (inputBusqueda.value) {
+      inputBusqueda.value.focus();
+    }
+  }, 250);
 });
 
 /* =====================
@@ -622,8 +637,16 @@ function ordenarRiesgosPorFecha() {
    Inicialización: Fetch de Datos
 ===================== */
 onMounted(async () => {
-  await empresasStore.fetchEmpresaById(empresaId);
-  await centrosStore.fetchCentrosTrabajo(empresaId);
+  if (empresasStore.currentEmpresaId !== empresaId) {
+    await empresasStore.fetchEmpresaById(empresaId);
+  }
+
+  if (
+    centrosStore.centrosTrabajo.length === 0 ||
+    empresasStore.currentEmpresaId !== empresaId
+  ) {
+    await centrosStore.fetchCentrosTrabajo(empresaId);
+  }
 
   const riesgos = await trabajadoresStore.fetchRiesgosTrabajoPorEmpresa(empresaId);
   riesgosOriginales.value = [...riesgos]; // Guardamos una copia de los riesgos completos
@@ -1283,13 +1306,12 @@ const mostrarTipScrollLateral = () => {
               ref="inputBusqueda"
               v-model="busquedaTexto"
               type="text"
-              @input="filtrarPorBusqueda"
               placeholder="Buscar por nombre, puesto, No. Empleado, NSS, fecha, notas..."
               class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 text-sm bg-white hover:border-gray-300"
             />
             <div v-if="busquedaTexto" class="absolute inset-y-0 right-0 pr-3 flex items-center">
               <button
-                @click="busquedaTexto = ''; filtrarPorBusqueda()"
+                @click="limpiarBusqueda"
                 class="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <i class="fas fa-times text-sm"></i>

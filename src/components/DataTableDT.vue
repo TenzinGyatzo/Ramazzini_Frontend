@@ -53,6 +53,33 @@ const emit = defineEmits<{
   (e: 'toggle-vigencias', mostrar: boolean): void;
 }>();
 
+function buildExpedienteRoute(trabajadorId: string) {
+  return {
+    name: 'expediente-medico' as const,
+    params: {
+      idEmpresa: String(route.params.idEmpresa ?? empresas.currentEmpresaId ?? ''),
+      idCentroTrabajo: String(
+        route.params.idCentroTrabajo ?? centrosTrabajo.currentCentroTrabajoId ?? '',
+      ),
+      idTrabajador: String(trabajadorId),
+    },
+  };
+}
+
+function isModifiedNavigationClick(event: JQuery.ClickEvent) {
+  const nativeEvent = event.originalEvent;
+  if (!nativeEvent) return false;
+
+  return (
+    nativeEvent.defaultPrevented ||
+    nativeEvent.button !== 0 ||
+    nativeEvent.metaKey ||
+    nativeEvent.ctrlKey ||
+    nativeEvent.shiftKey ||
+    nativeEvent.altKey
+  );
+}
+
 onMounted(() => {
   $(document).on('mouseenter', '.folio-tooltip', function () {
     showFolioTooltip(this as HTMLElement);
@@ -413,16 +440,7 @@ function inicializarDataTable() {
           data: null,
           title: 'Expediente',
           render: function (data, type, row) {
-            const url = router.resolve({
-              name: 'expediente-medico',
-              params: {
-                idEmpresa: String(route.params.idEmpresa ?? empresas.currentEmpresaId ?? ''),
-                idCentroTrabajo: String(
-                  route.params.idCentroTrabajo ?? centrosTrabajo.currentCentroTrabajoId ?? '',
-                ),
-                idTrabajador: String(row._id),
-              }
-            }).href;
+            const url = router.resolve(buildExpedienteRoute(String(row._id))).href;
 
             return `
               <a
@@ -592,6 +610,19 @@ function inicializarDataTable() {
       ]
     });
 
+    $(document).on('click', '.btn-expediente', function (event) {
+      if (isModifiedNavigationClick(event)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const idTrabajador = String($(this).data('id') ?? '');
+      if (!idTrabajador) return;
+
+      router.push(buildExpedienteRoute(idTrabajador));
+    });
+
     $(document).on('click', '.btn-rt', function () {
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
@@ -676,6 +707,7 @@ onBeforeUnmount(() => {
   folioTooltipEl?.remove();
   folioTooltipEl = null;
 
+  $(document).off('click', '.btn-expediente');
   $(document).off('click', '.btn-rt');
   $(document).off('click', '.btn-riesgos');
   $(document).off('click', '.btn-fusionar');

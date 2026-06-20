@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
-import { ref, onMounted, watch } from 'vue';
-import { useTrabajadoresStore } from '@/stores/trabajadores';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 
-const trabajadores = useTrabajadoresStore();
 const { canManageCentrosTrabajo, executeIfCanManageCentrosTrabajo } = usePermissionRestrictions();
 
 const props = defineProps({
@@ -18,6 +15,14 @@ const props = defineProps({
         type: Object as () => Empresa | null,
         required: false,
     },
+    numeroTrabajadores: {
+        type: Number,
+        default: 0,
+    },
+    contandoTrabajadores: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emit = defineEmits<{
@@ -27,22 +32,16 @@ const emit = defineEmits<{
 
 const handleEditarCentro = (empresa: Empresa, centro: CentroTrabajo) => {
     executeIfCanManageCentrosTrabajo(() => {
-        // Emitir evento solo si tiene permisos
         emit('editarCentro', empresa, centro);
     }, 'editar centros de trabajo');
 };
 
 const handleEliminarCentro = (id: string, nombreCentro: string) => {
     executeIfCanManageCentrosTrabajo(() => {
-        emit('eliminarCentro', id, nombreCentro, numeroTrabajadores.value);
+        emit('eliminarCentro', id, nombreCentro, props.numeroTrabajadores);
     }, 'eliminar centros de trabajo');
 };
 
-// Estado para el número de trabajadores
-const numeroTrabajadores = ref(0);
-const loadingTrabajadores = ref(false);
-
-// Método para formatear la dirección
 const formatDireccion = (centro: CentroTrabajo) => {
     const parts: string[] = [];
     if (centro.direccionCentro) parts.push(centro.direccionCentro);
@@ -51,47 +50,6 @@ const formatDireccion = (centro: CentroTrabajo) => {
     if (centro.estado) parts.push(centro.estado);
     return parts.join(', ');
 };
-
-// Función para obtener el número de trabajadores del centro
-const obtenerNumeroTrabajadores = async () => {
-    if (!props.centro || !props.empresa) {
-        numeroTrabajadores.value = 0;
-        return;
-    }
-
-    loadingTrabajadores.value = true;
-    try {
-        const trabajadoresCentro = await trabajadores.fetchTrabajadores(
-            props.empresa._id, 
-            props.centro._id
-        );
-        
-        if (Array.isArray(trabajadoresCentro)) {
-            numeroTrabajadores.value = trabajadoresCentro.length;
-        } else {
-            numeroTrabajadores.value = 0;
-        }
-    } catch (error) {
-        console.error('Error al obtener trabajadores del centro:', error);
-        numeroTrabajadores.value = 0;
-    } finally {
-        loadingTrabajadores.value = false;
-    }
-};
-
-// Observar cambios en las props para actualizar el conteo
-watch(() => [props.centro?._id, props.empresa?._id], () => {
-    if (props.centro && props.empresa) {
-        obtenerNumeroTrabajadores();
-    }
-}, { immediate: true });
-
-// Cargar trabajadores cuando el componente se monta
-onMounted(() => {
-    if (props.centro && props.empresa) {
-        obtenerNumeroTrabajadores();
-    }
-});
 </script>
 
 <template>
@@ -112,7 +70,7 @@ onMounted(() => {
                             <h3 class="text-xl font-bold text-gray-900 mb-1">{{ centro.nombreCentro }}</h3>
                             <div class="flex items-center gap-2">
                                 <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                                <span v-if="loadingTrabajadores" class="text-sm text-gray-400">
+                                <span v-if="contandoTrabajadores" class="text-sm text-gray-400">
                                     <i class="fas fa-spinner fa-spin mr-1"></i>
                                     Contando...
                                 </span>
