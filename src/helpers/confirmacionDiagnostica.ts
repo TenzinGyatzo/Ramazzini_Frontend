@@ -141,7 +141,7 @@ async function validateSlot(
   let aplica = false;
 
   if (slot === 1) {
-    codigo = extractCIE10Code(String(p.codigoCIE10Principal ?? ''));
+    codigo = extractCIE10Code(String(p.codigoCIE10Principal ?? '')) ?? '';
     const flags = codigo ? await resolveDiagCatalogFlags(codigo) : null;
     aplica = aplicaConfirmacionDiagnostico1({
       tipoPersonal,
@@ -151,7 +151,7 @@ async function validateSlot(
         typeof p.relacionTemporal === 'number' ? p.relacionTemporal : null,
     });
   } else if (slot === 2) {
-    codigo = extractCIE10Code(String(p.codigoCIEDiagnostico2 ?? ''));
+    codigo = extractCIE10Code(String(p.codigoCIEDiagnostico2 ?? '')) ?? '';
     const flags = codigo ? await resolveDiagCatalogFlags(codigo) : null;
     aplica = aplicaConfirmacionDiagnostico23({
       tipoPersonal,
@@ -163,7 +163,7 @@ async function validateSlot(
           : null,
     });
   } else {
-    codigo = extractCIE10Code(String(p.codigoCIEDiagnostico3 ?? ''));
+    codigo = extractCIE10Code(String(p.codigoCIEDiagnostico3 ?? '')) ?? '';
     const flags = codigo ? await resolveDiagCatalogFlags(codigo) : null;
     aplica = aplicaConfirmacionDiagnostico23({
       tipoPersonal,

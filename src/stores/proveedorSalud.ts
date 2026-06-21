@@ -23,6 +23,7 @@ export interface RegulatoryPolicy {
         cluesFieldVisible: boolean; // CLUES visible solo en SIRES
         dailyConsentEnabled: boolean; // Consentimiento diario habilitado solo en SIRES
         auditTrailEnabled: boolean; // Trail de auditoría NOM-024
+        workerIdentificationImmutable: boolean; // Identificación trabajador inmutable post-alta
     };
     validation: {
         curpFirmantes: 'required' | 'optional';

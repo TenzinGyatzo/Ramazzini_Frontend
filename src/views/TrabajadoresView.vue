@@ -71,10 +71,13 @@ const trabajadoresParaTabla = computed(() => {
 
 async function cargarDuplicadosPendientes() {
   if (!canManageTrabajadores.value) return;
+  const empresaId = empresas.currentEmpresaId;
+  const centroId = centrosTrabajo.currentCentroTrabajoId;
+  if (!empresaId || !centroId) return;
   try {
     const { data } = await TrabajadoresAPI.getDuplicadosPendientes(
-      empresas.currentEmpresaId,
-      centrosTrabajo.currentCentroTrabajoId,
+      empresaId,
+      centroId,
     );
     duplicadosPendientes.value = Array.isArray(data) ? data : [];
   } catch {
@@ -94,15 +97,22 @@ function onRevisarDuplicadosImportacion() {
   modalResumenImportacion.hideModal();
   filtroSoloDuplicados.value = true;
   cargarDuplicadosPendientes();
-  trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
+  const empresaId = empresas.currentEmpresaId;
+  const centroId = centrosTrabajo.currentCentroTrabajoId;
+  if (empresaId && centroId) {
+    trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId);
+  }
 }
 
 async function abrirFusionDesdeListado(trabajadorId: string) {
   executeIfCanManageTrabajadores(async () => {
+    const empresaId = empresas.currentEmpresaId;
+    const centroId = centrosTrabajo.currentCentroTrabajoId;
+    if (!empresaId || !centroId) return;
     try {
       const { data } = await TrabajadoresAPI.getDuplicadosDeTrabajador(
-        empresas.currentEmpresaId,
-        centrosTrabajo.currentCentroTrabajoId,
+        empresaId,
+        centroId,
         trabajadorId,
       );
       const candidatos = Array.isArray(data) ? data : [];
@@ -120,7 +130,11 @@ async function abrirFusionDesdeListado(trabajadorId: string) {
 function onFusionCompletada() {
   showFusionModal.value = false;
   cargarDuplicadosPendientes();
-  trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
+  const empresaId = empresas.currentEmpresaId;
+  const centroId = centrosTrabajo.currentCentroTrabajoId;
+  if (empresaId && centroId) {
+    trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId);
+  }
 }
 
 const dataTableRef = ref();

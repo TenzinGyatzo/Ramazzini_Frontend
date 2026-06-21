@@ -12,7 +12,7 @@ export function buildCatalogSearchInputAttrs(inputName: string) {
     autocomplete: 'one-time-code',
     autocorrect: 'off',
     autocapitalize: 'off',
-    spellcheck: 'false',
+    spellcheck: false,
     name: inputName,
     'data-lpignore': 'true',
     'data-form-type': 'other',

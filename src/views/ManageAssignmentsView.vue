@@ -111,17 +111,23 @@ const hasChangesForUser = (usuario: Usuario) => {
 };
 
 const cargarDatos = async () => {
+  const idProveedorSalud = user.value?.idProveedorSalud;
+  if (!idProveedorSalud) {
+    toast?.open({ message: 'No se pudo identificar el proveedor de salud', type: 'error' });
+    return;
+  }
+
   loading.value = true;
   try {
     // Cargar usuarios
     const resultadoUsuarios = await userStore.fetchUsersByProveedorId(
-      user.value.idProveedorSalud
+      idProveedorSalud
     );
     usuarios.value = resultadoUsuarios.data;
 
     // Cargar empresas
     const resultadoEmpresas = await AssignmentsAPI.getAvailableEmpresas(
-      user.value.idProveedorSalud
+      idProveedorSalud
     );
     empresas.value = resultadoEmpresas.data;
 

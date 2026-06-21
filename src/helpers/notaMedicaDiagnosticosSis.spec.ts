@@ -15,13 +15,16 @@ vi.mock('@/helpers/cexCatalogCodes', () => ({
   })),
 }));
 
-const validateCIE10SexAgeMock = vi.fn(async () => []);
+const validateCIE10SexAgeMock = vi.fn<
+  (params: import('./cie10').CIE10SexAgeValidationParams) => Promise<import('./cie10').CIE10SexAgeIssue[]>
+>(async () => []);
 
 vi.mock('./cie10', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./cie10')>();
   return {
     ...actual,
-    validateCIE10SexAge: (...args: unknown[]) => validateCIE10SexAgeMock(...args),
+    validateCIE10SexAge: (params: import('./cie10').CIE10SexAgeValidationParams) =>
+      validateCIE10SexAgeMock(params),
     findCIE10Rule: vi.fn(async (code: string) => {
       if (code === 'MT01') return { letra: 'MT' };
       if (code === 'CP01') return { letra: 'CP' };
@@ -210,7 +213,10 @@ describe('validateDiagnostico2Sis / validateDiagnostico3Sis', () => {
   it('valida sexo/edad una sola vez por campo en diag2', async () => {
     validateCIE10SexAgeMock.mockResolvedValueOnce([
       {
+        type: 'CIE10_SEX',
         field: 'codigoCIEDiagnostico2',
+        code: 'C530',
+        catalogKeyUsed: 'C530',
         messageToast: 'Sexo no permitido',
         messageInline: 'Sexo no permitido',
       },
@@ -250,7 +256,10 @@ describe('validateNotaMedicaDiagnosticos2Y3', () => {
 
     expect(validateCIE10SexAgeMock).toHaveBeenCalledTimes(3);
     const fields = validateCIE10SexAgeMock.mock.calls.map(
-      (call) => Object.keys(call[0] as Record<string, unknown>).filter((k) => k.startsWith('codigo')),
+      (call) =>
+        Object.keys(call[0] as import('./cie10').CIE10SexAgeValidationParams).filter((k) =>
+          k.startsWith('codigo'),
+        ),
     );
     expect(fields).toEqual([
       ['codigoCIE10Principal'],

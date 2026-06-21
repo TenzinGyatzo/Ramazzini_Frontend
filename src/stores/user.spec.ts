@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import type { AxiosResponse } from 'axios';
 
 vi.mock('@/api/AuthAPI', () => ({
   default: {
@@ -21,6 +22,16 @@ const mockUser = {
   email: 'medico@test.com',
   role: 'Médico',
 };
+
+function mockAxiosResponse<T>(data: T): AxiosResponse<T> {
+  return {
+    data,
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config: {} as AxiosResponse<T>['config'],
+  };
+}
 
 describe('useUserStore (H-11)', () => {
   beforeEach(() => {
@@ -45,7 +56,7 @@ describe('useUserStore (H-11)', () => {
       setItem,
       removeItem: vi.fn(),
     });
-    vi.mocked(AuthAPI.auth).mockResolvedValue({ data: mockUser });
+    vi.mocked(AuthAPI.auth).mockResolvedValue(mockAxiosResponse(mockUser));
 
     const store = useUserStore();
     await store.fetchUser();
@@ -56,7 +67,7 @@ describe('useUserStore (H-11)', () => {
   });
 
   it('fetchUser usa caché en memoria y solo revalida con force', async () => {
-    vi.mocked(AuthAPI.auth).mockResolvedValue({ data: mockUser });
+    vi.mocked(AuthAPI.auth).mockResolvedValue(mockAxiosResponse(mockUser));
 
     const store = useUserStore();
     await store.fetchUser();

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import type { AxiosResponse } from 'axios';
 
 vi.mock('@/api/ProveedorSaludAPI', () => ({
   default: {
@@ -16,6 +17,16 @@ const mockProveedor = {
   pais: 'MX',
 };
 
+function mockAxiosResponse<T>(data: T): AxiosResponse<T> {
+  return {
+    data,
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config: {} as AxiosResponse<T>['config'],
+  };
+}
+
 describe('useProveedorSaludStore (H-11)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -29,9 +40,9 @@ describe('useProveedorSaludStore (H-11)', () => {
       setItem,
       removeItem: vi.fn(),
     });
-    vi.mocked(ProveedorSaludAPI.getProveedorById).mockResolvedValue({
-      data: mockProveedor,
-    });
+    vi.mocked(ProveedorSaludAPI.getProveedorById).mockResolvedValue(
+      mockAxiosResponse(mockProveedor),
+    );
 
     const store = useProveedorSaludStore();
     await store.loadProveedorSalud('prov-1');

@@ -3,19 +3,28 @@ import rt from './axiosRTs';
 import pagos from './axiosPagos';
 import api from './axios';
 
+type InterceptorManagerWithHandlers = {
+  handlers: Array<{ fulfilled: unknown; rejected: unknown }>;
+};
+
+function getResponseInterceptorCount(client: typeof rt): number {
+  const manager = client.interceptors.response as unknown as InterceptorManagerWithHandlers;
+  return manager.handlers?.length ?? 0;
+}
+
 describe('clientes Axios dedicados (H-12)', () => {
   it('axiosRTs envía cookies de sesión (withCredentials)', () => {
     expect(rt.defaults.withCredentials).toBe(true);
-    expect(rt.interceptors.response.handlers.length).toBeGreaterThan(0);
+    expect(getResponseInterceptorCount(rt)).toBeGreaterThan(0);
   });
 
   it('axiosPagos envía cookies de sesión (withCredentials)', () => {
     expect(pagos.defaults.withCredentials).toBe(true);
-    expect(pagos.interceptors.response.handlers.length).toBeGreaterThan(0);
+    expect(getResponseInterceptorCount(pagos)).toBeGreaterThan(0);
   });
 
   it('axios principal comparte el mismo patrón de autenticación', () => {
     expect(api.defaults.withCredentials).toBe(true);
-    expect(api.interceptors.response.handlers.length).toBeGreaterThan(0);
+    expect(getResponseInterceptorCount(api)).toBeGreaterThan(0);
   });
 });

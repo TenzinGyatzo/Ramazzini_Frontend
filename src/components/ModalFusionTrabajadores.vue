@@ -220,6 +220,9 @@ function esConservado(id: string): boolean {
 
 
 async function loadPreview() {
+  const empresaId = empresas.currentEmpresaId;
+  const centroId = centrosTrabajo.currentCentroTrabajoId;
+  if (!empresaId || !centroId) return;
 
   const seq = ++previewSeq;
 
@@ -229,9 +232,9 @@ async function loadPreview() {
 
     const { data } = await TrabajadoresAPI.getFusionPreview(
 
-      empresas.currentEmpresaId,
+      empresaId,
 
-      centrosTrabajo.currentCentroTrabajoId,
+      centroId,
 
       destinoId.value,
 
@@ -309,15 +312,22 @@ async function confirmarFusion() {
 
 
 
+  const empresaId = empresas.currentEmpresaId;
+  const centroId = centrosTrabajo.currentCentroTrabajoId;
+  if (!empresaId || !centroId) {
+    toast?.open({ message: 'Empresa o centro de trabajo no disponible', type: 'error' });
+    return;
+  }
+
   submitting.value = true;
 
   try {
 
     await TrabajadoresAPI.fusionarTrabajadores(
 
-      empresas.currentEmpresaId,
+      empresaId,
 
-      centrosTrabajo.currentCentroTrabajoId,
+      centroId,
 
       {
 
@@ -337,9 +347,9 @@ async function confirmarFusion() {
 
     await trabajadores.fetchTrabajadoresConHistoria(
 
-      empresas.currentEmpresaId,
+      empresaId,
 
-      centrosTrabajo.currentCentroTrabajoId,
+      centroId,
 
     );
 

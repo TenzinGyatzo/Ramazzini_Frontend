@@ -252,6 +252,10 @@ const closeModal = () => {
             saving.value = true;
 
             const userId = userStore.user?._id;
+            if (!userId) {
+              console.error('Usuario no autenticado');
+              return;
+            }
             
             // Limpiar contenido vacío antes de guardar
             const conclusionesLimpio = cleanEmptyHtml(sanitizeRichHtml(formData.value.conclusiones));
