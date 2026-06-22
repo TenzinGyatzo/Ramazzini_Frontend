@@ -421,7 +421,7 @@ const appVersion = __APP_VERSION__;
   color: var(--sidebar-text);
   background: linear-gradient(180deg, var(--sidebar-bg-color) 0%, #276749 100%);
   position: fixed;
-  z-index: 5;
+  z-index: var(--z-sidebar);
   top: 0;
   left: 0;
   bottom: 0;
@@ -607,7 +607,7 @@ const appVersion = __APP_VERSION__;
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
-    z-index: 5;
+    z-index: var(--z-sidebar);
     width: 100% !important;
     max-width: 300px;
   }

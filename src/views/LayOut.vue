@@ -708,7 +708,12 @@ const isHomeRoute = computed(() => route.name === 'inicio');
 </script>
 
 <template>
-  <main class="flex flex-col items-center p-4 md:p-10 md:w-full overflow-x-auto min-h-screen">
+  <main
+    :class="[
+      'flex flex-col items-center p-4 md:p-10 md:w-full overflow-x-auto',
+      isHomeRoute ? 'home-layout min-h-dvh max-h-dvh overflow-y-auto' : 'min-h-screen',
+    ]"
+  >
     
     <!-- Logo de la empresa -->
     <div v-if="empresas.currentEmpresa?.logotipoEmpresa?.data && 
@@ -724,7 +729,7 @@ const isHomeRoute = computed(() => route.name === 'inicio');
       <RouterLink
         v-show="isHomeRoute"
         :to="{ name: 'inicio' }"
-        class="layout-nav-link logo-transition mt-14 block aspect-[1397/1403] w-1/2 transform cursor-pointer transition-transform duration-300 ease hover:scale-105 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 2xl:w-1/8"
+        class="home-logo-link layout-nav-link logo-transition mt-14 block aspect-[1397/1403] w-1/2 transform cursor-pointer transition-transform duration-300 ease hover:scale-105 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 2xl:w-1/8"
       >
         <img
           src="/img/logosRamazzini/RamazziniBrand.png"
@@ -755,27 +760,27 @@ const isHomeRoute = computed(() => route.name === 'inicio');
 
     <!-- Contenido principal: inicio solo anima entrada; desmontaje instantáneo al navegar -->
     <Transition appear name="slide-up-in-only" @leave="(_, done) => done()">
-      <div v-if="isHomeRoute" class="mx-auto flex w-full flex-col items-center">
-        <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl py-5 text-center text-slate-700 font-medium bg-gradient-to-r from-slate-700 to-gray-600 bg-clip-text text-transparent">
+      <div v-if="isHomeRoute" class="home-content mx-auto flex w-full flex-col items-center">
+        <h1 class="home-title text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl py-5 text-center text-slate-700 font-medium bg-gradient-to-r from-slate-700 to-gray-600 bg-clip-text text-transparent">
           Ramazzini
         </h1>
-        <p class="text-xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl xl:w-2/3 py-2 text-center text-gray-600">
+        <p class="home-subtitle text-xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl xl:w-2/3 py-2 text-center text-gray-600">
           La aplicación para la creación y gestión de informes de exámenes médicos laborales.
         </p>
-        <p class="text-gray-600 text-sm sm:text-lg my-4 text-center">Hola, {{ user.getUsername }}</p>
+        <p class="home-greeting text-gray-600 text-sm sm:text-lg my-4 text-center">Hola, {{ user.getUsername }}</p>
         
         <!-- Botones de acción -->
-        <div class="grid gap-4 w-full max-w-md mt-2">
+        <div class="home-actions grid gap-4 w-full max-w-md mt-2">
           <RouterLink
             :to="{ name: 'empresas' }"
-            class="layout-nav-link button-transition block w-full transform rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-3 text-center text-lg font-medium uppercase tracking-wide text-white shadow-lg transition-all duration-300 ease hover:scale-105 hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl sm:text-xl md:text-2xl">
+            class="home-cta-btn layout-nav-link button-transition block w-full transform rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-3 text-center text-lg font-medium uppercase tracking-wide text-white shadow-lg transition-all duration-300 ease hover:scale-105 hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl sm:text-xl md:text-2xl">
             VER MIS CLIENTES
           </RouterLink>
 
           <div class="flex justify-center">
             <a href="/login">
               <button
-                class="button-transition transform rounded-lg border-2 border-gray-300 px-4 py-1 text-sm uppercase text-gray-800 shadow-md transition-all duration-300 ease hover:scale-105 hover:bg-red-600 hover:text-gray-200 hover:shadow-lg sm:text-base md:text-lg"
+                class="home-logout-btn button-transition transform rounded-lg border-2 border-gray-300 px-4 py-1 text-sm uppercase text-gray-800 shadow-md transition-all duration-300 ease hover:scale-105 hover:bg-red-600 hover:text-gray-200 hover:shadow-lg sm:text-base md:text-lg"
                 @click="user.logout">
                 <i class="fa-solid fa-sign-out-alt mr-3"></i>
                 CERRAR SESIÓN
@@ -786,8 +791,7 @@ const isHomeRoute = computed(() => route.name === 'inicio');
       </div>
     </Transition>
 
-    <!-- RouterView después de inicio en el DOM para quedar encima si hubiera un frame de solapamiento -->
-    <div v-if="!isHomeRoute" class="relative z-10 w-full max-w-screen-2xl">
+    <div v-if="!isHomeRoute" class="w-full max-w-screen-2xl">
       <RouterView />
     </div>
 
@@ -1570,6 +1574,181 @@ a:focus-visible {
 
 .button-transition:hover {
   transform: scale(1.05) !important;
+}
+
+/* Responsividad por altura — pantalla de inicio (no altera breakpoints de ancho) */
+@media (max-height: 850px) {
+  .home-layout {
+    padding-top: 1.75rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .home-logo-link {
+    margin-top: 3rem;
+    max-height: 30vh;
+  }
+
+  .home-logo-link img {
+    max-height: 30vh;
+    width: auto;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  .home-title {
+    font-size: clamp(2.75rem, 6vh + 0.875rem, 7rem);
+    line-height: 1.05;
+    padding-block: 1rem;
+  }
+
+  .home-subtitle {
+    font-size: clamp(1.125rem, 2.25vh + 0.625rem, 2.75rem);
+    line-height: 1.1;
+    padding-block: 0.375rem;
+  }
+
+  .home-greeting {
+    margin-block: 0.875rem;
+    font-size: clamp(0.875rem, 1vh + 0.625rem, 1.0625rem);
+  }
+
+  .home-actions .home-cta-btn {
+    font-size: clamp(1rem, 1.25vh + 0.75rem, 1.375rem);
+    padding-block: 0.5em;
+    padding-inline: 1.25em;
+    border-radius: 0.75em;
+    letter-spacing: 0.05em;
+  }
+
+  .home-actions .home-logout-btn {
+    font-size: clamp(0.8125rem, 0.75vh + 0.625rem, 0.9375rem);
+    padding-block: 0.28em;
+    padding-inline: 0.9em;
+    border-radius: 0.5em;
+    border-width: 0.12em;
+  }
+
+  .home-actions .home-logout-btn i {
+    margin-right: 0.65em;
+    font-size: 1em;
+  }
+}
+
+@media (max-height: 700px) {
+  .home-layout {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .home-logo-link {
+    margin-top: 2.25rem;
+    max-height: 26vh;
+  }
+
+  .home-logo-link img {
+    max-height: 26vh;
+    width: auto;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  .home-title {
+    font-size: clamp(2.5rem, 5.5vh + 0.75rem, 6.5rem);
+    padding-block: 0.875rem;
+  }
+
+  .home-subtitle {
+    font-size: clamp(1.125rem, 2vh + 0.625rem, 2.5rem);
+    line-height: 1.1;
+    padding-block: 0.3125rem;
+  }
+
+  .home-greeting {
+    margin-block: 0.75rem;
+  }
+
+  .home-actions {
+    gap: 0.875rem;
+    margin-top: 0.375rem;
+  }
+
+  .home-actions .home-cta-btn {
+    font-size: 1.125rem;
+    padding-block: 0.5em;
+    padding-inline: 1.25em;
+    border-radius: 0.75em;
+    letter-spacing: 0.05em;
+  }
+
+  .home-actions .home-logout-btn {
+    font-size: 0.9375rem;
+    padding-block: 0.28em;
+    padding-inline: 0.9em;
+    border-radius: 0.5em;
+    border-width: 0.12em;
+  }
+
+  .home-actions .home-logout-btn i {
+    margin-right: 0.65em;
+    font-size: 1em;
+  }
+}
+
+@media (max-height: 580px) {
+  .home-layout {
+    padding-top: 0.875rem;
+    padding-bottom: 0.875rem;
+  }
+
+  .home-logo-link {
+    margin-top: 1.25rem;
+    max-height: 20vh;
+  }
+
+  .home-logo-link img {
+    max-height: 20vh;
+  }
+
+  .home-title {
+    font-size: clamp(2rem, 4.5vh + 0.5rem, 4rem);
+    padding-block: 0.5rem;
+  }
+
+  .home-subtitle {
+    font-size: clamp(1rem, 1.5vh + 0.5rem, 1.375rem);
+    line-height: 1.1;
+    padding-block: 0.1875rem;
+  }
+
+  .home-greeting {
+    margin-block: 0.5rem;
+    font-size: 0.9375rem;
+  }
+
+  .home-actions {
+    gap: 0.625rem;
+  }
+
+  .home-actions .home-cta-btn {
+    font-size: 0.9375rem;
+    padding-block: 0.48em;
+    padding-inline: 1.2em;
+    border-radius: 0.7em;
+    letter-spacing: 0.04em;
+  }
+
+  .home-actions .home-logout-btn {
+    font-size: 0.8125rem;
+    padding-block: 0.26em;
+    padding-inline: 0.85em;
+    border-radius: 0.45em;
+    border-width: 0.11em;
+  }
+
+  .home-actions .home-logout-btn i {
+    margin-right: 0.6em;
+    font-size: 1em;
+  }
 }
 
 </style>

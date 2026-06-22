@@ -7,6 +7,13 @@
   --sidebar-width: 80px;
   --content-margin: 80px;
   --sidebar-difference: 0px; /* Diferencia adicional cuando está expandido */
+  --z-sidebar: 30;
+  --z-modal: 50;
+}
+
+/* Modales full-screen por encima del sidebar */
+.modal.fixed {
+  z-index: var(--z-modal);
 }
 
 /* Clases utilitarias para anchos dinámicos basados en el estado del sidebar */
