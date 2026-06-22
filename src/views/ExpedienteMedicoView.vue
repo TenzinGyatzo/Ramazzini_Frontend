@@ -24,6 +24,7 @@ import ModalAnularDocumento from '@/components/modals/ModalAnularDocumento.vue';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
 import DailyConsentModal from '@/components/DailyConsentModal.vue';
 import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
+import ModalDeclaracionVeracidad from '@/components/ModalDeclaracionVeracidad.vue';
 import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
@@ -64,6 +65,7 @@ const {
 
 const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);
+const showDeclaracionVeracidadModal = ref(false);
 const showSubscriptionModal = ref(false);
 const showFinalizeModal = ref(false);
 const showAnularModal = ref(false);
@@ -117,6 +119,10 @@ const toggleDocumentoExternoModal = () => {
 
     showDocumentoExternoModal.value = !showDocumentoExternoModal.value;
   }, 'gestionar documentos externos');
+};
+
+const toggleDeclaracionVeracidadModal = () => {
+  showDeclaracionVeracidadModal.value = !showDeclaracionVeracidadModal.value;
 };
 
 const toggleDocumentoExternoUpdateModal = () => {
@@ -891,6 +897,14 @@ const añoMasReciente = computed(() => {
       </Transition>
 
       <Transition appear name="fade">
+        <ModalDeclaracionVeracidad
+          v-if="showDeclaracionVeracidadModal"
+          :trabajador="trabajadores.currentTrabajador ?? null"
+          @closeModal="toggleDeclaracionVeracidadModal"
+        />
+      </Transition>
+
+      <Transition appear name="fade">
         <ModalUpdateDocumentoExterno v-if="showDocumentoExternoUpdateModal"
           @closeModalUpdate="toggleDocumentoExternoUpdateModal" 
           @updateData="() => fetchData(true)"
@@ -1233,7 +1247,7 @@ const añoMasReciente = computed(() => {
 
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row justify-center items-center gap-4 mt-6">
+            <div class="flex flex-wrap justify-center items-center gap-4 mt-6">
               <!-- Documento Externo -->
               <div class="flex justify-center">
                 <SliderButton 
@@ -1244,6 +1258,20 @@ const añoMasReciente = computed(() => {
                   <span class="sm:hidden">Doc. Ext.</span>
                   <span class="hidden sm:inline">Documento Externo</span>
                 </SliderButton>
+              </div>
+
+              <!-- Declaración Veracidad -->
+              <div class="flex justify-center">
+                <button
+                  type="button"
+                  @click="toggleDeclaracionVeracidadModal"
+                  class="relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-emerald-600 bg-white overflow-hidden transition-all duration-200 hover:bg-emerald-50 hover:shadow-lg"
+                >
+                  <i class="fas fa-file-signature text-emerald-600 text-lg ml-4"></i>
+                  <span class="flex-1 text-center text-emerald-600 text-lg ml-3">
+                    <span class="hidden sm:inline">Decl. de</span> Veracidad
+                  </span>
+                </button>
               </div>
   
               <!-- Botón para Cuestionarios de Vigilancia Médica -->
@@ -1259,7 +1287,7 @@ const añoMasReciente = computed(() => {
               </div>
   
               <!-- Botón para Registrar Resultados Clínicos -->
-              <div class="sm:col-span-2 lg:col-span-1 flex justify-center">
+              <div class="flex justify-center">
                 <button
                   @click="showResultadosClinicosPanel = true"
                   class="relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-blue-600 bg-white overflow-hidden transition-all duration-200 hover:bg-blue-50 hover:shadow-lg"
