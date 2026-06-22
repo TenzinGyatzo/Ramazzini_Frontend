@@ -1,6 +1,7 @@
 import { ref, onMounted, computed } from "vue";
 import { defineStore } from "pinia";
 import ProveedorSaludAPI from "@/api/ProveedorSaludAPI";
+import { isMexicoProvider } from "@/helpers/proveedorPais";
 
 interface AddOn {
     tipo: string; // 'usuario_adicional', 'empresas_extra', u otros
@@ -287,7 +288,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         }
     }
 
-    const isMX = computed(() => proveedorSalud.value?.pais === 'MX');
+    const isMX = computed(() => isMexicoProvider(proveedorSalud.value?.pais));
 
     const isProveedorLoaded = computed(
         () => !loading.value && proveedorSalud.value !== null,

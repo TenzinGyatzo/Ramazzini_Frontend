@@ -22,6 +22,7 @@ import {
   getWorkerImmutablePayloadFields,
   isPaisNacimientoReadOnlyForWorker,
 } from '@/helpers/workerPaisNacimientoImmutability';
+import { normalizeProveedorPaisCode } from '@/helpers/proveedorPais';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
 
 const posibleDuplicadoRegistro = ref(null);
@@ -67,7 +68,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded } = useCurrentUser();
-const { geoFieldsRequired, workerCurpRequired, workerIdentificationImmutable, isSIRES, isMxProveedor, workerCurpValidationRules } = useNom024Fields();
+const { geoFieldsRequired, workerCurpRequired, workerIdentificationImmutable, isSIRES, isMxProveedor, mxWorkerCurpValidationRules } = useNom024Fields();
 
 const isEditingTrabajador = computed(() => !!trabajadores.currentTrabajador?._id);
 
@@ -226,7 +227,9 @@ const getEmpresaIniciales = (e) => {
   return parts.map((p) => p.charAt(0).toUpperCase()).join('');
 };
 
-const paisProveedor = computed(() => proveedorSaludStore.proveedorSalud?.pais || '');
+const paisProveedor = computed(() =>
+  normalizeProveedorPaisCode(proveedorSaludStore.proveedorSalud?.pais),
+);
 
 const identificadorPersonalLabel = computed(() => {
   switch (paisProveedor.value) {
@@ -257,8 +260,10 @@ const identificadorPersonalPlaceholder = computed(() => {
 const curpRenapoValidationMessage =
   'CURP debe tener 18 caracteres en formato RENAPO (ej: ROAJ850102HDFLRN08) o CURP genérica (XXXX999999XXXXXX99).';
 
-// Validación condicional: RENAPO solo para MX; sin validación para identificadores LATAM
-const curpValidation = workerCurpValidationRules;
+const mxCurpValidationMessages = {
+  required: 'Este campo es obligatorio',
+  curpRenapoValidation: curpRenapoValidationMessage,
+};
 
 // Validación condicional para campos NOM-024: requeridos solo para SIRES_NOM024
 const nom024FieldValidation = computed(() => {
@@ -476,8 +481,15 @@ const handleSubmit = async (data) => {
     updatedBy: currentUserId
   };
 
-  const curpCapturada = (data.curp || curpValue.value || '').trim();
-  if (curpCapturada) {
+  const curpCapturada = String(curpValue.value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const isEditingTrabajador = !!trabajadores.currentTrabajador?._id;
+
+  if (!isMxProveedor.value && isEditingTrabajador && !isCurpFieldReadOnly.value) {
+    // curpValue (v-model) es la fuente de verdad; data.curp de FormKit puede conservar valor previo
+    trabajadorData.curp = curpCapturada || '';
+  } else if (curpCapturada) {
     trabajadorData.curp = curpCapturada;
   }
 
@@ -787,23 +799,39 @@ const cancelarTransferencia = () => {
             @submit="handleSubmit" @submit-invalid="onFormSubmitInvalid">
             <div class="lg:grid gap-3 lg:grid-cols-2">
               <div>
+                <!-- México: validación RENAPO según régimen -->
                 <FormKit
+                  v-if="isMxProveedor"
                   type="text"
                   :label="identificadorPersonalLabel"
                   name="curp"
                   :placeholder="identificadorPersonalPlaceholder"
-                  :validation="curpValidation"
-                  :validation-messages="{ 
-                    required: 'Este campo es obligatorio',
-                    curpRenapoValidation: curpRenapoValidationMessage 
-                  }"
+                  :validation="mxWorkerCurpValidationRules"
+                  :validation-messages="mxCurpValidationMessages"
                   maxlength="30"
                   :disabled="isCurpFieldReadOnly"
                   v-model="curpValue"
                 >
                   <template #label>
                     <span class="font-medium text-lg text-gray-700">
-                      {{ identificadorPersonalLabel }}<span v-if="isMxProveedor && workerCurpRequired" class="text-red-500">*</span>
+                      {{ identificadorPersonalLabel }}<span v-if="workerCurpRequired" class="text-red-500">*</span>
+                    </span>
+                  </template>
+                </FormKit>
+                <!-- LATAM: identificador local (DPI, cédula, etc.) sin validación de formato -->
+                <FormKit
+                  v-else
+                  type="text"
+                  :label="identificadorPersonalLabel"
+                  name="curp"
+                  :placeholder="identificadorPersonalPlaceholder"
+                  maxlength="30"
+                  :disabled="isCurpFieldReadOnly"
+                  v-model="curpValue"
+                >
+                  <template #label>
+                    <span class="font-medium text-lg text-gray-700">
+                      {{ identificadorPersonalLabel }}
                     </span>
                   </template>
                 </FormKit>

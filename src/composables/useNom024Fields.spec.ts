@@ -69,6 +69,6 @@ describe('useNom024Fields', () => {
     const { workerCurpValidationRules, showWorkerCurpField } = useNom024Fields();
 
     expect(showWorkerCurpField.value).toBe(false);
-    expect(workerCurpValidationRules.value).toBe('');
+    expect(workerCurpValidationRules.value).toBeNull();
   });
 });

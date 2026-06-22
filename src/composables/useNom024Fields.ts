@@ -1,5 +1,7 @@
 import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { isMexicoProvider } from '@/helpers/proveedorPais';
 
 /**
  * Composable para acceder a flags de policy relacionados con campos NOM-024
@@ -7,6 +9,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
  */
 export function useNom024Fields() {
   const proveedorSaludStore = useProveedorSaludStore();
+  const { proveedorSalud } = storeToRefs(proveedorSaludStore);
 
   const policy = computed(() => proveedorSaludStore.regulatoryPolicy);
 
@@ -30,25 +33,29 @@ export function useNom024Fields() {
     policy.value?.features?.workerIdentificationImmutable ?? false
   );
 
-  const isMxProveedor = computed(() => proveedorSaludStore.isMX);
+  const isMxProveedor = computed(() =>
+    isMexicoProvider(proveedorSalud.value?.pais),
+  );
 
   /** Campo con etiqueta CURP (solo proveedores en México) */
   const showWorkerCurpField = computed(() => isMxProveedor.value);
 
-  /**
-   * Reglas FormKit para identificador personal del trabajador:
-   * - No-MX: sin validación (opcional)
-   * - MX + SIRES: CURP requerida (RENAPO)
-   * - MX + SIN_REGIMEN: CURP opcional (RENAPO si se captura)
-   */
-  const workerCurpValidationRules = computed(() => {
-    if (!isMxProveedor.value) {
-      return '';
-    }
+  const mxWorkerCurpValidationRules = computed((): string => {
     if (workerCurpRequired.value) {
       return 'required|curpRenapoValidation';
     }
     return 'optional|curpRenapoValidation';
+  });
+
+  /**
+   * Reglas FormKit para identificador personal del trabajador.
+   * Fuera de MX retorna null para no enlazar el prop validation en FormKit.
+   */
+  const workerCurpValidationRules = computed((): string | null => {
+    if (!isMxProveedor.value) {
+      return null;
+    }
+    return mxWorkerCurpValidationRules.value;
   });
 
   return {
@@ -59,6 +66,7 @@ export function useNom024Fields() {
     workerIdentificationImmutable,
     isMxProveedor,
     showWorkerCurpField,
+    mxWorkerCurpValidationRules,
     workerCurpValidationRules,
     isSIRES: computed(() => policy.value?.regime === 'SIRES_NOM024'),
     isSinRegimen: computed(() => policy.value?.regime === 'SIN_REGIMEN'),
