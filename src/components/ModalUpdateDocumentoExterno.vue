@@ -7,6 +7,9 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { validarFechaDocumentoNoFutura } from '@/helpers/validacionCampos';
+import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
+import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 
 const toast = inject('toast');
 
@@ -45,6 +48,35 @@ const resultadoVinculado = ref(null);
 const showSelectorResultados = ref(false);
 const resultadoSeleccionado = ref('');
 const pendingDesvincularDocumentoModal = ref(false);
+
+const buildFormState = () => ({
+  nombreDocumento: nombreDocumento.value,
+  fechaDocumento: fechaDocumento.value,
+  notasDocumento: notasDocumento.value,
+  pendingDesvincular: pendingDesvincularDocumentoModal.value,
+});
+
+const { isDirty } = useDirtySnapshot(buildFormState, {
+  resetTrigger: () => Boolean(idDocumento.value),
+});
+
+const closeModal = () => {
+  pendingDesvincularDocumentoModal.value = false;
+  emit('closeModalUpdate');
+};
+
+const {
+  showDiscardConfirm,
+  dismissPulse,
+  requestDismiss,
+  forceClose,
+  continueEditing,
+  confirmDiscard,
+} = useModalDirtyGuard({
+  isDirty,
+  onClose: closeModal,
+  enabled: () => !showSelectorResultados.value,
+});
 
 const documentoTieneVinculo = computed(() => {
   return Boolean(
@@ -190,7 +222,7 @@ const handleSubmit = async () => {
   });
 
   emit('updateData');
-  closeModal(); 
+  forceClose(); 
 };
 
 // Función para iniciar el proceso de vinculación
@@ -272,29 +304,30 @@ const abrirResultadoParaEdicion = () => {
   if (!resultadoVinculado.value) return;
   resultadosClinicosStore.setCurrent(resultadoVinculado.value);
   emit('abrirResultados');
-  closeModal();
+  forceClose();
 };
 
-// Limpiar la vista previa cuando se cierre el modal
-const closeModal = () => {
-  pendingDesvincularDocumentoModal.value = false;
-  emit('closeModalUpdate');
-};
 </script>
 
 <template>
   <div class="modal fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
-    <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
+    <div
+      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      :class="{ 'modal-backdrop-pulse': dismissPulse }"
+      @click="requestDismiss"
+    >
     </div>
     <Transition appear name="fade">
       <!-- Modal centrado con desplazamiento interno -->
       <div
-        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto">
+        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+        :class="{ 'modal-dismiss-pulse': dismissPulse }"
+      >
         <!-- Botón para cerrar el modal -->
         <div
           class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
-          @click="closeModal">
+          @click="requestDismiss">
           &times;
         </div>
 
@@ -493,12 +526,18 @@ const closeModal = () => {
 
           <button
             class="text-xl mt-2 w-full rounded-lg bg-white font-semibold text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg flex-1"
-            @click="closeModal">
+            @click="requestDismiss">
             Cerrar
           </button>
         </FormKit>
       </div>
     </Transition>
+
+    <ModalDiscardConfirmDialog
+      :open="showDiscardConfirm"
+      @continue-editing="continueEditing"
+      @discard="confirmDiscard"
+    />
   </div>
 </template>
 

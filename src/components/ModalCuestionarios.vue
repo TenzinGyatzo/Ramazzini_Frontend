@@ -8,6 +8,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
 import { useNavigateWithDailyConsent } from '@/composables/useNavigateWithDailyConsent';
+import { useEscapeToClose } from '@/composables/useEscapeToClose';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
 import DailyConsentModal from '@/components/DailyConsentModal.vue';
@@ -64,6 +65,16 @@ const QUESTIONNAIRE_TIPO_MAP = {
 const closeModal = () => {
   emit('closeModal');
 };
+
+const handleBackdropClose = () => {
+  if (showProfessionalDataModal.value || showConsentModal.value) return;
+  closeModal();
+};
+
+useEscapeToClose(
+  closeModal,
+  () => !showProfessionalDataModal.value && !showConsentModal.value,
+);
 
 const questionnaireToDocumentType = {
   'control-prenatal': 'controlPrenatal',
@@ -310,7 +321,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
 
 <template>
   <div class="modal modal-cuestionarios fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
-    <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal" />
+    <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="handleBackdropClose" />
     <Transition appear name="fade">
       <div
         class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto">

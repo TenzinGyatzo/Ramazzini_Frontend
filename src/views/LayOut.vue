@@ -69,6 +69,27 @@ const darkModeText = computed(() => {
   return isDarkMode.value ? 'Modo Claro' : 'Modo Oscuro';
 });
 
+const debugViewportEnabled =
+  import.meta.env.VITE_DEBUG_VIEWPORT === "true";
+
+const viewportWidth = ref(0);
+const viewportHeight = ref(0);
+
+const viewportBreakpoint = computed(() => {
+  const w = viewportWidth.value;
+  if (w >= 1536) return { label: "2xl", color: "bg-purple-500" };
+  if (w >= 1280) return { label: "xl", color: "bg-blue-500" };
+  if (w >= 1024) return { label: "lg", color: "bg-green-500" };
+  if (w >= 768) return { label: "md", color: "bg-yellow-500" };
+  if (w >= 640) return { label: "sm", color: "bg-orange-500" };
+  return { label: "xs", color: "bg-red-500" };
+});
+
+function updateViewportSize() {
+  viewportWidth.value = window.innerWidth;
+  viewportHeight.value = window.innerHeight;
+}
+
 const isVisible = ref(false);
 const isMenuOpen = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
@@ -108,6 +129,11 @@ const closeNotificationEmpresas = () => {
 
 onMounted(() => {
   syncThemeFromEnvironment();
+
+  if (debugViewportEnabled) {
+    updateViewportSize();
+    window.addEventListener("resize", updateViewportSize);
+  }
 
   LOGO_ASSETS.forEach((src) => {
     const img = new Image();
@@ -155,6 +181,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
+  if (debugViewportEnabled) {
+    window.removeEventListener("resize", updateViewportSize);
+  }
 });
 
 const toggleMenu = () => {
@@ -1208,26 +1237,23 @@ const isHomeRoute = computed(() => route.name === 'inicio');
 
   </main>
 
-  <!-- Herramienta de Debug - Media Query -->
-  <!-- <div class="fixed top-4 right-4 z-50 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm font-mono">
+  <!-- Herramienta de Debug - Viewport (VITE_DEBUG_VIEWPORT=true en .env.local) -->
+  <div
+    v-if="debugViewportEnabled"
+    class="fixed top-4 right-4 z-50 bg-black/75 text-white px-3 py-2 rounded-lg text-sm font-mono pointer-events-none select-none"
+  >
     <div class="flex items-center gap-2">
-      <span class="w-2 h-2 bg-red-500 rounded-full sm:hidden"></span>
-      <span class="w-2 h-2 bg-orange-500 rounded-full hidden sm:block md:hidden"></span>
-      <span class="w-2 h-2 bg-yellow-500 rounded-full hidden md:block lg:hidden"></span>
-      <span class="w-2 h-2 bg-green-500 rounded-full hidden lg:block xl:hidden"></span>
-      <span class="w-2 h-2 bg-blue-500 rounded-full hidden xl:block 2xl:hidden"></span>
-      <span class="w-2 h-2 bg-purple-500 rounded-full hidden 2xl:block"></span>
-      <span class="text-xs">
-        <span class="sm:hidden">xs</span>
-        <span class="hidden sm:block md:hidden">sm</span>
-        <span class="hidden md:block lg:hidden">md</span>
-        <span class="hidden lg:block xl:hidden">lg</span>
-        <span class="hidden xl:block 2xl:hidden">xl</span>
-        <span class="hidden 2xl:block">2xl</span>
+      <span
+        class="w-2 h-2 rounded-full shrink-0"
+        :class="viewportBreakpoint.color"
+      ></span>
+      <span class="text-xs tabular-nums">
+        {{ viewportBreakpoint.label }}
+        ·
+        {{ viewportWidth }}×{{ viewportHeight }}
       </span>
     </div>
   </div>
-  -->
 
   <Teleport to="body">
     <ModalEliminacion

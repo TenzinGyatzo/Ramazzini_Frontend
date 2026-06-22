@@ -6,6 +6,9 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 import MexicoGeoSelect from '@/components/selectors/MexicoGeoSelect.vue';
 import CPAutocomplete from '@/components/selectors/CPAutocomplete.vue';
+import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
+import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 
 const toast = inject('toast');
 
@@ -30,14 +33,69 @@ const formulario = ref({
   municipio: ''
 });
 
+const formData = ref({
+  nombreCentro: '',
+  direccionCentro: '',
+  codigoPostal: '',
+  estado: '',
+  municipio: '',
+  idEmpresa: '',
+});
+
 // Sincronizar valores iniciales cuando se edita un centro
 watchEffect(() => {
   if (centrosTrabajo.currentCentroTrabajo) {
     formulario.value.codigoPostal = centrosTrabajo.currentCentroTrabajo.codigoPostal || '';
-    // Mostramos y guardamos como nombre propio
     formulario.value.estado = toTitleCase(centrosTrabajo.currentCentroTrabajo.estado || '');
     formulario.value.municipio = toTitleCase(centrosTrabajo.currentCentroTrabajo.municipio || '');
+
+    formData.value = {
+      nombreCentro: centrosTrabajo.currentCentroTrabajo.nombreCentro || '',
+      direccionCentro: centrosTrabajo.currentCentroTrabajo.direccionCentro || '',
+      codigoPostal: centrosTrabajo.currentCentroTrabajo.codigoPostal || '',
+      estado: centrosTrabajo.currentCentroTrabajo.estado || '',
+      municipio: centrosTrabajo.currentCentroTrabajo.municipio || '',
+      idEmpresa: empresas.currentEmpresaId || '',
+    };
+  } else {
+    formData.value.idEmpresa = empresas.currentEmpresaId || '';
   }
+});
+
+const buildFormState = () => {
+  if (isMX.value) {
+    return {
+      nombreCentro: formData.value.nombreCentro,
+      direccionCentro: formData.value.direccionCentro,
+      codigoPostal: formulario.value.codigoPostal,
+      estado: formulario.value.estado,
+      municipio: formulario.value.municipio,
+      idEmpresa: formData.value.idEmpresa,
+    };
+  }
+
+  return { ...formData.value };
+};
+
+const { isDirty } = useDirtySnapshot(buildFormState, {
+  resetTrigger: () => !centrosTrabajo.loadingModal,
+});
+
+const closeModal = () => {
+  emit('closeModal');
+};
+
+const {
+  showDiscardConfirm,
+  dismissPulse,
+  requestDismiss,
+  forceClose,
+  continueEditing,
+  confirmDiscard,
+} = useModalDirtyGuard({
+  isDirty,
+  onClose: closeModal,
+  enabled: () => !centrosTrabajo.loadingModal,
 });
 
 const handleCPSelect = (data) => {
@@ -106,7 +164,7 @@ const handleSubmit = async (data) => {
       await centrosTrabajo.createCentroTrabajo(empresas.currentEmpresaId, centroTrabajoData);
       toast.open({ message: 'Centro de trabajo creado con éxito' });
     }
-    emit('closeModal');
+    forceClose();
     centrosTrabajo.fetchCentrosTrabajo(empresas.currentEmpresaId);
   } catch (error) {
     console.error('Error al crear o actualizar el centro:', error);
@@ -114,26 +172,28 @@ const handleSubmit = async (data) => {
   }
 };
 
-// Limpiar la vista previa cuando se cierre el modal
-const closeModal = () => {
-  emit('closeModal');
-};
 </script>
 
 
 <template>
   <div class="modal modal-centros fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
-    <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
+    <div
+      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      :class="{ 'modal-backdrop-pulse': dismissPulse }"
+      @click="requestDismiss"
+    >
     </div>
     <Transition appear name="fade">
       <!-- Modal centrado con desplazamiento interno -->
       <div
-        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto">
+        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+        :class="{ 'modal-dismiss-pulse': dismissPulse }"
+      >
         <!-- Botón para cerrar el modal -->
         <div
           class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
-          @click="closeModal">
+          @click="requestDismiss">
           &times;
         </div>
 
@@ -142,18 +202,18 @@ const closeModal = () => {
         </div>
         <!-- Contenido del modal -->
         <div v-else>
-          <h1 class="text-3xl">{{ centrosTrabajo.currentCentroTrabajo._id ? 'Editar Entidad' : 'Registrar Entidad' }}</h1>
+          <h1 class="text-3xl">{{ centrosTrabajo.currentCentroTrabajo._id ? 'Editar Centro' : 'Registrar Centro' }}</h1>
           <p class="text-xs text-gray-500 mt-1 mb-3">Los campos con <span class="text-red-500 font-medium">*</span> son obligatorios</p>
           <hr class="mt-2 mb-3">
 
           <FormKit type="form" :actions="false" incomplete-message="Por favor complete todos los campos"
-            @submit="handleSubmit">
+            @submit="handleSubmit" @input="formData = $event">
             <FormKit type="text" name="nombreCentro"
               placeholder="Nombre del centro, área, departamento o proyecto" validation="required"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
               :value="centrosTrabajo.currentCentroTrabajo?.nombreCentro || ''">
               <template #label>
-                <span class="font-medium text-lg text-gray-700">Nombre Entidad<span class="text-red-500">*</span></span>
+                <span class="font-medium text-lg text-gray-700">Nombre Centro<span class="text-red-500">*</span></span>
               </template>
             </FormKit>
             <FormKit type="text" label="Dirección" name="direccionCentro" placeholder="Calle, número y colonia"
@@ -201,11 +261,17 @@ const closeModal = () => {
 
         <button
           class="text-xl mt-2 w-full rounded-lg bg-white font-semibold text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg flex-1"
-          @click="closeModal">
+          @click="requestDismiss">
           Cerrar
         </button>
       </div>
     </Transition>
+
+    <ModalDiscardConfirmDialog
+      :open="showDiscardConfirm"
+      @continue-editing="continueEditing"
+      @discard="confirmDiscard"
+    />
   </div>
 </template>
 

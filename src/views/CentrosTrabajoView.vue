@@ -288,7 +288,7 @@ watch(
                       :title="canManageCentrosTrabajo ? 'Crear nuevo centro de trabajo' : 'No tienes permisos para crear centros de trabajo'"
                     >
                       <i class="fas fa-plus text-sm"></i>
-                      <span>Nueva Entidad</span>
+                      <span>Nuevo Centro</span>
                     </button>
                   </div>
                 </div>

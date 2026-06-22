@@ -1,0 +1,18 @@
+@keyframes modalDismissPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(0.985);
+  }
+}
+
+.modal-dismiss-pulse {
+  animation: modalDismissPulse 80ms ease-out;
+}
+
+.modal-backdrop-pulse {
+  transition: opacity 80ms ease-out;
+  opacity: 0.6 !important;
+}

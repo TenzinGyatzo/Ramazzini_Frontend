@@ -4,6 +4,9 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 import { useCurrentUser } from '@/composables/useCurrentUser';
+import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
+import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 
 const toast = inject('toast');
 
@@ -17,6 +20,54 @@ const emit = defineEmits(['closeModal', 'openSubscriptionModal']);
 const logotipoPreview = ref(null);  // Para la vista previa de la imagen
 const logotipoArchivo = ref(null);  // Para el archivo cargado
 const isDragOver = ref(false);  // Para el estado de drag and drop
+const formData = ref({
+  nombreComercial: '',
+  razonSocial: '',
+  RFC: '',
+  giroDeEmpresa: '',
+});
+
+watch(
+  () => empresas.currentEmpresa,
+  (empresa) => {
+    formData.value = {
+      nombreComercial: empresa?.nombreComercial || '',
+      razonSocial: empresa?.razonSocial || '',
+      RFC: empresa?.RFC || '',
+      giroDeEmpresa: empresa?.giroDeEmpresa || '',
+    };
+  },
+  { immediate: true },
+);
+
+const buildFormState = () => ({
+  ...formData.value,
+  logotipoArchivo: logotipoArchivo.value?.name ?? null,
+});
+
+const { isDirty } = useDirtySnapshot(buildFormState, {
+  resetTrigger: () => !empresas.loadingModal,
+});
+
+const closeModal = () => {
+  logotipoPreview.value = null;
+  logotipoArchivo.value = null;
+  isDragOver.value = false;
+  emit('closeModal');
+};
+
+const {
+  showDiscardConfirm,
+  dismissPulse,
+  requestDismiss,
+  forceClose,
+  continueEditing,
+  confirmDiscard,
+} = useModalDirtyGuard({
+  isDirty,
+  onClose: closeModal,
+  enabled: () => !empresas.loadingModal,
+});
 
 watch(
     () => userStore.user,
@@ -151,7 +202,7 @@ const handleSubmit = async (data) => {
       await empresas.createEmpresa(formData);
       toast.open({ message: 'Empresa creada exitosamente' });	
     }
-    emit('closeModal');
+    forceClose();
     empresas.fetchEmpresas(proveedorSaludStore.proveedorSalud._id);
   } catch (error) {
     console.log('Error al crear o actualizar la empresa:', error);
@@ -159,42 +210,41 @@ const handleSubmit = async (data) => {
   }
 };
 
-// Limpiar la vista previa cuando se cierre el modal
-const closeModal = () => {
-  logotipoPreview.value = null;  // Limpiar la vista previa
-  logotipoArchivo.value = null;  // Limpiar el archivo cargado
-  isDragOver.value = false;  // Limpiar el estado de drag
-  emit('closeModal');
-};
 </script>
 
 <template>
-  <div class="modal modal-empresas fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
+  <div class="modal modal-empresas fixed top-0 left-0 z-10 p-3 sm:p-6 md:p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
-    <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
+    <div
+      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      :class="{ 'modal-backdrop-pulse': dismissPulse }"
+      @click="requestDismiss"
+    >
     </div>
     <Transition appear name="fade">
       <!-- Modal centrado con desplazamiento interno -->
       <div
-        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto">
+        class="modal-inner relative bg-white text-gray-900 w-full sm:w-[92%] md:w-3/5 lg:w-1/2 xl:w-2/5 2xl:max-w-2xl 2xl:w-full p-5 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+        :class="{ 'modal-dismiss-pulse': dismissPulse }"
+      >
         <!-- Botón para cerrar el modal -->
         <div
-          class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
-          @click="closeModal">
+          class="modal-close absolute h-10 w-10 sm:h-12 sm:w-12 flex justify-center items-center top-0 right-0 text-3xl sm:text-4xl text-gray-400 hover:text-gray-500 cursor-pointer"
+          @click="requestDismiss">
           &times;
         </div>
 
         <div v-if="empresas.loadingModal">
-          <h1 class="text-3xl text-center">Cargando empresa...</h1>
+          <h1 class="text-xl sm:text-2xl md:text-3xl text-center">Cargando empresa...</h1>
         </div>
         <!-- Contenido del modal -->
         <div v-else>
-          <h1 class="text-3xl">{{ empresas.currentEmpresa._id ? 'Editar Empresa' : 'Registrar Empresa' }}</h1>
+          <h1 class="text-xl sm:text-2xl md:text-3xl pr-10">{{ empresas.currentEmpresa._id ? 'Editar Empresa' : 'Registrar Empresa' }}</h1>
           <p class="text-xs text-gray-500 mt-1 mb-3">Los campos con <span class="text-red-500 font-medium">*</span> son obligatorios</p>
           <hr class="mt-2 mb-3">
 
           <FormKit type="form" :actions="false" incomplete-message="Por favor complete todos los campos"
-            @submit="handleSubmit">
+            @submit="handleSubmit" @input="formData = $event">
             <FormKit type="text" name="nombreComercial"
               placeholder="Nombre comercial de la empresa" validation="required"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
@@ -203,11 +253,13 @@ const closeModal = () => {
                 <span class="font-medium text-lg text-gray-700">Nombre Comercial<span class="text-red-500">*</span></span>
               </template>
             </FormKit>
-            <FormKit type="text" label="Razón Social" name="razonSocial" placeholder="Razón social de la empresa"
-              :value="empresas.currentEmpresa?.razonSocial || ''" />
-            <FormKit type="text" label="RFC/Registro Patronal" name="RFC" placeholder="RFC o Registro Patronal (opcional)" validation="rfcValidation" :validation-messages="{
-                  rfcValidation: 'Debe tener entre 6 y 28 caracteres alfanuméricos con separadores (RFC, Registro Patronal, etc.)',
-                }" :value="empresas.currentEmpresa?.RFC || ''" />
+            <div class="grid grid-cols-1 md:grid-cols-2 md:gap-x-4">
+              <FormKit type="text" label="Razón Social" name="razonSocial" placeholder="Razón social de la empresa"
+                :value="empresas.currentEmpresa?.razonSocial || ''" />
+              <FormKit type="text" label="RFC/Registro Patronal" name="RFC" placeholder="RFC o Registro Patronal" validation="rfcValidation" :validation-messages="{
+                    rfcValidation: 'Debe tener entre 6 y 28 caracteres alfanuméricos con separadores (RFC, Registro Patronal, etc.)',
+                  }" :value="empresas.currentEmpresa?.RFC || ''" />
+            </div>
             <FormKit type="text" label="Giro de la empresa" name="giroDeEmpresa" placeholder="Giro de la Empresa"
               :value="empresas.currentEmpresa?.giroDeEmpresa || ''" />
 
@@ -215,10 +267,10 @@ const closeModal = () => {
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mt-4 mb-2">Logotipo</label>
               <div 
-                class="border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer"
+                class="border-2 border-dashed rounded-lg min-h-[7rem] sm:min-h-[9rem] max-w-full sm:max-w-md md:max-w-lg mx-auto px-4 py-5 sm:p-6 text-center transition-all duration-200 cursor-pointer"
                 :class="[
                   isDragOver 
-                    ? 'border-emerald-500 bg-emerald-50 scale-105' 
+                    ? 'border-emerald-500 bg-emerald-50 sm:scale-105' 
                     : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
                 ]"
                 @dragenter="handleDragEnter"
@@ -237,29 +289,29 @@ const closeModal = () => {
                 
                 <div class="text-gray-600">
                   <!-- Icono dinámico de Imagen -->
-                  <div class="mx-auto h-12 w-12 mb-4 transition-all duration-200" :class="isDragOver ? 'scale-110' : ''">
+                  <div class="mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 transition-all duration-200" :class="isDragOver ? 'sm:scale-110' : ''">
                     <div v-if="!isDragOver" class="flex items-center justify-center">
-                      <svg class="h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <svg class="h-10 w-10 sm:h-12 sm:w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                       </svg>
                     </div>
 
                     <div v-else class="flex items-center justify-center">
-                      <svg class="h-12 w-12 text-emerald-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <svg class="h-10 w-10 sm:h-12 sm:w-12 text-emerald-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                       </svg>
                     </div>
                   </div>
                   
                   <!-- Texto dinámico -->
-                  <p class="text-lg font-medium transition-colors duration-200" :class="isDragOver ? 'text-emerald-700' : ''">
+                  <p class="text-sm sm:text-base md:text-lg font-medium transition-colors duration-200" :class="isDragOver ? 'text-emerald-700' : ''">
                     {{ isDragOver ? '¡Suelta el logotipo aquí!' : 'Arrastra el logotipo aquí o haz clic para seleccionar' }}
                   </p>
-                  <p class="text-sm text-gray-500 mt-2">PNG, JPG, JPEG (máximo 1MB)</p>
+                  <p class="text-xs sm:text-sm text-gray-500 mt-2">PNG, JPG, JPEG (máximo 1MB)</p>
                   
                   <!-- Indicador visual cuando se arrastra -->
                   <div v-if="isDragOver" class="mt-3">
-                    <div class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm">
+                    <div class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs sm:text-sm">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                       </svg>
@@ -271,39 +323,47 @@ const closeModal = () => {
             </div>
 
             <!-- Mostrar la vista previa del logotipo -->
-            <div class="flex flex-row justify-center items-center gap-4">
-              <div class="w-1/2 flex flex-col items-center" v-if="empresas.currentEmpresa?.logotipoEmpresa?.data">
-                <p class="font-medium text-lg text-gray-700">Logotipo actual:</p>
+            <div class="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-6">
+              <div class="w-full sm:flex-1 sm:min-w-0 flex flex-col items-center" v-if="empresas.currentEmpresa?.logotipoEmpresa?.data">
+                <p class="font-medium text-base sm:text-lg text-gray-700">Logotipo actual:</p>
                 <img
                   :src="'/uploads/logos/' + empresas.currentEmpresa?.logotipoEmpresa?.data + '?t=' + empresas.currentEmpresa?.updatedAt"
                   :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
-                  class="w-48 h-48 object-contain mt-2 border-2 border-gray-300 rounded-lg" />
+                  class="w-full max-w-40 sm:max-w-48 aspect-square object-contain mt-2 border-2 border-gray-300 rounded-lg" />
               </div>
               <Transition appear name="fade-slow">
-                <div v-if="logotipoPreview" class="w-1/2 flex flex-col items-center">
-                  <p v-if="empresas.currentEmpresa?.logotipoEmpresa?.data" class="font-medium text-lg text-gray-700">
+                <div v-if="logotipoPreview" class="w-full sm:flex-1 sm:min-w-0 flex flex-col items-center">
+                  <p v-if="empresas.currentEmpresa?.logotipoEmpresa?.data" class="font-medium text-base sm:text-lg text-gray-700">
                     Logotipo nuevo:</p>
-                  <p v-else class="font-medium text-lg text-gray-700">Logotipo:</p>
+                  <p v-else class="font-medium text-base sm:text-lg text-gray-700">Logotipo:</p>
                   <img :src="logotipoPreview" alt="Vista previa del logotipo"
-                    class="w-48 h-48 object-contain mt-2 border-2 border-gray-300 rounded-lg" />
+                    class="w-full max-w-40 sm:max-w-48 aspect-square object-contain mt-2 border-2 border-gray-300 rounded-lg" />
                 </div>
               </Transition>
             </div>
             <hr class="my-3">
-            <FormKit type="submit" :disabled="empresas.loadingModal">
-              <span v-if="empresas.loadingModal">Guardando...</span>
-              <span v-else>{{ empresas.currentEmpresa._id ? 'Actualizar Empresa' : 'Guardar Empresa' }}</span>
-            </FormKit>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
+              <button
+                type="button"
+                class="text-lg sm:text-xl w-full sm:w-auto rounded-lg bg-white font-semibold text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg"
+                @click="requestDismiss">
+                Cerrar
+              </button>
+              <FormKit type="submit" :disabled="empresas.loadingModal" outer-class="w-full sm:w-auto">
+                <span v-if="empresas.loadingModal">Guardando...</span>
+                <span v-else>{{ empresas.currentEmpresa._id ? 'Actualizar Empresa' : 'Guardar Empresa' }}</span>
+              </FormKit>
+            </div>
           </FormKit>
         </div>
-
-        <button
-          class="text-xl mt-2 w-full rounded-lg bg-white font-semibold text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg flex-1"
-          @click="closeModal">
-          Cerrar
-        </button>
       </div>
     </Transition>
+
+    <ModalDiscardConfirmDialog
+      :open="showDiscardConfirm"
+      @continue-editing="continueEditing"
+      @discard="confirmDiscard"
+    />
   </div>
 </template>
 

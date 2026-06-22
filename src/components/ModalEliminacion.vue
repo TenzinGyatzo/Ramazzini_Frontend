@@ -3,6 +3,7 @@ import { computed, watch } from 'vue';
 import type { NivelEliminacion } from '@/config/eliminacion';
 import type { DetalleContextoEliminacion } from '@/config/eliminacion';
 import { useVerificacionEliminacion } from '@/composables/useVerificacionEliminacion';
+import { useEscapeToClose } from '@/composables/useEscapeToClose';
 
 const props = defineProps<{
   isVisible: boolean;
@@ -49,9 +50,12 @@ const requiereTexto = computed(() => props.nivel === 'robusto');
 const isBusy = computed(() => props.isConfirming || verifying.value);
 
 const handleCancel = () => {
+  if (isBusy.value) return;
   reset();
   emit('cancel');
 };
+
+useEscapeToClose(handleCancel, () => props.isVisible && !isBusy.value);
 
 const handleConfirm = async () => {
   if (isBusy.value) return;
@@ -80,7 +84,10 @@ const handleConfirm = async () => {
         class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"
         @click="handleCancel"
       />
-      <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+      <div
+        class="fixed inset-0 z-10 w-screen overflow-y-auto"
+        @click.self="handleCancel"
+      >
         <div class="flex min-h-full justify-center p-8 text-center items-center">
           <div
             class="modal-inner relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useVerificacionEliminacion } from '@/composables/useVerificacionEliminacion';
+import { useEscapeToClose } from '@/composables/useEscapeToClose';
 
 const props = defineProps({
   isVisible: {
@@ -59,9 +60,12 @@ const handleConfirm = async () => {
 };
 
 const handleCancel = () => {
+  if (isBusy.value) return;
   reset();
   emit('cancel');
 };
+
+useEscapeToClose(handleCancel, () => props.isVisible && !isBusy.value);
 
 // Computed para mostrar información de los documentos seleccionados
 const documentTypes = computed<Record<string, number>>(() => {
@@ -153,8 +157,8 @@ const documentTypes = computed<Record<string, number>>(() => {
   <Transition name="modal-fade" appear>
     <div v-if="isVisible" class="fixed inset-0 z-50 overflow-y-auto">
       <!-- Overlay -->
-      <div class="flex items-center justify-center min-h-screen px-4 py-6">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+      <div class="flex items-center justify-center min-h-screen px-4 py-6" @click.self="handleCancel">
+        <div class="fixed inset-0 transition-opacity pointer-events-none" aria-hidden="true">
           <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
         </div>
 

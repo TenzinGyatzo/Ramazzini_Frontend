@@ -283,8 +283,8 @@ const getExtensionIcon = (extension: string) => {
 <template>
   <Transition name="fade">
     <div v-if="isOpen" class="fixed inset-0 z-[60]">
-      <div class="fixed inset-0 bg-gray-900/60" @click="handleClose" />
-      <div class="flex min-h-full items-center justify-center p-4">
+      <div class="fixed inset-0 bg-gray-900/60 pointer-events-none" aria-hidden="true" />
+      <div class="flex min-h-full items-center justify-center p-4" @click.self="handleClose">
         <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl relative max-h-[90vh] flex flex-col" @click.stop>
           <!-- Header -->
           <div class="px-6 py-5 border-b border-gray-200">

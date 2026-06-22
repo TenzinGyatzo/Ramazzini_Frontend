@@ -1,5 +1,6 @@
 import './assets/main.css'
 import './assets/dark-mode.css'
+import './assets/modal-dirty-guard.css'
 
 import { applyAppTheme, readInitialDarkPreference } from '@/theme/appTheme'
 

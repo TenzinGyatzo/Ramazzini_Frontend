@@ -23,7 +23,14 @@ import {
   isPaisNacimientoReadOnlyForWorker,
 } from '@/helpers/workerPaisNacimientoImmutability';
 import { normalizeProveedorPaisCode } from '@/helpers/proveedorPais';
+import {
+  normalizeWorkerPersonName,
+  resolveWorkerPersonNameRegime,
+} from '@/helpers/normalizeWorkerPersonName';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
+import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
+import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 
 const posibleDuplicadoRegistro = ref(null);
 const showFusionModal = ref(false);
@@ -68,7 +75,11 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded } = useCurrentUser();
-const { geoFieldsRequired, workerCurpRequired, workerIdentificationImmutable, isSIRES, isMxProveedor, mxWorkerCurpValidationRules } = useNom024Fields();
+const { geoFieldsRequired, workerCurpRequired, workerIdentificationImmutable, isSIRES, isSinRegimen, isMxProveedor, mxWorkerCurpValidationRules } = useNom024Fields();
+
+const personNameRegime = computed(() =>
+  resolveWorkerPersonNameRegime(isSIRES.value, isSinRegimen.value),
+);
 
 const isEditingTrabajador = computed(() => !!trabajadores.currentTrabajador?._id);
 
@@ -294,6 +305,75 @@ watch(() => trabajadores.currentTrabajador?.curp, (newCurp) => {
   curpValue.value = newCurp || '';
 }, { immediate: true });
 
+const formData = ref({});
+const primerApellidoField = ref('');
+const segundoApellidoField = ref('');
+const nombreField = ref('');
+
+const syncWorkerPersonNameFields = () => {
+  const worker = trabajadores.currentTrabajador;
+  const regime = personNameRegime.value;
+
+  primerApellidoField.value = normalizeWorkerPersonName(worker?.primerApellido, regime);
+  segundoApellidoField.value = normalizeWorkerPersonName(worker?.segundoApellido, regime);
+  nombreField.value = normalizeWorkerPersonName(worker?.nombre, regime);
+};
+
+watch(
+  [() => trabajadores.currentTrabajador, personNameRegime],
+  syncWorkerPersonNameFields,
+  { immediate: true },
+);
+
+const normalizePersonNameField = (field) => {
+  const refMap = {
+    primerApellido: primerApellidoField,
+    segundoApellido: segundoApellidoField,
+    nombre: nombreField,
+  };
+
+  const target = refMap[field];
+  if (!target) return;
+
+  target.value = normalizeWorkerPersonName(target.value, personNameRegime.value);
+};
+
+const buildFormState = () => ({
+  ...formData.value,
+  primerApellido: primerApellidoField.value,
+  segundoApellido: segundoApellidoField.value,
+  nombre: nombreField.value,
+  curp: curpValue.value,
+  nacimiento: { ...nom024NacimientoFields.value },
+  residencia: { ...nom024ResidenciaFields.value },
+});
+
+const { isDirty } = useDirtySnapshot(buildFormState, {
+  resetTrigger: () => !trabajadores.loadingModal,
+});
+
+const closeModal = () => {
+  posibleDuplicadoRegistro.value = null;
+  showFusionModal.value = false;
+  emit('closeModal');
+};
+
+const {
+  showDiscardConfirm,
+  dismissPulse,
+  requestDismiss,
+  forceClose,
+  continueEditing,
+  confirmDiscard,
+} = useModalDirtyGuard({
+  isDirty,
+  onClose: closeModal,
+  enabled: () =>
+    !showFusionModal.value &&
+    !mostrarModalTransferencia.value &&
+    !trabajadores.loadingModal,
+});
+
 // Función para insertar CURP genérico (para paciente desconocido o extranjero)
 const insertGenericCURP = () => {
   curpValue.value = 'XXXX999999XXXXXX99';
@@ -456,9 +536,9 @@ const handleSubmit = async (data) => {
   }
 
   const trabajadorData = {
-    primerApellido: data.primerApellido,
-    segundoApellido: data.segundoApellido,
-    nombre: data.nombre,
+    primerApellido: normalizeWorkerPersonName(data.primerApellido, personNameRegime.value),
+    segundoApellido: normalizeWorkerPersonName(data.segundoApellido, personNameRegime.value),
+    nombre: normalizeWorkerPersonName(data.nombre, personNameRegime.value),
     fechaNacimiento: data.fechaNacimiento,
     sexo: data.sexo,
     escolaridad: data.escolaridad,
@@ -533,7 +613,7 @@ const handleSubmit = async (data) => {
       }
       toast.open({ message: 'Trabajador registrado exitosamente', type: 'success' });
     }
-    emit('closeModal');
+    forceClose();
     trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
   } catch (error) {
     console.error('Error al crear o actualizar al trabajador:', error);
@@ -548,12 +628,6 @@ const handleSubmit = async (data) => {
   }
 };
 
-const closeModal = () => {
-  posibleDuplicadoRegistro.value = null;
-  showFusionModal.value = false;
-  emit('closeModal');
-};
-
 async function descartarDuplicadoAlta() {
   const alertId = posibleDuplicadoRegistro.value?.alertId;
   try {
@@ -566,7 +640,7 @@ async function descartarDuplicadoAlta() {
     }
     posibleDuplicadoRegistro.value = null;
     toast.open({ message: 'Registrado como trabajador distinto', type: 'info' });
-    emit('closeModal');
+    forceClose();
     trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
   } catch (error) {
     toast.open({
@@ -583,7 +657,7 @@ function abrirFusionDesdeAlta() {
 function onFusionCompletada() {
   posibleDuplicadoRegistro.value = null;
   showFusionModal.value = false;
-  emit('closeModal');
+  forceClose();
 }
 
 // Función para transferir trabajador a otro centro de trabajo (render inmediato + carga en bg)
@@ -689,7 +763,7 @@ const confirmarTransferencia = async () => {
     mostrarModalTransferencia.value = false;
     empresaSeleccionada.value = null;
     centroSeleccionado.value = null;
-    emit('closeModal');
+    forceClose();
     trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
   } catch (error) {
     console.error('Error al transferir trabajador:', error);
@@ -719,17 +793,22 @@ const cancelarTransferencia = () => {
 <template>
   <div class="modal modal-trabajadores fixed top-0 left-0 z-40 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
     <!-- Fondo oscuro transparente -->
-    <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
+    <div
+      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      :class="{ 'modal-backdrop-pulse': dismissPulse }"
+      @click="requestDismiss"
+    >
     </div>
     <Transition appear name="fade">
       <!-- Modal centrado con desplazamiento interno -->
       <div
-        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-6 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+        class="modal-inner relative bg-white text-gray-900 w-full sm:w-[92%] md:w-4/5 lg:w-3/4 xl:w-2/3 2xl:max-w-5xl 2xl:w-4/5 p-6 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+        :class="{ 'modal-dismiss-pulse': dismissPulse }"
         style="overflow-x: visible;">
         <!-- Botón para cerrar el modal -->
         <div
           class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
-          @click="closeModal">
+          @click="requestDismiss">
           &times;
         </div>
 
@@ -796,7 +875,7 @@ const cancelarTransferencia = () => {
           <hr class="mt-2 mb-3">
 
           <FormKit type="form" :actions="false" incomplete-message="Por favor complete todos los campos"
-            @submit="handleSubmit" @submit-invalid="onFormSubmitInvalid">
+            @submit="handleSubmit" @submit-invalid="onFormSubmitInvalid" @input="formData = $event">
             <div class="lg:grid gap-3 lg:grid-cols-2">
               <div>
                 <!-- México: validación RENAPO según régimen -->
@@ -849,25 +928,28 @@ const cancelarTransferencia = () => {
                   Usar CURP genérico <br class="hidden md:block">(desconocido/extranjero)
                 </button>
               </div>
-              <FormKit type="text" name="nombre" placeholder="Nombres del trabajador"
-                  validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
-                  :disabled="isCurpConformationReadOnly"
-                  :value="trabajadores.currentTrabajador?.nombre || ''">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Nombre(s)<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
               <FormKit type="text" name="primerApellido" placeholder="Apellido paterno"
                   validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
                   :disabled="isCurpConformationReadOnly"
-                  :value="trabajadores.currentTrabajador?.primerApellido || ''">
+                  v-model="primerApellidoField"
+                  @blur="normalizePersonNameField('primerApellido')">
                 <template #label>
                   <span class="font-medium text-lg text-gray-700">Primer Apellido<span class="text-red-500">*</span></span>
                 </template>
               </FormKit>
               <FormKit type="text" label="Segundo Apellido" name="segundoApellido" placeholder="Apellido materno"
                   :disabled="isCurpConformationReadOnly"
-                  :value="trabajadores.currentTrabajador?.segundoApellido || ''" />
+                  v-model="segundoApellidoField"
+                  @blur="normalizePersonNameField('segundoApellido')" />
+              <FormKit type="text" name="nombre" placeholder="Nombres del trabajador"
+                  validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
+                  :disabled="isCurpConformationReadOnly"
+                  v-model="nombreField"
+                  @blur="normalizePersonNameField('nombre')">
+                <template #label>
+                  <span class="font-medium text-lg text-gray-700">Nombre(s)<span class="text-red-500">*</span></span>
+                </template>
+              </FormKit>
               <FormKit type="select" name="sexo" placeholder="-Seleccione un sexo-"
                 :options="['Masculino', 'Femenino', 'Intersexual']" validation="required"
                 :validation-messages="{ required: 'Este campo es obligatorio' }"
@@ -1059,11 +1141,17 @@ const cancelarTransferencia = () => {
 
         <button
           class="text-xl mt-2 w-full rounded-lg bg-white font-semibold text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg flex-1"
-          @click="closeModal">
+          @click="requestDismiss">
           Cerrar
         </button>
       </div>
     </Transition>
+
+    <ModalDiscardConfirmDialog
+      :open="showDiscardConfirm"
+      @continue-editing="continueEditing"
+      @discard="confirmDiscard"
+    />
 
     <!-- Modal de transferencia -->
     <Transition appear name="fade">

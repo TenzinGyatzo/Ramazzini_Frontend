@@ -5,7 +5,8 @@
       <div
         v-if="isOpen"
         class="fixed inset-0 bg-black bg-opacity-50 z-20"
-        @click="handleClose"
+        :class="{ 'modal-backdrop-pulse': dismissPulse }"
+        @click="handleDismiss"
       ></div>
     </Transition>
 
@@ -15,6 +16,7 @@
         v-if="isOpen"
         ref="drawerRef"
         class="resultados-clinicos-panel fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-30 flex flex-col"
+        :class="{ 'modal-dismiss-pulse': dismissPulse }"
       >
         <!-- Header -->
         <div ref="drawerHeaderRef" class="flex items-center justify-between h-14 md:h-auto p-3 md:p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
@@ -22,7 +24,7 @@
             {{ isEditing ? 'Editar Resultado Clínico' : 'Registrar Resultado Clínico' }}
           </h2>
           <button
-            @click="handleClose"
+            @click="handleDismiss"
             class="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <i class="fas fa-times text-gray-600 text-xl"></i>
@@ -644,7 +646,7 @@
               <div ref="buttonsContainerRef" class="flex gap-3">
                 <button
                   type="button"
-                  @click="handleClose"
+                  @click="handleDismiss"
                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
@@ -886,6 +888,12 @@
       </Teleport>
 
   </Teleport>
+
+  <ModalDiscardConfirmDialog
+    :open="showDiscardConfirm"
+    @continue-editing="continueEditing"
+    @discard="confirmDiscard"
+  />
 </template>
 
 <script setup lang="ts">
@@ -900,6 +908,9 @@ import { convertirFechaISOaDDMMYYYY, formatDateYYYYMMDD } from '@/helpers/dates'
 import { validarFechaDocumentoNoFutura } from '@/helpers/validacionCampos';
 import SelectorDocumentoExterno from '@/components/SelectorDocumentoExterno.vue';
 import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
+import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
+import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 const props = defineProps<{
@@ -1329,7 +1340,7 @@ const ejecutarEliminacionResultado = async (item: ResultadoClinico) => {
     store.setCurrent(null);
     resetForm();
     currentStep.value = 'select';
-    handleClose();
+    forceClose();
   }
 };
 
@@ -1550,7 +1561,7 @@ const handleSubmit = async () => {
     
     pendingDesvincularDocumento.value = false;
     pendingVincularDocumento.value = false;
-    handleClose();
+    forceClose();
   } catch (error: any) {
     toast.open({
       message: error.response?.data?.message || 'Error al guardar el resultado',
@@ -1564,8 +1575,69 @@ const handleClose = () => {
   currentStep.value = 'select';
   isEditing.value = false;
   editingId.value = null;
-  store.setCurrent(null); // Limpiar current al cerrar
+  store.setCurrent(null);
   emit('close');
+};
+
+const buildFormState = () => ({
+  step: currentStep.value,
+  editingId: editingId.value,
+  form: { ...formData.value },
+  pendingDesvincular: pendingDesvincularDocumento.value,
+  pendingVincular: pendingVincularDocumento.value,
+});
+
+const { isDirty } = useDirtySnapshot(buildFormState, {
+  resetTrigger: () => props.isOpen,
+});
+
+const dismissNestedLayer = () => {
+  if (showImageViewer.value) {
+    cerrarImagen();
+    return true;
+  }
+
+  if (showPdfViewer.value) {
+    cerrarPdf();
+    return true;
+  }
+
+  if (showSelectorDocumento.value) {
+    showSelectorDocumento.value = false;
+    return true;
+  }
+
+  return false;
+};
+
+const {
+  showDiscardConfirm,
+  dismissPulse,
+  requestDismiss,
+  forceClose,
+  continueEditing,
+  confirmDiscard,
+} = useModalDirtyGuard({
+  isDirty,
+  onClose: handleClose,
+  enabled: () =>
+    props.isOpen &&
+    !showImageViewer.value &&
+    !showPdfViewer.value &&
+    !showSelectorDocumento.value,
+  onEscapeWhenDisabled: () => {
+    if (props.isOpen) {
+      dismissNestedLayer();
+    }
+  },
+});
+
+const handleDismiss = () => {
+  if (dismissNestedLayer()) return;
+
+  if (props.isOpen) {
+    requestDismiss();
+  }
 };
 
 const resetForm = () => {
@@ -1931,10 +2003,10 @@ const abrirDocumentoExterno = async (documento: any) => {
 };
 
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    if (showImageViewer.value) cerrarImagen();
-    else if (showPdfViewer.value) cerrarPdf();
-  }
+  if (event.key !== 'Escape') return;
+
+  event.preventDefault();
+  handleDismiss();
 };
 
 onMounted(() => {

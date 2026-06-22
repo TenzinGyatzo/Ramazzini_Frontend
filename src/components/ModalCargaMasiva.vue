@@ -6,6 +6,9 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 import { useImportacionTrabajadores } from '@/composables/useImportacionTrabajadores';
+import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
+import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import { useModalResumenImportacionStore } from '@/stores/modalResumenImportacion';
 
 const toast = inject('toast');
@@ -22,6 +25,33 @@ const emit = defineEmits(['closeModal', 'openSubscriptionModal']);
 // Propiedades reactivas para el archivo
 const selectedFile = ref(null);
 const isDragOver = ref(false);
+
+const buildFormState = () => ({
+  selectedFile: selectedFile.value?.name ?? null,
+});
+
+const { isDirty } = useDirtySnapshot(buildFormState, {
+  markCleanOnMount: true,
+});
+
+const closeModal = () => {
+  selectedFile.value = null;
+  isDragOver.value = false;
+  emit('closeModal');
+};
+
+const {
+  showDiscardConfirm,
+  dismissPulse,
+  requestDismiss,
+  forceClose,
+  continueEditing,
+  confirmDiscard,
+} = useModalDirtyGuard({
+  isDirty,
+  onClose: closeModal,
+  enabled: () => !isImporting.value,
+});
 
 const periodoDePruebaFinalizado = proveedorSaludStore.proveedorSalud?.periodoDePruebaFinalizado;
 const estadoSuscripcion = proveedorSaludStore.proveedorSalud?.estadoSuscripcion;
@@ -155,7 +185,7 @@ const handleSubmit = async () => {
     );
     
     // El modal de resumen se mostrará automáticamente desde el composable
-    emit('closeModal');
+    forceClose();
     
     // Actualizar la lista de trabajadores
     await trabajadores.fetchTrabajadores(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
@@ -165,13 +195,6 @@ const handleSubmit = async () => {
     const errorMessage = error.response?.data?.message || 'Hubo un error, por favor utilice la plantilla.';
     toast.open({ message: errorMessage, type: 'error' });
   }
-};
-
-// Limpiar cuando se cierre el modal
-const closeModal = () => {
-  selectedFile.value = null;
-  isDragOver.value = false;
-  emit('closeModal');
 };
 
 // Función para probar el resumen mixto (opcional, solo para desarrollo)
@@ -184,7 +207,7 @@ const testResumenMixto = async () => {
     modalStore.showModal(testResumen);
     
     // Cerrar el modal de carga masiva
-    emit('closeModal');
+    forceClose();
     
   } catch (error) {
     console.error('Error al mostrar resumen de prueba:', error);
@@ -196,16 +219,22 @@ const testResumenMixto = async () => {
 <template>
   <div class="modal modal-carga-masiva fixed top-0 left-0 z-20 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
     <!-- Fondo oscuro transparente -->
-    <div class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="closeModal">
+    <div
+      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      :class="{ 'modal-backdrop-pulse': dismissPulse }"
+      @click="requestDismiss"
+    >
     </div>
     <Transition appear name="fade">
       <!-- Modal centrado con desplazamiento interno -->
       <div
-        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto">
+        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+        :class="{ 'modal-dismiss-pulse': dismissPulse }"
+      >
         <!-- Botón para cerrar el modal -->
         <div
           class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
-          @click="closeModal">
+          @click="requestDismiss">
           &times;
         </div>
 
@@ -327,7 +356,7 @@ const testResumenMixto = async () => {
             <span v-else>Importando...</span>
           </button>
           <button
-            @click="closeModal"
+            @click="requestDismiss"
             :disabled="isImporting"
             class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors carga-masiva-cancelar-btn"
           >
@@ -363,6 +392,12 @@ const testResumenMixto = async () => {
         </div>
       </div>
     </Transition>
+
+    <ModalDiscardConfirmDialog
+      :open="showDiscardConfirm"
+      @continue-editing="continueEditing"
+      @discard="confirmDiscard"
+    />
   </div>
 </template>
 
