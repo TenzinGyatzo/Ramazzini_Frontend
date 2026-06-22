@@ -56,11 +56,19 @@ const nssValidation = ({ value }) => {
 };
 
 const curpValidation = ({ value }) => {
-  // Validación flexible para CURP que acepta formatos de diferentes países
-  // Acepta: números, letras, espacios, guiones, puntos, guiones bajos y barras
+  // Validación flexible para identificadores LATAM (DPI, cédula, etc.)
   // Longitud: 4 a 30 caracteres
   const curpRegex = /^[A-Za-z0-9\s\-_.\/]{4,30}$/;
   return curpRegex.test(value);
+};
+
+const curpRenapoValidation = ({ value }) => {
+  if (!value || String(value).trim() === '') {
+    return true;
+  }
+  const normalized = String(value).trim().toUpperCase();
+  const renapoRegex = /^([A-Z]{4}\d{6}[HMX][A-Z]{5}[0-9A-Z]\d|XXXX999999XXXXXX99)$/;
+  return renapoRegex.test(normalized);
 };
 
 const fechaNacimientoFirmanteValidation = ({ value }) => {
@@ -107,6 +115,8 @@ const config = {
       cedulaProfesionalValidation,
       cedulaEspecialistaValidation,
       nssValidation,
+      curpValidation,
+      curpRenapoValidation,
       fechaNacimientoFirmanteValidation,
     },
   },

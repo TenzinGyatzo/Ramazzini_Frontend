@@ -67,7 +67,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded } = useCurrentUser();
-const { geoFieldsRequired, workerCurpRequired, workerIdentificationImmutable, isSIRES } = useNom024Fields();
+const { geoFieldsRequired, workerCurpRequired, workerIdentificationImmutable, isSIRES, isMxProveedor, workerCurpValidationRules } = useNom024Fields();
 
 const isEditingTrabajador = computed(() => !!trabajadores.currentTrabajador?._id);
 
@@ -254,17 +254,11 @@ const identificadorPersonalPlaceholder = computed(() => {
   }
 });
 
-const identificadorPersonalValidationMessage = computed(() => {
-  return 'Debe tener entre 4 y 30 caracteres alfanuméricos y puede incluir separadores comunes.';
-});
+const curpRenapoValidationMessage =
+  'CURP debe tener 18 caracteres en formato RENAPO (ej: ROAJ850102HDFLRN08) o CURP genérica (XXXX999999XXXXXX99).';
 
-// Validación condicional de CURP: requerido para SIRES, opcional para SIN_REGIMEN
-const curpValidation = computed(() => {
-  if (workerCurpRequired.value) {
-    return 'required|curpValidation';
-  }
-  return 'optional|curpValidation';
-});
+// Validación condicional: RENAPO solo para MX; sin validación para identificadores LATAM
+const curpValidation = workerCurpValidationRules;
 
 // Validación condicional para campos NOM-024: requeridos solo para SIRES_NOM024
 const nom024FieldValidation = computed(() => {
@@ -470,7 +464,6 @@ const handleSubmit = async (data) => {
     estadoCivil: data.estadoCivil,
     numeroEmpleado: data.numeroEmpleado,
     nss: data.nss,
-    curp: data.curp || curpValue.value,
     // NOM-024 Fields (usar valores reactivos si no están en data)
     entidadNacimiento: data.entidadNacimiento || nom024NacimientoFields.value.entidadNacimiento,
     paisNacimiento: data.paisNacimiento || nom024NacimientoFields.value.paisNacimiento,
@@ -482,6 +475,11 @@ const handleSubmit = async (data) => {
     createdBy: currentUserId,
     updatedBy: currentUserId
   };
+
+  const curpCapturada = (data.curp || curpValue.value || '').trim();
+  if (curpCapturada) {
+    trabajadorData.curp = curpCapturada;
+  }
 
   // Solo agregar fechaIngreso si tiene un valor válido
   if (data.fechaIngreso && data.fechaIngreso !== '') {
@@ -797,7 +795,7 @@ const cancelarTransferencia = () => {
                   :validation="curpValidation"
                   :validation-messages="{ 
                     required: 'Este campo es obligatorio',
-                    curpValidation: identificadorPersonalValidationMessage 
+                    curpRenapoValidation: curpRenapoValidationMessage 
                   }"
                   maxlength="30"
                   :disabled="isCurpFieldReadOnly"
@@ -805,7 +803,7 @@ const cancelarTransferencia = () => {
                 >
                   <template #label>
                     <span class="font-medium text-lg text-gray-700">
-                      {{ identificadorPersonalLabel }}<span v-if="workerCurpRequired" class="text-red-500">*</span>
+                      {{ identificadorPersonalLabel }}<span v-if="isMxProveedor && workerCurpRequired" class="text-red-500">*</span>
                     </span>
                   </template>
                 </FormKit>
@@ -813,7 +811,7 @@ const cancelarTransferencia = () => {
               <div class="flex items-center">
                 <!-- Botón sutil para insertar CURP genérico (solo para MX) -->
                 <button
-                  v-if="paisProveedor === 'MX' && !isCurpFieldReadOnly"
+                  v-if="isMxProveedor && !isCurpFieldReadOnly"
                   type="button"
                   @click.prevent="insertGenericCURP"
                   class="mt-0 mb-4 md:mt-4 md:mb-0 text-xs text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200"
