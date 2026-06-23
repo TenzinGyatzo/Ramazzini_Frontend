@@ -445,7 +445,7 @@ function inicializarDataTable() {
             return `
               <a
                 href="${url}"
-                class="btn-expediente bg-emerald-600 text-white rounded-full px-2 py-1 transition-all duration-300 ease-out transform hover:scale-105 shadow-md hover:shadow-lg hover:bg-emerald-500 hover:text-white hover:border-emerald-700 border-2 border-emerald-600 inline-block"
+                class="btn-expediente bg-emerald-600 text-white rounded-full px-2 py-1 transition-all duration-100 ease-out transform hover:scale-105 shadow-md hover:shadow-lg hover:bg-emerald-500 hover:text-white hover:border-emerald-700 border-2 border-emerald-600 inline-block"
                 data-id="${escapeHtml(row._id)}"
               >
                 Expediente
@@ -571,7 +571,10 @@ function inicializarDataTable() {
       ],
       deferRender: true,
       scrollX: true,
-      select: true,
+      select: {
+        style: 'os',
+        selector: 'td:not(.columna-expediente):not(.columna-acciones)',
+      },
       order: [[0, 'desc']],
       scrollCollapse: true,
       scrollY: '800px',
@@ -606,11 +609,14 @@ function inicializarDataTable() {
         { targets: 39, width: '90px' }, // Laboratorio RC
         { targets: 40, width: '60px' }, // Agentes Riesgo
         { targets: 41, width: '60px' }, // Consultas
+        { targets: 43, className: 'columna-expediente' },
         { targets: 44, width: '248px', className: 'columna-acciones' } // Acciones con clase específica
       ]
     });
 
     $(document).on('click', '.btn-expediente', function (event) {
+      event.stopPropagation();
+
       if (isModifiedNavigationClick(event)) {
         return;
       }
@@ -623,7 +629,9 @@ function inicializarDataTable() {
       router.push(buildExpedienteRoute(idTrabajador));
     });
 
-    $(document).on('click', '.btn-rt', function () {
+    $(document).on('click', '.btn-rt', function (event) {
+      event.stopPropagation();
+
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
@@ -633,7 +641,9 @@ function inicializarDataTable() {
       }
     });
 
-    $(document).on('click', '.btn-riesgos', function () {
+    $(document).on('click', '.btn-riesgos', function (event) {
+      event.stopPropagation();
+
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
@@ -641,7 +651,9 @@ function inicializarDataTable() {
       }
     });
 
-    $(document).on('click', '.btn-fusionar', function () {
+    $(document).on('click', '.btn-fusionar', function (event) {
+      event.stopPropagation();
+
       const id = $(this).data('id');
       if (id) {
         executeIfCanManageTrabajadores(() => {
@@ -650,7 +662,9 @@ function inicializarDataTable() {
       }
     });
 
-    $(document).on('click', '.btn-editar', function () {
+    $(document).on('click', '.btn-editar', function (event) {
+      event.stopPropagation();
+
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
@@ -660,7 +674,9 @@ function inicializarDataTable() {
       }
     });
 
-    $(document).on('click', '.btn-alta-baja', function () {
+    $(document).on('click', '.btn-alta-baja', function (event) {
+      event.stopPropagation();
+
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
@@ -670,7 +686,9 @@ function inicializarDataTable() {
       }
     });
 
-    $(document).on('click', '.btn-eliminar', function () {
+    $(document).on('click', '.btn-eliminar', function (event) {
+      event.stopPropagation();
+
       const id = $(this).data('id');
       const nombre = $(this).data('nombre');
       executeIfCanManageTrabajadores(() => {

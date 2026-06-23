@@ -1133,6 +1133,21 @@ const isHomeRoute = computed(() => route.name === 'inicio');
               </div>
             </a>
 
+            <RouterLink
+              v-if="
+                catalogAdminEnabled &&
+                proveedorSaludStore.isSIRES &&
+                (user.user?.role === 'Principal' || user.user?.role === 'Administrador')
+              "
+              :to="{ name: 'admin-catalogos' }"
+              @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-teal-50 hover:to-teal-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-teal-300 group">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-book text-teal-500 group-hover:text-teal-600 transition-colors duration-200"></i>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Catálogos NOM-024</span>
+              </div>
+            </RouterLink>
+
             <!-- Administrativo -->
             <p v-if="user.user?.role === 'Administrativo'" class="text-sm font-medium text-gray-700 text-justify">Tienes el rol de Administrativo. No hay nada que configurar para este rol.</p>
           </div>
@@ -1164,20 +1179,6 @@ const isHomeRoute = computed(() => route.name === 'inicio');
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-shield-halved text-indigo-500 group-hover:text-indigo-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Gestionar Permisos</span>
-              </div>
-            </RouterLink>
-            <RouterLink
-              v-if="
-                catalogAdminEnabled &&
-                proveedorSaludStore.isSIRES &&
-                (user.user?.role === 'Principal' || user.user?.role === 'Administrador')
-              "
-              :to="{ name: 'admin-catalogos' }"
-              @click="isMenuOpen = false"
-               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-teal-50 hover:to-teal-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-teal-300 group">
-              <div class="flex items-center gap-3">
-                <i class="fa-solid fa-book text-teal-500 group-hover:text-teal-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Catálogos NOM-024</span>
               </div>
             </RouterLink>
             <RouterLink :to="{ name: 'manage-assignments' }" @click="isMenuOpen = false"
@@ -1314,6 +1315,7 @@ const isHomeRoute = computed(() => route.name === 'inicio');
 
   <Teleport to="body">
     <ModalEliminacion
+      v-if="route.name !== 'trabajadores' && route.name !== 'expediente-medico'"
       :is-visible="eliminacionOpen"
       :nivel="eliminacionNivel"
       :tipo-registro="eliminacionTipoRegistro"

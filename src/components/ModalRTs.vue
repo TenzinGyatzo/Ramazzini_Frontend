@@ -272,7 +272,12 @@ const sugerenciasNatLesion = [ "Contusi√≥n", "Traumatismo", "Fractura", "Luxaci√
         <div v-if="modo === 'listado'" class="space-y-4">
           <h2 class="text-lg font-semibold text-gray-800 mb-2">Historial de Riesgos de Trabajo</h2>
 
-            <div v-if="!trabajadoresStore.currentTrabajador?.riesgosTrabajo?.length" 
+            <div v-if="trabajadoresStore.loadingModal"
+               class="p-4 border rounded-lg shadow-sm text-center bg-gray-50">
+            <p class="text-gray-600">Cargando riesgos de trabajo...</p>
+            </div>
+
+            <div v-else-if="!trabajadoresStore.currentTrabajador?.riesgosTrabajo?.length" 
                class="p-4 border rounded-lg shadow-sm text-center bg-gray-50">
             <p class="text-gray-600">No hay riesgos de trabajo registrados</p>
             </div>

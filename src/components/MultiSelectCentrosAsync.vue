@@ -92,6 +92,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, inject } from 'vue';
 import AssignmentsAPI from '@/api/AssignmentsAPI';
+import { getCentrosForEmpresas } from '@/composables/useCentrosCache';
 
 interface Props {
   selectedIds: string[];
@@ -137,15 +138,10 @@ const cargarCentros = async () => {
     centrosTrabajo.value = [];
     return;
   }
-  
+
   loading.value = true;
   try {
-    const centrosPromises = props.empresasSeleccionadas.map(empresaId =>
-      AssignmentsAPI.getAvailableCentros(empresaId)
-    );
-    
-    const resultados = await Promise.all(centrosPromises);
-    centrosTrabajo.value = resultados.flatMap(res => res.data || []);
+    centrosTrabajo.value = await getCentrosForEmpresas(props.empresasSeleccionadas);
   } catch (error) {
     console.error('Error al cargar centros de trabajo:', error);
     centrosTrabajo.value = [];
@@ -159,11 +155,9 @@ const getEmpresaNombre = (empresaId: string): string => {
 
   const empresa = empresas.value.find(e => e._id === empresaId);
   if (empresa) {
-    console.log('Empresa encontrada:', empresa.nombreComercial);
     return empresa.nombreComercial;
   }
-  
-  // Si no encontramos la empresa, intentar cargarla
+
   console.warn(`Empresa con ID ${empresaId} no encontrada en el array local`);
   return `Empresa ${empresaId.slice(-4)}`;
 };
@@ -223,14 +217,12 @@ const cargarEmpresas = async () => {
       // Primero intentar usar las empresas pasadas como prop
       if (props.empresasDisponibles && props.empresasDisponibles.length > 0) {
         empresas.value = props.empresasDisponibles;
-        console.log('Empresas cargadas desde props:', empresas.value.length);
         return;
       }
       
       // Intentar obtener empresas del store
       if (empresasStore.empresas && empresasStore.empresas.value && empresasStore.empresas.value.length > 0) {
         empresas.value = empresasStore.empresas.value;
-        console.log('Empresas cargadas desde store:', empresas.value.length);
       } else {
         // Si no están en el store, cargarlas directamente
         interface UserStore {
@@ -238,12 +230,10 @@ const cargarEmpresas = async () => {
         }
         const userStore = inject<UserStore>('userStore');
         if (userStore && userStore.user) {
-          console.log('Cargando empresas desde API...');
           const resultado = await AssignmentsAPI.getAvailableEmpresas(
             userStore.user.idProveedorSalud
           );
           empresas.value = resultado.data || [];
-          console.log('Empresas cargadas desde API:', empresas.value.length);
         }
       }
     } catch (error) {
@@ -273,7 +263,6 @@ watch(() => props.empresasSeleccionadas, async (newEmpresas) => {
 watch(() => props.empresasDisponibles, (newEmpresas) => {
   if (newEmpresas && newEmpresas.length > 0) {
     empresas.value = newEmpresas;
-    console.log('Empresas actualizadas desde props:', empresas.value.length);
   }
 }, { immediate: true });
 </script>

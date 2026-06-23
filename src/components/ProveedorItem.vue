@@ -1,7 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { format, differenceInDays, parseISO } from 'date-fns';
-import { ca, es } from 'date-fns/locale';
+import { es } from 'date-fns/locale';
+import { usePagosStore } from '@/stores/pagosStore';
 
 const props = defineProps({
   id: String,
@@ -16,28 +17,65 @@ const props = defineProps({
   semaforizacionActivada: Boolean,
   logotipoEmpresa: Object,
   suscripcion: Object,
+  suscripcionActivaId: String,
   historiasClinicasMes: Number,
   notasMedicasMes: Number,
   todasLasHistoriasClinicas: Number,
   todasLasNotasMedicas: Number,
+  empresasCount: Number,
   empresas: Array,
+  principalUser: Object,
   users: Object,
 });
 
-const historiasDelMes = ref(0);
+const pagosStore = usePagosStore();
 const detallesAbiertos = ref(false);
+const suscripcionLocal = ref(null);
+const cargandoSuscripcion = ref(false);
 
 const baseURL = import.meta.env.VITE_API_URL || 'https://ramazzini.app';
-// console.log('baseURL:', baseURL);
 
 const logoSrc = computed(() => {
   return `${baseURL}/assets/providers-logos/${props.logotipoEmpresa?.data}?t=${Date.now()}`;
 });
 
+const usuarioPrincipal = computed(() => {
+  if (props.principalUser) return props.principalUser;
+  const data = props.users?.data;
+  return Array.isArray(data) && data.length ? data[0] : null;
+});
+
+const cantidadEmpresas = computed(() => {
+  if (typeof props.empresasCount === 'number') return props.empresasCount;
+  return Array.isArray(props.empresas) ? props.empresas.length : 0;
+});
+
+const suscripcionVisible = computed(
+  () => props.suscripcion ?? suscripcionLocal.value,
+);
+
+const tieneSuscripcionActiva = computed(
+  () => Boolean(props.suscripcionActivaId || props.suscripcion || suscripcionLocal.value),
+);
+
+watch(detallesAbiertos, async (abierto) => {
+  if (!abierto || suscripcionVisible.value || !props.suscripcionActivaId) return;
+
+  cargandoSuscripcion.value = true;
+  try {
+    suscripcionLocal.value = await pagosStore.getSubscriptionFromDB(
+      props.suscripcionActivaId,
+    );
+  } catch (error) {
+    console.error('Error al cargar suscripción:', error);
+  } finally {
+    cargandoSuscripcion.value = false;
+  }
+});
+
 const colorOptions = [
   { name: "Gris Oscuro (Default)", hex: "#343A40" },
   { name: "Gris", hex: "#6C757D" },
-  // { name: "Gris Claro", hex: "#F8F9FA" },
   { name: "Azul Oscuro", hex: "#004085" },
   { name: "Azul Profesional", hex: "#007BFF" },
   { name: "Turquesa Oscuro", hex: "#138496" },
@@ -90,6 +128,7 @@ const clasesEstado = computed(() => ({
 }));
 
 const formatCurrency = (amount) => {
+  if (amount == null) return '0';
   return amount.toLocaleString("en-US");
 };
 </script>
@@ -98,21 +137,22 @@ const formatCurrency = (amount) => {
     <div class="text-sm grid grid-cols-1 md:grid-cols-4 w-full max-w-3xl mx-auto bg-white border p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out h-102">
         <div class="col-span-3">
             <p class="text-gray-600"><strong>🏢 Negocio:</strong> {{ nombre || 'No disponible' }}</p>
-            <p class="text-gray-600"><strong>👤 Usuario Principal:</strong> {{ users.data[0].username }}</p>
-            <p class="text-gray-600"><strong>📧 Correo:</strong> {{ users.data[0].email }}</p>
-            <p class="text-gray-600"><strong>📞 Teléfono:</strong> {{ users.data[0].phone }}</p>
-            <!-- <p class="text-gray-600"><strong>🌍 País:</strong> {{ pais || 'No disponible' }}</p> -->
-            <!-- <p class="text-gray-600"><strong>📧 Correo:</strong> {{ correoElectronico || 'No disponible' }}</p> -->
+            <template v-if="usuarioPrincipal">
+              <p class="text-gray-600"><strong>👤 Usuario Principal:</strong> {{ usuarioPrincipal.username }}</p>
+              <p class="text-gray-600"><strong>📧 Correo:</strong> {{ usuarioPrincipal.email }}</p>
+              <p class="text-gray-600"><strong>📞 Teléfono:</strong> {{ usuarioPrincipal.phone || 'No disponible' }}</p>
+            </template>
+            <p v-else class="text-gray-500 italic">Usuario principal no disponible</p>
             <p class="text-gray-600"><strong>🎨 Color Informe:</strong> {{ nombreColorInforme }}</p>
             <p class="text-gray-600"><strong>🚦 Semaforización:</strong> {{ semaforizacionActivada ? 'Activada' : 'Desactivada' }}</p>
-            <p class="text-gray-600"><strong>📊 Clientes registrados:</strong> {{ empresas.length }}</p>
+            <p class="text-gray-600"><strong>📊 Clientes registrados:</strong> {{ cantidadEmpresas }}</p>
             <p class="text-gray-600">
                 <strong>👥 H. C. Usadas en {{ mesActual }}:</strong>
-                {{ `${historiasClinicasMes} de ${maxHistoriasPermitidasAlMes} permitidas` }}
+                {{ `${historiasClinicasMes ?? 0} de ${maxHistoriasPermitidasAlMes} permitidas` }}
             </p>
-            <p class="text-gray-600"><strong>📝 Notas Médicas Usadas en {{ mesActual }}:</strong> {{ `${notasMedicasMes} ${notasMedicasMes === 1 ? 'nota' : 'notas'}` }}</p>
-            <p class="text-gray-600"><strong>👥 Total de H. Clínicas:</strong> {{ `${todasLasHistoriasClinicas}` }} historias</p>
-            <p class="text-gray-600"><strong>📝 Total de Notas Médicas:</strong> {{ `${todasLasNotasMedicas} ${todasLasNotasMedicas === 1 ? 'nota' : 'notas'}` }}</p>
+            <p class="text-gray-600"><strong>📝 Notas Médicas Usadas en {{ mesActual }}:</strong> {{ `${notasMedicasMes ?? 0} ${notasMedicasMes === 1 ? 'nota' : 'notas'}` }}</p>
+            <p class="text-gray-600"><strong>👥 Total de H. Clínicas:</strong> {{ `${todasLasHistoriasClinicas ?? 0}` }} historias</p>
+            <p class="text-gray-600"><strong>📝 Total de Notas Médicas:</strong> {{ `${todasLasNotasMedicas ?? 0} ${todasLasNotasMedicas === 1 ? 'nota' : 'notas'}` }}</p>
             <p class="text-gray-600"><strong>⏳ Periodo Gratuito:</strong> {{ periodoGratuito }}</p>
             <p class="text-gray-600">
                 <strong>📍 Estado: </strong>
@@ -120,8 +160,9 @@ const formatCurrency = (amount) => {
                     {{ estadoSuscripcion || 'Sin suscripción actual' }}
                 </span>
             </p>
-            <div v-if="suscripcion" class="mt-4">
+            <div v-if="tieneSuscripcionActiva" class="mt-4">
                 <button
+                    type="button"
                     @click="detallesAbiertos = !detallesAbiertos"
                     class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded-lg transition-colors duration-200 focus:outline-none"
                 >
@@ -144,14 +185,17 @@ const formatCurrency = (amount) => {
 
                 <Transition name="fade" mode="out-in">
                     <div v-show="detallesAbiertos" class="mt-2">
-                        <p class="text-gray-600"><strong>📦 {{ suscripcion.reason || 'No disponible' }}</strong></p>
-                        <p class="text-gray-600"><strong>💰 Monto mensual:</strong> $ {{ formatCurrency(suscripcion.auto_recurring?.transaction_amount) }} MXN</p>
-                        <p class="text-gray-600"><strong>💳 Método de pago:</strong> {{ suscripcion.payment_method_id }}</p>
-                        <p class="text-gray-600"><strong>📆 Inició:</strong> {{ formatDate(suscripcion.date_created) }}</p>
-                        <p class="text-gray-600"><strong>🔄 Próximo cobro:</strong> {{ formatDate(suscripcion.next_payment_date) }}</p>
-                        <p class="text-gray-600"><strong>🕓 Última actualización:</strong> {{ formatDate(suscripcion.last_modified) }}</p>
-                        <!-- <p class="text-gray-600"><strong>📍 Estado:</strong> {{ suscripcion.status || 'No disponible' }}</p> -->
-                        <p class="text-gray-600"><strong>👤 Email del pagador:</strong> {{ suscripcion.payer_email || 'No disponible' }}</p>
+                        <p v-if="cargandoSuscripcion" class="text-gray-500 text-sm">Cargando suscripción…</p>
+                        <template v-else-if="suscripcionVisible">
+                          <p class="text-gray-600"><strong>📦 {{ suscripcionVisible.reason || 'No disponible' }}</strong></p>
+                          <p class="text-gray-600"><strong>💰 Monto mensual:</strong> $ {{ formatCurrency(suscripcionVisible.auto_recurring?.transaction_amount) }} MXN</p>
+                          <p class="text-gray-600"><strong>💳 Método de pago:</strong> {{ suscripcionVisible.payment_method_id || 'No disponible' }}</p>
+                          <p class="text-gray-600"><strong>📆 Inició:</strong> {{ formatDate(suscripcionVisible.date_created) }}</p>
+                          <p class="text-gray-600"><strong>🔄 Próximo cobro:</strong> {{ formatDate(suscripcionVisible.next_payment_date) }}</p>
+                          <p class="text-gray-600"><strong>🕓 Última actualización:</strong> {{ formatDate(suscripcionVisible.last_modified) }}</p>
+                          <p class="text-gray-600"><strong>👤 Email del pagador:</strong> {{ suscripcionVisible.payer_email || 'No disponible' }}</p>
+                        </template>
+                        <p v-else class="text-gray-500 text-sm">No se pudo cargar la suscripción</p>
                     </div>
                 </Transition>
             </div>

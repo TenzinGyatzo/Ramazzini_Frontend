@@ -30,6 +30,38 @@ interface User {
     centrosTrabajoAsignados?: string[];
 }
 
+export type TenantUsersScope = 'permissions' | 'assignments' | 'full';
+
+export interface FetchTenantUsersOptions {
+    scope?: TenantUsersScope;
+    roles?: string;
+    force?: boolean;
+}
+
+const TENANT_USERS_CACHE_TTL_MS = 60_000;
+const tenantUsersCache = new Map<string, { data: User[]; fetchedAt: number }>();
+
+function getTenantUsersCacheKey(
+    idProveedorSalud: string,
+    scope: TenantUsersScope,
+    roles?: string,
+) {
+    return `${idProveedorSalud}:${scope}:${roles ?? ''}`;
+}
+
+function invalidateTenantUsersCache(idProveedorSalud?: string) {
+    if (!idProveedorSalud) {
+        tenantUsersCache.clear();
+        return;
+    }
+
+    for (const key of tenantUsersCache.keys()) {
+        if (key.startsWith(`${idProveedorSalud}:`)) {
+            tenantUsersCache.delete(key);
+        }
+    }
+}
+
 // Define el store
 export const useUserStore = defineStore("user", () => {
 
@@ -44,6 +76,7 @@ export const useUserStore = defineStore("user", () => {
         empresasAsignadas.value = [];
         centrosTrabajoAsignados.value = [];
         fetchUserPromise = null;
+        invalidateTenantUsersCache();
     }
 
     async function fetchUser(force = false) {
@@ -119,9 +152,39 @@ export const useUserStore = defineStore("user", () => {
         }
     }
 
-    async function fetchUsersByProveedorId(idProveedorSalud: string) {
+    async function fetchUsersByProveedorId(
+        idProveedorSalud: string,
+        options: FetchTenantUsersOptions = {},
+    ) {
+        const scope = options.scope ?? 'full';
+        const cacheKey = getTenantUsersCacheKey(
+            idProveedorSalud,
+            scope,
+            options.roles,
+        );
+
+        if (!options.force) {
+            const cached = tenantUsersCache.get(cacheKey);
+            if (
+                cached &&
+                Date.now() - cached.fetchedAt < TENANT_USERS_CACHE_TTL_MS
+            ) {
+                return { success: true, data: cached.data };
+            }
+        }
+
         try {
-            const { data } = await AuthAPI.getUsersByProveedorId(idProveedorSalud);
+            const { data } = await AuthAPI.getUsersByProveedorId(
+                idProveedorSalud,
+                {
+                    scope,
+                    roles: options.roles,
+                },
+            );
+            tenantUsersCache.set(cacheKey, {
+                data,
+                fetchedAt: Date.now(),
+            });
             return { success: true, data };
         } catch (error) {
             return { success: false, error };
@@ -168,6 +231,7 @@ export const useUserStore = defineStore("user", () => {
         registerUser,
         inviteUser,
         fetchUsersByProveedorId,
+        invalidateTenantUsersCache,
         loadUserAssignments,
         hasAccessToEmpresa,
         hasAccessToCentro,

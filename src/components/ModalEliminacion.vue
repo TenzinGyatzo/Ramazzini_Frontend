@@ -14,6 +14,8 @@ const props = defineProps<{
   detalleContexto?: DetalleContextoEliminacion | null;
   mensajePersonalizado?: string;
   isConfirming?: boolean;
+  /** Cuando el padre ya aplica Transition (p. ej. modal-work), omitir fade interno. */
+  disableTransition?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -78,7 +80,7 @@ const handleConfirm = async () => {
 </script>
 
 <template>
-  <Transition name="fade">
+  <Transition name="fade" :css="!disableTransition">
     <div v-if="isVisible" class="relative z-[70]">
       <div
         class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"

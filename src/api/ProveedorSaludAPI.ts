@@ -49,6 +49,11 @@ export default {
         return proveedor.get("/obtener-proveedores-salud");
     },
 
+    getPanelAdmin(ids?: string[]) {
+        const params = ids?.length ? { ids: ids.join(',') } : undefined;
+        return proveedor.get('/panel-admin', { params });
+    },
+
     changeRegimenRegulatorio(proveedorId: string, regimen: string, reason: string) {
         return proveedor.patch(`/${proveedorId}/regimen-regulatorio`, {
             regimenRegulatorio: regimen,

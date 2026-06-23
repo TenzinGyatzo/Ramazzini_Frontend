@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, inject, watch, nextTick } from 'vue';
+import { ref, onMounted, computed, inject, watch } from 'vue';
 import { useUserStore } from '@/stores/user';
+import { useEmpresasStore } from '@/stores/empresas';
 import AssignmentsAPI from '@/api/AssignmentsAPI';
-import { useRouter, onBeforeRouteLeave } from 'vue-router';
+import { onBeforeRouteLeave } from 'vue-router';
 import MultiSelectEmpresas from '@/components/MultiSelectEmpresas.vue';
 import MultiSelectCentrosAsync from '@/components/MultiSelectCentrosAsync.vue';
 import AssignmentsSummary from '@/components/AssignmentsSummary.vue';
+import { preloadCentros } from '@/composables/useCentrosCache';
 
 // Interfaces
 interface Usuario {
@@ -42,11 +44,11 @@ interface Toast {
 
 const toast = inject<Toast>('toast');
 const userStore = useUserStore();
-const router = useRouter();
+const empresasStore = useEmpresasStore();
 
 const usuarios = ref<Usuario[]>([]);
 const empresas = ref<Empresa[]>([]);
-const loading = ref(false);
+const loading = ref(true);
 const saving = ref(false);
 const hasUnsavedChanges = ref(false);
 
@@ -82,15 +84,39 @@ const hasChanges = computed(() => {
   });
 });
 
-onMounted(async () => {
-  await cargarDatos();
-  // Guardar estado original de asignaciones
-  usuariosFiltrados.value.forEach(usuario => {
+const syncOriginalAssignments = () => {
+  originalAssignments.value.clear();
+  usuariosFiltrados.value.forEach((usuario) => {
     originalAssignments.value.set(usuario._id, {
       empresasAsignadas: [...(usuario.empresasAsignadas || [])],
-      centrosTrabajoAsignados: [...(usuario.centrosTrabajoAsignados || [])]
+      centrosTrabajoAsignados: [...(usuario.centrosTrabajoAsignados || [])],
     });
   });
+};
+
+const normalizeUsuario = (usuario: Usuario): Usuario => ({
+  ...usuario,
+  empresasAsignadas: (usuario.empresasAsignadas ?? []).map(String),
+  centrosTrabajoAsignados: (usuario.centrosTrabajoAsignados ?? []).map(String),
+});
+
+const cargarEmpresasDisponibles = async (idProveedorSalud: string): Promise<Empresa[]> => {
+  if (empresasStore.empresas.length > 0) {
+    return empresasStore.empresas.map((e) => ({
+      _id: e._id,
+      nombreComercial: e.nombreComercial,
+      razonSocial: e.razonSocial,
+      rfc: e.RFC,
+    }));
+  }
+
+  const resultado = await AssignmentsAPI.getAvailableEmpresas(idProveedorSalud);
+  return resultado.data ?? [];
+};
+
+onMounted(async () => {
+  await cargarDatos();
+  syncOriginalAssignments();
 });
 
 // Watch para detectar cambios en asignaciones
@@ -119,37 +145,45 @@ const cargarDatos = async () => {
 
   loading.value = true;
   try {
-    // Cargar usuarios
-    const resultadoUsuarios = await userStore.fetchUsersByProveedorId(
-      idProveedorSalud
-    );
-    usuarios.value = resultadoUsuarios.data;
+    const [resultadoUsuarios, empresasData] = await Promise.all([
+      userStore.fetchUsersByProveedorId(idProveedorSalud, { scope: 'assignments' }),
+      cargarEmpresasDisponibles(idProveedorSalud),
+    ]);
 
-    // Cargar empresas
-    const resultadoEmpresas = await AssignmentsAPI.getAvailableEmpresas(
-      idProveedorSalud
-    );
-    empresas.value = resultadoEmpresas.data;
-
-    // No cargar todos los centros de trabajo aquí - se cargarán bajo demanda
-
-    // Cargar asignaciones para cada usuario
-    for (const usuario of usuariosFiltrados.value) {
-      try {
-        const resultadoAsignaciones = await AssignmentsAPI.getUserAssignments(usuario._id);
-        usuario.empresasAsignadas = resultadoAsignaciones.data.empresasAsignadas || [];
-        usuario.centrosTrabajoAsignados = resultadoAsignaciones.data.centrosTrabajoAsignados || [];
-      } catch (error) {
-        console.error(`Error al cargar asignaciones para ${usuario.username}:`, error);
-        usuario.empresasAsignadas = [];
-        usuario.centrosTrabajoAsignados = [];
-      }
+    if (!resultadoUsuarios.success) {
+      usuarios.value = [];
+      empresas.value = [];
+      toast?.open({
+        message: 'Error al cargar usuarios',
+        type: 'error',
+      });
+      return;
     }
+
+    usuarios.value = (resultadoUsuarios.data ?? []).map(normalizeUsuario);
+    empresas.value = empresasData;
+
+    const empresaIds = [
+      ...new Set(
+        usuarios.value
+          .filter(
+            (u) =>
+              (u.role === 'Médico' ||
+                u.role === 'Enfermero/a' ||
+                u.role === 'Administrativo' ||
+                u.role === 'Técnico Evaluador') &&
+              !u.permisos?.accesoCompletoEmpresasCentros,
+          )
+          .flatMap((u) => u.empresasAsignadas ?? []),
+      ),
+    ];
+
+    await preloadCentros(empresaIds);
   } catch (error) {
     console.error('Error al cargar datos:', error);
     toast?.open({
       message: 'Error al cargar datos',
-      type: 'error'
+      type: 'error',
     });
   } finally {
     loading.value = false;
@@ -188,6 +222,8 @@ const guardarTodosLosCambios = async () => {
     });
     
     hasUnsavedChanges.value = false;
+
+    userStore.invalidateTenantUsersCache(user.value?.idProveedorSalud);
     
     toast?.open({
       message: `Asignaciones actualizadas para ${usuariosConCambios.length} usuario(s)`,
@@ -200,14 +236,8 @@ const guardarTodosLosCambios = async () => {
       type: 'error'
     });
     
-    // Recargar datos para restaurar el estado anterior
     await cargarDatos();
-    usuariosFiltrados.value.forEach(usuario => {
-      originalAssignments.value.set(usuario._id, {
-        empresasAsignadas: [...(usuario.empresasAsignadas || [])],
-        centrosTrabajoAsignados: [...(usuario.centrosTrabajoAsignados || [])]
-      });
-    });
+    syncOriginalAssignments();
   } finally {
     saving.value = false;
   }
@@ -215,14 +245,8 @@ const guardarTodosLosCambios = async () => {
 
 const descartarCambios = async () => {
   try {
-    // Recargar datos para restaurar el estado original
     await cargarDatos();
-    usuariosFiltrados.value.forEach(usuario => {
-      originalAssignments.value.set(usuario._id, {
-        empresasAsignadas: [...(usuario.empresasAsignadas || [])],
-        centrosTrabajoAsignados: [...(usuario.centrosTrabajoAsignados || [])]
-      });
-    });
+    syncOriginalAssignments();
     hasUnsavedChanges.value = false;
     
     toast?.open({
@@ -298,7 +322,8 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
     </div>
 
-    <div v-if="loading" class="text-center py-20">
+    <Transition appear mode="out-in" name="slide-up">
+    <div v-if="loading" key="loading" class="text-center py-20">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
         <i class="empresa-item-placeholder-icon fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
       </div>
@@ -306,7 +331,7 @@ onBeforeRouteLeave((to, from, next) => {
       <p class="text-gray-500">Obteniendo información de usuarios y asignaciones</p>
     </div>
 
-    <div v-else-if="usuariosFiltrados.length === 0" class="text-center py-20">
+    <div v-else-if="usuariosFiltrados.length === 0" key="empty" class="text-center py-20">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
         <i class="fas fa-users text-2xl text-gray-400"></i>
       </div>
@@ -314,7 +339,7 @@ onBeforeRouteLeave((to, from, next) => {
       <p class="text-gray-500">Solo se muestran usuarios con rol Médico o Enfermero/a</p>
     </div>
 
-    <div v-else>
+    <div v-else key="content">
       <!-- Resumen de asignaciones -->
       <AssignmentsSummary :usuarios="usuariosFiltrados" />
       
@@ -451,8 +476,29 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </div>
     </div>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+.slide-up-enter-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+</style>
 
 <style>
 html.dark-mode .manage-assignments-view .assignments-unsaved-indicator {

@@ -19,6 +19,7 @@ import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalRTs from '@/components/ModalRTs.vue';
 import ModalResumenImportacion from '@/components/ModalResumenImportacion.vue';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
+import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import TrabajadoresHeaderSkeleton from '@/components/skeletons/TrabajadoresHeaderSkeleton.vue';
 import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 
@@ -27,12 +28,24 @@ import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import type { Trabajador } from '../interfaces/trabajador.interface';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
-import type { EliminacionRequest } from '@/composables/useEliminacion';
+import { useEliminacion } from '@/composables/useEliminacion';
 import type { EntidadEliminable } from '@/config/eliminacion';
 
 // 2. Stores, rutas y helpers
 const toast: any = inject('toast');
-const requestEliminacionGlobal = inject<(request: EliminacionRequest) => void>('requestEliminacion');
+const {
+  isOpen: eliminacionOpen,
+  isConfirming: eliminacionConfirming,
+  nivel: eliminacionNivel,
+  tipoRegistro: eliminacionTipoRegistro,
+  identificacion: eliminacionIdentificacion,
+  textoConfirmacionEsperado: eliminacionTextoConfirmacion,
+  detalleContexto: eliminacionDetalleContexto,
+  mensajePersonalizado: eliminacionMensajePersonalizado,
+  requestEliminacion: requestEliminacionLocal,
+  confirmarEliminacion,
+  cancelarEliminacion,
+} = useEliminacion();
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
@@ -85,10 +98,20 @@ async function cargarDuplicadosPendientes() {
   }
 }
 
-function abrirFusion(trabajadorId: string, candidatoId: string) {
+function resolverCandidatoDuplicado(trabajadorId: string): string | null {
+  for (const dup of duplicadosPendientes.value) {
+    const tId = String(dup.trabajadorId?._id ?? dup.trabajadorId ?? '');
+    const cId = String(dup.candidatoId?._id ?? dup.candidatoId ?? '');
+    if (tId === trabajadorId && cId) return cId;
+    if (cId === trabajadorId && tId) return tId;
+  }
+  return null;
+}
+
+function abrirFusion(trabajadorId: string, candidatoId?: string) {
   executeIfCanManageTrabajadores(() => {
     fusionTrabajadorA.value = trabajadorId;
-    fusionTrabajadorB.value = candidatoId;
+    fusionTrabajadorB.value = candidatoId ?? '';
     showFusionModal.value = true;
   }, 'fusionar trabajadores');
 }
@@ -105,25 +128,21 @@ function onRevisarDuplicadosImportacion() {
 }
 
 async function abrirFusionDesdeListado(trabajadorId: string) {
-  executeIfCanManageTrabajadores(async () => {
-    const empresaId = empresas.currentEmpresaId;
-    const centroId = centrosTrabajo.currentCentroTrabajoId;
-    if (!empresaId || !centroId) return;
-    try {
-      const { data } = await TrabajadoresAPI.getDuplicadosDeTrabajador(
-        empresaId,
-        centroId,
-        trabajadorId,
-      );
-      const candidatos = Array.isArray(data) ? data : [];
-      if (!candidatos.length) {
-        toast?.open({ message: 'No hay candidatos de duplicado para este trabajador', type: 'warning' });
-        return;
-      }
-      abrirFusion(trabajadorId, candidatos[0].trabajadorId);
-    } catch {
-      toast?.open({ message: 'No se pudieron cargar los duplicados', type: 'error' });
+  let candidatoId = resolverCandidatoDuplicado(trabajadorId);
+  if (!candidatoId) {
+    await cargarDuplicadosPendientes();
+    candidatoId = resolverCandidatoDuplicado(trabajadorId);
+  }
+
+  executeIfCanManageTrabajadores(() => {
+    if (!candidatoId) {
+      toast?.open({
+        message: 'No se encontró un candidato de duplicado para este trabajador',
+        type: 'warning',
+      });
+      return;
     }
+    abrirFusion(trabajadorId, candidatoId);
   }, 'fusionar trabajadores');
 }
 
@@ -516,21 +535,18 @@ const openModal = async (empresa: Empresa | null = null, centroTrabajo: CentroTr
 };
 
 const openModalInternal = async (empresa: Empresa | null = null, centroTrabajo: CentroTrabajo | null = null, trabajador: Trabajador | null = null) => {
-  showModal.value = false;
-  trabajadores.loadingModal;
-
   if (empresa && centroTrabajo && trabajador) {
-    try {
-      await trabajadores.fetchTrabajadorById(empresa._id, centroTrabajo._id, trabajador._id);
-    } catch (error) {
-      console.error('Error al cargar el trabajador:', error);
-    }
+    trabajadores.hydrateCurrentTrabajadorFromListado(trabajador);
   } else {
     trabajadores.resetCurrentTrabajador();
   }
 
-  trabajadores.loadingModal = false;
   showModal.value = true;
+
+  if (empresa && centroTrabajo && trabajador?._id) {
+    void trabajadores.fetchTrabajadorById(empresa._id, centroTrabajo._id, trabajador._id)
+      .catch((error) => console.error('Error al cargar el trabajador:', error));
+  }
 };
 
 const closeModal = () => showModal.value = false;
@@ -547,7 +563,7 @@ const solicitarEliminacion = (
   onConfirm: (id: string, password?: string) => Promise<void>,
 ) => {
   const entidad = TIPO_A_ENTIDAD[tipo] ?? 'trabajador';
-  requestEliminacionGlobal?.({
+  requestEliminacionLocal({
     entidad,
     identificacion: descripcion,
     onConfirm: async (password) => {
@@ -563,33 +579,31 @@ const solicitarEliminacion = (
 provide('solicitarEliminacion', solicitarEliminacion);
 
 const openRTsModal = async (empresa: Empresa | null, centro: CentroTrabajo | null, trabajador: Trabajador | null) => {
-  showRTsModal.value = false;
-  trabajadores.loadingModal;
   if (empresa && centro && trabajador) {
-    try {
-      await trabajadores.fetchTrabajadorById(empresa._id, centro._id, trabajador._id);
-    } catch (error) {
-      console.error('Error al cargar el trabajador:', error);
-    }
+    trabajadores.hydrateCurrentTrabajadorFromListado(trabajador);
   }
-  trabajadores.loadingModal = false;
+
   showRTsModal.value = true;
+
+  if (empresa && centro && trabajador?._id) {
+    void trabajadores.fetchTrabajadorById(empresa._id, centro._id, trabajador._id)
+      .catch((error) => console.error('Error al cargar el trabajador:', error));
+  }
 };
 
 const closeRTsModal = () => showRTsModal.value = false;
 
 const openRisksModal = async (empresa: Empresa | null, centro: CentroTrabajo | null, trabajador: Trabajador | null) => {
-  showRisksModal.value = false;
-  trabajadores.loadingModal;
   if (empresa && centro && trabajador) {
-    try {
-      await trabajadores.fetchTrabajadorById(empresa._id, centro._id, trabajador._id);
-    } catch (error) {
-      console.error('Error al cargar el trabajador:', error);
-    }
+    trabajadores.hydrateCurrentTrabajadorFromListado(trabajador);
   }
-  trabajadores.loadingModal = false;
+
   showRisksModal.value = true;
+
+  if (empresa && centro && trabajador?._id) {
+    void trabajadores.fetchTrabajadorById(empresa._id, centro._id, trabajador._id)
+      .catch((error) => console.error('Error al cargar el trabajador:', error));
+  }
 };
 
 const closeRisksModal = () => showRisksModal.value = false;
@@ -944,13 +958,36 @@ const toggleVigencias = () => {
         :duration="{ enter: 230, leave: 150 }"
       >
         <ModalFusionTrabajadores
-          v-if="showFusionModal && fusionTrabajadorA && fusionTrabajadorB"
+          v-if="showFusionModal && fusionTrabajadorA"
           :trabajador-a-id="fusionTrabajadorA"
-          :trabajador-b-id="fusionTrabajadorB"
+          :trabajador-b-id="fusionTrabajadorB || undefined"
           @close="showFusionModal = false"
           @fused="onFusionCompletada"
         />
       </Transition>
+
+      <Teleport to="body">
+        <Transition
+          appear
+          name="modal-work"
+          :duration="{ enter: 230, leave: 150 }"
+        >
+          <ModalEliminacion
+            v-if="eliminacionOpen"
+            disable-transition
+            :is-visible="eliminacionOpen"
+            :nivel="eliminacionNivel"
+            :tipo-registro="eliminacionTipoRegistro"
+            :identificacion="eliminacionIdentificacion"
+            :texto-confirmacion-esperado="eliminacionTextoConfirmacion"
+            :detalle-contexto="eliminacionDetalleContexto"
+            :mensaje-personalizado="eliminacionMensajePersonalizado"
+            :is-confirming="eliminacionConfirming"
+            @confirm="confirmarEliminacion"
+            @cancel="cancelarEliminacion"
+          />
+        </Transition>
+      </Teleport>
 
       <div
         v-if="!cargandoVista && conteoDuplicados > 0 && canManageTrabajadores"

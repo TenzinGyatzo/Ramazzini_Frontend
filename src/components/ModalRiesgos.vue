@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject } from 'vue';
+import { ref, inject, watch } from 'vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -30,9 +30,29 @@ const buildFormState = () => ({
   agentes: [...agentesSeleccionados.value].sort(),
 });
 
-const { isDirty } = useDirtySnapshot(buildFormState, {
+const { isDirty, resetSnapshot } = useDirtySnapshot(buildFormState, {
   markCleanOnMount: true,
 });
+
+watch(
+  () => trabajadores.currentTrabajador?._id,
+  () => {
+    agentesSeleccionados.value = [
+      ...(trabajadores.currentTrabajador?.agentesRiesgoActuales ?? []),
+    ];
+    resetSnapshot();
+  },
+);
+
+watch(
+  () => trabajadores.currentTrabajador?.agentesRiesgoActuales,
+  (agentes) => {
+    if (trabajadores.loadingModal) return;
+    agentesSeleccionados.value = [...(agentes ?? [])];
+    resetSnapshot();
+  },
+  { deep: true },
+);
 
 const closeModal = () => {
   emit('closeModal');

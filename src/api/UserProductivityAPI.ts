@@ -3,7 +3,12 @@ import proveedor from '@/lib/axiosProveedor'
 
 export default {
     // Obtener estadísticas de productividad para todos los usuarios de un proveedor
-    async getProductivityStatsByProveedor(idProveedorSalud: string, fechaInicio?: string, fechaFin?: string) {
+    async getProductivityStatsByProveedor(
+        idProveedorSalud: string,
+        fechaInicio?: string,
+        fechaFin?: string,
+        signal?: AbortSignal,
+    ) {
         const params = new URLSearchParams();
         if (fechaInicio) params.append('fechaInicio', fechaInicio);
         if (fechaFin) params.append('fechaFin', fechaFin);
@@ -11,11 +16,15 @@ export default {
         const queryString = params.toString();
         const url = `/users/productividad/${idProveedorSalud}${queryString ? `?${queryString}` : ''}`;
 
-        return auth.get(url);
+        return auth.get(url, { signal });
     },
 
     // Obtener estadísticas de productividad para todos los usuarios del sistema (solo para administradores)
-    async getAllProductivityStats(fechaInicio?: string, fechaFin?: string) {
+    async getAllProductivityStats(
+        fechaInicio?: string,
+        fechaFin?: string,
+        signal?: AbortSignal,
+    ) {
         const params = new URLSearchParams();
         if (fechaInicio) params.append('fechaInicio', fechaInicio);
         if (fechaFin) params.append('fechaFin', fechaFin);
@@ -23,7 +32,7 @@ export default {
         const queryString = params.toString();
         const url = `/users/productividad/todos${queryString ? `?${queryString}` : ''}`;
 
-        return auth.get(url);
+        return auth.get(url, { signal });
     },
 
     // Obtener estadísticas detalladas de un usuario específico

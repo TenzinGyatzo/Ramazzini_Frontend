@@ -43,6 +43,7 @@ function resetState() {
 }
 
 function requestEliminacion(request: EliminacionRequest) {
+  isOpen.value = true;
   nivel.value = resolverNivel(request.entidad, request.contextoNivel);
   tipoRegistro.value = ETIQUETAS_ENTIDAD[request.entidad];
   identificacion.value = request.identificacion;
@@ -51,7 +52,6 @@ function requestEliminacion(request: EliminacionRequest) {
   detalleContexto.value = request.detalleContexto ?? null;
   mensajePersonalizado.value = request.mensajePersonalizado ?? '';
   onConfirmHandler.value = request.onConfirm;
-  isOpen.value = true;
 }
 
 async function confirmarEliminacion(password?: string) {

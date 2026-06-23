@@ -25,6 +25,8 @@ import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales
 import DailyConsentModal from '@/components/DailyConsentModal.vue';
 import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
 import ModalDeclaracionVeracidad from '@/components/ModalDeclaracionVeracidad.vue';
+import ModalEliminacion from '@/components/ModalEliminacion.vue';
+import { useEliminacion } from '@/composables/useEliminacion';
 import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
@@ -34,10 +36,21 @@ import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
 import ResultadosClinicosPanel from '@/components/ResultadosClinicosPanel.vue';
 import ResultadosClinicosSubsection from '@/components/ResultadosClinicosSubsection.vue';
 import ExpedienteHeaderSkeleton from '@/components/skeletons/ExpedienteHeaderSkeleton.vue';
-import type { EliminacionRequest } from '@/composables/useEliminacion';
 
 const toast: any = inject('toast');
-const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
+const {
+  isOpen: eliminacionOpen,
+  isConfirming: eliminacionConfirming,
+  nivel: eliminacionNivel,
+  tipoRegistro: eliminacionTipoRegistro,
+  identificacion: eliminacionIdentificacion,
+  textoConfirmacionEsperado: eliminacionTextoConfirmacion,
+  detalleContexto: eliminacionDetalleContexto,
+  mensajePersonalizado: eliminacionMensajePersonalizado,
+  requestEliminacion: requestEliminacionLocal,
+  confirmarEliminacion,
+  cancelarEliminacion,
+} = useEliminacion();
 
 const route = useRoute();
 const router = useRouter();
@@ -172,7 +185,7 @@ const solicitarEliminacionDocumento = (
   documentName: string,
   documentType: string,
 ) => {
-  requestEliminacion?.({
+  requestEliminacionLocal({
     entidad: 'documentoExpediente',
     identificacion: documentName,
     onConfirm: async () => {
@@ -985,6 +998,29 @@ const añoMasReciente = computed(() => {
           @cancel="handleConsentCancel"
         />
       </Transition>
+
+      <Teleport to="body">
+        <Transition
+          appear
+          name="modal-work"
+          :duration="{ enter: 230, leave: 150 }"
+        >
+          <ModalEliminacion
+            v-if="eliminacionOpen"
+            disable-transition
+            :is-visible="eliminacionOpen"
+            :nivel="eliminacionNivel"
+            :tipo-registro="eliminacionTipoRegistro"
+            :identificacion="eliminacionIdentificacion"
+            :texto-confirmacion-esperado="eliminacionTextoConfirmacion"
+            :detalle-contexto="eliminacionDetalleContexto"
+            :mensaje-personalizado="eliminacionMensajePersonalizado"
+            :is-confirming="eliminacionConfirming"
+            @confirm="confirmarEliminacion"
+            @cancel="cancelarEliminacion"
+          />
+        </Transition>
+      </Teleport>
 
       <ResultadosClinicosPanel 
         v-if="trabajadores.currentTrabajadorId" 

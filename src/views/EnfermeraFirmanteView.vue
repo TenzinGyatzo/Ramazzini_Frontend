@@ -707,12 +707,12 @@ const firmaSrc = computed(() => {
                         </div>
 
                         <!-- Mostrar la vista previa del pie de página y firma del médico -->
-                        <div class="flex flex-col xl:flex-row justify-center items-stretch xl:items-center gap-6 mt-4">
+                        <div class="flex flex-col lg:flex-row justify-center items-stretch xl:items-center gap-6 mt-4">
 
                             <!-- Pie de Página del Médico Firmante (Izquierda) -->
                             <div v-if="piePaginaFirmante.nombre" class="w-full xl:w-1/2 flex flex-col items-center xl:items-start">
-                                <p class="font-medium text-lg text-gray-700 text-center xl:text-left">Pie de Página del Enfermera Firmante:</p>
-                                <div class="w-full max-w-md mt-4 p-4 border rounded-lg bg-gray-50 text-center xl:text-left">                  
+                                <p class="font-medium text-lg text-gray-700 text-left">Pie de Página del Enfermera Firmante:</p>
+                                <div class="w-full max-w-md mt-4 p-4 border rounded-lg bg-gray-50 text-left">                  
                                     <p class="text-sm text-gray-800 space-y-1">
                                         <span class="font-medium" v-if="piePaginaFirmante.nombre">
                                             {{ piePaginaFirmante.nombreCompleto }}
@@ -736,7 +736,7 @@ const firmaSrc = computed(() => {
 
                             <!-- Vista previa de las Firmas (Derecha) -->
                             <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-                                <div v-if="enfermeraFirmante.enfermeraFirmante?.firma?.data" class="w-full sm:w-1/2 flex flex-col items-center">
+                                <div v-if="enfermeraFirmante.enfermeraFirmante?.firma?.data" class="w-full flex flex-col items-center">
                                     <p class="font-medium text-lg text-gray-700">Firma actual:</p>
                                     <img :src="firmaSrc" :alt="'Firma de ' + piePaginaFirmante.nombreCompleto"
                                         class="w-40 h-40 sm:w-48 sm:h-48 object-contain mt-2 border-2 border-gray-300 rounded-lg"/>
@@ -744,7 +744,7 @@ const firmaSrc = computed(() => {
 
                                 <!-- Firma Nueva -->
                                 <Transition appear name="fade-slow">
-                                    <div v-if="firmaPreview" class="w-full sm:w-1/2 flex flex-col items-center">
+                                    <div v-if="firmaPreview" class="w-full flex flex-col items-center">
                                         <p class="font-medium text-lg text-gray-700">Firma Nueva:</p>
                                         <img :src="firmaPreview" alt="Vista previa de la firma"
                                             class="w-40 h-40 sm:w-48 sm:h-48 object-contain mt-2 border-2 border-gray-300 rounded-lg" />

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, inject, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, inject, computed, watch } from "vue";
 import { useUserStore } from "@/stores/user";
 import UserProductivityItem from "@/components/UserProductivityItem.vue";
 import UserProductivityAPI from "@/api/UserProductivityAPI";
@@ -209,113 +209,86 @@ const configuracionOriginal = {
   externos: 0
 };
 
-// Datos de ejemplo para la estructura base
-const usuariosConProductividad = ref([
-  {
-    _id: "1",
-    username: "Dr. Juan Pérez",
-    email: "juan.perez@empresa.com",
-    role: "Secundario",
-    productividad: {
-      totalAptitudes: 32,
-      totalHistoriasClinicas: 45,
-      totalExploracionesFisicas: 28,
-      totalExamenesVista: 15,
-      totalAudiometrias: 12,
-      totalAntidopings: 8,
-      totalNotasMedicas: 5,
-      totalDocumentosExternos: 3,
-      ultimoInforme: "2025-01-21T10:30:00.000Z",
-      totalDocumentos: 148
-    }
-  },
-  {
-    _id: "2", 
-    username: "Dra. María González",
-    email: "maria.gonzalez@empresa.com",
-    role: "Secundario",
-    productividad: {
-      totalAptitudes: 41,
-      totalHistoriasClinicas: 38,
-      totalExploracionesFisicas: 35,
-      totalExamenesVista: 18,
-      totalAudiometrias: 14,
-      totalAntidopings: 6,
-      totalNotasMedicas: 8,
-      totalDocumentosExternos: 4,
-      ultimoInforme: "2025-01-20T14:15:00.000Z",
-      totalDocumentos: 164
-    }
-  },
-  {
-    _id: "3",
-    username: "Dr. Carlos López",
-    email: "carlos.lopez@empresa.com", 
-    role: "Secundario",
-    productividad: {
-      totalAptitudes: 29,
-      totalHistoriasClinicas: 52,
-      totalExploracionesFisicas: 31,
-      totalExamenesVista: 22,
-      totalAudiometrias: 16,
-      totalAntidopings: 10,
-      totalNotasMedicas: 12,
-      totalDocumentosExternos: 6,
-      ultimoInforme: "2025-01-21T08:45:00.000Z",
-      totalDocumentos: 168
-    }
+const usuariosConProductividad = ref([]);
+const skipWatchRecarga = ref(true);
+let abortController = null;
+let debounceTimer = null;
+
+const aplicarReglasPuntaje = (reglas) => {
+  if (reglas) {
+    configuracionPuntos.value = { ...configuracionOriginal, ...reglas };
   }
-]);
+};
 
 // Función para cargar datos con filtros
 const cargarDatos = async (inicio, fin) => {
+  if (abortController) {
+    abortController.abort();
+  }
+  abortController = new AbortController();
+  const { signal } = abortController;
+
   try {
     loading.value = true;
-    
+
     let response;
-    
+
     if (esAdministrador.value) {
-      // Si es administrador, obtener estadísticas de todos los usuarios del sistema
-      response = await UserProductivityAPI.getAllProductivityStats(inicio, fin);
-      console.log("Obteniendo estadísticas de todos los usuarios (modo administrador)");
+      response = await UserProductivityAPI.getAllProductivityStats(inicio, fin, signal);
     } else {
-      // Si no es administrador, obtener solo los datos de su proveedor
       response = await UserProductivityAPI.getProductivityStatsByProveedor(
         user.value.idProveedorSalud,
         inicio,
-        fin
+        fin,
+        signal
       );
-      console.log("Obteniendo estadísticas del proveedor:", user.value.idProveedorSalud);
     }
-    
-    if (response.data) {
-      usuariosConProductividad.value = response.data;
-      console.log("Estadísticas de productividad obtenidas:", response.data);
+
+    if (signal.aborted) return;
+
+    const payload = response.data;
+    if (payload?.usuarios) {
+      usuariosConProductividad.value = payload.usuarios;
+      aplicarReglasPuntaje(payload.reglasPuntaje);
+    } else if (Array.isArray(payload)) {
+      usuariosConProductividad.value = payload;
     } else {
       throw new Error("No se obtuvieron datos de productividad");
     }
   } catch (error) {
+    if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError') {
+      return;
+    }
     console.error("Error al cargar datos:", error);
+    usuariosConProductividad.value = [];
     toast.open({
       type: "error",
       message: "Error al cargar los datos de productividad",
       position: "top-right",
     });
-    
-    // En caso de error, mantener los datos de ejemplo
-    console.log("Usando datos de ejemplo debido al error");
   } finally {
-    loading.value = false;
+    if (!signal.aborted) {
+      loading.value = false;
+    }
   }
 };
 
 onMounted(async () => {
-  cargarConfiguracionGuardada();
+  periodoPredefinido.value = 'Este mes';
+  manejarCambioPeriodo('Este mes');
+  skipWatchRecarga.value = false;
   await cargarDatos(fechaInicio.value, fechaFin.value);
+});
+
+onUnmounted(() => {
+  if (abortController) abortController.abort();
+  if (debounceTimer) clearTimeout(debounceTimer);
 });
 
 // Watcher para recargar datos cuando cambien las fechas
 watch([fechaInicio, fechaFin], ([inicio, fin]) => {
+  if (skipWatchRecarga.value) return;
+
   if (inicio && fin && new Date(inicio) > new Date(fin)) {
     toast.open({
       message: 'La fecha de inicio no puede ser mayor que la fecha final.',
@@ -323,7 +296,11 @@ watch([fechaInicio, fechaFin], ([inicio, fin]) => {
     });
     return;
   }
-  cargarDatos(inicio, fin);
+
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    cargarDatos(inicio, fin);
+  }, 300);
 });
 
 // Función para obtener estadísticas de un usuario específico
@@ -354,8 +331,9 @@ const obtenerEstadisticasUsuario = async (userId) => {
 };
 
 // Funciones para el modal de reglas de puntaje
-const abrirModalReglas = () => {
+const abrirModalReglas = async () => {
   mostrarModalReglas.value = true;
+  await cargarConfiguracionGuardada();
 };
 
 const cerrarModalReglas = () => {
@@ -858,7 +836,7 @@ const getInputClasses = (colorClass) => {
       </div>
 
       <!-- Resumen estadístico -->
-      <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div v-if="!loading" class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-white p-6 rounded-lg shadow-lg">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -893,7 +871,9 @@ const getInputClasses = (colorClass) => {
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-500">Promedio por Usuario</p>
               <p class="text-2xl font-bold text-gray-900">
-                {{ Math.round(usuariosConProductividad.reduce((sum, u) => sum + u.productividad.totalDocumentos, 0) / usuariosConProductividad.length) }}
+                {{ usuariosConProductividad.length
+                  ? Math.round(usuariosConProductividad.reduce((sum, u) => sum + u.productividad.totalDocumentos, 0) / usuariosConProductividad.length)
+                  : 0 }}
               </p>
             </div>
           </div>

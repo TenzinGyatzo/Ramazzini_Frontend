@@ -765,12 +765,12 @@ const firmaSrc = computed(() => {
                         </div>
 
                         <!-- Mostrar la vista previa del pie de página y firma del médico -->
-                        <div class="flex flex-col xl:flex-row justify-center items-stretch xl:items-center gap-6 mt-4">
+                        <div class="flex flex-col lg:flex-row justify-center items-stretch xl:items-center gap-6 mt-4">
 
                             <!-- Pie de Página del Médico Firmante (Izquierda) -->
                             <div v-if="piePaginaFirmante.nombre" class="w-full xl:w-1/2 flex flex-col items-center xl:items-start">
-                                <p class="font-medium text-lg text-gray-700 text-center xl:text-left">Pie de Página del Médico Firmante:</p>
-                                <div class="w-full max-w-md mt-4 p-4 border rounded-lg bg-gray-50 text-center xl:text-left">                  
+                                <p class="font-medium text-lg text-gray-700 text-left">Pie de Página del Médico Firmante:</p>
+                                <div class="w-full max-w-md mt-4 p-4 border rounded-lg bg-gray-50 text-left">                  
                                     <p class="text-sm text-gray-800 space-y-1">
                                         <span class="font-medium" v-if="piePaginaFirmante.nombre">
                                             {{ piePaginaFirmante.nombreCompleto }}
@@ -787,9 +787,10 @@ const firmaSrc = computed(() => {
                                             {{ proveedorSaludStore.proveedorSalud.pais === 'MX' ? 'Cédula Especialidad Med. del Trab. No.' : 'Registro de Especialidad No.' }} {{ piePaginaFirmante.numeroCedulaEspecialista }}
                                         </span><br v-if="piePaginaFirmante.especialistaSaludTrabajo">
                                         
-                                        <span v-if="piePaginaFirmante.nombreCredencialAdicional" 
-                                            class="font-light truncate overflow-hidden text-ellipsis whitespace-nowrap max-w-[390px]">
-                                            {{ piePaginaFirmante.nombreCredencialAdicional }} No. {{ piePaginaFirmante.numeroCredencialAdicional }}
+                                        <span v-if="piePaginaFirmante.nombreCredencialAdicional" class="font-light">
+                                            <span class="inline-block truncate max-w-[390px]">
+                                                {{ piePaginaFirmante.nombreCredencialAdicional }} No. {{ piePaginaFirmante.numeroCredencialAdicional }}
+                                            </span>
                                         </span>
                                     </p>
                                 </div>

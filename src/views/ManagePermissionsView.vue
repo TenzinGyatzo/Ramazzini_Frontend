@@ -14,15 +14,21 @@ const userStore = useUserStore();
 const user = computed(() => userStore.user);
 
 const usuarios = ref([]);
-const loading = ref(false);
+const loading = ref(true);
 const saving = ref(false);
 const hasUnsavedChanges = ref(false);
 
+const ROLES_OPERATIVOS = [
+  'Médico',
+  'Enfermero/a',
+  'Administrativo',
+  'Técnico Evaluador',
+];
+
 // Filtrar usuarios para mostrar solo Médicos, Enfermeros/as, Administrativos y Técnicos Evaluadores
 const usuariosFiltrados = computed(() => {
-  return usuarios.value.filter(usuario => 
-    usuario.role === 'Médico' || usuario.role === 'Enfermero/a' || 
-    usuario.role === 'Administrativo' || usuario.role === 'Técnico Evaluador'
+  return usuarios.value.filter((usuario) =>
+    ROLES_OPERATIVOS.includes(usuario.role),
   );
 });
 
@@ -46,12 +52,16 @@ const hasChanges = computed(() => {
   });
 });
 
-onMounted(async () => {
-  await cargarUsuarios();
-  // Guardar estado original de permisos
-  usuariosFiltrados.value.forEach(usuario => {
+const syncOriginalPermissions = () => {
+  originalPermissions.value.clear();
+  usuariosFiltrados.value.forEach((usuario) => {
     originalPermissions.value.set(usuario._id, { ...usuario.permisos });
   });
+};
+
+onMounted(async () => {
+  await cargarUsuarios();
+  syncOriginalPermissions();
 });
 
 // Watch para detectar cambios en permisos
@@ -78,14 +88,38 @@ const normalizeUserPermissions = (usuario) => ({
 });
 
 const cargarUsuarios = async () => {
+  const idProveedorSalud = user.value?.idProveedorSalud;
+  if (!idProveedorSalud) {
+    toast.open({
+      message: 'No se pudo identificar el proveedor de salud',
+      type: 'error',
+    });
+    return;
+  }
+
   loading.value = true;
   try {
     const resultado = await userStore.fetchUsersByProveedorId(
-      user.value.idProveedorSalud
+      idProveedorSalud,
+      {
+        scope: 'permissions',
+        roles: ROLES_OPERATIVOS.join(','),
+      },
     );
-    usuarios.value = resultado.data.map(normalizeUserPermissions);
+
+    if (!resultado.success) {
+      usuarios.value = [];
+      toast.open({
+        message: 'Error al cargar usuarios',
+        type: 'error',
+      });
+      return;
+    }
+
+    usuarios.value = (resultado.data ?? []).map(normalizeUserPermissions);
   } catch (error) {
     console.error('Error al cargar usuarios:', error);
+    usuarios.value = [];
     toast.open({
       message: 'Error al cargar usuarios',
       type: 'error'
@@ -133,6 +167,8 @@ const guardarTodosLosCambios = async () => {
     });
     
     hasUnsavedChanges.value = false;
+
+    userStore.invalidateTenantUsersCache(user.value?.idProveedorSalud);
     
     toast.open({
       message: `Permisos actualizados para ${usuariosConCambios.length} usuario(s)`,
@@ -145,11 +181,8 @@ const guardarTodosLosCambios = async () => {
       type: 'error'
     });
     
-    // Recargar usuarios para restaurar el estado anterior
     await cargarUsuarios();
-    usuariosFiltrados.value.forEach(usuario => {
-      originalPermissions.value.set(usuario._id, { ...usuario.permisos });
-    });
+    syncOriginalPermissions();
   } finally {
     saving.value = false;
   }
@@ -157,11 +190,8 @@ const guardarTodosLosCambios = async () => {
 
 const descartarCambios = async () => {
   try {
-    // Recargar usuarios para restaurar el estado original
     await cargarUsuarios();
-    usuariosFiltrados.value.forEach(usuario => {
-      originalPermissions.value.set(usuario._id, { ...usuario.permisos });
-    });
+    syncOriginalPermissions();
     hasUnsavedChanges.value = false;
     
     toast.open({
@@ -183,6 +213,7 @@ const toggleAccountStatus = async (usuario) => {
     await PermissionsAPI.toggleAccountStatus(usuario._id, nuevoEstado);
     
     usuario.cuentaActiva = nuevoEstado;
+    userStore.invalidateTenantUsersCache(user.value?.idProveedorSalud);
     const estado = nuevoEstado ? 'reactivada' : 'suspendida';
     
     toast.open({
@@ -198,9 +229,7 @@ const toggleAccountStatus = async (usuario) => {
     
     // Recargar usuarios para restaurar el estado anterior
     await cargarUsuarios();
-    usuariosFiltrados.value.forEach(usuario => {
-      originalPermissions.value.set(usuario._id, { ...usuario.permisos });
-    });
+    syncOriginalPermissions();
   }
 };
 
@@ -265,7 +294,8 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
     </div>
 
-    <div v-if="loading" class="text-center py-20">
+    <Transition appear mode="out-in" name="slide-up">
+    <div v-if="loading" key="loading" class="text-center py-20">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
         <i class="empresa-item-placeholder-icon fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
       </div>
@@ -273,7 +303,7 @@ onBeforeRouteLeave((to, from, next) => {
       <p class="text-gray-500">Obteniendo información de permisos</p>
     </div>
 
-    <div v-else-if="usuariosFiltrados.length === 0" class="text-center py-20">
+    <div v-else-if="usuariosFiltrados.length === 0" key="empty" class="text-center py-20">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
         <i class="fas fa-users text-2xl text-gray-400"></i>
       </div>
@@ -281,7 +311,7 @@ onBeforeRouteLeave((to, from, next) => {
       <p class="text-gray-500">Solo se muestran usuarios con rol Médico, Enfermero/a, Administrativo o Técnico Evaluador</p>
     </div>
 
-    <div v-else>
+    <div v-else key="content">
       <!-- Tarjeta de estado de permisos del usuario actual -->
       <!-- <PermissionStatusCard class="mb-6" /> -->
 
@@ -562,8 +592,29 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </div>
     </div>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+.slide-up-enter-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+</style>
 
 <style>
 html.dark-mode .permissions-unsaved-indicator {

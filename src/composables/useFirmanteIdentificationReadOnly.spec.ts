@@ -58,15 +58,14 @@ describe('useFirmanteIdentificationReadOnly', () => {
     const { preserveImmutableIdentificationFields } =
       useFirmanteIdentificationReadOnly(firmante);
 
-    const result = preserveImmutableIdentificationFields(
-      {
-        nombre: '',
-        primerApellido: '',
-        segundoApellido: '',
-        tituloProfesional: 'Dr.',
-      },
-      firmante.value,
-    );
+    const payload: Record<string, unknown> = {
+      nombre: '',
+      primerApellido: '',
+      segundoApellido: '',
+      tituloProfesional: 'Dr.',
+    };
+
+    const result = preserveImmutableIdentificationFields(payload, firmante.value);
 
     expect(result.nombre).toBe('JUAN');
     expect(result.primerApellido).toBe('GARCIA');

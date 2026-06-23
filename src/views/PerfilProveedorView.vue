@@ -748,7 +748,9 @@ const logoSrc = computed(() => {
             </div>
 
             <!-- Mostrar la vista previa del logotipo -->
-            <div class="flex flex-col xl:flex-row items-stretch xl:items-center justify-center gap-6">
+            <div class="flex flex-col md:flex-row items-stretch xl:items-center justify-center gap-6">
+              <div class="flex flex-col md:flex-row items-stretch xl:items-center justify-center gap-6">
+              </div>
               <div v-if="proveedorSalud.proveedorSalud?.logotipoEmpresa?.data" class="w-full sm:w-2/3 xl:w-1/3 flex flex-col items-center text-center xl:text-left mx-auto">
                 <p class="font-medium text-lg text-gray-700 mb-2">
                   Logotipo actual:

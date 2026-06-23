@@ -141,6 +141,11 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     currentTrabajadorId.value = "";
   }
 
+  function hydrateCurrentTrabajadorFromListado(trabajador: Partial<Trabajador> & { _id: string }) {
+    currentTrabajador.value = { ...trabajador } as Trabajador;
+    currentTrabajadorId.value = trabajador._id?.toString() ?? "";
+  }
+
   async function fetchTrabajadores(empresaId: string, centroTrabajoId: string) {
     const seq = ++listadoSeq;
     try {
@@ -477,6 +482,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     currentTrabajadorId,
     currentTrabajador,
     resetCurrentTrabajador,
+    hydrateCurrentTrabajadorFromListado,
     resetTrabajadores,
     invalidateListadoHistoriaCache,
     fetchTrabajadores,

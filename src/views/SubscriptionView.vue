@@ -666,6 +666,26 @@ const porcentajeHistorias = computed(() => {
 
 </template>
 
+<style scoped>
+.slide-up-enter-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+</style>
+
 <style>
   @keyframes fadeInScale {
     from {

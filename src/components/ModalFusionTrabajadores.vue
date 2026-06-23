@@ -22,6 +22,11 @@ import FusionRegistroResumen from '@/components/FusionRegistroResumen.vue';
 import FusionWorkerIdentidad from '@/components/FusionWorkerIdentidad.vue';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
+import {
+  getCachedFusionPreview,
+  setCachedFusionPreview,
+  invalidateFusionPreviewCache,
+} from '@/composables/useFusionPreviewCache';
 import type {
   DuplicateWorkerSummary,
   FusionPreview,
@@ -40,7 +45,7 @@ const props = defineProps<{
 
   trabajadorAId: string;
 
-  trabajadorBId: string;
+  trabajadorBId?: string;
 
   posibleDuplicado?: PosibleDuplicado | null;
 
@@ -256,60 +261,57 @@ function esConservado(id: string): boolean {
 async function loadPreview() {
   const empresaId = empresas.currentEmpresaId;
   const centroId = centrosTrabajo.currentCentroTrabajoId;
-  if (!empresaId || !centroId) return;
+  if (!empresaId || !centroId || !destinoId.value || !fuenteId.value) return;
 
   const seq = ++previewSeq;
-
   loading.value = true;
 
+  const cached = getCachedFusionPreview(destinoId.value, fuenteId.value);
+  if (cached) {
+    if (seq !== previewSeq) return;
+    preview.value = cached;
+    if (
+      cached.destinoRecomendadoId &&
+      cached.destinoRecomendadoId !== destinoId.value
+    ) {
+      const oldDestino = destinoId.value;
+      destinoId.value = cached.destinoRecomendadoId;
+      fuenteId.value = oldDestino;
+    }
+    loading.value = false;
+    return;
+  }
+
   try {
-
     const { data } = await TrabajadoresAPI.getFusionPreview(
-
       empresaId,
-
       centroId,
-
       destinoId.value,
-
       fuenteId.value,
-
     );
 
     if (seq !== previewSeq) return;
 
     preview.value = data;
+    setCachedFusionPreview(destinoId.value, fuenteId.value, data);
 
     if (data.destinoRecomendadoId && data.destinoRecomendadoId !== destinoId.value) {
-
       const oldDestino = destinoId.value;
-
       destinoId.value = data.destinoRecomendadoId;
-
       fuenteId.value = oldDestino;
-
     }
-
   } catch (error) {
-
     if (seq !== previewSeq) return;
 
     toast?.open({
-
       message: extractApiErrorMessage(error, 'No se pudo cargar la vista previa de fusión'),
-
       type: 'error',
-
     });
 
     forceClose();
-
   } finally {
-
     if (seq === previewSeq) loading.value = false;
-
   }
-
 }
 
 
@@ -379,6 +381,8 @@ async function confirmarFusion() {
 
     toast?.open({ message: 'Trabajadores fusionados correctamente', type: 'success' });
 
+    invalidateFusionPreviewCache(destinoId.value, fuenteId.value);
+
     await trabajadores.fetchTrabajadoresConHistoria(
 
       empresaId,
@@ -411,24 +415,58 @@ async function confirmarFusion() {
 
 
 
-onMounted(() => {
+onMounted(async () => {
+  loading.value = true;
 
-  if (props.posibleDuplicado) {
+  let trabajadorBId = props.trabajadorBId;
 
-    destinoId.value = props.posibleDuplicado.trabajadorId;
+  if (!trabajadorBId) {
+    const empresaId = empresas.currentEmpresaId;
+    const centroId = centrosTrabajo.currentCentroTrabajoId;
+    if (!empresaId || !centroId) {
+      forceClose();
+      return;
+    }
 
-    fuenteId.value = props.trabajadorAId === destinoId.value ? props.trabajadorBId : props.trabajadorAId;
-
-  } else {
-
-    destinoId.value = props.trabajadorAId;
-
-    fuenteId.value = props.trabajadorBId;
-
+    try {
+      const { data } = await TrabajadoresAPI.getDuplicadosDeTrabajador(
+        empresaId,
+        centroId,
+        props.trabajadorAId,
+      );
+      const candidatos = Array.isArray(data) ? data : [];
+      if (!candidatos.length) {
+        toast?.open({
+          message: 'No hay candidatos de duplicado para este trabajador',
+          type: 'warning',
+        });
+        forceClose();
+        return;
+      }
+      trabajadorBId = String(candidatos[0].trabajadorId ?? '');
+      if (!trabajadorBId) {
+        forceClose();
+        return;
+      }
+    } catch (error) {
+      toast?.open({
+        message: extractApiErrorMessage(error, 'No se pudieron cargar los duplicados'),
+        type: 'error',
+      });
+      forceClose();
+      return;
+    }
   }
 
-  loadPreview();
+  if (props.posibleDuplicado) {
+    destinoId.value = props.posibleDuplicado.trabajadorId;
+    fuenteId.value = props.trabajadorAId === destinoId.value ? trabajadorBId : props.trabajadorAId;
+  } else {
+    destinoId.value = props.trabajadorAId;
+    fuenteId.value = trabajadorBId;
+  }
 
+  await loadPreview();
 });
 
 </script>

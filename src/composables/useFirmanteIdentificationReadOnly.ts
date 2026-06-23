@@ -93,11 +93,11 @@ export function useFirmanteIdentificationReadOnly(
       return payload;
     }
 
-    const result = { ...payload };
+    const result: Record<string, unknown> = { ...payload };
     for (const field of FIRMANTE_IMMUTABLE_PAYLOAD_FIELDS) {
-      result[field] = formatStoredFieldForSubmit(field, record) as T[typeof field];
+      result[field] = formatStoredFieldForSubmit(field, record);
     }
-    return result;
+    return result as T;
   }
 
   return {

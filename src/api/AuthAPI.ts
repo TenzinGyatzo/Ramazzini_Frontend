@@ -51,8 +51,17 @@ export default {
     return auth.post(`/users/forgot-password/${token}`, data);
   },
 
-  getUsersByProveedorId(idProveedorSalud) {
-    return auth.get(`/users/get-users/${idProveedorSalud}`);
+  getUsersByProveedorId(
+    idProveedorSalud: string,
+    options?: { scope?: string; roles?: string },
+  ) {
+    const params = new URLSearchParams();
+    if (options?.scope) params.append('scope', options.scope);
+    if (options?.roles) params.append('roles', options.roles);
+    const queryString = params.toString();
+    return auth.get(
+      `/users/get-users/${idProveedorSalud}${queryString ? `?${queryString}` : ''}`,
+    );
   },
 
   removeUserByEmail(email: string, deletionPassword?: string) {
