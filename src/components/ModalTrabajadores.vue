@@ -602,7 +602,7 @@ const handleSubmit = async (data) => {
         posibleDuplicadoRegistro.value = response.posibleDuplicado;
         nuevoTrabajadorId.value = response.data?._id;
         toast.open({
-          message: `Trabajador registrado. Posible duplicado detectado (${response.posibleDuplicado.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM'}).`,
+          message: `Trabajador registrado. Posible duplicado detectado (${response.posibleDuplicado.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM'}). La alerta quedará pendiente hasta fusionar.`,
           type: 'warning',
         });
         trabajadores.fetchTrabajadoresConHistoria(
@@ -628,26 +628,12 @@ const handleSubmit = async (data) => {
   }
 };
 
-async function descartarDuplicadoAlta() {
-  const alertId = posibleDuplicadoRegistro.value?.alertId;
-  try {
-    if (alertId) {
-      await TrabajadoresAPI.descartarDuplicado(
-        empresas.currentEmpresaId,
-        centrosTrabajo.currentCentroTrabajoId,
-        alertId,
-      );
-    }
-    posibleDuplicadoRegistro.value = null;
-    toast.open({ message: 'Registrado como trabajador distinto', type: 'info' });
-    forceClose();
-    trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
-  } catch (error) {
-    toast.open({
-      message: extractApiErrorMessage(error, 'No se pudo descartar la alerta de duplicado'),
-      type: 'error',
-    });
-  }
+function posponerRevisionDuplicado() {
+  toast.open({
+    message: 'Podrás revisarlo desde el listado de trabajadores.',
+    type: 'info',
+  });
+  forceClose();
 }
 
 function abrirFusionDesdeAlta() {
@@ -839,13 +825,13 @@ const cancelarTransferencia = () => {
           </p>
           <div
             v-if="posibleDuplicadoRegistro"
-            class="mb-4 p-4 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900"
+            class="mb-4 p-4 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900 dark:border-amber-600/70 dark:bg-amber-950/45 dark:text-amber-100"
           >
-            <p class="font-medium">
+            <p class="font-medium text-amber-900 dark:text-amber-100">
               Posible duplicado detectado
               ({{ posibleDuplicadoRegistro.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM' }})
             </p>
-            <p class="mt-1">
+            <p class="mt-1 text-amber-900/90 dark:text-amber-100/90">
               Coincide con:
               {{ formatNombreCompleto(
                 posibleDuplicadoRegistro.trabajador?.primerApellido,
@@ -857,17 +843,17 @@ const cancelarTransferencia = () => {
             <div class="flex flex-wrap gap-2 mt-3">
               <button
                 type="button"
-                class="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-xs hover:bg-emerald-700"
+                class="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-xs hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                 @click="abrirFusionDesdeAlta"
               >
                 Fusionar ahora
               </button>
               <button
                 type="button"
-                class="px-3 py-1.5 rounded-md border border-gray-300 text-xs hover:bg-white"
-                @click="descartarDuplicadoAlta"
+                class="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-amber-900 hover:bg-white dark:border-slate-500 dark:bg-slate-800/70 dark:text-amber-100 dark:hover:bg-slate-700 dark:hover:border-slate-400"
+                @click="posponerRevisionDuplicado"
               >
-                Es otro trabajador
+                Revisar más tarde
               </button>
             </div>
           </div>

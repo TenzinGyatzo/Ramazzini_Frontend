@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch, computed, onBeforeUnmount, provide } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed, onBeforeUnmount, provide, nextTick } from "vue";
 import { useUserStore } from "@/stores/user";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { useMedicoFirmanteStore } from "@/stores/medicoFirmante";
@@ -93,6 +93,56 @@ function updateViewportSize() {
 const isVisible = ref(false);
 const isMenuOpen = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
+const menuScrollRef = ref<HTMLElement | null>(null);
+const menuHasScrollbar = ref(false);
+let menuScrollResizeObserver: ResizeObserver | null = null;
+
+function updateMenuScrollbarState() {
+  const el = menuScrollRef.value;
+  if (!el) {
+    menuHasScrollbar.value = false;
+    return;
+  }
+  menuHasScrollbar.value = el.scrollHeight > el.clientHeight;
+}
+
+function setupMenuScrollObserver() {
+  teardownMenuScrollObserver();
+  const el = menuScrollRef.value;
+  if (!el) return;
+
+  const runUpdate = () => updateMenuScrollbarState();
+  runUpdate();
+
+  menuScrollResizeObserver = new ResizeObserver(runUpdate);
+  menuScrollResizeObserver.observe(el);
+  const inner = el.firstElementChild;
+  if (inner instanceof HTMLElement) {
+    menuScrollResizeObserver.observe(inner);
+  }
+}
+
+function teardownMenuScrollObserver() {
+  menuScrollResizeObserver?.disconnect();
+  menuScrollResizeObserver = null;
+}
+
+watch(isMenuOpen, async (open) => {
+  if (open) {
+    await nextTick();
+    setupMenuScrollObserver();
+  } else {
+    teardownMenuScrollObserver();
+    menuHasScrollbar.value = false;
+  }
+});
+
+watch(datosCargados, async () => {
+  if (isMenuOpen.value) {
+    await nextTick();
+    updateMenuScrollbarState();
+  }
+});
 const isGuideMenuOpen = ref(false);
 const guideMenuRef = ref<HTMLElement | null>(null);
 const isNotificationVisible = ref(false);
@@ -181,6 +231,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
+  teardownMenuScrollObserver();
   if (debugViewportEnabled) {
     window.removeEventListener("resize", updateViewportSize);
   }
@@ -885,7 +936,7 @@ const isHomeRoute = computed(() => route.name === 'inicio');
         ref="menuRef"
         class="fixed top-20 right-6 bg-white rounded-2xl shadow-2xl p-6 w-72 z-40 border border-gray-100 backdrop-blur-sm bg-white/95 overflow-visible">
 
-        <div class="max-h-[70vh] overflow-y-auto pr-3">
+        <div ref="menuScrollRef" class="max-h-[70vh] overflow-y-auto pr-3">
           <div class="space-y-4">
 
           <!-- Administrador -->
@@ -1103,7 +1154,9 @@ const isHomeRoute = computed(() => route.name === 'inicio');
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-blue-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-chart-line text-blue-500 group-hover:text-blue-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Monitoreo de Usuarios</span>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200 whitespace-nowrap">
+                  {{ menuHasScrollbar ? 'Monitoreo Usuarios' : 'Monitoreo de Usuarios' }}
+                </span>
               </div>
             </RouterLink>
             <RouterLink :to="{ name: 'manage-permissions' }" @click="isMenuOpen = false"

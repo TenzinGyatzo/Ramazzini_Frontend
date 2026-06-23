@@ -10,10 +10,16 @@ import {
   nombreCompletoWorker,
 } from '@/helpers/fusionWorkerCompare';
 
-const props = defineProps<{
-  registro: DuplicateWorkerSummary;
-  opuesto: DuplicateWorkerSummary;
-}>();
+const props = withDefaults(
+  defineProps<{
+    registro: DuplicateWorkerSummary;
+    opuesto: DuplicateWorkerSummary;
+    identificadorPersonalLabel?: string;
+  }>(),
+  {
+    identificadorPersonalLabel: 'CURP',
+  },
+);
 
 function textClass(field: Parameters<typeof fieldDiffers>[0], normal = 'text-gray-600'): string {
   if (fieldDiffers(field, props.registro, props.opuesto)) {
@@ -88,7 +94,7 @@ const centro = computed(
       <div class="flex items-center gap-2 min-w-0">
         <i class="fas fa-id-badge text-purple-500 text-sm shrink-0"></i>
         <span class="text-sm truncate" :class="textClass('curp')">
-          CURP {{ registro.curp || '—' }}
+          {{ identificadorPersonalLabel }} {{ registro.curp || '—' }}
         </span>
       </div>
       <div class="flex items-center gap-2 min-w-0">

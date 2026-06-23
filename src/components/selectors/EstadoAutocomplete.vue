@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+import { useCatalogListKeyboard } from '@/helpers/useCatalogListKeyboard';
 import { sortEstadosByCode } from '@/helpers/geoCatalogSort';
 import { getResidenciaUiState } from '@/helpers/residenciaGeoRules';
 
@@ -210,8 +211,11 @@ const onInput = (e) => {
     emit('update:modelValue', '');
     selectedEntry.value = null;
     results.value = [];
+    resetHighlight();
     return;
   }
+
+  resetHighlight();
 
   // Implementación local de debounce
   if (debounceTimer) clearTimeout(debounceTimer);
@@ -248,6 +252,17 @@ const hideResults = () => {
     hasBlurred.value = true;
   }, 200);
 };
+
+const {
+  highlightedIndex,
+  listRef,
+  listboxId,
+  onKeydown,
+  resetHighlight,
+  isHighlighted,
+  setHighlightOnHover,
+  optionId,
+} = useCatalogListKeyboard(showResults, results, selectResult);
 </script>
 
 <template>
@@ -264,6 +279,11 @@ const hideResults = () => {
         @input="onInput"
         @focus="onFocus"
         @blur="hideResults"
+        @keydown="onKeydown"
+        role="combobox"
+        :aria-expanded="showResults && results.length > 0"
+        :aria-controls="listboxId"
+        :aria-activedescendant="highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined"
         :disabled="isInputDisabled"
         class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
         :placeholder="placeholder"
@@ -288,13 +308,24 @@ const hideResults = () => {
     </div>
 
     <!-- Resultados -->
-    <ul v-if="showResults && results.length > 0" 
-        class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-      <li 
-        v-for="result in results" 
+    <ul
+      v-if="showResults && results.length > 0"
+      :id="listboxId"
+      ref="listRef"
+      role="listbox"
+      class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+    >
+      <li
+        v-for="(result, index) in results"
         :key="result.code"
+        :id="optionId(index)"
+        data-list-option
+        role="option"
+        :aria-selected="isHighlighted(index)"
         @click="selectResult(result)"
-        class="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-b-0 transition-colors"
+        @mouseenter="setHighlightOnHover(index)"
+        class="p-3 cursor-pointer border-b last:border-b-0 transition-colors"
+        :class="isHighlighted(index) ? 'bg-emerald-100' : 'hover:bg-emerald-50'"
       >
         <div class="flex justify-between items-start">
           <div>
@@ -313,10 +344,10 @@ const hideResults = () => {
     <p class="text-xs text-gray-500 mt-1">
       <i class="fas fa-info-circle mr-1"></i>
       <template v-if="isResidenciaMode">
-        Residencia GIIS: con México (142) use 00, 99 o entidad federativa; con otro país se fija 88.
+        (ej. 25=Sinaloa, 14=Jalisco). Escriba para buscar.
       </template>
       <template v-else>
-        Código INEGI de 2 dígitos (NE, 00, 01-32, 88, 99). Ordenados por código numérico.
+        (ej. 25=Sinaloa, 14=Jalisco). Escriba para buscar.
       </template>
     </p>
   </div>

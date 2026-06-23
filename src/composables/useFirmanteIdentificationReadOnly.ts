@@ -1,6 +1,7 @@
 import { computed, type Ref, type ComputedRef } from 'vue';
 import { useNom024Fields } from '@/composables/useNom024Fields';
 import { isGenericCurp } from '@/helpers/isGenericCurp';
+import { convertirFechaISOaYYYYMMDD } from '@/helpers/dates';
 
 export const FIRMANTE_IMMUTABLE_PAYLOAD_FIELDS = [
   'curp',
@@ -16,7 +17,31 @@ export const FIRMANTE_IMMUTABLE_PAYLOAD_FIELDS = [
 export type FirmanteRecord = {
   _id?: string;
   curp?: string;
+  nombre?: string;
+  primerApellido?: string;
+  segundoApellido?: string;
+  fechaNacimiento?: string | Date;
+  sexo?: string;
+  entidadNacimiento?: string;
+  paisNacimiento?: number | string;
 } | null | undefined;
+
+function formatStoredFieldForSubmit(
+  field: (typeof FIRMANTE_IMMUTABLE_PAYLOAD_FIELDS)[number],
+  storedRecord: Record<string, unknown>,
+): unknown {
+  const raw = storedRecord[field];
+  if (raw === undefined || raw === null) {
+    return raw;
+  }
+  if (field === 'fechaNacimiento') {
+    if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return raw;
+    }
+    return convertirFechaISOaYYYYMMDD(String(raw));
+  }
+  return raw;
+}
 
 /**
  * Bloqueo de edición de campos CURP/demografía en firmantes SIRES (paridad ModalTrabajadores).
@@ -55,22 +80,22 @@ export function useFirmanteIdentificationReadOnly(
     return 'Los datos de identificación no pueden modificarse tras el registro.';
   });
 
-  function omitImmutableIdentificationFields<T extends Record<string, unknown>>(
+  function preserveImmutableIdentificationFields<T extends Record<string, unknown>>(
     payload: T,
+    storedRecord?: FirmanteRecord,
   ): T {
-    if (!isFirmanteIdentificationReadOnly.value) {
+    if (!isFirmanteIdentificationReadOnly.value || hasGenericCurpStored.value) {
       return payload;
     }
 
-    const omitSet = new Set<string>(
-      hasGenericCurpStored.value
-        ? []
-        : [...FIRMANTE_IMMUTABLE_PAYLOAD_FIELDS],
-    );
+    const record = (storedRecord ?? firmante.value) as Record<string, unknown> | null | undefined;
+    if (!record) {
+      return payload;
+    }
 
     const result = { ...payload };
-    for (const field of omitSet) {
-      delete result[field];
+    for (const field of FIRMANTE_IMMUTABLE_PAYLOAD_FIELDS) {
+      result[field] = formatStoredFieldForSubmit(field, record) as T[typeof field];
     }
     return result;
   }
@@ -82,6 +107,6 @@ export function useFirmanteIdentificationReadOnly(
     isCurpFieldReadOnly,
     isCurpConformationReadOnly,
     identificationSectionNotice,
-    omitImmutableIdentificationFields,
+    preserveImmutableIdentificationFields,
   };
 }

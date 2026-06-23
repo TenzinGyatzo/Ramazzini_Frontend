@@ -142,14 +142,14 @@ export const useUserStore = defineStore("user", () => {
 
     function hasAccessToEmpresa(empresaId: string): boolean {
         if (!user.value) return false;
-        if (user.value.role === 'Principal') return true;
+        if (user.value.role === 'Principal' || user.value.role === 'Administrador') return true;
         if (user.value.permisos?.accesoCompletoEmpresasCentros) return true;
         return empresasAsignadas.value.includes(empresaId);
     }
 
     function hasAccessToCentro(centroId: string): boolean {
         if (!user.value) return false;
-        if (user.value.role === 'Principal') return true;
+        if (user.value.role === 'Principal' || user.value.role === 'Administrador') return true;
         if (user.value.permisos?.accesoCompletoEmpresasCentros) return true;
         return centrosTrabajoAsignados.value.includes(centroId);
     }

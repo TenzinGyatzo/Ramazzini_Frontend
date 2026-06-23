@@ -43,7 +43,7 @@ const {
   isCurpFieldReadOnly,
   isCurpConformationReadOnly,
   identificationSectionNotice,
-  omitImmutableIdentificationFields,
+  preserveImmutableIdentificationFields,
 } = useFirmanteIdentificationReadOnly(firmanteRecord);
 
 const nom024ResidenciaFields = ref({
@@ -124,13 +124,15 @@ watch(
       nom024ResidenciaFields.value.municipioResidencia = firmante.municipioResidencia || "";
       nom024ResidenciaFields.value.localidadResidencia = firmante.localidadResidencia || "";
       nom024ResidenciaFields.value.paisResidencia = firmante.paisResidencia ?? "";
-    } else {
+    } else if (!firmante) {
       nom024ResidenciaFields.value.entidadResidencia = "";
       nom024ResidenciaFields.value.municipioResidencia = "";
       nom024ResidenciaFields.value.localidadResidencia = "";
       nom024ResidenciaFields.value.paisResidencia = "";
     }
-    initializeResidenciaGeoFields(nom024ResidenciaFields);
+    if (firmante?._id) {
+      initializeResidenciaGeoFields(nom024ResidenciaFields);
+    }
   },
   { immediate: true },
 );
@@ -345,9 +347,13 @@ const handleSubmit = async (data) => {
 
     const formData = new FormData();
 
-    // Incluir paisNacimiento del selector (no capturado por FormKit)
-    const submitData = omitImmutableIdentificationFields({
+    const baseData = {
       ...data,
+      nombre: formularioEnfermeraFirmante.value.nombre,
+      primerApellido: formularioEnfermeraFirmante.value.primerApellido,
+      segundoApellido: formularioEnfermeraFirmante.value.segundoApellido,
+      curp: formularioEnfermeraFirmante.value.curp,
+      fechaNacimiento,
       paisNacimiento: formularioEnfermeraFirmante.value.paisNacimiento,
       entidadNacimiento: formularioEnfermeraFirmante.value.entidadNacimiento,
       entidadResidencia: nom024ResidenciaFields.value.entidadResidencia,
@@ -355,7 +361,12 @@ const handleSubmit = async (data) => {
       municipioResidencia: nom024ResidenciaFields.value.municipioResidencia,
       localidadResidencia: nom024ResidenciaFields.value.localidadResidencia,
       sexo: sexo || formularioEnfermeraFirmante.value.sexo,
-    });
+    };
+
+    const submitData = preserveImmutableIdentificationFields(
+      baseData,
+      firmanteRecord.value,
+    );
     if (submitData.paisNacimiento === "" || submitData.paisNacimiento == null) delete submitData.paisNacimiento;
     if (!submitData.entidadNacimiento) delete submitData.entidadNacimiento;
     if (!geoFieldsRequired.value) {

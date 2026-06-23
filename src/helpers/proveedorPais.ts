@@ -14,3 +14,19 @@ export function normalizeProveedorPaisCode(
 export function isMexicoProvider(pais: string | null | undefined): boolean {
   return normalizeProveedorPaisCode(pais) === 'MX';
 }
+
+/** Etiqueta corta del identificador personal (p. ej. modal de fusión). */
+export function getIdentificadorPersonalLabel(
+  pais: string | null | undefined,
+): string {
+  switch (normalizeProveedorPaisCode(pais)) {
+    case 'PA':
+      return 'Cédula';
+    case 'GT':
+      return 'DPI';
+    case 'MX':
+      return 'CURP';
+    default:
+      return 'Id';
+  }
+}

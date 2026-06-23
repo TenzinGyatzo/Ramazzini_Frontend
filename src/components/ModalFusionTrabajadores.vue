@@ -14,6 +14,10 @@ import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 
+import { getIdentificadorPersonalLabel } from '@/helpers/proveedorPais';
+
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+
 import FusionRegistroResumen from '@/components/FusionRegistroResumen.vue';
 import FusionWorkerIdentidad from '@/components/FusionWorkerIdentidad.vue';
 import type {
@@ -60,7 +64,18 @@ const centrosTrabajo = useCentrosTrabajoStore();
 
 const trabajadores = useTrabajadoresStore();
 
+const proveedorSaludStore = useProveedorSaludStore();
 
+const identificadorPersonalLabel = computed(() =>
+  getIdentificadorPersonalLabel(proveedorSaludStore.proveedorSalud?.pais),
+);
+
+const criterioCoincidenciaLabel = computed(() => {
+  const criterio = preview.value?.criterioMatch;
+  if (!criterio) return 'confirmación manual';
+  if (criterio === 'FOLIO') return 'mismo folio UM';
+  return `misma ${identificadorPersonalLabel.value}`;
+});
 
 const loading = ref(true);
 
@@ -477,6 +492,7 @@ onMounted(() => {
             <FusionWorkerIdentidad
               :registro="registro"
               :opuesto="registroOpuesto(registro)"
+              :identificador-personal-label="identificadorPersonalLabel"
             />
 
 
@@ -564,7 +580,7 @@ onMounted(() => {
 
             <strong>{{ totalRegistrosFuente }}</strong> registro(s) en total al trabajador que conserves.
 
-            Criterio de coincidencia: {{ preview.criterioMatch || 'confirmación manual' }}.
+            Criterio de coincidencia: {{ criterioCoincidenciaLabel }}.
 
           </p>
 

@@ -954,27 +954,27 @@ const toggleVigencias = () => {
 
       <div
         v-if="!cargandoVista && conteoDuplicados > 0 && canManageTrabajadores"
-        class="mb-4 p-4 rounded-xl border border-amber-200 bg-amber-50 flex flex-wrap items-center justify-between gap-3"
+        class="mb-4 p-4 rounded-xl border border-amber-200 bg-amber-50 flex flex-wrap items-center justify-between gap-3 dark:border-amber-600/70 dark:bg-amber-950/45"
       >
-        <p class="text-sm text-amber-900">
+        <p class="text-sm text-amber-900 dark:text-amber-100">
           <strong>{{ conteoDuplicados }}</strong> trabajador(es) con posible duplicado pendiente de revisión.
         </p>
         <div class="flex flex-wrap items-center gap-2">
           <label
             v-if="conteoDuplicados > 0"
-            class="inline-flex items-center gap-2 text-sm text-amber-900 cursor-pointer"
+            class="inline-flex items-center gap-2 text-sm text-amber-900 dark:text-amber-100 cursor-pointer"
           >
             <input
               v-model="filtroSoloDuplicados"
               type="checkbox"
-              class="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+              class="rounded border-amber-400 text-amber-600 focus:ring-amber-500 dark:border-amber-500 dark:bg-slate-800 dark:focus:ring-amber-400"
             />
             Solo duplicados
           </label>
           <button
             v-if="duplicadosPendientes.length"
             type="button"
-            class="text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700"
+            class="text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
             @click="abrirFusion(
               String(duplicadosPendientes[0].trabajadorId?._id || duplicadosPendientes[0].trabajadorId),
               String(duplicadosPendientes[0].candidatoId?._id || duplicadosPendientes[0].candidatoId),

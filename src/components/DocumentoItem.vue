@@ -627,7 +627,7 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
 
 const pdfViewerRef = ref(null);
 const pdfViewerContainerRef = ref(null);
-/** Montar VPdfViewer solo cuando ya tenemos escala inicial (tope 200%). */
+/** Montar VPdfViewer solo cuando ya tenemos escala inicial (tope dinámico por altura). */
 const pdfViewerReady = ref(false);
 const pdfInitialScale = ref(1);
 const pdfViewerMountKey = ref(0);
@@ -641,8 +641,15 @@ let pdfViewerClampGeneration = 0;
 
 const PDF_VIEWER_RESIZE_DEBOUNCE_MS = 175;
 const PDF_VIEWER_RESIZE_MIN_DELTA_PX = 8;
-const PDF_VIEWER_MAX_SCALE = 2; // 200%
 const PDF_VIEWER_MIN_SCALE_MOBILE = 0.85;
+
+function getPdfMaxScaleByViewportHeight(height) {
+    if (height >= 1300) return 2;
+    if (height >= 1200) return 1.75;
+    if (height >= 1000) return 1.5;
+    if (height >= 850) return 1.25;
+    return 1;
+}
 const PDF_VIEWER_MIN_SCALE_THRESHOLD = 0.75;
 const PDF_VIEWER_THUMBNAIL_PANEL_PX = 200;
 /** Margen interno del visor: scrollbar + padding de página (estimado pre-montaje). */
@@ -703,8 +710,8 @@ function enforcePdfZoomLimits(zoomCtrl) {
     const scale = readPdfZoomScale(zoomCtrl);
     if (scale == null) return false;
 
-    if (scale > PDF_VIEWER_MAX_SCALE) {
-        zoomCtrl.zoom(PDF_VIEWER_MAX_SCALE);
+    if (scale > pdfViewerMaxScale.value) {
+        zoomCtrl.zoom(pdfViewerMaxScale.value);
         return true;
     }
 
@@ -726,7 +733,7 @@ function schedulePdfZoomClamp(zoomCtrl, generation, attempt = 0) {
 
     const shouldContinue =
         attempt < PDF_VIEWER_CLAMP_MAX_ATTEMPTS &&
-        (scale == null || changed || scale > PDF_VIEWER_MAX_SCALE || attempt < 10);
+        (scale == null || changed || scale > pdfViewerMaxScale.value || attempt < 10);
 
     if (!shouldContinue) return;
 
@@ -775,7 +782,7 @@ function computeTargetPdfScale(areaWidthOverride = null) {
     if (!pageWidth || pageWidth <= 0 || areaWidth <= 0) return null;
 
     const fitScale = areaWidth / pageWidth;
-    let scale = Math.min(fitScale, PDF_VIEWER_MAX_SCALE);
+    let scale = Math.min(fitScale, pdfViewerMaxScale.value);
 
     if (windowWidth.value < 480 && scale < PDF_VIEWER_MIN_SCALE_THRESHOLD) {
         scale = PDF_VIEWER_MIN_SCALE_MOBILE;
@@ -818,8 +825,8 @@ function applyNumericFitZoom(zoomCtrl) {
     zoomCtrl.zoom(target);
 
     const scale = readPdfZoomScale(zoomCtrl);
-    if (scale != null && scale > PDF_VIEWER_MAX_SCALE) {
-        zoomCtrl.zoom(PDF_VIEWER_MAX_SCALE);
+    if (scale != null && scale > pdfViewerMaxScale.value) {
+        zoomCtrl.zoom(pdfViewerMaxScale.value);
     }
     return true;
 }
@@ -854,7 +861,7 @@ function applyFitToWidth(retryCount = 0) {
         return;
     }
 
-    // Sin metadatos: PageWidth y luego forzar tope 200%
+    // Sin metadatos: PageWidth y luego forzar tope por altura
     zoomCtrl.zoom(ZoomLevel.PageWidth);
     nextTick(() => {
         if (generation !== pdfViewerClampGeneration) return;
@@ -2062,18 +2069,26 @@ const handleKeyDown = (event) => {
 };
 
 ////////////////////////////////////////////
-// Estado para la anchura de la ventana
+// Estado para las dimensiones del viewport
 const windowWidth = ref(window.innerWidth);
+const windowHeight = ref(window.innerHeight);
 
-// Actualizar la anchura de la ventana al cambiar de tamaño
-const updateWindowWidth = () => {
+const pdfViewerMaxScale = computed(() =>
+    getPdfMaxScaleByViewportHeight(windowHeight.value),
+);
+
+const updateWindowDimensions = () => {
     windowWidth.value = window.innerWidth;
+    windowHeight.value = window.innerHeight;
+    if (showPdfViewer.value) {
+        scheduleApplyFitToWidth();
+    }
 };
 
 // Agregar y eliminar el listener de eventos
-onMounted(() => window.addEventListener('resize', updateWindowWidth));
+onMounted(() => window.addEventListener('resize', updateWindowDimensions));
 onUnmounted(() => {
-    window.removeEventListener('resize', updateWindowWidth);
+    window.removeEventListener('resize', updateWindowDimensions);
     disconnectPdfViewerResizeObserver();
 });
 

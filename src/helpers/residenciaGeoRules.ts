@@ -305,6 +305,16 @@ export function applyResidenciaCoherence(
   }
 
   const entidad = normalizeEntidadResidencia(formulario.entidadResidencia);
+
+  if (
+    (trigger === 'entidad' || trigger === 'init') &&
+    entidad &&
+    isEntidadAllowedForMexico(entidad) &&
+    !isMexicoResidenciaPais(normalizePaisResidencia(formulario.paisResidencia))
+  ) {
+    formulario.paisResidencia = PAIS_RESIDENCIA_MEXICO;
+  }
+
   if (!entidad) return;
 
   if (trigger === 'pais' || trigger === 'entidad' || trigger === 'init') {

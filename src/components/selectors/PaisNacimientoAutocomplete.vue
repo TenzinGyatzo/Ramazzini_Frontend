@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+import { useCatalogListKeyboard } from '@/helpers/useCatalogListKeyboard';
 
 const { catalogSearchInputAttrs } = useCatalogSearchInput();
 
@@ -193,8 +194,11 @@ const onInput = (e) => {
     emit('update:modelValue', '');
     selectedEntry.value = null;
     results.value = [];
+    resetHighlight();
     return;
   }
+
+  resetHighlight();
 
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
@@ -227,6 +231,17 @@ const hideResults = () => {
     hasBlurred.value = true;
   }, 200);
 };
+
+const {
+  highlightedIndex,
+  listRef,
+  listboxId,
+  onKeydown,
+  resetHighlight,
+  isHighlighted,
+  setHighlightOnHover,
+  optionId,
+} = useCatalogListKeyboard(showResults, results, selectResult);
 </script>
 
 <template>
@@ -243,6 +258,11 @@ const hideResults = () => {
         @input="onInput"
         @focus="onFocus"
         @blur="hideResults"
+        @keydown="onKeydown"
+        role="combobox"
+        :aria-expanded="showResults && results.length > 0"
+        :aria-controls="listboxId"
+        :aria-activedescendant="highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined"
         :disabled="disabled"
         class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
         :placeholder="placeholder"
@@ -265,13 +285,24 @@ const hideResults = () => {
       Este campo es obligatorio
     </div>
 
-    <ul v-if="showResults && results.length > 0"
-        class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+    <ul
+      v-if="showResults && results.length > 0"
+      :id="listboxId"
+      ref="listRef"
+      role="listbox"
+      class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+    >
       <li
-        v-for="result in results"
+        v-for="(result, index) in results"
         :key="result.code"
+        :id="optionId(index)"
+        data-list-option
+        role="option"
+        :aria-selected="isHighlighted(index)"
         @click="selectResult(result)"
-        class="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-b-0 transition-colors"
+        @mouseenter="setHighlightOnHover(index)"
+        class="p-3 cursor-pointer border-b last:border-b-0 transition-colors"
+        :class="isHighlighted(index) ? 'bg-emerald-100' : 'hover:bg-emerald-50'"
       >
         <div class="flex justify-between items-start">
           <div>
@@ -289,7 +320,7 @@ const hideResults = () => {
 
     <p class="text-xs text-gray-500 mt-1">
       <i class="fas fa-info-circle mr-1"></i>
-      Catálogo cat_pais (ej. 142=México, 228=USA). Escriba para buscar.
+      (ej. 142=México, 228=USA). Escriba para buscar.
     </p>
   </div>
 </template>

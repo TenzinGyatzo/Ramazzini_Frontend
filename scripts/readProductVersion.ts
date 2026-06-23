@@ -2,16 +2,18 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-/** Debe coincidir con `**Versión vigente del software:** \`vX.Y\`` en `backend/CHANGELOG.md`. */
+/** Debe coincidir con `**Versión vigente del software:** \`vX.Y.Z\`` en `backend/CHANGELOG.md`. */
 const VIGENTE_RE =
-  /\*\*Versión vigente del software:\*\*\s*`(v\d+\.\d+)`/m
+  /\*\*Versión vigente del software:\*\*\s*`(v\d+\.\d+\.\d+)`/m
 
 function readVersionFromPackageJson(): string {
   const scriptDir = dirname(fileURLToPath(import.meta.url))
   const pkgPath = join(scriptDir, '..', 'package.json')
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version?: string }
-  const [major = '0', minor = '0'] = String(pkg.version ?? '0.0.0').split('.')
-  return `v${major}.${minor}`
+  const [major = '0', minor = '0', patch = '0'] = String(
+    pkg.version ?? '0.0.0',
+  ).split('.')
+  return `v${major}.${minor}.${patch}`
 }
 
 export function readProductVersionFromChangelog(changelogPath: string): string {

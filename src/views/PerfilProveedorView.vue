@@ -775,10 +775,10 @@ const logoSrc = computed(() => {
               
               <!-- Vista previa del Pie de Página del Informe -->
               <div v-if="piePaginaInforme.nombre" class="w-full xl:w-1/2 flex flex-col items-center xl:items-end">
-                <p class="font-medium text-lg text-gray-700 text-center xl:text-right">
+                <p class="font-medium text-lg text-gray-700 text-right w-full max-w-md">
                   Pie de Página en Informes:
                 </p>
-                <div class="w-full max-w-md mt-4 p-4 border rounded-lg bg-gray-50 text-center xl:text-right">                  
+                <div class="w-full max-w-md mt-4 p-4 border rounded-lg bg-gray-50 text-right">                  
                   <p class="text-sm text-gray-800 italic space-y-1">
                     <span v-if="piePaginaInforme.nombre" class="font-medium">{{ piePaginaInforme.nombre }}</span><br v-if="piePaginaInforme.nombre">
                     

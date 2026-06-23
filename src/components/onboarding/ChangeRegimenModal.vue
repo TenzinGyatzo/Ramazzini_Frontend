@@ -31,7 +31,6 @@ const features = [
   { name: 'Campo CLUES', description: 'Visible y validado contra catálogo oficial' },
   { name: 'Exportación GIIS', description: 'Habilitada para integración con GIIS' },
   { name: 'Consentimiento informado', description: 'Funcionalidad de consentimiento informado habilitada' },
-  { name: 'Firma lectrónica Avanzada', description: 'Funcionalidad de firma electrónica avanzada habilitada' },
   { name: 'Auditoría de cambios', description: 'Funcionalidad de auditoría de cambios habilitada' },
 ];
 </script>

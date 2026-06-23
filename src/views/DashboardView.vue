@@ -2350,6 +2350,95 @@ const mostrarRayosXDistribucion = computed(() => hasAnyPositiveChartData(grafica
 const mostrarAnalisisLaboratorioProporcion = computed(() => hasAnyPositiveChartData(graficaAnalisisLaboratorioProporcionData.value.chart));
 const mostrarAnalisisLaboratorioDistribucion = computed(() => hasAnyPositiveChartData(graficaAnalisisLaboratorioDistribucionData.value));
 
+const GRID_COLS_XL = 4;
+
+const avanzarColumnaGridXl = (col, width) => {
+  if (width <= 0) return col;
+  if (col + width > GRID_COLS_XL) {
+    col = 0;
+  }
+  col += width;
+  if (col >= GRID_COLS_XL) {
+    col = 0;
+  }
+  return col;
+};
+
+const evaluarGrupoEstudiosClinicos = (col, mostrarProporcion, mostrarDistribucion) => {
+  const columnasGrupo =
+    (mostrarProporcion ? 1 : 0) + (mostrarDistribucion ? 2 : 0);
+
+  if (mostrarProporcion) {
+    col = avanzarColumnaGridXl(col, 1);
+  }
+  if (mostrarDistribucion) {
+    col = avanzarColumnaGridXl(col, 2);
+  }
+
+  const mostrarEspacio = columnasGrupo === 3 && col === 3;
+  if (mostrarEspacio) {
+    col = 0;
+  }
+
+  return { col, mostrarEspacio };
+};
+
+const espaciosVaciosGridDashboard = computed(() => {
+  let col = 0;
+
+  col = avanzarColumnaGridXl(col, 1); // sexo
+  col = avanzarColumnaGridXl(col, 2); // grupos etarios
+  col = avanzarColumnaGridXl(col, 2); // cintura
+  col = avanzarColumnaGridXl(col, 2); // tensión arterial
+  col = avanzarColumnaGridXl(col, 2); // IMC
+  col = avanzarColumnaGridXl(col, 2); // agentes de riesgo
+  col = avanzarColumnaGridXl(col, 2); // enfermedades crónicas
+  col = avanzarColumnaGridXl(col, 2); // antecedentes
+
+  if (mostrarTamizajeBipolar.value) col = avanzarColumnaGridXl(col, 1);
+  if (mostrarTamizajeProdromal.value) col = avanzarColumnaGridXl(col, 1);
+  if (mostrarTamizajeTLP.value) col = avanzarColumnaGridXl(col, 2);
+
+  col = avanzarColumnaGridXl(col, 1); // agudeza visual
+  col = avanzarColumnaGridXl(col, 1); // requieren lentes
+  col = avanzarColumnaGridXl(col, 1); // vista corregida
+  col = avanzarColumnaGridXl(col, 1); // daltonismo
+
+  const audiometria = evaluarGrupoEstudiosClinicos(
+    col,
+    mostrarAudiometriaProporcion.value,
+    mostrarAudiometriaDistribucion.value
+  );
+  col = audiometria.col;
+
+  const espirometria = evaluarGrupoEstudiosClinicos(
+    col,
+    mostrarEspirometriaProporcion.value,
+    mostrarEspirometriaDistribucion.value
+  );
+  col = espirometria.col;
+
+  const ekg = evaluarGrupoEstudiosClinicos(
+    col,
+    mostrarEkgProporcion.value,
+    mostrarEkgDistribucion.value
+  );
+  col = ekg.col;
+
+  const rayosX = evaluarGrupoEstudiosClinicos(
+    col,
+    mostrarRayosXProporcion.value,
+    mostrarRayosXDistribucion.value
+  );
+
+  return {
+    entreAudiometriaYEspirometria: audiometria.mostrarEspacio,
+    entreEspirometriaYEkg: espirometria.mostrarEspacio,
+    entreEkgYRayosX: ekg.mostrarEspacio,
+    entreRayosXYAnalisisLaboratorio: rayosX.mostrarEspacio,
+  };
+});
+
 // Computed para tabla y grafica de consultas
 const totalConsultas = computed(() => {
   if (!dashboardData.value.length) return 0;
@@ -4341,7 +4430,10 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Espacio vacío intencional entre Audiometría y Espirometría -->
-            <div class="hidden xl:block bg-transparent p-6 rounded-lg shadow-none col-span-1"></div>
+            <div
+              v-if="espaciosVaciosGridDashboard.entreAudiometriaYEspirometria"
+              class="hidden xl:block bg-transparent p-6 rounded-lg shadow-none col-span-1"
+            ></div>
 
             <!-- Proporción Espirometría -->
             <div
@@ -4464,7 +4556,10 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Espacio vacío intencional entre Espirometría y EKG -->
-            <div class="hidden xl:block bg-transparent p-6 rounded-lg shadow-none col-span-1"></div>
+            <div
+              v-if="espaciosVaciosGridDashboard.entreEspirometriaYEkg"
+              class="hidden xl:block bg-transparent p-6 rounded-lg shadow-none col-span-1"
+            ></div>
 
             <!-- Proporción EKG -->
             <div
@@ -4587,7 +4682,10 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Espacio vacío intencional entre EKG y Rayos X -->
-            <div class="hidden xl:block bg-transparent p-6 rounded-lg shadow-none col-span-1"></div>
+            <div
+              v-if="espaciosVaciosGridDashboard.entreEkgYRayosX"
+              class="hidden xl:block bg-transparent p-6 rounded-lg shadow-none col-span-1"
+            ></div>
 
             <!-- Proporción Rayos X -->
             <div
@@ -4710,7 +4808,10 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Espacio vacío intencional entre Rayos X y Análisis de laboratorio -->
-            <div class="hidden xl:block bg-transparent p-6 rounded-lg shadow-none col-span-1"></div>
+            <div
+              v-if="espaciosVaciosGridDashboard.entreRayosXYAnalisisLaboratorio"
+              class="hidden xl:block bg-transparent p-6 rounded-lg shadow-none col-span-1"
+            ></div>
 
             <!-- Proporción Análisis de laboratorio -->
             <div

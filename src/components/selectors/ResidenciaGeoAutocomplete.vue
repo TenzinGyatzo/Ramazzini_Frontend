@@ -3,6 +3,7 @@ import { ref, watch, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import EstadoAutocomplete from './EstadoAutocomplete.vue';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+import { useCatalogListKeyboard } from '@/helpers/useCatalogListKeyboard';
 import {
   getMunicipioDisplayCode,
   sortMunicipiosByCode,
@@ -387,6 +388,7 @@ const onMunicipioInput = (e) => {
     emit('update:municipioResidencia', '');
     municipioSelected.value = null;
     municipioResults.value = [];
+    municipioResetHighlight();
     emit('update:localidadResidencia', '');
     localidadQuery.value = '';
     localidadSelected.value = null;
@@ -394,6 +396,8 @@ const onMunicipioInput = (e) => {
     localidadShowResults.value = false;
     return;
   }
+
+  municipioResetHighlight();
 
   if (municipioDebounceTimer) clearTimeout(municipioDebounceTimer);
   municipioDebounceTimer = setTimeout(() => {
@@ -442,8 +446,11 @@ const onLocalidadInput = (e) => {
     emit('update:localidadResidencia', '');
     localidadSelected.value = null;
     localidadResults.value = [];
+    localidadResetHighlight();
     return;
   }
+
+  localidadResetHighlight();
 
   if (localidadDebounceTimer) clearTimeout(localidadDebounceTimer);
   localidadDebounceTimer = setTimeout(() => {
@@ -605,6 +612,36 @@ const hideLocalidadResults = () => {
     localidadHasBlurred.value = true;
   }, 200);
 };
+
+const {
+  highlightedIndex: municipioHighlightedIndex,
+  listRef: municipioListRef,
+  listboxId: municipioListboxId,
+  onKeydown: onMunicipioKeydown,
+  resetHighlight: municipioResetHighlight,
+  isHighlighted: isMunicipioHighlighted,
+  setHighlightOnHover: setMunicipioHighlightOnHover,
+  optionId: municipioOptionId,
+} = useCatalogListKeyboard(
+  municipioShowResults,
+  municipioResults,
+  onMunicipioSelect,
+);
+
+const {
+  highlightedIndex: localidadHighlightedIndex,
+  listRef: localidadListRef,
+  listboxId: localidadListboxId,
+  onKeydown: onLocalidadKeydown,
+  resetHighlight: localidadResetHighlight,
+  isHighlighted: isLocalidadHighlighted,
+  setHighlightOnHover: setLocalidadHighlightOnHover,
+  optionId: localidadOptionId,
+} = useCatalogListKeyboard(
+  localidadShowResults,
+  localidadResults,
+  onLocalidadSelect,
+);
 </script>
 
 <template>
@@ -637,6 +674,11 @@ const hideLocalidadResults = () => {
           @input="onMunicipioInput"
           @focus="onMunicipioFocus"
           @blur="hideMunicipioResults"
+          @keydown="onMunicipioKeydown"
+          role="combobox"
+          :aria-expanded="municipioShowResults && municipioResults.length > 0"
+          :aria-controls="municipioListboxId"
+          :aria-activedescendant="municipioHighlightedIndex >= 0 ? municipioOptionId(municipioHighlightedIndex) : undefined"
           class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="Buscar Municipio"
           v-bind="municipioInputAttrs"
@@ -652,13 +694,24 @@ const hideLocalidadResults = () => {
       </div>
 
       <!-- Resultados Municipio -->
-      <ul v-if="municipioShowResults && municipioResults.length > 0" 
-          class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-        <li 
-          v-for="result in municipioResults" 
+      <ul
+        v-if="municipioShowResults && municipioResults.length > 0"
+        :id="municipioListboxId"
+        ref="municipioListRef"
+        role="listbox"
+        class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+      >
+        <li
+          v-for="(result, index) in municipioResults"
           :key="result.code"
+          :id="municipioOptionId(index)"
+          data-list-option
+          role="option"
+          :aria-selected="isMunicipioHighlighted(index)"
           @click="onMunicipioSelect(result)"
-          class="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-b-0 transition-colors"
+          @mouseenter="setMunicipioHighlightOnHover(index)"
+          class="p-3 cursor-pointer border-b last:border-b-0 transition-colors"
+          :class="isMunicipioHighlighted(index) ? 'bg-emerald-100' : 'hover:bg-emerald-50'"
         >
           <div class="flex justify-between items-start">
             <div>
@@ -681,7 +734,7 @@ const hideLocalidadResults = () => {
 
       <p class="text-xs text-gray-500 mt-1">
         <i class="fas fa-info-circle mr-1"></i>
-        Código GIIS de 3 dígitos (999, 998 o catálogo INEGI). Ordenados por código numérico.
+         Ordenados por código numérico. Escriba para buscar.
       </p>
       </div>
     </div>
@@ -702,6 +755,11 @@ const hideLocalidadResults = () => {
           @input="onLocalidadInput"
           @focus="onLocalidadFocus"
           @blur="hideLocalidadResults"
+          @keydown="onLocalidadKeydown"
+          role="combobox"
+          :aria-expanded="localidadShowResults && localidadResults.length > 0"
+          :aria-controls="localidadListboxId"
+          :aria-activedescendant="localidadHighlightedIndex >= 0 ? localidadOptionId(localidadHighlightedIndex) : undefined"
           class="w-full h-12 p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           placeholder="Buscar por código o nombre de la localidad..."
           v-bind="localidadInputAttrs"
@@ -717,13 +775,24 @@ const hideLocalidadResults = () => {
       </div>
 
       <!-- Resultados Localidad -->
-      <ul v-if="localidadShowResults && localidadResults.length > 0" 
-          class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-        <li 
-          v-for="result in localidadResults" 
+      <ul
+        v-if="localidadShowResults && localidadResults.length > 0"
+        :id="localidadListboxId"
+        ref="localidadListRef"
+        role="listbox"
+        class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+      >
+        <li
+          v-for="(result, index) in localidadResults"
           :key="result.code"
+          :id="localidadOptionId(index)"
+          data-list-option
+          role="option"
+          :aria-selected="isLocalidadHighlighted(index)"
           @click="onLocalidadSelect(result)"
-          class="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-b-0 transition-colors"
+          @mouseenter="setLocalidadHighlightOnHover(index)"
+          class="p-3 cursor-pointer border-b last:border-b-0 transition-colors"
+          :class="isLocalidadHighlighted(index) ? 'bg-emerald-100' : 'hover:bg-emerald-50'"
         >
           <div class="flex justify-between items-start">
             <div>
@@ -746,7 +815,7 @@ const hideLocalidadResults = () => {
 
       <p class="text-xs text-gray-500 mt-1">
         <i class="fas fa-info-circle mr-1"></i>
-        Código GIIS de 4 dígitos (9999, 9998 o catálogo INEGI). Ordenados por código numérico.
+        Ordenados por código numérico. Escriba para buscar.
       </p>
       </div>
 

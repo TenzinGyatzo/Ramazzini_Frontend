@@ -1,13 +1,16 @@
 <script setup>
-import { ref, onMounted, computed, inject, watch, nextTick } from 'vue';
+import { ref, onMounted, computed, inject, watch } from 'vue';
 import { useUserStore } from '@/stores/user';
 import PermissionsAPI from '@/api/PermissionsAPI';
-import { useRouter, onBeforeRouteLeave } from 'vue-router';
-import PermissionStatusCard from '@/components/PermissionStatusCard.vue';
+import { onBeforeRouteLeave } from 'vue-router';
+import {
+  sanitizePermissionsForRole,
+  isPermissionEditableForRole,
+  getPermissionBlockReason,
+} from '@/constants/rolePermissionPolicy';
 
 const toast = inject('toast');
 const userStore = useUserStore();
-const router = useRouter();
 const user = computed(() => userStore.user);
 
 const usuarios = ref([]);
@@ -66,13 +69,21 @@ const hasChangesForUser = (usuario) => {
   );
 };
 
+const isPermissionDisabled = (role, permissionKey) =>
+  !isPermissionEditableForRole(role, permissionKey);
+
+const normalizeUserPermissions = (usuario) => ({
+  ...usuario,
+  permisos: sanitizePermissionsForRole(usuario.role, usuario.permisos ?? {}),
+});
+
 const cargarUsuarios = async () => {
   loading.value = true;
   try {
     const resultado = await userStore.fetchUsersByProveedorId(
       user.value.idProveedorSalud
     );
-    usuarios.value = resultado.data;
+    usuarios.value = resultado.data.map(normalizeUserPermissions);
   } catch (error) {
     console.error('Error al cargar usuarios:', error);
     toast.open({
@@ -103,17 +114,9 @@ const guardarTodosLosCambios = async () => {
     );
   });
 
-  // Forzar permisos a false para administrativos y técnicos antes de guardar
+  // Aplicar techos por rol antes de guardar
   usuariosConCambios.forEach(usuario => {
-    if (usuario.role === 'Administrativo') {
-      usuario.permisos.gestionarDocumentosDiagnostico = false;
-      usuario.permisos.gestionarDocumentosEvaluacion = false;
-      usuario.permisos.gestionarDocumentosExternos = false;
-      usuario.permisos.gestionarOtrosDocumentos = false;
-    }
-    if (usuario.role === 'Técnico Evaluador') {
-      usuario.permisos.gestionarDocumentosDiagnostico = false;
-    }
+    usuario.permisos = sanitizePermissionsForRole(usuario.role, usuario.permisos);
   });
 
   try {
@@ -225,7 +228,7 @@ onBeforeRouteLeave((to, from, next) => {
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-4">
         <div>
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Gestionar Permisos de Usuarios</h1>
-          <p class="text-sm sm:text-base text-gray-600">Configura los permisos específicos para cada usuario médico y enfermero/a</p>
+          <p class="text-sm sm:text-base text-gray-600">Configura los permisos específicos para usuarios operativos del tenant</p>
         </div>
         
         <!-- Indicador de cambios y botones de acción -->
@@ -275,7 +278,7 @@ onBeforeRouteLeave((to, from, next) => {
         <i class="fas fa-users text-2xl text-gray-400"></i>
       </div>
       <h2 class="text-xl font-semibold text-gray-700 mb-2">No hay usuarios para gestionar</h2>
-      <p class="text-gray-500">Solo se muestran usuarios con rol Médico o Enfermero/a</p>
+      <p class="text-gray-500">Solo se muestran usuarios con rol Médico, Enfermero/a, Administrativo o Técnico Evaluador</p>
     </div>
 
     <div v-else>
@@ -420,7 +423,7 @@ onBeforeRouteLeave((to, from, next) => {
             <!-- Mensaje informativo para administrativos -->
             <div v-if="usuario.role === 'Administrativo'" class="manage-permissions-role-hint mb-3 p-2 bg-amber-50 border border-amber-200 rounded text-[10px] sm:text-xs text-amber-700 flex items-start gap-2">
               <i class="fas fa-info-circle mt-0.5 shrink-0"></i>
-              <span>Los usuarios administrativos no tienen permitido gestionar documentos médicos por políticas de seguridad.</span>
+              <span>Los usuarios administrativos no pueden gestionar documentos clínicos (diagnóstico, evaluación u otros). Solo pueden gestionar documentos externos.</span>
             </div>
 
             <!-- Mensaje informativo para técnicos evaluadores -->
@@ -433,13 +436,13 @@ onBeforeRouteLeave((to, from, next) => {
               <label 
                 :class="[
                   'flex items-center space-x-2 sm:space-x-3',
-                  (usuario.role === 'Administrativo' || usuario.role === 'Técnico Evaluador') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                  isPermissionDisabled(usuario.role, 'gestionarDocumentosDiagnostico') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
                 ]"
               >
                 <input 
                   type="checkbox" 
                   v-model="usuario.permisos.gestionarDocumentosDiagnostico"
-                  :disabled="usuario.role === 'Administrativo' || usuario.role === 'Técnico Evaluador'"
+                  :disabled="isPermissionDisabled(usuario.role, 'gestionarDocumentosDiagnostico')"
                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50"
                 >
                 <i class="fas fa-stethoscope text-gray-600 text-sm sm:text-base"></i>
@@ -449,29 +452,24 @@ onBeforeRouteLeave((to, from, next) => {
               <label 
                 :class="[
                   'flex items-center space-x-2 sm:space-x-3',
-                  usuario.role === 'Administrativo' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                  isPermissionDisabled(usuario.role, 'gestionarDocumentosEvaluacion') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
                 ]"
               >
                 <input 
                   type="checkbox" 
                   v-model="usuario.permisos.gestionarDocumentosEvaluacion"
-                  :disabled="usuario.role === 'Administrativo'"
+                  :disabled="isPermissionDisabled(usuario.role, 'gestionarDocumentosEvaluacion')"
                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50"
                 >
                 <i class="fas fa-clipboard-check text-gray-600 text-sm sm:text-base"></i>
                 <span class="text-xs sm:text-sm text-gray-700 leading-snug">Documentos de Evaluación</span>
               </label>
 
-              <label 
-                :class="[
-                  'flex items-center space-x-2 sm:space-x-3',
-                  usuario.role === 'Administrativo' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                ]"
-              >
+              <label class="flex items-center space-x-2 sm:space-x-3 cursor-pointer">
                 <input 
                   type="checkbox" 
                   v-model="usuario.permisos.gestionarDocumentosExternos"
-                  :disabled="usuario.role === 'Administrativo'"
+                  :disabled="isPermissionDisabled(usuario.role, 'gestionarDocumentosExternos')"
                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50"
                 >
                 <i class="fas fa-file-upload text-gray-600 text-sm sm:text-base"></i>
@@ -481,13 +479,13 @@ onBeforeRouteLeave((to, from, next) => {
               <label 
                 :class="[
                   'flex items-center space-x-2 sm:space-x-3',
-                  usuario.role === 'Administrativo' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                  isPermissionDisabled(usuario.role, 'gestionarOtrosDocumentos') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
                 ]"
               >
                 <input 
                   type="checkbox" 
                   v-model="usuario.permisos.gestionarOtrosDocumentos"
-                  :disabled="usuario.role === 'Administrativo'"
+                  :disabled="isPermissionDisabled(usuario.role, 'gestionarOtrosDocumentos')"
                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50"
                 >
                 <i class="fas fa-clipboard-list text-gray-600 text-sm sm:text-base"></i>
@@ -505,6 +503,15 @@ onBeforeRouteLeave((to, from, next) => {
               <i class="fas fa-shield-alt text-purple-600 mr-2"></i>
               Acceso a Funcionalidades
             </h4>
+
+            <div
+              v-if="usuario.role === 'Administrativo' || usuario.role === 'Técnico Evaluador'"
+              class="manage-permissions-role-hint mb-3 p-2 bg-amber-50 border border-amber-200 rounded text-[10px] sm:text-xs text-amber-700 flex items-start gap-2"
+            >
+              <i class="fas fa-info-circle mt-0.5 shrink-0"></i>
+              <span>{{ getPermissionBlockReason(usuario.role, 'accesoRiesgosTrabajo') }}</span>
+            </div>
+
             <div class="space-y-3 pl-4 sm:pl-6">
               <label class="flex items-center space-x-2 sm:space-x-3 cursor-pointer">
                 <input 
@@ -526,11 +533,17 @@ onBeforeRouteLeave((to, from, next) => {
                 <span class="text-xs sm:text-sm text-gray-700 leading-snug">Acceso al Dashboard de Salud</span>
               </label>
 
-              <label class="flex items-center space-x-2 sm:space-x-3 cursor-pointer">
+              <label 
+                :class="[
+                  'flex items-center space-x-2 sm:space-x-3',
+                  isPermissionDisabled(usuario.role, 'accesoRiesgosTrabajo') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                ]"
+              >
                 <input 
                   type="checkbox" 
                   v-model="usuario.permisos.accesoRiesgosTrabajo"
-                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  :disabled="isPermissionDisabled(usuario.role, 'accesoRiesgosTrabajo')"
+                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50"
                 >
                 <i class="fas fa-exclamation-triangle text-gray-600 text-sm sm:text-base"></i>
                 <span class="text-xs sm:text-sm text-gray-700 leading-snug">Acceso a Riesgos de Trabajo</span>

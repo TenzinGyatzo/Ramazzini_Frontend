@@ -2,11 +2,12 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import TecnicoFirmanteAPI from "@/api/TecnicoFirmanteAPI";
 import axios from "axios";
+import { unwrapFirmanteRecord } from "@/helpers/unwrapFirmanteRecord";
 
 interface TecnicoFirmante {
   _id: string;
   nombre: string;
-  curp?: string; // NOM-024: CURP del profesional de salud
+  curp?: string;
   primerApellido?: string;
   segundoApellido?: string;
   sexo?: string;
@@ -14,6 +15,13 @@ interface TecnicoFirmante {
   numeroCedulaProfesional?: string;
   nombreCredencialAdicional?: string;
   numeroCredencialAdicional?: string;
+  paisNacimiento?: number;
+  entidadNacimiento?: string;
+  entidadResidencia?: string;
+  municipioResidencia?: string;
+  localidadResidencia?: string;
+  paisResidencia?: number;
+  fechaNacimiento?: string;
   firma?: {
     data: string;
     contentType: string;
@@ -23,13 +31,14 @@ interface TecnicoFirmante {
 
 export const useTecnicoFirmanteStore = defineStore("tecnicoFirmante", () => {
   const loading = ref(true);
+  const saving = ref(false);
   const tecnicoFirmante = ref<TecnicoFirmante | null>(null);
 
   async function loadTecnicoFirmanteById(id: string) {
     try {
       loading.value = true;
       const { data } = await TecnicoFirmanteAPI.getTecnicoFirmanteById(id);
-      tecnicoFirmante.value = data;
+      tecnicoFirmante.value = unwrapFirmanteRecord<TecnicoFirmante>(data);
     } catch (error) {
       console.error("Error al cargar técnico firmante:", error);
     } finally {
@@ -41,7 +50,7 @@ export const useTecnicoFirmanteStore = defineStore("tecnicoFirmante", () => {
     try {
       loading.value = true;
       const { data } = await TecnicoFirmanteAPI.getTecnicoFirmanteByUserId(idUser);
-      tecnicoFirmante.value = data;
+      tecnicoFirmante.value = unwrapFirmanteRecord<TecnicoFirmante>(data);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response && error.response.status === 404) {
@@ -57,40 +66,49 @@ export const useTecnicoFirmanteStore = defineStore("tecnicoFirmante", () => {
     }
   }
 
-  async function createTecnicoFirmante(data: any) {
+  async function createTecnicoFirmante(data: FormData) {
     try {
-      loading.value = true;
+      saving.value = true;
       const { data: response } = await TecnicoFirmanteAPI.createTecnicoFirmante(data);
-      tecnicoFirmante.value = response;
-      return response;
+      const firmante = unwrapFirmanteRecord<TecnicoFirmante>(response);
+      if (!firmante) {
+        throw new Error("Respuesta inválida al crear técnico firmante");
+      }
+      tecnicoFirmante.value = firmante;
+      return firmante;
     } catch (error) {
       console.error("Error al crear técnico firmante:", error);
+      throw error;
     } finally {
-      loading.value = false;
+      saving.value = false;
     }
   }
 
-  async function updateTecnicoFirmanteById(id: string, data: any) {
+  async function updateTecnicoFirmanteById(id: string, data: FormData) {
     try {
-      loading.value = true;
+      saving.value = true;
       const { data: response } = await TecnicoFirmanteAPI.updateTecnicoFirmanteById(id, data);
-      tecnicoFirmante.value = response;
-      return response;
+      const firmante = unwrapFirmanteRecord<TecnicoFirmante>(response);
+      if (!firmante) {
+        throw new Error("Respuesta inválida al actualizar técnico firmante");
+      }
+      tecnicoFirmante.value = firmante;
+      return firmante;
     } catch (error) {
       console.error("Error al actualizar técnico firmante:", error);
+      throw error;
     } finally {
-      loading.value = false;
+      saving.value = false;
     }
   }
 
   return {
     tecnicoFirmante,
     loading,
+    saving,
     loadTecnicoFirmanteById,
     loadTecnicoFirmante,
     createTecnicoFirmante,
     updateTecnicoFirmanteById,
   };
 });
-
-
