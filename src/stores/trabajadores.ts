@@ -80,6 +80,29 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
   let listadoSeq = 0;
   let detailSeq = 0;
 
+  const LISTADO_HISTORIA_TTL_MS = 3 * 60 * 1000;
+  const listadoHistoriaCache = new Map<
+    string,
+    { data: Trabajador[]; fetchedAt: number }
+  >();
+
+  function listadoHistoriaCacheKey(empresaId: string, centroTrabajoId: string) {
+    return `${empresaId}:${centroTrabajoId}`;
+  }
+
+  function invalidateListadoHistoriaCache(
+    empresaId?: string,
+    centroTrabajoId?: string,
+  ) {
+    if (empresaId && centroTrabajoId) {
+      listadoHistoriaCache.delete(
+        listadoHistoriaCacheKey(empresaId, centroTrabajoId),
+      );
+      return;
+    }
+    listadoHistoriaCache.clear();
+  }
+
   function resetTrabajadores() {
     trabajadores.value = [];
   }
@@ -148,14 +171,41 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     }
   }
 
-  async function fetchTrabajadoresConHistoria(empresaId: string, centroTrabajoId: string) {
+  async function fetchTrabajadoresConHistoria(
+    empresaId: string,
+    centroTrabajoId: string,
+    options?: { skipCache?: boolean },
+  ) {
     const seq = ++listadoSeq;
+    const cacheKey = listadoHistoriaCacheKey(empresaId, centroTrabajoId);
+    const cached = listadoHistoriaCache.get(cacheKey);
+    const isFresh =
+      cached != null &&
+      Date.now() - cached.fetchedAt < LISTADO_HISTORIA_TTL_MS;
+
+    if (cached && !options?.skipCache) {
+      trabajadores.value = cached.data;
+      if (isFresh) {
+        loading.value = false;
+        return cached.data;
+      }
+    } else if (!cached) {
+      trabajadores.value = [];
+    }
+
     try {
-      loading.value = true;
-      const { data } = await TrabajadoresAPI.getTrabajadoresConHistoria(empresaId, centroTrabajoId);
-      // Descartar si una petición más reciente ya tomó el control.
+      loading.value = !cached;
+      const { data } = await TrabajadoresAPI.getTrabajadoresConHistoria(
+        empresaId,
+        centroTrabajoId,
+      );
       if (seq !== listadoSeq) return data;
-      trabajadores.value = Array.isArray(data) ? data : [];
+      const list = Array.isArray(data) ? data : [];
+      trabajadores.value = list;
+      listadoHistoriaCache.set(cacheKey, {
+        data: list,
+        fetchedAt: Date.now(),
+      });
       return data;
     } catch (error) {
       console.error('Error al obtener trabajadores con historia clínica', error);
@@ -163,7 +213,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     } finally {
       if (seq === listadoSeq) loading.value = false;
     }
-  }  
+  }
 
   async function fetchRiesgosTrabajoPorEmpresa(empresaId: string) {
     try {
@@ -283,6 +333,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
         centroTrabajoId,
         trabajadorData
       );
+      invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
       return data;
     } catch (error) {
       throw error;
@@ -305,6 +356,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
         trabajadorId,
         trabajadorData
       );
+      invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
     } catch (error) {
       // console.log(error);
       throw error;
@@ -325,6 +377,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
               centroTrabajoId,
               formData
           );
+          invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
           return response;
         } catch (error: unknown) {
           if (error instanceof Error) {
@@ -356,6 +409,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
         trabajadorId,
         deletionPassword,
       );
+      invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
     } catch (error) {
       // console.log(error);
       throw error;
@@ -404,6 +458,8 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
         trabajadorId,
         nuevoCentroId
       );
+      invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
+      invalidateListadoHistoriaCache(empresaId, nuevoCentroId);
       return response;
     } catch (error) {
       console.error("Error al transferir el trabajador", error);
@@ -422,6 +478,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     currentTrabajador,
     resetCurrentTrabajador,
     resetTrabajadores,
+    invalidateListadoHistoriaCache,
     fetchTrabajadores,
     countTrabajadoresPorCentro,
     fetchTrabajadoresConHistoria,

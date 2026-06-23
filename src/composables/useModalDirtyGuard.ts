@@ -8,6 +8,8 @@ interface UseModalDirtyGuardOptions {
   isDirty: Ref<boolean>;
   onClose: () => void;
   enabled?: MaybeRefOrGetter<boolean>;
+  /** Si se define, controla cuándo Esc se captura (p. ej. mientras el modal está abierto). Por defecto usa `enabled`. */
+  escapeActive?: MaybeRefOrGetter<boolean>;
   onEscapeWhenDisabled?: () => void;
 }
 
@@ -100,7 +102,12 @@ export function useModalDirtyGuard(options: UseModalDirtyGuardOptions) {
     requestDismiss();
   };
 
-  useEscapeToClose(handleEscape, () => toValue(options.enabled ?? true) || Boolean(options.onEscapeWhenDisabled));
+  const isEscapeActive = () =>
+    options.escapeActive !== undefined
+      ? toValue(options.escapeActive)
+      : toValue(options.enabled ?? true);
+
+  useEscapeToClose(handleEscape, isEscapeActive);
 
   return {
     showDiscardConfirm,

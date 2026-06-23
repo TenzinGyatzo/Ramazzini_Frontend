@@ -15,6 +15,7 @@ import { subDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import DescargarInformeDashboard from '@/components/DescargarInformeDashboard.vue';
 import ModalPersonalizarInforme from '@/components/ModalPersonalizarInforme.vue';
+import DashboardChartSkeleton from '@/components/skeletons/DashboardChartSkeleton.vue';
 import { formatearNombreFirmante } from '@/helpers/nombres';
 
 const toast = inject('toast');
@@ -36,7 +37,9 @@ const nombreMedicoFirmanteDashboard = computed(() => {
 const centrosTrabajo = ref([]);
 const centroSeleccionado = ref('Todos')
 const tablaGruposEtarios = ref([]);
-const dashboardData = ref({});
+const dashboardData = ref([]);
+const dashboardLoading = ref(false);
+const chartRenderWave = ref(0);
 const fechaInicio = ref(null)
 const fechaFin = ref(null)
 const periodoPredefinido = ref('')
@@ -204,48 +207,97 @@ const refCircunferencia = ref();
 const refSexo = ref();
 const refTensionArterial = ref();
 
+const CHART_WAVE_COUNT = 4;
+const CHART_WAVE_DELAY_MS = 80;
+
+function scheduleChartRenderWaves() {
+  chartRenderWave.value = 0;
+  for (let wave = 1; wave <= CHART_WAVE_COUNT; wave++) {
+    setTimeout(() => {
+      chartRenderWave.value = wave;
+    }, wave * CHART_WAVE_DELAY_MS);
+  }
+}
+
+function chartWaveVisible(wave) {
+  return !dashboardLoading.value && chartRenderWave.value >= wave;
+}
+
+let cargarDatosSeq = 0;
+
 const cargarDatos = async (empresaId, inicio, fin) => {
   if (!empresaId) return;
 
-  // 1. Empresa, Centros de Trabajo y Médico Firmante en paralelo
-  const [empresa, centros] = await Promise.all([
-    empresasStore.fetchEmpresaById(empresaId),
-    centrosTrabajoStore.fetchCentrosTrabajo(empresaId)
-  ]);
+  const seq = ++cargarDatosSeq;
+  dashboardLoading.value = true;
+  chartRenderWave.value = 0;
 
-  // Cargar médico firmante usando el ID del usuario logueado
-  const user = userStore.user;
-  if (user?._id) {
-    await medicoFirmanteStore.loadMedicoFirmante(user._id);
-  }
+  try {
+    const user = userStore.user;
+    const medicoPromise = user?._id
+      ? medicoFirmanteStore.loadMedicoFirmante(user._id)
+      : Promise.resolve();
 
-  empresasStore.currentEmpresa = empresa;
-  centrosTrabajo.value = centros;
-  
-  // Cargar y validar el centro seleccionado desde localStorage
-  const centroGuardado = cargarCentroSeleccionado();
-  centroSeleccionado.value = validarCentroSeleccionado(centroGuardado, centros);
+    const [empresa, centros] = await Promise.all([
+      empresasStore.fetchEmpresaById(empresaId),
+      centrosTrabajoStore.fetchCentrosTrabajo(empresaId),
+      medicoPromise,
+    ]);
 
-  // 2. Info para el dashboard (en paralelo)
-  if (centros.length > 0) {
-    dashboardData.value = await Promise.all(
-      centros.map((centro) =>
-        trabajadoresStore.fetchDashboardData(empresaId, centro._id, inicio, fin)
-      )
-    );
-  } else {
-    dashboardData.value = [];
-  }
+    if (seq !== cargarDatosSeq) return;
 
-  // Debug: inspeccionar datos EKG y ESPIROMETRIA recibidos del backend
-  if (dashboardData.value?.length) {
-    console.log('Dashboard EKG/ESPIROMETRIA/RX/LAB', dashboardData.value.map((data, index) => ({
-      centroId: centros[index]?._id,
-      ekg: data?.ekg ?? [],
-      espirometria: data?.espirometria ?? [],
-      rayosX: data?.rayosX ?? [],
-      analisisLaboratorio: data?.analisisLaboratorio ?? []
-    })));
+    empresasStore.currentEmpresa = empresa;
+    centrosTrabajo.value = centros;
+
+    const centroGuardado = cargarCentroSeleccionado();
+    centroSeleccionado.value = validarCentroSeleccionado(centroGuardado, centros);
+
+    if (centros.length === 0) {
+      dashboardData.value = [];
+      await cargarPersonalizaciones();
+      return;
+    }
+
+    const centroPrioritario =
+      centroGuardado !== 'Todos'
+        ? centros.find((c) => c.nombreCentro === centroGuardado)
+        : null;
+
+    const cargarDashboardCentro = (centro) =>
+      trabajadoresStore.fetchDashboardData(empresaId, centro._id, inicio, fin);
+
+    if (centroPrioritario) {
+      const idxPrioritario = centros.findIndex((c) => c._id === centroPrioritario._id);
+      const datosPrioritario = await cargarDashboardCentro(centroPrioritario);
+      if (seq !== cargarDatosSeq) return;
+
+      const datosPorCentro = new Array(centros.length);
+      datosPorCentro[idxPrioritario] = datosPrioritario;
+      dashboardData.value = datosPorCentro;
+      dashboardLoading.value = false;
+      scheduleChartRenderWaves();
+
+      const otrosCentros = centros.filter((c) => c._id !== centroPrioritario._id);
+      if (otrosCentros.length > 0) {
+        const restantes = await Promise.all(otrosCentros.map(cargarDashboardCentro));
+        if (seq !== cargarDatosSeq) return;
+        otrosCentros.forEach((centro, i) => {
+          const idx = centros.findIndex((c) => c._id === centro._id);
+          datosPorCentro[idx] = restantes[i];
+        });
+        dashboardData.value = [...datosPorCentro];
+      }
+    } else {
+      dashboardData.value = await Promise.all(centros.map(cargarDashboardCentro));
+      if (seq !== cargarDatosSeq) return;
+      scheduleChartRenderWaves();
+    }
+
+    await cargarPersonalizaciones();
+  } finally {
+    if (seq === cargarDatosSeq) {
+      dashboardLoading.value = false;
+    }
   }
 };
 
@@ -273,7 +325,6 @@ watch(
   ([idEmpresa, inicio, fin]) => {
     if (inicio && fin && new Date(inicio) > new Date(fin)) return;
     cargarDatos(idEmpresa, inicio, fin);
-    cargarPersonalizaciones(); // Cargar personalizaciones también
   },
   { immediate: true }
 );
@@ -3366,10 +3417,20 @@ const tablaCintura = computed(() => {
           </div>
         </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 auto-rows-[360px] sm:auto-rows-[400px] md:auto-rows-[430px] lg:auto-rows-[460px]">
+          <div
+            v-if="dashboardLoading"
+            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 auto-rows-[360px] sm:auto-rows-[400px] md:auto-rows-[430px] lg:auto-rows-[460px]"
+          >
+            <DashboardChartSkeleton v-for="n in 8" :key="'dashboard-skel-' + n" />
+          </div>
+
+          <div
+            v-else
+            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 auto-rows-[360px] sm:auto-rows-[400px] md:auto-rows-[430px] lg:auto-rows-[460px]"
+          >
 
             <!-- Distribución por Sexo -->
-            <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(1)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col">
               <!-- Header con tooltip -->
               <div class="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
                 <h3 class="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -3457,7 +3518,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Grupos Etarios: 2 columnas -->
-            <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
+            <div v-if="chartWaveVisible(1)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
                 <h3 class="text-base sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Distribución por Grupos Etarios
@@ -3529,7 +3590,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Cintura -->
-            <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(3)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col">
               <div class="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
                 <!-- Título + descripción -->
                 <div class="flex flex-col gap-0.5">
@@ -3620,7 +3681,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Alteraciones en la presión arterial -->
-            <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
+            <div v-if="chartWaveVisible(3)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
                 <h3 class="text-base sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Alteraciones en la presión arterial
@@ -3709,7 +3770,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- IMC: 2 columnas -->
-            <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
+            <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
                 <h3 class="text-base sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Distribución por categoría de IMC
@@ -3794,7 +3855,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Riesgos: 2 columnas --> 
-            <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
+            <div v-if="chartWaveVisible(3)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
                 <h3 class="text-base sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Exposición a factores de riesgo
@@ -3876,7 +3937,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Crónicas --> 
-            <div class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
                 <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Antecedentes relacionados con enfermedades crónicas
@@ -3935,7 +3996,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Localizados --> 
-            <div class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
                 <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Antecedentes de problemas localizados
@@ -3996,7 +4057,7 @@ const tablaCintura = computed(() => {
 
             <!-- Tamizajes psicológicos (TEA, prodromal, TLP) -->
             <div
-              v-if="mostrarTamizajeBipolar"
+              v-if="chartWaveVisible(3) && mostrarTamizajeBipolar"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-1 xl:col-span-1"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4026,7 +4087,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <div
-              v-if="mostrarTamizajeProdromal"
+              v-if="chartWaveVisible(3) && mostrarTamizajeProdromal"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-1 xl:col-span-1"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4056,7 +4117,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <div
-              v-if="mostrarTamizajeTLP"
+              v-if="chartWaveVisible(3) && mostrarTamizajeTLP"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
@@ -4151,7 +4212,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Agudeza Visual -->
-            <div class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
                 <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Agudeza Visual
@@ -4204,7 +4265,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Requieren Lentes -->
-            <div class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <!-- Header con tooltip -->
               <div class="flex items-start justify-between border-b border-gray-200 pb-2 mb-4">
                 <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -4237,7 +4298,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Vista corregida -->
-            <div class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
                 <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Vista Corregida
@@ -4270,7 +4331,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Daltonismo -->
-            <div class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
                 <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Daltonismo
@@ -4301,7 +4362,7 @@ const tablaCintura = computed(() => {
 
             <!-- Proporción Audiometría Normal/Anormal: 1 columna -->
             <div
-              v-if="mostrarAudiometriaProporcion"
+              v-if="chartWaveVisible(4) && mostrarAudiometriaProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4332,7 +4393,7 @@ const tablaCintura = computed(() => {
 
             <!-- Distribución de Resultados de Audiometría: 2 columnas -->
             <div
-              v-if="mostrarAudiometriaDistribucion"
+              v-if="chartWaveVisible(4) && mostrarAudiometriaDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4437,7 +4498,7 @@ const tablaCintura = computed(() => {
 
             <!-- Proporción Espirometría -->
             <div
-              v-if="mostrarEspirometriaProporcion"
+              v-if="chartWaveVisible(4) && mostrarEspirometriaProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4468,7 +4529,7 @@ const tablaCintura = computed(() => {
 
             <!-- Distribución Espirometría -->
             <div
-              v-if="mostrarEspirometriaDistribucion"
+              v-if="chartWaveVisible(4) && mostrarEspirometriaDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4563,7 +4624,7 @@ const tablaCintura = computed(() => {
 
             <!-- Proporción EKG -->
             <div
-              v-if="mostrarEkgProporcion"
+              v-if="chartWaveVisible(4) && mostrarEkgProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4594,7 +4655,7 @@ const tablaCintura = computed(() => {
 
             <!-- Distribución EKG -->
             <div
-              v-if="mostrarEkgDistribucion"
+              v-if="chartWaveVisible(4) && mostrarEkgDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4689,7 +4750,7 @@ const tablaCintura = computed(() => {
 
             <!-- Proporción Rayos X -->
             <div
-              v-if="mostrarRayosXProporcion"
+              v-if="chartWaveVisible(4) && mostrarRayosXProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4720,7 +4781,7 @@ const tablaCintura = computed(() => {
 
             <!-- Distribución Rayos X -->
             <div
-              v-if="mostrarRayosXDistribucion"
+              v-if="chartWaveVisible(4) && mostrarRayosXDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4815,7 +4876,7 @@ const tablaCintura = computed(() => {
 
             <!-- Proporción Análisis de laboratorio -->
             <div
-              v-if="mostrarAnalisisLaboratorioProporcion"
+              v-if="chartWaveVisible(4) && mostrarAnalisisLaboratorioProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4846,7 +4907,7 @@ const tablaCintura = computed(() => {
 
             <!-- Distribución Análisis de laboratorio -->
             <div
-              v-if="mostrarAnalisisLaboratorioDistribucion"
+              v-if="chartWaveVisible(4) && mostrarAnalisisLaboratorioDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4934,7 +4995,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Aptitud al Puesto: 2 columnas -->
-            <div class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
+            <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
                 <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                   Aptitud al Puesto
@@ -5022,7 +5083,7 @@ const tablaCintura = computed(() => {
             </div>
 
             <!-- Consultas -->
-            <div class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
+            <div v-if="chartWaveVisible(1)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <div class="flex items-start justify-between border-b border-gray-200 pb-2 mb-4">
                 <div class="flex flex-col gap-0.5">
                   <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">

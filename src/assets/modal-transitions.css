@@ -1,0 +1,65 @@
+/*
+ * Transiciones de modales de trabajo (overlay + panel).
+ *
+ * Patrón de uso:
+ *   1. En la vista padre: <Transition appear name="modal-work" :duration="{ enter: 230, leave: 150 }"><ModalX v-if="showModal" /></Transition>
+ *   2. En el modal: backdrop con class "modal-work-overlay", panel con class "modal-work-panel"
+ *
+ * La duración en el padre es necesaria porque Vue detecta transitionend solo en el
+ * elemento raíz del modal, no en los hijos animados.
+ */
+
+.modal-work-leave-active {
+  pointer-events: none;
+}
+
+.modal-work-enter-active .modal-work-overlay,
+.modal-work-leave-active .modal-work-overlay {
+  transition: opacity 180ms ease-out;
+}
+
+.modal-work-leave-active .modal-work-overlay {
+  transition-duration: 150ms;
+  transition-timing-function: ease-in;
+}
+
+.modal-work-enter-from .modal-work-overlay,
+.modal-work-leave-to .modal-work-overlay {
+  opacity: 0;
+}
+
+.modal-work-panel {
+  transform-origin: center center;
+}
+
+.modal-work-enter-active .modal-work-panel,
+.modal-work-leave-active .modal-work-panel {
+  transition:
+    opacity 180ms ease-out,
+    transform 180ms ease-out;
+}
+
+.modal-work-enter-active .modal-work-panel {
+  transition-delay: 50ms;
+}
+
+.modal-work-leave-active .modal-work-panel {
+  transition-duration: 135ms;
+  transition-delay: 0ms;
+  transition-timing-function: ease-in;
+}
+
+.modal-work-enter-from .modal-work-panel,
+.modal-work-leave-to .modal-work-panel {
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-work-enter-active .modal-work-overlay,
+  .modal-work-leave-active .modal-work-overlay,
+  .modal-work-enter-active .modal-work-panel,
+  .modal-work-leave-active .modal-work-panel {
+    transition: none !important;
+  }
+}

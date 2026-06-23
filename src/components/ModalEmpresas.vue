@@ -216,17 +216,16 @@ const handleSubmit = async (data) => {
   <div class="modal modal-empresas fixed top-0 left-0 z-10 p-3 sm:p-6 md:p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
     <div
-      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
       :class="{ 'modal-backdrop-pulse': dismissPulse }"
       @click="requestDismiss"
     >
     </div>
-    <Transition appear name="fade">
-      <!-- Modal centrado con desplazamiento interno -->
-      <div
-        class="modal-inner relative bg-white text-gray-900 w-full sm:w-[92%] md:w-3/5 lg:w-1/2 xl:w-2/5 2xl:max-w-2xl 2xl:w-full p-5 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
-        :class="{ 'modal-dismiss-pulse': dismissPulse }"
-      >
+    <!-- Modal centrado con desplazamiento interno -->
+    <div
+      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full sm:w-[92%] md:w-3/5 lg:w-1/2 xl:w-2/5 2xl:max-w-2xl 2xl:w-full p-5 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+      :class="{ 'modal-dismiss-pulse': dismissPulse }"
+    >
         <!-- Botón para cerrar el modal -->
         <div
           class="modal-close absolute h-10 w-10 sm:h-12 sm:w-12 flex justify-center items-center top-0 right-0 text-3xl sm:text-4xl text-gray-400 hover:text-gray-500 cursor-pointer"
@@ -357,7 +356,6 @@ const handleSubmit = async (data) => {
           </FormKit>
         </div>
       </div>
-    </Transition>
 
     <ModalDiscardConfirmDialog
       :open="showDiscardConfirm"

@@ -308,20 +308,25 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
 
 <template>
   <Teleport to="body">
-    <div
-      v-if="visible && tid"
-      class="fixed inset-0 z-[50] grid place-items-center p-4"
-      role="dialog"
-      aria-modal="true"
+    <Transition
+      appear
+      name="modal-work"
+      :duration="{ enter: 230, leave: 150 }"
     >
       <div
-        class="absolute inset-0 bg-emerald-900/50 backdrop-blur-sm z-[40]"
-        aria-hidden="true"
-        @click="closeModal"
-      />
-      <div
-        class="relative bg-white rounded-lg shadow-xl shadow-slate-900/20 w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col z-[50] text-gray-900"
+        v-if="visible && tid"
+        class="modal modal-seguimiento-programado fixed inset-0 z-[50] grid place-items-center p-4"
+        role="dialog"
+        aria-modal="true"
       >
+        <div
+          class="modal-work-overlay absolute inset-0 bg-emerald-900/50 backdrop-blur-sm z-[40]"
+          aria-hidden="true"
+          @click="closeModal"
+        />
+        <div
+          class="modal-work-panel relative bg-white rounded-lg shadow-xl shadow-slate-900/20 w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col z-[50] text-gray-900"
+        >
         <div class="flex items-start justify-between gap-4 px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
           <div>
             <h2 class="text-xl font-semibold text-gray-800">Seguimientos e inasistencias</h2>
@@ -603,6 +608,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </Transition>
   </Teleport>
 </template>

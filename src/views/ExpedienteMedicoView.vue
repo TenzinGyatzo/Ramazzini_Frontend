@@ -891,12 +891,20 @@ const añoMasReciente = computed(() => {
           @closeModal="showSubscriptionModal = false"/>
       </Transition>
 
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalCargaDocumentoExterno v-if="showDocumentoExternoModal"
           @closeDocumentoExternoModal="toggleDocumentoExternoModal" @updateData="() => fetchData(true)" />
       </Transition>
 
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalDeclaracionVeracidad
           v-if="showDeclaracionVeracidadModal"
           :trabajador="trabajadores.currentTrabajador ?? null"
@@ -904,7 +912,11 @@ const añoMasReciente = computed(() => {
         />
       </Transition>
 
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalUpdateDocumentoExterno v-if="showDocumentoExternoUpdateModal"
           @closeModalUpdate="toggleDocumentoExternoUpdateModal" 
           @updateData="() => fetchData(true)"
@@ -934,7 +946,11 @@ const añoMasReciente = computed(() => {
         />
       </Transition>
 
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalCuestionarios
           v-if="showCuestionariosModal"
           @closeModal="toggleCuestionariosModal"
@@ -971,7 +987,7 @@ const añoMasReciente = computed(() => {
       </Transition>
 
       <ResultadosClinicosPanel 
-        v-if="showResultadosClinicosPanel && trabajadores.currentTrabajadorId" 
+        v-if="trabajadores.currentTrabajadorId" 
         :isOpen="showResultadosClinicosPanel"
         :trabajadorId="trabajadores.currentTrabajadorId"
         @close="handleCloseResultadosPanel"

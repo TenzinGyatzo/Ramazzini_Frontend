@@ -20,6 +20,8 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 import FusionRegistroResumen from '@/components/FusionRegistroResumen.vue';
 import FusionWorkerIdentidad from '@/components/FusionWorkerIdentidad.vue';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
+import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import type {
   DuplicateWorkerSummary,
   FusionPreview,
@@ -91,7 +93,24 @@ const numeroEmpleadoResuelto = ref('');
 
 const confirmacion = ref(false);
 
+const closeModal = () => {
+  emit('close');
+};
 
+const isFusionDirty = computed(() => confirmacion.value);
+
+const {
+  showDiscardConfirm,
+  dismissPulse,
+  requestDismiss,
+  forceClose,
+  continueEditing,
+  confirmDiscard,
+} = useModalDirtyGuard({
+  isDirty: isFusionDirty,
+  onClose: closeModal,
+  enabled: () => !submitting.value,
+});
 
 let previewSeq = 0;
 
@@ -283,7 +302,7 @@ async function loadPreview() {
 
     });
 
-    emit('close');
+    forceClose();
 
   } finally {
 
@@ -370,7 +389,7 @@ async function confirmarFusion() {
 
     emit('fused');
 
-    emit('close');
+    forceClose();
 
   } catch (error) {
 
@@ -417,16 +436,23 @@ onMounted(() => {
 
 
 <template>
+  <div class="modal modal-fusion-trabajadores fixed inset-0 z-[60] p-4 grid place-items-center">
+    <div
+      class="modal-work-overlay absolute inset-0 bg-emerald-900/50 backdrop-blur-sm"
+      :class="{ 'modal-backdrop-pulse': dismissPulse }"
+      aria-hidden="true"
+      @click="requestDismiss"
+    />
+    <div
+      class="modal-work-panel relative bg-white dark:bg-slate-800 dark:text-slate-100 rounded-xl shadow-xl dark:shadow-black/40 max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+      :class="{ 'modal-dismiss-pulse': dismissPulse }"
+    >
 
-  <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40">
+      <div class="p-6 border-b border-gray-200 dark:border-slate-600">
 
-    <div class="bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-100">Fusionar trabajadores</h2>
 
-      <div class="p-6 border-b">
-
-        <h2 class="text-xl font-semibold text-gray-900">Fusionar trabajadores</h2>
-
-        <p class="text-sm text-gray-600 mt-1">
+        <p class="text-sm text-gray-600 dark:text-slate-300 mt-1">
 
           Se consolidará el expediente clínico bajo un solo registro. El registro fuente será eliminado.
 
@@ -436,14 +462,14 @@ onMounted(() => {
 
 
 
-      <div v-if="loading" class="p-8 text-center text-gray-500">Cargando vista previa…</div>
+      <div v-if="loading" class="p-8 text-center text-gray-500 dark:text-slate-400">Cargando vista previa…</div>
 
 
 
       <div v-else-if="preview" class="p-6 space-y-6">
 
-        <p class="text-xs text-gray-500">
-          Elige el registro que se <strong>conserva</strong> (destino). El otro se elimina y todo su contenido se migra al destino.
+        <p class="text-xs text-gray-500 dark:text-slate-400">
+          Elige el registro que se <strong class="text-gray-700 dark:text-slate-200">conserva</strong> (destino). El otro se elimina y todo su contenido se migra al destino.
         </p>
 
         <div class="grid lg:grid-cols-2 gap-4">
@@ -451,8 +477,8 @@ onMounted(() => {
           <div
             v-for="registro in [preview.destino, preview.fuente]"
             :key="registro._id"
-            class="border rounded-xl p-4 flex flex-col bg-gradient-to-br from-white to-gray-50 transition-all duration-300"
-            :class="esConservado(registro._id) ? 'border-emerald-400' : 'border-red-200'"
+            class="border rounded-xl p-4 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-900 transition-all duration-300"
+            :class="esConservado(registro._id) ? 'border-emerald-400 dark:border-emerald-500' : 'border-red-200 dark:border-red-800'"
           >
 
             <div class="flex justify-between items-start mb-3 gap-2">
@@ -461,7 +487,7 @@ onMounted(() => {
 
                 class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
 
-                :class="esConservado(registro._id) ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'"
+                :class="esConservado(registro._id) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'"
 
               >
 
@@ -475,7 +501,7 @@ onMounted(() => {
 
                 type="button"
 
-                class="text-xs text-emerald-700 underline whitespace-nowrap"
+                class="text-xs text-emerald-700 dark:text-emerald-400 underline whitespace-nowrap"
 
                 @click="conservarRegistro(registro._id)"
 
@@ -521,11 +547,11 @@ onMounted(() => {
 
 
 
-        <div class="bg-sky-50 border border-sky-200 rounded-lg p-4 text-sm text-sky-950 space-y-2">
+        <div class="bg-sky-50 border border-sky-200 dark:bg-sky-950/35 dark:border-sky-800 rounded-lg p-4 text-sm text-sky-950 dark:text-sky-100 space-y-2">
 
           <p class="font-medium flex items-center gap-2">
 
-            <i class="fas fa-map-marker-alt text-sky-600"></i>
+            <i class="fas fa-map-marker-alt text-sky-600 dark:text-sky-400"></i>
 
             Ubicación del expediente unificado
 
@@ -535,11 +561,11 @@ onMounted(() => {
 
             Tras la fusión, el trabajador quedará asociado al centro de trabajo del registro que conserves como destino:
 
-            <strong>{{ centroDestinoFinal }}</strong>
+            <strong class="text-sky-950 dark:text-sky-50">{{ centroDestinoFinal }}</strong>
 
           </p>
 
-          <p v-if="centrosDistintos" class="text-sky-900 leading-relaxed">
+          <p v-if="centrosDistintos" class="text-sky-900 dark:text-sky-200 leading-relaxed">
 
             Los registros seleccionados pertenecen a centros de trabajo diferentes. 
             
@@ -552,7 +578,7 @@ onMounted(() => {
 
           </p>
 
-          <p v-else class="text-sky-800">
+          <p v-else class="text-sky-800 dark:text-sky-200">
 
             Ambos registros ya pertenecen al mismo centro de trabajo, por lo que la ubicación del trabajador no se verá afectada.
 
@@ -564,11 +590,11 @@ onMounted(() => {
 
         <!-- Resumen de migración (registro que se elimina) -->
 
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-950 space-y-3">
+        <div class="bg-amber-50 border border-amber-200 dark:bg-amber-950/35 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-950 dark:text-amber-100 space-y-3">
 
           <p class="font-medium flex items-center gap-2">
 
-            <i class="fas fa-exchange-alt text-amber-700"></i>
+            <i class="fas fa-exchange-alt text-amber-700 dark:text-amber-400"></i>
 
             Contenido que se migrará al registro destino
 
@@ -599,19 +625,19 @@ onMounted(() => {
 
         <div v-if="conflictoNumero" class="space-y-2">
 
-          <p class="text-sm font-medium text-gray-800">Conflicto de número de empleado — seleccione cuál conservar:</p>
+          <p class="text-sm font-medium text-gray-800 dark:text-slate-200">Conflicto de número de empleado — seleccione cuál conservar:</p>
 
-          <label class="flex items-center gap-2 text-sm">
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
 
-            <input v-model="numeroEmpleadoResuelto" type="radio" :value="preview.destino.numeroEmpleado" />
+            <input v-model="numeroEmpleadoResuelto" type="radio" class="accent-emerald-600 dark:accent-emerald-400" :value="preview.destino.numeroEmpleado" />
 
             {{ preview.destino.numeroEmpleado }} (destino actual)
 
           </label>
 
-          <label class="flex items-center gap-2 text-sm">
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
 
-            <input v-model="numeroEmpleadoResuelto" type="radio" :value="preview.fuente.numeroEmpleado" />
+            <input v-model="numeroEmpleadoResuelto" type="radio" class="accent-emerald-600 dark:accent-emerald-400" :value="preview.fuente.numeroEmpleado" />
 
             {{ preview.fuente.numeroEmpleado }} (fuente)
 
@@ -621,9 +647,9 @@ onMounted(() => {
 
 
 
-        <label class="flex items-start gap-2 text-sm text-gray-700">
+        <label class="flex items-start gap-2 text-sm text-gray-700 dark:text-slate-300">
 
-          <input v-model="confirmacion" type="checkbox" class="mt-1" />
+          <input v-model="confirmacion" type="checkbox" class="mt-1 accent-emerald-600 dark:accent-emerald-400" />
 
           Confirmo que ambos registros corresponden a la misma persona y deseo fusionar el expediente.
 
@@ -633,17 +659,17 @@ onMounted(() => {
 
 
 
-      <div class="p-6 border-t flex justify-end gap-3">
+      <div class="p-6 border-t border-gray-200 dark:border-slate-600 flex justify-end gap-3">
 
         <button
 
           type="button"
 
-          class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+          class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
 
           :disabled="submitting"
 
-          @click="emit('close')"
+          @click="requestDismiss"
 
         >
 
@@ -671,6 +697,11 @@ onMounted(() => {
 
     </div>
 
+    <ModalDiscardConfirmDialog
+      :open="showDiscardConfirm"
+      @continue-editing="continueEditing"
+      @discard="confirmDiscard"
+    />
   </div>
 
 </template>

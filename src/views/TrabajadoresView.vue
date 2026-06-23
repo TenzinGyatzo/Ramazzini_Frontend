@@ -403,85 +403,63 @@ async function cargarContextoHeader(empresaId: string, centroTrabajoId: string) 
   }
 }
 
-// 5. Ciclo de vida
-onMounted(async () => {
-  const empresaId = String(route.params.idEmpresa);
-  const centroTrabajoId = String(route.params.idCentroTrabajo);
-  const guardado = localStorage.getItem('mostrarFiltros');
+async function finalizarCargaTabla(aplicarQuery = false) {
+  if (aplicarQuery) {
+    aplicarFiltrosDesdeQuery(route.query);
+    router.replace({ query: {} });
+  }
 
-  // Limpiar el listado compartido para no mostrar datos de una vista previa
-  // (p. ej. los conteos de la vista de centros) mientras carga.
+  await nextTick();
+  mostrarTabla.value = true;
+  await nextTick();
+  dataTableRef.value?.aplicarTodosLosFiltrosDesdeLocalStorage();
+  tablaLista.value = true;
+}
+
+async function cargarVistaTrabajadores(
+  empresaId: string,
+  centroTrabajoId: string,
+  opciones: { aplicarQuery?: boolean } = {},
+) {
   cargandoVista.value = true;
   headerContextoLoading.value = true;
-  trabajadores.resetTrabajadores();
+  mostrarTabla.value = false;
+  tablaLista.value = false;
 
-  const inicioCarga = Date.now();
   const contextoPromise = cargarContextoHeader(empresaId, centroTrabajoId);
 
-  // Trabajadores y alertas de duplicado se resuelven juntos; el header usa contextoPromise aparte.
   await Promise.all([
     trabajadores.fetchTrabajadoresConHistoria(empresaId, centroTrabajoId),
     contextoPromise,
-    cargarDuplicadosPendientes(),
   ]);
 
-  // Guard anti-race: si el usuario navegó a otro centro, abortar.
   if (
     String(route.params.idEmpresa) !== empresaId ||
     String(route.params.idCentroTrabajo) !== centroTrabajoId
   ) {
     return;
   }
+
   cargandoVista.value = false;
-  // logCarga('fetchParalelo trabajadores+empresa+centro', {
-  //   duracionMs: roundMs(performance.now() - tFetch),
-  //   registros: trabajadores.trabajadores.length,
-  //   empresaId,
-  //   centroTrabajoId,
-  // });
+  void cargarDuplicadosPendientes();
 
-  // Garantizar que el spinner se muestre por al menos tiempoMinimoSpinner ms para mejor UX
-  const tiempoTranscurrido = Date.now() - inicioCarga;
-  const tiempoMinimoSpinner = 100;
-  if (tiempoTranscurrido < tiempoMinimoSpinner) {
-    const pad = tiempoMinimoSpinner - tiempoTranscurrido;
-    await new Promise(resolve => setTimeout(resolve, pad));
-    // logCarga('esperaMinimaSpinner', { duracionMs: pad });
-  }
+  await finalizarCargaTabla(opciones.aplicarQuery ?? false);
+}
 
-  // Aplicar filtros desde query antes de mostrar la tabla
-  aplicarFiltrosDesdeQuery(route.query);
-  router.replace({ query: {} });
-  // logCarga('filtrosDesdeQueryYRuta');
-
-  // Esperar a que el DOM se actualice completamente
-  await nextTick();
-  // logCarga('postNextTick');
-
-  // Usar requestAnimationFrame para asegurar que el DOM esté completamente renderizado
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      mostrarTabla.value = true;
-      // logCarga('mostrarTabla (tras 2 rAF)');
-
-      // Esperar un tick más para que el componente DataTableDT se monte
-      nextTick(() => {
-        // Aplicar filtros después de que la tabla esté lista
-        setTimeout(() => {
-          dataTableRef.value?.aplicarTodosLosFiltrosDesdeLocalStorage();
-          tablaLista.value = true; // Marcar que la tabla está completamente lista
-          // logCarga('tablaLista + filtros localStorage', {
-          //   aplicarFiltrosLsMs: roundMs(performance.now() - tDt),
-          // });
-          // logCarga('FIN montaje lista para uso', {
-          //   totalDesdeMontajeMs: roundMs(performance.now() - tMount),
-          // });
-        }, 50); // Pequeño delay para asegurar que DataTables esté inicializado
-      });
+// 5. Ciclo de vida
+watch(
+  () => [route.params.idEmpresa, route.params.idCentroTrabajo] as const,
+  async ([idEmpresa, idCentro], prev) => {
+    if (!idEmpresa || !idCentro) return;
+    await cargarVistaTrabajadores(String(idEmpresa), String(idCentro), {
+      aplicarQuery: prev === undefined,
     });
-  });
+  },
+  { immediate: true },
+);
 
-  mostrarFiltros.value = guardado === 'true';
+onMounted(() => {
+  const guardado = localStorage.getItem('mostrarFiltros');
 
   filtrosConfig.forEach(({ id }) => {
     const select = document.getElementById(`filtro-${id}`) as HTMLSelectElement;
@@ -913,7 +891,11 @@ const toggleVigencias = () => {
     <div>
       <!-- Modales -->
        <Teleport to="body">
-        <Transition appear name="fade">
+        <Transition
+          appear
+          name="modal-work"
+          :duration="{ enter: 230, leave: 150 }"
+        >
           <ModalTrabajadores v-if="showModal" @closeModal="closeModal" @openSubscriptionModal="showSubscriptionModal = true" />
         </Transition>
       </Teleport>
@@ -922,7 +904,11 @@ const toggleVigencias = () => {
         <ModalSuscripcion v-if="showSubscriptionModal" @closeModal="showSubscriptionModal = false" />
       </Transition>
 
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalCargaMasiva v-if="showImportModal" @openSubscriptionModal="showSubscriptionModal = true" @closeModal="toggleImportModal" />
       </Transition>
 
@@ -936,21 +922,35 @@ const toggleVigencias = () => {
         />
       </Transition>
 
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalRTs v-if="showRTsModal" @closeModal="closeRTsModal" @solicitarEliminacion="solicitarEliminacion" />
       </Transition>
 
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalRiesgos v-if="showRisksModal" @closeModal="closeRisksModal" />
       </Transition>
 
-      <ModalFusionTrabajadores
-        v-if="showFusionModal && fusionTrabajadorA && fusionTrabajadorB"
-        :trabajador-a-id="fusionTrabajadorA"
-        :trabajador-b-id="fusionTrabajadorB"
-        @close="showFusionModal = false"
-        @fused="onFusionCompletada"
-      />
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
+        <ModalFusionTrabajadores
+          v-if="showFusionModal && fusionTrabajadorA && fusionTrabajadorB"
+          :trabajador-a-id="fusionTrabajadorA"
+          :trabajador-b-id="fusionTrabajadorB"
+          @close="showFusionModal = false"
+          @fused="onFusionCompletada"
+        />
+      </Transition>
 
       <div
         v-if="!cargandoVista && conteoDuplicados > 0 && canManageTrabajadores"

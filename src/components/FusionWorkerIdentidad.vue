@@ -21,9 +21,9 @@ const props = withDefaults(
   },
 );
 
-function textClass(field: Parameters<typeof fieldDiffers>[0], normal = 'text-gray-600'): string {
+function textClass(field: Parameters<typeof fieldDiffers>[0], normal = 'text-gray-600 dark:text-slate-300'): string {
   if (fieldDiffers(field, props.registro, props.opuesto)) {
-    return 'text-orange-600 font-semibold';
+    return 'text-orange-600 dark:text-orange-400 font-semibold';
   }
   return normal;
 }
@@ -44,13 +44,13 @@ const centro = computed(
     <div class="flex-1 min-w-0 mb-3">
       <h3
         class="text-lg font-semibold truncate mb-2"
-        :class="textClass('nombre', 'text-gray-900')"
+        :class="textClass('nombre', 'text-gray-900 dark:text-slate-100')"
       >
         {{ nombre || 'Sin nombre' }}
       </h3>
       <div class="flex items-center gap-3 flex-wrap">
         <div class="inline-flex items-center gap-1.5 text-sm font-medium">
-          <i class="fas fa-briefcase text-gray-500 text-sm"></i>
+          <i class="fas fa-briefcase text-gray-500 dark:text-slate-400 text-sm"></i>
           <span :class="textClass('puesto')">{{ puesto }}</span>
         </div>
         <div
@@ -70,7 +70,7 @@ const centro = computed(
     <!-- Datos laborales / demográficos -->
     <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-4 mb-3">
       <div class="flex items-center gap-2">
-        <i class="fas fa-building text-gray-500 text-sm"></i>
+        <i class="fas fa-building text-gray-500 dark:text-slate-400 text-sm"></i>
         <span class="text-sm" :class="textClass('centroTrabajo')">{{ centro }}</span>
       </div>
       <div class="flex items-center gap-2">

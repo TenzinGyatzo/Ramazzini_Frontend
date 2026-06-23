@@ -93,13 +93,12 @@ const handleDescargar = async () => {
 <template>
   <div class="modal fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
     <div
-      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
       @click="closeModal"
     />
-    <Transition appear name="fade">
-      <div
-        class="modal-inner relative bg-white text-gray-900 dark:bg-slate-800 dark:text-slate-100 w-full max-w-md p-8 rounded-lg shadow-md shadow-slate-900 dark:shadow-black/40 max-h-[90vh] overflow-y-auto"
-      >
+    <div
+      class="modal-work-panel modal-inner relative bg-white text-gray-900 dark:bg-slate-800 dark:text-slate-100 w-full max-w-md p-8 rounded-lg shadow-md shadow-slate-900 dark:shadow-black/40 max-h-[90vh] overflow-y-auto"
+    >
         <div
           class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 dark:text-slate-400 dark:hover:text-slate-300 cursor-pointer"
           @click="closeModal"
@@ -154,6 +153,5 @@ const handleDescargar = async () => {
           </button>
         </div>
       </div>
-    </Transition>
   </div>
 </template>

@@ -746,9 +746,7 @@ const confirmarTransferencia = async () => {
     });
 
     // Cerrar modales y actualizar la lista
-    mostrarModalTransferencia.value = false;
-    empresaSeleccionada.value = null;
-    centroSeleccionado.value = null;
+    forceCloseTransfer();
     forceClose();
     trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
   } catch (error) {
@@ -768,29 +766,49 @@ const confirmarTransferencia = async () => {
 };
 
 // Función para cancelar la transferencia
-const cancelarTransferencia = () => {
+const closeTransferModal = () => {
   mostrarModalTransferencia.value = false;
   empresaSeleccionada.value = null;
   centroSeleccionado.value = null;
   centrosDisponibles.value = [];
+  empresaSearch.value = '';
+  empresaSearchDebounced.value = '';
 };
+
+const isTransferDirty = computed(() =>
+  Boolean(empresaSeleccionada.value || centroSeleccionado.value),
+);
+
+const {
+  showDiscardConfirm: showTransferDiscardConfirm,
+  dismissPulse: transferDismissPulse,
+  requestDismiss: requestTransferDismiss,
+  forceClose: forceCloseTransfer,
+  continueEditing: continueTransferEditing,
+  confirmDiscard: confirmTransferDiscard,
+} = useModalDirtyGuard({
+  isDirty: isTransferDirty,
+  onClose: closeTransferModal,
+  enabled: () =>
+    mostrarModalTransferencia.value && !transferenciaEnProceso.value,
+});
 </script>
 
 <template>
+  <div>
   <div class="modal modal-trabajadores fixed top-0 left-0 z-40 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
     <!-- Fondo oscuro transparente -->
     <div
-      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
       :class="{ 'modal-backdrop-pulse': dismissPulse }"
       @click="requestDismiss"
     >
     </div>
-    <Transition appear name="fade">
-      <!-- Modal centrado con desplazamiento interno -->
-      <div
-        class="modal-inner relative bg-white text-gray-900 w-full sm:w-[92%] md:w-4/5 lg:w-3/4 xl:w-2/3 2xl:max-w-5xl 2xl:w-4/5 p-6 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
-        :class="{ 'modal-dismiss-pulse': dismissPulse }"
-        style="overflow-x: visible;">
+    <!-- Modal centrado con desplazamiento interno -->
+    <div
+      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full sm:w-[92%] md:w-4/5 lg:w-3/4 xl:w-2/3 2xl:max-w-5xl 2xl:w-4/5 p-6 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+      :class="{ 'modal-dismiss-pulse': dismissPulse }"
+      style="overflow-x: visible;">
         <!-- Botón para cerrar el modal -->
         <div
           class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
@@ -1131,7 +1149,6 @@ const cancelarTransferencia = () => {
           Cerrar
         </button>
       </div>
-    </Transition>
 
     <ModalDiscardConfirmDialog
       :open="showDiscardConfirm"
@@ -1140,9 +1157,25 @@ const cancelarTransferencia = () => {
     />
 
     <!-- Modal de transferencia -->
-    <Transition appear name="fade">
-      <div v-if="mostrarModalTransferencia" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" @click="cancelarTransferencia">
-        <div class="modal-inner bg-white text-gray-900 w-4/5 sm:w-3/5 md:w-1/2 lg:w-2/5 xl:w-1/3 2xl:w-1/4 p-8 rounded-lg shadow-md shadow-slate-900 max-h-[80vh] overflow-y-auto" @click.stop>
+    <Transition
+      appear
+      name="modal-work"
+      :duration="{ enter: 230, leave: 150 }"
+    >
+      <div
+        v-if="mostrarModalTransferencia"
+        class="modal modal-transferencia fixed inset-0 z-50 p-4 grid place-items-center"
+      >
+        <div
+          class="modal-work-overlay absolute inset-0 bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+          :class="{ 'modal-backdrop-pulse': transferDismissPulse }"
+          @click="requestTransferDismiss"
+        />
+        <div
+          class="modal-work-panel modal-inner relative bg-white text-gray-900 w-4/5 sm:w-3/5 md:w-1/2 lg:w-2/5 xl:w-1/3 2xl:w-1/4 p-8 rounded-lg shadow-md shadow-slate-900 max-h-[80vh] overflow-y-auto"
+          :class="{ 'modal-dismiss-pulse': transferDismissPulse }"
+          @click.stop
+        >
           <!-- Header del modal -->
           <div class="flex justify-between items-start mb-3">
             <div>
@@ -1150,7 +1183,7 @@ const cancelarTransferencia = () => {
               <p class="mt-1 text-sm text-gray-500">Selecciona una empresa destino y luego un centro de trabajo.</p>
             </div>
             <button
-              @click="cancelarTransferencia"
+              @click="requestTransferDismiss"
               class="text-gray-400 hover:text-gray-600 text-2xl"
               :disabled="transferenciaEnProceso">
               &times;
@@ -1351,7 +1384,7 @@ const cancelarTransferencia = () => {
           <!-- Botones de acción -->
           <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
-              @click="cancelarTransferencia"
+              @click="requestTransferDismiss"
               class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200"
               :disabled="transferenciaEnProceso">
               Cancelar
@@ -1375,16 +1408,29 @@ const cancelarTransferencia = () => {
         </div>
       </div>
     </Transition>
+
+    <ModalDiscardConfirmDialog
+      :open="showTransferDiscardConfirm"
+      @continue-editing="continueTransferEditing"
+      @discard="confirmTransferDiscard"
+    />
   </div>
 
-  <ModalFusionTrabajadores
-    v-if="showFusionModal && posibleDuplicadoRegistro && nuevoTrabajadorId"
-    :trabajador-a-id="nuevoTrabajadorId"
-    :trabajador-b-id="posibleDuplicadoRegistro.trabajadorId"
-    :posible-duplicado="posibleDuplicadoRegistro"
-    @close="showFusionModal = false"
-    @fused="onFusionCompletada"
-  />
+  <Transition
+    appear
+    name="modal-work"
+    :duration="{ enter: 230, leave: 150 }"
+  >
+    <ModalFusionTrabajadores
+      v-if="showFusionModal && posibleDuplicadoRegistro && nuevoTrabajadorId"
+      :trabajador-a-id="nuevoTrabajadorId"
+      :trabajador-b-id="posibleDuplicadoRegistro.trabajadorId"
+      :posible-duplicado="posibleDuplicadoRegistro"
+      @close="showFusionModal = false"
+      @fused="onFusionCompletada"
+    />
+  </Transition>
+  </div>
 </template>
 
 

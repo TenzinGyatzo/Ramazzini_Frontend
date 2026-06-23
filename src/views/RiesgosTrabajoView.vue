@@ -795,7 +795,11 @@ const mostrarTipScrollLateral = () => {
 <template>
   <Transition appear mode="out-in" name="slide-up">
     <div>
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalRTs
           v-if="showRTsModal"
           @closeModal="showRTsModal = false"

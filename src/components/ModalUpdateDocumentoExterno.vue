@@ -313,17 +313,16 @@ const abrirResultadoParaEdicion = () => {
   <div class="modal fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
     <div
-      class="absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
+      class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
       :class="{ 'modal-backdrop-pulse': dismissPulse }"
       @click="requestDismiss"
     >
     </div>
-    <Transition appear name="fade">
-      <!-- Modal centrado con desplazamiento interno -->
-      <div
-        class="modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
-        :class="{ 'modal-dismiss-pulse': dismissPulse }"
-      >
+    <!-- Modal centrado con desplazamiento interno -->
+    <div
+      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+      :class="{ 'modal-dismiss-pulse': dismissPulse }"
+    >
         <!-- Botón para cerrar el modal -->
         <div
           class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
@@ -531,7 +530,6 @@ const abrirResultadoParaEdicion = () => {
           </button>
         </FormKit>
       </div>
-    </Transition>
 
     <ModalDiscardConfirmDialog
       :open="showDiscardConfirm"

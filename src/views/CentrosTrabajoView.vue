@@ -223,7 +223,11 @@ watch(
 <template>
   <Transition appear mode="out-in" name="slide-up">
     <div>
-      <Transition appear name="fade">
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalCentros v-if="showModal" @closeModal="closeModal" />
       </Transition>
 

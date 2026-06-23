@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <!-- Overlay -->
-    <Transition name="fade">
+    <Transition appear name="panel-overlay">
       <div
         v-if="isOpen"
         class="fixed inset-0 bg-black bg-opacity-50 z-20"
@@ -11,7 +11,7 @@
     </Transition>
 
     <!-- Drawer -->
-    <Transition name="slide-right">
+    <Transition appear name="slide-right">
       <div
         v-if="isOpen"
         ref="drawerRef"
@@ -1620,15 +1620,14 @@ const {
 } = useModalDirtyGuard({
   isDirty,
   onClose: handleClose,
+  escapeActive: () => props.isOpen,
   enabled: () =>
     props.isOpen &&
     !showImageViewer.value &&
     !showPdfViewer.value &&
     !showSelectorDocumento.value,
   onEscapeWhenDisabled: () => {
-    if (props.isOpen) {
-      dismissNestedLayer();
-    }
+    dismissNestedLayer();
   },
 });
 
@@ -2184,9 +2183,42 @@ const buildPdfUrl = (ruta: string, nombrePDF: string, updatedAt: number | null =
 </script>
 
 <style scoped>
+.panel-overlay-enter-active,
+.panel-overlay-leave-active {
+  transition: opacity 90ms ease;
+}
+
+.panel-overlay-enter-from,
+.panel-overlay-leave-to {
+  opacity: 0;
+}
+
+.slide-right-enter-active {
+  transition: transform 120ms ease-out;
+}
+
+.slide-right-leave-active {
+  transition: transform 90ms ease-in;
+  pointer-events: none;
+}
+
+.slide-right-enter-from,
+.slide-right-leave-to {
+  transform: translateX(100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-overlay-enter-active,
+  .panel-overlay-leave-active,
+  .slide-right-enter-active,
+  .slide-right-leave-active {
+    transition: none !important;
+  }
+}
+
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s;
+  transition: opacity 0.1s ease;
 }
 
 .fade-enter-from,
@@ -2194,25 +2226,9 @@ const buildPdfUrl = (ruta: string, nombrePDF: string, updatedAt: number | null =
   opacity: 0;
 }
 
-.slide-right-enter-active {
-  transition: transform 0.3s ease-out;
-}
-
-.slide-right-enter-from {
-  transform: translateX(100%);
-}
-
-.slide-right-leave-active {
-  transition: transform 0.3s ease-in;
-}
-
-.slide-right-leave-to {
-  transform: translateX(100%);
-}
-
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .modal-fade-enter-from,
