@@ -58,6 +58,14 @@ export default {
         });
     },
 
+    registrarExportacionExcel(
+        empresaId: string,
+        centroTrabajoId: string,
+        body: { rowCount: number; filename: string; filtered?: boolean },
+    ) {
+        return api.post(`/${empresaId}/${centroTrabajoId}/registrar-exportacion-excel`, body);
+    },
+
     transferirTrabajador(empresaId: string, centroTrabajoId: string, trabajadorId: string, nuevoCentroId: string) {
         return api.patch(`/${empresaId}/${centroTrabajoId}/transferir-trabajador/${trabajadorId}`, {
             nuevoCentroId

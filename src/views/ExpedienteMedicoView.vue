@@ -22,7 +22,7 @@ import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
 import ModalFinalizarDocumento from '@/components/modals/ModalFinalizarDocumento.vue';
 import ModalAnularDocumento from '@/components/modals/ModalAnularDocumento.vue';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
-import DailyConsentModal from '@/components/DailyConsentModal.vue';
+import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
 import ModalDeclaracionVeracidad from '@/components/ModalDeclaracionVeracidad.vue';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
@@ -31,7 +31,7 @@ import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
-import { useNavigateWithDailyConsent } from '@/composables/useNavigateWithDailyConsent';
+import { useNavigateWithTreatmentConsent } from '@/composables/useNavigateWithTreatmentConsent';
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
 import ResultadosClinicosPanel from '@/components/ResultadosClinicosPanel.vue';
 import ResultadosClinicosSubsection from '@/components/ResultadosClinicosSubsection.vue';
@@ -67,14 +67,13 @@ const { canCreateDocument, getRestrictionMessage, executeIfCanManageDocumentosEx
   usePermissionRestrictions();
 const { validationResult, loadFirmanteData } = useProfessionalDataValidation();
 const {
-  navigateWithDailyConsent,
+  navigateWithTreatmentConsent,
   showModal: showConsentModal,
   modalTrabajadorId,
   modalTrabajadorNombre,
-  modalTrabajadorSexo,
   handleConsentRegistered,
   handleConsentCancel,
-} = useNavigateWithDailyConsent();
+} = useNavigateWithTreatmentConsent();
 
 const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);
@@ -416,10 +415,9 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
 
   // Si es crear-documento, usar navegación con consentimiento preventivo
   if (routeName === 'crear-documento' && trabajadores.currentTrabajadorId && trabajadores.currentTrabajador) {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador.sexo,
       to: {
         name: routeName,
         params: routeParams,
@@ -988,11 +986,10 @@ const añoMasReciente = computed(() => {
       </Transition>
 
       <Transition appear name="fade">
-        <DailyConsentModal
+        <TreatmentConsentModal
           v-if="showConsentModal"
           :trabajadorId="modalTrabajadorId"
           :trabajadorNombre="modalTrabajadorNombre"
-          :trabajadorSexo="modalTrabajadorSexo"
           :open="showConsentModal"
           @registered="handleConsentRegistered"
           @cancel="handleConsentCancel"

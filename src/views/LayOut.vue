@@ -16,6 +16,10 @@ import {
 import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
 import ModalEliminacion from "@/components/ModalEliminacion.vue";
 import { useEliminacion } from "@/composables/useEliminacion";
+import {
+  isConfidentialityAgreementPending,
+  confidentialityAgreementAccepted,
+} from "@/composables/useConfidentialityAgreement";
 
 const {
   isOpen: eliminacionOpen,
@@ -192,20 +196,42 @@ onMounted(() => {
 
   watch(
     () => user.user,
-    async (user) => {
+    async (currentUser) => {
       datosCargados.value = false;
-      if (user?.idProveedorSalud) {
-        await proveedorSaludStore.loadProveedorSalud(user.idProveedorSalud);
+      if (!currentUser || isConfidentialityAgreementPending()) {
+        return;
       }
-      if (user?._id) {
-        await medicoFirmanteStore.loadMedicoFirmante(user._id);
-        await enfermeraFirmanteStore.loadEnfermeraFirmante(user._id);
-        await tecnicoFirmanteStore.loadTecnicoFirmante(user._id);
+      if (currentUser.idProveedorSalud) {
+        await proveedorSaludStore.loadProveedorSalud(currentUser.idProveedorSalud);
+      }
+      if (currentUser._id) {
+        await medicoFirmanteStore.loadMedicoFirmante(currentUser._id);
+        await enfermeraFirmanteStore.loadEnfermeraFirmante(currentUser._id);
+        await tecnicoFirmanteStore.loadTecnicoFirmante(currentUser._id);
       }
       datosCargados.value = true;
     },
     { immediate: true }
   );
+
+  watch(confidentialityAgreementAccepted, async (accepted) => {
+    if (!accepted || !user.user || isConfidentialityAgreementPending()) {
+      return;
+    }
+    datosCargados.value = false;
+    if (user.user.idProveedorSalud) {
+      await proveedorSaludStore.loadProveedorSalud(user.user.idProveedorSalud);
+      empresas.fetchEmpresas(user.user.idProveedorSalud).then(() => {
+        empresasCargadas.value = true;
+      });
+    }
+    if (user.user._id) {
+      await medicoFirmanteStore.loadMedicoFirmante(user.user._id);
+      await enfermeraFirmanteStore.loadEnfermeraFirmante(user.user._id);
+      await tecnicoFirmanteStore.loadTecnicoFirmante(user.user._id);
+    }
+    datosCargados.value = true;
+  });
 
   setTimeout(() => {
     isVisible.value = true;
@@ -222,7 +248,7 @@ watch(
 );
 
 onMounted(() => {
-  if (user.user?.idProveedorSalud) {
+  if (user.user?.idProveedorSalud && !isConfidentialityAgreementPending()) {
     empresas.fetchEmpresas(user.user.idProveedorSalud).then(() => {
       empresasCargadas.value = true;
     });

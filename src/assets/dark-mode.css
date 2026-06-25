@@ -2210,8 +2210,8 @@ html.dark-mode .auditoria-view .pagination button:hover:not(:disabled) {
   background-color: #475569 !important;
 }
 
-/* DailyConsentModal: círculo del icono legible sobre panel oscuro */
-html.dark-mode .daily-consent-modal-icon {
+/* TreatmentConsentModal: círculo del icono legible sobre panel oscuro */
+html.dark-mode .treatment-consent-modal-icon {
   box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.4) !important;
 }
 

@@ -10,9 +10,11 @@ import {
 } from '@/helpers/pdfHtmlParser';
 import { ref, nextTick, watch, computed, onMounted } from 'vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import InformesAPI from '@/api/InformesAPI';
 
 const props = defineProps<{
   refsGraficas: Record<string, any>;
+  empresaId?: string;
   nombreEmpresa?: string;
   razonSocial?: string;
   logoBase64?: string;
@@ -2566,6 +2568,16 @@ const generarPDF = async () => {
   // Pequeño delay para asegurar que el modal se muestre
   setTimeout(async () => {
     try {
+      if (props.empresaId) {
+        await InformesAPI.registrarExportacionDashboard({
+          empresaId: props.empresaId,
+          periodo: props.periodo ?? '',
+          centroTrabajo: props.centroTrabajo ?? 'Todos',
+          totalTrabajadores: props.totalTrabajadores,
+          modo: 'view',
+        }).catch(() => {});
+      }
+
       const docDefinition = generarDocDefinition(false); // Calidad normal
       pdfMake.createPdf(docDefinition).open();
       mensajeExito.value = 'El informe se generó correctamente. Puedes revisarlo en la ventana que se abrió.';
@@ -2599,6 +2611,16 @@ const descargarPDF = async () => {
   // Pequeño delay para asegurar que el modal se muestre
   setTimeout(async () => {
     try {
+      if (props.empresaId) {
+        await InformesAPI.registrarExportacionDashboard({
+          empresaId: props.empresaId,
+          periodo: props.periodo ?? '',
+          centroTrabajo: props.centroTrabajo ?? 'Todos',
+          totalTrabajadores: props.totalTrabajadores,
+          modo: 'download',
+        }).catch(() => {});
+      }
+
       const docDefinition = generarDocDefinition(true); // Alta calidad
       pdfMake.createPdf(docDefinition).download(`InformeSaludLaboral_${props.nombreEmpresa?.replace(/\s+/g, '_') || 'Empresa'}_${new Date().toISOString().split('T')[0]}.pdf`);
       mensajeExito.value = 'Informe generado correctamente.';

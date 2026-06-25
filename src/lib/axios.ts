@@ -15,8 +15,13 @@ api.interceptors.response.use(
     if (errorData?.errorCode) {
       // CONSENT_REQUIRED se maneja mediante modal, no mostrar toast aquí
       if (errorData.errorCode === 'CONSENT_REQUIRED') {
-        // El modal se manejará en el composable useDailyConsentGate
+        // El modal se manejará en el composable useTreatmentConsentGate
         // No mostrar toast para evitar duplicación
+        return Promise.reject(error);
+      }
+
+      // CONFIDENTIALITY_AGREEMENT_REQUIRED se maneja mediante modal global
+      if (errorData.errorCode === 'CONFIDENTIALITY_AGREEMENT_REQUIRED') {
         return Promise.reject(error);
       }
       

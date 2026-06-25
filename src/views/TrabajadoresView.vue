@@ -698,7 +698,7 @@ function generarNombreArchivoExcel(): string {
   return partes.join('_') + '.xlsx';
 }
 
-const exportarFiltrados = () => {
+const exportarFiltrados = async () => {
   if (!dataTableRef.value) return;
 
   const table = $('#customTable').DataTable();
@@ -814,6 +814,15 @@ const exportarFiltrados = () => {
   }));
 
   const nombreArchivo = generarNombreArchivoExcel();
+  const empresaId = String(route.params.idEmpresa);
+  const centroTrabajoId = String(route.params.idCentroTrabajo);
+
+  await TrabajadoresAPI.registrarExportacionExcel(empresaId, centroTrabajoId, {
+    rowCount: trabajadoresFiltrados.length,
+    filename: nombreArchivo,
+    filtered: true,
+  }).catch(() => {});
+
   exportarTrabajadoresDesdeFrontend(trabajadoresFiltrados, nombreArchivo);
 };
 

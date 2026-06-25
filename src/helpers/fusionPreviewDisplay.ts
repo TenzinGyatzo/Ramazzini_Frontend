@@ -31,7 +31,7 @@ export const FUSION_DOCUMENTO_DISPLAY: FusionDocumentoDisplay[] = [
   { modelName: 'EventoSeguimientoCardiometabolico', labelSingular: 'Evento Seguimiento Cardiometabólico', labelPlural: 'Eventos Seguimiento Cardiometabólico', icon: 'fas fa-heartbeat', iconClass: 'text-purple-600', section: 'expediente' },
   { modelName: 'InformeLongitudinalCardiometabolico', labelSingular: 'Informe Longitudinal Cardiometabólico', labelPlural: 'Informes Longitudinales Cardiometabólico', icon: 'fas fa-file-alt', iconClass: 'text-purple-600', section: 'expediente' },
   { modelName: 'DocumentoExterno', labelSingular: 'Documento Externo', labelPlural: 'Documentos Externos', icon: 'fas fa-file-alt', iconClass: 'text-purple-600', section: 'expediente' },
-  { modelName: 'ConsentimientoDiario', labelSingular: 'Consentimiento diario', labelPlural: 'Consentimientos diarios', icon: 'fas fa-file-signature', iconClass: 'text-gray-600', section: 'vinculado' },
+  { modelName: 'Consentimiento', labelSingular: 'Consentimiento tratamiento información', labelPlural: 'Consentimientos', icon: 'fas fa-file-signature', iconClass: 'text-gray-600', section: 'vinculado' },
   { modelName: 'Deteccion', labelSingular: 'Detección', labelPlural: 'Detecciones', icon: 'fas fa-search', iconClass: 'text-cyan-600', section: 'vinculado' },
   { modelName: 'SeguimientoProgramadoCardiometabolico', labelSingular: 'Seguimiento programado cardiometabólico', labelPlural: 'Seguimientos programados cardiometabólicos', icon: 'fas fa-calendar-check', iconClass: 'text-purple-600', section: 'vinculado' },
 ];

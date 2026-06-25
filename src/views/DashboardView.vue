@@ -3261,6 +3261,7 @@ const tablaCintura = computed(() => {
             <div class="w-full sm:w-auto">
               <DescargarInformeDashboard
               v-if="dashboardData.length > 0"
+              :empresa-id="String(route.params.idEmpresa)"
               :refs-graficas="{
                 imc: { ref: refIMC, config: { type: 'bar', data: graficaIMCData, options: graficaIMCOptionsPDF } },
                 aptitud: { ref: refAptitud, config: { type: 'bar', data: graficaAptitudData, options: graficaAptitudOptionsPDF } },

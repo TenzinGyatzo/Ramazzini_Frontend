@@ -1,6 +1,10 @@
 import api from '@/lib/axios'
 
 export default {
+    getAllDocuments(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/todos`);
+    },
+
     getAntidopings(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/antidoping`);
     },

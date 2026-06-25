@@ -7,11 +7,11 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
-import { useNavigateWithDailyConsent } from '@/composables/useNavigateWithDailyConsent';
+import { useNavigateWithTreatmentConsent } from '@/composables/useNavigateWithTreatmentConsent';
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
-import DailyConsentModal from '@/components/DailyConsentModal.vue';
+import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 
 const toast = inject('toast');
 
@@ -24,14 +24,13 @@ const proveedorSaludStore = useProveedorSaludStore();
 const { validateDocumentCreation, executeIfCanManageOtrosDocumentos } = usePermissionRestrictions();
 const { validationResult, loadFirmanteData } = useProfessionalDataValidation();
 const {
-  navigateWithDailyConsent,
+  navigateWithTreatmentConsent,
   showModal: showConsentModal,
   modalTrabajadorId,
   modalTrabajadorNombre,
-  modalTrabajadorSexo,
   handleConsentRegistered,
   handleConsentCancel,
-} = useNavigateWithDailyConsent();
+} = useNavigateWithTreatmentConsent();
 
 const showProfessionalDataModal = ref(false);
 
@@ -119,10 +118,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
       });
       return;
     }
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -134,10 +132,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'constancia-aptitud') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -149,10 +146,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'receta') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -164,10 +160,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'certificado-expedito') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -179,10 +174,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'historia-otologica') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -194,10 +188,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'previo-espirometria') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -209,10 +202,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'nota-aclaratoria') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -224,10 +216,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'entrevista-psicologica') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -239,10 +230,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'trastornos-estado-animo') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -254,10 +244,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'cuestionario-prodromal-breve') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -269,10 +258,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'trastorno-limite-personalidad') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -284,10 +272,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'evento-seguimiento-cardiometabolico') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -300,10 +287,9 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     });
     closeModal();
   } else if (questionnaireType === 'informe-longitudinal-cardiometabolico') {
-    await navigateWithDailyConsent({
+    await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
       trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      trabajadorSexo: trabajadores.currentTrabajador?.sexo,
       to: {
         name: 'crear-documento',
         params: {
@@ -467,11 +453,10 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     </Transition>
 
     <Transition appear name="fade">
-      <DailyConsentModal
+      <TreatmentConsentModal
         v-if="showConsentModal"
         :trabajadorId="modalTrabajadorId"
         :trabajadorNombre="modalTrabajadorNombre"
-        :trabajadorSexo="modalTrabajadorSexo"
         :open="showConsentModal"
         @registered="handleConsentRegistered"
         @cancel="handleConsentCancel"

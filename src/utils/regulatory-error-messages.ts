@@ -71,12 +71,14 @@ const ERROR_CODE_MESSAGES: Record<
   CONSENT_NOT_ENABLED: {
     SIN_REGIMEN: {
       title: 'Consentimiento no disponible',
-      message: 'El consentimiento informado diario no está disponible para tu régimen regulatorio.',
+      message:
+        'El consentimiento para tratamiento de información no está disponible para tu régimen regulatorio.',
       type: 'error',
     },
     SIRES_NOM024: {
       title: 'Consentimiento no habilitado',
-      message: 'El consentimiento informado diario no está habilitado para este proveedor.',
+      message:
+        'El consentimiento para tratamiento de información no está habilitado para este proveedor.',
       type: 'error',
     },
   },
@@ -84,12 +86,14 @@ const ERROR_CODE_MESSAGES: Record<
   CONSENT_ALREADY_EXISTS: {
     SIN_REGIMEN: {
       title: 'Consentimiento ya registrado',
-      message: 'Ya existe un consentimiento registrado para este trabajador en la fecha especificada.',
+      message:
+        'Ya existe un consentimiento registrado para este trabajador en la versión vigente.',
       type: 'warning',
     },
     SIRES_NOM024: {
       title: 'Consentimiento ya registrado',
-      message: 'Ya existe un consentimiento registrado para este trabajador en la fecha especificada.',
+      message:
+        'Ya existe un consentimiento registrado para este trabajador en la versión vigente.',
       type: 'warning',
     },
   },
@@ -97,12 +101,27 @@ const ERROR_CODE_MESSAGES: Record<
   CONSENT_REQUIRED: {
     SIN_REGIMEN: {
       title: 'Consentimiento requerido',
-      message: 'Se requiere consentimiento informado diario para realizar esta acción.',
+      message:
+        'Se requiere consentimiento para tratamiento de información para realizar esta acción.',
       type: 'error',
     },
     SIRES_NOM024: {
       title: 'Consentimiento requerido',
-      message: 'Se requiere consentimiento informado diario para crear este documento según la normativa SIRES (NOM-024).',
+      message:
+        'Se requiere consentimiento para tratamiento de información en SIRES (versión vigente) para crear este documento.',
+      type: 'error',
+    },
+  },
+
+  CONFIDENTIALITY_AGREEMENT_REQUIRED: {
+    SIN_REGIMEN: {
+      title: 'Acuerdo requerido',
+      message: 'Debe aceptar el Acuerdo de Confidencialidad y Uso de la Información para continuar.',
+      type: 'error',
+    },
+    SIRES_NOM024: {
+      title: 'Acuerdo requerido',
+      message: 'Debe aceptar el Acuerdo de Confidencialidad y Uso de la Información para continuar.',
       type: 'error',
     },
   },

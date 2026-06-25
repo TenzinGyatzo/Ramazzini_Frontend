@@ -84,6 +84,13 @@ export function useRegulatoryPolicy() {
   );
 
   /**
+   * Indica si el acuerdo de confidencialidad está habilitado
+   */
+  const confidentialityAgreementEnabled = computed<boolean>(() =>
+    proveedorSaludStore.confidentialityAgreementEnabled
+  );
+
+  /**
    * Indica si el trail de auditoría NOM-024 está habilitado
    */
   const auditTrailEnabled = computed<boolean>(() =>
@@ -139,6 +146,7 @@ export function useRegulatoryPolicy() {
     cluesFieldVisible,
     showSiresUI,
     dailyConsentEnabled,
+    confidentialityAgreementEnabled,
     auditTrailEnabled,
     canAccessCatalogAdmin,
     // Validations

@@ -10,6 +10,7 @@ import {
   startNavigationProgress,
   finishNavigationProgress,
 } from "@/composables/useNavigationProgress";
+import { refreshConfidentialityAgreementStatus } from "@/composables/useConfidentialityAgreement";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -236,6 +237,7 @@ router.beforeEach((to, from) => {
     try {
       if (requiresAuth) {
         await userStore.fetchUser();
+        await refreshConfidentialityAgreementStatus();
         identifyUser();
       }
       

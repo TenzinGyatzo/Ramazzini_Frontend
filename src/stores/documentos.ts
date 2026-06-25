@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import DocumentosAPI from "@/api/DocumentosAPI";
+import { getToast } from "@/utils/toast";
 import type {
   Antidoping,
   Aptitud,
@@ -97,52 +98,76 @@ export const useDocumentosStore = defineStore("documentos", () => {
     });
   }
 
-  const DOCUMENT_FETCHERS: Array<{
-    tipo: string;
-    fetch: (trabajadorId: string) => Promise<{ data: unknown }>;
-    label: string;
-  }> = [
-    { tipo: 'antidopings', fetch: DocumentosAPI.getAntidopings, label: 'antidopings' },
-    { tipo: 'aptitudes', fetch: DocumentosAPI.getAptitudes, label: 'aptitudes' },
-    { tipo: 'audiometrias', fetch: DocumentosAPI.getAudiometrias, label: 'audiometrias' },
-    { tipo: 'certificados', fetch: DocumentosAPI.getCertificados, label: 'certificados' },
-    { tipo: 'certificadosExpedito', fetch: DocumentosAPI.getCertificadosExpedito, label: 'certificadosExpedito' },
-    { tipo: 'documentosExternos', fetch: DocumentosAPI.getDocumentosExternos, label: 'documentosExternos' },
-    { tipo: 'examenesVista', fetch: DocumentosAPI.getExamenesVista, label: 'examenesVista' },
-    { tipo: 'exploracionesFisicas', fetch: DocumentosAPI.getExploracionesFisicas, label: 'exploracionesFisicas' },
-    { tipo: 'historiasClinicas', fetch: DocumentosAPI.getHistoriasClinicas, label: 'historiasClinicas' },
-    { tipo: 'notasMedicas', fetch: DocumentosAPI.getNotasMedicas, label: 'notasMedicas' },
-    { tipo: 'notasAclaratorias', fetch: DocumentosAPI.getNotasAclaratorias, label: 'notasAclaratorias' },
-    { tipo: 'controlPrenatal', fetch: DocumentosAPI.getControlPrenatal, label: 'controlPrenatal' },
-    { tipo: 'historiaOtologica', fetch: DocumentosAPI.getHistoriaOtologica, label: 'historiaOtologica' },
-    { tipo: 'previoEspirometria', fetch: DocumentosAPI.getPrevioEspirometria, label: 'previoEspirometria' },
-    { tipo: 'recetas', fetch: DocumentosAPI.getRecetas, label: 'recetas' },
-    { tipo: 'constanciasAptitud', fetch: DocumentosAPI.getConstanciasAptitud, label: 'constanciasAptitud' },
-    { tipo: 'entrevistasPsicologicas', fetch: DocumentosAPI.getEntrevistaPsicologica, label: 'entrevistasPsicologicas' },
-    { tipo: 'trastornosEstadoAnimo', fetch: DocumentosAPI.getTrastornosEstadoAnimo, label: 'trastornosEstadoAnimo' },
-    { tipo: 'cuestionarioProdromalBreve', fetch: DocumentosAPI.getCuestionarioProdromalBreve, label: 'cuestionarioProdromalBreve' },
-    { tipo: 'trastornoLimitePersonalidad', fetch: DocumentosAPI.getTrastornoLimitePersonalidad, label: 'trastornoLimitePersonalidad' },
-    { tipo: 'eventoSeguimientoCardiometabolico', fetch: DocumentosAPI.getEventoSeguimientoCardiometabolico, label: 'eventoSeguimientoCardiometabolico' },
-    { tipo: 'informeLongitudinalCardiometabolico', fetch: DocumentosAPI.getInformeLongitudinalCardiometabolico, label: 'informeLongitudinalCardiometabolico' },
-  ];
+  const DOCUMENT_STORE_KEYS = [
+    'antidopings',
+    'aptitudes',
+    'audiometrias',
+    'certificados',
+    'certificadosExpedito',
+    'documentosExternos',
+    'examenesVista',
+    'exploracionesFisicas',
+    'historiasClinicas',
+    'notasMedicas',
+    'notasAclaratorias',
+    'controlPrenatal',
+    'historiaOtologica',
+    'previoEspirometria',
+    'recetas',
+    'constanciasAptitud',
+    'entrevistasPsicologicas',
+    'trastornosEstadoAnimo',
+    'cuestionarioProdromalBreve',
+    'trastornoLimitePersonalidad',
+    'eventoSeguimientoCardiometabolico',
+    'informeLongitudinalCardiometabolico',
+  ] as const;
+
+  function isTooManyRequestsError(error: unknown): boolean {
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    return status === 429;
+  }
+
+  function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
   async function fetchAllDocuments(trabajadorId: string) {
     try {
       loading.value = true;
       documentsByYear.value = {};
 
-      await Promise.all(
-        DOCUMENT_FETCHERS.map(async ({ tipo, fetch, label }) => {
-          try {
-            const response = await fetch(trabajadorId);
-            const data = Array.isArray(response.data) ? response.data : [];
+      let lastError: unknown;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const response = await DocumentosAPI.getAllDocuments(trabajadorId);
+          const payload = response.data as Record<string, unknown>;
+
+          DOCUMENT_STORE_KEYS.forEach((tipo) => {
+            const raw = payload[tipo];
+            const data = Array.isArray(raw) ? raw : [];
             mergeTipoEnDocumentsByYear(tipo, data);
-          } catch (error) {
-            console.error(`Error al obtener ${label}`, error);
+          });
+          return;
+        } catch (error) {
+          lastError = error;
+          if (isTooManyRequestsError(error) && attempt === 0) {
+            await sleep(2000);
+            continue;
           }
-        }),
-      );
+          throw error;
+        }
+      }
+
+      throw lastError;
     } catch (error) {
+      if (isTooManyRequestsError(error)) {
+        getToast().open({
+          message:
+            'Demasiadas peticiones. Espera un momento y vuelve a abrir el expediente.',
+          type: 'error',
+        });
+      }
       console.error("Error general al obtener documentos", error);
     } finally {
       loading.value = false;

@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
-import DailyConsentModal from '@/components/DailyConsentModal.vue';
+import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
-import type { ConsentimientoCreated } from '@/types/consentimiento-diario';
+import type { ConsentimientoCreated } from '@/types/consentimiento';
 
 // Composables
 const { dailyConsentEnabled } = useRegulatoryPolicy();
@@ -135,7 +135,7 @@ const canOpenModal = computed(() => {
     </div>
 
     <!-- Modal -->
-    <DailyConsentModal
+    <TreatmentConsentModal
       v-if="dailyConsentEnabled"
       :trabajador-id="trabajadorId"
       :trabajador-nombre="trabajadorNombre"

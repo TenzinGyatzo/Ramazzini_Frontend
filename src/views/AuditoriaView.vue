@@ -188,11 +188,16 @@ async function verifyAudit() {
               <option value="LOGIN_FAIL">Login fallido</option>
               <option value="SESSION_UNLOCK_SUCCESS">Sesión desbloqueada</option>
               <option value="SESSION_UNLOCK_FAIL">Sesión desbloqueo fallido</option>
+              <option value="ACUERDO_CONFIDENCIALIDAD_ACEPTADO">Acuerdo de confidencialidad aceptado</option>
             </optgroup>
             <optgroup label="Admin / asignaciones">
               <option value="ADMIN_ROLES_PERMISSIONS">Roles/permisos</option>
               <option value="ADMIN_USER_ASSIGNMENTS">Asignaciones usuario</option>
               <!-- <option value="ADMIN_CONFIG_SIRES">Config SIRES</option> -->
+            </optgroup>
+            <optgroup label="Exportaciones">
+              <option value="WORKERS_EXPORT_EXCEL">Export Excel trabajadores</option>
+              <option value="DASHBOARD_REPORT_EXPORTED">Informe dashboard exportado</option>
             </optgroup>
             <optgroup label="GIIS / sistema">
               <option value="GIIS_EXPORT_STARTED">GIIS export iniciado</option>
