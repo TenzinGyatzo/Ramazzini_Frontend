@@ -1,5 +1,12 @@
 import { calcularEdad } from "./dates";
 import { parseISO, isAfter, subDays } from 'date-fns';
+import {
+  ETIQUETAS_FRANJAS_TAMIZAJE_TLP,
+  clasificarFranjaTamizajeTLP,
+  esPositivoTamizajeProdromalBreve,
+  esPositivoTamizajeTrastornosEstadoAnimo,
+  puntajeTamizajeTrastornoLimitePersonalidad,
+} from '@/helpers/tamizajePsicologicoCriterios';
 
 // GRUPOS ETARIOS
 const gruposEtarios = [
@@ -829,33 +836,11 @@ export function distribuirResultadosClinicos(
   });
 }
 
-// —— Tamizajes psicológicos (dashboard): reglas operativas, no diagnóstico clínico ——
+// —— Tamizajes psicológicos (dashboard): criterios canónicos en tamizajePsicologicoCriterios.ts ——
 
-const RESPUESTA_SI = 'Sí';
-
-const CAMPOS_P1_TRASTORNOS_ESTADO_ANIMO = [
-  'p1ExaltadoComportamientoNoHabitualOMetidoProblemas',
-  'p1IrritableGritosPeleas',
-  'p1MasSeguridadQueLoHabitual',
-  'p1DormiaMenosSinNecesitarMasSueno',
-  'p1HablabaMasOMasRapido',
-  'p1PensamientosAgolpados',
-  'p1DistraccionDificultadConcentracion',
-  'p1MasEnergiaQueLoHabitual',
-  'p1MasActivoOMasCosasQueLoHabitual',
-  'p1MasSocialExtrovertido',
-  'p1MasApetitoSexual',
-  'p1CosasExageradasRiesgosas',
-  'p1GastoDineroProblemas',
-] as const;
-
-/**
- * Tamizaje riesgo bipolar (TEA): ≥2 «Sí» en P1 y P2 (mismo período) = «Sí».
- * Revisar umbrales con criterio clínico interno.
- */
+/** @deprecated Usar esPositivoTamizajeTrastornosEstadoAnimo. Alias de compatibilidad. */
 export function esTamizajeBipolarPositivoTEA(row: Record<string, unknown>): boolean {
-  const totalSi = CAMPOS_P1_TRASTORNOS_ESTADO_ANIMO.filter((k) => row[k] === RESPUESTA_SI).length;
-  return totalSi >= 2 && row.p2SituacionesMismoPeriodo === RESPUESTA_SI;
+  return esPositivoTamizajeTrastornosEstadoAnimo(row);
 }
 
 export function calcularAnilloTamizajeBipolarTEA(data: Record<string, unknown>[]) {
@@ -866,7 +851,7 @@ export function calcularAnilloTamizajeBipolarTEA(data: Record<string, unknown>[]
   let positivos = 0;
   let negativos = 0;
   for (const row of data) {
-    if (esTamizajeBipolarPositivoTEA(row)) positivos++;
+    if (esPositivoTamizajeTrastornosEstadoAnimo(row)) positivos++;
     else negativos++;
   }
 
@@ -890,15 +875,14 @@ export function calcularAnilloTamizajeBipolarTEA(data: Record<string, unknown>[]
 }
 
 /**
- * Mínimo de respuestas «Sí» en p1–p21 para marcar tamizaje prodromal como positivo.
- * Valor revisable con el equipo clínico.
+ * @deprecated Usar esPositivoTamizajeProdromalBreve. Alias de compatibilidad.
  */
-export const UMBRAL_SI_CPB_RIESGO_PSICOTICO = 5;
+export const UMBRAL_SI_CPB_RIESGO_PSICOTICO = 6;
 
 export function contarSiCuestionarioProdromalBreve(row: Record<string, unknown>): number {
   let n = 0;
   for (let i = 1; i <= 21; i++) {
-    if (row[`p${i}`] === RESPUESTA_SI) n++;
+    if (row[`p${i}`] === 'Sí') n++;
   }
   return n;
 }
@@ -911,7 +895,7 @@ export function calcularAnilloTamizajeProdromalCPB(data: Record<string, unknown>
   let positivos = 0;
   let negativos = 0;
   for (const row of data) {
-    if (contarSiCuestionarioProdromalBreve(row) >= UMBRAL_SI_CPB_RIESGO_PSICOTICO) positivos++;
+    if (esPositivoTamizajeProdromalBreve(row)) positivos++;
     else negativos++;
   }
 
@@ -934,45 +918,18 @@ export function calcularAnilloTamizajeProdromalCPB(data: Record<string, unknown>
   };
 }
 
-const CAMPOS_SI_TRASTORNO_LIMITE = [
-  'relacionesCercanasDiscusionesRupturas',
-  'autolesionIntentoSuicidio',
-  'impulsividadOtrosDosProblemas',
-  'extremadamenteMalHumor',
-  'enojadoFrecuenteActuaEnojadoSarcastico',
-  'desconfianzaOtrasPersonas',
-  'sensacionIrrealidadEntornoIrreal',
-  'vacioCronico',
-  'faltaIdentidadQuienEs',
-  'esfuerzosEvitarAbandono',
-] as const;
-
 export function contarCriteriosSiTLP(row: Record<string, unknown>): number {
-  return CAMPOS_SI_TRASTORNO_LIMITE.filter((k) => row[k] === RESPUESTA_SI).length;
+  return puntajeTamizajeTrastornoLimitePersonalidad(row);
 }
 
-/**
- * Franjas por conteo de «Sí» (0–10): 0–2 improbable, 3–5 posible, 6–10 probable.
- * Cortes revisables con criterio clínico interno.
- */
-export function clasificarFranjaTamizajeTLP(totalSi: number): 0 | 1 | 2 {
-  if (totalSi <= 2) return 0;
-  if (totalSi <= 5) return 1;
-  return 2;
-}
-
-export const ETIQUETAS_FRANJAS_TAMIZAJE_TLP = [
-  'Síntomas improbables',
-  'Posibles síntomas',
-  'Síntomas probables',
-] as const;
+export { clasificarFranjaTamizajeTLP, ETIQUETAS_FRANJAS_TAMIZAJE_TLP };
 
 function contarTrabajadoresPorFranjasTamizajeTLP(
   data: Record<string, unknown>[]
 ): [number, number, number] {
   const counts: [number, number, number] = [0, 0, 0];
   for (const row of data) {
-    const idx = clasificarFranjaTamizajeTLP(contarCriteriosSiTLP(row));
+    const idx = clasificarFranjaTamizajeTLP(puntajeTamizajeTrastornoLimitePersonalidad(row));
     counts[idx]++;
   }
   return counts;

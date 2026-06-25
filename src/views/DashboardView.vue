@@ -4069,7 +4069,7 @@ const tablaCintura = computed(() => {
                     <span
                       class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 md:bottom-auto md:top-1/2 md:left-full md:ml-2 md:-translate-x-0 md:-translate-y-1/2 w-64 text-sm font-normal bg-white text-gray-700 border border-gray-300 rounded shadow-lg px-3 py-2 opacity-0 peer-hover:opacity-100 transition-opacity z-10 pointer-events-none"
                     >
-                      Proporción de trabajadores con último cuestionario en el periodo: <span class="font-semibold">Positivo</span> según criterio operativo (≥2 «Sí» en P1 y «Sí» en P2). Tamizaje, no diagnóstico.
+                      Proporción de trabajadores con último cuestionario en el periodo: <span class="font-semibold">Positivo</span> según criterio MDQ (≥7 «Sí» en P1, «Sí» en P2 y «Problemas moderados» o «Problemas serios» en P3). Tamizaje, no diagnóstico.
                     </span>
                   </span>
                 </h3>
@@ -4099,7 +4099,7 @@ const tablaCintura = computed(() => {
                     <span
                       class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 md:bottom-auto md:top-1/2 md:left-full md:ml-2 md:-translate-x-0 md:-translate-y-1/2 w-64 text-sm font-normal bg-white text-gray-700 border border-gray-300 rounded shadow-lg px-3 py-2 opacity-0 peer-hover:opacity-100 transition-opacity z-10 pointer-events-none"
                     >
-                      <span class="font-semibold">Positivo</span> si el número de respuestas «Sí» en el cuestionario prodromal breve alcanza el umbral configurado. Tamizaje operativo, revisable clínicamente.
+                      <span class="font-semibold">Positivo</span> si Frecuencia &gt; 6 y Malestar &gt; 13 (PQ-B). Tamizaje operativo, no diagnóstico.
                     </span>
                   </span>
                 </h3>
@@ -4129,7 +4129,7 @@ const tablaCintura = computed(() => {
                     <span
                       class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 md:bottom-auto md:top-1/2 md:left-full md:ml-2 md:-translate-x-0 md:-translate-y-1/2 w-64 text-sm font-normal bg-white text-gray-700 border border-gray-300 rounded shadow-lg px-3 py-2 opacity-0 peer-hover:opacity-100 transition-opacity z-10 pointer-events-none"
                     >
-                      Distribución por conteo de criterios «Sí» en el cuestionario: improbable (0–2), posible (3–5), probable (6–10). Tamizaje, no diagnóstico.
+                      Distribución por puntaje MSI-BPD: improbable (0–4 «Sí»), posible (5–6 «Sí»), probable (7–10 «Sí»). Tamizaje, no diagnóstico.
                     </span>
                   </span>
                 </h3>
