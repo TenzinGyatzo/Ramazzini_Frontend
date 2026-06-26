@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { endOfMonth, format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
+import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -342,7 +343,7 @@ onMounted(async () => {
   const centroTrabajo = centrosTrabajo.currentCentroTrabajo.nombreCentro;
   const trabajadorNombre = trabajadores.currentTrabajador.nombre;
   const trabajadorId = trabajadores.currentTrabajadorId;
-  formDataInformeLongitudinalCardiometabolico.value.rutaPDF = `expedientes-medicos/${empresa}/${centroTrabajo}/${trabajadorNombre}_${trabajadorId}`;
+  formDataInformeLongitudinalCardiometabolico.value.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 
   loadingSeg.value = true;
   try {

@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/composables/useCurrentUser';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { convertirFechaISOaDDMMYYYY, convertirYYYYMMDDaISO } from '@/helpers/dates';
+import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
 import { format } from 'date-fns';
 import type { DocumentoExterno } from '@/interfaces/documentos.inteface';
 
@@ -225,7 +226,12 @@ const handleSubmitUpload = async () => {
       fechaDocumento: convertirYYYYMMDDaISO(format(new Date(), 'yyyy-MM-dd')),
       notasDocumento: '',
       extension: extension,
-      rutaDocumento: `expedientes-medicos/${currentEmpresa.nombreComercial}/${currentCentroTrabajo.nombreCentro}/${trabajadores.currentTrabajador.nombre}_${trabajadores.currentTrabajador._id}`,
+      rutaDocumento: buildClinicalDirectoryPath(
+        currentEmpresa.nombreComercial,
+        currentCentroTrabajo.nombreCentro,
+        trabajadores.currentTrabajador.nombre,
+        trabajadores.currentTrabajador._id,
+      ),
       idTrabajador: trabajadores.currentTrabajador._id,
       createdBy: currentUserId,
       updatedBy: currentUserId

@@ -11,6 +11,7 @@ import { useCurrentUser } from '@/composables/useCurrentUser';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
 import FormStepper from '@/components/steps/FormStepper.vue';
 import VisualizadorAntidoping from '@/components/steps/VisualizadorAntidoping.vue';
 import VisualizadorAptitud from '@/components/steps/VisualizadorAptitud.vue';
@@ -303,7 +304,7 @@ watchEffect(async () => {
       return;
     }
 
-    const rutaBase = `expedientes-medicos/${empresa}/${centroTrabajo}/${trabajadorNombre}_${trabajadorIdVal}/`;
+    const rutaBase = `${buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorIdVal)}/`;
 
     const documentoMap = {
       antidoping: formData.formDataAntidoping,

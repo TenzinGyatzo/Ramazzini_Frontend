@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
 
 /** Campos de fecha por tipo plural de documento clínico (mismo mapa que Step2). */
 export const fechaCamposDocumentoOrigen: Record<string, string> = {
@@ -98,5 +99,10 @@ export function construirRutaPdfNotaAclaratoria(
   trabajadorNombre: string,
   trabajadorId: string,
 ): string {
-  return `expedientes-medicos/${empresa}/${centroTrabajo}/${trabajadorNombre}_${trabajadorId}`;
+  return buildClinicalDirectoryPath(
+    empresa,
+    centroTrabajo,
+    trabajadorNombre,
+    trabajadorId,
+  );
 }

@@ -7,6 +7,7 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 import { format } from 'date-fns';
 import { convertirYYYYMMDDaISO } from '@/helpers/dates';
+import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
@@ -200,7 +201,12 @@ const handleSubmit = async () => {
         fechaDocumento: convertirYYYYMMDDaISO(format(new Date(), 'yyyy-MM-dd')),
         notasDocumento: '', // Vacío por defecto
         extension: extension,
-        rutaDocumento: `expedientes-medicos/${currentEmpresa.nombreComercial}/${currentCentroTrabajo.nombreCentro}/${currentTrabajador.nombre}_${currentTrabajador._id}`,
+        rutaDocumento: buildClinicalDirectoryPath(
+          currentEmpresa.nombreComercial,
+          currentCentroTrabajo.nombreCentro,
+          currentTrabajador.nombre,
+          currentTrabajador._id,
+        ),
         idTrabajador: currentTrabajador._id,
         createdBy: currentUserId,
         updatedBy: currentUserId
