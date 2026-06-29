@@ -899,6 +899,11 @@
 <script setup lang="ts">
 import { ref, watch, computed, inject, nextTick, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
+import { authRequestConfig } from '@/lib/attachAuthToken';
+import {
+  buildClinicalFileUrl,
+  headClinicalFile,
+} from '@/lib/clinicalFiles';
 import { VPdfViewer, Locales, useLicense } from '@vue-pdf-viewer/viewer';
 import { useResultadosClinicosStore, type ResultadoClinico } from '@/stores/resultadosClinicos';
 import type { DocumentoExterno } from '@/interfaces/documentos.inteface';
@@ -1798,7 +1803,8 @@ const localization = {
     }
 };
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const joinClinicalPath = (ruta: string, nombreArchivo: string) =>
+  `${ruta}/${nombreArchivo}`.replace(/\/+/g, '/');
 
 // Estado para el visor de PDF
 const showPdfViewer = ref(false);
@@ -1895,20 +1901,23 @@ const initialScale = computed(() => {
 });
 
 const abrirPdf = async (ruta: string, nombre: string, updatedAt: number | null) => {
-  const fullPath = new URL(`${ruta}/${nombre}`, BASE_URL);
+  const relativePath = joinClinicalPath(ruta, nombre);
+  const fullPath = new URL(buildClinicalFileUrl(relativePath));
   if (updatedAt) {
     fullPath.searchParams.append('t', updatedAt.toString());
   }
 
   try {
-    const response = await axios.get(fullPath.href, { responseType: 'blob' });
+    const response = await axios.get(buildClinicalFileUrl(relativePath), {
+      responseType: 'blob',
+      ...authRequestConfig(),
+    });
     const contentType = response.headers['content-type'];
 
     if (response.status === 200 && contentType === 'application/pdf') {
-      pdfUrl.value = fullPath.href;
+      pdfUrl.value = URL.createObjectURL(response.data);
       currentPdfUrl.value = fullPath.href;
       showPdfViewer.value = true;
-      // Asegurar que la ventana tenga el foco para capturar eventos de teclado
       nextTick(() => {
         window.focus();
       });
@@ -1939,19 +1948,27 @@ const construirRutaCompleta = (documento: any) => {
   if (!documento || !documento.rutaDocumento) return '';
   const nombreArchivo = `${documento.nombreDocumento} ${convertirFechaISOaDDMMYYYY(documento.fechaDocumento)}${documento.extension}`;
   if (documento.rutaDocumento.endsWith(nombreArchivo)) {
-    return `${BASE_URL}/${documento.rutaDocumento}`;
+    return buildClinicalFileUrl(documento.rutaDocumento);
   }
-  return `${BASE_URL}/${documento.rutaDocumento}/${nombreArchivo}`;
+  return buildClinicalFileUrl(joinClinicalPath(documento.rutaDocumento, nombreArchivo));
 };
 
 const abrirImagen = async (rutaCompleta: string) => {
   try {
-    const response = await axios.head(rutaCompleta);
-    if (response.status === 200 && response.headers['content-type'].startsWith('image/')) {
-      imageUrl.value = rutaCompleta;
-      currentImageUrl.value = rutaCompleta;
+    const relativePath = rutaCompleta.startsWith('http')
+      ? new URL(rutaCompleta).pathname.replace(/^\//, '')
+      : rutaCompleta.replace(/^\//, '');
+    const exists = await headClinicalFile(relativePath, { contentType: 'image/' });
+    if (exists) {
+      const response = await axios.get(buildClinicalFileUrl(relativePath), {
+        responseType: 'blob',
+        ...authRequestConfig(),
+      });
+      const blobUrl = URL.createObjectURL(response.data);
+      imageUrl.value = blobUrl;
+      currentImageUrl.value = blobUrl;
       showImageViewer.value = true;
-      
+
       nextTick(() => {
         window.focus();
         document.addEventListener('mousemove', handleGlobalMouseMove);
@@ -2159,9 +2176,8 @@ const formatDate = (date: string | Date) => {
 
 const buildPdfUrl = (ruta: string, nombrePDF: string, updatedAt: number | null = null, options: { useCacheBuster?: boolean; fallbackToNow?: boolean } = {}) => {
   const { useCacheBuster = true, fallbackToNow = false } = options;
-  const sanitizedRuta = ruta.replace(/\/+/g, '/');
-  const sanitizedNombrePDF = nombrePDF.replace(/\/+/g, '/');
-  const fullPath = new URL(`${sanitizedRuta}/${sanitizedNombrePDF}`, import.meta.env.VITE_API_URL);
+  const relativePath = joinClinicalPath(ruta, nombrePDF);
+  const fullPath = new URL(buildClinicalFileUrl(relativePath));
 
   if (useCacheBuster) {
     const cacheBuster = updatedAt || (fallbackToNow ? Date.now() : null);
