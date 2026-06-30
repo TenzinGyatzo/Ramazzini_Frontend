@@ -21,6 +21,9 @@ export function normalizarCamposAuditoriaPayload<T extends PayloadConAuditoria>(
   if (out.createdBy != null) {
     const id = mongoIdStr(out.createdBy);
     if (id) out.createdBy = id;
+    else delete out.createdBy;
+  } else {
+    delete out.createdBy;
   }
   if (updatedByUserId) {
     out.updatedBy = updatedByUserId;
