@@ -17,11 +17,14 @@ export async function fetchClinicalFileBlob(relativePath: string): Promise<Blob>
 
 export async function headClinicalFile(
   relativePath: string,
-  options?: { contentType?: string },
+  options?: { contentType?: string; probe?: 'regenerable' | 'external' },
 ): Promise<boolean> {
   try {
     const url = buildClinicalFileUrl(relativePath);
-    const res = await axios.head(url, authRequestConfig());
+    const headers = options?.probe
+      ? { 'X-Clinical-File-Probe': options.probe }
+      : undefined;
+    const res = await axios.head(url, { ...authRequestConfig(), headers });
     if (res.status !== 200) {
       return false;
     }

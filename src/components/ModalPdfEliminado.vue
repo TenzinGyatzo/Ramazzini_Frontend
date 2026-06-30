@@ -41,6 +41,7 @@ const esperarQuePDFEsteDisponible = async (relativePath: string, maxIntentos = 1
   for (let intento = 0; intento < maxIntentos; intento++) {
     const disponible = await headClinicalFile(relativePath, {
       contentType: 'application/pdf',
+      probe: 'regenerable',
     });
     if (disponible) {
       return true;

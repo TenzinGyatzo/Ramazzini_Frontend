@@ -2549,7 +2549,9 @@ const verificarDisponibilidadPDF = async () => {
       const relativePath = props.documentoExterno.rutaDocumento.endsWith(nombreArchivo)
         ? props.documentoExterno.rutaDocumento
         : joinClinicalPath(props.documentoExterno.rutaDocumento, nombreArchivo);
-      pdfDisponible.value = await headClinicalFile(relativePath);
+      pdfDisponible.value = await headClinicalFile(relativePath, {
+        probe: 'external',
+      });
     } catch (error) {
       pdfDisponible.value = false;
     } finally {
@@ -2570,6 +2572,7 @@ const verificarDisponibilidadPDF = async () => {
     const rutaCompleta = joinClinicalPath(ruta, nombre);
     pdfDisponible.value = await headClinicalFile(rutaCompleta, {
       contentType: 'application/pdf',
+      probe: 'regenerable',
     });
   } catch (error) {
     pdfDisponible.value = false;
