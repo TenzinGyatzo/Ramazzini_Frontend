@@ -213,7 +213,7 @@ watch(
                 <td class="px-4 py-3 text-sm">
                   <template v-if="b.status === 'completed'">
                     <div class="flex flex-wrap gap-2">
-                      <template v-for="art in (b.artifacts || []).filter((a) => ['CEX', 'LES'].includes(a.guide))" :key="art.guide">
+                      <template v-for="art in (b.artifacts || []).filter((a) => a.guide === 'CEX')" :key="art.guide">
                         <button
                           v-if="art.zipPath"
                           type="button"

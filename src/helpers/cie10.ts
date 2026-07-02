@@ -448,62 +448,59 @@ export function normalizeSexo(sexo: string | null | undefined): 'HOMBRE' | 'MUJE
   return null;
 }
 
-/**
- * Busca una regla CIE-10 en el catálogo
- * Primero intenta match exacto por código, luego fallback a prefijo de 3 caracteres
- * 
- * @param code - Código CIE-10 a buscar (ej: "C530" o "C53")
- * @returns Regla encontrada o null si no existe
- */
-export async function findCIE10Rule(code: string): Promise<CIE10Rule | null> {
-  if (!code) {
-    return null;
-  }
+const cie10RuleCache = new Map<string, CIE10Rule | null>();
 
-  const normalizedCode = code.trim().toUpperCase();
+/** Limpia cache de reglas CIE-10 (útil en tests). */
+export function clearCIE10RuleCache(): void {
+  cie10RuleCache.clear();
+}
 
+function mapCatalogEntryToRule(
+  entry: {
+    code?: string;
+    lsex?: string;
+    linfRaw?: string | null;
+    lsupRaw?: string | null;
+    letra?: string | null;
+    tipoPersonal1VezCe?: number[];
+    tipoPersonalSubsecCe?: number[];
+    diaCronicos?: boolean;
+    diaCaInfantil?: boolean;
+  },
+  key: string,
+): CIE10Rule {
+  return {
+    key: entry.code || key,
+    lsex: entry.lsex || 'NO',
+    linf: entry.linfRaw || null,
+    lsup: entry.lsupRaw || null,
+    letra: entry.letra ?? null,
+    tipoPersonal1VezCe: entry.tipoPersonal1VezCe,
+    tipoPersonalSubsecCe: entry.tipoPersonalSubsecCe,
+    diaCronicos: entry.diaCronicos ?? false,
+    diaCaInfantil: entry.diaCaInfantil ?? false,
+  };
+}
+
+async function fetchCIE10RuleUncached(normalizedCode: string): Promise<CIE10Rule | null> {
   try {
-    // Intentar primero con match exacto
     try {
       const response = await CatalogsAPI.getCIE10ByCode(normalizedCode);
       if (response.data) {
-        const entry = response.data;
-        return {
-          key: entry.code || normalizedCode,
-          lsex: entry.lsex || 'NO',
-          linf: entry.linfRaw || null,
-          lsup: entry.lsupRaw || null,
-          letra: entry.letra ?? null,
-          tipoPersonal1VezCe: entry.tipoPersonal1VezCe,
-          tipoPersonalSubsecCe: entry.tipoPersonalSubsecCe,
-          diaCronicos: entry.diaCronicos ?? false,
-          diaCaInfantil: entry.diaCaInfantil ?? false,
-        };
+        return mapCatalogEntryToRule(response.data, normalizedCode);
       }
-    } catch (error) {
+    } catch {
       // No encontrado con match exacto, continuar con prefijo
     }
 
-    // Fallback: intentar con prefijo de 3 caracteres (ej: "C53" de "C530")
     if (normalizedCode.length >= 3) {
       const prefix = normalizedCode.substring(0, 3);
       try {
         const response = await CatalogsAPI.getCIE10ByCode(prefix);
         if (response.data) {
-          const entry = response.data;
-          return {
-            key: prefix,
-            lsex: entry.lsex || 'NO',
-            linf: entry.linfRaw || null,
-            lsup: entry.lsupRaw || null,
-            letra: entry.letra ?? null,
-            tipoPersonal1VezCe: entry.tipoPersonal1VezCe,
-            tipoPersonalSubsecCe: entry.tipoPersonalSubsecCe,
-            diaCronicos: entry.diaCronicos ?? false,
-            diaCaInfantil: entry.diaCaInfantil ?? false,
-          };
+          return mapCatalogEntryToRule(response.data, prefix);
         }
-      } catch (error) {
+      } catch {
         // No encontrado, retornar null
       }
     }
@@ -513,6 +510,28 @@ export async function findCIE10Rule(code: string): Promise<CIE10Rule | null> {
     console.error('Error buscando regla CIE-10:', error);
     return null;
   }
+}
+
+/**
+ * Busca una regla CIE-10 en el catálogo
+ * Primero intenta match exacto por código, luego fallback a prefijo de 3 caracteres
+ *
+ * @param code - Código CIE-10 a buscar (ej: "C530" o "C53")
+ * @returns Regla encontrada o null si no existe
+ */
+export async function findCIE10Rule(code: string): Promise<CIE10Rule | null> {
+  if (!code) {
+    return null;
+  }
+
+  const normalizedCode = code.trim().toUpperCase();
+  if (cie10RuleCache.has(normalizedCode)) {
+    return cie10RuleCache.get(normalizedCode) ?? null;
+  }
+
+  const result = await fetchCIE10RuleUncached(normalizedCode);
+  cie10RuleCache.set(normalizedCode, result);
+  return result;
 }
 
 /**

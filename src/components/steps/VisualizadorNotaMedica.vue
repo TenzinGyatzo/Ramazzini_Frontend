@@ -333,7 +333,7 @@ const muestraDiagnostico3 = computed(() =>
 
     <!-- Diagnóstico Principal -->
     <div 
-      v-if="formData.formDataNotaMedica.codigoCIE10Principal || formData.formDataNotaMedica.relacionTemporal !== undefined && formData.formDataNotaMedica.relacionTemporal !== null || (formData.formDataNotaMedica.codigosCIE10Complementarios && formData.formDataNotaMedica.codigosCIE10Complementarios.length > 0) || formData.formDataNotaMedica.confirmacionDiagnostica || formData.formDataNotaMedica.codigoCIECausaExterna || formData.formDataNotaMedica.causaExterna" 
+      v-if="formData.formDataNotaMedica.codigoCIE10Principal || formData.formDataNotaMedica.relacionTemporal !== undefined && formData.formDataNotaMedica.relacionTemporal !== null || (formData.formDataNotaMedica.codigosCIE10Complementarios && formData.formDataNotaMedica.codigosCIE10Complementarios.length > 0) || formData.formDataNotaMedica.confirmacionDiagnostica" 
       class="w-full mb-1 cursor-pointer" 
       :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.diagnostico }" 
       @click="goToStep(stepMap.diagnostico)"
@@ -363,16 +363,6 @@ const muestraDiagnostico3 = computed(() =>
       <p v-if="muestraConfirmacionDiagnostica1 && formData.formDataNotaMedica.confirmacionDiagnostica !== undefined" class="text-justify font-medium mb-1">
         Confirmación Diagnóstica: <span class="font-light">{{ formData.formDataNotaMedica.confirmacionDiagnostica ? 'Sí' : 'No' }}</span>
       </p>
-
-      <!-- Causa Externa -->
-      <template v-if="formData.formDataNotaMedica.codigoCIECausaExterna || formData.formDataNotaMedica.causaExterna">
-        <p v-if="formData.formDataNotaMedica.codigoCIECausaExterna" class="text-justify font-medium mb-1">
-          Causa Externa: <span class="font-light">{{ extractDescription(formData.formDataNotaMedica.codigoCIECausaExterna) || extractCode(formData.formDataNotaMedica.codigoCIECausaExterna) }}</span>
-        </p>
-        <p v-if="formData.formDataNotaMedica.causaExterna" class="text-justify font-medium mb-1">
-          Descripción Causa Externa: <span class="font-light">{{ formData.formDataNotaMedica.causaExterna }}</span>
-        </p>
-      </template>
     </div>
     <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.diagnostico }" @click="goToStep(stepMap.diagnostico)">+ Agregar Diagnóstico Principal</div>
 

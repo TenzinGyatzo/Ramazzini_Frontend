@@ -38,7 +38,7 @@ export default {
     return api.get(`${BASE}/batches/${batchId}`).then((r) => r.data);
   },
 
-  /** Triggers browser download for TXT artifact (CEX, LES). Uses blob + link to avoid new tab. */
+  /** Triggers browser download for TXT artifact (CEX). Uses blob + link to avoid new tab. */
   async downloadFile(batchId: string, guide: string, _filename?: string): Promise<void> {
     const res = await api.get(`${BASE}/batches/${batchId}/download/${guide}`, {
       responseType: "blob",
@@ -62,7 +62,7 @@ export default {
     window.URL.revokeObjectURL(url);
   },
 
-  /** Triggers browser download for ZIP deliverable (CEX, LES). Uses blob + link to avoid new tab. */
+  /** Triggers browser download for ZIP deliverable (CEX). Uses blob + link to avoid new tab. */
   async downloadDeliverable(batchId: string, guide: string): Promise<void> {
     const res = await api.get(`${BASE}/batches/${batchId}/download-deliverable/${guide}`, {
       responseType: "blob",

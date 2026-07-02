@@ -31,8 +31,6 @@ const codigosCIE10Complementarios = ref([]);
 // NOM-024 GIIS-B015: Nuevos campos
 const relacionTemporal = ref(null); // 0=Primera Vez, 1=Subsecuente
 const confirmacionDiagnostica = ref(false);
-const codigoCIECausaExterna = ref('');
-const causaExterna = ref('');
 
 // Estado para tooltip de relación temporal
 const showRelacionTemporalTooltip = ref(false);
@@ -69,15 +67,6 @@ const extractDescription = (value) => {
   // Extraer descripción después de " - "
   return value.split(' - ').slice(1).join(' - ').trim();
 };
-
-// Computed: Determinar si el diagnóstico principal requiere causa externa
-const requiereCausaExterna = computed(() => {
-  if (!codigoCIE10Principal.value) return false;
-  const codigo = extractCode(codigoCIE10Principal.value);
-  const primeraLetra = codigo.charAt(0).toUpperCase();
-  // Cap. XIX (S, T) o Cap. XX (V-Y)
-  return primeraLetra === 'S' || primeraLetra === 'T' || (primeraLetra >= 'V' && primeraLetra <= 'Y');
-});
 
 // Computed: Edad del trabajador en años (fechaNacimiento vs fechaNotaMedica)
 const edadTrabajador = computed(() => {
@@ -116,8 +105,6 @@ onMounted(async () => {
         codigosCIE10Complementarios.value = documentos.currentDocument.codigosCIE10Complementarios || [];
         relacionTemporal.value = documentos.currentDocument.relacionTemporal ?? null;
         confirmacionDiagnostica.value = documentos.currentDocument.confirmacionDiagnostica ?? false;
-        codigoCIECausaExterna.value = documentos.currentDocument.codigoCIECausaExterna || '';
-        causaExterna.value = documentos.currentDocument.causaExterna || '';
     }
 
     // Cargar desde formData (estado temporal)
@@ -132,12 +119,6 @@ onMounted(async () => {
     }
     if (formDataNotaMedica.confirmacionDiagnostica !== undefined) {
         confirmacionDiagnostica.value = formDataNotaMedica.confirmacionDiagnostica;
-    }
-    if (formDataNotaMedica.codigoCIECausaExterna) {
-        codigoCIECausaExterna.value = formDataNotaMedica.codigoCIECausaExterna;
-    }
-    if (formDataNotaMedica.causaExterna) {
-        causaExterna.value = formDataNotaMedica.causaExterna;
     }
 
     // Event handlers para tooltip de relación temporal
@@ -185,8 +166,6 @@ onUnmounted(() => {
     } else {
         formDataNotaMedica.confirmacionDiagnostica = undefined;
     }
-    formDataNotaMedica.codigoCIECausaExterna = codigoCIECausaExterna.value || '';
-    formDataNotaMedica.causaExterna = causaExterna.value || '';
 
     // Limpiar event handlers del tooltip de relación temporal
     if (relacionTemporalClickOutsideHandler) {
@@ -237,14 +216,6 @@ watch(muestraConfirmacionDiagnostica1, (newValue) => {
     }
 });
 
-
-watch(codigoCIECausaExterna, (newValue) => {
-    formDataNotaMedica.codigoCIECausaExterna = newValue;
-});
-
-watch(causaExterna, (newValue) => {
-    formDataNotaMedica.causaExterna = newValue;
-});
 
 // Funciones para manejar tooltip de relación temporal
 const openRelacionTemporalTooltip = () => {
@@ -665,37 +636,6 @@ watch(
                     </TransitionGroup>
                 </div>
 
-            </div>
-        </div>
-
-        <!-- Causa Externa (NOM-024 GIIS-B015) -->
-        <div v-if="requiereCausaExterna" class="space-y-4 border border-blue-200 rounded-xl p-4 bg-blue-50/30">
-            <h3 class="text-sm font-bold text-blue-900 flex items-center gap-2">
-                <i class="fas fa-info-circle"></i>
-                Causa Externa (Obligatoria para Cap. XIX/XX)
-            </h3>
-            
-            <div>
-                <CIE10Autocomplete
-                    v-model="codigoCIECausaExterna"
-                    label="Código CIE-10 Causa Externa (V01-Y98)"
-                    :required="true"
-                    :trabajadorId="trabajadores.currentTrabajadorId"
-                    :fechaConsulta="fechaNotaMedica"
-                    placeholder="Buscar causa externa..."
-                />
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Descripción de Causa Externa (Texto Libre)
-                </label>
-                <textarea
-                    v-model="causaExterna"
-                    class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    placeholder="Describa la causa externa..."
-                    rows="3"
-                ></textarea>
             </div>
         </div>
     </div>

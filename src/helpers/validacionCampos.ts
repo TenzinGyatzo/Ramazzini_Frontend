@@ -90,15 +90,6 @@ function requiereConfirmacionDiagnostica(codigoCIE10Principal: any): boolean {
   return esCronico || esCancer;
 }
 
-// Función para determinar si requiere causa externa
-function requiereCausaExterna(codigoCIE10Principal: any): boolean {
-  if (!codigoCIE10Principal) return false;
-  const codigo = extractCode(codigoCIE10Principal);
-  const primeraLetra = codigo.charAt(0).toUpperCase();
-  // Cap. XIX (S, T) o Cap. XX (V-Y)
-  return primeraLetra === 'S' || primeraLetra === 'T' || (primeraLetra >= 'V' && primeraLetra <= 'Y');
-}
-
 // Función para validar relación temporal
 function validarRelacionTemporal(valor: any): boolean {
   // Debe ser 0 (Primera Vez) o 1 (Subsecuente)
@@ -113,16 +104,6 @@ function validarConfirmacionDiagnostica(valor: any, datosFormulario: any): boole
   }
   // Si se requiere, debe estar definido (true o false explícito)
   return valor !== undefined && valor !== null;
-}
-
-// Función para validar causa externa (condicional)
-function validarCausaExterna(valor: any, datosFormulario: any): boolean {
-  // Si no se requiere, no validar (siempre válido)
-  if (!requiereCausaExterna(datosFormulario.codigoCIE10Principal)) {
-    return true;
-  }
-  // Si se requiere, debe estar presente
-  return validarSeleccion(valor);
 }
 
 /** Sí / No (coincide con enums del backend) */
@@ -282,14 +263,6 @@ const camposRequeridosPorTipo: Record<string, Array<{
     { campo: 'motivoConsulta', nombre: 'Motivo de consulta', tipo: 'texto', paso: 2, validacion: validarTexto },
     { campo: 'codigoCIE10Principal', nombre: 'Diagnóstico principal', tipo: 'seleccion', paso: 6, validacion: validarSeleccion },
     { campo: 'relacionTemporal', nombre: 'Relación temporal', tipo: 'seleccion', paso: 6, validacion: validarRelacionTemporal },
-    {
-      campo: 'codigoCIECausaExterna',
-      nombre: 'Causa externa',
-      tipo: 'seleccion',
-      paso: 6,
-      validacion: (valor: any, datosFormulario: any) => validarCausaExterna(valor, datosFormulario),
-      condicional: true
-    },
   ],
 
   notaAclaratoria: [
@@ -933,8 +906,7 @@ export function validarCamposRequeridos(
     camposRequeridos = camposRequeridos.map((campo) => {
       if (
         campo.campo === 'codigoCIE10Principal' ||
-        campo.campo === 'relacionTemporal' ||
-        campo.campo === 'codigoCIECausaExterna'
+        campo.campo === 'relacionTemporal'
       ) {
         return { ...campo, paso: stepMap.diagnostico };
       }
@@ -1178,7 +1150,6 @@ export function validarNotaMedicaCIEExact4Chars(
     { valor: datosFormulario.codigoCIE10Principal, nombre: 'Diagnóstico principal', paso: pasoDiagPrinc },
     { valor: datosFormulario.codigoCIEDiagnostico2, nombre: 'Diagnóstico 2', paso: pasoDiagSec2 },
     { valor: datosFormulario.codigoCIEDiagnostico3, nombre: 'Diagnóstico 3', paso: pasoDiagSec3 },
-    { valor: datosFormulario.codigoCIECausaExterna, nombre: 'Causa externa', paso: pasoDiagPrinc },
   ];
 
   for (const { valor, nombre, paso } of campos) {

@@ -1341,10 +1341,13 @@ export default {
     const showCamposFaltantesModal = ref(false);
     const camposFaltantes = ref([]);
     const isSubmitting = ref(false);
+    const isValidating = ref(false);
 
     const handleSubmit = async () => {
-      if (isSubmitting.value) return;
+      if (isSubmitting.value || isValidating.value) return;
 
+      isValidating.value = true;
+      try {
       let datosLimpios;
 
       // Limpiar datos del formulario según el tipo de documento
@@ -1407,7 +1410,7 @@ export default {
         return; // Salir si el tipo de documento no es válido
       }
 
-      // VALIDACIÓN CIE-10: Verificar duplicidades para notaMedica
+      // VALIDACIÓN NOTA MÉDICA (síncrona): prep y reglas locales antes de campos requeridos
       if (documentos.currentTypeOfDocument === 'notaMedica') {
         const esMujerNotaMedica =
           trabajadores.currentTrabajador?.sexo === 'Femenino';
@@ -1421,25 +1424,10 @@ export default {
           delete formData.formDataNotaMedica.relacionTemporal;
         }
 
-        const trabajadorNm = trabajadores.currentTrabajador;
         normalizeNotaMedicaDiagnosticosPv(
           formData.formDataNotaMedica,
           showSiresUI.value,
         );
-
-        const { medicoFirmante: medicoFirmanteConf, enfermeraFirmante: enfermeraFirmanteConf } =
-          await fetchMedicoEnfermeraFirmantes(user.value?._id);
-        const fechaNotaConf = formData.formDataNotaMedica.fechaNotaMedica
-          ? new Date(formData.formDataNotaMedica.fechaNotaMedica)
-          : new Date();
-        await normalizeNotaMedicaConfirmacionDiagnostica(formData.formDataNotaMedica, {
-          trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
-            ? new Date(trabajadorNm.fechaNacimiento)
-            : fechaNotaConf,
-          fechaNotaMedica: fechaNotaConf,
-          medicoFirmante: medicoFirmanteConf,
-          enfermeraFirmante: enfermeraFirmanteConf,
-        });
 
         const cie10Validation = validateCIE10Duplicates({
           codigoCIE10Principal: formData.formDataNotaMedica.codigoCIE10Principal,
@@ -1449,18 +1437,16 @@ export default {
           primeraVezDiagnostico2: formData.formDataNotaMedica.primeraVezDiagnostico2,
           primeraVezDiagnostico3: formData.formDataNotaMedica.primeraVezDiagnostico3,
         });
-        
+
         if (!cie10Validation.ok && cie10Validation.issues.length > 0) {
-          // Mostrar toast con el primer issue encontrado
           const message = generateBlockingToastMessage(cie10Validation.issues[0]);
-          toast.open({ 
-            message: message, 
-            type: 'error' 
+          toast.open({
+            message: message,
+            type: 'error',
           });
-          return; // No continuar con el envío
+          return;
         }
 
-        // VALIDACIÓN CIE-10: Códigos deben tener exactamente 4 caracteres
         const cie4CharsNota = validarNotaMedicaCIEExact4Chars(
           formData.formDataNotaMedica,
           showSiresUI.value,
@@ -1470,7 +1456,7 @@ export default {
           if (cie4CharsNota.paso) stepsStore.goToStep(cie4CharsNota.paso);
           toast.open({
             message: cie4CharsNota.mensaje,
-            type: 'error'
+            type: 'error',
           });
           return;
         }
@@ -1484,60 +1470,6 @@ export default {
           if (ramazziniScope.paso) stepsStore.goToStep(ramazziniScope.paso);
           toast.open({
             message: ramazziniScope.mensaje,
-            type: 'error',
-          });
-          return;
-        }
-
-        // DIAGNOSTICO_SIS: principal, diag2/diag3 — catálogo, tipoPersonal, sexo/edad
-        try {
-        const fechaNotaMedicaSis = formData.formDataNotaMedica.fechaNotaMedica
-          ? new Date(formData.formDataNotaMedica.fechaNotaMedica)
-          : new Date();
-        const sis = await validateNotaMedicaDiagnosticos2Y3({
-          formData: formData.formDataNotaMedica,
-          trabajadorSexo: trabajadorNm?.sexo || '',
-          trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
-            ? new Date(trabajadorNm.fechaNacimiento)
-            : fechaNotaMedicaSis,
-          fechaNotaMedica: fechaNotaMedicaSis,
-          medicoFirmante: medicoFirmanteConf,
-          enfermeraFirmante: enfermeraFirmanteConf,
-          showSiresUI: showSiresUI.value,
-          esMujer: esMujerNotaMedica,
-        });
-        if (!sis.ok) {
-          if (sis.paso) stepsStore.goToStep(sis.paso);
-          toast.open({
-            message: sis.messageToast || 'Validación de diagnósticos no superada.',
-            type: 'error',
-          });
-          return;
-        }
-
-        const confirmacion = await validateNotaMedicaConfirmacionDiagnostica({
-          formData: formData.formDataNotaMedica,
-          trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
-            ? new Date(trabajadorNm.fechaNacimiento)
-            : fechaNotaMedicaSis,
-          fechaNotaMedica: fechaNotaMedicaSis,
-          medicoFirmante: medicoFirmanteConf,
-          enfermeraFirmante: enfermeraFirmanteConf,
-          showSiresUI: showSiresUI.value,
-          esMujer: esMujerNotaMedica,
-        });
-        if (!confirmacion.ok) {
-          if (confirmacion.paso) stepsStore.goToStep(confirmacion.paso);
-          toast.open({
-            message: confirmacion.messageToast || 'Validación de confirmación diagnóstica no superada.',
-            type: 'error',
-          });
-          return;
-        }
-        } catch (err) {
-          console.error('validateNotaMedicaDiagnosticos2Y3:', err);
-          toast.open({
-            message: 'No se pudo validar los diagnósticos CIE-10. Intente de nuevo.',
             type: 'error',
           });
           return;
@@ -1557,7 +1489,6 @@ export default {
           return;
         }
 
-        // VALIDACIÓN PRE-SUBMIT NOTA MÉDICA: fechas, edad, sistólica/diastólica (CEX NOM-024)
         const validacionNotaMedica = validarNotaMedicaPreSubmit(
           formData.formDataNotaMedica,
           trabajadores.currentTrabajador,
@@ -1568,13 +1499,11 @@ export default {
           if (validacionNotaMedica.paso) stepsStore.goToStep(validacionNotaMedica.paso);
           toast.open({
             message: validacionNotaMedica.mensaje,
-            type: 'error'
+            type: 'error',
           });
           return;
         }
-      }
 
-      if (documentos.currentTypeOfDocument === 'notaMedica') {
         datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
       }
 
@@ -1618,7 +1547,84 @@ export default {
         return; // No continuar con el envío
       }
 
+      // VALIDACIÓN NOTA MÉDICA (async): catálogo CIE-10, firmantes y confirmación diagnóstica
+      if (documentos.currentTypeOfDocument === 'notaMedica') {
+        const esMujerNotaMedica =
+          trabajadores.currentTrabajador?.sexo === 'Femenino';
+        const trabajadorNm = trabajadores.currentTrabajador;
+
+        const { medicoFirmante: medicoFirmanteConf, enfermeraFirmante: enfermeraFirmanteConf } =
+          await fetchMedicoEnfermeraFirmantes(user.value?._id);
+        const fechaNotaConf = formData.formDataNotaMedica.fechaNotaMedica
+          ? new Date(formData.formDataNotaMedica.fechaNotaMedica)
+          : new Date();
+        await normalizeNotaMedicaConfirmacionDiagnostica(formData.formDataNotaMedica, {
+          trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
+            ? new Date(trabajadorNm.fechaNacimiento)
+            : fechaNotaConf,
+          fechaNotaMedica: fechaNotaConf,
+          medicoFirmante: medicoFirmanteConf,
+          enfermeraFirmante: enfermeraFirmanteConf,
+        });
+
+        try {
+          const fechaNotaMedicaSis = formData.formDataNotaMedica.fechaNotaMedica
+            ? new Date(formData.formDataNotaMedica.fechaNotaMedica)
+            : new Date();
+          const sis = await validateNotaMedicaDiagnosticos2Y3({
+            formData: formData.formDataNotaMedica,
+            trabajadorSexo: trabajadorNm?.sexo || '',
+            trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
+              ? new Date(trabajadorNm.fechaNacimiento)
+              : fechaNotaMedicaSis,
+            fechaNotaMedica: fechaNotaMedicaSis,
+            medicoFirmante: medicoFirmanteConf,
+            enfermeraFirmante: enfermeraFirmanteConf,
+            showSiresUI: showSiresUI.value,
+            esMujer: esMujerNotaMedica,
+          });
+          if (!sis.ok) {
+            if (sis.paso) stepsStore.goToStep(sis.paso);
+            toast.open({
+              message: sis.messageToast || 'Validación de diagnósticos no superada.',
+              type: 'error',
+            });
+            return;
+          }
+
+          const confirmacion = await validateNotaMedicaConfirmacionDiagnostica({
+            formData: formData.formDataNotaMedica,
+            trabajadorFechaNacimiento: trabajadorNm?.fechaNacimiento
+              ? new Date(trabajadorNm.fechaNacimiento)
+              : fechaNotaMedicaSis,
+            fechaNotaMedica: fechaNotaMedicaSis,
+            medicoFirmante: medicoFirmanteConf,
+            enfermeraFirmante: enfermeraFirmanteConf,
+            showSiresUI: showSiresUI.value,
+            esMujer: esMujerNotaMedica,
+          });
+          if (!confirmacion.ok) {
+            if (confirmacion.paso) stepsStore.goToStep(confirmacion.paso);
+            toast.open({
+              message: confirmacion.messageToast || 'Validación de confirmación diagnóstica no superada.',
+              type: 'error',
+            });
+            return;
+          }
+        } catch (err) {
+          console.error('validateNotaMedicaDiagnosticos2Y3:', err);
+          toast.open({
+            message: 'No se pudo validar los diagnósticos CIE-10. Intente de nuevo.',
+            type: 'error',
+          });
+          return;
+        }
+
+        datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
+      }
+
       isSubmitting.value = true;
+      isValidating.value = false;
       try {
         // VALIDACIÓN ESPECÍFICA PARA CONSTANCIA DE APTITUD: Verificar que exista una Aptitud al Puesto con una de las 3 opciones de "si aptitud"
         if (documentos.currentTypeOfDocument === 'constanciaAptitud') {
@@ -1828,12 +1834,16 @@ export default {
       } finally {
         isSubmitting.value = false;
       }
+      } finally {
+        isValidating.value = false;
+      }
     };
 
     return {
       stepsStore,
       handleSubmit,
       isSubmitting,
+      isValidating,
       progressPercentage,
       currentStepDisplay,
       showCamposFaltantesModal,
@@ -1933,12 +1943,16 @@ export default {
       <button
         v-if="!disableEdit"
         @click="handleSubmit"
-        :disabled="isSubmitting"
-        :aria-busy="isSubmitting"
+        :disabled="isSubmitting || isValidating"
+        :aria-busy="isSubmitting || isValidating"
         class="text-xs md:text-sm mt-6 text-gray-500 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span v-if="isSubmitting" class="inline-flex items-center gap-0.5">
           Guardando
+          <span class="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+        </span>
+        <span v-else-if="isValidating" class="inline-flex items-center gap-0.5">
+          Validando
           <span class="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
         </span>
         <span v-else>Guardar cambios</span>
@@ -1996,12 +2010,16 @@ export default {
             <button
               v-if="!disableEdit"
               @click="handleSubmit"
-              :disabled="isSubmitting"
-              :aria-busy="isSubmitting"
+              :disabled="isSubmitting || isValidating"
+              :aria-busy="isSubmitting || isValidating"
               class="px-4 py-2 text-xs md:text-base rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-transform duration-200 ease-in-out hover:scale-110 glow-animation focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <span v-if="isSubmitting" class="inline-flex items-center gap-0.5">
                 Creando PDF
+                <span class="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+              </span>
+              <span v-else-if="isValidating" class="inline-flex items-center gap-0.5">
+                Validando
                 <span class="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
               </span>
               <span v-else>Crear PDF</span>

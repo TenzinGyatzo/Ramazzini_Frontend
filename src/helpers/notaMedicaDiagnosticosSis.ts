@@ -3,7 +3,6 @@
  * Bloqueo en submit (frontend).
  */
 
-import CatalogsAPI from '@/api/CatalogsAPI';
 import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import { getCexCatalogCodes } from '@/helpers/cexCatalogCodes';
@@ -282,12 +281,8 @@ async function validateSexAgeForField(
 async function catalogEntryExists(code: string): Promise<boolean> {
   const key = norm4Chars(code);
   if (!key) return false;
-  try {
-    await CatalogsAPI.getCIE10ByCode(key);
-    return true;
-  } catch {
-    return false;
-  }
+  const rule = await findCIE10Rule(key);
+  return rule !== null;
 }
 
 function tipoPersonalLabel(code: number, codes: Awaited<ReturnType<typeof getCexCatalogCodes>>): string {
