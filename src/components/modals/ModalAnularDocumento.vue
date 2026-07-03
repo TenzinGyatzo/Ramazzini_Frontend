@@ -9,6 +9,7 @@ import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { useCurrentUser } from '@/composables/useCurrentUser';
 
 interface Props {
   documentType: string;
@@ -25,6 +26,7 @@ const documentosStore = useDocumentosStore();
 const medicoStore = useMedicoFirmanteStore();
 const enfermeraStore = useEnfermeraFirmanteStore();
 const tecnicoStore = useTecnicoFirmanteStore();
+const { currentUser, ensureUserLoaded } = useCurrentUser();
 
 // Estados reactivos
 const loading = ref(false);
@@ -48,14 +50,8 @@ const fechaFinalizacion = computed(() => {
 const fechaActual = computed(() => formatDateDDMMYYYY(new Date()));
 const fechaAnulacion = computed(() => fechaActual.value);
 
-// Usuario actual
-const user = computed(() => {
-  try {
-    return JSON.parse(localStorage.getItem('user') || '{}');
-  } catch (e) {
-    return {};
-  }
-});
+// Usuario actual (Pinia store; localStorage 'user' ya no se persiste)
+const user = currentUser;
 
 // Computed property para datos formateados del finalizador
 const finalizadorData = computed(() => {
@@ -107,6 +103,8 @@ const loadDocumentData = async () => {
   loadingFirmantes.value = true;
   
   try {
+    await ensureUserLoaded();
+
     // 1. Obtener documento completo
     await documentosStore.fetchDocumentById(props.documentType, props.trabajadorId, props.documentId);
     documento.value = documentosStore.currentDocument;

@@ -6,6 +6,7 @@
  */
 
 import type { RegulatoryErrorDetails } from '@/types/regulatory-error';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 /**
  * Tipo de régimen regulatorio
@@ -254,28 +255,27 @@ export function mapRegulatoryErrorMessage(
 }
 
 /**
- * Obtiene el régimen regulatorio actual del localStorage
- * Útil para usar en interceptores donde los composables no están disponibles
+ * Obtiene el régimen regulatorio actual desde el store en memoria.
+ * Útil para usar en interceptores donde los composables no están disponibles.
  * 
  * @returns Régimen regulatorio actual ('SIRES_NOM024' | 'SIN_REGIMEN')
  */
 export function getCurrentRegime(): RegulatoryRegime {
   try {
-    // Intentar obtener del localStorage (donde se guarda el proveedor)
-    const proveedorSaludStr = localStorage.getItem('proveedorSalud');
-    if (proveedorSaludStr) {
-      const proveedorSalud = JSON.parse(proveedorSaludStr);
-      const regime = proveedorSalud?.regulatoryPolicy?.regime || proveedorSalud?.regimenRegulatorio;
-      
-      if (regime === 'SIRES_NOM024') {
-        return 'SIRES_NOM024';
-      }
+    const proveedorSaludStore = useProveedorSaludStore();
+    const proveedorSalud = proveedorSaludStore.proveedorSalud;
+    const regime =
+      proveedorSalud?.regulatoryPolicy?.regime ||
+      proveedorSalud?.regimenRegulatorio;
+
+    if (regime === 'SIRES_NOM024') {
+      return 'SIRES_NOM024';
     }
-    
+
     // Fallback a SIN_REGIMEN si no se puede determinar
     return 'SIN_REGIMEN';
   } catch (error) {
-    // Fallback seguro si hay algún error accediendo al localStorage
+    // Fallback seguro si Pinia no está inicializado o el proveedor aún no está cargado.
     return 'SIN_REGIMEN';
   }
 }

@@ -9,6 +9,7 @@ import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { useCurrentUser } from '@/composables/useCurrentUser';
 
 interface Props {
   documentType: string;
@@ -25,6 +26,7 @@ const documentosStore = useDocumentosStore();
 const medicoStore = useMedicoFirmanteStore();
 const enfermeraStore = useEnfermeraFirmanteStore();
 const tecnicoStore = useTecnicoFirmanteStore();
+const { currentUser, ensureUserLoaded } = useCurrentUser();
 
 // Estados reactivos
 const loading = ref(false);
@@ -61,14 +63,8 @@ const etiquetaElaborador = computed(() => {
   return 'Elaborado por';
 });
 
-// Usuario actual
-const user = computed(() => {
-  try {
-    return JSON.parse(localStorage.getItem('user') || '{}');
-  } catch (e) {
-    return {};
-  }
-});
+// Usuario actual (Pinia store; localStorage 'user' ya no se persiste)
+const user = currentUser;
 
 // Computed property para datos formateados del elaborador
 const elaboradorData = computed(() => {
@@ -140,10 +136,12 @@ const loadFirmanteData = async () => {
   loadingFirmantes.value = true;
   
   try {
+    await ensureUserLoaded();
+
     // 1. Obtener documento completo
     await documentosStore.fetchDocumentById(props.documentType, props.trabajadorId, props.documentId);
     documento.value = documentosStore.currentDocument;
-    
+
     if (!documento.value) {
       console.error('No se pudo cargar el documento');
       return;
@@ -189,7 +187,7 @@ const loadFirmanteData = async () => {
     // 4. Cargar firmante finalizador (usuario actual)
     const currentUserId = user.value?._id;
     const userRole = user.value?.role;
-    
+
     if (currentUserId && userRole) {
       try {
         if (userRole === 'Médico' || userRole === 'Principal') {

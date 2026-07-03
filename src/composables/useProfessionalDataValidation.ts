@@ -2,22 +2,16 @@ import { computed } from 'vue';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
+import { useCurrentUser } from '@/composables/useCurrentUser';
 
 export function useProfessionalDataValidation() {
   const medicoStore = useMedicoFirmanteStore();
   const enfermeraStore = useEnfermeraFirmanteStore();
   const tecnicoStore = useTecnicoFirmanteStore();
-
-  const user = computed(() => {
-    try {
-      return JSON.parse(localStorage.getItem('user') || '{}');
-    } catch (e) {
-      return {};
-    }
-  });
+  const { currentUser, ensureUserLoaded } = useCurrentUser();
 
   const validationResult = computed(() => {
-    const role = user.value?.role;
+    const role = currentUser.value?.role;
     let firmante: any = null;
     let routeName = '';
     let firmanteTypeLabel = '';
@@ -69,10 +63,10 @@ export function useProfessionalDataValidation() {
   });
 
   const loadFirmanteData = async () => {
-    const userId = user.value?._id;
+    const userId = await ensureUserLoaded();
     if (!userId) return;
 
-    const role = user.value?.role;
+    const role = currentUser.value?.role;
     try {
       if (role === 'Médico' || role === 'Principal') {
         await medicoStore.loadMedicoFirmante(userId);
