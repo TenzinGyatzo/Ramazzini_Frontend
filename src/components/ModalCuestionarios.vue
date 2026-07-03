@@ -22,7 +22,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { validateDocumentCreation, executeIfCanManageOtrosDocumentos } = usePermissionRestrictions();
-const { validationResult, loadFirmanteData } = useProfessionalDataValidation();
+const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
 const {
   navigateWithTreatmentConsent,
   showModal: showConsentModal,
@@ -105,7 +105,8 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     return;
   }
 
-  if (!validationResult.value.isValid) {
+  const professionalValidation = await ensureProfessionalDataReady();
+  if (!professionalValidation.isValid) {
     showProfessionalDataModal.value = true;
     return;
   }

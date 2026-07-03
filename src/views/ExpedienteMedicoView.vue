@@ -65,7 +65,7 @@ const resultadosClinicos = useResultadosClinicosStore();
 
 const { canCreateDocument, getRestrictionMessage, executeIfCanManageDocumentosExternos } =
   usePermissionRestrictions();
-const { validationResult, loadFirmanteData } = useProfessionalDataValidation();
+const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
 const {
   navigateWithTreatmentConsent,
   showModal: showConsentModal,
@@ -330,6 +330,7 @@ watch(
   () => route.params,
   () => {
     fetchData();
+    loadFirmanteData();
   }
 );
 
@@ -390,9 +391,12 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
   }
 
   // Validar datos profesionales antes de crear cualquier documento
-  if (routeName === 'crear-documento' && !validationResult.value.isValid) {
-    showProfessionalDataModal.value = true;
-    return;
+  if (routeName === 'crear-documento') {
+    const professionalValidation = await ensureProfessionalDataReady();
+    if (!professionalValidation.isValid) {
+      showProfessionalDataModal.value = true;
+      return;
+    }
   }
 
   const routeParams: RouteParamsRaw =

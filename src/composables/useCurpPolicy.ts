@@ -10,8 +10,15 @@ export function useCurpPolicy() {
 
   const policy = computed(() => proveedorSaludStore.regulatoryPolicy);
 
+  const isMX = computed<boolean>(
+    () => proveedorSaludStore.proveedorSalud?.pais === 'MX',
+  );
+
   const curpRequired = computed<boolean>(() => {
-    return policy.value?.validation?.curpFirmantes === 'required';
+    return (
+      isMX.value &&
+      policy.value?.validation?.curpFirmantes === 'required'
+    );
   });
 
   const paisNacimientoRequired = computed<boolean>(() => true);
@@ -28,6 +35,7 @@ export function useCurpPolicy() {
   });
 
   const showCurpField = computed<boolean>(() => {
+    if (!isMX.value) return false;
     const regime = policy.value?.regime;
     return regime === 'SIRES_NOM024' || regime === 'SIN_REGIMEN';
   });
@@ -55,6 +63,7 @@ export function useCurpPolicy() {
     curpValidationRules,
     isSIRES,
     isSinRegimen,
+    isMX,
     sexoRequired,
   };
 }

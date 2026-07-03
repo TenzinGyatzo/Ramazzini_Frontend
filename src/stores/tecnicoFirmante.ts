@@ -54,7 +54,10 @@ export const useTecnicoFirmanteStore = defineStore("tecnicoFirmante", () => {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response && error.response.status === 404) {
-          tecnicoFirmante.value = null;
+          const hadCachedForUser = tecnicoFirmante.value?.idUser === idUser;
+          if (!hadCachedForUser) {
+            tecnicoFirmante.value = null;
+          }
         } else {
           console.error("Error al cargar técnico firmante:", error.message);
         }

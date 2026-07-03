@@ -1,8 +1,11 @@
 import { computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { useCurrentUser } from '@/composables/useCurrentUser';
+
+type FirmanteRecord = Record<string, unknown>;
 
 export function getFirmanteRouteNameByRole(role: string | undefined): string {
   if (role === 'Médico' || role === 'Principal' || role === 'Administrador') {
@@ -42,7 +45,7 @@ function isTecnicoRole(role: string | undefined): boolean {
   return role === 'Técnico Evaluador';
 }
 
-function getRequiredFieldsByRole(role: string | undefined): string[] {
+export function getRequiredFieldsByRole(role: string | undefined): string[] {
   const required = ['nombre', 'primerApellido', 'tituloProfesional'];
   if (isMedicoRole(role) || isEnfermeraRole(role)) {
     required.push('numeroCedulaProfesional');
@@ -50,8 +53,8 @@ function getRequiredFieldsByRole(role: string | undefined): string[] {
   return required;
 }
 
-function getMissingFields(
-  firmante: Record<string, string | undefined> | null,
+export function getMissingFields(
+  firmante: FirmanteRecord | null,
   role: string | undefined,
 ): string[] {
   const requiredFields = getRequiredFieldsByRole(role);
@@ -63,12 +66,47 @@ function getMissingFields(
   const missingFields: string[] = [];
   for (const field of requiredFields) {
     const value = firmante[field];
-    if (!value || value.trim() === '') {
+    if (typeof value !== 'string' || value.trim() === '') {
       missingFields.push(field);
     }
   }
 
   return missingFields;
+}
+
+function getFirmanteForRole(
+  role: string | undefined,
+  medicoFirmante: FirmanteRecord | null,
+  enfermeraFirmante: FirmanteRecord | null,
+  tecnicoFirmante: FirmanteRecord | null,
+) {
+  if (isMedicoRole(role)) return medicoFirmante;
+  if (isEnfermeraRole(role)) return enfermeraFirmante;
+  if (isTecnicoRole(role)) return tecnicoFirmante;
+  return null;
+}
+
+export function buildProfessionalDataValidation(
+  role: string | undefined,
+  firmante: FirmanteRecord | null,
+) {
+  if (!isMedicoRole(role) && !isEnfermeraRole(role) && !isTecnicoRole(role)) {
+    return {
+      isValid: true,
+      missingFields: [] as string[],
+      routeName: '',
+      firmanteTypeLabel: '',
+    };
+  }
+
+  const missingFields = getMissingFields(firmante, role);
+
+  return {
+    isValid: missingFields.length === 0,
+    missingFields,
+    routeName: getFirmanteRouteNameByRole(role),
+    firmanteTypeLabel: getFirmanteTypeLabelByRole(role),
+  };
 }
 
 export function useProfessionalDataValidation() {
@@ -77,37 +115,20 @@ export function useProfessionalDataValidation() {
   const tecnicoStore = useTecnicoFirmanteStore();
   const { currentUser, ensureUserLoaded } = useCurrentUser();
 
+  const { medicoFirmante } = storeToRefs(medicoStore);
+  const { enfermeraFirmante } = storeToRefs(enfermeraStore);
+  const { tecnicoFirmante } = storeToRefs(tecnicoStore);
+
   const validationResult = computed(() => {
     const role = currentUser.value?.role;
-    let firmante: any = null;
-    const routeName = getFirmanteRouteNameByRole(role);
-    const firmanteTypeLabel = getFirmanteTypeLabelByRole(role);
+    const firmante = getFirmanteForRole(
+      role,
+      medicoFirmante.value as FirmanteRecord | null,
+      enfermeraFirmante.value as FirmanteRecord | null,
+      tecnicoFirmante.value as FirmanteRecord | null,
+    );
 
-    if (isMedicoRole(role)) {
-      firmante = medicoStore.medicoFirmante;
-    } else if (isEnfermeraRole(role)) {
-      firmante = enfermeraStore.enfermeraFirmante;
-    } else if (isTecnicoRole(role)) {
-      firmante = tecnicoStore.tecnicoFirmante;
-    } else {
-      // Para otros roles (como Administrativo que ya tiene restricciones), 
-      // o si no hay rol, no validamos firmante
-      return {
-        isValid: true,
-        missingFields: [],
-        routeName: '',
-        firmanteTypeLabel: ''
-      };
-    }
-
-    const missingFields = getMissingFields(firmante, role);
-
-    return {
-      isValid: missingFields.length === 0,
-      missingFields,
-      routeName,
-      firmanteTypeLabel
-    };
+    return buildProfessionalDataValidation(role, firmante);
   });
 
   const loadFirmanteData = async () => {
@@ -128,10 +149,15 @@ export function useProfessionalDataValidation() {
     }
   };
 
+  const ensureProfessionalDataReady = async () => {
+    await loadFirmanteData();
+    return validationResult.value;
+  };
+
   return {
     validationResult,
     loadFirmanteData,
-    loading: computed(() => medicoStore.loading || enfermeraStore.loading || tecnicoStore.loading)
+    ensureProfessionalDataReady,
+    loading: computed(() => medicoStore.loading || enfermeraStore.loading || tecnicoStore.loading),
   };
 }
-

@@ -151,6 +151,8 @@ const isGuideMenuOpen = ref(false);
 const guideMenuRef = ref<HTMLElement | null>(null);
 const isNotificationVisible = ref(false);
 const isNotificationEmpresasVisible = ref(false);
+const configNotificationSuppressed = ref(false);
+const empresasNotificationSuppressed = ref(false);
 
 const guiaConfiguracionInicialURL = "https://scribehow.com/shared/Configuracion_de_Informes__qSuHpPxtSnKc8JTaObgY7Q?referrer=workspace"
 const guiaRegistrarClientesURL = "https://scribehow.com/shared/Agregar_Clientes_y_Centros_de_Trabajo__32Haet8BQy6oFUDacWcbWg?referrer=documents"
@@ -174,11 +176,13 @@ const handleClickOutside = (event: MouseEvent) => {
 // Función para cerrar notificaciones
 const closeNotification = () => {
   isNotificationVisible.value = false;
+  configNotificationSuppressed.value = true;
 };
 
 // Función para cerrar notificación de empresas
 const closeNotificationEmpresas = () => {
   isNotificationEmpresasVisible.value = false;
+  empresasNotificationSuppressed.value = true;
 };
 
 onMounted(() => {
@@ -617,102 +621,41 @@ const colorNotificacion = computed(() => {
   }
 });
 
-// Watcher para mostrar la notificación cuando hay campos pendientes
-watch(mostrarMensajePendiente, (nuevoValor) => {
-  if (nuevoValor && datosCargados.value) {
-    // Mostrar la notificación después de un pequeño delay para mejor UX
-    setTimeout(() => {
+function tryShowConfigNotification() {
+  if (configNotificationSuppressed.value) return;
+  if (!datosCargados.value || !mostrarMensajePendiente.value) return;
+  setTimeout(() => {
+    if (!configNotificationSuppressed.value) {
       isNotificationVisible.value = true;
-    }, 1000);
-  }
-});
+    }
+  }, 1000);
+}
 
-// Watcher adicional para cuando datosCargados cambie a true y ya haya campos pendientes
-watch(datosCargados, (nuevoValor) => {
-  if (nuevoValor && mostrarMensajePendiente.value) {
-    // Mostrar la notificación después de un pequeño delay para mejor UX
-    setTimeout(() => {
-      isNotificationVisible.value = true;
-    }, 1000);
-  }
-});
-
-// Watcher adicional para cuando mostrarMensajePendiente cambie después de que los datos estén cargados
-watch([datosCargados, mostrarMensajePendiente], ([nuevosDatosCargados, nuevoMostrarMensaje]) => {
-  if (nuevosDatosCargados && nuevoMostrarMensaje) {
-    // Mostrar la notificación después de un pequeño delay para mejor UX
-    setTimeout(() => {
-      isNotificationVisible.value = true;
-    }, 1000);
-  }
-});
-
-// Watcher adicional para cuando datosCargados cambie a true y ya haya campos pendientes
-watch([datosCargados, logotipoPendiente, camposPendientesProveedor, camposPendientesMedico, camposPendientesEnfermera, camposPendientesTecnicoEvaluador], ([nuevosDatosCargados, nuevoLogotipoPendiente, nuevosCamposProveedor, nuevosCamposMedico, nuevosCamposEnfermera, nuevosCamposTecnico]) => {
-  const userRole = user.user?.role;
-  
-  // Para roles de médicos
-  if ((userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') && 
-      nuevosDatosCargados && 
-      (nuevoLogotipoPendiente || nuevosCamposProveedor.length > 0 || nuevosCamposMedico.length > 0)) {
-    setTimeout(() => {
-      isNotificationVisible.value = true;
-    }, 1000);
-  }
-  
-  // Para rol de enfermera
-  if (userRole === 'Enfermero/a' && nuevosDatosCargados && nuevosCamposEnfermera.length > 0) {
-    setTimeout(() => {
-      isNotificationVisible.value = true;
-    }, 1000);
-  }
-  
-  // Para rol de técnico evaluador
-  if (userRole === 'Técnico Evaluador' && nuevosDatosCargados && nuevosCamposTecnico.length > 0) {
-    setTimeout(() => {
-      isNotificationVisible.value = true;
-    }, 1000);
-  }
-});
-
-// Watcher para mostrar la notificación cuando no hay empresas registradas
-watch([empresasCargadas, () => empresas.empresas.length], ([nuevoEmpresasCargadas, nuevoNumeroEmpresas]) => {
-  if (nuevoEmpresasCargadas && nuevoNumeroEmpresas === 0) {
-    // Mostrar la notificación después de un pequeño delay para mejor UX
-    setTimeout(() => {
+function tryShowEmpresasNotification() {
+  if (empresasNotificationSuppressed.value) return;
+  if (!empresasCargadas.value || empresas.empresas.length !== 0) return;
+  setTimeout(() => {
+    if (!empresasNotificationSuppressed.value) {
       isNotificationEmpresasVisible.value = true;
-    }, 1000);
+    }
+  }, 1000);
+}
+
+watch(() => user.user?._id, (newId, oldId) => {
+  if (newId !== oldId) {
+    configNotificationSuppressed.value = false;
+    empresasNotificationSuppressed.value = false;
+    isNotificationVisible.value = false;
+    isNotificationEmpresasVisible.value = false;
   }
 });
 
-// Watcher adicional para cuando empresasCargadas cambie a true y no haya empresas
-watch(empresasCargadas, (nuevoValor) => {
-  if (nuevoValor && empresas.empresas.length === 0) {
-    // Mostrar la notificación después de un pequeño delay para mejor UX
-    setTimeout(() => {
-      isNotificationEmpresasVisible.value = true;
-    }, 1000);
-  }
+watch([datosCargados, mostrarMensajePendiente], () => {
+  tryShowConfigNotification();
 });
 
-// Watcher adicional para cuando ambos valores cambien
-watch([empresasCargadas, () => empresas.empresas.length], ([nuevoEmpresasCargadas, nuevoNumeroEmpresas]) => {
-  if (nuevoEmpresasCargadas && nuevoNumeroEmpresas === 0) {
-    // Mostrar la notificación después de un pequeño delay para mejor UX
-    setTimeout(() => {
-      isNotificationEmpresasVisible.value = true;
-    }, 1000);
-  }
-});
-
-// Watcher adicional para cuando datosCargados cambie a true y ya haya empresas cargadas
-watch([datosCargados, empresasCargadas, () => empresas.empresas.length], ([nuevosDatosCargados, nuevoEmpresasCargadas, nuevoNumeroEmpresas]) => {
-  if (nuevosDatosCargados && nuevoEmpresasCargadas && nuevoNumeroEmpresas === 0) {
-    // Mostrar la notificación después de un pequeño delay para mejor UX
-    setTimeout(() => {
-      isNotificationEmpresasVisible.value = true;
-    }, 1000);
-  }
+watch([empresasCargadas, () => empresas.empresas.length], () => {
+  tryShowEmpresasNotification();
 });
 
 // Watchers para las animaciones de tooltips
