@@ -981,7 +981,8 @@ const añoMasReciente = computed(() => {
           :missingFields="validationResult.missingFields"
           :routeName="validationResult.routeName"
           :firmanteTypeLabel="validationResult.firmanteTypeLabel"
-          @closeModal="showProfessionalDataModal = false" 
+          @closeModal="showProfessionalDataModal = false"
+          @navigateToConfig="showProfessionalDataModal = false"
         />
       </Transition>
 

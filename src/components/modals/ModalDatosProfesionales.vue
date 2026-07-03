@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useCurrentUser } from '@/composables/useCurrentUser';
+import { getFirmanteRouteNameByRole } from '@/composables/useProfessionalDataValidation';
 
 const props = defineProps({
   missingFields: {
@@ -9,24 +11,33 @@ const props = defineProps({
   },
   routeName: {
     type: String,
-    required: true
+    default: ''
   },
   firmanteTypeLabel: {
     type: String,
-    required: true
+    default: ''
   }
 });
 
-const emit = defineEmits(['closeModal']);
+const emit = defineEmits(['closeModal', 'navigateToConfig']);
 const router = useRouter();
+const { currentUser } = useCurrentUser();
 
 const closeModal = () => {
   emit('closeModal');
 };
 
-const goToConfiguration = () => {
-  router.push({ name: props.routeName });
+const targetRouteName = computed(() => {
+  return getFirmanteRouteNameByRole(currentUser.value?.role) || props.routeName;
+});
+
+const goToConfiguration = async () => {
+  const routeName = targetRouteName.value;
+  if (!routeName) return;
+
+  emit('navigateToConfig');
   closeModal();
+  await router.push({ name: routeName });
 };
 
 const fieldLabels = {

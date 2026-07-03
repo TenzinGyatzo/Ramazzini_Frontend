@@ -443,12 +443,13 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
       </div>
 
     <Transition appear name="fade">
-      <ModalDatosProfesionales
+        <ModalDatosProfesionales
         v-if="showProfessionalDataModal"
         :missingFields="validationResult.missingFields"
         :routeName="validationResult.routeName"
         :firmanteTypeLabel="validationResult.firmanteTypeLabel"
         @closeModal="showProfessionalDataModal = false"
+        @navigateToConfig="() => { showProfessionalDataModal = false; closeModal(); }"
       />
     </Transition>
 

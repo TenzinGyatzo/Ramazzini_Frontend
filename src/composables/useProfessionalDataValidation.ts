@@ -4,6 +4,73 @@ import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 
+export function getFirmanteRouteNameByRole(role: string | undefined): string {
+  if (role === 'Médico' || role === 'Principal' || role === 'Administrador') {
+    return 'medico-firmante';
+  }
+  if (role === 'Enfermero/a') {
+    return 'enfermera-firmante';
+  }
+  if (role === 'Técnico Evaluador') {
+    return 'tecnico-evaluador-firmante';
+  }
+  return '';
+}
+
+export function getFirmanteTypeLabelByRole(role: string | undefined): string {
+  if (role === 'Médico' || role === 'Principal' || role === 'Administrador') {
+    return 'Médico';
+  }
+  if (role === 'Enfermero/a') {
+    return 'Enfermero/a';
+  }
+  if (role === 'Técnico Evaluador') {
+    return 'Técnico Evaluador';
+  }
+  return '';
+}
+
+function isMedicoRole(role: string | undefined): boolean {
+  return role === 'Médico' || role === 'Principal' || role === 'Administrador';
+}
+
+function isEnfermeraRole(role: string | undefined): boolean {
+  return role === 'Enfermero/a';
+}
+
+function isTecnicoRole(role: string | undefined): boolean {
+  return role === 'Técnico Evaluador';
+}
+
+function getRequiredFieldsByRole(role: string | undefined): string[] {
+  const required = ['nombre', 'primerApellido', 'tituloProfesional'];
+  if (isMedicoRole(role) || isEnfermeraRole(role)) {
+    required.push('numeroCedulaProfesional');
+  }
+  return required;
+}
+
+function getMissingFields(
+  firmante: Record<string, string | undefined> | null,
+  role: string | undefined,
+): string[] {
+  const requiredFields = getRequiredFieldsByRole(role);
+
+  if (!firmante) {
+    return requiredFields;
+  }
+
+  const missingFields: string[] = [];
+  for (const field of requiredFields) {
+    const value = firmante[field];
+    if (!value || value.trim() === '') {
+      missingFields.push(field);
+    }
+  }
+
+  return missingFields;
+}
+
 export function useProfessionalDataValidation() {
   const medicoStore = useMedicoFirmanteStore();
   const enfermeraStore = useEnfermeraFirmanteStore();
@@ -13,21 +80,15 @@ export function useProfessionalDataValidation() {
   const validationResult = computed(() => {
     const role = currentUser.value?.role;
     let firmante: any = null;
-    let routeName = '';
-    let firmanteTypeLabel = '';
+    const routeName = getFirmanteRouteNameByRole(role);
+    const firmanteTypeLabel = getFirmanteTypeLabelByRole(role);
 
-    if (role === 'Médico' || role === 'Principal') {
+    if (isMedicoRole(role)) {
       firmante = medicoStore.medicoFirmante;
-      routeName = 'medico-firmante';
-      firmanteTypeLabel = 'Médico';
-    } else if (role === 'Enfermero/a') {
+    } else if (isEnfermeraRole(role)) {
       firmante = enfermeraStore.enfermeraFirmante;
-      routeName = 'enfermera-firmante';
-      firmanteTypeLabel = 'Enfermero/a';
-    } else if (role === 'Técnico Evaluador') {
+    } else if (isTecnicoRole(role)) {
       firmante = tecnicoStore.tecnicoFirmante;
-      routeName = 'tecnico-firmante';
-      firmanteTypeLabel = 'Técnico Evaluador';
     } else {
       // Para otros roles (como Administrativo que ya tiene restricciones), 
       // o si no hay rol, no validamos firmante
@@ -39,20 +100,7 @@ export function useProfessionalDataValidation() {
       };
     }
 
-    if (!firmante) {
-      return {
-        isValid: false,
-        missingFields: ['nombre', 'primerApellido', 'tituloProfesional', 'numeroCedulaProfesional'],
-        routeName,
-        firmanteTypeLabel
-      };
-    }
-
-    const missingFields: string[] = [];
-    if (!firmante.nombre || firmante.nombre.trim() === '') missingFields.push('nombre');
-    if (!firmante.primerApellido || firmante.primerApellido.trim() === '') missingFields.push('primerApellido');
-    if (!firmante.tituloProfesional || firmante.tituloProfesional.trim() === '') missingFields.push('tituloProfesional');
-    if (!firmante.numeroCedulaProfesional || firmante.numeroCedulaProfesional.trim() === '') missingFields.push('numeroCedulaProfesional');
+    const missingFields = getMissingFields(firmante, role);
 
     return {
       isValid: missingFields.length === 0,
@@ -68,11 +116,11 @@ export function useProfessionalDataValidation() {
 
     const role = currentUser.value?.role;
     try {
-      if (role === 'Médico' || role === 'Principal') {
+      if (isMedicoRole(role)) {
         await medicoStore.loadMedicoFirmante(userId);
-      } else if (role === 'Enfermero/a') {
+      } else if (isEnfermeraRole(role)) {
         await enfermeraStore.loadEnfermeraFirmante(userId);
-      } else if (role === 'Técnico Evaluador') {
+      } else if (isTecnicoRole(role)) {
         await tecnicoStore.loadTecnicoFirmante(userId);
       }
     } catch (error) {
