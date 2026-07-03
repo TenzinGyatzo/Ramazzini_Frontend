@@ -30,7 +30,7 @@ const features = [
   { name: 'Validaciones regulatorias', description: 'CURP, CIE-10 y campos geográficos serán obligatorios' },
   { name: 'Campo CLUES', description: 'Visible y validado contra catálogo oficial' },
   { name: 'Exportación GIIS', description: 'Habilitada para integración con GIIS' },
-  { name: 'Consentimiento informado', description: 'Funcionalidad de consentimiento informado habilitada' },
+  { name: 'Consentimiento', description: 'Funcionalidad de consentimiento habilitada' },
   { name: 'Auditoría de cambios', description: 'Funcionalidad de auditoría de cambios habilitada' },
 ];
 </script>
