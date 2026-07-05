@@ -453,19 +453,21 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     empresaId: string,
     centroTrabajoId: string,
     trabajadorId: string,
-    nuevoCentroId: string
+    nuevoCentroId: string,
+    empresaDestinoId?: string,
   ) {
     try {
       loading.value = true;
-      const response = await TrabajadoresAPI.transferirTrabajador(
+      const { data } = await TrabajadoresAPI.transferirTrabajador(
         empresaId,
         centroTrabajoId,
         trabajadorId,
         nuevoCentroId
       );
+      const destEmpresaId = empresaDestinoId ?? empresaId;
       invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
-      invalidateListadoHistoriaCache(empresaId, nuevoCentroId);
-      return response;
+      invalidateListadoHistoriaCache(destEmpresaId, nuevoCentroId);
+      return data;
     } catch (error) {
       console.error("Error al transferir el trabajador", error);
       throw error;

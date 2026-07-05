@@ -71,6 +71,7 @@ interface ProveedorSalud {
 // Define el store
 export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     const loading = ref(true);
+    const saving = ref(false);
     const proveedorSalud = ref<ProveedorSalud | null>(null);
 
     async function loadProveedorSalud(idProveedorSalud: string) {
@@ -101,30 +102,39 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
 
     async function createProveedor(proveedorSaludData: ProveedorSalud) {
         try {
-            loading.value = true;
+            saving.value = true;
             const { data } = await ProveedorSaludAPI.createProveedor(proveedorSaludData);
-            proveedorSalud.value = data;
-            // console.log("Proveedor Salud", proveedorSalud.value);
-            return data
+            const created = data.data;
+            proveedorSalud.value = {
+                ...created,
+                regulatoryPolicy:
+                    proveedorSalud.value?.regulatoryPolicy ?? created.regulatoryPolicy,
+            };
+            return data;
         } catch (error) {
-            console.error("Error al cargar proveedor de salud:", error);
+            console.error("Error al crear proveedor de salud:", error);
             throw error;
         } finally {
-            loading.value = false;
+            saving.value = false;
         }
     }
 
     async function updateProveedorById(idProveedorSalud: string, proveedorSaludData: ProveedorSalud) {
         try {
-            loading.value = true;
+            saving.value = true;
             const { data } = await ProveedorSaludAPI.updateProveedorById(idProveedorSalud, proveedorSaludData);
-            proveedorSalud.value = data;
-            // console.log("Proveedor Salud", proveedorSalud.value);
+            const updated = data.data;
+            proveedorSalud.value = {
+                ...updated,
+                regulatoryPolicy:
+                    proveedorSalud.value?.regulatoryPolicy ?? updated.regulatoryPolicy,
+            };
             return data;
         } catch (error) {
-            console.error("Error al cargar proveedor de salud:", error);
+            console.error("Error al actualizar proveedor de salud:", error);
+            throw error;
         } finally {
-            loading.value = false;
+            saving.value = false;
         }
     }
 
@@ -262,7 +272,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
             throw new Error('Proveedor no cargado');
         }
         try {
-            loading.value = true;
+            saving.value = true;
             const { data } = await ProveedorSaludAPI.changeRegimenRegulatorio(
                 proveedorSalud.value._id,
                 regimen,
@@ -276,7 +286,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
             console.error('Error al cambiar régimen regulatorio:', error);
             throw error;
         } finally {
-            loading.value = false;
+            saving.value = false;
         }
     }
 
@@ -340,6 +350,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     return {
         proveedorSalud,
         loading,
+        saving,
         isProveedorLoaded,
         logotipoPendiente,
         camposPendientesProveedor,

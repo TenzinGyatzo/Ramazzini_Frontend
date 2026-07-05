@@ -730,20 +730,28 @@ const confirmarTransferencia = async () => {
   try {
     transferenciaEnProceso.value = true;
     
-    await trabajadores.transferirTrabajador(
+    const response = await trabajadores.transferirTrabajador(
       empresas.currentEmpresaId,
       centrosTrabajo.currentCentroTrabajoId,
       trabajadores.currentTrabajador._id,
-      centroSeleccionado.value._id || centroSeleccionado.value
+      centroSeleccionado.value._id || centroSeleccionado.value,
+      empresaSeleccionada.value,
     );
 
     const empresaNombre = empresasDisponibles.value.find(e => e._id === empresaSeleccionada.value)?.nombreComercial || 'la empresa seleccionada';
     const centroNombre = centroSeleccionado.value.nombreCentro || centroSeleccionado.value;
-    
-    toast.open({ 
-      message: `Trabajador transferido exitosamente a ${empresaNombre} (${centroNombre})`, 
-      type: 'success' 
-    });
+
+    if (response?.posibleDuplicado) {
+      toast.open({
+        message: `Trabajador transferido a ${empresaNombre} (${centroNombre}). Posible duplicado detectado (${response.posibleDuplicado.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM'}).`,
+        type: 'warning',
+      });
+    } else {
+      toast.open({ 
+        message: `Trabajador transferido exitosamente a ${empresaNombre} (${centroNombre})`, 
+        type: 'success' 
+      });
+    }
 
     // Cerrar modales y actualizar la lista
     forceCloseTransfer();

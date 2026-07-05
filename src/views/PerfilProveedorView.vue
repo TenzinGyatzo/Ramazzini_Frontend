@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, computed, watch, watchEffect } from "vue";
+import { ref, inject, computed, watch } from "vue";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { useUserStore } from "@/stores/user";
 import { useRouter, RouterLink } from "vue-router";
@@ -47,31 +47,33 @@ const formulario = ref({
 });
 
 // Cargar los valores iniciales del proveedor en el formulario
-watchEffect(() => {
-  if (proveedorSalud.proveedorSalud) {
-    // Asegurar que los valores geográficos siempre sean strings
-    const estadoValue = proveedorSalud.proveedorSalud.estado;
-    const municipioValue = proveedorSalud.proveedorSalud.municipio;
-    const codigoPostalValue = proveedorSalud.proveedorSalud.codigoPostal;
-    
+watch(
+  () => proveedorSalud.proveedorSalud,
+  (proveedor) => {
+    if (!proveedor?._id) return;
+
+    const estadoValue = proveedor.estado;
+    const municipioValue = proveedor.municipio;
+    const codigoPostalValue = proveedor.codigoPostal;
+
     Object.assign(formulario.value, {
-      nombre: proveedorSalud.proveedorSalud.nombre ?? "",
-      direccion: proveedorSalud.proveedorSalud.direccion ?? "",
+      nombre: proveedor.nombre ?? "",
+      direccion: proveedor.direccion ?? "",
       municipio: typeof municipioValue === 'string' ? (municipioValue || "") : (municipioValue ? String(municipioValue) : ""),
       estado: typeof estadoValue === 'string' ? (estadoValue || "") : (estadoValue ? String(estadoValue) : ""),
-      telefono: proveedorSalud.proveedorSalud.telefono ?? "",
-      sitioWeb: proveedorSalud.proveedorSalud.sitioWeb ?? "",
-      pais: proveedorSalud.proveedorSalud.pais ?? "",
-      correoElectronico: proveedorSalud.proveedorSalud.correoElectronico ?? "",
-      perfilProveedorSalud: proveedorSalud.proveedorSalud.perfilProveedorSalud ?? "", 
+      telefono: proveedor.telefono ?? "",
+      sitioWeb: proveedor.sitioWeb ?? "",
+      pais: proveedor.pais ?? "",
+      correoElectronico: proveedor.correoElectronico ?? "",
+      perfilProveedorSalud: proveedor.perfilProveedorSalud ?? "",
       codigoPostal: typeof codigoPostalValue === 'string' ? (codigoPostalValue || "") : (codigoPostalValue ? String(codigoPostalValue) : ""),
-      clues: proveedorSalud.proveedorSalud.clues ?? ""
+      clues: proveedor.clues ?? ""
     });
 
-    colorInforme.value = proveedorSalud.proveedorSalud.colorInforme || "#343A40";
-    semaforizacionActivada.value = proveedorSalud.proveedorSalud.semaforizacionActivada ?? false;
-  }
-});
+    colorInforme.value = proveedor.colorInforme || "#343A40";
+    semaforizacionActivada.value = proveedor.semaforizacionActivada ?? false;
+  },
+);
 
 // Limpiar campos geográficos si se cambia de país
 watch(() => formulario.value.pais, (newPais, oldPais) => {
@@ -371,12 +373,6 @@ const handleSubmit = async (data) => {
     toast.open({
       message: response.message,
     });
-
-    // Usar el ID devuelto por el backend para recargar los datos
-    const idProveedor = response.data._id || proveedorSalud.proveedorSalud._id;
-    if (idProveedor) {
-      await proveedorSalud.loadProveedorSalud(idProveedor);
-    }
   } catch (error) {
     console.error("Error al crear o actualizar el proveedor:", error);
     alert(
@@ -397,11 +393,6 @@ const handleRegimenChange = async (reason) => {
       type: 'success'
     });
     showChangeRegimenModal.value = false;
-    // El store ya actualizó proveedorSalud, la policy se refleja automáticamente
-    // Recargar los datos del proveedor para obtener la policy actualizada
-    if (proveedorSalud.proveedorSalud._id) {
-      await proveedorSalud.loadProveedorSalud(proveedorSalud.proveedorSalud._id);
-    }
   } catch (error) {
     console.error('Error al cambiar régimen regulatorio:', error);
     toast.open({
@@ -470,8 +461,8 @@ const logoSrc = computed(() => {
       <div
         class="relative bg-white text-gray-800 w-full max-w-5xl p-5 sm:p-8 lg:p-10 mt-2 sm:mt-4 rounded-lg shadow-lg mx-auto max-h-none overflow-visible lg:max-h-[82vh] lg:overflow-y-auto">
       <Transition appear name="fade-slow">
-        <div v-if="proveedorSalud.loading">
-          <!-- <h1 class="text-3xl text-center">Cargando proveedor...</h1> -->
+        <div v-if="proveedorSalud.loading && !proveedorSalud.proveedorSalud" class="py-12 text-center text-gray-500">
+          <i class="fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
         </div>
         <div v-else>
           <h1 class="text-3xl">Perfil de Proveedor de Servicios de Salud Ocupacional</h1>
@@ -809,7 +800,7 @@ const logoSrc = computed(() => {
               <!-- Botón de Actualizar -->
               <div class="w-full sm:w-1/2 pr-2">
                 <FormKit type="submit">
-                  <span v-if="proveedorSalud.loading">Guardando...</span>
+                  <span v-if="proveedorSalud.saving">Guardando...</span>
                   <span v-else>Actualizar Datos</span>
                 </FormKit>
               </div>

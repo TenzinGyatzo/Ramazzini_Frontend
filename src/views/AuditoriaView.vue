@@ -38,14 +38,17 @@ function formatDate(d: string | undefined): string {
   if (!d) return "—";
   try {
     const date = new Date(d);
-    return date.toLocaleString("es-MX", {
+    const dateStr = date.toLocaleDateString("es-MX", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+    });
+    const timeStr = date.toLocaleTimeString("es-MX", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
     });
+    return `${dateStr}\n${timeStr}`;
   } catch {
     return String(d);
   }
@@ -265,11 +268,17 @@ async function verifyAudit() {
           </thead>
           <tbody>
             <tr v-for="ev in items" :key="ev._id ?? ev.timestamp + ev.actorId">
-              <td>{{ formatDate(ev.timestamp) }}</td>
-              <td>{{ ev.actorSnapshot?.email ?? ev.actorId }}</td>
-              <td>{{ ev.actionType }}</td>
-              <td>{{ ev.resourceType ?? "—" }}</td>
-              <td>{{ ev.resourceId ?? "—" }}</td>
+              <td class="cell-date">{{ formatDate(ev.timestamp) }}</td>
+              <td class="cell-actor" :title="ev.actorSnapshot?.email ?? ev.actorId">
+                {{ ev.actorSnapshot?.email ?? ev.actorId }}
+              </td>
+              <td class="cell-long" :title="ev.actionType">{{ ev.actionType }}</td>
+              <td class="cell-long" :title="ev.resourceType ?? undefined">
+                {{ ev.resourceType ?? "—" }}
+              </td>
+              <td class="cell-id" :title="ev.resourceId ?? undefined">
+                {{ ev.resourceId ?? "—" }}
+              </td>
             </tr>
             <tr v-if="items.length === 0 && !loading">
               <td colspan="5">Sin resultados. Ajuste filtros y pulse Buscar.</td>
@@ -363,7 +372,13 @@ async function verifyAudit() {
   color: #b91c1c;
   margin-bottom: 1rem;
 }
+.table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
 .audit-table {
+  table-layout: fixed;
   width: 100%;
   border-collapse: collapse;
 }
@@ -372,10 +387,53 @@ async function verifyAudit() {
   padding: 0.5rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+.audit-table th:nth-child(1),
+.audit-table td:nth-child(1) {
+  width: 12%;
+}
+.audit-table th:nth-child(2),
+.audit-table td:nth-child(2) {
+  width: 24%;
+}
+.audit-table th:nth-child(3),
+.audit-table td:nth-child(3) {
+  width: 20%;
+}
+.audit-table th:nth-child(4),
+.audit-table td:nth-child(4) {
+  width: 20%;
+}
+.audit-table th:nth-child(5),
+.audit-table td:nth-child(5) {
+  width: 19%;
 }
 .audit-table th {
   background: #f5f5f5;
   font-weight: 600;
+}
+.cell-date {
+  white-space: pre-line;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.cell-actor,
+.cell-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0;
+}
+.cell-long {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+.cell-id {
+  font-size: 0.8125rem;
+  color: #555;
+  font-family: ui-monospace, monospace;
 }
 .pagination {
   display: flex;
@@ -390,5 +448,24 @@ async function verifyAudit() {
 .pagination button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+@media (max-width: 640px) {
+  .auditoria-view {
+    padding: 0.75rem;
+  }
+  .filters .filter-row {
+    flex-wrap: wrap;
+  }
+  .audit-table th,
+  .audit-table td {
+    padding: 0.35rem 0.5rem;
+  }
+  .cell-date {
+    font-size: 0.8125rem;
+  }
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
 }
 </style>
