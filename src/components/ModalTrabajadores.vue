@@ -1180,7 +1180,7 @@ const {
           @click="requestTransferDismiss"
         />
         <div
-          class="modal-work-panel modal-inner relative bg-white text-gray-900 w-4/5 sm:w-3/5 md:w-1/2 lg:w-2/5 xl:w-1/3 2xl:w-1/4 p-8 rounded-lg shadow-md shadow-slate-900 max-h-[80vh] overflow-y-auto"
+          class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full sm:w-[82%] md:w-[70%] lg:w-2/3 xl:w-[60%] 2xl:max-w-4xl 2xl:w-4/5 p-6 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[85vh] overflow-y-auto"
           :class="{ 'modal-dismiss-pulse': transferDismissPulse }"
           @click.stop
         >

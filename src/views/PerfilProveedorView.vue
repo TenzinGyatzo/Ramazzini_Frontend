@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, computed, watch } from "vue";
+import { ref, inject, computed, watch, onUnmounted } from "vue";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { useUserStore } from "@/stores/user";
 import { useRouter, RouterLink } from "vue-router";
@@ -10,6 +10,7 @@ import MexicoGeoSelect from "@/components/selectors/MexicoGeoSelect.vue";
 import CPAutocomplete from "@/components/selectors/CPAutocomplete.vue";
 import { useNom024Fields } from "@/composables/useNom024Fields";
 import ChangeRegimenModal from "@/components/onboarding/ChangeRegimenModal.vue";
+import { processProviderLogo } from "@/helpers/processProviderLogo";
 
 const proveedorSalud = useProveedorSaludStore();
 const userStore = useUserStore();
@@ -17,8 +18,21 @@ const router = useRouter();
 
 const logotipoPreview = ref(null);
 const logotipoArchivo = ref(null);
+const procesandoLogotipo = ref(false);
 const isDragOver = ref(false);  // Para el estado de drag and drop
 const toast = inject("toast");
+
+// URL de objeto de la vista previa, para liberarla al reemplazar o desmontar
+let previewObjectUrl = null;
+
+const revokePreviewUrl = () => {
+  if (previewObjectUrl) {
+    URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = null;
+  }
+};
+
+onUnmounted(revokePreviewUrl);
 
 const colorInforme = ref("#343A40");
 const semaforizacionActivada = ref(false);
@@ -73,6 +87,7 @@ watch(
     colorInforme.value = proveedor.colorInforme || "#343A40";
     semaforizacionActivada.value = proveedor.semaforizacionActivada ?? false;
   },
+  { immediate: true },
 );
 
 // Limpiar campos geográficos si se cambia de país
@@ -200,22 +215,44 @@ const colorOptions = [
   { name: "Oro", hex: "#E0A800" },
 ];
 
+// Valida y procesa el logotipo (fondo, recorte, padding, 500x500 PNG) antes de usarlo
+const handleLogoSelection = async (file) => {
+  const validation = validateFile(file);
+  if (!validation.valid) {
+    toast.open({ message: validation.message, type: 'error' });
+    return;
+  }
+
+  procesandoLogotipo.value = true;
+  try {
+    const { file: processed, warnings } = await processProviderLogo(file);
+    logotipoArchivo.value = processed;
+    revokePreviewUrl();
+    previewObjectUrl = URL.createObjectURL(processed);
+    logotipoPreview.value = previewObjectUrl;
+    warnings.forEach((warning) => {
+      toast.open({ message: warning, type: 'warning' });
+    });
+  } catch (error) {
+    console.error('Error al procesar el logotipo:', error);
+    toast.open({
+      message: 'No se pudo procesar el logotipo, por favor intenta con otra imagen.',
+      type: 'error',
+    });
+    revokePreviewUrl();
+    logotipoPreview.value = null;
+    logotipoArchivo.value = null;
+  } finally {
+    procesandoLogotipo.value = false;
+  }
+};
+
 const handleFileChange = (event) => {
   const file = event?.target?.files?.[0];
   if (file && file instanceof File) {
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      toast.open({ message: validation.message, type: 'error' });
-      return;
-    }
-    
-    logotipoArchivo.value = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      logotipoPreview.value = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    handleLogoSelection(file);
   } else {
+    revokePreviewUrl();
     logotipoPreview.value = null;
     logotipoArchivo.value = null;
   }
@@ -246,22 +283,12 @@ const handleDrop = (event) => {
   event.preventDefault();
   event.stopPropagation();
   isDragOver.value = false;
-  
+
+  if (procesandoLogotipo.value) return;
+
   const files = Array.from(event.dataTransfer.files);
   if (files.length > 0) {
-    const file = files[0]; // Solo tomamos el primer archivo
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      toast.open({ message: validation.message, type: 'error' });
-      return;
-    }
-    
-    logotipoArchivo.value = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      logotipoPreview.value = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    handleLogoSelection(files[0]); // Solo tomamos el primer archivo
   }
 };
 
@@ -281,6 +308,8 @@ const normalizeGeoValue = (value) => {
 
 const handleSubmit = async (data) => {
   const formData = new FormData();
+  const proveedorActual = proveedorSalud.proveedorSalud;
+  const isUpdate = !!proveedorActual?._id;
 
   // Agregar solo los campos con valores definidos, pero asegurar que campos geográficos sean strings
   Object.entries(data).forEach(([key, value]) => {
@@ -306,8 +335,12 @@ const handleSubmit = async (data) => {
     formData.append("telefono", formulario.value.telefono);
   }
 
-  // Agregar país del formulario (CountrySelect no es FormKit)
-  if (formulario.value.pais) {
+  // CountrySelect no es FormKit. En actualización solo enviar país si cambió,
+  // porque el backend revalida régimen regulatorio al recibir este campo.
+  if (
+    formulario.value.pais &&
+    (!isUpdate || formulario.value.pais !== proveedorActual?.pais)
+  ) {
     formData.append("pais", formulario.value.pais);
   }
 
@@ -333,8 +366,7 @@ const handleSubmit = async (data) => {
 
   // CLUES opcional: solo si se incluye en el payload; si ya existía y se deja vacío, enviar "" para borrarlo
   const cluesValue = (formulario.value.clues || "").trim();
-  const isUpdate = !!proveedorSalud.proveedorSalud?._id;
-  const hadClues = (proveedorSalud.proveedorSalud?.clues || "").trim() !== "";
+  const hadClues = (proveedorActual?.clues || "").trim() !== "";
   if (cluesValue) {
     formData.append("clues", cluesValue);
   } else if (isUpdate && hadClues) {
@@ -681,19 +713,21 @@ const logoSrc = computed(() => {
 
             <!-- Área de arrastrar y soltar para el logotipo -->
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Logotipo (Asegura que sea .png sin fondo, cuadrada, de al menos 500 x 500px, con el menor espacio posible entre el logo y el borde de la imagen)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Logotipo (Se optimizará automáticamente a PNG de 500 x 500px sin fondo claro. Para mejores resultados, usa un logo sobre fondo blanco o un PNG transparente)</label>
               <div 
-                class="border-2 border-dashed rounded-lg p-4 sm:p-6 text-center transition-all duration-200 cursor-pointer"
+                class="border-2 border-dashed rounded-lg p-4 sm:p-6 text-center transition-all duration-200"
                 :class="[
-                  isDragOver 
-                    ? 'border-emerald-500 bg-emerald-50 scale-105' 
-                    : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
+                  procesandoLogotipo
+                    ? 'border-gray-300 bg-gray-50 cursor-wait opacity-70'
+                    : isDragOver 
+                      ? 'border-emerald-500 bg-emerald-50 scale-105 cursor-pointer' 
+                      : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50 cursor-pointer'
                 ]"
                 @dragenter="handleDragEnter"
                 @dragleave="handleDragLeave"
                 @dragover="handleDragOver"
                 @drop="handleDrop"
-                @click="$refs.logotipoInput.click()"
+                @click="!procesandoLogotipo && $refs.logotipoInput.click()"
               >
                 <input
                   ref="logotipoInput"
@@ -703,7 +737,13 @@ const logoSrc = computed(() => {
                   class="hidden"
                 />
                 
-                <div class="text-gray-600">
+                <!-- Estado de procesamiento -->
+                <div v-if="procesandoLogotipo" class="text-gray-600 py-4">
+                  <i class="fas fa-spinner fa-spin text-3xl text-emerald-600 mb-3"></i>
+                  <p class="text-lg font-medium">Optimizando logotipo...</p>
+                </div>
+
+                <div v-else class="text-gray-600">
                   <!-- Icono dinámico -->
                   <div class="mx-auto h-12 w-12 mb-4 transition-all duration-200" :class="isDragOver ? 'scale-110' : ''">
                     <div v-if="!isDragOver" class="flex items-center justify-center">
