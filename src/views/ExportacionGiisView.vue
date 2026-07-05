@@ -26,6 +26,8 @@ const hasGeneratingBatch = computed(() =>
 const canGenerate = computed(
   () => !generating.value && !hasGeneratingBatch.value && !!selectedYearMonth.value
 );
+const giisTxtDownloadEnabled =
+  import.meta.env.VITE_GIIS_TXT_DOWNLOAD_ENABLED === "true";
 
 function formatDate(d: string | undefined): string {
   if (!d) return "—";
@@ -203,12 +205,6 @@ watch(
                   >
                     {{ statusLabel(b.status) }}
                   </span>
-                  <div
-                    v-if="(b.establecimientoClues ?? '').trim() === '9998'"
-                    class="text-xs text-amber-700 mt-0.5"
-                  >
-                    Reporte en modo privado (CLUES 9998)
-                  </div>
                 </td>
                 <td class="px-4 py-3 text-sm">
                   <template v-if="b.status === 'completed'">
@@ -223,7 +219,7 @@ watch(
                           {{ art.guide }} Cifrado
                         </button>
                         <button
-                          v-if="art.path"
+                          v-if="giisTxtDownloadEnabled && art.path"
                           type="button"
                           @click="handleDownloadTxt(b.batchId, art.guide)"
                           class="text-blue-600 hover:underline text-sm"
