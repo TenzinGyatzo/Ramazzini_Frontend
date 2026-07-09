@@ -158,6 +158,16 @@ export default {
     listCatalog(catalogType: string, limit?: number) {
         const params = limit !== undefined ? { limit } : {};
         return api.get(`/catalogs/giis/${catalogType}/list`, { params });
-    }
+    },
+
+    exportImportReferenceCatalog(
+        type: 'paises' | 'entidades' | 'municipios' | 'localidades',
+        params?: { entidadCode?: string; municipioCode?: string },
+    ) {
+        return api.get(`/catalogs/import-reference/${type}/export`, {
+            params,
+            responseType: 'blob',
+        });
+    },
 }
 

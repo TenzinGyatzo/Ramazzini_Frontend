@@ -26,6 +26,7 @@ export const useImportacionTrabajadores = () => {
     file: File,
     idCentroTrabajo: string,
     idEmpresa: string,
+    createdBy: string,
     onProgress?: (progress: number) => void
   ): Promise<void> => {
     try {
@@ -45,11 +46,8 @@ export const useImportacionTrabajadores = () => {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('idCentroTrabajo', idCentroTrabajo)
-      
-      // Obtener el ID del usuario actual (esto debería venir del contexto)
-      const currentUserId = '6650f38308ac3beedf5ac41b' // TODO: Obtener dinámicamente
-      formData.append('createdBy', currentUserId)
-      formData.append('updatedBy', currentUserId)
+      formData.append('createdBy', createdBy)
+      formData.append('updatedBy', createdBy)
 
       // Realizar la importación
       const response = await TrabajadoresAPI.importTrabajadores(idEmpresa, idCentroTrabajo, formData)
@@ -89,6 +87,7 @@ export const useImportacionTrabajadores = () => {
     data: any[],
     idCentroTrabajo: string,
     idEmpresa: string,
+    createdBy: string,
     onProgress?: (progress: number) => void
   ): Promise<void> => {
     try {
@@ -109,11 +108,8 @@ export const useImportacionTrabajadores = () => {
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
       formData.append('file', blob, 'data.json')
       formData.append('idCentroTrabajo', idCentroTrabajo)
-      
-      // Obtener el ID del usuario actual (esto debería venir del contexto)
-      const currentUserId = '6650f38308ac3beedf5ac41b' // TODO: Obtener dinámicamente
-      formData.append('createdBy', currentUserId)
-      formData.append('updatedBy', currentUserId)
+      formData.append('createdBy', createdBy)
+      formData.append('updatedBy', createdBy)
 
       // Realizar la importación
       const response = await TrabajadoresAPI.importTrabajadores(idEmpresa, idCentroTrabajo, formData)

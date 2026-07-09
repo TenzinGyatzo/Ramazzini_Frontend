@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, onMounted } from 'vue';	
+import { ref, inject, onMounted, computed } from 'vue';	
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -8,6 +8,9 @@ import { useCurrentUser } from '@/composables/useCurrentUser';
 import { useImportacionTrabajadores } from '@/composables/useImportacionTrabajadores';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
+import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
+import { getPlantillaImportacionTrabajadores } from '@/helpers/plantillaImportacionTrabajadores';
+import CargaMasivaCodigosSiresPanel from '@/components/CargaMasivaCodigosSiresPanel.vue';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import { useModalResumenImportacionStore } from '@/stores/modalResumenImportacion';
 
@@ -18,9 +21,16 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded } = useCurrentUser();
+const { isSIRES } = useRegulatoryPolicy();
 const { importarTrabajadores, isImporting, importProgress } = useImportacionTrabajadores();
 const modalStore = useModalResumenImportacionStore();
 const emit = defineEmits(['closeModal', 'openSubscriptionModal']);
+
+const plantillaImportacion = computed(() =>
+  getPlantillaImportacionTrabajadores(
+    isSIRES.value ? 'SIRES_NOM024' : 'SIN_REGIMEN',
+  ),
+);
 
 // Propiedades reactivas para el archivo
 const selectedFile = ref(null);
@@ -182,6 +192,7 @@ const handleSubmit = async () => {
       selectedFile.value, 
       centrosTrabajo.currentCentroTrabajoId,
       empresas.currentEmpresaId,
+      currentUserId,
     );
     
     // El modal de resumen se mostrará automáticamente desde el composable
@@ -331,14 +342,26 @@ const testResumenMixto = async () => {
             <li>• Sustituye los datos ficticios por la información real de tus trabajadores.</li>
             <li>• No elimines columnas, ni cambies los nombres de los encabezados.</li>
             <li>• El sistema intentará normalizar los datos para que sean consistentes con el sistema.</li>
-            <li>• Las columnas "Número de empleado", "NSS" y "Teléfono" son opcionales. De no requerirse, dejarlas vacías.</li>
-            <li>• El NSS debe tener exactamente 11 dígitos.</li>
-            <li>• <strong>Proveedores en México (NOM-024):</strong> Las columnas de identificación geográfica (Entidad Nacimiento, País de nacimiento, Entidad Residencia, Municipio Residencia, Localidad Residencia) son obligatorias y deben usar códigos INEGI/cat_pais.</li>
+            <template v-if="isSIRES">
+              <li>• <strong>SIRES NOM-024:</strong> La plantilla incluye CURP y campos geográficos obligatorios.</li>
+              <li>• CURP obligatoria en formato RENAPO (18 caracteres). Se permite la genérica XXXX999999XXXXXX99.</li>
+              <li>• Campos geo: use códigos INEGI (entidad, municipio, localidad) y CATALOG_KEY cat_pais para países (ej. 142 = México).</li>
+              <li>• Use el buscador de códigos o descargue los catálogos de referencia en la sección de apoyo geo.</li>
+              <li>• NSS: si se captura, debe tener exactamente 11 dígitos numéricos.</li>
+              <li>• Nombres y apellidos en MAYÚSCULAS, sin abreviaturas (DR., ING., etc.).</li>
+              <li>• Las columnas "Número de empleado" y "Teléfono" son opcionales.</li>
+            </template>
+            <template v-else>
+              <li>• Las columnas "Número de empleado", "NSS" y "Teléfono" son opcionales. De no requerirse, dejarlas vacías.</li>
+            </template>
+            <li>• Los comentarios de ayuda en los encabezados del Excel se ven al pasar el cursor sobre el triángulo rojo.</li>
             <li>• Guarda los cambios y sube el archivo completo.</li>
             <li>• Los trabajadores se importarán automáticamente al sistema.</li>
             <li>• Si requieres asistencia, no dudes en contactarnos vía <span class="text-emerald-600">WhatsApp</span> al número <span class="text-emerald-600">(668) 170 28 50</span>.</li>
           </ul>
         </div>
+
+        <CargaMasivaCodigosSiresPanel v-if="isSIRES" class="mb-6" />
 
         <!-- Botones de acción -->
         <div class="flex space-x-3 mb-4">
@@ -376,8 +399,8 @@ const testResumenMixto = async () => {
 
         <!-- Botón de descarga de plantilla -->
         <div class="text-center">
-          <a href="/template/Plantilla para Importar Trabajadores.xlsx"
-            download="Plantilla para Importar Trabajadores.xlsx">
+          <a :href="plantillaImportacion.href"
+            :download="plantillaImportacion.downloadName">
             <button
               class="w-full bg-white text-gray-800 px-4 py-2 rounded-lg border-2 border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center justify-center"
               :disabled="isImporting"
@@ -438,5 +461,15 @@ html.dark-mode .modal-carga-masiva .carga-masiva-cancelar-btn {
 html.dark-mode .modal-carga-masiva .carga-masiva-cancelar-btn:hover {
   background-color: #475569 !important;
   color: #f8fafc !important;
+}
+
+html.dark-mode .modal-carga-masiva .carga-masiva-codigos-sires {
+  background-color: rgba(30, 27, 75, 0.45) !important;
+  border-color: rgba(99, 102, 241, 0.45) !important;
+}
+
+html.dark-mode .modal-carga-masiva .carga-masiva-codigos-sires input:disabled {
+  background-color: #334155 !important;
+  color: #64748b !important;
 }
 </style>

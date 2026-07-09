@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isVisible" class="fixed inset-0 z-50 overflow-y-auto">
+  <div v-if="isVisible" class="modal-resumen-importacion fixed inset-0 z-50 overflow-y-auto">
     <!-- Overlay de fondo -->
     <div class="flex items-center justify-center min-h-screen px-4 text-center">
       <div class="fixed inset-0 transition-opacity" aria-hidden="true">
@@ -7,16 +7,16 @@
       </div>
 
       <!-- Modal -->
-      <div class="relative inline-block w-full max-w-2xl bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all">
+      <div class="modal-resumen-importacion-panel relative inline-block w-full max-w-2xl bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all">
         <!-- Header -->
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="modal-resumen-importacion-header bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg leading-6 font-medium text-gray-900">
               Resumen de Importación de Trabajadores
             </h3>
             <button
               @click="closeModal"
-              class="text-gray-400 hover:text-gray-600 transition-colors"
+              class="modal-resumen-importacion-close text-gray-400 hover:text-gray-600 transition-colors"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -25,8 +25,8 @@
           </div>
 
           <!-- Estadísticas Generales -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+          <div class="modal-resumen-importacion-stats grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="modal-resumen-importacion-stat bg-green-50 border border-green-200 rounded-lg p-4 text-center">
               <div class="text-2xl font-bold text-green-600">{{ resumen.totalProcessed }}</div>
               <div class="text-sm text-green-700">Total Procesados</div>
             </div>
@@ -66,7 +66,7 @@
         </div>
 
         <!-- Contenido del Modal -->
-        <div class="bg-gray-50 px-4 py-3 sm:px-6">
+        <div class="modal-resumen-importacion-body bg-gray-50 px-4 py-3 sm:px-6">
           <!-- Tabs -->
           <div class="border-b border-gray-200 mb-4">
             <nav class="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-4">
@@ -76,7 +76,7 @@
                   activeTab === 'resumen'
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50',
-                  'whitespace-nowrap py-3 px-3 border-2 rounded-lg font-medium text-sm transition-all duration-200 text-center'
+                  'modal-resumen-importacion-tab whitespace-nowrap py-3 px-3 border-2 rounded-lg font-medium text-sm transition-all duration-200 text-center'
                 ]"
               >
                 Resumen General
@@ -88,7 +88,7 @@
                   activeTab === 'errores'
                     ? 'border-red-500 text-red-600 bg-red-50'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50',
-                  'whitespace-nowrap py-3 px-3 border-2 rounded-lg font-medium text-sm transition-all duration-200 text-center'
+                  'modal-resumen-importacion-tab whitespace-nowrap py-3 px-3 border-2 rounded-lg font-medium text-sm transition-all duration-200 text-center'
                 ]"
               >
                 Errores ({{ resumen.failed }})
@@ -100,7 +100,7 @@
                   activeTab === 'exitosos'
                     ? 'border-green-500 text-green-600 bg-green-50'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50',
-                  'whitespace-nowrap py-3 px-3 border-2 rounded-lg font-medium text-sm transition-all duration-200 text-center'
+                  'modal-resumen-importacion-tab whitespace-nowrap py-3 px-3 border-2 rounded-lg font-medium text-sm transition-all duration-200 text-center'
                 ]"
               >
                 Exitosos ({{ resumen.successful }})
@@ -112,7 +112,7 @@
                   activeTab === 'normalizaciones'
                     ? 'border-purple-500 text-purple-600 bg-purple-50'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50',
-                  'whitespace-nowrap py-3 px-3 border-2 rounded-lg font-medium text-sm transition-all duration-200 text-center'
+                  'modal-resumen-importacion-tab whitespace-nowrap py-3 px-3 border-2 rounded-lg font-medium text-sm transition-all duration-200 text-center'
                 ]"
               >
                 Normalizaciones ({{ trabajadoresConNormalizaciones.length }})
@@ -122,7 +122,7 @@
 
           <!-- Tab: Resumen General -->
           <div v-if="activeTab === 'resumen'" class="space-y-4">
-            <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <div class="modal-resumen-importacion-card bg-white rounded-lg border border-gray-200 p-4">
               <h4 class="text-lg font-medium text-gray-900 mb-3">Detalles de la Importación</h4>
               <div class="grid grid-cols-1 sm:grid-cols-2 md:w-3/5 gap-0">
                 <div>
@@ -177,7 +177,7 @@
 
           <!-- Tab: Errores -->
           <div v-if="activeTab === 'errores' && resumen.failed > 0" class="space-y-4">
-            <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <div class="modal-resumen-importacion-card bg-white rounded-lg border border-gray-200 p-4">
               <h4 class="text-lg font-medium text-red-800 mb-3">Detalle de Errores</h4>
               <div class="space-y-3">
                 <div
@@ -268,7 +268,7 @@
 
           <!-- Tab: Exitosos -->
           <div v-if="activeTab === 'exitosos' && resumen.successful > 0" class="space-y-4">
-            <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <div class="modal-resumen-importacion-card bg-white rounded-lg border border-gray-200 p-4">
               <h4 class="text-lg font-medium text-green-800 mb-3">Trabajadores Importados Exitosamente</h4>
               <div class="space-y-3">
                 <div
@@ -336,7 +336,7 @@
 
           <!-- Tab: Normalizaciones -->
           <div v-if="activeTab === 'normalizaciones'" class="space-y-4">
-            <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <div class="modal-resumen-importacion-card bg-white rounded-lg border border-gray-200 p-4">
               <h4 class="text-lg font-medium text-purple-800 mb-3">Datos Normalizados</h4>
               
               <div v-if="trabajadoresConNormalizaciones.length === 0" class="text-center py-8">
@@ -445,7 +445,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <div class="modal-resumen-importacion-footer bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
             @click="closeModal"
             class="w-full flex items-center justify-center text-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-normal text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
@@ -455,14 +455,14 @@
           <button
             v-if="resumen.failed > 0"
             @click="downloadErrorReport"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            class="modal-resumen-importacion-btn-secondary mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
             📊 Descargar Reporte de Errores
           </button>
           <button
             v-if="trabajadoresConNormalizaciones.length > 0"
             @click="downloadNormalizationReport"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-purple-300 shadow-sm px-4 py-2 bg-purple-50 text-base font-medium text-purple-700 hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            class="modal-resumen-importacion-btn-purple mt-3 w-full inline-flex justify-center rounded-md border border-purple-300 shadow-sm px-4 py-2 bg-purple-50 text-base font-medium text-purple-700 hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
             🔄 Descargar Reporte de Normalizaciones
           </button>

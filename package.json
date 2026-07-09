@@ -9,9 +9,9 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test": "vitest --environment happy-dom",
+    "test:ui": "vitest --ui --environment happy-dom",
+    "test:run": "vitest run --environment happy-dom"
   },
   "dependencies": {
     "@formkit/themes": "^1.6.7",

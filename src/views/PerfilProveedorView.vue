@@ -491,7 +491,7 @@ const logoSrc = computed(() => {
     <Transition appear mode="out-in" name="slide-up">
     <div>
       <div
-        class="relative bg-white text-gray-800 w-full max-w-5xl p-5 sm:p-8 lg:p-10 mt-2 sm:mt-4 rounded-lg shadow-lg mx-auto max-h-none overflow-visible lg:max-h-[82vh] lg:overflow-y-auto">
+        class="form-green-submit relative bg-white text-gray-800 w-full max-w-5xl p-5 sm:p-8 lg:p-10 mt-2 sm:mt-4 rounded-lg shadow-lg mx-auto max-h-none overflow-visible lg:max-h-[82vh] lg:overflow-y-auto">
       <Transition appear name="fade-slow">
         <div v-if="proveedorSalud.loading && !proveedorSalud.proveedorSalud" class="py-12 text-center text-gray-500">
           <i class="fas fa-spinner fa-spin text-2xl text-emerald-600"></i>
@@ -831,14 +831,14 @@ const logoSrc = computed(() => {
             </div>
 
             <hr class="my-3" />
-            <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="form-action-buttons flex flex-col sm:flex-row justify-between gap-2">
               <!-- Botón de Volver -->
               <RouterLink :to="{ name: 'inicio' }"
-                class="nav-action-link block text-center text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg mb-1">
+                class="nav-action-link flex items-center justify-center text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg">
                 Volver
               </RouterLink>
               <!-- Botón de Actualizar -->
-              <div class="w-full sm:w-1/2 pr-2">
+              <div class="w-full sm:w-1/2">
                 <FormKit type="submit">
                   <span v-if="proveedorSalud.saving">Guardando...</span>
                   <span v-else>Actualizar Datos</span>

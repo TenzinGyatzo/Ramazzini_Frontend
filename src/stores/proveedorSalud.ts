@@ -26,6 +26,7 @@ export interface RegulatoryPolicy {
         confidentialityAgreementEnabled: boolean; // Acuerdo de confidencialidad SIRES
         auditTrailEnabled: boolean; // Trail de auditoría NOM-024
         workerIdentificationImmutable: boolean; // Identificación trabajador inmutable post-alta
+        controlPrenatalEnabled: boolean; // Documento Control Prenatal (solo SIN_REGIMEN)
     };
     validation: {
         curpFirmantes: 'required' | 'optional';
@@ -340,6 +341,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     const dailyConsentEnabled = computed(() => regulatoryPolicy.value?.features.dailyConsentEnabled ?? false);
     const confidentialityAgreementEnabled = computed(() => regulatoryPolicy.value?.features.confidentialityAgreementEnabled ?? false);
     const auditTrailEnabled = computed(() => regulatoryPolicy.value?.features.auditTrailEnabled ?? false);
+    const controlPrenatalEnabled = computed(() => regulatoryPolicy.value?.features.controlPrenatalEnabled ?? true);
     
     // Helpers basados en policy - Validations
     const curpFirmantesRequired = computed(() => regulatoryPolicy.value?.validation.curpFirmantes === 'required');
@@ -370,6 +372,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         dailyConsentEnabled,
         confidentialityAgreementEnabled,
         auditTrailEnabled,
+        controlPrenatalEnabled,
         // Validations
         curpFirmantesRequired,
         workerCurpRequired,

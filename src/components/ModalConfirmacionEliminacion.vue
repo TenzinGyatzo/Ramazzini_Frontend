@@ -163,7 +163,7 @@ const documentTypes = computed<Record<string, number>>(() => {
         </div>
 
         <!-- Modal -->
-        <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-lg mx-auto">
+        <div class="modal-confirmacion-eliminacion modal-eliminacion relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-lg mx-auto">
           <!-- Header -->
           <div class="bg-gradient-to-r from-red-500 to-rose-600 px-4 py-3 sm:px-6">
             <div class="flex items-center justify-between">

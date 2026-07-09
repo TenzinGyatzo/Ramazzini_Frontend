@@ -54,7 +54,7 @@ const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
 const { canCreateDocument, getRestrictionMessage } = useUserPermissions();
-const { documentImmutabilityEnabled } = useRegulatoryPolicy();
+const { documentImmutabilityEnabled, controlPrenatalEnabled } = useRegulatoryPolicy();
 const isFinalized = computed(() => documentos.isFinalized);
 const disableEdit = computed(() => documentImmutabilityEnabled.value && isFinalized.value);
 
@@ -235,6 +235,18 @@ const inicializarDesdeRuta = () => {
   }
 
   // Verificar permisos de usuario para el tipo de documento
+  if (tipoDocumento.value === 'controlPrenatal' && !controlPrenatalEnabled.value) {
+    router.push({
+      name: 'expediente-medico',
+      params: {
+        idEmpresa: empresaId.value,
+        idCentroTrabajo: centroTrabajoId.value,
+        idTrabajador: trabajadorId.value,
+      },
+    });
+    return;
+  }
+
   if (tipoDocumento.value && !canCreateDocument(tipoDocumento.value)) {
     console.warn(`Acceso no autorizado: ${tipoDocumento.value}`);
     router.push({

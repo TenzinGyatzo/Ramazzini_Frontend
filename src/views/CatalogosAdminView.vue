@@ -354,9 +354,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto p-4 md:p-8">
+  <div class="catalogos-admin-view max-w-6xl mx-auto p-4 md:p-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-2">Administración de catálogos</h1>
-    <p class="text-sm text-gray-600 mb-6">
+    <p class="catalogos-admin-intro text-sm text-gray-600 mb-6">
       Los catálogos se almacenan en CSV en el servidor. Para actualizaciones masivas use
       <strong>Importar CSV</strong>; el CRUD por fila reescribe el archivo completo.
     </p>
@@ -379,7 +379,7 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-    <div class="grid md:grid-cols-3 gap-4 mb-6">
+    <div class="catalogos-admin-filters dark-mode-input-surface grid md:grid-cols-3 gap-4 mb-6">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Catálogo</label>
         <select
@@ -421,13 +421,13 @@ onMounted(async () => {
 
     <div
       v-if="isLargeCatalog"
-      class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900"
+      class="catalogos-admin-warning mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900"
     >
       Este catálogo tiene más de {{ LARGE_CATALOG_THRESHOLD.toLocaleString() }} registros.
       Se sugiere importar el CSV completo; editar una sola fila puede tardar varios segundos.
     </div>
 
-    <div class="flex flex-wrap gap-2 mb-6">
+    <div class="catalogos-admin-toolbar flex flex-wrap gap-2 mb-6">
       <button
         type="button"
         class="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700"
@@ -437,21 +437,21 @@ onMounted(async () => {
       </button>
       <button
         type="button"
-        class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm hover:bg-gray-200"
+        class="catalogos-admin-btn-secondary px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm hover:bg-gray-200"
         @click="downloadExport"
       >
         Exportar CSV
       </button>
       <button
         type="button"
-        class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm hover:bg-gray-200"
+        class="catalogos-admin-btn-secondary px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm hover:bg-gray-200"
         @click="reloadCache"
       >
         Recargar caché
       </button>
     </div>
 
-    <div class="mb-8 p-4 border border-dashed border-indigo-300 rounded-xl bg-indigo-50/50">
+    <div class="catalogos-admin-import mb-8 p-4 border border-dashed border-indigo-300 rounded-xl bg-indigo-50/50">
       <h2 class="font-semibold text-gray-800 mb-2">Actualizar catálogo completo</h2>
       <input type="file" accept=".csv,text/csv" class="text-sm mb-2" @change="onImportFileChange" />
       <button
@@ -466,16 +466,16 @@ onMounted(async () => {
 
     <div
       v-if="loading"
-      class="flex flex-col items-center justify-center py-12 border border-gray-200 rounded-xl bg-gray-50/80"
+      class="catalogos-admin-loading flex flex-col items-center justify-center py-12 border border-gray-200 rounded-xl bg-gray-50/80"
     >
       <div
         class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"
       />
       <p class="mt-3 text-sm text-gray-600">Cargando entradas…</p>
     </div>
-    <div v-else class="overflow-x-auto border border-gray-200 rounded-xl">
+    <div v-else class="catalogos-admin-table overflow-x-auto border border-gray-200 rounded-xl">
       <table class="min-w-full text-sm">
-        <thead class="bg-gray-50">
+        <thead class="catalogos-admin-table-head bg-gray-50">
           <tr>
             <th class="text-left px-4 py-3 font-medium text-gray-700">Código</th>
             <th class="text-left px-4 py-3 font-medium text-gray-700">Descripción</th>
@@ -486,21 +486,21 @@ onMounted(async () => {
           <tr
             v-for="row in items"
             :key="row.code"
-            class="border-t border-gray-100 hover:bg-gray-50"
+            class="catalogos-admin-table-row border-t border-gray-100 hover:bg-gray-50"
           >
-            <td class="px-4 py-2 font-mono text-xs">{{ row.code }}</td>
+            <td class="px-4 py-2 font-mono text-xs catalogos-admin-code">{{ row.code }}</td>
             <td class="px-4 py-2">{{ row.description }}</td>
             <td class="px-4 py-2 text-right space-x-2">
               <button
                 type="button"
-                class="text-indigo-600 hover:underline"
+                class="catalogos-admin-action-edit text-indigo-600 hover:underline"
                 @click="openEdit(row)"
               >
                 Editar
               </button>
               <button
                 type="button"
-                class="text-red-600 hover:underline"
+                class="catalogos-admin-action-delete text-red-600 hover:underline"
                 @click="openDeleteModal(row)"
               >
                 Eliminar
@@ -516,12 +516,12 @@ onMounted(async () => {
       </table>
     </div>
 
-    <div class="flex items-center justify-between mt-4 text-sm text-gray-600">
+    <div class="catalogos-admin-pagination flex items-center justify-between mt-4 text-sm text-gray-600">
       <span>{{ total }} registros · página {{ page }} / {{ totalPages }}</span>
       <div class="flex gap-2">
         <button
           type="button"
-          class="px-3 py-1 border rounded disabled:opacity-40"
+          class="catalogos-admin-page-btn px-3 py-1 border rounded disabled:opacity-40"
           :disabled="page <= 1"
           @click="page--"
         >
@@ -529,7 +529,7 @@ onMounted(async () => {
         </button>
         <button
           type="button"
-          class="px-3 py-1 border rounded disabled:opacity-40"
+          class="catalogos-admin-page-btn px-3 py-1 border rounded disabled:opacity-40"
           :disabled="page >= totalPages"
           @click="page++"
         >
@@ -544,16 +544,16 @@ onMounted(async () => {
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       @mousedown.self="closeDeleteModal"
     >
-      <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6" @mousedown.stop>
+      <div class="catalogos-admin-modal bg-white rounded-xl shadow-xl max-w-lg w-full p-6" @mousedown.stop>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirmar eliminación</h3>
         <p class="text-sm text-gray-600 mb-6">
           ¿Eliminar {{ deleteTipoRegistro }} identificado como
-          <strong>"{{ deleteIdentificacion }}"</strong>? Esta acción no se puede deshacer.
+          <strong class="catalogos-admin-modal-strong">"{{ deleteIdentificacion }}"</strong>? Esta acción no se puede deshacer.
         </p>
         <div class="flex justify-end gap-2">
           <button
             type="button"
-            class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
+            class="catalogos-admin-btn-secondary px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
             @click="closeDeleteModal"
           >
             Cancelar
@@ -575,10 +575,10 @@ onMounted(async () => {
       @mousedown.self="closeForm"
     >
       <div
-        class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto"
+        class="catalogos-admin-modal catalogos-admin-form dark-mode-input-surface bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto"
         @mousedown.stop
       >
-        <h3 class="text-lg font-semibold mb-4">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
           {{ formMode === "create" ? "Nueva entrada" : "Editar entrada" }}
         </h3>
         <div class="space-y-3">
@@ -656,14 +656,14 @@ onMounted(async () => {
         <div class="flex justify-end gap-2 mt-6">
           <button
             type="button"
-            class="px-4 py-2 border rounded-lg"
+            class="catalogos-admin-btn-secondary px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             @click="closeForm"
           >
             Cancelar
           </button>
           <button
             type="button"
-            class="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             @click="saveForm"
           >
             Guardar

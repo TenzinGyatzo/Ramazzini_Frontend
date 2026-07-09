@@ -217,7 +217,7 @@ const sugerenciasNatLesion = [ "Contusi√≥n", "Traumatismo", "Fractura", "Luxaci√
 </script>
 
 <template>
-  <div class="modal fixed top-0 left-0 z-50 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
+  <div class="modal modal-rts fixed top-0 left-0 z-50 p-4 sm:p-8 h-screen w-full flex items-center justify-center">
     <!-- Fondo -->
     <div
       class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
@@ -230,14 +230,14 @@ const sugerenciasNatLesion = [ "Contusi√≥n", "Traumatismo", "Fractura", "Luxaci√
       :class="{ 'modal-dismiss-pulse': dismissPulse }"
     >
         <!-- Bot√≥n cerrar -->
-        <div class="absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer" @click="requestDismiss">
+        <div class="modal-rts-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer" @click="requestDismiss">
           &times;
         </div>
 
         <h1 class="text-2xl font-semibold mb-2">Riesgos de Trabajo</h1>
         <hr class="mb-4">
         <!-- Informaci√≥n del trabajador -->
-        <div class="mb-3 p-4 bg-gray-50 rounded-lg">
+        <div class="modal-rts-worker-info mb-3 p-4 bg-gray-50 rounded-lg">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <p class="text-sm font-medium text-gray-600">Nombre del trabajador</p>
@@ -273,12 +273,12 @@ const sugerenciasNatLesion = [ "Contusi√≥n", "Traumatismo", "Fractura", "Luxaci√
           <h2 class="text-lg font-semibold text-gray-800 mb-2">Historial de Riesgos de Trabajo</h2>
 
             <div v-if="trabajadoresStore.loadingModal"
-               class="p-4 border rounded-lg shadow-sm text-center bg-gray-50">
+               class="modal-rts-empty p-4 border rounded-lg shadow-sm text-center bg-gray-50">
             <p class="text-gray-600">Cargando riesgos de trabajo...</p>
             </div>
 
             <div v-else-if="!trabajadoresStore.currentTrabajador?.riesgosTrabajo?.length" 
-               class="p-4 border rounded-lg shadow-sm text-center bg-gray-50">
+               class="modal-rts-empty p-4 border rounded-lg shadow-sm text-center bg-gray-50">
             <p class="text-gray-600">No hay riesgos de trabajo registrados</p>
             </div>
 
@@ -286,7 +286,7 @@ const sugerenciasNatLesion = [ "Contusi√≥n", "Traumatismo", "Fractura", "Luxaci√
               v-else
               v-for="rt in riesgosTrabajo"
               :key="rt._id"
-              class="p-3 border border-gray-300 rounded-lg shadow-sm bg-gray-50 flex flex-col gap-0 text-gray-700"
+              class="modal-rts-item p-3 border border-gray-300 rounded-lg shadow-sm bg-gray-50 flex flex-col gap-0 text-gray-700"
             >
               <!-- Naturaleza de la lesi√≥n y fecha -->
               <div class="flex justify-between items-center">
@@ -339,8 +339,8 @@ const sugerenciasNatLesion = [ "Contusi√≥n", "Traumatismo", "Fractura", "Luxaci√
 
               <!-- Botones de acci√≥n -->
               <div class="flex justify-end gap-2 mt-1">
-                <button @click="editarRT(rt)" class="text-blue-600 hover:underline text-xs">Editar</button>
-                <button @click="toggleDeleteModal(rt._id, rt)" class="text-red-600 hover:underline text-xs">Eliminar</button>
+                <button @click="editarRT(rt)" class="modal-rts-action-edit text-blue-600 hover:underline text-xs">Editar</button>
+                <button @click="toggleDeleteModal(rt._id, rt)" class="modal-rts-action-delete text-red-600 hover:underline text-xs">Eliminar</button>
               </div>
             </div>
 
@@ -351,13 +351,13 @@ const sugerenciasNatLesion = [ "Contusi√≥n", "Traumatismo", "Fractura", "Luxaci√
           </button>
 
           <button @click="requestDismiss"
-            class="mt-3 w-full py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100">
+            class="modal-rts-btn-secondary mt-3 w-full py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100">
             Cerrar
           </button>
         </div>
 
         <!-- Formulario para crear o editar RT -->
-        <div v-if="modo === 'nuevo' || modo === 'editar'" class="space-y-4">
+        <div v-if="modo === 'nuevo' || modo === 'editar'" class="modal-rts-form space-y-4">
           <h2 class="text-lg font-semibold text-gray-800 mb-2">
             {{ modo === 'editar' ? 'Editar Riesgo de Trabajo' : 'Registrar Nueva RT o Reca√≠da' }}
           </h2>
@@ -497,7 +497,7 @@ const sugerenciasNatLesion = [ "Contusi√≥n", "Traumatismo", "Fractura", "Luxaci√
 
           <!-- Botones de acci√≥n -->
           <div class="flex justify-between mt-4 gap-4">
-            <button @click="cancelFormEdit" class="w-1/2 py-2 bg-white border text-gray-700 font-medium rounded-lg hover:bg-gray-100">
+            <button @click="cancelFormEdit" class="modal-rts-btn-secondary w-1/2 py-2 bg-white border text-gray-700 font-medium rounded-lg hover:bg-gray-100">
               Cancelar
             </button>
             <button @click="handleSubmit" class="w-1/2 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">

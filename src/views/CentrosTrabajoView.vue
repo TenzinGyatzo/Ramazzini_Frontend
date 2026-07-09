@@ -234,7 +234,7 @@ watch(
       <div class="min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <!-- Header moderno con información de la empresa -->
-          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden mb-8">
+          <div class="centros-empresa-header bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden mb-8">
             <div class="p-6">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <!-- Información de la empresa -->
@@ -247,8 +247,8 @@ watch(
                       :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
                       class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg shadow-lg"
                     />
-                    <div v-else class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                      <i class="fas fa-building text-gray-400 text-xl"></i>
+                    <div v-else class="centros-empresa-logo-placeholder w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                      <i class="centros-empresa-logo-placeholder-icon fas fa-building text-gray-400 text-xl"></i>
                     </div>
                   </div>
                   

@@ -3211,8 +3211,8 @@ const tablaCintura = computed(() => {
               :alt="'Logo de ' + empresasStore.currentEmpresa.nombreComercial"
               class="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded mx-auto xl:mx-0"
             />
-            <div v-else class="w-full sm:w-48 h-28 sm:h-32 flex flex-col items-center justify-center bg-gradient-to-r from-gray-200 to-gray-300 text-gray-500 rounded text-center px-4 border-2 border-dashed border-gray-400 mx-auto xl:mx-0">
-                <i class="fas fa-camera text-3xl sm:text-4xl mb-2"></i> <!-- Icono de FontAwesome -->
+            <div v-else class="empresa-item-placeholder w-full sm:w-48 h-28 sm:h-32 flex flex-col items-center justify-center bg-gradient-to-r from-gray-200 to-gray-300 text-gray-500 rounded text-center px-4 border-2 border-dashed border-gray-400 mx-auto xl:mx-0">
+                <i class="empresa-item-placeholder-icon fas fa-camera text-3xl sm:text-4xl mb-2"></i> <!-- Icono de FontAwesome -->
                 <span class="text-xs sm:text-sm text-center">Identifica más rápido a tu cliente agregando un logotipo</span>
             </div>
 

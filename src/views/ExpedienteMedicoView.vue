@@ -449,6 +449,7 @@ const toggleRouteSelection = (route: string, isSelected: boolean) => {
 };
 
 const documentImmutabilityEnabled = computed(() => proveedorSaludStore.documentImmutabilityEnabled);
+const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
 
 const isDocumentoInmutable = (doc: { estado?: string }) => {
     if (!documentImmutabilityEnabled.value) return false;
@@ -483,7 +484,9 @@ const toggleDeletionMode = () => {
             yearData.documentosExternos?.forEach(d => checkDoc(d, 'documentoExterno', 'Documento Externo'));
             yearData.notasMedicas?.forEach(d => checkDoc(d, 'notaMedica', 'Nota Medica'));
             yearData.recetas?.forEach(d => checkDoc(d, 'receta', 'Receta'));
-            yearData.controlPrenatal?.forEach(d => checkDoc(d, 'controlPrenatal', 'Control Prenatal'));
+            if (controlPrenatalEnabled.value) {
+                yearData.controlPrenatal?.forEach(d => checkDoc(d, 'controlPrenatal', 'Control Prenatal'));
+            }
             yearData.historiaOtologica?.forEach(d => checkDoc(d, 'historiaOtologica', 'Historia Otologica'));
             yearData.previoEspirometria?.forEach(d => checkDoc(d, 'previoEspirometria', 'Previo Espirometria'));
         });
@@ -670,15 +673,17 @@ const handleDeleteSelected = async () => {
             });
 
             // Control Prenatal
-            yearData.controlPrenatal?.forEach(controlPrenatal => {
-                const rutaBase = obtenerRutaDocumento(controlPrenatal, 'Control Prenatal');
-                const fecha = obtenerFechaDocumento(controlPrenatal) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(controlPrenatal, 'Control Prenatal', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(controlPrenatal)) {
-                    documentosAEliminar.push({ id: controlPrenatal._id, tipo: 'controlPrenatal' });
-                }
-            });
+            if (controlPrenatalEnabled.value) {
+                yearData.controlPrenatal?.forEach(controlPrenatal => {
+                    const rutaBase = obtenerRutaDocumento(controlPrenatal, 'Control Prenatal');
+                    const fecha = obtenerFechaDocumento(controlPrenatal) || 'SinFecha';
+                    const nombreArchivo = obtenerNombreArchivo(controlPrenatal, 'Control Prenatal', fecha);
+                    const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                    if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(controlPrenatal)) {
+                        documentosAEliminar.push({ id: controlPrenatal._id, tipo: 'controlPrenatal' });
+                    }
+                });
+            }
 
             // Historia Otologica
             yearData.historiaOtologica?.forEach(historiaOtologica => {
@@ -864,7 +869,7 @@ const totalDocumentosCreados = computed(() => {
       (yearData.certificados?.length || 0) +
       (yearData.certificadosExpedito?.length || 0) +
       (yearData.notasMedicas?.length || 0) +
-      (yearData.controlPrenatal?.length || 0) +
+      (controlPrenatalEnabled.value ? (yearData.controlPrenatal?.length || 0) : 0) +
       (yearData.historiaOtologica?.length || 0) +
       (yearData.previoEspirometria?.length || 0) +
       (yearData.entrevistasPsicologicas?.length || 0) +

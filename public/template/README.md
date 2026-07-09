@@ -1,109 +1,60 @@
-# Plantilla de Importación de Trabajadores
+# Plantillas de Importación de Trabajadores
 
-## Archivo: `Plantilla para Importar Trabajadores.xlsx`
+## Archivos
 
-Esta plantilla se utiliza para la importación masiva de trabajadores al sistema.
+| Archivo | Régimen | Columnas |
+|---------|---------|----------|
+| `Plantilla para Importar Trabajadores.xlsx` | SIN_REGIMEN | 12 columnas básicas |
+| `Plantilla Importar Trabajadores SIRES NOM024.xlsx` | SIRES_NOM024 | 19 columnas (básicas + CURP + geo) |
 
-## Columnas Requeridas (NOM-024 - Actualización Phase 1)
+## Plantilla SIN_REGIMEN (12 columnas)
 
-### Datos Personales Básicos
-- **Num. Trab.** (opcional): Número de empleado
-- **Primer Apellido** (requerido)
-- **Segundo Apellido** (requerido)
-- **Nombre** (requerido)
-- **NSS** (opcional): Número de Seguridad Social (11 dígitos)
-- **Edad** (requerido)
-- **Sexo** (requerido): Masculino/Femenino
-- **Escolaridad** (requerido)
+`numeroEmpleado`, `nss`, `primerApellido`, `segundoApellido`, `nombre`, `fechaNacimiento`, `sexo`, `escolaridad`, `puesto`, `fechaIngreso`, `telefono`, `estadoCivil`
 
-### **NUEVAS COLUMNAS NOM-024 (Phase 1)**
-Las siguientes columnas fueron agregadas para cumplir con NOM-024-SSA3-2012:
+- `numeroEmpleado`, `nss`, `telefono`, `fechaIngreso`, `segundoApellido`: opcionales
+- Resto: obligatorios para importación
 
-- **Entidad Nacimiento**: Código INEGI de 2 dígitos (ej. "09" para Ciudad de México)
-  - Campo: `entidadNacimiento`
-  - Obligatorio para proveedores MX
-  - Valores especiales: "NE" (No Especificado), "00" (Nacido en el extranjero)
+## Plantilla SIRES_NOM024 (19 columnas)
 
-- **País de nacimiento**: CATALOG_KEY numérico de cat_pais (ej. `142` para México, `248` para NO ESPECIFICADO)
-  - Campo: `paisNacimiento`
-  - Obligatorio para proveedores MX
-  - Formato: número entero (CATALOG_KEY del catálogo cat_pais)
+Las 12 columnas básicas más:
 
-- **Entidad Residencia**: Código INEGI de 2 dígitos
-  - Campo: `entidadResidencia`
-  - Obligatorio para proveedores MX
-  - Valores especiales: "NE" (No Especificado)
+| Columna | Descripción |
+|---------|-------------|
+| `curp` | CURP RENAPO (18 caracteres). Obligatorio. |
+| `entidadNacimiento` | Código INEGI 2 dígitos (01-32, NE, 00) |
+| `paisNacimiento` | CATALOG_KEY cat_pais (ej. 142 = México) |
+| `entidadResidencia` | Código INEGI 2 dígitos |
+| `municipioResidencia` | Código INEGI 3 dígitos |
+| `localidadResidencia` | Código INEGI 4 dígitos |
+| `paisResidencia` | CATALOG_KEY cat_pais |
 
-- **Municipio Residencia**: Código INEGI de 3 dígitos
-  - Campo: `municipioResidencia`
-  - Obligatorio para proveedores MX
-  - Formato: 3 dígitos (ej. "015")
+Todos los campos NOM-024 son **obligatorios** para proveedores en régimen SIRES_NOM024.
 
-- **Localidad Residencia**: Código INEGI de 4 dígitos
-  - Campo: `localidadResidencia`
-  - Obligatorio para proveedores MX
-  - Formato: 4 dígitos (ej. "0001")
-  - Valores especiales: "NND" (No Hay Dato)
+## Comentarios en encabezados
 
-### Datos Laborales
-- **Puesto** (requerido)
-- **Antigüedad** (requerido)
-- **Teléfono** (opcional)
-- **Estado Civil** (requerido)
+Cada encabezado incluye una nota de ayuda (OBLIGATORIO / OPCIONAL y reglas de formato). Las notas están **ocultas por defecto**; pase el cursor sobre el triángulo rojo en la esquina de la celda para verlas.
 
-### Datos de Salud
-- IMC, Circunferencia Cintura, Tensión Arterial, etc.
-- Antecedentes Personales Patológicos
-- Aptitud, Audiometría, Agentes de Riesgo
+## Regenerar plantillas
 
-## Instrucciones para Actualizar la Plantilla
+Desde la carpeta `backend`:
 
-1. **Abrir el archivo Excel**: `Plantilla para Importar Trabajadores.xlsx`
+```bash
+npm run generate:import-templates
+```
 
-2. **Insertar las 5 nuevas columnas** después de "Escolaridad" y antes de "Puesto":
-   - Columna I: `Entidad Nacimiento`
-   - Columna J: `País de nacimiento`
-   - Columna K: `Entidad Residencia`
-   - Columna L: `Municipio Residencia`
-   - Columna M: `Localidad Residencia`
+El script escribe ambos archivos en `frontend/public/template/`.
 
-3. **Agregar datos de ejemplo** para cada columna:
-   - Entidad Nacimiento: `09` (ejemplo: Ciudad de México)
-   - País de nacimiento: `142` (ejemplo: México)
-   - Entidad Residencia: `09`
-   - Municipio Residencia: `015`
-   - Localidad Residencia: `0001`
+## Catálogos de referencia (solo SIRES_NOM024)
 
-4. **Guardar el archivo** manteniendo el formato `.xlsx`
+En el modal **Importar Trabajadores** (régimen SIRES) hay una sección de apoyo geo:
 
-## Compatibilidad hacia atrás
+1. **Consultar códigos** — buscador jerárquico (país, entidad, municipio, localidad) con botón copiar.
+2. **Descargar CSV** — catálogos de países, entidades y municipios; localidades solo del municipio seleccionado.
 
-✅ **Plantillas antiguas siguen funcionando**: Si el archivo Excel no incluye las nuevas columnas, el sistema las tratará como vacías y:
-- Para proveedores **MX**: el backend rechazará los registros por campos faltantes (validación NOM-024)
-- Para proveedores **no-MX**: los registros se importarán sin problema
+Los archivos CSV se generan desde los mismos catálogos que valida la importación (`GET /api/catalogs/import-reference/:type/export`).
 
-## Validación Backend
+## Compatibilidad
 
-El backend valida:
-- Formato de códigos INEGI
-- Obligatoriedad condicional según país del proveedor
-- Longitud y formato de campos
-- Códigos válidos según catálogos oficiales
-
-## Export de Trabajadores
-
-El archivo de exportación (`exportarExcel.ts`) ya incluye estas columnas automáticamente, por lo que cualquier export generará archivos con la estructura actualizada.
-
-## Referencias
-
-- NOM-024-SSA3-2012: Sistemas de información de registro electrónico para la salud
-- Catálogos INEGI: Códigos de entidades, municipios y localidades
-- Task: FE-TASK-12 (Task 32) - Phase 1 NOM-024
-
-
-
-
-
-
-
-
+- No elimine ni renombre columnas de encabezado.
+- La fila 2 contiene datos ficticios de ejemplo; sustitúyalos por datos reales.
+- El backend acepta encabezados en camelCase (como en la plantilla) o alias en español para campos geo.

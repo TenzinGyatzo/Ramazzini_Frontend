@@ -72,7 +72,7 @@ const volver = () => {
   <Transition appear mode="out-in" name="slide-up">
     <div
       v-if="registroExitoso == false"
-      class="add-user-view relative bg-white text-gray-800 w-full max-w-lg p-8 sm:p-10 mt-2 rounded-lg max-h-[82vh] shadow-lg overflow-y-auto mx-auto"
+      class="form-green-submit relative bg-white text-gray-800 w-full max-w-lg p-8 sm:p-10 mt-2 rounded-lg max-h-[82vh] shadow-lg overflow-y-auto mx-auto"
     >
       <h1 class="text-2xl sm:text-3xl text-gray-800">Agregar usuario adicional</h1>
       <hr class="mt-2 mb-3" />
@@ -161,19 +161,17 @@ const volver = () => {
         </div>
 
         <hr class="my-3" />
-        <div
-          class="flex flex-col sm:flex-row justify-between items-center gap-2"
-        >
+        <div class="form-action-buttons flex flex-col sm:flex-row justify-between gap-2">
           <!-- Botón de Volver -->
           <button
             type="button"
-            class="text-base sm:text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg mb-1"
+            class="flex items-center justify-center text-base sm:text-lg w-full sm:w-1/2 rounded-lg bg-white font-medium text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg"
             @click="volver"
           >
             Volver
           </button>
           <!-- Botón de Actualizar -->
-          <div class="w-full sm:w-1/2 pr-2">
+          <div class="w-full sm:w-1/2">
             <FormKit type="submit">Registrar </FormKit>
           </div>
         </div>
@@ -209,20 +207,3 @@ const volver = () => {
     </div>
   </Transition>
 </template>
-
-<style>
-html.dark-mode .add-user-view .formkit-outer[data-type='submit'] .formkit-input,
-html.dark-mode .add-user-view .formkit-wrapper button[type='submit'],
-html.dark-mode .add-user-view .formkit-input[type='submit'] {
-  background-color: #047857 !important;
-  border-color: #065f46 !important;
-  color: #ecfdf5 !important;
-}
-
-html.dark-mode .add-user-view .formkit-outer[data-type='submit'] .formkit-input:hover,
-html.dark-mode .add-user-view .formkit-wrapper button[type='submit']:hover,
-html.dark-mode .add-user-view .formkit-input[type='submit']:hover {
-  background-color: #065f46 !important;
-  border-color: #064e3b !important;
-}
-</style>

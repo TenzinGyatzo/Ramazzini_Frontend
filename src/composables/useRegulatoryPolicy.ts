@@ -98,6 +98,13 @@ export function useRegulatoryPolicy() {
   );
 
   /**
+   * Indica si el documento Control Prenatal está habilitado
+   */
+  const controlPrenatalEnabled = computed<boolean>(() =>
+    proveedorSaludStore.controlPrenatalEnabled
+  );
+
+  /**
    * Administración de catálogos: env flag AND régimen SIRES
    */
   const canAccessCatalogAdmin = computed<boolean>(() =>
@@ -148,6 +155,7 @@ export function useRegulatoryPolicy() {
     dailyConsentEnabled,
     confidentialityAgreementEnabled,
     auditTrailEnabled,
+    controlPrenatalEnabled,
     canAccessCatalogAdmin,
     // Validations
     curpFirmantesRequired,

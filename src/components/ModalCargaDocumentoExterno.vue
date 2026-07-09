@@ -260,7 +260,7 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="modal fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
+  <div class="modal modal-documento-externo modal-carga-documento-externo fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
     <div
       class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
@@ -286,7 +286,7 @@ const handleSubmit = async () => {
         <!-- Área de arrastrar y soltar -->
         <div class="mb-6">
           <div 
-            class="border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer"
+            class="modal-documento-externo-dropzone border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer"
             :class="[
               isDragOver 
                 ? 'border-emerald-500 bg-emerald-50 scale-105' 
@@ -379,11 +379,11 @@ const handleSubmit = async () => {
             </button>
           </div>
           
-          <div class="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
+          <div class="modal-documento-externo-files space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
             <div 
               v-for="(file, index) in selectedFiles" 
               :key="index"
-              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              class="modal-documento-externo-file-item flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <div class="flex items-center space-x-3">
                 <!-- Icono según tipo de archivo -->
@@ -430,7 +430,7 @@ const handleSubmit = async () => {
         </div>
 
         <!-- Información adicional -->
-        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div class="modal-documento-externo-info mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h4 class="font-medium text-blue-900 mb-2 flex items-center">
             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
@@ -460,7 +460,7 @@ const handleSubmit = async () => {
           <button
             @click="requestDismiss"
             :disabled="isUploading"
-            class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="modal-documento-externo-btn-secondary flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Cancelar
           </button>

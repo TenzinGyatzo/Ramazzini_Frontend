@@ -13,6 +13,7 @@ const documentosStore = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
 
 const documentImmutabilityEnabled = computed(() => proveedorSaludStore.documentImmutabilityEnabled);
+const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
 
 const isDocumentoInmutable = (doc: { estado?: string }) => {
     if (!documentImmutabilityEnabled.value) return false;
@@ -94,7 +95,7 @@ const totalDocumentos = computed(() => {
            (props.documents.certificadosExpedito?.length || 0) +
            (props.documents.documentosExternos?.length || 0) +
            (props.documents.notasMedicas?.length || 0) +
-           (props.documents.controlPrenatal?.length || 0) +
+           (controlPrenatalEnabled.value ? (props.documents.controlPrenatal?.length || 0) : 0) +
            (props.documents.historiaOtologica?.length || 0) +
            (props.documents.previoEspirometria?.length || 0) +
            (props.documents.recetas?.length || 0) +
@@ -147,7 +148,9 @@ const documentoRutasInfo = computed(() => {
     props.documents.certificadosExpedito?.forEach((doc) => pushDoc(doc, 'Certificado Expedito'));
     props.documents.documentosExternos?.forEach((doc) => pushDoc(doc, 'Documento Externo'));
     props.documents.notasMedicas?.forEach((doc) => pushDoc(doc, 'Nota Medica'));
-    props.documents.controlPrenatal?.forEach((doc) => pushDoc(doc, 'Control Prenatal'));
+    if (controlPrenatalEnabled.value) {
+        props.documents.controlPrenatal?.forEach((doc) => pushDoc(doc, 'Control Prenatal'));
+    }
     props.documents.historiaOtologica?.forEach((doc) => pushDoc(doc, 'Historia Otologica'));
     props.documents.previoEspirometria?.forEach((doc) => pushDoc(doc, 'Previo Espirometria'));
     props.documents.recetas?.forEach((doc) => pushDoc(doc, 'Receta'));
@@ -580,7 +583,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             </div>
 
             <!-- Control Prenatal -->
-            <div v-if="documents.controlPrenatal && documents.controlPrenatal.length > 0">
+            <div v-if="controlPrenatalEnabled && documents.controlPrenatal && documents.controlPrenatal.length > 0">
                 <div v-for="(controlPrenatal, index) in documents.controlPrenatal" :key="controlPrenatal._id"
                      class="transition-all duration-200 hover:bg-gray-50"
 >

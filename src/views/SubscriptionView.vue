@@ -296,13 +296,21 @@ const porcentajeHistorias = computed(() => {
       <div 
         v-for="plan in plans" 
         :key="plan.id" 
-        class="bg-white border-2 p-5 sm:p-6 rounded-xl shadow-lg hover:shadow-xl cursor-pointer transition-all duration-300 ease-in-out transform hover:scale-105"
+        class="subscription-plan-card bg-white border-2 border-gray-200 p-5 sm:p-6 rounded-xl shadow-lg hover:shadow-xl cursor-pointer transition-all duration-300 ease-in-out transform hover:scale-105"
         :class="{
-          'border-sky-500 bg-sky-50': selectedPlan?.id === plan.id,
-          'border-green-500 bg-green-50': suscripcionActual?.reason?.includes(plan.name)
+          'subscription-plan-card--selected': selectedPlan?.id === plan.id,
+          'subscription-plan-card--current': suscripcionActual?.reason?.includes(plan.name),
         }"
         @click="selectedPlan = plan; extraHistories = 0;">
-        <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">{{ plan.name }}</h2>
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <h2 class="text-xl sm:text-2xl font-semibold text-gray-700">{{ plan.name }}</h2>
+          <span
+            v-if="selectedPlan?.id === plan.id"
+            class="subscription-plan-card__badge subscription-plan-card__badge--selected shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
+          >
+            Seleccionado
+          </span>
+        </div>
         <p class="text-2xl sm:text-3xl mb-4 font-light text-sky-600">${{ formatCurrency(plan.price) }}/mes</p>
         <ul class="text-gray-600 divide-y divide-gray-200 text-sm sm:text-base">
           <li class="py-1">{{ plan.histories }} Historias Clínicas</li>
@@ -362,7 +370,7 @@ const porcentajeHistorias = computed(() => {
         </div>
       </div>
       <!-- Visualización de uso actual -->
-      <div class="bg-white p-5 sm:p-6 rounded-xl shadow-md">
+      <div class="subscription-usage-card bg-white p-5 sm:p-6 rounded-xl shadow-md">
         <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">Uso de Recursos</h2>
 
         <!-- Uso de Historias Clínicas -->
@@ -474,7 +482,7 @@ const porcentajeHistorias = computed(() => {
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Sección de Add-ons -->
-      <div class="bg-white p-5 sm:p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300 ease-in-out">
+      <div class="subscription-addon-card bg-white p-5 sm:p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300 ease-in-out">
         <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-gray-700">Extras para tu Plan</h2>
         <div class="flex flex-col gap-6 text-sm sm:text-base">
           <div>
@@ -596,24 +604,24 @@ const porcentajeHistorias = computed(() => {
   <!-- Modal de recomendaciones -->
   <Teleport to="body">
     <transition name="fade">
-      <div v-if="mostrarModalPago" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300 ease-in-out" @click.self="mostrarModalPago = false">
-        <div class="bg-white rounded-xl shadow-2xl max-w-lg lg:max-w-xl w-full m-4 transform transition-all duration-300 ease-in-out scale-95 opacity-0 animate-fadeInScale">
+      <div v-if="mostrarModalPago" class="subscription-pago-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300 ease-in-out" @click.self="mostrarModalPago = false">
+        <div class="subscription-pago-modal bg-white rounded-xl shadow-2xl max-w-lg lg:max-w-xl w-full m-4 transform transition-all duration-300 ease-in-out scale-95 opacity-0 animate-fadeInScale">
           <div class="absolute top-4 right-4">
-            <button @click="mostrarModalPago = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <button @click="mostrarModalPago = false" class="subscription-pago-modal__close text-gray-400 hover:text-gray-600 transition-colors">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
 
-          <div class="p-6 sm:p-8 space-y-5">
+          <div class="subscription-pago-modal__body p-6 sm:p-8 space-y-5">
             <div class="text-center">
               <span class="text-4xl lg:text-5xl mb-2">💳</span> <h2 class="text-2xl lg:text-3xl font-bold text-gray-800">¡Prepara tu Pago Exitoso!</h2>
             </div>
 
-            <p class="text-gray-600 text-sm lg:text-base text-center">
+            <p class="subscription-pago-modal__intro text-gray-600 text-sm lg:text-base text-center">
               Para asegurar que tu suscripción se active sin problemas, sigue estos simples consejos:
             </p>
 
-            <div class="bg-sky-50 border border-sky-200 rounded-lg p-4 space-y-3">
+            <div class="subscription-pago-modal__tips bg-sky-50 border border-sky-200 rounded-lg p-4 space-y-3">
               <p class="text-sm lg:text-base text-sky-700">
                 <strong class="font-semibold">🔒 Tu seguridad es clave.</strong> Mercado Pago utiliza sistemas avanzados para prevenir fraudes. Esto es excelente para proteger tus datos, aunque en ocasiones puede rechazar pagos legítimos si detecta algo inusual.
               </p>
@@ -638,22 +646,22 @@ const porcentajeHistorias = computed(() => {
               </ul>
             </div>
 
-            <p class="text-xs lg:text-sm text-gray-500 text-center">
-                Si tu pago es rechazado, ¡no te preocupes! Intenta con otro método o <a href="https://wa.link/yzc8p1" target="_blank" rel="noopener noreferrer" class="text-sky-600 hover:underline font-medium">contáctanos</a>. Estamos para ayudarte.
+            <p class="subscription-pago-modal__footer-note text-xs lg:text-sm text-gray-500 text-center">
+                Si tu pago es rechazado, ¡no te preocupes! Intenta con otro método o <a href="https://wa.link/yzc8p1" target="_blank" rel="noopener noreferrer" class="subscription-pago-modal__link text-sky-600 hover:underline font-medium">contáctanos</a>. Estamos para ayudarte.
             </p>
 
             <div class="flex flex-col sm:flex-row justify-end gap-3 pt-3">
               <button 
                 @click="!loading && (mostrarModalPago = false)"
                 :disabled="loading"
-                class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 transition-all text-sm lg:text-base font-medium w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                class="subscription-pago-modal__btn-secondary px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 transition-all text-sm lg:text-base font-medium w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cerrar
               </button>
               <button
                 @click="() => { loading = true; requestSubscription(); }"
                 :disabled="loading"
-                class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg focus:ring-2 focus:ring-sky-300 focus:ring-offset-1 transition-all text-sm lg:text-base font-semibold w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                class="subscription-pago-modal__btn-primary px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg focus:ring-2 focus:ring-sky-300 focus:ring-offset-1 transition-all text-sm lg:text-base font-semibold w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ loading ? 'Procesando...' : 'Entendido, ir al Pago' }}
               </button>
@@ -701,9 +709,53 @@ const porcentajeHistorias = computed(() => {
     animation: fadeInScale 0.3s ease-out forwards;
   }
 
+  .subscription-plan-card--selected {
+    border-color: #0ea5e9 !important;
+    background-color: #f0f9ff !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22), 0 10px 25px -8px rgba(14, 116, 144, 0.25) !important;
+  }
+
+  .subscription-plan-card--current:not(.subscription-plan-card--selected) {
+    border-color: #22c55e !important;
+    background-color: #f0fdf4 !important;
+  }
+
+  .subscription-plan-card__badge--selected {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+  }
+
   html.dark-mode .subscription-extras-card {
-    background-color: #0f172a !important;
     border: 1px solid #334155 !important;
+  }
+
+  html.dark-mode .subscription-addon-card {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+  }
+
+  html.dark-mode .subscription-addon-card .text-gray-600 {
+    color: #cbd5e1 !important;
+  }
+
+  html.dark-mode .subscription-addon-card .extras-step-btn {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #475569 !important;
+  }
+
+  html.dark-mode .subscription-addon-card .extras-step-btn:hover {
+    background-color: #475569 !important;
+    color: #f8fafc !important;
+  }
+
+  html.dark-mode .subscription-addon-card input.extras-input[type='number'] {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+    -webkit-text-fill-color: #e2e8f0 !important;
+    caret-color: #e2e8f0 !important;
   }
 
   html.dark-mode .subscription-extras-card .text-gray-700 {
@@ -744,5 +796,148 @@ const porcentajeHistorias = computed(() => {
 
   html.dark-mode .subscription-plan-summary .text-gray-500 {
     color: #cbd5e1 !important;
+  }
+
+  /* Vista general */
+  html.dark-mode .subscription-view {
+    background-color: #0f172a !important;
+  }
+
+  html.dark-mode .subscription-view .subscription-extras-card,
+  html.dark-mode .subscription-view .subscription-addon-card,
+  html.dark-mode .subscription-view .subscription-usage-card {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+  }
+
+  html.dark-mode .subscription-view .subscription-extras-card .text-gray-700,
+  html.dark-mode .subscription-view .subscription-addon-card .text-gray-700,
+  html.dark-mode .subscription-view .subscription-usage-card .text-gray-700 {
+    color: #e2e8f0 !important;
+  }
+
+  html.dark-mode .subscription-view .subscription-usage-card .bg-gray-200 {
+    background-color: #334155 !important;
+  }
+
+  html.dark-mode .subscription-view .subscription-extras-card table thead tr {
+    background-color: #0f172a !important;
+    color: #f1f5f9 !important;
+  }
+
+  html.dark-mode .subscription-view .subscription-extras-card table tbody tr {
+    border-color: #334155 !important;
+  }
+
+  /* Tarjetas de planes */
+  html.dark-mode .subscription-plan-card {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+  }
+
+  html.dark-mode .subscription-plan-card:hover {
+    border-color: #64748b !important;
+  }
+
+  html.dark-mode .subscription-plan-card--selected {
+    background-color: rgba(14, 116, 144, 0.32) !important;
+    border-color: #38bdf8 !important;
+    box-shadow:
+      0 0 0 3px rgba(56, 189, 248, 0.28),
+      0 12px 28px -8px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  html.dark-mode .subscription-plan-card--current:not(.subscription-plan-card--selected) {
+    background-color: rgba(22, 101, 52, 0.2) !important;
+    border-color: #4ade80 !important;
+  }
+
+  html.dark-mode .subscription-plan-card__badge--selected {
+    background-color: rgba(14, 116, 144, 0.55) !important;
+    color: #e0f2fe !important;
+    border: 1px solid #38bdf8 !important;
+  }
+
+  html.dark-mode .subscription-plan-card .text-sky-600 {
+    color: #7dd3fc !important;
+  }
+
+  html.dark-mode .subscription-plan-card .text-green-600 {
+    color: #4ade80 !important;
+  }
+
+  html.dark-mode .subscription-plan-card .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #334155 !important;
+  }
+
+  /* Modal de pago */
+  html.dark-mode .subscription-pago-overlay {
+    background-color: rgba(0, 0, 0, 0.65) !important;
+  }
+
+  html.dark-mode .subscription-pago-modal {
+    background-color: #1e293b !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65) !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__close {
+    color: #94a3b8 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__close:hover {
+    color: #e2e8f0 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__body h2 {
+    color: #f1f5f9 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__intro {
+    color: #94a3b8 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__tips {
+    background-color: rgba(12, 74, 110, 0.38) !important;
+    border-color: #0284c7 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__tips .text-sky-700 {
+    color: #bae6fd !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__tips .text-gray-700,
+  html.dark-mode .subscription-pago-modal__tips .text-gray-600 {
+    color: #cbd5e1 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__tips .text-sky-500 {
+    color: #38bdf8 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__footer-note {
+    color: #94a3b8 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__link {
+    color: #7dd3fc !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__btn-secondary {
+    background-color: #334155 !important;
+    border-color: #475569 !important;
+    color: #e2e8f0 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__btn-secondary:hover:not(:disabled) {
+    background-color: #475569 !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__btn-primary {
+    background-color: #0284c7 !important;
+    color: #f0f9ff !important;
+  }
+
+  html.dark-mode .subscription-pago-modal__btn-primary:hover:not(:disabled) {
+    background-color: #0369a1 !important;
   }
 </style>

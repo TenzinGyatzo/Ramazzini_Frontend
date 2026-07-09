@@ -6,6 +6,7 @@ import {
     fetchClinicalFileBlob,
     headClinicalFile,
 } from '@/lib/clinicalFiles';
+import { obtenerResultadoBinauralAudiometria } from '@/helpers/audiometriaCalculos';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref, defineAsyncComponent } from 'vue';
 import { Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
@@ -102,6 +103,17 @@ const getResultadoCuestionarioTexto = (resultado, resultadoPersonalizado) => {
 
   // Para otros casos, mostrar el resultado normal
   return resultado.toUpperCase();
+};
+
+const obtenerPABAudiometria = (audiometriaDoc) => {
+  if (!audiometriaDoc || typeof audiometriaDoc !== 'object') return null;
+  const resultado = obtenerResultadoBinauralAudiometria(audiometriaDoc);
+  // #region agent log
+  if (audiometriaDoc.metodoAudiometria === 'AMA') {
+    fetch('http://127.0.0.1:7456/ingest/63f6e900-4f19-4275-bb41-ed79b55538ec',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8375a6'},body:JSON.stringify({sessionId:'8375a6',location:'DocumentoItem.vue:obtenerPABAudiometria',message:'Badge PAB audiometría',data:{dinamico:resultado,guardado:audiometriaDoc.perdidaAuditivaBilateralAMA,runId:'post-fix'},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+  }
+  // #endregion
+  return resultado;
 };
 
 // Función para obtener el nombre legible del tipo de documento
@@ -1943,6 +1955,7 @@ const isAnulado = computed(() => {
 const documentImmutabilityEnabled = computed(() =>
     proveedorSaludStore.documentImmutabilityEnabled
 );
+const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
 const isReadOnly = computed(() => {
     const isFinalizedOrAnulado = isFinalized.value || isAnulado.value;
     return documentImmutabilityEnabled.value && isFinalizedOrAnulado;
@@ -3059,8 +3072,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                     class="hidden sm:flex ml-2"
                                 />
                                 <template v-else>
-                                    <span v-if="audiometria.metodoAudiometria === 'AMA' && audiometria.perdidaAuditivaBilateralAMA" class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                                        PAB: {{ audiometria.perdidaAuditivaBilateralAMA }}%
+                                    <span v-if="audiometria.metodoAudiometria === 'AMA' && obtenerPABAudiometria(audiometria) !== null" class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                                        PAB: {{ obtenerPABAudiometria(audiometria) }}%
                                     </span>
                                     <span v-else-if="audiometria.metodoAudiometria === 'LFT' && audiometria.hipoacusiaBilateralCombinada" class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
                                         HBC: {{ audiometria.hipoacusiaBilateralCombinada }}%
@@ -3887,7 +3900,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 </div>
 
                 <!-- Control Prenatal -->
-                <div v-if="typeof controlPrenatal === 'object'" class="flex itemsats-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                <div v-if="controlPrenatalEnabled && typeof controlPrenatal === 'object'" class="flex itemsats-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
@@ -4734,7 +4747,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
             </div>
 
             <!-- Botones de acción -->
-            <div class="flex flex-wrap justify-end gap-1 sm:gap-1.5 md:gap-2 mx-1.5 w-auto">
+            <div class="documento-item-actions flex flex-wrap justify-end gap-1 sm:gap-1.5 md:gap-2 mx-1.5 w-auto">
                 <!-- Botón de descarga dinámico -->
                 <template v-for="(documento, key) in {
                     'Antidoping': antidoping,
@@ -4765,7 +4778,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseenter="(e) => updateTooltipPosition(e, 'Descargar documento')"
                         @mouseleave="hideTooltip"
                         type="button"
-                        class="py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
+                        class="documento-item-action documento-item-action--download py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
                         <i class="fa-solid fa-download fa-lg"></i>
                     </button>
                     <button v-if="documento && documento.rutaPDF"
@@ -4773,17 +4786,17 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseenter="(e) => updateTooltipPosition(e, 'Descargar documento')"
                         @mouseleave="hideTooltip"
                         type="button"
-                        class="py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
+                        class="documento-item-action documento-item-action--download py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
                         <i class="fa-solid fa-download fa-lg"></i>
                     </button>
                 </template>
 
                 <button v-if="documentoTipo === 'documentoExterno'" type="button"
                     :class="[
-                        'py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
+                        'documento-item-action py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
                         canEditFinalized
-                            ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
-                            : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                            ? 'documento-item-action--edit bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
+                            : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
                     @click="handleEditDocumentoExterno"
                     @mouseenter="(e) => updateTooltipPosition(e, isReadOnly ? 'Ver documento' : 'Editar documento')"
@@ -4792,10 +4805,10 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 </button>
                 <button v-else type="button"
                     :class="[
-                        'py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
+                        'documento-item-action py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
                         canEditFinalized
-                            ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
-                            : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                            ? 'documento-item-action--edit bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
+                            : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
                     @click="handleEditDocument(documentoId, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, isReadOnly ? 'Ver documento' : 'Editar documento')"
@@ -4804,7 +4817,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 </button>
 
                 <button v-if="puedeFinalizar && documentImmutabilityEnabled" type="button"
-                    class="py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition-transform duration-200 ease-in-out transform hover:scale-110 shadow-sm z-5"
+                    class="documento-item-action documento-item-action--finalize py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition-transform duration-200 ease-in-out transform hover:scale-110 shadow-sm z-5"
                     @click="$emit('abrirModalFinalizar', documentoId, documentoNombre, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, 'Finalizar documento')"
                     @mouseleave="hideTooltip">
@@ -4813,10 +4826,10 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                 <button type="button"
                     :class="[
-                        'py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
+                        'documento-item-action py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
                         canDeleteDocument(documentoTipo) && !isAnulado
-                            ? 'bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110'
-                            : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                            ? 'documento-item-action--delete bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110'
+                            : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
                     :disabled="!canDeleteDocument(documentoTipo) || isAnulado"
                     @click="isAnulacion ? handleAnularDocument(documentoId, documentoNombre, documentoTipo) : handleDeleteDocument(documentoId, documentoNombre, documentoTipo)"

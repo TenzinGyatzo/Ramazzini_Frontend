@@ -29,6 +29,8 @@ import type { Trabajador } from '../interfaces/trabajador.interface';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useEliminacion } from '@/composables/useEliminacion';
+import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
+import { getPlantillaImportacionTrabajadores } from '@/helpers/plantillaImportacionTrabajadores';
 import type { EntidadEliminable } from '@/config/eliminacion';
 
 // 2. Stores, rutas y helpers
@@ -54,6 +56,13 @@ const route = useRoute();
 const router = useRouter();
 const { canManageTrabajadores } = useUserPermissions();
 const { executeIfCanManageTrabajadores } = usePermissionRestrictions();
+const { isSIRES } = useRegulatoryPolicy();
+
+const plantillaImportacion = computed(() =>
+  getPlantillaImportacionTrabajadores(
+    isSIRES.value ? 'SIRES_NOM024' : 'SIN_REGIMEN',
+  ),
+);
 
 // 3. Refs y estado reactivo
 const showModal = ref(false);
@@ -1443,8 +1452,11 @@ const toggleVigencias = () => {
                   <h4 class="font-semibold text-gray-900 mb-2 text-sm">Plantilla Excel</h4>
                   <p class="text-xs text-gray-600 mb-3">
                     Descarga la plantilla para carga masiva
+                    <span v-if="isSIRES" class="block mt-1 text-indigo-700 dark:text-indigo-300">
+                      Los catálogos de códigos están disponibles al abrir Carga Masiva.
+                    </span>
                   </p>
-                  <a href="/template/Plantilla para Importar Trabajadores.xlsx" download class="w-full bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors inline-block">
+                  <a :href="plantillaImportacion.href" :download="plantillaImportacion.downloadName" class="w-full bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors inline-block">
                     Descargar Plantilla
                   </a>
                 </div>

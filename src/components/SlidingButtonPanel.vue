@@ -1,11 +1,14 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import axios from "axios";
 import { authRequestConfig } from "@/lib/attachAuthToken";
 import { useTrabajadoresStore } from "@/stores/trabajadores";
+import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import ModalFaltanPdfs from "./ModalFaltanPdfs.vue";
 
 const trabajadores = useTrabajadoresStore();
+const proveedorSaludStore = useProveedorSaludStore();
+const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
 
 const mostrarModalFaltanPdfs = ref(false);
 const loading = ref(false);
@@ -52,7 +55,7 @@ const getDocumentType = (route) => {
   if (route.includes("Certificado")) return "Certificado";
   if (route.includes("Previo Espirometria")) return "Previo Espirometria";
   if (route.includes("Nota Medica")) return "Nota Medica";
-  if (route.includes("Control Prenatal")) return "Control Prenatal";
+  if (controlPrenatalEnabled.value && route.includes("Control Prenatal")) return "Control Prenatal";
   if (route.includes("Receta")) return "Receta";
   if (route.includes("Entrevista Psicologica")) return "Entrevista Psicologica";
   if (route.includes("Trastornos Estado Animo")) return "Trastornos Estado Animo";
@@ -90,7 +93,9 @@ const handleClick = async () => {
   if (loading.value) return;
   loading.value = true;
   // Ordenar las rutas seleccionadas
-  const orderedRoutes = props.selectedRoutes.sort((a, b) => {
+  const orderedRoutes = props.selectedRoutes
+    .filter((route) => controlPrenatalEnabled.value || !route.includes('Control Prenatal'))
+    .sort((a, b) => {
     const aType = getDocumentType(a);
     const bType = getDocumentType(b);
     return (

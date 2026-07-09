@@ -310,7 +310,7 @@ const abrirResultadoParaEdicion = () => {
 </script>
 
 <template>
-  <div class="modal fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
+  <div class="modal modal-documento-externo modal-update-documento-externo fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
     <div
       class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
@@ -332,11 +332,11 @@ const abrirResultadoParaEdicion = () => {
 
         <div class="flex items-center justify-between mb-3">
           <h1 class="text-3xl">{{ isBloqueado ? 'Datos del Documento' : 'Editar Documento' }}</h1>
-          <span v-if="isFinalizado" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <span v-if="isFinalizado" class="documento-badge inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
             <i class="fas fa-check-circle mr-2"></i>
             Finalizado
           </span>
-          <span v-if="isAnulado" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-rose-100 text-rose-800 border border-rose-200">
+          <span v-if="isAnulado" class="documento-badge inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-rose-100 text-rose-800 border border-rose-200">
             <i class="fas fa-times-circle mr-2"></i>
             Anulado
           </span>
@@ -358,10 +358,10 @@ const abrirResultadoParaEdicion = () => {
           <!-- Card de resultado vinculado con transición de estado -->
           <div 
             :class="[
-              'p-4 rounded-lg transition-all duration-300',
+              'modal-documento-externo-vinculo p-4 rounded-lg transition-all duration-300',
               pendingDesvincularDocumentoModal 
-                ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 shadow-lg' 
-                : 'bg-emerald-50 border border-emerald-200 shadow-sm'
+                ? 'modal-documento-externo-vinculo--pending bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 shadow-lg' 
+                : 'modal-documento-externo-vinculo--linked bg-emerald-50 border border-emerald-200 shadow-sm'
             ]"
           >
             <div class="flex items-start justify-between gap-3">
@@ -431,7 +431,7 @@ const abrirResultadoParaEdicion = () => {
           <button
             @click="iniciarVinculacion"
             type="button"
-            class="w-full px-4 py-3 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-200 hover:border-emerald-300 flex items-center justify-center gap-2"
+            class="modal-documento-externo-link-btn w-full px-4 py-3 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-200 hover:border-emerald-300 flex items-center justify-center gap-2"
           >
             <i class="fas fa-link"></i>
             Vincular a resultado clínico
@@ -439,7 +439,7 @@ const abrirResultadoParaEdicion = () => {
         </div>
 
         <!-- Selector de resultado clínico -->
-        <div v-else class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+        <div v-else class="modal-documento-externo-selector mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
           <div class="flex items-center gap-2 text-gray-700 mb-3">
             <i class="fas fa-link"></i>
             <span class="text-sm font-semibold">Seleccionar resultado clínico</span>
@@ -452,7 +452,7 @@ const abrirResultadoParaEdicion = () => {
           <div v-else class="mb-3">
             <select 
               v-model="resultadoSeleccionado"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              class="modal-documento-externo-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             >
               <option value="">Seleccione un resultado...</option>
               <option 
@@ -478,7 +478,7 @@ const abrirResultadoParaEdicion = () => {
             <button
               @click="cancelarVinculacion"
               type="button"
-              class="flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+              class="modal-documento-externo-btn-secondary flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
             >
               Cancelar
             </button>
@@ -524,7 +524,7 @@ const abrirResultadoParaEdicion = () => {
           </div>
 
           <button
-            class="text-xl mt-2 w-full rounded-lg bg-white font-semibold text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg flex-1"
+            class="modal-documento-externo-btn-close text-xl mt-2 w-full rounded-lg bg-white font-semibold text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg flex-1"
             @click="requestDismiss">
             Cerrar
           </button>

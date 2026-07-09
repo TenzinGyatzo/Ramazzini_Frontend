@@ -155,7 +155,7 @@ const handleMouseLeave = () => {
   <div v-if="tieneNotasAclaratorias" class="hidden sm:flex items-center relative ml-2">
     <span 
       ref="badgeRef"
-      class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 border border-amber-300 transition-colors duration-200 cursor-help"
+      class="documento-badge inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 border border-amber-300 transition-colors duration-200 cursor-help"
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
     >
@@ -176,7 +176,7 @@ const handleMouseLeave = () => {
           transform: 'translate(-50%, -100%)',
           marginBottom: '8px'
         }">
-        <div class="px-3 py-1.5 bg-gray-800 text-white text-xs rounded-lg shadow-xl border border-gray-700 whitespace-pre-line max-w-xs">
+        <div class="documento-badge-tooltip px-3 py-1.5 bg-gray-800 text-white text-xs rounded-lg shadow-xl border border-gray-700 whitespace-pre-line max-w-xs">
           {{ tooltipText }}
           <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
         </div>

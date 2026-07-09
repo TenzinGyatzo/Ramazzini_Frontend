@@ -9,6 +9,7 @@ import { usePermissionRestrictions } from '@/composables/usePermissionRestrictio
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
 import { useNavigateWithTreatmentConsent } from '@/composables/useNavigateWithTreatmentConsent';
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
+import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
 import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
@@ -41,6 +42,8 @@ const isMX = computed(() => {
 const notaAclaratoriaEnabled = computed(() => {
   return proveedorSaludStore.notaAclaratoriaEnabled;
 });
+
+const { controlPrenatalEnabled } = useRegulatoryPolicy();
 
 onMounted(async () => {
   await loadFirmanteData();
@@ -376,7 +379,11 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 <span class="min-w-0">Informe Longitudinal Cardiometabólico</span>
               </button>
-              <button type="button" @click="handleQuestionnaireSelect('control-prenatal')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
+              <button
+                v-if="controlPrenatalEnabled"
+                type="button"
+                @click="handleQuestionnaireSelect('control-prenatal')"
+                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-baby text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Control Prenatal (Embarazo y Lactancia)
               </button>

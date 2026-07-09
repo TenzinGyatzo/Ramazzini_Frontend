@@ -266,12 +266,22 @@ async function removeRecord(item: SeguimientoProgramadoCardiometabolico): Promis
 
 function estadoBadgeClass(estado: string): string {
   const map: Record<string, string> = {
-    Programada: 'bg-amber-100 text-amber-900 border border-amber-200',
-    Realizada: 'bg-emerald-100 text-emerald-900 border border-emerald-200',
-    'No asistió': 'bg-orange-100 text-orange-900 border border-orange-200',
-    Cancelada: 'bg-gray-200 text-gray-800 border border-gray-300',
+    Programada: 'seguimiento-estado-badge seguimiento-estado-badge--programada bg-amber-100 text-amber-900 border border-amber-200',
+    Realizada: 'seguimiento-estado-badge seguimiento-estado-badge--realizada bg-emerald-100 text-emerald-900 border border-emerald-200',
+    'No asistió': 'seguimiento-estado-badge seguimiento-estado-badge--no-asistio bg-orange-100 text-orange-900 border border-orange-200',
+    Cancelada: 'seguimiento-estado-badge seguimiento-estado-badge--cancelada bg-gray-200 text-gray-800 border border-gray-300',
   };
-  return map[estado] ?? 'bg-slate-100 text-slate-800 border border-slate-200';
+  return map[estado] ?? 'seguimiento-estado-badge seguimiento-estado-badge--default bg-slate-100 text-slate-800 border border-slate-200';
+}
+
+function estadoRadioSlug(value: EstadoFormValue): string {
+  const slugs: Record<EstadoFormValue, string> = {
+    Programada: 'programada',
+    Realizada: 'realizada',
+    'No asistió': 'no-asistio',
+    Cancelada: 'cancelada',
+  };
+  return slugs[value];
 }
 
 /** Sin selección: aspecto plano neutro. Seleccionado: outline con color propio del estado. */
@@ -301,8 +311,12 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
     'border border-gray-200 bg-gray-50/80 text-gray-600 hover:border-gray-300 hover:bg-gray-100/80';
   const p = palettes[value];
   const base =
-    'flex min-h-[2.75rem] w-full items-center justify-center rounded-xl px-2 py-2 text-center text-xs font-medium leading-snug transition-all sm:text-sm';
-  return `${base} ${selected ? `border-2 ${p.active}` : flatIdle}`;
+    'seguimiento-estado-radio flex min-h-[2.75rem] w-full items-center justify-center rounded-xl px-2 py-2 text-center text-xs font-medium leading-snug transition-all sm:text-sm';
+  const slug = estadoRadioSlug(value);
+  if (selected) {
+    return `${base} seguimiento-estado-radio--selected seguimiento-estado-radio--${slug} border-2 ${p.active}`;
+  }
+  return `${base} seguimiento-estado-radio--idle ${flatIdle}`;
 }
 </script>
 
@@ -325,9 +339,9 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
           @click="closeModal"
         />
         <div
-          class="modal-work-panel relative bg-white rounded-lg shadow-xl shadow-slate-900/20 w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col z-[50] text-gray-900"
+          class="modal-seguimiento-programado-panel modal-work-panel relative bg-white rounded-lg shadow-xl shadow-slate-900/20 w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col z-[50] text-gray-900"
         >
-        <div class="flex items-start justify-between gap-4 px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
+        <div class="modal-seguimiento-programado-header flex items-start justify-between gap-4 px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50">
           <div>
             <h2 class="text-xl font-semibold text-gray-800">Seguimientos e inasistencias</h2>
             <p class="text-sm text-gray-600 mt-1">
@@ -403,7 +417,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
         <div class="flex-1 overflow-y-auto px-6 py-4 space-y-6">
           <div
             v-if="!isFormVisible"
-            class="rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 px-4 py-6 text-center"
+            class="modal-seguimiento-programado-cta rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 px-4 py-6 text-center"
           >
             <p class="text-sm text-gray-600 mb-4">
               Para agregar una cita o inasistencia nueva, usa el botón siguiente.
@@ -420,7 +434,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
 
           <section
             v-if="isFormVisible"
-            class="rounded-xl border p-4 space-y-3 transition-colors"
+            class="modal-seguimiento-programado-form rounded-xl border p-4 space-y-3 transition-colors"
             :class="
               editingId
                 ? 'border-amber-400 ring-2 ring-amber-300/80 bg-amber-50/90 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.35)]'
@@ -447,7 +461,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
                     id="scm-fecha-programada"
                     v-model="formFechaLocal"
                     type="date"
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                    class="seguimiento-form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
                   >
                 </div>
                 <div class="min-w-0 sm:text-right">
@@ -455,7 +469,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
                   <select
                     id="scm-motivo"
                     v-model="formMotivo"
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-left focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                    class="seguimiento-form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-left focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
                   >
                     <option value="">—</option>
                     <option
@@ -500,7 +514,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
                   id="scm-observaciones"
                   v-model="formObservaciones"
                   rows="3"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-y min-h-[4rem]"
+                  class="seguimiento-form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-y min-h-[4rem]"
                   placeholder="Contexto breve..."
                 />
               </div>
@@ -517,7 +531,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
               <button
                 v-if="editingId"
                 type="button"
-                class="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+                class="modal-seguimiento-programado-btn-secondary rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
                 :disabled="saving"
                 @click="cancelEdit"
               >
@@ -526,7 +540,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
               <button
                 v-else-if="showNewForm"
                 type="button"
-                class="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
+                class="modal-seguimiento-programado-btn-secondary rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-100"
                 :disabled="saving"
                 @click="cancelEdit"
               >
@@ -541,10 +555,10 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
               <i class="fas fa-spinner fa-spin text-xl text-emerald-600 mr-2" />
               Cargando…
             </div>
-            <ul v-else-if="list.length === 0" class="rounded-lg border border-dashed border-gray-300 bg-gray-50 py-10 text-center text-sm text-gray-600">
+            <ul v-else-if="list.length === 0" class="modal-seguimiento-programado-empty rounded-lg border border-dashed border-gray-300 bg-gray-50 py-10 text-center text-sm text-gray-600">
               No hay seguimientos programados para este trabajador.
             </ul>
-            <ul v-else class="divide-y divide-gray-200 rounded-xl border border-gray-200 overflow-hidden bg-white">
+            <ul v-else class="modal-seguimiento-programado-list divide-y divide-gray-200 rounded-xl border border-gray-200 overflow-hidden bg-white">
               <li
                 v-for="item in list"
                 :key="item._id"
@@ -598,7 +612,7 @@ function estadoRadioSpanClass(value: EstadoFormValue, selected: boolean): string
           </section>
         </div>
 
-        <div class="border-t border-gray-200 px-6 py-3 bg-gray-50 flex justify-end">
+        <div class="modal-seguimiento-programado-footer border-t border-gray-200 px-6 py-3 bg-gray-50 flex justify-end">
           <button
             type="button"
             class="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"

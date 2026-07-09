@@ -895,12 +895,12 @@ const getInputClasses = (colorClass) => {
       <!-- Modal de Reglas de Puntaje -->
       <div 
         v-if="mostrarModalReglas" 
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        class="productivity-reglas-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         @click.self="cerrarModalReglas"
       >
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="productivity-reglas-modal bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
           <!-- Header del Modal -->
-          <div class="px-6 py-4 border-b border-gray-200">
+          <div class="productivity-reglas-modal__header px-6 py-4 border-b border-gray-200">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <i class="fas fa-cog text-green-600"></i>
@@ -908,7 +908,7 @@ const getInputClasses = (colorClass) => {
               </h3>
               <button 
                 @click="cerrarModalReglas"
-                class="text-gray-400 hover:text-gray-600 transition-colors"
+                class="productivity-reglas-modal__close text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <i class="fas fa-times text-xl"></i>
               </button>
@@ -916,8 +916,8 @@ const getInputClasses = (colorClass) => {
           </div>
 
           <!-- Contenido del Modal -->
-          <div class="px-6 py-4">
-            <div v-if="esAdministrador" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div class="productivity-reglas-modal__body px-6 py-4">
+            <div v-if="esAdministrador" class="productivity-reglas-modal__notice mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div class="flex items-center">
                 <i class="fas fa-info-circle text-blue-500 mr-2"></i>
                 <p class="text-sm text-blue-700">
@@ -925,14 +925,14 @@ const getInputClasses = (colorClass) => {
                 </p>
               </div>
             </div>
-            <p class="text-sm text-gray-600 mb-6">
+            <p class="productivity-reglas-modal__intro text-sm text-gray-600 mb-6">
               Configura cuántos puntos otorga cada tipo de documento en el sistema de ranking para {{ esAdministrador ? 'tu proveedor de salud' : 'tu organización' }}.
             </p>
 
             <!-- Formulario de Configuración -->
-            <div class="space-y-4">
+            <div class="productivity-reglas-modal__rules space-y-4">
               <!-- Aptitudes -->
-              <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--green flex items-center justify-between p-4 bg-green-50 rounded-lg">
                 <div class="flex items-center gap-3">
                   <i class="fas fa-user-check text-green-500 text-lg"></i>
                   <div>
@@ -953,7 +953,7 @@ const getInputClasses = (colorClass) => {
               </div>
 
               <!-- Historias Clínicas -->
-              <div class="flex items-center justify-between p-4 bg-teal-50 rounded-lg">
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--teal flex items-center justify-between p-4 bg-teal-50 rounded-lg">
                 <div class="flex items-center gap-3">
                   <i class="fas fa-notes-medical text-teal-500 text-lg"></i>
                   <div>
@@ -974,7 +974,7 @@ const getInputClasses = (colorClass) => {
               </div>
 
               <!-- Exploraciones Físicas -->
-              <div class="flex items-center justify-between p-4 bg-indigo-50 rounded-lg">
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--indigo flex items-center justify-between p-4 bg-indigo-50 rounded-lg">
                 <div class="flex items-center gap-3">
                   <i class="fas fa-heartbeat text-indigo-500 text-lg"></i>
                   <div>
@@ -995,7 +995,7 @@ const getInputClasses = (colorClass) => {
               </div>
 
               <!-- Exámenes de la Vista -->
-              <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--yellow flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
                 <div class="flex items-center gap-3">
                   <i class="fas fa-eye text-yellow-500 text-lg"></i>
                   <div>
@@ -1016,7 +1016,7 @@ const getInputClasses = (colorClass) => {
               </div>
 
               <!-- Audiometrías -->
-              <div class="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--purple flex items-center justify-between p-4 bg-purple-50 rounded-lg">
                 <div class="flex items-center gap-3">
                   <i class="fas fa-volume-up text-purple-500 text-lg"></i>
                   <div>
@@ -1037,7 +1037,7 @@ const getInputClasses = (colorClass) => {
               </div>
 
               <!-- Antidopings -->
-              <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--red flex items-center justify-between p-4 bg-red-50 rounded-lg">
                 <div class="flex items-center gap-3">
                   <i class="fas fa-flask text-red-500 text-lg"></i>
                   <div>
@@ -1058,7 +1058,7 @@ const getInputClasses = (colorClass) => {
               </div>
 
               <!-- Notas Médicas -->
-              <div class="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--orange flex items-center justify-between p-4 bg-orange-50 rounded-lg">
                 <div class="flex items-center gap-3">
                   <i class="fas fa-stethoscope text-orange-500 text-lg"></i>
                   <div>
@@ -1079,7 +1079,7 @@ const getInputClasses = (colorClass) => {
               </div>
 
               <!-- Documentos Externos -->
-              <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--gray flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div class="flex items-center gap-3">
                   <i class="fas fa-file-upload text-gray-600 text-lg"></i>
                   <div>
@@ -1102,11 +1102,11 @@ const getInputClasses = (colorClass) => {
           </div>
 
           <!-- Footer del Modal -->
-          <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div class="productivity-reglas-modal__footer px-6 py-4 border-t border-gray-200 bg-gray-50">
             <div class="flex items-center justify-between">
               <button
                 @click="resetearConfiguracion"
-                class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                class="productivity-reglas-modal__btn-muted px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
               >
                 <i class="fas fa-undo mr-2"></i>
                 Restablecer Valores
@@ -1114,13 +1114,13 @@ const getInputClasses = (colorClass) => {
               <div class="flex gap-3">
                 <button
                   @click="cerrarModalReglas"
-                  class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                  class="productivity-reglas-modal__btn-muted px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   @click="guardarConfiguracion"
-                  class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                  class="productivity-reglas-modal__btn-save px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
                 >
                   <i class="fas fa-save mr-2"></i>
                   Guardar Configuración

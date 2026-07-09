@@ -826,8 +826,8 @@ const mostrarTipScrollLateral = () => {
             :alt="'Logo de ' + empresasStore.currentEmpresa?.nombreComercial"
             class="w-24 h-24 object-contain rounded"
           />
-          <div v-else class="w-1/4 h-32 flex flex-col items-center justify-center bg-gradient-to-r from-gray-200 to-gray-300 text-gray-500 rounded mb-4 text-center px-4 border-2 border-dashed border-gray-400">
-            <i class="fas fa-camera text-4xl mb-2"></i>
+          <div v-else class="empresa-item-placeholder w-1/4 h-32 flex flex-col items-center justify-center bg-gradient-to-r from-gray-200 to-gray-300 text-gray-500 rounded mb-4 text-center px-4 border-2 border-dashed border-gray-400">
+            <i class="empresa-item-placeholder-icon fas fa-camera text-4xl mb-2"></i>
             <span class="text-xs text-center">Identifica más rápido a tu cliente agregando un logotipo</span>
           </div>
 

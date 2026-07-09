@@ -92,3 +92,50 @@ a.nav-action-link[class*='flex'] {
 a.layout-nav-link:not([class*='text-white']):not([class*='text-emerald']):not([class*='text-gray']) {
   color: inherit;
 }
+
+/* Form action row: equal-height Volver + FormKit submit (perfil, firmantes, add user) */
+.form-green-submit .form-action-buttons {
+  align-items: stretch;
+}
+
+.form-green-submit .form-action-buttons > a,
+.form-green-submit .form-action-buttons > button[type='button'],
+.form-green-submit .form-action-buttons > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-green-submit .form-action-buttons .formkit-outer[data-type='submit'] {
+  margin: 0 !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-green-submit .form-action-buttons .formkit-outer[data-type='submit'] .formkit-wrapper {
+  flex: 1;
+  display: flex;
+}
+
+.form-green-submit .form-action-buttons .formkit-outer[data-type='submit'] .formkit-input,
+.form-green-submit .form-action-buttons .formkit-outer[data-type='submit'] button[type='submit'] {
+  flex: 1;
+  width: 100%;
+  min-height: 3.25rem;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  box-sizing: border-box;
+  line-height: 1.75rem;
+}
+
+.form-green-submit .form-action-buttons > a.nav-action-link,
+.form-green-submit .form-action-buttons > button[type='button'] {
+  min-height: 3.25rem;
+  margin-bottom: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.75rem;
+}

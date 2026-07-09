@@ -77,6 +77,11 @@ onMounted(() => {
   // Sincronizar valores locales con formData
   sincronizarValoresLocales();
   
+  // Recalcular campos AMA al cargar documento existente (corrige valores legacy en BD)
+  if ((formDataAudiometria.metodoAudiometria || 'AMA') === 'AMA') {
+    formDataAudiometria.perdidaMonauralOD_AMA = calcularPorcentajePorOido().porcentaje;
+  }
+  
   // Calcular hipoacusia bilateral combinada si ya existen ambos porcentajes
   calcularHipoacusiaBilateralCombinada();
 });

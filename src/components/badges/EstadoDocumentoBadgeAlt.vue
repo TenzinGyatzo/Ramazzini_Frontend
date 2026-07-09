@@ -293,7 +293,7 @@ const tooltipText = computed(() => {
   <div class="inline-flex flex-col items-start gap-1" :aria-label="`Estado del documento: ${badgeConfig.label}`">
     <span 
       ref="badgeRef"
-      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-colors duration-200 cursor-help"
+      class="documento-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-colors duration-200 cursor-help"
       :class="badgeConfig.classes"
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
@@ -301,7 +301,7 @@ const tooltipText = computed(() => {
       <i v-if="badgeConfig.icon" :class="[badgeConfig.icon, 'mr-1.5']"></i>
       {{ badgeConfig.label }}
     </span>
-    <span v-if="metadata" class="text-[10px] text-gray-500 font-medium italic ml-1">
+    <span v-if="metadata" class="documento-badge-metadata text-[10px] text-gray-500 font-medium italic ml-1">
       {{ metadata }}
     </span>
   </div>
@@ -318,7 +318,7 @@ const tooltipText = computed(() => {
           transform: 'translate(-50%, -100%)',
           marginBottom: '8px'
         }">
-        <div class="px-3 py-1.5 bg-gray-800 text-white text-xs rounded-lg shadow-xl border border-gray-700 whitespace-pre-line max-w-xs">
+        <div class="documento-badge-tooltip px-3 py-1.5 bg-gray-800 text-white text-xs rounded-lg shadow-xl border border-gray-700 whitespace-pre-line max-w-xs">
           {{ tooltipText }}
           <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
         </div>
