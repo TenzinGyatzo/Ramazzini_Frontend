@@ -258,8 +258,10 @@ const calcularPorcentaje = (valorActual, valorTotal) => {
   return Math.min((valorActual / valorTotal) * 100, 100).toFixed(0);
 };
 
+const limiteHistoriasActual = computed(() => proveedorSalud.value?.maxHistoriasPermitidasAlMes ?? 0);
+
 const porcentajeHistorias = computed(() => {
-  return calcularPorcentaje(historiasDelMes.value, selectedPlan.value?.histories + extraHistories.value);
+  return calcularPorcentaje(historiasDelMes.value, limiteHistoriasActual.value);
 });
 
 // const porcentajeUsuarios = computed(() => {
@@ -377,14 +379,14 @@ const porcentajeHistorias = computed(() => {
         <div>
           <p class="text-gray-700 text-sm sm:text-base mb-2">
             <strong>Historias clínicas registradas:</strong> {{ historiasDelMes }} 
-            <span class="text-gray-600">(límite: <strong>{{ selectedPlan?.histories + extraHistories }}</strong>)</span>
+            <span class="text-gray-600">(límite: <strong>{{ limiteHistoriasActual }}</strong>)</span>
           </p>
           <div class="w-full bg-gray-200 rounded-full h-3 sm:h-4 mt-2 relative">
             <div 
               class="h-3 sm:h-4 rounded-full absolute top-0 left-0 transition-all duration-500" 
               :class="{
-                'bg-gradient-to-r from-cyan-500 to-cyan-400': historiasDelMes <= (selectedPlan?.histories + extraHistories),
-                'bg-gradient-to-r from-red-500 to-red-400': historiasDelMes > (selectedPlan?.histories + extraHistories)
+                'bg-gradient-to-r from-cyan-500 to-cyan-400': historiasDelMes <= limiteHistoriasActual,
+                'bg-gradient-to-r from-red-500 to-red-400': historiasDelMes > limiteHistoriasActual
               }"
               :style="{ width: `${porcentajeHistorias}%` }"
             ></div>
@@ -395,8 +397,8 @@ const porcentajeHistorias = computed(() => {
           <p v-if="porcentajeHistorias >= 80 && porcentajeHistorias < 100" class="text-yellow-600 text-xs sm:text-sm mt-2">
             ⚠️ Estás cerca del límite de historias clínicas. Considera actualizar tu plan.
           </p>
-          <p v-if="historiasDelMes > (selectedPlan?.histories + extraHistories)" class="text-red-600 text-xs sm:text-sm mt-2">
-            ⚠️ Excede el límite de historias clínicas permitidas en este plan.
+          <p v-if="historiasDelMes > limiteHistoriasActual" class="text-red-600 text-xs sm:text-sm mt-2">
+            ⚠️ Excede el límite de historias clínicas permitidas en tu plan actual.
           </p>
         </div>
 
