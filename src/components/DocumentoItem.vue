@@ -107,13 +107,7 @@ const getResultadoCuestionarioTexto = (resultado, resultadoPersonalizado) => {
 
 const obtenerPABAudiometria = (audiometriaDoc) => {
   if (!audiometriaDoc || typeof audiometriaDoc !== 'object') return null;
-  const resultado = obtenerResultadoBinauralAudiometria(audiometriaDoc);
-  // #region agent log
-  if (audiometriaDoc.metodoAudiometria === 'AMA') {
-    fetch('http://127.0.0.1:7456/ingest/63f6e900-4f19-4275-bb41-ed79b55538ec',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8375a6'},body:JSON.stringify({sessionId:'8375a6',location:'DocumentoItem.vue:obtenerPABAudiometria',message:'Badge PAB audiometría',data:{dinamico:resultado,guardado:audiometriaDoc.perdidaAuditivaBilateralAMA,runId:'post-fix'},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-  }
-  // #endregion
-  return resultado;
+  return obtenerResultadoBinauralAudiometria(audiometriaDoc);
 };
 
 // Función para obtener el nombre legible del tipo de documento

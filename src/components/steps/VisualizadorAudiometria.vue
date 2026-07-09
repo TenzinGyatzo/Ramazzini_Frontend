@@ -180,13 +180,7 @@ const calcularResultadoBinaural = () => {
 
 // Computed para el resultado binaural dinámico
 const resultadoBinaural = computed(() => {
-  const result = calcularResultadoBinaural();
-  const od = calcularPorcentajePorOido('Derecho');
-  const oi = calcularPorcentajePorOido('Izquierdo');
-  // #region agent log
-  fetch('http://127.0.0.1:7456/ingest/63f6e900-4f19-4275-bb41-ed79b55538ec',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8375a6'},body:JSON.stringify({sessionId:'8375a6',location:'VisualizadorAudiometria.vue:resultadoBinaural',message:'Visualizador cálculo dinámico AMA',data:{metodo:formDataAudiometria.value.metodoAudiometria,odDinamico:od.porcentaje,oiDinamico:oi.porcentaje,bilateralDinamico:result.porcentaje,guardadoOD_AMA:formDataAudiometria.value.perdidaMonauralOD_AMA,guardadoOI_AMA:formDataAudiometria.value.perdidaMonauralOI_AMA,guardadoBilateralAMA:formDataAudiometria.value.perdidaAuditivaBilateralAMA,guardadoPorcentajeOD:formDataAudiometria.value.porcentajePerdidaOD,guardadoPorcentajeOI:formDataAudiometria.value.porcentajePerdidaOI,frecuenciasOD:{500:formDataAudiometria.value.oidoDerecho500,1000:formDataAudiometria.value.oidoDerecho1000,2000:formDataAudiometria.value.oidoDerecho2000,3000:formDataAudiometria.value.oidoDerecho3000},runId:'post-fix'},timestamp:Date.now(),hypothesisId:'H1-H3'})}).catch(()=>{});
-  // #endregion
-  return result;
+  return calcularResultadoBinaural();
 });
 
 // Computed para datos de la gráfica audiométrica
