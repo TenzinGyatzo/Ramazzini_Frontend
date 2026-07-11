@@ -5,7 +5,6 @@ import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import {
   formatCountLabel,
   lineasDocumentosExpediente,
-  lineasOtrosVinculados,
   lineasResultadosClinicos,
 } from '@/helpers/fusionPreviewDisplay';
 
@@ -14,8 +13,6 @@ export interface ExpedienteConteosResponse {
   total: number;
   resultadosClinicosConteos: Record<string, number>;
   totalResultadosClinicos: number;
-  vinculadosConteos: Record<string, number>;
-  totalVinculados: number;
   fechaUltimaActividad: string | null;
 }
 
@@ -81,18 +78,6 @@ function buildResultadosClinicosLines(
     .join('');
 }
 
-function buildVinculadosLines(vinculadosConteos: Record<string, number>): string {
-  return lineasOtrosVinculados(vinculadosConteos)
-    .map((item) =>
-      renderLine(
-        item.icon,
-        item.iconClass,
-        escapeHtml(formatCountLabel(item.count, item.labelSingular, item.labelPlural)),
-      ),
-    )
-    .join('');
-}
-
 export function buildLoadingExpedienteSummaryHtml(): string {
   return `
     <div class="expediente-resumen-loading-state">
@@ -120,19 +105,14 @@ export function buildExactExpedienteSummaryHtml(
     total,
     resultadosClinicosConteos = {},
     totalResultadosClinicos = 0,
-    vinculadosConteos = {},
-    totalVinculados = 0,
     fechaUltimaActividad = null,
   } = data;
 
   const lineasDocumentos = lineasDocumentosExpediente(conteos);
   const lineasRc = buildResultadosClinicosLines(resultadosClinicosConteos);
-  const lineasVinculados = buildVinculadosLines(vinculadosConteos);
 
   const isEmpty =
-    lineasDocumentos.length === 0 &&
-    totalResultadosClinicos === 0 &&
-    totalVinculados === 0;
+    lineasDocumentos.length === 0 && totalResultadosClinicos === 0;
 
   if (isEmpty) {
     return `
@@ -165,19 +145,11 @@ export function buildExactExpedienteSummaryHtml(
     `
     : '';
 
-  const vinculadosHtml = totalVinculados > 0
-    ? `
-      <p class="expediente-resumen-subtitle mt-2">Otros registros vinculados (${totalVinculados})</p>
-      <div class="expediente-resumen-grid">${lineasVinculados}</div>
-    `
-    : '';
-
   return `
     <p class="expediente-resumen-title">${buildTitle(options.nombreTrabajador)}</p>
     ${buildUltimaActividadLine(fechaUltimaActividad)}
     ${documentosHtml}
     ${rcHtml}
-    ${vinculadosHtml}
   `;
 }
 
@@ -206,8 +178,6 @@ function normalizeConteosResponse(
     total: raw.total ?? 0,
     resultadosClinicosConteos: raw.resultadosClinicosConteos ?? {},
     totalResultadosClinicos: raw.totalResultadosClinicos ?? 0,
-    vinculadosConteos: raw.vinculadosConteos ?? {},
-    totalVinculados: raw.totalVinculados ?? 0,
     fechaUltimaActividad: raw.fechaUltimaActividad ?? null,
   };
 }

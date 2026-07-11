@@ -81,13 +81,7 @@ describe('expedienteResumenTrabajador', () => {
       resultadosClinicosConteos: { ESPIROMETRIA: 1, EKG: 2 },
 
       totalResultadosClinicos: 3,
-
-      vinculadosConteos: {},
-
-      totalVinculados: 0,
-
       fechaUltimaActividad: null,
-
     });
 
 
@@ -110,44 +104,23 @@ describe('expedienteResumenTrabajador', () => {
 
 
 
-  it('incluye nombre del trabajador, última actividad y vinculados', () => {
-
+  it('incluye nombre del trabajador y última actividad sin vinculados', () => {
     const html = buildExactExpedienteSummaryHtml(
-
       {
-
         conteos: { HistoriaClinica: 1 },
-
         total: 1,
-
         resultadosClinicosConteos: {},
-
         totalResultadosClinicos: 0,
-
-        vinculadosConteos: { Consentimiento: 1, Deteccion: 2 },
-
-        totalVinculados: 3,
-
         fechaUltimaActividad: '2025-07-01T12:00:00.000Z',
-
       },
-
       { nombreTrabajador: 'Juan Pérez García' },
-
     );
 
-
-
     expect(html).toContain('Expediente — Juan Pérez García');
-
     expect(html).toContain('Última actividad:');
-
-    expect(html).toContain('Otros registros vinculados (3)');
-
-    expect(html).toContain('Consentimiento');
-
-    expect(html).toContain('Detecciones');
-
+    expect(html).not.toContain('Otros registros vinculados');
+    expect(html).not.toContain('Consentimiento');
+    expect(html).not.toContain('Detecciones');
   });
 
 
@@ -159,8 +132,6 @@ describe('expedienteResumenTrabajador', () => {
         total: 0,
         resultadosClinicosConteos: {},
         totalResultadosClinicos: 0,
-        vinculadosConteos: {},
-        totalVinculados: 0,
         fechaUltimaActividad: null,
       },
       { nombreTrabajador: 'María López' },
@@ -202,8 +173,6 @@ describe('expedienteResumenTrabajador', () => {
         total: 4,
         resultadosClinicosConteos: {},
         totalResultadosClinicos: 2,
-        vinculadosConteos: {},
-        totalVinculados: 1,
         fechaUltimaActividad: null,
       }),
     ).toBe(4);
