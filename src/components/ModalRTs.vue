@@ -23,7 +23,14 @@ const trabajadoresStore = useTrabajadoresStore();
 const riesgosTrabajoStore = useRiesgoTrabajoStore();
 const proveedorSaludStore = useProveedorSaludStore();
 
+const ESTADO_INCAPACIDAD_ACTIVA = 'Incapacidad Activa';
+
 const riesgosTrabajo = computed(() => trabajadoresStore.currentTrabajador?.riesgosTrabajo || []);
+
+const fechaAltaHabilitada = computed(() => {
+  const alta = rtEnEdicion.value?.alta;
+  return Boolean(alta) && alta !== ESTADO_INCAPACIDAD_ACTIVA;
+});
 
 const modo = ref('listado');
 const rtEnEdicion = ref(null); // será un objeto con los datos del RT si se edita
@@ -91,6 +98,9 @@ const handleSubmit = async () => {
     }
 
     const payload = limpiarCamposOpcionales(rtEnEdicion.value);
+    if (payload.alta === ESTADO_INCAPACIDAD_ACTIVA) {
+      delete payload.fechaAlta;
+    }
 
     let riesgoFinal = null;
 
@@ -182,7 +192,9 @@ const editarRT = (rt) => {
   rtEnEdicion.value = {
     ...rt,
     fechaRiesgo: rt.fechaRiesgo ? new Date(rt.fechaRiesgo).toISOString().slice(0, 10) : '',
-    fechaAlta: rt.fechaAlta ? new Date(rt.fechaAlta).toISOString().slice(0, 10) : ''
+    fechaAlta: rt.alta === ESTADO_INCAPACIDAD_ACTIVA
+      ? ''
+      : (rt.fechaAlta ? new Date(rt.fechaAlta).toISOString().slice(0, 10) : ''),
   };
   modo.value = 'editar';
 };
@@ -204,7 +216,13 @@ const eliminarRT = async (id) => {
 
 watch(() => rtEnEdicion.value?.secuelas, (nuevoValor) => {
   if (nuevoValor === 'No') {
-    rtEnEdicion.value.porcentajeIPP = 0; // Vaciar el campo
+    rtEnEdicion.value.porcentajeIPP = 0;
+  }
+});
+
+watch(() => rtEnEdicion.value?.alta, (nuevoValor) => {
+  if (nuevoValor === ESTADO_INCAPACIDAD_ACTIVA) {
+    rtEnEdicion.value.fechaAlta = '';
   }
 });
 
@@ -439,7 +457,12 @@ const sugerenciasNatLesion = [ "Contusión", "Traumatismo", "Fractura", "Luxaci�
 
             <div>
               <label class="block text-sm font-medium text-gray-600">Fecha de Alta</label>
-              <input type="date" v-model="rtEnEdicion.fechaAlta" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+              <input
+                type="date"
+                v-model="rtEnEdicion.fechaAlta"
+                :disabled="!fechaAltaHabilitada"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:text-gray-400"
+              />
             </div>
           </div>
 

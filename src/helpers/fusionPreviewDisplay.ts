@@ -47,6 +47,21 @@ export const TIPO_ESTUDIO_LABELS: Record<string, string> = {
   ANALISIS_LABORATORIO: 'Análisis de laboratorio',
 };
 
+/** Iconos y etiquetas por tipo de resultado clínico (alineado con ResultadosClinicosPanel). */
+export const RC_TIPO_DISPLAY: Array<{
+  tipo: string;
+  labelSingular: string;
+  labelPlural: string;
+  icon: string;
+  iconClass: string;
+}> = [
+  { tipo: 'ESPIROMETRIA', labelSingular: 'Espirometría', labelPlural: 'Espirometrías', icon: 'fas fa-lungs', iconClass: 'text-blue-600' },
+  { tipo: 'EKG', labelSingular: 'EKG', labelPlural: 'EKG', icon: 'fas fa-heartbeat', iconClass: 'text-red-600' },
+  { tipo: 'TIPO_SANGRE', labelSingular: 'Tipo de sangre', labelPlural: 'Tipos de sangre', icon: 'fas fa-tint', iconClass: 'text-red-800' },
+  { tipo: 'RAYOS_X', labelSingular: 'Rayos X', labelPlural: 'Rayos X', icon: 'fas fa-x-ray', iconClass: 'text-teal-700' },
+  { tipo: 'ANALISIS_LABORATORIO', labelSingular: 'Análisis de laboratorio', labelPlural: 'Análisis de laboratorio', icon: 'fas fa-vial', iconClass: 'text-violet-600' },
+];
+
 export const RESULTADO_GLOBAL_LABELS: Record<string, string> = {
   NORMAL: 'Normal',
   ANORMAL: 'Anormal',
@@ -71,4 +86,11 @@ export function lineasOtrosVinculados(conteos: Record<string, number> | undefine
     .filter((d) => d.section === 'vinculado')
     .map((d) => ({ ...d, count: conteos[d.modelName] ?? 0 }))
     .filter((d) => d.count > 0);
+}
+
+export function lineasResultadosClinicos(conteos: Record<string, number> | undefined) {
+  if (!conteos) return [];
+  return RC_TIPO_DISPLAY
+    .map((item) => ({ ...item, count: conteos[item.tipo] ?? 0 }))
+    .filter((item) => item.count > 0);
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, inject, computed, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, inject, computed, nextTick } from 'vue';
 import { useRoute, useRouter, type RouteParamsRaw } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -36,6 +36,7 @@ import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
 import ResultadosClinicosPanel from '@/components/ResultadosClinicosPanel.vue';
 import ResultadosClinicosSubsection from '@/components/ResultadosClinicosSubsection.vue';
 import ExpedienteHeaderSkeleton from '@/components/skeletons/ExpedienteHeaderSkeleton.vue';
+import { invalidateExpedienteConteosCache } from '@/helpers/expedienteResumenTrabajador';
 
 const toast: any = inject('toast');
 const {
@@ -199,6 +200,7 @@ const solicitarEliminacionDocumento = (
           documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
           resultadosClinicos.fetchResultadosAgrupados(trabajadores.currentTrabajadorId!),
         ]);
+        invalidateExpedienteConteosForCurrentTrabajador();
       } catch (error) {
         console.log('Error al eliminar el documento:', error);
         toast.open({
@@ -262,6 +264,7 @@ const handleAnularDocument = async (razonAnulacion: string) => {
 
     toggleAnularModal();
     await documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!);
+    invalidateExpedienteConteosForCurrentTrabajador();
   } catch (error: any) {
     console.error("Error al anular el documento:", error);
     const message = error.response?.data?.message || "Error al anular el documento, por favor intente nuevamente.";
@@ -283,6 +286,7 @@ const handleFinalizeDocument = async () => {
 
     showFinalizeModal.value = false;
     await documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!);
+    invalidateExpedienteConteosForCurrentTrabajador();
   } catch (error: any) {
     console.error("Error al finalizar el documento:", error);
     const message = error.response?.data?.message || "Error al finalizar el documento, por favor intente nuevamente.";
@@ -324,7 +328,18 @@ const fetchData = async (force = false) => {
   }
 };
 
+function invalidateExpedienteConteosForCurrentTrabajador() {
+  const id =
+    trabajadores.currentTrabajadorId ??
+    (route.params.idTrabajador ? String(route.params.idTrabajador) : '');
+  if (id) invalidateExpedienteConteosCache(id);
+}
+
 onMounted(fetchData);
+
+onBeforeUnmount(() => {
+  invalidateExpedienteConteosForCurrentTrabajador();
+});
 
 watch(
   () => route.params,
@@ -829,6 +844,7 @@ const handleDeleteSelected = async () => {
           documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
           resultadosClinicos.fetchResultadosAgrupados(trabajadores.currentTrabajadorId!)
         ]);
+        invalidateExpedienteConteosForCurrentTrabajador();
         
     } catch (error) {
         console.error('Error al eliminar documentos:', error);

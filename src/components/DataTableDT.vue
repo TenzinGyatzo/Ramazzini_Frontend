@@ -12,6 +12,23 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useUserPermissions } from '@/composables/useUserPermissions';
+import {
+  buildExactExpedienteSummaryHtml,
+  buildFailedExpedienteSummaryHtml,
+  buildLoadingExpedienteSummaryHtml,
+  EXPEDIENTE_DISPLAY_CACHED_MS,
+  EXPEDIENTE_DISPLAY_UNCACHED_MS,
+  EXPEDIENTE_PREFETCH_MS,
+  fetchExpedienteConteosCached,
+  formatNombreTrabajador,
+  getExpedienteResumenBadgeTotal,
+  peekExpedienteConteosCache,
+  type ExpedienteConteosResponse,
+} from '@/helpers/expedienteResumenTrabajador';
+import {
+  initExpedienteTooltipViewportListener,
+  isExpedienteTooltipEnabled,
+} from '@/composables/useExpedienteTooltipEnabled';
 
 const props = defineProps<{ 
   rows: any[];
@@ -29,6 +46,21 @@ const mostrarVigenciasLocal = ref(props.mostrarVigencias !== false);
 const tablaRef = ref<HTMLElement | null>(null);
 let dataTableInstance: any = null;
 let folioTooltipEl: HTMLDivElement | null = null;
+let expedienteTooltipEl: HTMLDivElement | null = null;
+let expedientePrefetchTimer: ReturnType<typeof setTimeout> | null = null;
+let expedienteDisplayTimer: ReturnType<typeof setTimeout> | null = null;
+let expedienteHoverTarget: HTMLElement | null = null;
+let expedienteHoverTrabajadorId: string | null = null;
+let expedienteHoverRow: Record<string, unknown> | null = null;
+let expedienteHoverStartedAt = 0;
+let expedienteSummaryRevealed = false;
+let expedienteHoverRequestId = 0;
+let expedienteEarlyRevealTimer: ReturnType<typeof setTimeout> | null = null;
+let expedienteViewportCleanup: (() => void) | null = null;
+let expedienteScrollHandler: (() => void) | null = null;
+let expedienteEscapeHandler: ((event: KeyboardEvent) => void) | null = null;
+
+const EXPEDIENTE_TOOLTIP_ID = 'expediente-tooltip-floating';
 
 const router = useRouter();
 const route = useRoute();
@@ -81,10 +113,33 @@ function isModifiedNavigationClick(event: JQuery.ClickEvent) {
 }
 
 onMounted(() => {
+  expedienteViewportCleanup = initExpedienteTooltipViewportListener();
+
   $(document).on('mouseenter', '.folio-tooltip', function () {
     showFolioTooltip(this as HTMLElement);
   });
   $(document).on('mouseleave', '.folio-tooltip', hideFolioTooltip);
+
+  $(document).on('mouseenter', '.btn-expediente', function () {
+    handleExpedienteMouseEnter(this as HTMLElement);
+  });
+  $(document).on('mouseleave', '.btn-expediente', handleExpedienteMouseLeave);
+  $(document).on('focusin', '.btn-expediente', function () {
+    handleExpedienteMouseEnter(this as HTMLElement, { fromKeyboard: true });
+  });
+  $(document).on('focusout', '.btn-expediente', function (event) {
+    const related = ((event.originalEvent as FocusEvent | undefined)?.relatedTarget ?? null) as Node | null;
+    const current = this as HTMLElement;
+    if (related && current.contains(related)) return;
+    handleExpedienteMouseLeave();
+  });
+
+  expedienteEscapeHandler = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      hideExpedienteTooltip();
+    }
+  };
+  document.addEventListener('keydown', expedienteEscapeHandler);
 
   // Usar requestAnimationFrame para asegurar que el DOM esté completamente renderizado
   requestAnimationFrame(() => {
@@ -134,6 +189,336 @@ function hideFolioTooltip() {
   folioTooltipEl.style.display = 'none';
 }
 
+function getExpedienteTooltipEl(): HTMLDivElement {
+  if (!expedienteTooltipEl) {
+    expedienteTooltipEl = document.createElement('div');
+    expedienteTooltipEl.id = EXPEDIENTE_TOOLTIP_ID;
+    expedienteTooltipEl.className = 'expediente-tooltip-floating';
+    expedienteTooltipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(expedienteTooltipEl);
+  }
+  return expedienteTooltipEl;
+}
+
+function buildExpedienteSummaryOptions(row: Record<string, unknown> | null) {
+  return {
+    nombreTrabajador: row ? formatNombreTrabajador(row) : undefined,
+  };
+}
+
+function getExpedienteButtonLabel(trabajadorId: string): string {
+  const cached = peekExpedienteConteosCache(trabajadorId);
+  if (!cached) return 'Expediente';
+  return `Expediente (${getExpedienteResumenBadgeTotal(cached)})`;
+}
+
+function updateExpedienteButtonBadge(
+  button: HTMLElement,
+  trabajadorId: string,
+  data?: ExpedienteConteosResponse,
+) {
+  const labelEl = button.querySelector('.btn-expediente-label');
+  if (!labelEl) return;
+
+  if (data) {
+    labelEl.textContent = `Expediente (${getExpedienteResumenBadgeTotal(data)})`;
+    return;
+  }
+
+  labelEl.textContent = getExpedienteButtonLabel(trabajadorId);
+}
+
+function syncExpedienteButtonBadges() {
+  $('.btn-expediente').each(function () {
+    const button = this as HTMLElement;
+    const trabajadorId = String(button.getAttribute('data-id') ?? '');
+    if (!trabajadorId) return;
+
+    updateExpedienteButtonBadge(button, trabajadorId);
+  });
+}
+
+function attachExpedienteScrollListeners() {
+  detachExpedienteScrollListeners();
+
+  expedienteScrollHandler = () => {
+    if (!expedienteHoverTarget || !expedienteTooltipEl) return;
+    if (expedienteTooltipEl.style.display === 'none') return;
+    positionFloatingTooltip(expedienteTooltipEl, expedienteHoverTarget);
+  };
+
+  window.addEventListener('scroll', expedienteScrollHandler, true);
+}
+
+function detachExpedienteScrollListeners() {
+  if (!expedienteScrollHandler) return;
+  window.removeEventListener('scroll', expedienteScrollHandler, true);
+  expedienteScrollHandler = null;
+}
+
+function clearExpedienteDisplayTimer() {
+  if (expedienteDisplayTimer) {
+    clearTimeout(expedienteDisplayTimer);
+    expedienteDisplayTimer = null;
+  }
+}
+
+function clearExpedienteEarlyRevealTimer() {
+  if (expedienteEarlyRevealTimer) {
+    clearTimeout(expedienteEarlyRevealTimer);
+    expedienteEarlyRevealTimer = null;
+  }
+}
+
+function clearExpedienteHoverTimers() {
+  if (expedientePrefetchTimer) {
+    clearTimeout(expedientePrefetchTimer);
+    expedientePrefetchTimer = null;
+  }
+  clearExpedienteDisplayTimer();
+  clearExpedienteEarlyRevealTimer();
+}
+
+function hasMetExpedienteMinDisplayIntent(): boolean {
+  return Date.now() - expedienteHoverStartedAt >= EXPEDIENTE_DISPLAY_CACHED_MS;
+}
+
+function attemptRevealExpedienteSummary(
+  trabajadorId: string,
+  target: HTMLElement,
+  row: Record<string, unknown>,
+) {
+  if (expedienteSummaryRevealed) return;
+  if (!isSameExpedienteHover(target, trabajadorId)) return;
+  if (!hasMetExpedienteMinDisplayIntent()) return;
+  if (!peekExpedienteConteosCache(trabajadorId)) return;
+
+  clearExpedienteDisplayTimer();
+  void showExpedienteSummaryWhenReady(trabajadorId, target, row);
+}
+
+function scheduleExpedienteEarlyRevealCheck(
+  trabajadorId: string,
+  target: HTMLElement,
+  row: Record<string, unknown>,
+) {
+  clearExpedienteEarlyRevealTimer();
+
+  const check = () => {
+    if (!isSameExpedienteHover(target, trabajadorId)) return;
+    if (expedienteSummaryRevealed) return;
+
+    if (!hasMetExpedienteMinDisplayIntent()) {
+      const waitMs =
+        EXPEDIENTE_DISPLAY_CACHED_MS - (Date.now() - expedienteHoverStartedAt);
+      expedienteEarlyRevealTimer = setTimeout(check, Math.max(waitMs, 0));
+      return;
+    }
+
+    attemptRevealExpedienteSummary(trabajadorId, target, row);
+  };
+
+  check();
+}
+
+function isSameExpedienteHover(target: HTMLElement, trabajadorId: string): boolean {
+  return (
+    expedienteHoverTarget === target &&
+    expedienteHoverTrabajadorId === trabajadorId
+  );
+}
+
+function cancelExpedienteTooltipForInteraction() {
+  clearExpedienteHoverTimers();
+  expedienteHoverRequestId += 1;
+  expedienteSummaryRevealed = false;
+  detachExpedienteScrollListeners();
+
+  if (expedienteHoverTarget) {
+    expedienteHoverTarget.removeAttribute('aria-describedby');
+  }
+
+  if (!expedienteTooltipEl) return;
+  expedienteTooltipEl.style.opacity = '0';
+  expedienteTooltipEl.style.display = 'none';
+}
+
+function hideExpedienteTooltip() {
+  clearExpedienteHoverTimers();
+  detachExpedienteScrollListeners();
+  expedienteSummaryRevealed = false;
+
+  if (expedienteHoverTarget) {
+    expedienteHoverTarget.removeAttribute('aria-describedby');
+  }
+
+  expedienteHoverTarget = null;
+  expedienteHoverTrabajadorId = null;
+  expedienteHoverRow = null;
+  expedienteHoverRequestId += 1;
+
+  if (!expedienteTooltipEl) return;
+  expedienteTooltipEl.style.opacity = '0';
+  expedienteTooltipEl.style.display = 'none';
+}
+
+function positionFloatingTooltip(tip: HTMLDivElement, target: HTMLElement) {
+  const rect = target.getBoundingClientRect();
+  const tipHeight = tip.offsetHeight;
+  const tipWidth = tip.offsetWidth;
+  let top = rect.top - tipHeight - 8;
+  if (top < 8) {
+    top = rect.bottom + 8;
+  }
+
+  tip.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - tipWidth - 8))}px`;
+  tip.style.top = `${top}px`;
+}
+
+function showExpedienteTooltip(target: HTMLElement, html: string) {
+  const tip = getExpedienteTooltipEl();
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+  tip.style.visibility = 'hidden';
+  tip.style.opacity = '0';
+  positionFloatingTooltip(tip, target);
+  tip.style.visibility = 'visible';
+  tip.style.opacity = '1';
+
+  target.setAttribute('aria-describedby', EXPEDIENTE_TOOLTIP_ID);
+  attachExpedienteScrollListeners();
+}
+
+function findTrabajadorRow(trabajadorId: string): Record<string, unknown> | null {
+  const trabajador = props.rows.find((row) => String(row._id) === trabajadorId);
+  return trabajador ? (trabajador as Record<string, unknown>) : null;
+}
+
+function handleExpedienteMouseEnter(
+  target: HTMLElement,
+  options: { fromKeyboard?: boolean } = {},
+) {
+  if (!isExpedienteTooltipEnabled()) return;
+
+  const trabajadorId = String(target.getAttribute('data-id') ?? '');
+  if (!trabajadorId) return;
+
+  const row = findTrabajadorRow(trabajadorId);
+  if (!row) return;
+
+  clearExpedienteHoverTimers();
+  expedienteHoverStartedAt = Date.now();
+  expedienteSummaryRevealed = false;
+  expedienteHoverTarget = target;
+  expedienteHoverTrabajadorId = trabajadorId;
+  expedienteHoverRow = row;
+
+  const cached = peekExpedienteConteosCache(trabajadorId);
+  const displayDelay =
+    options.fromKeyboard && cached
+      ? 0
+      : cached
+        ? EXPEDIENTE_DISPLAY_CACHED_MS
+        : EXPEDIENTE_DISPLAY_UNCACHED_MS;
+
+  if (!cached) {
+    expedientePrefetchTimer = setTimeout(() => {
+      if (!isSameExpedienteHover(target, trabajadorId)) return;
+      void prefetchExpedienteConteos(trabajadorId, target, row);
+    }, EXPEDIENTE_PREFETCH_MS);
+
+    scheduleExpedienteEarlyRevealCheck(trabajadorId, target, row);
+  }
+
+  expedienteDisplayTimer = setTimeout(() => {
+    if (!isSameExpedienteHover(target, trabajadorId)) return;
+    void showExpedienteSummaryWhenReady(trabajadorId, target, row);
+  }, displayDelay);
+}
+
+async function prefetchExpedienteConteos(
+  trabajadorId: string,
+  target: HTMLElement,
+  row: Record<string, unknown>,
+) {
+  if (peekExpedienteConteosCache(trabajadorId)) {
+    attemptRevealExpedienteSummary(trabajadorId, target, row);
+    return;
+  }
+
+  try {
+    await fetchExpedienteConteosCached(trabajadorId);
+    attemptRevealExpedienteSummary(trabajadorId, target, row);
+  } catch {
+    // El error se maneja al momento de visualización.
+  }
+}
+
+async function showExpedienteSummaryWhenReady(
+  trabajadorId: string,
+  target: HTMLElement,
+  row: Record<string, unknown>,
+) {
+  if (expedienteSummaryRevealed) return;
+
+  const sessionId = expedienteHoverRequestId;
+  const summaryOptions = buildExpedienteSummaryOptions(row);
+
+  if (!isSameExpedienteHover(target, trabajadorId)) return;
+
+  const cached = peekExpedienteConteosCache(trabajadorId);
+  if (cached) {
+    expedienteSummaryRevealed = true;
+    showExpedienteTooltip(
+      target,
+      buildExactExpedienteSummaryHtml(cached, summaryOptions),
+    );
+    updateExpedienteButtonBadge(target, trabajadorId, cached);
+    return;
+  }
+
+  expedienteSummaryRevealed = true;
+  showExpedienteTooltip(target, buildLoadingExpedienteSummaryHtml());
+
+  try {
+    const data = await fetchExpedienteConteosCached(trabajadorId);
+    if (
+      sessionId !== expedienteHoverRequestId ||
+      !isSameExpedienteHover(target, trabajadorId)
+    ) {
+      return;
+    }
+
+    showExpedienteTooltip(
+      target,
+      buildExactExpedienteSummaryHtml(data, summaryOptions),
+    );
+    updateExpedienteButtonBadge(target, trabajadorId, data);
+  } catch {
+    if (
+      sessionId !== expedienteHoverRequestId ||
+      !isSameExpedienteHover(target, trabajadorId)
+    ) {
+      return;
+    }
+
+    showExpedienteTooltip(
+      target,
+      buildFailedExpedienteSummaryHtml(summaryOptions),
+    );
+  }
+}
+
+function handleExpedienteMouseLeave() {
+  const target = expedienteHoverTarget;
+  const trabajadorId = expedienteHoverTrabajadorId;
+  hideExpedienteTooltip();
+
+  if (target && trabajadorId) {
+    updateExpedienteButtonBadge(target, trabajadorId);
+  }
+}
+
 function inicializarDataTable() {
   if (!dataTableInstance) {
 
@@ -150,7 +535,7 @@ function inicializarDataTable() {
     };
 
     // Definir las columnas que se ocultan por defecto
-    const columnasOcultas = [2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42];
+    const columnasOcultas = [2, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42];
 
     dataTableInstance = new DataTablesCore('#customTable', {
       data: props.rows,
@@ -445,10 +830,10 @@ function inicializarDataTable() {
             return `
               <a
                 href="${url}"
-                class="btn-expediente bg-emerald-600 text-white rounded-full px-2 py-1 transition-all duration-100 ease-out transform hover:scale-105 shadow-md hover:shadow-lg hover:bg-emerald-500 hover:text-white hover:border-emerald-700 border-2 border-emerald-600 inline-block"
+                class="btn-expediente bg-emerald-600 text-white rounded-full px-2 py-1 transition-all duration-100 ease-out transform hover:scale-105 shadow-md hover:shadow-lg hover:bg-emerald-500 hover:text-white hover:border-emerald-700 border-2 border-emerald-600 inline-flex items-center"
                 data-id="${escapeHtml(row._id)}"
               >
-                Expediente
+                <span class="btn-expediente-label">Expediente</span>
               </a>
             `;
           }
@@ -594,11 +979,11 @@ function inicializarDataTable() {
       columnDefs: [
         { targets: props.mostrarColumnasOcultas ? [] : columnasOcultas, visible: props.mostrarColumnasOcultas ? true : false }, // Oculta las columnas según la prop
         { targets: 0, className: 'text-center' },
-        { targets: 3, width: '100px' }, // Nombre completo
+        { targets: 3, width: '170px' }, // Nombre completo
         { targets: 4, width: '100px' }, // Aptitud
         { targets: 5, width: '120px' }, // Estado Vigencia
         { targets: 6, width: '70px' }, // Última actualización
-        { targets: 10, width: '100px' }, // Puesto
+        { targets: 10, width: '140px' }, // Puesto
         { targets: 14, width: '60px' }, // IMC
         { targets: 32, width: '70px' }, // Tabaco
         { targets: 34, width: '80px' }, // Audiometría
@@ -609,13 +994,14 @@ function inicializarDataTable() {
         { targets: 39, width: '90px' }, // Laboratorio RC
         { targets: 40, width: '60px' }, // Agentes Riesgo
         { targets: 41, width: '60px' }, // Consultas
-        { targets: 43, className: 'columna-expediente' },
+        { targets: 43, width: '95px', className: 'columna-expediente' },
         { targets: 44, width: '248px', className: 'columna-acciones' } // Acciones con clase específica
       ]
     });
 
     $(document).on('click', '.btn-expediente', function (event) {
       event.stopPropagation();
+      cancelExpedienteTooltipForInteraction();
 
       if (isModifiedNavigationClick(event)) {
         return;
@@ -698,6 +1084,7 @@ function inicializarDataTable() {
 
     dataTableInstance.on('init', function () {
       aplicarTodosLosFiltrosDesdeLocalStorage();
+      syncExpedienteButtonBadges();
       
       // Ocultar columna de número de empleado si no hay datos
       const tieneNumeroEmpleado = props.rows.some(row => 
@@ -711,10 +1098,9 @@ function inicializarDataTable() {
       }
     });
 
-    // Eliminamos la lógica de reordenamiento automático que interfiere con el orden original
-    // dataTableInstance.on('draw', function () {
-    //   // Esta lógica causaba que el filtro de período cambiara el orden automáticamente
-    // });
+    dataTableInstance.on('draw', function () {
+      syncExpedienteButtonBadges();
+    });
   }
 }
 
@@ -724,6 +1110,20 @@ onBeforeUnmount(() => {
   hideFolioTooltip();
   folioTooltipEl?.remove();
   folioTooltipEl = null;
+
+  $(document).off('mouseenter', '.btn-expediente');
+  $(document).off('mouseleave', '.btn-expediente');
+  $(document).off('focusin', '.btn-expediente');
+  $(document).off('focusout', '.btn-expediente');
+  hideExpedienteTooltip();
+  expedienteTooltipEl?.remove();
+  expedienteTooltipEl = null;
+  expedienteViewportCleanup?.();
+  expedienteViewportCleanup = null;
+  if (expedienteEscapeHandler) {
+    document.removeEventListener('keydown', expedienteEscapeHandler);
+    expedienteEscapeHandler = null;
+  }
 
   $(document).off('click', '.btn-expediente');
   $(document).off('click', '.btn-rt');
@@ -914,7 +1314,7 @@ defineExpose({
 // Agregar watcher para la prop mostrarColumnasOcultas
 watch(() => props.mostrarColumnasOcultas, (nuevoValor) => {
   if (dataTableInstance) {
-    const columnasOcultas = [2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42];
+    const columnasOcultas = [2, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42];
     
     // Cambiar la visibilidad de las columnas
     columnasOcultas.forEach((columnaIndex) => {
@@ -1281,6 +1681,17 @@ table.dataTable tbody tr.selected .btn-expediente {
   color: white !important;
 }
 
+table.dataTable th.columna-expediente,
+table.dataTable td.columna-expediente {
+  white-space: nowrap;
+  min-width: 115px;
+}
+
+.btn-expediente,
+.btn-expediente-label {
+  white-space: nowrap;
+}
+
 table.dataTable tbody tr > td,
 table.dataTable tbody tr > th {
   padding-top: 8px !important;
@@ -1502,5 +1913,84 @@ table.dataTable td:nth-child(6) .flex {
   pointer-events: none;
   transition: opacity 0.15s ease;
   white-space: nowrap;
+}
+
+.expediente-tooltip-floating {
+  position: fixed;
+  z-index: 10001;
+  display: none;
+  max-width: 360px;
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  line-height: 1.2rem;
+  color: #374151;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.expediente-tooltip-floating .expediente-resumen-title {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.expediente-tooltip-floating .expediente-resumen-subtitle {
+  margin: 0 0 4px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.expediente-tooltip-floating .expediente-resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+}
+
+.expediente-tooltip-floating .expediente-resumen-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+}
+
+.expediente-tooltip-floating .expediente-resumen-line i {
+  width: 12px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.expediente-tooltip-floating .expediente-resumen-hint,
+.expediente-tooltip-floating .expediente-resumen-loading,
+.expediente-tooltip-floating .expediente-resumen-error,
+.expediente-tooltip-floating .expediente-resumen-empty {
+  margin: 8px 0 0;
+  font-size: 0.65rem;
+  color: #6b7280;
+}
+
+.expediente-tooltip-floating .expediente-resumen-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  color: #374151;
+}
+
+.expediente-tooltip-floating .expediente-resumen-error {
+  color: #dc2626;
+}
+
+.expediente-tooltip-floating .expediente-resumen-ultima-actividad {
+  margin: 0 0 8px;
+  font-size: 0.65rem;
+  color: #6b7280;
 }
 </style>

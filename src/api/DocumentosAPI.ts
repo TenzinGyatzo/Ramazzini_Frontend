@@ -5,6 +5,10 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/todos`);
     },
 
+    getDocumentosConteos(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/conteos`);
+    },
+
     getAntidopings(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/antidoping`);
     },

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, watch, computed, provide } from 'vue';
+import { ref, inject, watch, computed, provide, onUnmounted } from 'vue';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
@@ -20,6 +20,7 @@ import {
 import { FIRMANTE_EDAD_MINIMA, FIRMANTE_EDAD_MAXIMA } from '../../formkit.config';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 import { useFirmanteIdentificationReadOnly } from '@/composables/useFirmanteIdentificationReadOnly';
+import { processSignatorySignature } from '@/helpers/processProviderLogo';
 
 const enfermeraFirmante = useEnfermeraFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -57,7 +58,20 @@ useResidenciaGeoCoherence(nom024ResidenciaFields);
 
 const firmaPreview = ref(null);
 const firmaArchivo = ref(null);
+const procesandoFirma = ref(false);
 const isDragOver = ref(false);  // Para el estado de drag and drop
+
+// URL de objeto de la vista previa, para liberarla al reemplazar o desmontar
+let previewObjectUrl = null;
+
+const revokePreviewUrl = () => {
+  if (previewObjectUrl) {
+    URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = null;
+  }
+};
+
+onUnmounted(revokePreviewUrl);
 
 // Objeto reactivo para el formulario del enfermera firmante
 const formularioEnfermeraFirmante = ref({
@@ -177,22 +191,44 @@ const piePaginaFirmante = computed(() => ({
 
 const toast = inject('toast');
 
+// Valida y procesa la firma (fondo, recorte, padding, 500x500 PNG) antes de usarla
+const handleSignatureSelection = async (file) => {
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      toast.open({ message: validation.message, type: 'error' });
+      return;
+    }
+
+    procesandoFirma.value = true;
+    try {
+        const { file: processed, warnings } = await processSignatorySignature(file);
+        firmaArchivo.value = processed;
+        revokePreviewUrl();
+        previewObjectUrl = URL.createObjectURL(processed);
+        firmaPreview.value = previewObjectUrl;
+        warnings.forEach((warning) => {
+            toast.open({ message: warning, type: 'warning' });
+        });
+    } catch (error) {
+        console.error('Error al procesar la firma:', error);
+        toast.open({
+            message: 'No se pudo procesar la firma, por favor intenta con otra imagen.',
+            type: 'error',
+        });
+        revokePreviewUrl();
+        firmaPreview.value = null;
+        firmaArchivo.value = null;
+    } finally {
+        procesandoFirma.value = false;
+    }
+};
+
 const handleFileChange = (event) => {
     const file = event?.target?.files?.[0];
     if (file && file instanceof File) {
-        const validation = validateFile(file);
-        if (!validation.valid) {
-          toast.open({ message: validation.message, type: 'error' });
-          return;
-        }
-        
-        firmaArchivo.value = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            firmaPreview.value = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        handleSignatureSelection(file);
     } else {
+        revokePreviewUrl();
         firmaPreview.value = null;
         firmaArchivo.value = null;
     }
@@ -223,22 +259,12 @@ const handleDrop = (event) => {
   event.preventDefault();
   event.stopPropagation();
   isDragOver.value = false;
-  
+
+  if (procesandoFirma.value) return;
+
   const files = Array.from(event.dataTransfer.files);
   if (files.length > 0) {
-    const file = files[0]; // Solo tomamos el primer archivo
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      toast.open({ message: validation.message, type: 'error' });
-      return;
-    }
-    
-    firmaArchivo.value = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      firmaPreview.value = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    handleSignatureSelection(files[0]); // Solo tomamos el primer archivo
   }
 };
 
@@ -649,19 +675,21 @@ const firmaSrc = computed(() => {
 
                         <!-- Área de arrastrar y soltar para la firma -->
                         <div class="mb-4">
-                          <label class="block text-sm font-medium text-gray-700 mt-4 mb-2">Firma (Asegura que sea .png sin fondo, cuadrada, de al menos 500 x 500px)</label>
+                          <label class="block text-sm font-medium text-gray-700 mt-4 mb-2">Firma (Se optimizará automáticamente a PNG de 500 x 500px sin fondo claro. Para mejores resultados, usa una firma sobre fondo blanco o un PNG transparente)</label>
                           <div 
-                            class="border-2 border-dashed rounded-lg p-4 sm:p-6 text-center transition-all duration-200 cursor-pointer"
+                            class="border-2 border-dashed rounded-lg p-4 sm:p-6 text-center transition-all duration-200"
                             :class="[
-                              isDragOver 
-                                ? 'border-emerald-500 bg-emerald-50 scale-105' 
-                                : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
+                              procesandoFirma
+                                ? 'border-gray-300 bg-gray-50 cursor-wait opacity-70'
+                                : isDragOver 
+                                  ? 'border-emerald-500 bg-emerald-50 scale-105 cursor-pointer' 
+                                  : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50 cursor-pointer'
                             ]"
                             @dragenter="handleDragEnter"
                             @dragleave="handleDragLeave"
                             @dragover="handleDragOver"
                             @drop="handleDrop"
-                            @click="$refs.firmaInput.click()"
+                            @click="!procesandoFirma && $refs.firmaInput.click()"
                           >
                             <input
                               ref="firmaInput"
@@ -670,8 +698,14 @@ const firmaSrc = computed(() => {
                               @change="handleFileChange"
                               class="hidden"
                             />
-                            
-                            <div class="text-gray-600">
+
+                            <!-- Estado de procesamiento -->
+                            <div v-if="procesandoFirma" class="text-gray-600 py-4">
+                              <i class="fas fa-spinner fa-spin text-3xl text-emerald-600 mb-3"></i>
+                              <p class="text-lg font-medium">Optimizando firma...</p>
+                            </div>
+
+                            <div v-else class="text-gray-600">
                               <!-- Icono dinámico -->
                               <div class="mx-auto h-12 w-12 mb-4 transition-all duration-200" :class="isDragOver ? 'scale-110' : ''">
                                 <div v-if="!isDragOver" class="flex items-center justify-center">

@@ -1,7 +1,8 @@
 /**
- * Procesamiento de logotipos de proveedores de salud en el cliente (sin IA):
- * remueve fondos claros/uniformes, recorta márgenes vacíos, añade padding
- * y normaliza a un PNG de 500×500 px listo para usarse en los informes PDF.
+ * Procesamiento de imágenes de marca (logotipos de proveedores y firmas de
+ * firmantes) en el cliente (sin IA): remueve fondos claros/uniformes, recorta
+ * márgenes vacíos, añade padding y normaliza a un PNG de 500×500 px listo para
+ * usarse en los informes PDF.
  */
 
 export const OUTPUT_SIZE = 500;
@@ -9,6 +10,8 @@ export const PADDING_RATIO = 0.1;
 export const LIGHT_PIXEL_THRESHOLD = 240;
 export const CORNER_SAMPLE_TOLERANCE = 35;
 export const MIN_CONTENT_RATIO = 0.05;
+/** Imágenes ya optimizadas por debajo de este peso pueden omitir el procesamiento. */
+export const SKIP_PROCESSING_MAX_BYTES = 150 * 1024;
 
 /** Alpha mínimo para considerar un píxel como contenido (y no fondo). */
 const CONTENT_ALPHA_THRESHOLD = 20;
@@ -33,9 +36,19 @@ export interface ContentBounds {
   bottom: number;
 }
 
-export interface ProcessedProviderLogo {
+export interface ProcessedBrandingImage {
   file: File;
   warnings: string[];
+}
+
+/** Alias retrocompatible para el resultado del procesamiento de logotipos. */
+export type ProcessedProviderLogo = ProcessedBrandingImage;
+
+export interface ProcessBrandingImageOptions {
+  /** Nombre base usado cuando el archivo original no aporta uno válido. */
+  defaultBaseName?: string;
+  /** Etiqueta de la entidad para adaptar los mensajes ("logotipo", "firma"). */
+  entityLabel?: string;
 }
 
 /** Detecta si la imagen ya usa transparencia (PNG con canal alpha real). */
@@ -137,7 +150,66 @@ export function getContentBounds(pixels: PixelData): ContentBounds | null {
   return { left, top, right, bottom };
 }
 
-function loadImage(file: File): Promise<HTMLImageElement> {
+/** Construye el nombre del archivo procesado, siempre con extensión .png. */
+export function buildProcessedFileName(originalName: string, defaultBaseName: string): string {
+  const baseName = (originalName || '').replace(/\.[^.]+$/, '') || defaultBaseName;
+  return `${baseName}.png`;
+}
+
+/** Indica si el archivo subido es PNG (por MIME o extensión). */
+export function isPngFile(file: File): boolean {
+  const type = (file.type || '').toLowerCase();
+  if (type === 'image/png') return true;
+  return (file.name || '').toLowerCase().endsWith('.png');
+}
+
+/** Indica si el archivo subido es JPEG/JPG (por MIME o extensión). */
+export function isJpegFile(file: File): boolean {
+  const type = (file.type || '').toLowerCase();
+  if (type === 'image/jpeg' || type === 'image/jpg') return true;
+  const name = (file.name || '').toLowerCase();
+  return name.endsWith('.jpg') || name.endsWith('.jpeg');
+}
+
+/**
+ * Omite el procesamiento cuando la imagen ya es apta para PDF:
+ * - PNG con transparencia, dimensiones acotadas, peso razonable y contenido
+ *   que cabe sin upscale dentro del área útil del lienzo normalizado.
+ * - JPEG/JPG ya optimizado (peso razonable y lado mayor ≤ OUTPUT_SIZE), para
+ *   no convertirlo a PNG más pesado sin beneficio.
+ */
+export function shouldSkipBrandingProcessing(
+  file: File,
+  width: number,
+  height: number,
+  pixels: PixelData,
+): boolean {
+  if (file.size > SKIP_PROCESSING_MAX_BYTES) return false;
+  if (Math.max(width, height) > OUTPUT_SIZE) return false;
+
+  if (isJpegFile(file)) {
+    return true;
+  }
+
+  if (!isPngFile(file)) return false;
+  if (!hasTransparency(pixels)) return false;
+
+  const bounds = getContentBounds(pixels);
+  if (!bounds) return false;
+
+  const contentWidth = bounds.right - bounds.left + 1;
+  const contentHeight = bounds.bottom - bounds.top + 1;
+  const availableSize = OUTPUT_SIZE * (1 - 2 * PADDING_RATIO);
+
+  return Math.max(contentWidth, contentHeight) <= availableSize;
+}
+
+/** Conserva el original si el resultado procesado no reduce el peso. */
+export function shouldKeepOriginalOverProcessed(original: File, processed: File): boolean {
+  return processed.size >= original.size;
+}
+
+function loadImage(file: File, entityLabel: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -147,37 +219,42 @@ function loadImage(file: File): Promise<HTMLImageElement> {
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('No se pudo cargar la imagen del logotipo'));
+      reject(new Error(`No se pudo cargar la imagen ${entityLabel === 'firma' ? 'de la firma' : 'del logotipo'}`));
     };
     img.src = url;
   });
 }
 
-function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+function canvasToPngBlob(canvas: HTMLCanvasElement, entityLabel: string): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) {
         resolve(blob);
       } else {
-        reject(new Error('No se pudo exportar el logotipo procesado'));
+        reject(new Error(`No se pudo exportar ${entityLabel === 'firma' ? 'la firma procesada' : 'el logotipo procesado'}`));
       }
     }, 'image/png');
   });
 }
 
 /**
- * Procesa el logotipo: remueve fondo claro (solo si la imagen no tiene ya
- * transparencia), recorta márgenes vacíos, centra con padding y exporta un
- * PNG de 500×500 px. Los warnings informan resultados dudosos sin bloquear.
+ * Procesa una imagen de marca: remueve fondo claro (solo si la imagen no tiene
+ * ya transparencia), recorta márgenes vacíos, centra con padding y exporta un
+ * PNG de 500×500 px. Omite el procesamiento en PNG/JPEG ya optimizados, y si
+ * el PNG resultante no reduce el peso, conserva el archivo original.
  */
-export async function processProviderLogo(file: File): Promise<ProcessedProviderLogo> {
+export async function processBrandingImage(
+  file: File,
+  options: ProcessBrandingImageOptions = {},
+): Promise<ProcessedBrandingImage> {
+  const { defaultBaseName = 'logotipo', entityLabel = 'logotipo' } = options;
   const warnings: string[] = [];
-  const image = await loadImage(file);
+  const image = await loadImage(file, entityLabel);
 
   const sourceWidth = image.naturalWidth || image.width;
   const sourceHeight = image.naturalHeight || image.height;
   if (!sourceWidth || !sourceHeight) {
-    throw new Error('La imagen del logotipo no tiene dimensiones válidas');
+    throw new Error(`La imagen ${entityLabel === 'firma' ? 'de la firma' : 'del logotipo'} no tiene dimensiones válidas`);
   }
 
   // Canvas intermedio al tamaño original para manipular píxeles
@@ -191,6 +268,10 @@ export async function processProviderLogo(file: File): Promise<ProcessedProvider
   sourceCtx.drawImage(image, 0, 0);
 
   const imageData = sourceCtx.getImageData(0, 0, sourceWidth, sourceHeight);
+
+  if (shouldSkipBrandingProcessing(file, sourceWidth, sourceHeight, imageData)) {
+    return { file, warnings: [] };
+  }
 
   // Si el PNG ya trae transparencia, respetamos sus píxeles opacos;
   // si no (típico JPG), removemos el fondo claro/uniforme.
@@ -216,7 +297,9 @@ export async function processProviderLogo(file: File): Promise<ProcessedProvider
   const contentHeight = bounds.bottom - bounds.top + 1;
   const contentRatio = (contentWidth * contentHeight) / (sourceWidth * sourceHeight);
   if (contentRatio < MIN_CONTENT_RATIO) {
-    warnings.push('El logotipo quedó muy pequeño tras el recorte; verifica la vista previa.');
+    warnings.push(
+      `${entityLabel === 'firma' ? 'La firma quedó muy pequeña' : 'El logotipo quedó muy pequeño'} tras el recorte; verifica la vista previa.`,
+    );
   }
 
   // Canvas final 500×500 con el contenido centrado y padding uniforme
@@ -229,7 +312,8 @@ export async function processProviderLogo(file: File): Promise<ProcessedProvider
   }
 
   const availableSize = OUTPUT_SIZE * (1 - 2 * PADDING_RATIO);
-  const scale = Math.min(availableSize / contentWidth, availableSize / contentHeight);
+  // Nunca agrandar: solo reducir o mantener escala cuando haga falta normalizar.
+  const scale = Math.min(availableSize / contentWidth, availableSize / contentHeight, 1);
   const targetWidth = contentWidth * scale;
   const targetHeight = contentHeight * scale;
   const offsetX = (OUTPUT_SIZE - targetWidth) / 2;
@@ -249,9 +333,29 @@ export async function processProviderLogo(file: File): Promise<ProcessedProvider
     targetHeight,
   );
 
-  const blob = await canvasToPngBlob(outputCanvas);
-  const baseName = file.name.replace(/\.[^.]+$/, '') || 'logotipo';
-  const processedFile = new File([blob], `${baseName}.png`, { type: 'image/png' });
+  const blob = await canvasToPngBlob(outputCanvas, entityLabel);
+  const processedFile = new File([blob], buildProcessedFileName(file.name, defaultBaseName), {
+    type: 'image/png',
+  });
+
+  // Solo conservar el PNG procesado si realmente reduce el peso del archivo.
+  if (shouldKeepOriginalOverProcessed(file, processedFile)) {
+    return { file, warnings: [] };
+  }
 
   return { file: processedFile, warnings };
+}
+
+/**
+ * Procesa el logotipo de un proveedor de salud (wrapper de processBrandingImage).
+ */
+export function processProviderLogo(file: File): Promise<ProcessedBrandingImage> {
+  return processBrandingImage(file, { defaultBaseName: 'logotipo', entityLabel: 'logotipo' });
+}
+
+/**
+ * Procesa la firma de un firmante (médico, enfermera o técnico).
+ */
+export function processSignatorySignature(file: File): Promise<ProcessedBrandingImage> {
+  return processBrandingImage(file, { defaultBaseName: 'firma', entityLabel: 'firma' });
 }
