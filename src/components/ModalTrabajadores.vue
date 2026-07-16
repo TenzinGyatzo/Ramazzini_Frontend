@@ -509,8 +509,8 @@ const handleSubmit = async (data) => {
       return;
     }
 
-    // Bloquear solo si canceló la suscripción y la fecha de fin de suscripción ya pasó
-    if (estadoSuscripcion === 'cancelled' && finDeSuscripcion && new Date() > finDeSuscripcion) {
+    // Bloquear si canceló y no hay fecha de fin, o si la fecha de fin ya pasó
+    if (estadoSuscripcion === 'cancelled' && (!finDeSuscripcion || new Date() >= finDeSuscripcion)) {
       emit('openSubscriptionModal');
       return;
     }

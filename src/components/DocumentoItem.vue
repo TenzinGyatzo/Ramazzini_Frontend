@@ -342,7 +342,7 @@ const editarDocumento = (documentoId, documentoTipo) => {
             return;
         }
 
-        if (estadoSuscripcion === 'cancelled' && finDeSuscripcion && new Date() > finDeSuscripcion) {
+        if (estadoSuscripcion === 'cancelled' && (!finDeSuscripcion || new Date() >= finDeSuscripcion)) {
             emit('openSubscriptionModal');
             return;
         }

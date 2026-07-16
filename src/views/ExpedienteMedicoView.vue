@@ -124,7 +124,7 @@ const toggleDocumentoExternoModal = () => {
         return;
       }
 
-      if (estadoSuscripcion.value === 'cancelled' && finDeSuscripcion.value && new Date() > finDeSuscripcion.value) {
+      if (estadoSuscripcion.value === 'cancelled' && (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())) {
         showSubscriptionModal.value = true;
         return;
       }
@@ -148,7 +148,7 @@ const toggleDocumentoExternoUpdateModal = () => {
         return;
       }
 
-      if (estadoSuscripcion.value === 'cancelled' && finDeSuscripcion.value && new Date() > finDeSuscripcion.value) {
+      if (estadoSuscripcion.value === 'cancelled' && (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())) {
         showSubscriptionModal.value = true;
         return;
       }
@@ -167,7 +167,7 @@ const toggleCuestionariosModal = () => {
       return;
     }
 
-    if (estadoSuscripcion.value === 'cancelled' && finDeSuscripcion.value && new Date() > finDeSuscripcion.value) {
+    if (estadoSuscripcion.value === 'cancelled' && (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())) {
       showSubscriptionModal.value = true;
       return;
     }
@@ -379,8 +379,7 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
 
     if (
       estadoSuscripcion.value === 'cancelled' &&
-      finDeSuscripcion.value &&
-      new Date() > finDeSuscripcion.value
+      (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())
     ) {
       showSubscriptionModal.value = true;
       return;
