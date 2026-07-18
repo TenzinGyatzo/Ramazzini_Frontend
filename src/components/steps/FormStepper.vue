@@ -12,6 +12,9 @@ import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 import DocumentosAPI from '@/api/DocumentosAPI';
+import { generarGraficaAudiometria } from '@/helpers/generarGraficaAudiometria';
+import { generarGraficasIlc } from '@/helpers/generarGraficasIlc';
+import { usePdfGenerationStore } from '@/stores/pdfGeneration';
 
 import Step1Antidoping from '../steps/antidopingSteps/Step1.vue';
 import Step2Antidoping from '../steps/antidopingSteps/Step2.vue';
@@ -1731,40 +1734,90 @@ export default {
         }
 
         const documentId = response._id;
-        const apiEndpoint = `${import.meta.env.VITE_API_URL}/informes/${documentos.currentTypeOfDocument}/${empresas.currentEmpresaId}/${trabajadores.currentTrabajadorId}/${documentId}/${user.value._id}`;
-
-        if (documentos.currentTypeOfDocument === 'audiometria') {
-          const graficaBase64 = formData.formDataAudiometria.graficaAudiometria;
-
-          if (graficaBase64) {
-            await axios.post(apiEndpoint, { grafica: graficaBase64 }, authRequestConfig());
-          } else {
-            await axios.get(apiEndpoint, authRequestConfig());
-          }
-        } else {
-          await axios.get(apiEndpoint, authRequestConfig());
-        }
-
         const tipoDocEnviado = documentos.currentTypeOfDocument;
-        const esCreacionNotaAclaratoria =
-          tipoDocEnviado === 'notaAclaratoria' && !datosLimpios._id;
+        const trabajadorId = trabajadores.currentTrabajadorId;
+        const empresaId = empresas.currentEmpresaId;
+        const centroTrabajoId = centrosTrabajo.currentCentroTrabajoId;
+        const userId = user.value._id;
+        const apiEndpoint = `${import.meta.env.VITE_API_URL}/informes/${tipoDocEnviado}/${empresaId}/${trabajadorId}/${documentId}/${userId}`;
+        const documentoGuardado = response;
+        const pdfGenerationStore = usePdfGenerationStore();
 
-        formData.resetFormData();
-        documentos.currentTypeOfDocument = null;
+        // Optimista: el expediente puede mostrar "Generando…" sin esperar al PATCH
+        pdfGenerationStore.markLocalGenerating(documentId);
+        isSubmitting.value = false;
 
-        if (esCreacionNotaAclaratoria) {
-          router.push({
-            name: 'expediente-medico',
-            params: {
-              idEmpresa: empresas.currentEmpresaId,
-              idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-              idTrabajador: trabajadores.currentTrabajadorId,
-            },
-          });
-          return;
-        }
+        // Navegar YA (no await markPdfGenerating ni PDF). resetForm diferido para no bloquear el paint.
+        router.push({
+          name: 'expediente-medico',
+          params: {
+            idEmpresa: empresaId,
+            idCentroTrabajo: centroTrabajoId,
+            idTrabajador: trabajadorId,
+          },
+        });
 
-        router.back();
+        queueMicrotask(() => {
+          formData.resetFormData();
+          documentos.currentTypeOfDocument = null;
+        });
+
+        void (async () => {
+          try {
+            try {
+              await DocumentosAPI.markPdfGenerating(
+                tipoDocEnviado,
+                trabajadorId,
+                documentId,
+              );
+            } catch (markError) {
+              console.warn('No se pudo marcar pdfStatus generating:', markError);
+            }
+
+            if (tipoDocEnviado === 'audiometria') {
+              const graficaBase64 = generarGraficaAudiometria(documentoGuardado);
+              await axios.post(
+                apiEndpoint,
+                { grafica: graficaBase64 },
+                authRequestConfig(),
+              );
+            } else if (tipoDocEnviado === 'informeLongitudinalCardiometabolico') {
+              const graficas = generarGraficasIlc(
+                documentoGuardado?.eventosConcentrados,
+              );
+              try {
+                await DocumentosAPI.updateDocument(
+                  tipoDocEnviado,
+                  trabajadorId,
+                  documentId,
+                  {
+                    ...graficas,
+                    idTrabajador: trabajadorId,
+                    fechaInformeLongitudinalCardiometabolico:
+                      documentoGuardado.fechaInformeLongitudinalCardiometabolico,
+                    updatedBy: userId,
+                  },
+                );
+              } catch (persistError) {
+                console.warn(
+                  'No se pudieron persistir gráficas ILC (se envían en POST):',
+                  persistError,
+                );
+              }
+              await axios.post(apiEndpoint, graficas, authRequestConfig());
+            } else {
+              await axios.get(apiEndpoint, authRequestConfig());
+            }
+          } catch (bgError) {
+            console.error(
+              'Error al generar PDF en background tras guardar documento:',
+              bgError,
+            );
+            pdfGenerationStore.clearLocalGenerating(documentId);
+          }
+        })();
+
+        return;
       } catch (error) {
         console.error('Error en el proceso de creación o generación del informe:', error);
 
@@ -2015,7 +2068,7 @@ export default {
               class="px-4 py-2 text-xs md:text-base rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-transform duration-200 ease-in-out hover:scale-110 glow-animation focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <span v-if="isSubmitting" class="inline-flex items-center gap-0.5">
-                Creando PDF
+                Guardando
                 <span class="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
               </span>
               <span v-else-if="isValidating" class="inline-flex items-center gap-0.5">

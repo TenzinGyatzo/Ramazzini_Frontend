@@ -11,6 +11,9 @@ import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref, defineAsyncComponent } from 'vue';
 import { Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
 import { enqueuePdfAvailabilityCheck } from '@/composables/usePdfAvailabilityQueue';
+import { usePdfGenerationTracker } from '@/composables/usePdfGenerationTracker';
+import { usePdfGenerationStore } from '@/stores/pdfGeneration';
+import { getToast } from '@/utils/toast';
 
 const VPdfViewer = defineAsyncComponent(() =>
   import('@vue-pdf-viewer/viewer').then((mod) => mod.VPdfViewer),
@@ -378,6 +381,14 @@ const extractRelativeClinicalPath = (urlOrPath) => {
 // Función dinámica para descargar un archivo basado en el documento// Función dinámica para descargar un archivo basado en el documento
 const descargarArchivo = async (documento, tipoDocumento) => {
     try {
+        if (isPdfGenerating.value) {
+            getToast()?.open?.({
+                message: 'El PDF se está generando. Espere un momento.',
+                type: 'warning',
+            });
+            return;
+        }
+
         console.log('Descargando archivo:', { documento, tipoDocumento });
 
         const ruta = obtenerRutaDocumento(documento, tipoDocumento);
@@ -592,6 +603,14 @@ const buildPdfUrl = (ruta, nombrePDF, updatedAt = null, options = {}) => {
 };
 
 const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
+    if (isPdfGenerating.value) {
+        getToast()?.open?.({
+            message: 'El PDF se está generando. Espere un momento.',
+            type: 'warning',
+        });
+        return;
+    }
+
     const fullPath = buildPdfUrl(ruta, nombrePDF, updatedAt, { useCacheBuster: true, fallbackToNow: true });
     const relativePath = joinClinicalPath(ruta, nombrePDF);
 
@@ -623,7 +642,9 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
         }
     } catch (error) {
         if (error.response && error.response.status === 404) {
-            mostrarModalPdfEliminado.value = true;
+            if (!isPdfGenerating.value) {
+                mostrarModalPdfEliminado.value = true;
+            }
         } else {
             console.error('Error al intentar cargar el archivo PDF:', error.message);
             alert('Ocurrió un error al intentar cargar el archivo PDF.');
@@ -1179,12 +1200,13 @@ const openHoverPreview = (targetOrEvent, payload) => {
 };
 
 const schedulePdfHover = (event, ruta, nombrePDF, updatedAt, title) => {
-    if (!canHover.value) return;
+    if (!canHover.value || isPdfGenerating.value) return;
     if (!ruta || !nombrePDF) return;
     clearTimeout(hideTimer);
     clearTimeout(hoverTimer);
 
     hoverTimer = setTimeout(async () => {
+        if (isPdfGenerating.value) return;
         const tipoSinEspacios = props.documentoTipo.toLowerCase().replace(/\s+/g, '');
         const isRegenerable = tipoSinEspacios !== 'documentoexterno';
         const relativePath = joinClinicalPath(ruta, nombrePDF);
@@ -1198,9 +1220,11 @@ const schedulePdfHover = (event, ruta, nombrePDF, updatedAt, title) => {
                 src: '',
                 title: title || 'Documento PDF',
                 pdfAvailable: false,
-                isRegenerable: true,
+                isRegenerable: !isPdfFailed.value,
                 openAction: () => {
-                    mostrarModalPdfEliminado.value = true;
+                    if (!isPdfGenerating.value) {
+                        mostrarModalPdfEliminado.value = true;
+                    }
                 },
             });
             return;
@@ -1512,6 +1536,13 @@ const handleMouseLeave = (event) => {
 
 // Funciones para controles de PDF
 const descargarPdfActual = async () => {
+    if (isPdfGenerating.value) {
+        getToast()?.open?.({
+            message: 'El PDF se está generando. Espere un momento.',
+            type: 'warning',
+        });
+        return;
+    }
     if (currentPdfUrl.value) {
         try {
             // Determinar qué documento está siendo visualizado
@@ -1752,6 +1783,80 @@ const currentDocumentData = computed(() => {
            props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad ||
            props.eventoSeguimientoCardiometabolico || props.informeLongitudinalCardiometabolico;
 });
+
+const trackedPdfStatus = ref(null);
+const { start: startPdfTracker, stop: stopPdfTracker } = usePdfGenerationTracker();
+const pdfGenerationStore = usePdfGenerationStore();
+
+const pdfStatusEffective = computed(() => {
+    if (pdfGenerationStore.isLocalGenerating(props.documentoId)) {
+      return 'generating';
+    }
+    return trackedPdfStatus.value ?? currentDocumentData.value?.pdfStatus ?? null;
+});
+const isPdfGenerating = computed(() => pdfStatusEffective.value === 'generating');
+const isPdfFailed = computed(() => pdfStatusEffective.value === 'failed');
+
+const ensurePdfGenerationTracker = () => {
+    if (!isPdfGenerating.value) return;
+    const tipo = props.documentoTipo?.toLowerCase?.().replace(/\s+/g, '') || props.documentoTipo;
+    if (tipo === 'documentoexterno' || tipo === 'documentoExterno') return;
+
+    startPdfTracker({
+        documentType: props.documentoTipo,
+        trabajadorId: trabajadores.currentTrabajadorId,
+        documentId: props.documentoId,
+        relativePdfPath: () => {
+            try {
+                const { ruta, nombre } = construirRutaYNombrePDF();
+                if (!ruta || !nombre) return null;
+                return joinClinicalPath(ruta, nombre);
+            } catch {
+                return null;
+            }
+        },
+        onStatus: (status) => {
+            trackedPdfStatus.value = status;
+            const doc = currentDocumentData.value;
+            if (doc && typeof doc === 'object') {
+                doc.pdfStatus = status;
+            }
+            if (status === 'ready' || status === 'failed') {
+                pdfGenerationStore.clearLocalGenerating(props.documentoId);
+            }
+            if (status === 'ready') {
+                pdfDisponible.value = true;
+                pdfCheckScheduled = false;
+                schedulePdfCheck();
+            } else if (status === 'failed') {
+                pdfDisponible.value = false;
+            }
+        },
+    });
+};
+
+watch(
+    () => [
+      currentDocumentData.value?.pdfStatus,
+      pdfGenerationStore.isLocalGenerating(props.documentoId),
+    ],
+    ([status, localGenerating]) => {
+        if (status === 'generating' || localGenerating) {
+            trackedPdfStatus.value = 'generating';
+            ensurePdfGenerationTracker();
+            return;
+        }
+        if (status === 'ready' || status === 'failed') {
+            trackedPdfStatus.value = status;
+            stopPdfTracker();
+            pdfGenerationStore.clearLocalGenerating(props.documentoId);
+            if (status === 'ready') {
+                pdfDisponible.value = true;
+            }
+        }
+    },
+    { immediate: true },
+);
 
 // Mapeo de campos de fecha para buscar documentos origen
 const fechaCamposOrigen = {
@@ -2010,6 +2115,20 @@ const { antidoping } = props; // Desestructuración para acceder a antidoping
 
 // Computed para el indicador lateral
 const indicadorLateral = computed(() => {
+  if (isPdfGenerating.value) {
+    return {
+      class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-yellow-500 animate-pulse',
+      title: 'Generando PDF...'
+    };
+  }
+
+  if (isPdfFailed.value) {
+    return {
+      class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-rose-500 to-red-400',
+      title: 'Error al generar PDF - Se puede regenerar'
+    };
+  }
+
   // Verificando disponibilidad
   if (verificandoPDF.value) {
     return {
@@ -2501,6 +2620,11 @@ const abrirNotaAclaratoria = (notaAclaratoria) => {
 };
 
 const manejarRegeneracionDesdePadre = async () => {
+  trackedPdfStatus.value = 'ready';
+  if (currentDocumentData.value && typeof currentDocumentData.value === 'object') {
+    currentDocumentData.value.pdfStatus = 'ready';
+  }
+  pdfDisponible.value = true;
   await abrirDocumentoCorrespondiente();      // Abre visor
   await nextTick();                           // Espera a que DOM actualice
   mostrarModalPdfEliminado.value = false;     // Cierra el modal
@@ -2644,13 +2768,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
     <Teleport to="body">
         <transition name="fade">
             <ModalPdfEliminado
-                v-if="mostrarModalPdfEliminado"
+                v-if="mostrarModalPdfEliminado && !isPdfGenerating"
                 :tipo="documentoTipo.toLowerCase().replace(/\s+/g, '')"
                 :empresaId="empresas.currentEmpresaId"
                 :trabajadorId="trabajadores.currentTrabajadorId"
                 :documentoId="documentoId"
                 :userId="user._id"
                 :getPdfMetadata="construirRutaYNombrePDF"
+                :pdfStatus="pdfStatusEffective"
                 @regenerado="manejarRegeneracionDesdePadre"
                 @close="mostrarModalPdfEliminado = false"
             />
@@ -2664,15 +2789,32 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
         :class="{
             'hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50': !isDeletionMode,
             'hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50': isDeletionMode,
-            'border-yellow-300 hover:border-yellow-400': verificandoPDF,
-            'border-gray-200 hover:border-emerald-300': pdfDisponible && !isDeletionMode,
-            'border-gray-200 hover:border-red-300': pdfDisponible && isDeletionMode,
-            'border-gray-200 hover:border-gray-300': !pdfDisponible && !isDeletionMode,
-            'border-gray-200 hover:border-red-400': !pdfDisponible && isDeletionMode
+            'border-amber-300 hover:border-amber-400': isPdfGenerating,
+            'border-yellow-300 hover:border-yellow-400': verificandoPDF && !isPdfGenerating,
+            'border-gray-200 hover:border-emerald-300': pdfDisponible && !isDeletionMode && !isPdfGenerating,
+            'border-gray-200 hover:border-red-300': pdfDisponible && isDeletionMode && !isPdfGenerating,
+            'border-gray-200 hover:border-gray-300': !pdfDisponible && !isDeletionMode && !isPdfGenerating,
+            'border-gray-200 hover:border-red-400': !pdfDisponible && isDeletionMode && !isPdfGenerating
         }">
 
         <!-- Indicador de disponibilidad del PDF -->
         <div :class="indicadorLateral.class" :title="indicadorLateral.title"></div>
+
+        <div
+            v-if="isPdfGenerating"
+            class="absolute top-2 right-2 z-10 inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 border border-amber-200"
+        >
+            <i class="fas fa-spinner fa-spin text-amber-500"></i>
+            Generando PDF…
+        </div>
+        <div
+            v-else-if="isPdfFailed"
+            class="absolute top-2 right-2 z-10 inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700 border border-rose-200"
+            title="Error al generar el PDF"
+        >
+            <i class="fas fa-exclamation-triangle text-rose-500"></i>
+            PDF fallido
+        </div>
 
         <div class="flex items-center justify-between p-4 pl-6 min-h-[80px] max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3 max-[390px]:p-3 max-[390px]:pl-3">
             <div class="flex items-center flex-1 max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3 w-full">
@@ -4847,7 +4989,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
         @enter="handlePreviewEnter"
         @leave="handlePreviewLeave"
         @open="handlePreviewOpen"
-        @regenerate="mostrarModalPdfEliminado = true"
+        @regenerate="!isPdfGenerating && (mostrarModalPdfEliminado = true)"
     />
 
     <!-- Visor de PDF -->

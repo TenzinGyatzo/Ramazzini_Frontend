@@ -121,6 +121,13 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/${documentType}/${documentoId}`);
     },
 
+    /** Poll liviano: solo pdfStatus (+ rutaPDF). Evita documento filled. */
+    getPdfStatus(documentType: string, trabajadorId: string, documentoId: string) {
+        return api.get(
+            `/expedientes/${trabajadorId}/documentos/${documentType}/${documentoId}/pdf-status`,
+        );
+    },
+
     deleteDocumentById(documentType: string, trabajadorId: string, documentoId: string, razonAnulacion?: string) {
         return api.delete(`/expedientes/${trabajadorId}/documentos/${documentType}/eliminar/${documentoId}`, {
             data: { razonAnulacion }
@@ -129,5 +136,11 @@ export default {
 
     finalizarDocumento(documentType: string, trabajadorId: string, documentId: string) {
         return api.post(`/expedientes/${trabajadorId}/documentos/${documentType}/${documentId}/finalizar`);
+    },
+
+    markPdfGenerating(documentType: string, trabajadorId: string, documentId: string) {
+        return api.post(
+            `/expedientes/${trabajadorId}/documentos/${documentType}/${documentId}/pdf-status/generating`,
+        );
     },
 }

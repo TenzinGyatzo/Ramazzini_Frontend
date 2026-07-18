@@ -4,7 +4,8 @@ import { authRequestConfig } from '@/lib/attachAuthToken';
 import { headClinicalFile } from '@/lib/clinicalFiles';
 import { inject, ref, onMounted, onUnmounted } from 'vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
-import { exportarGraficaAltaResolucion } from '@/helpers/exportChartImage';
+import { generarGraficaAudiometria } from '@/helpers/generarGraficaAudiometria';
+import { generarGraficasIlc } from '@/helpers/generarGraficasIlc';
 
 const toast: any = inject('toast');
 
@@ -15,20 +16,19 @@ const props = defineProps<{
   documentoId: string
   userId: string
   getPdfMetadata: () => { ruta: string; nombre: string };
+  pdfStatus?: string | null;
 }>();
 
 const emit = defineEmits(['regenerado', 'close']);
 
 const isLoading = ref(false);
 
-// Función para manejar la tecla ESC
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     emit('close');
   }
 };
 
-// Agregar y remover event listener
 onMounted(() => {
   document.addEventListener('keydown', handleKeyDown);
 });
@@ -51,228 +51,76 @@ const esperarQuePDFEsteDisponible = async (relativePath: string, maxIntentos = 1
   return false;
 };
 
-// Función para generar la gráfica de audiometría desde los datos del documento
-const generarGraficaAudiometria = async (datosAudiometria: any): Promise<string> => {
-  const frecuencias = [125, 250, 500, 1000, 2000, 3000, 4000, 6000, 8000];
-  
-  // Datos del oído derecho
-  const oidoDerecho = [
-    datosAudiometria.oidoDerecho125,
-    datosAudiometria.oidoDerecho250,
-    datosAudiometria.oidoDerecho500,
-    datosAudiometria.oidoDerecho1000,
-    datosAudiometria.oidoDerecho2000,
-    datosAudiometria.oidoDerecho3000,
-    datosAudiometria.oidoDerecho4000,
-    datosAudiometria.oidoDerecho6000,
-    datosAudiometria.oidoDerecho8000
-  ].map(valor => valor !== null && valor !== undefined ? Number(valor) : null);
-
-  // Datos del oído izquierdo
-  const oidoIzquierdo = [
-    datosAudiometria.oidoIzquierdo125,
-    datosAudiometria.oidoIzquierdo250,
-    datosAudiometria.oidoIzquierdo500,
-    datosAudiometria.oidoIzquierdo1000,
-    datosAudiometria.oidoIzquierdo2000,
-    datosAudiometria.oidoIzquierdo3000,
-    datosAudiometria.oidoIzquierdo4000,
-    datosAudiometria.oidoIzquierdo6000,
-    datosAudiometria.oidoIzquierdo8000
-  ].map(valor => valor !== null && valor !== undefined ? Number(valor) : null);
-
-  const chartConfig = {
-    type: 'line',
-    data: {
-      labels: frecuencias.map(f => `${f} Hz`),
-      datasets: [
-        {
-          label: 'Oído Derecho',
-          data: oidoDerecho,
-          borderColor: 'rgba(239, 68, 68, 0.8)', // Rojo con transparencia
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0,
-          pointBackgroundColor: 'transparent',
-          pointBorderColor: 'rgba(239, 68, 68, 0.8)',
-          pointBorderWidth: 1.5,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          spanGaps: false
-        },
-        {
-          label: 'Oído Izquierdo',
-          data: oidoIzquierdo,
-          borderColor: '#3B82F6', // Azul sólido
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          tension: 0,
-          pointBackgroundColor: '#3B82F6',
-          pointBorderColor: '#3B82F6',
-          pointBorderWidth: 1.5,
-          pointStyle: 'crossRot',
-          pointRadius: 8,
-          pointHoverRadius: 10,
-          spanGaps: false
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      },
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            padding: 10,
-            pointStyleWidth: 17,
-            font: {
-              size: 12,
-              weight: '500'
-            }
-          }
-        },
-        tooltip: {
-          enabled: true,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          titleColor: '#ffffff',
-          bodyColor: '#ffffff',
-          borderColor: '#374151',
-          borderWidth: 1,
-          callbacks: {
-            title: (context: any) => {
-              return `Frecuencia: ${context[0].label}`;
-            },
-            label: (context: any) => {
-              const valor = context.raw;
-              return `${context.dataset.label}: ${valor !== null ? valor + ' dB' : 'Sin medición'}`;
-            }
-          }
-        },
-        datalabels: {
-          display: false
-        }
-      },
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: 'Frecuencia (Hz)',
-            font: {
-              size: 12,
-              weight: '600'
-            },
-            color: '#374151'
-          },
-          grid: {
-            display: true,
-            color: 'rgba(0, 0, 0, 0.2)',
-            drawTicks: false,
-            lineWidth: 1
-          },
-          border: {
-            display: true,
-            color: '#374151',
-            width: 1.2
-          },
-          ticks: {
-            color: '#374151',
-            font: {
-              size: 11,
-              weight: '500'
-            },
-            padding: 6
-          }
-        },
-        y: {
-          title: {
-            display: true,
-            text: 'Umbral Auditivo (dB)',
-            font: {
-              size: 12,
-              weight: '600'
-            },
-            color: '#374151'
-          },
-          grid: {
-            display: true,
-            color: 'rgba(0, 0, 0, 0.2)',
-            drawTicks: false,
-            lineWidth: 1
-          },
-          border: {
-            display: true,
-            color: '#374151',
-            width: 1.2
-          },
-          ticks: {
-            color: '#374151',
-            font: {
-              size: 11,
-              weight: '500'
-            },
-            padding: 6,
-            stepSize: 10
-          },
-          min: -10,
-          max: 120
-        }
-      },
-      elements: {
-        point: {
-          radius: 6,
-          hoverRadius: 8
-        },
-        line: {
-          borderWidth: 2
-        }
-      }
-    }
-  };
-
-  return exportarGraficaAltaResolucion(chartConfig, 1140, 380);
-};
-
 const regenerar = async () => {
+  if (props.pdfStatus === 'generating' || isLoading.value) {
+    toast.open({
+      message: 'El PDF aún se está generando. Espere un momento.',
+      type: 'warning',
+    });
+    return;
+  }
+
   try {
     isLoading.value = true;
 
     const apiEndpoint = `${import.meta.env.VITE_API_URL}/informes/${props.tipo}/${props.empresaId}/${props.trabajadorId}/${props.documentoId}/${props.userId}`;
-    
-    // Si es audiometría, obtener los datos del documento y generar la gráfica
+
     if (props.tipo === 'audiometria') {
       try {
-        // Obtener los datos del documento de audiometría
-        const response = await DocumentosAPI.getDocumentById('audiometria', props.trabajadorId, props.documentoId);
+        const response = await DocumentosAPI.getDocumentById(
+          'audiometria',
+          props.trabajadorId,
+          props.documentoId,
+        );
         const datosAudiometria = response.data;
-        
-        // Generar la gráfica desde los datos
-        const graficaBase64 = await generarGraficaAudiometria(datosAudiometria);
-        
-        // Enviar la gráfica al backend usando POST
+        const graficaBase64 = generarGraficaAudiometria(datosAudiometria);
         await axios.post(apiEndpoint, { grafica: graficaBase64 }, authRequestConfig());
       } catch (error) {
         console.error('Error al obtener datos de audiometría:', error);
-        // Si falla, intentar sin gráfica
+        await axios.get(apiEndpoint, authRequestConfig());
+      }
+    } else if (props.tipo === 'informeLongitudinalCardiometabolico') {
+      try {
+        const response = await DocumentosAPI.getDocumentById(
+          'informeLongitudinalCardiometabolico',
+          props.trabajadorId,
+          props.documentoId,
+        );
+        const doc = response.data;
+        const graficas = generarGraficasIlc(doc?.eventosConcentrados);
+        try {
+          await DocumentosAPI.updateDocument(
+            'informeLongitudinalCardiometabolico',
+            props.trabajadorId,
+            props.documentoId,
+            {
+              ...graficas,
+              idTrabajador: props.trabajadorId,
+              fechaInformeLongitudinalCardiometabolico:
+                doc.fechaInformeLongitudinalCardiometabolico,
+              updatedBy: props.userId,
+            },
+          );
+        } catch (persistError) {
+          console.warn('No se pudieron persistir gráficas ILC al regenerar:', persistError);
+        }
+        await axios.post(apiEndpoint, graficas, authRequestConfig());
+      } catch (error) {
+        console.error('Error al regenerar gráficas ILC:', error);
         await axios.get(apiEndpoint, authRequestConfig());
       }
     } else {
-      // Para otros tipos de documento, usar GET normal
       await axios.get(apiEndpoint, authRequestConfig());
     }
 
     const { ruta, nombre } = props.getPdfMetadata();
     const rutaCompleta = `${ruta}/${nombre}`.replace(/\/+/g, '/');
     const disponible = await esperarQuePDFEsteDisponible(rutaCompleta);
-    if (!disponible) throw new Error("El PDF aún no está disponible.");
+    if (!disponible) throw new Error('El PDF aún no está disponible.');
 
-    toast.open({ message: "El PDF ha sido regenerado correctamente." });
+    toast.open({ message: 'El PDF ha sido regenerado correctamente.' });
 
-    emit('regenerado'); 
+    emit('regenerado');
 
     isLoading.value = false;
   } catch (error) {
@@ -350,8 +198,6 @@ button:focus {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
-
-
 </style>
 
 <template>
@@ -395,7 +241,8 @@ button:focus {
             </span>
           </button>
           <button
-            class="w-2/3 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-200 active:scale-95"
+            class="w-2/3 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:hover:scale-100"
+            :disabled="pdfStatus === 'generating'"
             @click="regenerar"
           >
             <span class="flex items-center justify-center gap-2">
@@ -445,13 +292,6 @@ button:focus {
       <!-- Estado de carga -->
       <template v-else>
         <div class="text-center">
-          <!-- Header con icono animado -->
-          <!-- <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
-            <i class="fa-solid fa-sync-alt text-2xl text-emerald-600 animate-spin"></i>
-          </div> -->
-          <!-- <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4 animate-pulse">
-            <i class="fa-solid fa-file-pdf text-2xl text-emerald-600"></i>
-          </div> -->
           <h2 class="text-2xl font-bold text-gray-800 mb-2">
             Regenerando Documento
           </h2>
@@ -480,4 +320,3 @@ button:focus {
     </div>
   </div>
 </template>
-

@@ -1,3 +1,5 @@
+export type PdfStatus = 'generating' | 'ready' | 'failed';
+
 import { DocumentoEstado } from './nom024.interface';
 
 /** Usuario poblado desde el backend (findDocument con populate) */
@@ -77,6 +79,7 @@ export interface EventoSeguimientoCardiometabolico {
   proximaRevisionSugerida?: string;
   idTrabajador?: string;
   rutaPDF?: string;
+  pdfStatus?: PdfStatus;
   estado?: DocumentoEstado;
   fechaFinalizacion?: string;
   finalizadoPor?: string;
@@ -97,6 +100,7 @@ export interface Antidoping {
     opiaceos: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string | UserRef;
     updatedBy: string | UserRef;
     metilendioximetanfetamina?: string;
@@ -145,6 +149,7 @@ export interface Aptitud {
     medidasPreventivas?: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -194,6 +199,7 @@ export interface Audiometria {
     recomendacionesAudiometria?: string[];
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -218,6 +224,7 @@ export interface Certificado {
     fechaCertificado: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -256,6 +263,7 @@ export interface CertificadoExpedito {
     observaciones: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -320,6 +328,7 @@ export interface ExamenVista {
     interpretacionIshihara: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -387,6 +396,7 @@ export interface ExploracionFisica {
     resumenExploracionFisica?: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -498,6 +508,7 @@ export interface HistoriaClinica {
     codigosCIE10Complementarios?: string[];
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -543,6 +554,7 @@ export interface NotaMedica {
     codigosCIE10Complementarios?: string[];
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -560,6 +572,7 @@ export interface NotaAclaratoria {
     impactoClinico: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -694,6 +707,7 @@ export interface ControlPrenatal {
     observacionesFondoUterino?: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -743,6 +757,7 @@ export interface HistoriaOtologica {
     resultadoCuestionario: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -796,6 +811,7 @@ export interface PrevioEspirometria {
     resultadoCuestionario: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -823,6 +839,7 @@ export interface Receta {
     indicaciones: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -847,6 +864,7 @@ export interface ConstanciaAptitud {
     fechaConstanciaAptitud: string;
     idTrabajador: string;
     rutaPDF: string;
+    pdfStatus?: PdfStatus;
     createdBy: string;
     updatedBy: string;
     // NOM-024 Fields
@@ -1091,6 +1109,7 @@ export interface InformeLongitudinalCardiometabolico {
   graficaEvolucionPesoImc?: string;
   graficaEvolucionPerfilLipidico?: string;
   rutaPDF?: string;
+  pdfStatus?: PdfStatus;
   createdBy?: unknown;
   updatedBy?: unknown;
   createdAt?: string;
