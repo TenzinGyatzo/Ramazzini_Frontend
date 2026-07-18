@@ -1038,7 +1038,7 @@ let hoverTimer = null;
 let hideTimer = null;
 let hoverMediaQuery = null;
 
-const HOVER_DELAY = 250;
+const HOVER_DELAY = 600;
 const HIDE_DELAY = 160;
 const PREVIEW_MARGIN = 120;
 
