@@ -169,26 +169,17 @@ const actualizarAlteracionesSalud = () => {
 
 onMounted(async () => {
   try {
-    const responseHistorias = await DocumentosAPI.getHistoriasClinicas(trabajadores.currentTrabajadorId);
-    historiasClinicas.value = responseHistorias.data;
+    const { data: vecinos } = await DocumentosAPI.getAptitudInformeVecinos(
+      trabajadores.currentTrabajadorId,
+    );
 
-    const responseExploraciones = await DocumentosAPI.getExploracionesFisicas(trabajadores.currentTrabajadorId);
-    exploracionesFisicas.value = responseExploraciones.data;
-
-    const responseExamenes = await DocumentosAPI.getExamenesVista(trabajadores.currentTrabajadorId);
-    examenesVista.value = responseExamenes.data;
-
-    const rEp = await DocumentosAPI.getEntrevistaPsicologica(trabajadores.currentTrabajadorId);
-    entrevistasPsicologicas.value = rEp.data || [];
-
-    const rTea = await DocumentosAPI.getTrastornosEstadoAnimo(trabajadores.currentTrabajadorId);
-    trastornosEstadoAnimoList.value = rTea.data || [];
-
-    const rPqb = await DocumentosAPI.getCuestionarioProdromalBreve(trabajadores.currentTrabajadorId);
-    cuestionariosProdromalBreve.value = rPqb.data || [];
-
-    const rTlp = await DocumentosAPI.getTrastornoLimitePersonalidad(trabajadores.currentTrabajadorId);
-    trastornosLimitePersonalidad.value = rTlp.data || [];
+    historiasClinicas.value = vecinos?.historiaClinica ?? [];
+    exploracionesFisicas.value = vecinos?.exploracionFisica ?? [];
+    examenesVista.value = vecinos?.examenVista ?? [];
+    entrevistasPsicologicas.value = vecinos?.entrevistaPsicologica ?? [];
+    trastornosEstadoAnimoList.value = vecinos?.trastornosEstadoAnimo ?? [];
+    cuestionariosProdromalBreve.value = vecinos?.cuestionarioProdromalBreve ?? [];
+    trastornosLimitePersonalidad.value = vecinos?.trastornoLimitePersonalidad ?? [];
 
     recalcularDocumentosCercanos();
     actualizarAlteracionesSalud();

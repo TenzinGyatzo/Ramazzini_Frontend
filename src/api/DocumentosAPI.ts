@@ -97,6 +97,14 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/informeLongitudinalCardiometabolico`);
     },
 
+    /**
+     * Documentos vecinos lean (proyección aptitud PDF) para autofill Step9.
+     * Un solo round-trip: 1× canónico + queries en paralelo sin populate.
+     */
+    getAptitudInformeVecinos(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/aptitud-vecinos`);
+    },
+
     getAlturaDisponible(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/altura-disponible`);
     },
