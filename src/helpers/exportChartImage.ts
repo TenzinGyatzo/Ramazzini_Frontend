@@ -44,6 +44,15 @@ export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, he
   config.options.maintainAspectRatio = false; // Importante para controlar el aspect ratio
   config.options.animation = false;
 
+  // JSON.stringify elimina callbacks; restaurar ticks del audiograma
+  if (
+    config.type === 'line' &&
+    config.options.scales?.y?.title?.text === 'Umbral Auditivo (dB)'
+  ) {
+    config.options.scales.y.ticks = config.options.scales.y.ticks || {};
+    config.options.scales.y.ticks.callback = (value: number | string) => `${value} dB`;
+  }
+
   // Factor de escalado optimizado según el tipo de gráfica
   let scaleFactor;
   if (config.type === 'doughnut' || config.type === 'pie') {

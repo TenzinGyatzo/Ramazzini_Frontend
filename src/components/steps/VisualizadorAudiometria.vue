@@ -9,6 +9,10 @@ import { calcularEdad, calcularAntiguedad, convertirFechaISOaDDMMYYYY, formatDat
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import { exportarGraficaAltaResolucion } from '@/helpers/exportChartImage';
+import {
+  buildAudiometriaChartData,
+  buildAudiometriaChartOptions,
+} from '@/helpers/audiometriaChartConfig';
 import GraficaAudiometria from '@/components/graficas/GraficaAudiometria.vue';
 import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 
@@ -183,197 +187,14 @@ const resultadoBinaural = computed(() => {
   return calcularResultadoBinaural();
 });
 
-// Computed para datos de la gráfica audiométrica
-const graficaAudiometriaData = computed(() => {
-  const frecuencias = [125, 250, 500, 1000, 2000, 3000, 4000, 6000, 8000];
-  
-  // Datos del oído derecho
-  const oidoDerecho = [
-    formDataAudiometria.value.oidoDerecho125,
-    formDataAudiometria.value.oidoDerecho250,
-    formDataAudiometria.value.oidoDerecho500,
-    formDataAudiometria.value.oidoDerecho1000,
-    formDataAudiometria.value.oidoDerecho2000,
-    formDataAudiometria.value.oidoDerecho3000,
-    formDataAudiometria.value.oidoDerecho4000,
-    formDataAudiometria.value.oidoDerecho6000,
-    formDataAudiometria.value.oidoDerecho8000
-  ].map(valor => valor !== null && valor !== undefined ? Number(valor) : null);
+// Computed para datos y opciones de la gráfica audiométrica (config compartida con PDF)
+const graficaAudiometriaData = computed(() =>
+  buildAudiometriaChartData(formDataAudiometria.value),
+);
 
-  // Datos del oído izquierdo
-  const oidoIzquierdo = [
-    formDataAudiometria.value.oidoIzquierdo125,
-    formDataAudiometria.value.oidoIzquierdo250,
-    formDataAudiometria.value.oidoIzquierdo500,
-    formDataAudiometria.value.oidoIzquierdo1000,
-    formDataAudiometria.value.oidoIzquierdo2000,
-    formDataAudiometria.value.oidoIzquierdo3000,
-    formDataAudiometria.value.oidoIzquierdo4000,
-    formDataAudiometria.value.oidoIzquierdo6000,
-    formDataAudiometria.value.oidoIzquierdo8000
-  ].map(valor => valor !== null && valor !== undefined ? Number(valor) : null);
-
-  return {
-    labels: frecuencias.map(f => `${f} Hz`),
-    datasets: [
-      {
-        label: 'Oído Derecho',
-        data: oidoDerecho,
-        borderColor: 'rgba(239, 68, 68, 0.8)', // Rojo con transparencia
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0,
-        pointBackgroundColor: 'transparent',
-        pointBorderColor: 'rgba(239, 68, 68, 0.8)',
-        pointBorderWidth: 1.5,
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        spanGaps: false
-      },
-      {
-        label: 'Oído Izquierdo',
-        data: oidoIzquierdo,
-        borderColor: '#3B82F6', // Azul sólido
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        tension: 0,
-        pointBackgroundColor: '#3B82F6',
-        pointBorderColor: '#3B82F6',
-        pointBorderWidth: 1.5,
-        pointStyle: 'crossRot',
-        pointRadius: 8,
-        pointHoverRadius: 10,
-        spanGaps: false
-      }
-    ]
-  };
-});
-
-// Opciones de configuración para la gráfica audiométrica
-const graficaAudiometriaOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: {
-    intersect: false,
-    mode: 'index'
-  },
-  plugins: {
-    legend: {
-      display: true,
-      position: 'top',
-      labels: {
-        color: isHtmlDark.value ? '#e2e8f0' : '#374151',
-        usePointStyle: true,
-        padding: 10,
-        pointStyleWidth: 17,
-        font: {
-          size: 12,
-          weight: '500'
-        }
-      }
-    },
-    tooltip: {
-      enabled: true,
-      backgroundColor: isHtmlDark.value ? 'rgba(15, 23, 42, 0.95)' : 'rgba(0, 0, 0, 0.7)',
-      titleColor: '#ffffff',
-      bodyColor: '#ffffff',
-      borderColor: isHtmlDark.value ? '#64748b' : '#374151',
-      borderWidth: 1,
-      callbacks: {
-        title: (context) => {
-          return `Frecuencia: ${context[0].label}`;
-        },
-        label: (context) => {
-          const valor = context.raw;
-          return `${context.dataset.label}: ${valor !== null ? valor + ' dB' : 'Sin medición'}`;
-        }
-      }
-    },
-    datalabels: {
-      display: false
-    }
-  },
-  scales: {
-    x: {
-      title: {
-        display: true,
-        text: 'Frecuencia (Hz)',
-        font: {
-          size: 12,
-          weight: '600'
-        },
-        color: isHtmlDark.value ? '#e2e8f0' : '#374151'
-      },
-      grid: {
-        display: true,
-        color: isHtmlDark.value ? 'rgba(148, 163, 184, 0.35)' : 'rgba(0, 0, 0, 0.2)',
-        drawTicks: false,
-        lineWidth: 1
-      },
-      border: {
-        display: true,
-        color: isHtmlDark.value ? '#94a3b8' : '#374151',
-        width: 1.2
-      },
-      ticks: {
-        color: isHtmlDark.value ? '#e2e8f0' : '#374151',
-        font: {
-          size: 11,
-        }
-      }
-    },
-    y: {
-      title: {
-        display: true,
-        text: 'Umbral Auditivo (dB)',
-        font: {
-          size: 12,
-          weight: '600'
-        },
-        color: isHtmlDark.value ? '#e2e8f0' : '#374151'
-      },
-      min: -10,
-      max: 110,
-      stepSize: 10,
-      // Usar offset para crear espacio visual adicional
-      offset: true,
-      grid: {
-        display: true,
-        color: isHtmlDark.value ? 'rgba(148, 163, 184, 0.35)' : 'rgba(0, 0, 0, 0.2)',
-        lineWidth: 1
-      },
-      border: {
-        display: true,
-        color: isHtmlDark.value ? '#94a3b8' : '#374151',
-        width: 1.2
-      },
-      ticks: {
-        color: isHtmlDark.value ? '#e2e8f0' : '#374151',
-        font: {
-          size: 11
-        },
-        stepSize: 10,
-        maxTicksLimit: 13,
-        count: 13,
-        includeBounds: true,
-        autoSkip: false,
-        suggestedMin: -10,
-        suggestedMax: 110,
-        callback: function(value) {
-          return value + ' dB';
-        }
-      },
-      // Invertir el eje Y para que los valores más altos estén arriba (estándar audiométrico)
-      reverse: true
-    }
-  },
-  elements: {
-    line: {
-      borderWidth: 2
-    },
-    point: {
-      borderWidth: 2
-    }
-  }
-}));
+const graficaAudiometriaOptions = computed(() =>
+  buildAudiometriaChartOptions({ isDark: isHtmlDark.value }),
+);
 
 // Función para generar y guardar la gráfica en el store
 const generarYGuardarGrafica = async () => {
