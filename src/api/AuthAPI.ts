@@ -72,7 +72,19 @@ export default {
     });
   },
 
-  verifyCurrentPassword(password: string) {
-    return auth.post('/users/verify-password', { password });
+  verifyCurrentPassword(
+    password: string,
+    opts?: {
+      purpose?: 'deletion';
+      resourceType?: string;
+      resourceId?: string;
+    },
+  ) {
+    return auth.post('/users/verify-password', {
+      password,
+      ...(opts?.purpose ? { purpose: opts.purpose } : {}),
+      ...(opts?.resourceType ? { resourceType: opts.resourceType } : {}),
+      ...(opts?.resourceId ? { resourceId: opts.resourceId } : {}),
+    });
   },
 };

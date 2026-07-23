@@ -152,11 +152,14 @@ export default {
 
     /**
      * List all entries from a GIIS catalog (for populating selectors)
-     * @param catalogType Catalog type key (e.g. 'cat_sitio_ocurrencia', 'cat_tipo_vialidad')
+     * @param catalogType Catalog type key (e.g. 'cat_afiliacion', 'cat_pais')
      * @param limit Optional limit (default 500)
+     * @param vigenteOnly When true, only entries with VIGENTE=1
      */
-    listCatalog(catalogType: string, limit?: number) {
-        const params = limit !== undefined ? { limit } : {};
+    listCatalog(catalogType: string, limit?: number, vigenteOnly?: boolean) {
+        const params: Record<string, string | number | boolean> = {};
+        if (limit !== undefined) params.limit = limit;
+        if (vigenteOnly === true) params.vigenteOnly = true;
         return api.get(`/catalogs/giis/${catalogType}/list`, { params });
     },
 

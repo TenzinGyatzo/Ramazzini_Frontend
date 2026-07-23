@@ -2,11 +2,21 @@ import { ref } from 'vue';
 import AuthAPI from '@/api/AuthAPI';
 import { textosConfirmacionCoinciden } from '@/config/eliminacion';
 
+export interface VerificacionEliminacionContext {
+  resourceType?: string;
+  resourceId?: string;
+}
+
 export function useVerificacionEliminacion() {
   const password = ref('');
   const textoConfirmacion = ref('');
   const error = ref('');
   const verifying = ref(false);
+  const auditContext = ref<VerificacionEliminacionContext>({});
+
+  function setAuditContext(ctx: VerificacionEliminacionContext) {
+    auditContext.value = ctx ?? {};
+  }
 
   async function verificar(): Promise<boolean> {
     error.value = '';
@@ -17,7 +27,11 @@ export function useVerificacionEliminacion() {
 
     verifying.value = true;
     try {
-      await AuthAPI.verifyCurrentPassword(password.value);
+      await AuthAPI.verifyCurrentPassword(password.value, {
+        purpose: 'deletion',
+        resourceType: auditContext.value.resourceType,
+        resourceId: auditContext.value.resourceId,
+      });
       return true;
     } catch {
       error.value = 'Contraseña incorrecta';
@@ -41,6 +55,7 @@ export function useVerificacionEliminacion() {
     textoConfirmacion.value = '';
     error.value = '';
     verifying.value = false;
+    auditContext.value = {};
   }
 
   return {
@@ -48,6 +63,7 @@ export function useVerificacionEliminacion() {
     textoConfirmacion,
     error,
     verifying,
+    setAuditContext,
     verificar,
     validarTextoConfirmacion,
     reset,

@@ -17,6 +17,8 @@ import {
 import { computeMuestraConfirmacionFlags } from '@/helpers/confirmacionDiagnostica';
 import { useUserStore } from '@/stores/user';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
+import CatalogsAPI from '@/api/CatalogsAPI';
+import { formatDerechohabienciaLabels } from '@/helpers/afiliacionCex';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -48,15 +50,23 @@ const etiquetasGenero = {
   4: 'Transexual', 5: 'Travesti', 6: 'Intersexual', 88: 'Otro',
 };
 
-const catalogoDerechohabiencia = {
-  '0': 'No especificado', '1': 'Ninguna', '2': 'IMSS', '3': 'ISSSTE',
-  '4': 'PEMEX', '5': 'SEDENA', '6': 'SEMAR', '8': 'Otra',
-  '10': 'IMSS Bienestar', '11': 'ISSFAM', '14': 'OPD IMSS BIENESTAR', '99': 'Se ignora',
-};
+const afiliacionLabelByCode = ref({});
 
 function formatDerechohabiencia(valor) {
-  if (!valor || valor === '0' || valor === '99') return catalogoDerechohabiencia[valor] || valor;
-  return valor.split('&').map(v => catalogoDerechohabiencia[v] || v).join(', ');
+  return formatDerechohabienciaLabels(valor, afiliacionLabelByCode.value);
+}
+
+async function loadAfiliacionLabels() {
+  try {
+    const { data } = await CatalogsAPI.listCatalog('cat_afiliacion', 500, false);
+    const map = {};
+    for (const entry of Array.isArray(data) ? data : []) {
+      map[String(entry.code)] = entry.description || entry.code;
+    }
+    afiliacionLabelByCode.value = map;
+  } catch {
+    afiliacionLabelByCode.value = {};
+  }
 }
 
 const goToStep = (stepNumber) => {
@@ -112,6 +122,7 @@ const refreshConfirmacionFlags = async () => {
 
 onMounted(() => {
   void refreshConfirmacionFlags();
+  void loadAfiliacionLabels();
 });
 
 watch(nm, () => {

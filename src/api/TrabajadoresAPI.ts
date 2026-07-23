@@ -61,7 +61,14 @@ export default {
     registrarExportacionExcel(
         empresaId: string,
         centroTrabajoId: string,
-        body: { rowCount: number; filename: string; filtered?: boolean },
+        body: {
+            rowCount: number;
+            filename: string;
+            filtered?: boolean;
+            columnKeys?: string[];
+            columnCount?: number;
+            showEmptyColumns?: boolean;
+        },
     ) {
         return api.post(`/${empresaId}/${centroTrabajoId}/registrar-exportacion-excel`, body);
     },

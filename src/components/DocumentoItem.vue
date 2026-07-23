@@ -38,7 +38,6 @@ import ModalPdfEliminado from './ModalPdfEliminado.vue';
 import EstadoDocumentoBadge from './badges/EstadoDocumentoBadge.vue';
 import BadgeNotaAclaratoria from './badges/BadgeNotaAclaratoria.vue';
 import DocumentHoverPreview from './DocumentHoverPreview.vue';
-import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useUserStore } from '@/stores/user';
 
@@ -185,17 +184,11 @@ const finDeSuscripcion = proveedorSaludStore.proveedorSalud?.finDeSuscripcion
 const userStore = useUserStore();
 const user = computed(() => userStore.user ?? {});
 
-// Composables de permisos
-const { canCreateDocument } = useUserPermissions();
+// Composables de permisos — misma matriz que backend assertCanManageDocument
 const {
-  canManageDocumentosDiagnostico,
-  canManageDocumentosEvaluacion,
-  canManageDocumentosExternos,
-  canManageOtrosDocumentos,
-  executeIfCanManageDocumentosDiagnostico,
-  executeIfCanManageDocumentosEvaluacion,
-  executeIfCanManageDocumentosExternos,
-  executeIfCanManageOtrosDocumentos
+  canCreateDocument,
+  getRestrictionMessage,
+  executeIfCanCreateDocument,
 } = usePermissionRestrictions();
 
 const mostrarModalPdfEliminado = ref(false);
@@ -226,62 +219,30 @@ const hideTooltip = () => {
 
 const emit = defineEmits(['eliminarDocumento', 'abrirModalAnular', 'abrirModalUpdate', 'closeModalUpdate', 'openSubscriptionModal', 'abrirModalFinalizar']);
 
-// Función para determinar si se puede editar un documento según su tipo
-const canEditDocument = (documentType) => {
-  const tipoSinEspacios = documentType.toLowerCase().replace(/\s+/g, '');
+/** Permiso canónico por tipo (gestionar = editar / finalizar / anular / eliminar). */
+const canManageThisDocument = computed(() => canCreateDocument(props.documentoTipo));
 
-  // Documentos de diagnóstico y certificación (solo aptitud y certificado)
-  if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
-    return canManageDocumentosDiagnostico.value;
-  }
-  // Otros documentos / cuestionarios adicionales (incluye certificado expedito, psicológicos y cardiometabólicos)
-  if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad', 'eventoseguimientocardiometabolico', 'informelongitudinalcardiometabolico'].includes(tipoSinEspacios)) {
-    return canManageOtrosDocumentos.value;
-  }
-
-  // Documentos externos
-  if (tipoSinEspacios === 'documentoexterno') {
-    return canManageDocumentosExternos.value;
-  }
-
-  // Documentos de evaluación (resto de documentos)
-  return canManageDocumentosEvaluacion.value;
-};
-
-// Función para determinar si se puede eliminar un documento según su tipo
-const canDeleteDocument = (documentType) => {
-  return canEditDocument(documentType); // Mismo permiso para editar y eliminar
-};
-
-// Función para manejar la edición con validación de permisos
 const handleEditDocument = (documentoId, documentoTipo) => {
-  const tipoSinEspacios = documentoTipo.toLowerCase().replace(/\s+/g, '');
-
-  if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
-    executeIfCanManageDocumentosDiagnostico(() => {
-      editarDocumento(documentoId, documentoTipo);
-    }, 'editar documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad', 'eventoseguimientocardiometabolico', 'informelongitudinalcardiometabolico'].includes(tipoSinEspacios)) {
-    executeIfCanManageOtrosDocumentos(() => {
-      editarDocumento(documentoId, documentoTipo);
-    }, 'editar otros documentos');
-  } else if (tipoSinEspacios === 'documentoexterno') {
-    executeIfCanManageDocumentosExternos(() => {
-      editarDocumento(documentoId, documentoTipo);
-    }, 'editar documentos externos');
-  } else {
-    executeIfCanManageDocumentosEvaluacion(() => {
-      editarDocumento(documentoId, documentoTipo);
-    }, 'editar documentos de evaluación');
+  // Consulta (Ver) en documentos inmutables: sin exigir permiso de gestionar
+  if (isReadOnly.value) {
+    editarDocumento(documentoId, documentoTipo);
+    return;
   }
+  executeIfCanCreateDocument(documentoTipo, () => {
+    editarDocumento(documentoId, documentoTipo);
+  });
 };
 
-// Función para manejar la edición de documentos externos con validación de permisos
 const handleEditDocumentoExterno = async () => {
-  executeIfCanManageDocumentosExternos(async () => {
+  const openExterno = async () => {
     await documentos.fetchDocumentById(props.documentoTipo, trabajadores.currentTrabajador._id, props.documentoExterno._id);
     emit('abrirModalUpdate');
-  }, 'editar documentos externos');
+  };
+  if (isReadOnly.value) {
+    await openExterno();
+    return;
+  }
+  executeIfCanCreateDocument(props.documentoTipo, openExterno);
 };
 
 // Función para obtener el label del tipo de estudio del resultado vinculado
@@ -294,46 +255,16 @@ const getResultadoTipoLabel = (tipoEstudio) => {
   return labels[tipoEstudio] || tipoEstudio;
 };
 
-// Función para manejar la eliminación con validación de permisos
 const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
-  const tipoSinEspacios = documentoTipo.toLowerCase().replace(/\s+/g, '');
-
-  if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
-    executeIfCanManageDocumentosDiagnostico(() => {
-      emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
-    }, 'eliminar documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad', 'eventoseguimientocardiometabolico', 'informelongitudinalcardiometabolico'].includes(tipoSinEspacios)) {
-    executeIfCanManageOtrosDocumentos(() => {
-      emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
-    }, 'eliminar otros documentos');
-  } else if (tipoSinEspacios === 'documentoexterno') {
-    executeIfCanManageDocumentosExternos(() => {
-      emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
-    }, 'eliminar documentos externos');
-  } else {
-    executeIfCanManageDocumentosEvaluacion(() => {
-      emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
-    }, 'eliminar documentos de evaluación');
-  }
+  executeIfCanCreateDocument(documentoTipo, () => {
+    emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
+  });
 };
 
 const handleAnularDocument = (documentoId, documentoNombre, documentoTipo) => {
-  const tipoSinEspacios = documentoTipo.toLowerCase().replace(/\s+/g, '');
-
-  const logic = () => {
-    // Emitir evento para abrir el modal de anulación
+  executeIfCanCreateDocument(documentoTipo, () => {
     emit('abrirModalAnular', documentoId, documentoNombre, documentoTipo);
-  };
-
-  if (['aptitud', 'certificado'].includes(tipoSinEspacios)) {
-    executeIfCanManageDocumentosDiagnostico(logic, 'anular documentos de diagnóstico y certificación');
-  } else if (['controlprenatal', 'historiaotologica', 'previoespirometria', 'certificadoexpedito', 'entrevistapsicologica', 'trastornosestadoanimo', 'cuestionarioprodromalbreve', 'trastornolimitepersonalidad', 'eventoseguimientocardiometabolico', 'informelongitudinalcardiometabolico'].includes(tipoSinEspacios)) {
-    executeIfCanManageOtrosDocumentos(logic, 'anular otros documentos');
-  } else if (tipoSinEspacios === 'documentoexterno') {
-    executeIfCanManageDocumentosExternos(logic, 'anular documentos externos');
-  } else {
-    executeIfCanManageDocumentosEvaluacion(logic, 'anular documentos de evaluación');
-  }
+  });
 };
 
 const editarDocumento = (documentoId, documentoTipo) => {
@@ -2081,8 +2012,25 @@ const isDeletableInBulkMode = computed(() => {
     return !isFinalized.value && !isAnulado.value;
 });
 
-const canEditFinalized = computed(() => {
-    return canEditDocument(props.documentoTipo);
+/** Abrir documento: editar requiere gestionar; Ver (inmutable) siempre permitido. */
+const canOpenDocument = computed(
+  () => canManageThisDocument.value || isReadOnly.value,
+);
+
+const editActionTooltip = computed(() => {
+  if (isReadOnly.value) return 'Ver documento';
+  if (!canManageThisDocument.value) {
+    return getRestrictionMessage(props.documentoTipo);
+  }
+  return 'Editar documento';
+});
+
+const deleteAnularActionTooltip = computed(() => {
+  if (isAnulado.value) return 'Documento anulado';
+  if (!canManageThisDocument.value) {
+    return getRestrictionMessage(props.documentoTipo);
+  }
+  return isAnulacion.value ? 'Anular documento' : 'Eliminar documento';
 });
 
 const documentoNombre = computed(() => {
@@ -4914,7 +4862,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseenter="(e) => updateTooltipPosition(e, 'Descargar documento')"
                         @mouseleave="hideTooltip"
                         type="button"
-                        class="documento-item-action documento-item-action--download py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
+                        class="documento-item-action documento-item-action--download inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
                         <i class="fa-solid fa-download fa-lg"></i>
                     </button>
                     <button v-if="documento && documento.rutaPDF"
@@ -4922,38 +4870,40 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseenter="(e) => updateTooltipPosition(e, 'Descargar documento')"
                         @mouseleave="hideTooltip"
                         type="button"
-                        class="documento-item-action documento-item-action--download py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
+                        class="documento-item-action documento-item-action--download inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full bg-green-100 hover:bg-green-200 text-green-600 transition-transform duration-300 ease-in-out transform hover:scale-110 shadow-sm z-5">
                         <i class="fa-solid fa-download fa-lg"></i>
                     </button>
                 </template>
 
                 <button v-if="documentoTipo === 'documentoExterno'" type="button"
                     :class="[
-                        'documento-item-action py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canEditFinalized
+                        'documento-item-action inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
+                        canOpenDocument
                             ? 'documento-item-action--edit bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
                             : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
+                    :disabled="!canOpenDocument"
                     @click="handleEditDocumentoExterno"
-                    @mouseenter="(e) => updateTooltipPosition(e, isReadOnly ? 'Ver documento' : 'Editar documento')"
+                    @mouseenter="(e) => updateTooltipPosition(e, editActionTooltip)"
                     @mouseleave="hideTooltip">
                     <i :class="isReadOnly ? 'fa-regular fa-eye fa-lg' : 'fa-regular fa-pen-to-square fa-lg'"></i>
                 </button>
                 <button v-else type="button"
                     :class="[
-                        'documento-item-action py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canEditFinalized
+                        'documento-item-action inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
+                        canOpenDocument
                             ? 'documento-item-action--edit bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
                             : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
+                    :disabled="!canOpenDocument"
                     @click="handleEditDocument(documentoId, documentoTipo)"
-                    @mouseenter="(e) => updateTooltipPosition(e, isReadOnly ? 'Ver documento' : 'Editar documento')"
+                    @mouseenter="(e) => updateTooltipPosition(e, editActionTooltip)"
                     @mouseleave="hideTooltip">
                     <i :class="isReadOnly ? 'fa-regular fa-eye fa-lg' : 'fa-regular fa-pen-to-square fa-lg'"></i>
                 </button>
 
-                <button v-if="puedeFinalizar && documentImmutabilityEnabled" type="button"
-                    class="documento-item-action documento-item-action--finalize py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition-transform duration-200 ease-in-out transform hover:scale-110 shadow-sm z-5"
+                <button v-if="puedeFinalizar && documentImmutabilityEnabled && canManageThisDocument" type="button"
+                    class="documento-item-action documento-item-action--finalize inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition-transform duration-200 ease-in-out transform hover:scale-110 shadow-sm z-5"
                     @click="$emit('abrirModalFinalizar', documentoId, documentoNombre, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, 'Finalizar documento')"
                     @mouseleave="hideTooltip">
@@ -4962,14 +4912,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                 <button type="button"
                     :class="[
-                        'documento-item-action py-1 px-1.5 sm:py-2 sm:px-2.5 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canDeleteDocument(documentoTipo) && !isAnulado
+                        'documento-item-action inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
+                        canManageThisDocument && !isAnulado
                             ? 'documento-item-action--delete bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110'
                             : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
-                    :disabled="!canDeleteDocument(documentoTipo) || isAnulado"
+                    :disabled="!canManageThisDocument || isAnulado"
                     @click="isAnulacion ? handleAnularDocument(documentoId, documentoNombre, documentoTipo) : handleDeleteDocument(documentoId, documentoNombre, documentoTipo)"
-                    @mouseenter="(e) => updateTooltipPosition(e, isAnulado ? 'Documento anulado' : (isAnulacion ? 'Anular documento' : 'Eliminar documento'))"
+                    @mouseenter="(e) => updateTooltipPosition(e, deleteAnularActionTooltip)"
                     @mouseleave="hideTooltip">
                     <i :class="isAnulacion ? 'fa-solid fa-file-circle-xmark fa-lg' : 'fa-solid fa-trash-can fa-lg'"></i>
                 </button>
@@ -5177,6 +5127,22 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 </template>
 
 <style>
+/* Botones de acción: tamaño fijo independiente del glifo FA */
+.documento-item-action {
+    box-sizing: border-box;
+    padding: 0;
+    line-height: 1;
+}
+
+.documento-item-action i {
+    width: 1.125rem;
+    height: 1.125rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
 /* Animaciones para los modales */
 .modal-fade-enter-active,
 .modal-fade-leave-active {

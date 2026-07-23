@@ -13,6 +13,7 @@ export enum RegulatoryErrorCode {
   CONSENT_ALREADY_EXISTS = 'CONSENT_ALREADY_EXISTS',
   CONSENT_REQUIRED = 'CONSENT_REQUIRED',
   CONFIDENTIALITY_AGREEMENT_REQUIRED = 'CONFIDENTIALITY_AGREEMENT_REQUIRED',
+  ORG_DELETE_BLOCKED_RESGUARDED_DOCS = 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS',
 }
 
 /**
@@ -42,6 +43,11 @@ export interface RegulatoryErrorDetails {
    * Ejemplos: 'notaMedica', 'historiaClinica', 'aptitud'
    */
   documentType?: string;
+
+  /** Conteo / IDs para bloqueo de borrado organizacional */
+  resguardedDocCount?: number;
+  empresaId?: string;
+  centroId?: string;
 }
 
 /**

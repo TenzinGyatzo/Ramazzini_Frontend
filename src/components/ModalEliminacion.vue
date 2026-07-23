@@ -16,6 +16,8 @@ const props = defineProps<{
   isConfirming?: boolean;
   /** Cuando el padre ya aplica Transition (p. ej. modal-work), omitir fade interno. */
   disableTransition?: boolean;
+  auditResourceType?: string;
+  auditResourceId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -28,6 +30,7 @@ const {
   textoConfirmacion,
   error,
   verifying,
+  setAuditContext,
   verificar,
   validarTextoConfirmacion,
   reset,
@@ -36,7 +39,23 @@ const {
 watch(
   () => props.isVisible,
   (visible) => {
-    if (!visible) reset();
+    if (!visible) {
+      reset();
+      return;
+    }
+    setAuditContext({
+      resourceType: props.auditResourceType,
+      resourceId: props.auditResourceId,
+    });
+  },
+);
+
+watch(
+  () => [props.auditResourceType, props.auditResourceId] as const,
+  ([resourceType, resourceId]) => {
+    if (props.isVisible) {
+      setAuditContext({ resourceType, resourceId });
+    }
   },
 );
 

@@ -48,6 +48,8 @@ const {
   textoConfirmacionEsperado: eliminacionTextoConfirmacion,
   detalleContexto: eliminacionDetalleContexto,
   mensajePersonalizado: eliminacionMensajePersonalizado,
+  auditResourceType: eliminacionAuditResourceType,
+  auditResourceId: eliminacionAuditResourceId,
   requestEliminacion: requestEliminacionLocal,
   confirmarEliminacion,
   cancelarEliminacion,
@@ -218,17 +220,28 @@ const toggleFinalizeModal = (
   documentName: string = 'Sin nombre',
   documentType: string | null = null
 ) => {
-  showFinalizeModal.value = !showFinalizeModal.value;
-
-  if (!showFinalizeModal.value) {
+  // Cerrar modal
+  if (showFinalizeModal.value) {
+    showFinalizeModal.value = false;
     selectedDocumentId.value = null;
     selectedDocumentName.value = '';
     selectedDocumentType.value = null;
-  } else {
-    selectedDocumentId.value = documentId;
-    selectedDocumentName.value = documentName;
-    selectedDocumentType.value = documentType;
+    return;
   }
+
+  if (documentType && !canCreateDocument(documentType)) {
+    toast.open({
+      message: getRestrictionMessage(documentType),
+      type: 'error',
+      position: 'top-right',
+    });
+    return;
+  }
+
+  showFinalizeModal.value = true;
+  selectedDocumentId.value = documentId;
+  selectedDocumentName.value = documentName;
+  selectedDocumentType.value = documentType;
 };
 
 const toggleAnularModal = (
@@ -236,17 +249,27 @@ const toggleAnularModal = (
   documentName: string = 'Sin nombre',
   documentType: string | null = null
 ) => {
-  showAnularModal.value = !showAnularModal.value;
-
-  if (!showAnularModal.value) {
+  if (showAnularModal.value) {
+    showAnularModal.value = false;
     selectedDocumentId.value = null;
     selectedDocumentName.value = '';
     selectedDocumentType.value = null;
-  } else {
-    selectedDocumentId.value = documentId;
-    selectedDocumentName.value = documentName;
-    selectedDocumentType.value = documentType;
+    return;
   }
+
+  if (documentType && !canCreateDocument(documentType)) {
+    toast.open({
+      message: getRestrictionMessage(documentType),
+      type: 'error',
+      position: 'top-right',
+    });
+    return;
+  }
+
+  showAnularModal.value = true;
+  selectedDocumentId.value = documentId;
+  selectedDocumentName.value = documentName;
+  selectedDocumentType.value = documentType;
 };
 
 const handleAnularDocument = async (razonAnulacion: string) => {
@@ -1037,6 +1060,8 @@ const añoMasReciente = computed(() => {
             :texto-confirmacion-esperado="eliminacionTextoConfirmacion"
             :detalle-contexto="eliminacionDetalleContexto"
             :mensaje-personalizado="eliminacionMensajePersonalizado"
+            :audit-resource-type="eliminacionAuditResourceType"
+            :audit-resource-id="eliminacionAuditResourceId"
             :is-confirming="eliminacionConfirming"
             @confirm="confirmarEliminacion"
             @cancel="cancelarEliminacion"

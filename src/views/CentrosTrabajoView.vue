@@ -15,6 +15,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
+import { extractApiErrorMessage } from '@/helpers/apiErrors';
 
 const toast: any = inject('toast');
 const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
@@ -90,6 +91,7 @@ const solicitarEliminacionCentro = (
   const empresaId = empresas.currentEmpresaId ?? String(route.params.idEmpresa);
   requestEliminacion?.({
     entidad: 'centroTrabajo',
+    resourceId: idCentroTrabajo,
     identificacion: nombreCentro,
     textoConfirmacion: cantidadTrabajadores > 0 ? nombreCentro : undefined,
     contextoNivel: { cantidadTrabajadores },
@@ -106,11 +108,18 @@ const solicitarEliminacionCentro = (
         await obtenerDatosEmpresa();
       } catch (error) {
         console.error('Error al eliminar el centro de trabajo', error);
-        toast.open({
-          message:
-            'Hubo un error. Algunos documentos no se pudieron eliminar. Elimínalos directamente y vuelve a intentarlo',
-          type: 'error',
-        });
+        const errorCode = (error as { response?: { data?: { errorCode?: string } } })
+          ?.response?.data?.errorCode;
+        // El interceptor de axios ya muestra toast para errores regulatorios
+        if (errorCode !== 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
+          toast.open({
+            message: extractApiErrorMessage(
+              error,
+              'No se pudo eliminar el centro de trabajo. Revise trabajadores y documentos asociados e intente de nuevo.',
+            ),
+            type: 'error',
+          });
+        }
         throw error;
       }
     },

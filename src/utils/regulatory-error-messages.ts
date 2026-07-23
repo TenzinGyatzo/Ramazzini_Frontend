@@ -126,6 +126,21 @@ const ERROR_CODE_MESSAGES: Record<
       type: 'error',
     },
   },
+
+  ORG_DELETE_BLOCKED_RESGUARDED_DOCS: {
+    SIN_REGIMEN: {
+      title: 'No se puede eliminar',
+      message:
+        'No se puede eliminar porque hay documentos finalizados o anulados asociados.',
+      type: 'error',
+    },
+    SIRES_NOM024: {
+      title: 'No se puede eliminar',
+      message:
+        'No se puede eliminar porque contiene documentos finalizados o anulados.',
+      type: 'error',
+    },
+  },
 };
 
 /**
@@ -245,6 +260,16 @@ export function mapRegulatoryErrorMessage(
     );
     
     suggestedAction = 'Por favor, completa este campo para continuar.';
+  }
+
+  if (errorCode === 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
+    if (details?.centroId) {
+      message =
+        'No se puede eliminar este centro de trabajo porque contiene documentos finalizados o anulados.';
+    } else if (details?.empresaId) {
+      message =
+        'No se puede eliminar esta empresa porque contiene documentos finalizados o anulados en sus centros de trabajo.';
+    }
   }
 
   return {

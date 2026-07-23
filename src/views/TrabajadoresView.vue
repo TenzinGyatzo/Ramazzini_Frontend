@@ -6,14 +6,21 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useModalResumenImportacionStore } from '@/stores/modalResumenImportacion';
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router';
-import { convertirFechaISOaDDMMYYYY, calcularEdad, calcularAntiguedad, determinarVistaCorregida } from '@/helpers/dates';
+import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import { exportarTrabajadoresDesdeFrontend } from '@/helpers/exportarExcel';
+import {
+  collectKeysWithData,
+  filterColumnKeysForRegime,
+  getColumnasDisponibles,
+} from '@/helpers/exportarTrabajadoresColumnas';
+import { mapTrabajadorParaExportExcel } from '@/helpers/mapTrabajadorParaExportExcel';
 import $ from 'jquery';
 
 import GreenButton from '@/components/GreenButton.vue';
 import DataTableDT from '@/components/DataTableDT.vue';
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
 import ModalCargaMasiva from '@/components/ModalCargaMasiva.vue';
+import ModalExportarTrabajadores from '@/components/ModalExportarTrabajadores.vue';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalRTs from '@/components/ModalRTs.vue';
@@ -44,6 +51,8 @@ const {
   textoConfirmacionEsperado: eliminacionTextoConfirmacion,
   detalleContexto: eliminacionDetalleContexto,
   mensajePersonalizado: eliminacionMensajePersonalizado,
+  auditResourceType: eliminacionAuditResourceType,
+  auditResourceId: eliminacionAuditResourceId,
   requestEliminacion: requestEliminacionLocal,
   confirmarEliminacion,
   cancelarEliminacion,
@@ -67,6 +76,9 @@ const plantillaImportacion = computed(() =>
 // 3. Refs y estado reactivo
 const showModal = ref(false);
 const showImportModal = ref(false);
+const showExportModal = ref(false);
+const exportRowCount = ref(0);
+const exportKeysWithData = ref<string[]>([]);
 const showSubscriptionModal = ref(false);
 const showRTsModal = ref(false);
 const showRisksModal = ref(false);
@@ -166,6 +178,7 @@ function onFusionCompletada() {
 }
 
 const dataTableRef = ref();
+const panelFiltrosRef = ref<HTMLElement | null>(null);
 const mostrarFiltros = ref(false);
 const filtrosAplicados = reactive(new Set<string>());
 const mostrarTabla = ref(false);
@@ -707,120 +720,62 @@ function generarNombreArchivoExcel(): string {
   return partes.join('_') + '.xlsx';
 }
 
-const exportarFiltrados = async () => {
+const nombreArchivoExportPreview = computed(() => generarNombreArchivoExcel());
+
+const abrirModalExportar = () => {
+  if (!canManageTrabajadores.value) {
+    executeIfCanManageTrabajadores(() => {}, 'exportar trabajadores a Excel');
+    return;
+  }
+
   if (!dataTableRef.value) return;
 
   const table = $('#customTable').DataTable();
-  const rowData = table.rows({ search: 'applied' }).data().toArray(); // ✅ todas las filas filtradas
+  const rowData = table.rows({ search: 'applied' }).data().toArray();
+  exportRowCount.value = rowData.length;
 
-  const trabajadoresFiltrados: any[] = rowData.map((row: any) => ({
-    numeroEmpleado: row.numeroEmpleado,
-    primerApellido: row.primerApellido || '',
-    segundoApellido: row.segundoApellido || '',
-    nombre: row.nombre,
-    nss: row.nss || '',
-    edad: calcularEdad(row.fechaNacimiento),
-    sexo: row.sexo,
-    escolaridad: row.escolaridad,
-    puesto: row.puesto,
-    antiguedad: calcularAntiguedad(row.fechaIngreso),
-    telefono: row.telefono,
-    estadoCivil: row.estadoCivil,
-    imc: row.exploracionFisicaResumen?.categoriaIMC || '-',
-    cintura: row.exploracionFisicaResumen?.categoriaCircunferenciaCintura || '-',
-    categoriaTensionArterial: row.exploracionFisicaResumen?.categoriaTensionArterial || '-',
-    aptitud: row.aptitudResumen?.aptitudPuesto || '-',
-    requiereLentes: row.examenVistaResumen?.requiereLentesUsoGeneral || '-',
-    correccionVisual: determinarVistaCorregida(
-      row.examenVistaResumen?.requiereLentesUsoGeneral,
-      Number(row.examenVistaResumen?.ojoIzquierdoLejanaConCorreccion),
-      Number(row.examenVistaResumen?.ojoDerechoLejanaConCorreccion)
-    ),
-    agudeza: row.examenVistaResumen?.sinCorreccionLejanaInterpretacion || '-',
-    daltonismo: row.examenVistaResumen?.interpretacionIshihara || '-',
-    diabetico: row.historiaClinicaResumen?.diabeticosPP || '-',
-    hipertensivo: row.historiaClinicaResumen?.hipertensivosPP || '-',
-    cardiopatico: row.historiaClinicaResumen?.cardiopaticosPP || '-',
-    epilepsia: row.historiaClinicaResumen?.epilepticosPP || '-',
-    alergia: row.historiaClinicaResumen?.alergicos || '-',
-    lumbalgia: row.historiaClinicaResumen?.lumbalgias || '-',
-    accidente: row.historiaClinicaResumen?.accidentes || '-',
-    quirurgico: row.historiaClinicaResumen?.quirurgicos || '-',
-    otro: row.historiaClinicaResumen?.otros || '-',
-    respiratorios: row.historiaClinicaResumen?.respiratorios || '-',
-    alcoholismo: row.historiaClinicaResumen?.alcoholismo || '',
-    tabaquismo: row.historiaClinicaResumen?.tabaquismo || '',
-    agentesRiesgo: Array.isArray(row.agentesRiesgoActuales) && row.agentesRiesgoActuales.length
-      ? row.agentesRiesgoActuales.join(', ')
-      : '-',
-    consultas: row.consultaResumen?.fechaNotaMedica ? 'Si' : 'No',
-    audiometria: (() => {
-      const resumen = row.audiometriaResumen || null;
-      if (!resumen) return '-';
-      
-      const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
-      
-      const binarioAMA = (ppab) => {
-        if (!isNum(ppab)) return 'Indeterminado';
-        return ppab <= 25 ? 'Normal' : 'Anormal';
-      };
-      
-      const binarioLFT = (hbc) => {
-        if (!isNum(hbc)) return 'Indeterminado';
-        return hbc >= 10 ? 'Anormal' : 'Normal';
-      };
-      
-      let resultado = 'Indeterminado';
-      if (resumen.metodoAudiometria === 'AMA') {
-        resultado = binarioAMA(resumen.perdidaAuditivaBilateralAMA);
-      } else if (resumen.metodoAudiometria === 'LFT') {
-        resultado = binarioLFT(resumen.hipoacusiaBilateralCombinada);
-      }
-      
-      return resultado === 'Indeterminado' ? '-' : resultado;
-    })(),
-    categoriaAudiometria: (() => {
-      const resumen = row.audiometriaResumen || null;
-      if (!resumen) return '-';
-      
-      const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
-      
-      const categoriaAMA = (ppab) => {
-        if (!isNum(ppab)) return 'Indeterminado';
-        if (ppab <= 25) return 'Normal';
-        if (ppab <= 40) return 'Hipoacusia leve';
-        if (ppab <= 60) return 'Hipoacusia moderada';
-        if (ppab <= 80) return 'Hipoacusia severa';
-        return 'Hipoacusia profunda';
-      };
-      
-      // Para LFT, usamos HBC ya que caidaMaxDb no existe en la base de datos
-      const categoriaLFT_porHBC = (hbc) => {
-        if (!isNum(hbc)) return 'Indeterminado';
-        // Usando rangos de HBC para categorizar (aproximación)
-        if (hbc <= 10) return 'Normal';
-        if (hbc <= 25) return 'Hipoacusia leve';
-        if (hbc <= 40) return 'Hipoacusia moderada';
-        if (hbc <= 60) return 'H. moderada-severa';
-        if (hbc <= 80) return 'Hipoacusia severa';
-        return 'Hipoacusia profunda';
-      };
-      
-      let resultado = 'Indeterminado';
-      if (resumen.metodoAudiometria === 'AMA') {
-        resultado = categoriaAMA(resumen.perdidaAuditivaBilateralAMA);
-      } else if (resumen.metodoAudiometria === 'LFT') {
-        resultado = categoriaLFT_porHBC(resumen.hipoacusiaBilateralCombinada);
-      }
-      
-      return resultado === 'Indeterminado' ? '-' : resultado;
-    })(),
-    espirometriaRc: row.resultadosClinicosResumen?.espirometria?.etiqueta ?? '-',
-    ekgRc: row.resultadosClinicosResumen?.ekg?.etiqueta ?? '-',
-    rayosXRc: row.resultadosClinicosResumen?.rayosX?.etiqueta ?? '-',
-    laboratorioRc: row.resultadosClinicosResumen?.analisisLaboratorio?.etiqueta ?? '-',
-    estadoLaboral: row.estadoLaboral || '-'
-  }));
+  const mapped = rowData.map((row: any) =>
+    mapTrabajadorParaExportExcel(row, { includeSiresFields: isSIRES.value }),
+  );
+  exportKeysWithData.value = collectKeysWithData(mapped, isSIRES.value);
+  showExportModal.value = true;
+};
+
+const cerrarModalExportar = () => {
+  showExportModal.value = false;
+};
+
+const ajustarFiltrosDesdeExport = async () => {
+  showExportModal.value = false;
+  mostrarFiltros.value = true;
+  await nextTick();
+  panelFiltrosRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+const confirmarExportacion = async (payload: {
+  columnKeys: string[];
+  showEmptyColumns: boolean;
+}) => {
+  if (!canManageTrabajadores.value) {
+    executeIfCanManageTrabajadores(() => {}, 'exportar trabajadores a Excel');
+    return;
+  }
+
+  if (!dataTableRef.value) return;
+
+  const columnKeys = filterColumnKeysForRegime(payload.columnKeys, isSIRES.value);
+  if (columnKeys.length === 0) return;
+
+  const needsSiresOnlyFields = columnKeys.some((k) =>
+    getColumnasDisponibles(true).find((c) => c.key === k && c.siresOnly),
+  );
+
+  const table = $('#customTable').DataTable();
+  const rowData = table.rows({ search: 'applied' }).data().toArray();
+
+  const trabajadoresFiltrados: any[] = rowData.map((row: any) =>
+    mapTrabajadorParaExportExcel(row, { includeSiresFields: needsSiresOnlyFields }),
+  );
 
   const nombreArchivo = generarNombreArchivoExcel();
   const empresaId = String(route.params.idEmpresa);
@@ -830,9 +785,27 @@ const exportarFiltrados = async () => {
     rowCount: trabajadoresFiltrados.length,
     filename: nombreArchivo,
     filtered: true,
+    columnKeys,
+    columnCount: columnKeys.length,
+    showEmptyColumns: payload.showEmptyColumns,
   }).catch(() => {});
 
-  exportarTrabajadoresDesdeFrontend(trabajadoresFiltrados, nombreArchivo);
+  const result = exportarTrabajadoresDesdeFrontend(
+    trabajadoresFiltrados,
+    nombreArchivo,
+    columnKeys,
+    isSIRES.value,
+  );
+
+  if (!result.ok) {
+    toast.open({
+      message: 'Selecciona al menos una columna para exportar',
+      type: 'warning',
+    });
+    return;
+  }
+
+  showExportModal.value = false;
 };
 
 const filtrosValidos = {
@@ -944,6 +917,20 @@ const toggleVigencias = () => {
         <ModalCargaMasiva v-if="showImportModal" @openSubscriptionModal="showSubscriptionModal = true" @closeModal="toggleImportModal" />
       </Transition>
 
+      <Teleport to="body">
+        <ModalExportarTrabajadores
+          :open="showExportModal"
+          :row-count="exportRowCount"
+          :chips-filtros="chipsFiltrosActivos"
+          :nombre-archivo="nombreArchivoExportPreview"
+          :is-sires="isSIRES"
+          :keys-with-data="exportKeysWithData"
+          @close="cerrarModalExportar"
+          @confirm="confirmarExportacion"
+          @adjust-filters="ajustarFiltrosDesdeExport"
+        />
+      </Teleport>
+
       <Transition appear name="fade">
         <ModalResumenImportacion 
           v-if="modalResumenImportacion.isVisible" 
@@ -1000,6 +987,8 @@ const toggleVigencias = () => {
             :texto-confirmacion-esperado="eliminacionTextoConfirmacion"
             :detalle-contexto="eliminacionDetalleContexto"
             :mensaje-personalizado="eliminacionMensajePersonalizado"
+            :audit-resource-type="eliminacionAuditResourceType"
+            :audit-resource-id="eliminacionAuditResourceId"
             :is-confirming="eliminacionConfirming"
             @confirm="confirmarEliminacion"
             @cancel="cancelarEliminacion"
@@ -1108,8 +1097,9 @@ const toggleVigencias = () => {
               variant="secondary"
               size="small"
               :class="['group', 'xl:!px-6 xl:!py-3 xl:!text-base']"
-              @click="exportarFiltrados" 
-              title="Exportar trabajadores filtrados a Excel"
+              :disabled="!canManageTrabajadores"
+              @click="abrirModalExportar" 
+              :title="canManageTrabajadores ? 'Exportar trabajadores filtrados a Excel' : 'No tienes permisos para exportar trabajadores a Excel'"
             >
               <template #icon>
                 <i class="fas fa-file-excel text-sm xl:text-base group-hover:scale-110 transition-transform duration-200"></i>
@@ -1120,7 +1110,7 @@ const toggleVigencias = () => {
       </div>
 
       <!-- Panel de controles y filtros -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-3">
+      <div ref="panelFiltrosRef" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-3">
         <!-- Controles principales -->
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-3">
           <div class="flex flex-wrap items-center gap-2">

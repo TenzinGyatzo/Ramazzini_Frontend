@@ -1,93 +1,101 @@
 import * as xlsx from 'xlsx';
+import {
+  cellValueForColumn,
+  filterColumnKeysForRegime,
+  headerForKey,
+} from '@/helpers/exportarTrabajadoresColumnas';
 
-export function exportarTrabajadoresDesdeFrontend(trabajadoresFiltrados: any[], nombreArchivo = 'trabajadores.xlsx') {
-  // Verificar si hay números de empleado válidos (solo números, máximo 7 dígitos)
-  const tieneNumerosEmpleadoValidos = trabajadoresFiltrados.some(trabajador => {
-    const numeroEmpleado = trabajador.numeroEmpleado;
-    return numeroEmpleado && 
-           numeroEmpleado !== '-' && 
-           numeroEmpleado !== '' && 
-           /^\d{1,7}$/.test(numeroEmpleado);
-  });
+export type ExportarTrabajadoresResult =
+  | { ok: true; exportedColumnCount: number }
+  | { ok: false; reason: 'no_columns' };
 
-  const trabajadoresData = trabajadoresFiltrados.map(trabajador => {
-    const baseData: any = {};
+function esNumeroEmpleadoValido(numeroEmpleado: unknown): boolean {
+  return (
+    typeof numeroEmpleado === 'string' &&
+    numeroEmpleado !== '-' &&
+    numeroEmpleado !== '' &&
+    /^\d{1,7}$/.test(numeroEmpleado)
+  );
+}
 
-    // Si hay números de empleado válidos, ponerlo como primera columna
-    if (tieneNumerosEmpleadoValidos) {
-      baseData['Num. Trab.'] = trabajador.numeroEmpleado;
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
+function calcularAnchosColumnas(
+  headers: string[],
+  rows: Record<string, string | number>[],
+): { wch: number }[] {
+  return headers.map((header) => {
+    let maxLen = header.length;
+    for (const row of rows) {
+      const cell = row[header];
+      const len = cell == null ? 0 : String(cell).length;
+      if (len > maxLen) maxLen = len;
     }
-    baseData['Primer Apellido'] = trabajador.primerApellido;
-    baseData['Segundo Apellido'] = trabajador.segundoApellido;
-    baseData.Nombre = trabajador.nombre;
-    baseData['NSS'] = trabajador.nss;
-    baseData.Edad = trabajador.edad;
-    baseData.Sexo = trabajador.sexo;
-    baseData.Escolaridad = trabajador.escolaridad;
-    
-    // Campos de identificación NOM-024
-    baseData['Entidad Nacimiento'] = trabajador.entidadNacimiento || '';
-    baseData['País de Nacimiento'] = trabajador.paisNacimiento ?? '';
-    baseData['Entidad Residencia'] = trabajador.entidadResidencia || '';
-    baseData['Municipio Residencia'] = trabajador.municipioResidencia || '';
-    baseData['Localidad Residencia'] = trabajador.localidadResidencia || '';
-    
-    baseData.Puesto = trabajador.puesto;
-    baseData.Antigüedad = trabajador.antiguedad;
-    baseData.Teléfono = trabajador.telefono;
-    baseData['Estado Civil'] = trabajador.estadoCivil;
-    baseData.IMC = trabajador.imc;
-    baseData['Circunferencia Cintura'] = trabajador.cintura;
-    baseData['Tensión Arterial'] = trabajador.categoriaTensionArterial;
-    baseData['Requiere Lentes'] = trabajador.requiereLentes;
-    baseData['Vista Corregida'] = trabajador.correccionVisual ? 'Corregida' : 'Sin corregir';
-    baseData.Daltonismo = trabajador.daltonismo;
-    baseData['Agudeza Visual'] = trabajador.agudeza;
-    baseData['Lumbalgia'] = trabajador.lumbalgia;
-    baseData.Diabético = trabajador.diabetico;
-    baseData['Cardiopático'] = trabajador.cardiopatico;
-    baseData['Alergias'] = trabajador.alergia;
-    baseData.Hipertensivo = trabajador.hipertensivo;
-    baseData['Respiratorio'] = trabajador.respiratorios;
-    baseData['Epilepsia'] = trabajador.epilepsia;
-    baseData['Quirúrgico'] = trabajador.quirurgico;
-    baseData['Otros'] = trabajador.otro;
-    baseData['Alcoholismo'] = trabajador.alcoholismo;
-    baseData['Tabaquismo'] = trabajador.tabaquismo;
-    baseData['Accidente Laboral'] = trabajador.accidente;
-    baseData.Aptitud = trabajador.aptitud;
-    baseData['Audiometría'] = trabajador.audiometria;
-    baseData['Categoría Audiometría'] = trabajador.categoriaAudiometria;
-    baseData['Espirometría (RC)'] = trabajador.espirometriaRc;
-    baseData['EKG (RC)'] = trabajador.ekgRc;
-    baseData['Rayos X (RC)'] = trabajador.rayosXRc;
-    baseData['Laboratorio (RC)'] = trabajador.laboratorioRc;
-    baseData['Agentes de Riesgo'] = trabajador.agentesRiesgo;
-    baseData.Consultas = trabajador.consultas;
-    baseData['Estado Laboral'] = trabajador.estadoLaboral;
+    return { wch: clamp(maxLen + 1, 8, 40) };
+  });
+}
 
-    return baseData;
+/**
+ * Exporta trabajadores a Excel con las columnas indicadas (orden del catálogo).
+ * `columnKeys` debe venir ya filtrado por régimen; se reordena por catálogo.
+ */
+export function exportarTrabajadoresDesdeFrontend(
+  trabajadoresFiltrados: any[],
+  nombreArchivo = 'trabajadores.xlsx',
+  columnKeys: string[] = [],
+  isSIRES = false,
+): ExportarTrabajadoresResult {
+  const orderedKeys = filterColumnKeysForRegime(columnKeys, isSIRES);
+  if (orderedKeys.length === 0) return { ok: false, reason: 'no_columns' };
+
+  const tieneNumerosEmpleadoValidos = trabajadoresFiltrados.some((t) =>
+    esNumeroEmpleadoValido(t.numeroEmpleado),
+  );
+
+  // Si Num. Trab. está seleccionado pero no hay valores válidos, omitir la columna en el archivo
+  const keysParaArchivo = orderedKeys.filter(
+    (k) => k !== 'numeroEmpleado' || tieneNumerosEmpleadoValidos,
+  );
+  if (keysParaArchivo.length === 0) return { ok: false, reason: 'no_columns' };
+
+  const headers = keysParaArchivo.map(headerForKey);
+
+  const trabajadoresData = trabajadoresFiltrados.map((trabajador) => {
+    const row: Record<string, string | number> = {};
+    for (const key of keysParaArchivo) {
+      row[headerForKey(key)] = cellValueForColumn(trabajador, key);
+    }
+    return row;
   });
 
   const worksheet = xlsx.utils.json_to_sheet([]);
-
-  // Agregar encabezados y datos como tabla desde A1
   xlsx.utils.sheet_add_json(worksheet, trabajadoresData, {
     origin: 'A1',
-    skipHeader: false
+    skipHeader: false,
   });
 
-  // Agregar propiedad para que Excel lo trate como tabla
   worksheet['!autofilter'] = {
-    ref: worksheet['!ref'] || ''
+    ref: worksheet['!ref'] || '',
   };
+  worksheet['!cols'] = calcularAnchosColumnas(headers, trabajadoresData);
+  worksheet['!views'] = [
+    {
+      state: 'frozen',
+      ySplit: 1,
+      topLeftCell: 'A2',
+      activePane: 'bottomLeft',
+      workbookViewId: 0,
+    },
+  ];
 
   const workbook = xlsx.utils.book_new();
   xlsx.utils.book_append_sheet(workbook, worksheet, 'Trabajadores');
 
   const excelBuffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([excelBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
   const link = document.createElement('a');
@@ -95,6 +103,8 @@ export function exportarTrabajadoresDesdeFrontend(trabajadoresFiltrados: any[], 
   link.download = nombreArchivo;
   link.click();
   URL.revokeObjectURL(link.href);
+
+  return { ok: true, exportedColumnCount: keysParaArchivo.length };
 }
 
 export function exportarRiesgosTrabajoDesdeFrontend(riesgosFiltrados: any[], nombreArchivo = 'riesgos-trabajo.xlsx') {
@@ -104,7 +114,7 @@ export function exportarRiesgosTrabajoDesdeFrontend(riesgosFiltrados: any[], nom
 
   const excelBuffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([excelBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
   const link = document.createElement('a');

@@ -30,6 +30,8 @@ const {
   textoConfirmacionEsperado: eliminacionTextoConfirmacion,
   detalleContexto: eliminacionDetalleContexto,
   mensajePersonalizado: eliminacionMensajePersonalizado,
+  auditResourceType: eliminacionAuditResourceType,
+  auditResourceId: eliminacionAuditResourceId,
   requestEliminacion,
   confirmarEliminacion,
   cancelarEliminacion,
@@ -1292,6 +1294,8 @@ const isHomeRoute = computed(() => route.name === 'inicio');
       :texto-confirmacion-esperado="eliminacionTextoConfirmacion"
       :detalle-contexto="eliminacionDetalleContexto"
       :mensaje-personalizado="eliminacionMensajePersonalizado"
+      :audit-resource-type="eliminacionAuditResourceType"
+      :audit-resource-id="eliminacionAuditResourceId"
       :is-confirming="eliminacionConfirming"
       @confirm="confirmarEliminacion"
       @cancel="cancelarEliminacion"

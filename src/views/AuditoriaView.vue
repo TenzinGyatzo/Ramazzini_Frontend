@@ -203,10 +203,8 @@ async function verifyAudit() {
               <option value="DASHBOARD_REPORT_EXPORTED">Informe dashboard exportado</option>
             </optgroup>
             <optgroup label="GIIS / sistema">
-              <option value="GIIS_EXPORT_STARTED">GIIS export iniciado</option>
               <option value="GIIS_EXPORT_FILE_GENERATED">GIIS archivo generado</option>
               <option value="GIIS_EXPORT_DOWNLOADED">GIIS descargado</option>
-              <!-- <option value="GIIS_VALIDATION_EXECUTED">GIIS validación</option> -->
               <option value="AUDIT_EXPORT_DOWNLOAD">Export auditoría descargado</option>
               <!-- <option value="SYSTEM_JOB">Job sistema</option> -->
             </optgroup>

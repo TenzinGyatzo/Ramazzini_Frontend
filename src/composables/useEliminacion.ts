@@ -12,6 +12,8 @@ import {
 
 export interface EliminacionRequest {
   entidad: EntidadEliminable;
+  /** ID del recurso a eliminar (para auditoría de auth fail). */
+  resourceId?: string;
   identificacion: string;
   textoConfirmacion?: string;
   detalleContexto?: DetalleContextoEliminacion;
@@ -28,6 +30,8 @@ const identificacion = ref('');
 const textoConfirmacionEsperado = ref('');
 const detalleContexto = ref<DetalleContextoEliminacion | null>(null);
 const mensajePersonalizado = ref('');
+const auditResourceType = ref('');
+const auditResourceId = ref('');
 const onConfirmHandler = shallowRef<((password?: string) => Promise<void>) | null>(null);
 
 function resetState() {
@@ -39,6 +43,8 @@ function resetState() {
   textoConfirmacionEsperado.value = '';
   detalleContexto.value = null;
   mensajePersonalizado.value = '';
+  auditResourceType.value = '';
+  auditResourceId.value = '';
   onConfirmHandler.value = null;
 }
 
@@ -51,6 +57,8 @@ function requestEliminacion(request: EliminacionRequest) {
     request.textoConfirmacion ?? request.identificacion;
   detalleContexto.value = request.detalleContexto ?? null;
   mensajePersonalizado.value = request.mensajePersonalizado ?? '';
+  auditResourceType.value = request.entidad;
+  auditResourceId.value = request.resourceId ?? '';
   onConfirmHandler.value = request.onConfirm;
 }
 
@@ -79,6 +87,8 @@ export function useEliminacion() {
     textoConfirmacionEsperado,
     detalleContexto,
     mensajePersonalizado,
+    auditResourceType,
+    auditResourceId,
     requestEliminacion,
     confirmarEliminacion,
     cancelarEliminacion,

@@ -1,8 +1,13 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
+import CatalogsAPI from '@/api/CatalogsAPI';
+import {
+  esExclusivoPorEtiqueta,
+  aplicarCambioDerechohabiencia,
+} from '@/helpers/afiliacionCex';
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -10,6 +15,9 @@ const trabajadores = useTrabajadoresStore();
 
 const genero = ref(0);
 const derechohabienciaSeleccion = ref([]);
+const afiliacionOptions = ref([]);
+const catalogLoading = ref(false);
+const catalogError = ref(null);
 
 const generoOptions = [
   { value: 0, label: 'No especificado' },
@@ -22,22 +30,13 @@ const generoOptions = [
   { value: 88, label: 'Otro' },
 ];
 
-const derechohabienciaOptions = [
-  { value: '0', label: 'No especificado' },
-  { value: '1', label: 'Ninguna' },
-  { value: '2', label: 'IMSS' },
-  { value: '3', label: 'ISSSTE' },
-  { value: '4', label: 'PEMEX' },
-  { value: '5', label: 'SEDENA' },
-  { value: '6', label: 'SEMAR' },
-  { value: '8', label: 'Otra' },
-  { value: '10', label: 'IMSS Bienestar' },
-  { value: '11', label: 'ISSFAM' },
-  { value: '14', label: 'OPD IMSS BIENESTAR' },
-  { value: '99', label: 'Se ignora' },
-];
-
-const exclusiveValues = ['0', '1', '99'];
+const optionsByCode = computed(() => {
+  const map = new Map();
+  for (const opt of afiliacionOptions.value) {
+    map.set(opt.value, opt);
+  }
+  return map;
+});
 
 function getValFromSource(field, defaultVal) {
   const formVal = formDataNotaMedica[field];
@@ -56,21 +55,68 @@ function syncFormData() {
 }
 
 function handleDerechohabienciaChange(clickedValue) {
-  if (exclusiveValues.includes(clickedValue)) {
-    if (derechohabienciaSeleccion.value.includes(clickedValue)) {
-      derechohabienciaSeleccion.value = [clickedValue];
-    }
-  } else {
-    derechohabienciaSeleccion.value = derechohabienciaSeleccion.value.filter(
-      (v) => !exclusiveValues.includes(v)
+  derechohabienciaSeleccion.value = aplicarCambioDerechohabiencia({
+    selected: [...derechohabienciaSeleccion.value],
+    clickedCode: clickedValue,
+    optionsByCode: optionsByCode.value,
+  });
+}
+
+function mapCatalogEntry(entry, { legacy = false } = {}) {
+  const label = entry.description || entry.code;
+  return {
+    value: String(entry.code),
+    label,
+    exclusive: esExclusivoPorEtiqueta(label),
+    vigente: entry.vigente !== false,
+    legacy,
+  };
+}
+
+async function loadAfiliacionOptions(savedCodes) {
+  catalogLoading.value = true;
+  catalogError.value = null;
+  try {
+    const [vigentesRes, allRes] = await Promise.all([
+      CatalogsAPI.listCatalog('cat_afiliacion', 500, true),
+      CatalogsAPI.listCatalog('cat_afiliacion', 500, false),
+    ]);
+    const vigentes = Array.isArray(vigentesRes.data) ? vigentesRes.data : [];
+    const all = Array.isArray(allRes.data) ? allRes.data : [];
+    const labelByCode = Object.fromEntries(
+      all.map((e) => [String(e.code), e.description || e.code]),
     );
-    if (derechohabienciaSeleccion.value.length > 9) {
-      derechohabienciaSeleccion.value = derechohabienciaSeleccion.value.slice(0, 9);
+    const allByCode = Object.fromEntries(
+      all.map((e) => [String(e.code), e]),
+    );
+
+    const options = vigentes.map((e) => mapCatalogEntry(e));
+    const vigenteCodes = new Set(options.map((o) => o.value));
+
+    for (const code of savedCodes) {
+      if (!vigenteCodes.has(code)) {
+        const entry = allByCode[code] || {
+          code,
+          description: labelByCode[code] || code,
+          vigente: false,
+        };
+        options.push(mapCatalogEntry(entry, { legacy: true }));
+      }
     }
+
+    afiliacionOptions.value = options;
+  } catch (err) {
+    catalogError.value =
+      err?.response?.data?.message ||
+      err?.message ||
+      'No se pudo cargar el catálogo de afiliación';
+    afiliacionOptions.value = [];
+  } finally {
+    catalogLoading.value = false;
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   const sexo = trabajadores.currentTrabajador?.sexo;
   const defaultGenero = sexo === 'Masculino' ? 1 : sexo === 'Femenino' ? 2 : 0;
 
@@ -78,12 +124,17 @@ onMounted(() => {
   genero.value = savedGenero;
 
   const savedDerecho = getValFromSource('derechohabiencia', '0');
+  let savedCodes = [];
   if (typeof savedDerecho === 'string' && savedDerecho !== '0') {
-    derechohabienciaSeleccion.value = savedDerecho.split('&').filter(Boolean);
-  } else {
-    derechohabienciaSeleccion.value = [];
+    savedCodes = savedDerecho.split('&').filter(Boolean);
+  } else if (savedDerecho === '0') {
+    savedCodes = [];
   }
+  derechohabienciaSeleccion.value = [...savedCodes];
 
+  await loadAfiliacionOptions(savedCodes);
+
+  // Si el default vacío debe ser "0" y existe esa opción vigente, no forzar selección
   syncFormData();
 });
 
@@ -118,12 +169,19 @@ onUnmounted(() => {
       <label class="block text-base font-medium text-gray-800 mb-2">
         Derechohabiencia <span class="text-red-500">*</span>
       </label>
-      <p class="text-sm text-gray-600 mb-3">Seleccione una o más opciones (máx. 9). "No especificado", "Ninguna" y "Se ignora" son exclusivas.</p>
-      <div class="grid grid-cols-2 gap-2">
+      <p class="text-sm text-gray-600 mb-3">
+        Seleccione una o más opciones (máx. 9). Las opciones “No especificado”, “Ninguna” y “Se ignora” (según etiqueta del catálogo) son exclusivas.
+      </p>
+
+      <p v-if="catalogLoading" class="text-sm text-gray-500 mb-2">Cargando catálogo de afiliación…</p>
+      <p v-else-if="catalogError" class="text-sm text-red-600 mb-2">{{ catalogError }}</p>
+
+      <div v-else class="grid grid-cols-2 gap-2">
         <label
-          v-for="opt in derechohabienciaOptions"
+          v-for="opt in afiliacionOptions"
           :key="opt.value"
           class="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer text-sm"
+          :class="{ 'opacity-70': opt.legacy }"
         >
           <input
             type="checkbox"
@@ -132,7 +190,10 @@ onUnmounted(() => {
             class="rounded text-emerald-600 focus:ring-emerald-500"
             @change="handleDerechohabienciaChange(opt.value)"
           />
-          {{ opt.label }}
+          <span>
+            {{ opt.label }}
+            <span v-if="opt.legacy" class="text-xs text-amber-700">(ya no vigente)</span>
+          </span>
         </label>
       </div>
     </div>

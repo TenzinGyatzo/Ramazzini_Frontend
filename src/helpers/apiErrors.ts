@@ -53,6 +53,21 @@ function extractRegulatoryErrorMessage(data: Record<string, unknown>): string | 
     }
     return 'Los datos de identificación del trabajador no pueden modificarse una vez concluido el registro.';
   }
+  if (errorCode === 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
+    if (typeof data.message === 'string' && data.message.trim() !== '') {
+      return data.message.trim();
+    }
+    const details = data.details as
+      | { centroId?: string; empresaId?: string }
+      | undefined;
+    if (details?.centroId) {
+      return 'No se puede eliminar este centro de trabajo porque contiene documentos finalizados o anulados.';
+    }
+    if (details?.empresaId) {
+      return 'No se puede eliminar esta empresa porque contiene documentos finalizados o anulados.';
+    }
+    return 'No se puede eliminar porque contiene documentos finalizados o anulados.';
+  }
   return null;
 }
 

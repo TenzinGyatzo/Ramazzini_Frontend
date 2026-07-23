@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import CentrosTrabajoAPI from '@/api/CentrosTrabajoAPI';
+import { extractApiErrorMessage } from '@/helpers/apiErrors';
 
 const toast: any = inject('toast');
 const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
@@ -89,6 +90,7 @@ const solicitarEliminacionEmpresa = async (idEmpresa: string, nombreComercial: s
 
   requestEliminacion?.({
     entidad: 'empresa',
+    resourceId: idEmpresa,
     identificacion: nombreComercial,
     textoConfirmacion: cantidadCentros > 0 ? nombreComercial : undefined,
     contextoNivel: { cantidadCentros },
@@ -104,11 +106,17 @@ const solicitarEliminacionEmpresa = async (idEmpresa: string, nombreComercial: s
         empresas.resetCurrentEmpresa();
       } catch (error) {
         console.log('Error al eliminar la empresa:', error);
-        toast.open({
-          message:
-            'Error al eliminar la empresa. Algunos documentos no se pudieron eliminar. Elimínalos directamente y vuelve a intentarlo',
-          type: 'error',
-        });
+        const errorCode = (error as { response?: { data?: { errorCode?: string } } })
+          ?.response?.data?.errorCode;
+        if (errorCode !== 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
+          toast.open({
+            message: extractApiErrorMessage(
+              error,
+              'No se pudo eliminar la empresa. Revise centros, trabajadores y documentos asociados e intente de nuevo.',
+            ),
+            type: 'error',
+          });
+        }
         throw error;
       }
     },
