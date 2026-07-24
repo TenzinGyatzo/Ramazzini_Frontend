@@ -44,6 +44,33 @@ const nearestExamenVista = ref(null);
 const user = computed(() => userStore.user);
 const proveedorSalud = computed(() => proveedorSaludStore.proveedorSalud);
 
+const textoAgudezaVisualCertificado = computed(() => {
+  const ev = nearestExamenVista.value;
+  if (!ev) return '';
+
+  const formatAV = (valor, ceguera) => {
+    if (ceguera) return 'Ceguera Total';
+    if (valor == null || valor === '') return 'NA';
+    return `20/${valor}`;
+  };
+
+  const reportarConCorreccion = !!ev.sinCorreccionNoEvaluablePorLentesContacto;
+  const oi = reportarConCorreccion
+    ? ev.ojoIzquierdoLejanaConCorreccion
+    : ev.ojoIzquierdoLejanaSinCorreccion;
+  const od = reportarConCorreccion
+    ? ev.ojoDerechoLejanaConCorreccion
+    : ev.ojoDerechoLejanaSinCorreccion;
+  const interpretacion = reportarConCorreccion
+    ? (ev.conCorreccionLejanaInterpretacion || 'categoría no disponible')
+    : (ev.sinCorreccionLejanaInterpretacion || 'categoría no disponible');
+  const tipo = reportarConCorreccion ? 'con corrección' : 'sin corrección';
+  const ciegaOI = ev.ojoIzquierdoCegueraTotal ?? false;
+  const ciegaOD = ev.ojoDerechoCegueraTotal ?? false;
+
+  return `Examen visual con agudeza lejana ${tipo}: OI ${formatAV(oi, ciegaOI)} y OD ${formatAV(od, ciegaOD)} (${interpretacion}).`;
+});
+
 watch(
   () => userStore.user,
   (currentUser) => {
@@ -373,15 +400,7 @@ function formatearCampo(campo) {
            </template>
 
            <template v-if="nearestExamenVista">
-             Examen visual con agudeza lejana sin corrección:
-             <template v-if="nearestExamenVista.sinCorreccionNoEvaluablePorLentesContacto">
-               OI NA y OD NA
-             </template>
-             <template v-else>
-               OI {{ nearestExamenVista.ojoIzquierdoCegueraTotal ? 'Ceguera Total' : (nearestExamenVista.ojoIzquierdoLejanaSinCorreccion != null ? `20/${nearestExamenVista.ojoIzquierdoLejanaSinCorreccion}` : 'NA') }} y
-               OD {{ nearestExamenVista.ojoDerechoCegueraTotal ? 'Ceguera Total' : (nearestExamenVista.ojoDerechoLejanaSinCorreccion != null ? `20/${nearestExamenVista.ojoDerechoLejanaSinCorreccion}` : 'NA') }}
-             </template>
-             ({{ nearestExamenVista.sinCorreccionLejanaInterpretacion || 'categoría no disponible' }}). 
+             {{ textoAgudezaVisualCertificado }}
              <template v-if="nearestExamenVista.interpretacionIshihara === 'Daltonismo'">
                Se detecta alteración en la percepción cromática (Daltonismo).
              </template>
