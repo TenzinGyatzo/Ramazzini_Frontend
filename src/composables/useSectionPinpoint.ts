@@ -11,6 +11,10 @@ import { useStepsStore } from '@/stores/steps';
 const FOCUSABLE_SELECTOR =
   'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/** Preferir campo de texto (detalle ya redactado) sobre chips Sí/No. */
+const TEXT_FOCUS_SELECTOR =
+  'textarea:not([disabled]), input:not([disabled]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="radio"]):not([type="checkbox"])';
+
 function findAnchor(
   root: HTMLElement,
   legacyStep: number,
@@ -20,9 +24,7 @@ function findAnchor(
   ) as HTMLElement | null;
 }
 
-function focusFirstControl(anchor: HTMLElement): void {
-  const el = anchor.querySelector(FOCUSABLE_SELECTOR) as HTMLElement | null;
-  if (!el) return;
+function focusElement(el: HTMLElement): void {
   try {
     el.focus({ preventScroll: true });
   } catch {
@@ -31,7 +33,48 @@ function focusFirstControl(anchor: HTMLElement): void {
 }
 
 /**
- * Centra el microstep en el panel scrolleable, un poco por encima del centro (~40%).
+ * Espera a que exista textarea/input (hidratación Si en onMounted del Step)
+ * y enfoca una sola vez. Evita enfocar chips intermedios (dispara focusin en cascada).
+ */
+async function focusBestControl(
+  anchor: HTMLElement,
+  isStale: () => boolean,
+): Promise<void> {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (isStale()) return;
+
+    const text = anchor.querySelector(
+      TEXT_FOCUS_SELECTOR,
+    ) as HTMLElement | null;
+    if (text) {
+      // Ya escribe el usuario en este campo: no reenfocar.
+      const active = document.activeElement;
+      if (active === text) return;
+      focusElement(text);
+      return;
+    }
+
+    if (attempt === 0) await nextTick();
+    else if (attempt === 1) {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    } else {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 40);
+      });
+    }
+  }
+
+  if (isStale()) return;
+  const fallback = anchor.querySelector(
+    FOCUSABLE_SELECTOR,
+  ) as HTMLElement | null;
+  if (fallback) focusElement(fallback);
+}
+
+/**
+ * Centra el microstep en el panel scrolleable, un poco por encima del centro.
  * Solo mueve `root` (no el scroll de la página).
  */
 function scrollAnchorTowardCenter(root: HTMLElement, anchor: HTMLElement): void {
@@ -58,21 +101,46 @@ export function useSectionPinpoint(
 ) {
   const steps = useStepsStore();
 
+  /** Ignorar focusin mientras aplicamos pinpoint programático (evita bucles). */
+  let suppressFocusin = false;
+  /** Cancela applies en vuelo cuando cambia el target. */
+  let applyGeneration = 0;
+
   const applyPinpoint = async (legacyStep: number | null) => {
+    const generation = ++applyGeneration;
+    const isStale = () => generation !== applyGeneration;
+
     if (legacyStep == null || legacyStep <= 0) return;
     const root = unref(scrollRoot);
     if (!root) return;
 
     await nextTick();
+    if (isStale()) return;
+
     const anchor = findAnchor(root, legacyStep);
     if (!anchor) return;
 
     scrollAnchorTowardCenter(root, anchor);
     await nextTick();
-    // No robar el focus si el usuario ya interactúa dentro del ancla (sync bidireccional).
+    if (isStale()) return;
+
     const active = document.activeElement;
-    if (active instanceof Node && anchor.contains(active)) return;
-    focusFirstControl(anchor);
+    if (
+      active instanceof Element &&
+      anchor.contains(active) &&
+      active.matches(TEXT_FOCUS_SELECTOR)
+    ) {
+      return;
+    }
+
+    suppressFocusin = true;
+    try {
+      await focusBestControl(anchor, isStale);
+    } finally {
+      // Liberar tras el tick de focusin síncrono.
+      await nextTick();
+      suppressFocusin = false;
+    }
   };
 
   const stopWatch = watch(
@@ -83,6 +151,7 @@ export function useSectionPinpoint(
   );
 
   const onFocusIn = (event: FocusEvent) => {
+    if (suppressFocusin) return;
     const root = unref(scrollRoot);
     if (!root) return;
     const target = event.target;
@@ -100,11 +169,12 @@ export function useSectionPinpoint(
   onMounted(() => {
     const root = unref(scrollRoot);
     root?.addEventListener('focusin', onFocusIn);
-    // Si ya hay pinpoint al montar la sección (click desde visualizador), aplicarlo.
     void applyPinpoint(steps.focusedLegacyStep);
   });
 
   onUnmounted(() => {
+    applyGeneration += 1;
+    suppressFocusin = false;
     const root = unref(scrollRoot);
     root?.removeEventListener('focusin', onFocusIn);
     stopWatch();
