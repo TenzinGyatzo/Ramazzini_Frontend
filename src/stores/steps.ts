@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref, markRaw } from "vue";
 import { useTrabajadoresStore } from "./trabajadores";
 import { useDocumentosStore } from "./documentos";
+import { useFormDataStore } from "./formDataStore";
 
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
@@ -9,9 +10,11 @@ const documentos = useDocumentosStore();
 // Evento personalizado para campos faltantes
 const showMissingFieldsModal = ref(false);
 
+type StepDef = { component: any; name: string; id?: string };
+
 export const useStepsStore = defineStore("steps", () => {
   // Lista de pasos
-  const steps = ref<Array<{ component: any; name: string }>>([]);
+  const steps = ref<StepDef[]>([]);
 
   // Paso actual
   const currentStep = ref(1);
@@ -30,9 +33,39 @@ export const useStepsStore = defineStore("steps", () => {
     focusedLegacyStep.value = null;
   };
 
+  const findStepNumberById = (id: string): number | null => {
+    const idx = steps.value.findIndex((s) => s.id === id);
+    return idx >= 0 ? idx + 1 : null;
+  };
+
+  const currentStepId = (): string | undefined =>
+    steps.value[currentStep.value - 1]?.id;
+
+  /** Con lentes de contacto, AV cercana sin corrección no aplica: saltar entre lejana sin ↔ lejana con. */
+  const examenVistaLentesContactoSkipTo = (
+    direction: "next" | "prev",
+  ): number | null => {
+    if (documentos.currentTypeOfDocument !== "examenVista") return null;
+    const formData = useFormDataStore().formDataExamenVista as Record<
+      string,
+      unknown
+    >;
+    if (!formData?.sinCorreccionNoEvaluablePorLentesContacto) return null;
+
+    const id = currentStepId();
+    if (direction === "next") {
+      if (id === "evAvLejanaSin" || id === "evAvCercanaSin") {
+        return findStepNumberById("evAvLejanaCon");
+      }
+    } else if (id === "evAvLejanaCon" || id === "evAvCercanaSin") {
+      return findStepNumberById("evAvLejanaSin");
+    }
+    return null;
+  };
+
   // Establece los pasos y marca los componentes como no reactivos
   const setSteps = (
-    newSteps: Array<{ component: any; name: string }>,
+    newSteps: StepDef[],
     options?: { preserveCurrentStep?: boolean }
   ) => {
     const prevLen = steps.value.length;
@@ -102,8 +135,10 @@ export const useStepsStore = defineStore("steps", () => {
         currentStep.value = steps.value.length + 1;
       }
     } else {
-      // Navegación normal para otros tipos de documento
-      if (currentStep.value < steps.value.length) {
+      const skipTo = examenVistaLentesContactoSkipTo("next");
+      if (skipTo != null) {
+        currentStep.value = skipTo;
+      } else if (currentStep.value < steps.value.length) {
         currentStep.value++;
       } else {
         currentStep.value = steps.value.length + 1;
@@ -122,7 +157,10 @@ export const useStepsStore = defineStore("steps", () => {
     isNavigating.value = true;
     clearPinpoint();
 
-    if (currentStep.value > 1) {
+    const skipTo = examenVistaLentesContactoSkipTo("prev");
+    if (skipTo != null) {
+      currentStep.value = skipTo;
+    } else if (currentStep.value > 1) {
       currentStep.value--;
     }
 
@@ -167,6 +205,20 @@ export const useStepsStore = defineStore("steps", () => {
       documentos.currentTypeOfDocument === 'historiaClinica'
     ) {
       stepNumber = redirectionMap[stepNumber];
+    }
+
+    // Examen vista + lentes de contacto: AV cercana sin corrección no aplica
+    if (documentos.currentTypeOfDocument === "examenVista") {
+      const formData = useFormDataStore().formDataExamenVista as Record<
+        string,
+        unknown
+      >;
+      if (
+        formData?.sinCorreccionNoEvaluablePorLentesContacto &&
+        steps.value[stepNumber - 1]?.id === "evAvCercanaSin"
+      ) {
+        stepNumber = findStepNumberById("evAvLejanaCon") ?? stepNumber;
+      }
     }
 
     if (stepNumber >= 1 && stepNumber <= steps.value.length) {

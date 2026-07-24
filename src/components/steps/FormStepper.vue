@@ -779,30 +779,30 @@ export default {
         
         // Steps base (Fecha, AV Lejana, AV Cercana, AV Con Lejana, AV Con Cercana, Ishihara)
         const stepsBase = [
-          { component: Step1ExamenVista, name: 'Paso 1' },
-          { component: Step2ExamenVista, name: 'Paso 2' },
-          { component: Step3ExamenVista, name: 'Paso 3' },
-          { component: Step4ExamenVista, name: 'Paso 4' },
-          { component: Step5ExamenVista, name: 'Paso 5' },
-          { component: Step6ExamenVista, name: 'Paso 6' },
+          { component: Step1ExamenVista, name: 'Paso 1', id: 'evFecha' },
+          { component: Step2ExamenVista, name: 'Paso 2', id: 'evAvLejanaSin' },
+          { component: Step3ExamenVista, name: 'Paso 3', id: 'evAvCercanaSin' },
+          { component: Step4ExamenVista, name: 'Paso 4', id: 'evAvLejanaCon' },
+          { component: Step5ExamenVista, name: 'Paso 5', id: 'evAvCercanaCon' },
+          { component: Step6ExamenVista, name: 'Paso 6', id: 'evIshihara' },
         ];
         
         let examenVistaSteps;
         if (paisProveedor === 'GT') {
           // Guatemala: Fecha primero; luego Antecedentes, Anamnesis, Utiliza anteojos; luego AV e Ishihara; luego 7, 8, 9
           examenVistaSteps = [
-            { component: Step1ExamenVista, name: 'Paso 1' },
-            { component: StepAntecedentesGT, name: 'Paso 2' },
-            { component: StepAnamnesisGT, name: 'Paso 3' },
-            { component: StepUtilizaAnteojosGT, name: 'Paso 4' },
-            { component: Step2ExamenVista, name: 'Paso 5' },
-            { component: Step3ExamenVista, name: 'Paso 6' },
-            { component: Step4ExamenVista, name: 'Paso 7' },
-            { component: Step5ExamenVista, name: 'Paso 8' },
-            { component: Step6ExamenVista, name: 'Paso 9' },
-            { component: Step7ExamenVista, name: 'Paso 10' },
-            { component: Step8ExamenVista, name: 'Paso 11' },
-            { component: Step9ExamenVista, name: 'Paso 12' }
+            { component: Step1ExamenVista, name: 'Paso 1', id: 'evFecha' },
+            { component: StepAntecedentesGT, name: 'Paso 2', id: 'evAntecedentesGT' },
+            { component: StepAnamnesisGT, name: 'Paso 3', id: 'evAnamnesisGT' },
+            { component: StepUtilizaAnteojosGT, name: 'Paso 4', id: 'evUtilizaAnteojosGT' },
+            { component: Step2ExamenVista, name: 'Paso 5', id: 'evAvLejanaSin' },
+            { component: Step3ExamenVista, name: 'Paso 6', id: 'evAvCercanaSin' },
+            { component: Step4ExamenVista, name: 'Paso 7', id: 'evAvLejanaCon' },
+            { component: Step5ExamenVista, name: 'Paso 8', id: 'evAvCercanaCon' },
+            { component: Step6ExamenVista, name: 'Paso 9', id: 'evIshihara' },
+            { component: Step7ExamenVista, name: 'Paso 10', id: 'evFuncionOcular' },
+            { component: Step8ExamenVista, name: 'Paso 11', id: 'evReceta' },
+            { component: Step9ExamenVista, name: 'Paso 12', id: 'evDiagnostico' },
           ];
         } else {
           examenVistaSteps = stepsBase;

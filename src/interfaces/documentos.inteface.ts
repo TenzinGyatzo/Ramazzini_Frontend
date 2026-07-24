@@ -309,12 +309,15 @@ export interface DocumentoExterno {
 export interface ExamenVista {
     _id: string;
     fechaExamenVista: string;
-    ojoIzquierdoLejanaSinCorreccion: number;
-    ojoDerechoLejanaSinCorreccion: number;
+    ojoIzquierdoCegueraTotal?: boolean;
+    ojoDerechoCegueraTotal?: boolean;
+    sinCorreccionNoEvaluablePorLentesContacto?: boolean;
+    ojoIzquierdoLejanaSinCorreccion: number | null;
+    ojoDerechoLejanaSinCorreccion: number | null;
     sinCorreccionLejanaInterpretacion: string;
     requiereLentesUsoGeneral: string;
-    ojoIzquierdoCercanaSinCorreccion: number;
-    ojoDerechoCercanaSinCorreccion: number;
+    ojoIzquierdoCercanaSinCorreccion: number | null;
+    ojoDerechoCercanaSinCorreccion: number | null;
     sinCorreccionCercanaInterpretacion: string;
     requiereLentesParaLectura: string;
     ojoIzquierdoLejanaConCorreccion?: number;

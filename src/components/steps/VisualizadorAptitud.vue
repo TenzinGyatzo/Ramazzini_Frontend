@@ -337,10 +337,23 @@ const examenVistaResumen = computed(() => {
   if (!nearestExamenVista.value) {
     return 'No hay exámenes de vista disponibles';
   }
-  return (nearestExamenVista.value.ojoIzquierdoLejanaConCorreccion === 0 || nearestExamenVista.value.ojoIzquierdoLejanaConCorreccion == null) &&
-    (nearestExamenVista.value.ojoDerechoLejanaConCorreccion === 0 || nearestExamenVista.value.ojoDerechoLejanaConCorreccion == null)
-    ? `OI: 20/${nearestExamenVista.value.ojoIzquierdoLejanaSinCorreccion || '-'}, OD: 20/${nearestExamenVista.value.ojoDerechoLejanaSinCorreccion || '-'} - ${nearestExamenVista.value.sinCorreccionLejanaInterpretacion || '-'}, Ishihara: ${nearestExamenVista.value.porcentajeIshihara || '-'}% - ${nearestExamenVista.value.interpretacionIshihara || '-'}`
-    : `OI: 20/${nearestExamenVista.value.ojoIzquierdoLejanaConCorreccion || '-'}, OD: 20/${nearestExamenVista.value.ojoDerechoLejanaConCorreccion || '-'} - ${nearestExamenVista.value.conCorreccionLejanaInterpretacion || '-'} Corregida, Ishihara: ${nearestExamenVista.value.porcentajeIshihara || '-'}% - ${nearestExamenVista.value.interpretacionIshihara || '-'}`;
+  const ev = nearestExamenVista.value;
+  const formatAV = (valor, ceguera) => {
+    if (ceguera) return 'Ceguera Total';
+    if (valor == null || valor === '') return 'NA';
+    return `20/${valor}`;
+  };
+  const ciegaOI = ev.ojoIzquierdoCegueraTotal ?? false;
+  const ciegaOD = ev.ojoDerechoCegueraTotal ?? false;
+  const sinCorreccion = ev.sinCorreccionNoEvaluablePorLentesContacto
+    ? `OI: NA, OD: NA - ${ev.sinCorreccionLejanaInterpretacion || '-'}`
+    : `OI: ${formatAV(ev.ojoIzquierdoLejanaSinCorreccion, ciegaOI)}, OD: ${formatAV(ev.ojoDerechoLejanaSinCorreccion, ciegaOD)} - ${ev.sinCorreccionLejanaInterpretacion || '-'}`;
+  const conCorreccion = `OI: ${formatAV(ev.ojoIzquierdoLejanaConCorreccion, ciegaOI)}, OD: ${formatAV(ev.ojoDerechoLejanaConCorreccion, ciegaOD)} - ${ev.conCorreccionLejanaInterpretacion || '-'} Corregida`;
+  const ishihara = `Ishihara: ${ev.porcentajeIshihara || '-'}% - ${ev.interpretacionIshihara || '-'}`;
+  return (ev.ojoIzquierdoLejanaConCorreccion === 0 || ev.ojoIzquierdoLejanaConCorreccion == null) &&
+    (ev.ojoDerechoLejanaConCorreccion === 0 || ev.ojoDerechoLejanaConCorreccion == null)
+    ? `${sinCorreccion}, ${ishihara}`
+    : `${conCorreccion}, ${ishihara}`;
 });
 
 const audiometriaResumen = computed(() => {

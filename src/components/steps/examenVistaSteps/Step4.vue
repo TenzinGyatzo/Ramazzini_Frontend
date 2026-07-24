@@ -45,6 +45,17 @@ onMounted(() => {
     conCorreccionLejanaInterpretacion.value = formDataExamenVista.conCorreccionLejanaInterpretacion || 'Visión normal';
     interpretarAgudezaVisualLejana();
   }
+  // Lentes de contacto: AV sin corrección no evaluable → debe capturar con corrección
+  if (
+    formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto ||
+    documentos.currentDocument?.sinCorreccionNoEvaluablePorLentesContacto
+  ) {
+    usaLentes.value = 'Si';
+    ojoIzquierdoLejanaConCorreccion.value = ciegaOI.value ? undefined : (formDataExamenVista.ojoIzquierdoLejanaConCorreccion ?? 20);
+    ojoDerechoLejanaConCorreccion.value = ciegaOD.value ? undefined : (formDataExamenVista.ojoDerechoLejanaConCorreccion ?? 20);
+    conCorreccionLejanaInterpretacion.value = formDataExamenVista.conCorreccionLejanaInterpretacion || 'Visión normal';
+    interpretarAgudezaVisualLejana();
+  }
 });
 
 onUnmounted(() => {

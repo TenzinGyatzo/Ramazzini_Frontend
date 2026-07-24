@@ -373,9 +373,14 @@ function formatearCampo(campo) {
            </template>
 
            <template v-if="nearestExamenVista">
-             Examen visual con agudeza lejana sin corrección: 
-             OI 20/{{ nearestExamenVista.ojoIzquierdoLejanaSinCorreccion || 'N/D' }} y 
-             OD 20/{{ nearestExamenVista.ojoDerechoLejanaSinCorreccion || 'N/D' }} 
+             Examen visual con agudeza lejana sin corrección:
+             <template v-if="nearestExamenVista.sinCorreccionNoEvaluablePorLentesContacto">
+               OI NA y OD NA
+             </template>
+             <template v-else>
+               OI {{ nearestExamenVista.ojoIzquierdoCegueraTotal ? 'Ceguera Total' : (nearestExamenVista.ojoIzquierdoLejanaSinCorreccion != null ? `20/${nearestExamenVista.ojoIzquierdoLejanaSinCorreccion}` : 'NA') }} y
+               OD {{ nearestExamenVista.ojoDerechoCegueraTotal ? 'Ceguera Total' : (nearestExamenVista.ojoDerechoLejanaSinCorreccion != null ? `20/${nearestExamenVista.ojoDerechoLejanaSinCorreccion}` : 'NA') }}
+             </template>
              ({{ nearestExamenVista.sinCorreccionLejanaInterpretacion || 'categoría no disponible' }}). 
              <template v-if="nearestExamenVista.interpretacionIshihara === 'Daltonismo'">
                Se detecta alteración en la percepción cromática (Daltonismo).

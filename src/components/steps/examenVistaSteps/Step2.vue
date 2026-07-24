@@ -3,12 +3,15 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
+const INTERPRETACION_LENTES_CONTACTO = 'No evaluable (lentes de contacto)';
+
 const formDataStore = useFormDataStore();
 const formDataExamenVista = formDataStore.formDataExamenVista;
 const documentos = useDocumentosStore();
 
 const ojoIzquierdoCegueraTotal = ref(formDataStore.formDataExamenVista.ojoIzquierdoCegueraTotal ?? false);
 const ojoDerechoCegueraTotal = ref(formDataStore.formDataExamenVista.ojoDerechoCegueraTotal ?? false);
+const sinCorreccionNoEvaluablePorLentesContacto = ref(false);
 const ojoIzquierdoLejanaSinCorreccion = ref(20);
 const ojoDerechoLejanaSinCorreccion = ref(20);
 const sinCorreccionLejanaInterpretacion = ref('Visión normal');
@@ -21,38 +24,84 @@ function getCiegaOD(doc) {
   return doc?.ojoDerechoCegueraTotal ?? doc?.ojoDerechoLejanaCegueraTotal ?? doc?.ojoDerechoCercanaCegueraTotal ?? false;
 }
 
+function aplicarNoEvaluableLentesContacto() {
+  if (!ojoIzquierdoCegueraTotal.value) {
+    ojoIzquierdoLejanaSinCorreccion.value = null;
+    formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = null;
+  }
+  if (!ojoDerechoCegueraTotal.value) {
+    ojoDerechoLejanaSinCorreccion.value = null;
+    formDataExamenVista.ojoDerechoLejanaSinCorreccion = null;
+  }
+  // Sincronizar también cercana: clínicamente no se puede medir sin corrección
+  if (!ojoIzquierdoCegueraTotal.value) {
+    formDataExamenVista.ojoIzquierdoCercanaSinCorreccion = null;
+  }
+  if (!ojoDerechoCegueraTotal.value) {
+    formDataExamenVista.ojoDerechoCercanaSinCorreccion = null;
+  }
+  formDataExamenVista.sinCorreccionCercanaInterpretacion = INTERPRETACION_LENTES_CONTACTO;
+  formDataExamenVista.requiereLentesParaLectura = 'No';
+}
+
 onMounted(() => {
   if (documentos.currentDocument) {
     const doc = documentos.currentDocument;
     ojoIzquierdoCegueraTotal.value = getCiegaOI(doc);
     ojoDerechoCegueraTotal.value = getCiegaOD(doc);
-    ojoIzquierdoLejanaSinCorreccion.value = ojoIzquierdoCegueraTotal.value ? null : (doc.ojoIzquierdoLejanaSinCorreccion ?? 20);
-    ojoDerechoLejanaSinCorreccion.value = ojoDerechoCegueraTotal.value ? null : (doc.ojoDerechoLejanaSinCorreccion ?? 20);
+    sinCorreccionNoEvaluablePorLentesContacto.value = doc.sinCorreccionNoEvaluablePorLentesContacto ?? false;
+    ojoIzquierdoLejanaSinCorreccion.value = (ojoIzquierdoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
+      ? null
+      : (doc.ojoIzquierdoLejanaSinCorreccion ?? 20);
+    ojoDerechoLejanaSinCorreccion.value = (ojoDerechoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
+      ? null
+      : (doc.ojoDerechoLejanaSinCorreccion ?? 20);
     sinCorreccionLejanaInterpretacion.value = doc.sinCorreccionLejanaInterpretacion ?? 'Visión normal';
     requiereLentesUsoGeneral.value = doc.requiereLentesUsoGeneral ?? 'No';
   } else {
     ojoIzquierdoCegueraTotal.value = formDataExamenVista.ojoIzquierdoCegueraTotal ?? false;
     ojoDerechoCegueraTotal.value = formDataExamenVista.ojoDerechoCegueraTotal ?? false;
-    ojoIzquierdoLejanaSinCorreccion.value = ojoIzquierdoCegueraTotal.value ? null : (formDataExamenVista.ojoIzquierdoLejanaSinCorreccion ?? 20);
-    ojoDerechoLejanaSinCorreccion.value = ojoDerechoCegueraTotal.value ? null : (formDataExamenVista.ojoDerechoLejanaSinCorreccion ?? 20);
+    sinCorreccionNoEvaluablePorLentesContacto.value = formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto ?? false;
+    ojoIzquierdoLejanaSinCorreccion.value = (ojoIzquierdoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
+      ? null
+      : (formDataExamenVista.ojoIzquierdoLejanaSinCorreccion ?? 20);
+    ojoDerechoLejanaSinCorreccion.value = (ojoDerechoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
+      ? null
+      : (formDataExamenVista.ojoDerechoLejanaSinCorreccion ?? 20);
     sinCorreccionLejanaInterpretacion.value = formDataExamenVista.sinCorreccionLejanaInterpretacion ?? 'Visión normal';
     requiereLentesUsoGeneral.value = formDataExamenVista.requiereLentesUsoGeneral ?? 'No';
   }
   formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
-  formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = ojoIzquierdoCegueraTotal.value ? null : ojoIzquierdoLejanaSinCorreccion.value;
-  formDataExamenVista.ojoDerechoLejanaSinCorreccion = ojoDerechoCegueraTotal.value ? null : ojoDerechoLejanaSinCorreccion.value;
+  formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto = sinCorreccionNoEvaluablePorLentesContacto.value;
+  formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = (ojoIzquierdoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
+    ? null
+    : ojoIzquierdoLejanaSinCorreccion.value;
+  formDataExamenVista.ojoDerechoLejanaSinCorreccion = (ojoDerechoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
+    ? null
+    : ojoDerechoLejanaSinCorreccion.value;
+  if (sinCorreccionNoEvaluablePorLentesContacto.value) {
+    aplicarNoEvaluableLentesContacto();
+  }
   interpretarAgudezaVisualLejana();
 });
 
 onUnmounted(() => {
-  formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = ojoIzquierdoCegueraTotal.value ? null : ojoIzquierdoLejanaSinCorreccion.value;
-  formDataExamenVista.ojoDerechoLejanaSinCorreccion = ojoDerechoCegueraTotal.value ? null : ojoDerechoLejanaSinCorreccion.value;
+  const noEvaluable = sinCorreccionNoEvaluablePorLentesContacto.value;
+  formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto = noEvaluable;
+  formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = (ojoIzquierdoCegueraTotal.value || noEvaluable)
+    ? null
+    : ojoIzquierdoLejanaSinCorreccion.value;
+  formDataExamenVista.ojoDerechoLejanaSinCorreccion = (ojoDerechoCegueraTotal.value || noEvaluable)
+    ? null
+    : ojoDerechoLejanaSinCorreccion.value;
   formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
   formDataExamenVista.sinCorreccionLejanaInterpretacion = sinCorreccionLejanaInterpretacion.value;
   formDataExamenVista.requiereLentesUsoGeneral = requiereLentesUsoGeneral.value;
+  if (noEvaluable) {
+    aplicarNoEvaluableLentesContacto();
+  }
 });
 
-// Sincronizar flags al store cuando cambien
 watch([ojoIzquierdoCegueraTotal, ojoDerechoCegueraTotal], () => {
   formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
   if (ojoIzquierdoCegueraTotal.value) {
@@ -66,18 +115,38 @@ watch([ojoIzquierdoCegueraTotal, ojoDerechoCegueraTotal], () => {
   interpretarAgudezaVisualLejana();
 }, { immediate: true });
 
-// Observa los cambios y actualiza el store y los campos relacionados
+watch(sinCorreccionNoEvaluablePorLentesContacto, (noEvaluable) => {
+  formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto = noEvaluable;
+  if (noEvaluable) {
+    // Excluyente con ceguera total
+    ojoIzquierdoCegueraTotal.value = false;
+    ojoDerechoCegueraTotal.value = false;
+    formDataStore.setExamenVistaCeguera(false, false);
+    aplicarNoEvaluableLentesContacto();
+  } else {
+    ojoIzquierdoLejanaSinCorreccion.value = 20;
+    ojoDerechoLejanaSinCorreccion.value = 20;
+    formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = 20;
+    formDataExamenVista.ojoDerechoLejanaSinCorreccion = 20;
+    // Restaurar cercana a default para forzar recaptura coherente
+    formDataExamenVista.ojoIzquierdoCercanaSinCorreccion = 20;
+    formDataExamenVista.ojoDerechoCercanaSinCorreccion = 20;
+    formDataExamenVista.sinCorreccionCercanaInterpretacion = 'Visión normal';
+    formDataExamenVista.requiereLentesParaLectura = 'No';
+  }
+  interpretarAgudezaVisualLejana();
+});
+
 watch([ojoIzquierdoLejanaSinCorreccion, ojoDerechoLejanaSinCorreccion], () => {
-  if (!ojoIzquierdoCegueraTotal.value) {
+  if (!ojoIzquierdoCegueraTotal.value && !sinCorreccionNoEvaluablePorLentesContacto.value) {
     formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = ojoIzquierdoLejanaSinCorreccion.value;
   }
-  if (!ojoDerechoCegueraTotal.value) {
+  if (!ojoDerechoCegueraTotal.value && !sinCorreccionNoEvaluablePorLentesContacto.value) {
     formDataExamenVista.ojoDerechoLejanaSinCorreccion = ojoDerechoLejanaSinCorreccion.value;
   }
   interpretarAgudezaVisualLejana();
 });
 
-// Función auxiliar para obtener la interpretación (rango 5-400)
 function obtenerInterpretacion(valor) {
   if (valor == null || valor === '') return null;
   const v = Number(valor);
@@ -90,13 +159,14 @@ function obtenerInterpretacion(valor) {
   return "Valor fuera de rango";
 }
 
-// Regla de interpretación: ambos ceguera total → "Ceguera total"; uno ceguera + otro Snellen → "OI: X. OD: Y" (OI siempre izq, OD siempre der)
 function interpretarAgudezaVisualLejana() {
   const ciegaOI = ojoIzquierdoCegueraTotal.value;
   const ciegaOD = ojoDerechoCegueraTotal.value;
 
   if (ciegaOI && ciegaOD) {
     sinCorreccionLejanaInterpretacion.value = "Ceguera total";
+  } else if (sinCorreccionNoEvaluablePorLentesContacto.value) {
+    sinCorreccionLejanaInterpretacion.value = INTERPRETACION_LENTES_CONTACTO;
   } else if (ciegaOI) {
     const interpOD = obtenerInterpretacion(ojoDerechoLejanaSinCorreccion.value);
     sinCorreccionLejanaInterpretacion.value = interpOD ? `OD: ${interpOD}` : "OD: NA";
@@ -115,8 +185,13 @@ function interpretarAgudezaVisualLejana() {
   requiereLentes();
 }
 
-// Solo evaluar ojos con agudeza numérica; ignorar ceguera total
 function requiereLentes() {
+  if (sinCorreccionNoEvaluablePorLentesContacto.value) {
+    // Ya usa corrección óptica (lentes de contacto); no inventar a partir de Snellen
+    requiereLentesUsoGeneral.value = "Si";
+    formDataExamenVista.requiereLentesUsoGeneral = requiereLentesUsoGeneral.value;
+    return;
+  }
   const valOI = ojoIzquierdoCegueraTotal.value ? null : (ojoIzquierdoLejanaSinCorreccion.value != null ? Number(ojoIzquierdoLejanaSinCorreccion.value) : null);
   const valOD = ojoDerechoCegueraTotal.value ? null : (ojoDerechoLejanaSinCorreccion.value != null ? Number(ojoDerechoLejanaSinCorreccion.value) : null);
   const ojosConValor = [valOI, valOD].filter(v => v != null);
@@ -131,26 +206,26 @@ function requiereLentes() {
 }
 
 function toggleCegueraOjoIzquierdo() {
+  if (sinCorreccionNoEvaluablePorLentesContacto.value) return;
   ojoIzquierdoCegueraTotal.value = !ojoIzquierdoCegueraTotal.value;
-  if (ojoIzquierdoCegueraTotal.value) {
-    ojoIzquierdoLejanaSinCorreccion.value = null;
-  } else {
-    ojoIzquierdoLejanaSinCorreccion.value = null; // No reinyectar default, dejar vacío
-  }
+  ojoIzquierdoLejanaSinCorreccion.value = null;
 }
 
 function toggleCegueraOjoDerecho() {
+  if (sinCorreccionNoEvaluablePorLentesContacto.value) return;
   ojoDerechoCegueraTotal.value = !ojoDerechoCegueraTotal.value;
-  if (ojoDerechoCegueraTotal.value) {
-    ojoDerechoLejanaSinCorreccion.value = null;
-  } else {
-    ojoDerechoLejanaSinCorreccion.value = null; // No reinyectar default
-  }
+  ojoDerechoLejanaSinCorreccion.value = null;
 }
 
-// Computed properties para validaciones y mensajes de error (solo cuando NO ceguera total)
+function toggleLentesContacto() {
+  sinCorreccionNoEvaluablePorLentesContacto.value = !sinCorreccionNoEvaluablePorLentesContacto.value;
+}
+
+const inputDeshabilitadoOI = computed(() => ojoIzquierdoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value);
+const inputDeshabilitadoOD = computed(() => ojoDerechoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value);
+
 const mensajeErrorOjoIzquierdo = computed(() => {
-  if (ojoIzquierdoCegueraTotal.value) return '';
+  if (inputDeshabilitadoOI.value) return '';
   const v = ojoIzquierdoLejanaSinCorreccion.value;
   if (v == null || v === '') return 'Debe capturar el valor';
   const n = Number(v);
@@ -160,7 +235,7 @@ const mensajeErrorOjoIzquierdo = computed(() => {
 });
 
 const mensajeErrorOjoDerecho = computed(() => {
-  if (ojoDerechoCegueraTotal.value) return '';
+  if (inputDeshabilitadoOD.value) return '';
   const v = ojoDerechoLejanaSinCorreccion.value;
   if (v == null || v === '') return 'Debe capturar el valor';
   const n = Number(v);
@@ -179,6 +254,7 @@ const colorInterpretacion = computed(() => {
   if (interpretacion.startsWith('OI: ')) interpretacion = interpretacion.slice(4);
   else if (interpretacion.startsWith('OD: ')) interpretacion = interpretacion.slice(4);
   if (interpretacion === 'Ceguera total') return 'bg-red-100 text-red-900';
+  if (interpretacion === INTERPRETACION_LENTES_CONTACTO) return 'bg-slate-100 text-slate-800';
   if (interpretacion === 'Visión excepcional' || interpretacion === 'Visión normal') return 'bg-emerald-50 text-emerald-800';
   if (interpretacion === 'Visión ligeramente reducida') return 'bg-yellow-50 text-yellow-800';
   if (interpretacion === 'Visión moderadamente reducida' || interpretacion === 'Visión significativamente reducida') return 'bg-orange-50 text-orange-800';
@@ -192,7 +268,23 @@ const iconoInterpretacion = 'M15 12a3 3 0 11-6 0 3 3 0 016 0z';
 <template>
   <div>
     <h1 class="text-2xl font-bold mb-4 text-gray-900">AGUDEZA VISUAL <br>SIN CORRECCIÓN</h1>
-    <h3 class="text-lg font-medium mb-6 text-gray-700">LEJANA (CARTA SCHNELLEN)</h3>
+    <h3 class="text-lg font-medium mb-2 text-gray-700">LEJANA (CARTA SCHNELLEN)</h3>
+
+    <label
+      class="mb-6 inline-flex max-w-full items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 cursor-pointer select-none transition-colors hover:border-gray-300 hover:bg-gray-100 has-[:checked]:border-slate-300 has-[:checked]:bg-slate-50"
+      title="Si el paciente asiste con lentes de contacto y no es posible retirarlos, la AV sin corrección no es evaluable."
+    >
+      <input
+        type="checkbox"
+        class="h-4 w-4 shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+        :checked="sinCorreccionNoEvaluablePorLentesContacto"
+        @change="toggleLentesContacto"
+      />
+      <span class="min-w-0 leading-snug">
+        <span class="text-sm font-medium text-gray-800">Lentes de contacto</span>
+        <span class="text-sm text-gray-500"> — no evaluable sin corrección · NA en ambos ojos</span>
+      </span>
+    </label>
 
     <!-- Ojo Izquierdo -->
     <div class="mb-6">
@@ -215,13 +307,23 @@ const iconoInterpretacion = 'M15 12a3 3 0 11-6 0 3 3 0 016 0z';
               class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               v-model="ojoIzquierdoLejanaSinCorreccion"
               step="5" min="5" max="400"
-              placeholder=""
-              :disabled="ojoIzquierdoCegueraTotal"
+              :placeholder="sinCorreccionNoEvaluablePorLentesContacto ? 'NA' : ''"
+              :disabled="inputDeshabilitadoOI"
             />
           </div>
         </div>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" class="rounded border-gray-300" :checked="ojoIzquierdoCegueraTotal" @change="toggleCegueraOjoIzquierdo" />
+        <label
+          class="flex items-center gap-2"
+          :class="sinCorreccionNoEvaluablePorLentesContacto ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'"
+          :title="sinCorreccionNoEvaluablePorLentesContacto ? 'No disponible con lentes de contacto' : undefined"
+        >
+          <input
+            type="checkbox"
+            class="rounded border-gray-300"
+            :checked="ojoIzquierdoCegueraTotal"
+            :disabled="sinCorreccionNoEvaluablePorLentesContacto"
+            @change="toggleCegueraOjoIzquierdo"
+          />
           <span class="text-sm font-medium text-gray-700">Ceguera total</span>
         </label>
       </div>
@@ -251,13 +353,23 @@ const iconoInterpretacion = 'M15 12a3 3 0 11-6 0 3 3 0 016 0z';
               class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               v-model="ojoDerechoLejanaSinCorreccion"
               step="5" min="5" max="400"
-              placeholder=""
-              :disabled="ojoDerechoCegueraTotal"
+              :placeholder="sinCorreccionNoEvaluablePorLentesContacto ? 'NA' : ''"
+              :disabled="inputDeshabilitadoOD"
             />
           </div>
         </div>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" class="rounded border-gray-300" :checked="ojoDerechoCegueraTotal" @change="toggleCegueraOjoDerecho" />
+        <label
+          class="flex items-center gap-2"
+          :class="sinCorreccionNoEvaluablePorLentesContacto ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'"
+          :title="sinCorreccionNoEvaluablePorLentesContacto ? 'No disponible con lentes de contacto' : undefined"
+        >
+          <input
+            type="checkbox"
+            class="rounded border-gray-300"
+            :checked="ojoDerechoCegueraTotal"
+            :disabled="sinCorreccionNoEvaluablePorLentesContacto"
+            @change="toggleCegueraOjoDerecho"
+          />
           <span class="text-sm font-medium text-gray-700">Ceguera total</span>
         </label>
       </div>
