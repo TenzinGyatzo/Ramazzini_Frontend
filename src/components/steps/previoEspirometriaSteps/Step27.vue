@@ -1,136 +1,61 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted } from 'vue';
+import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import PeSiNoChips from './PeSiNoChips.vue';
 
-const { formDataPrevioEspirometria } = useFormDataStore();
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
+
+const formDataStore = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const desprendimientoAgudoRetina = ref('NO');
 
+function syncToStore(value) {
+  formDataStore.formDataPrevioEspirometria = {
+    ...formDataStore.formDataPrevioEspirometria,
+    desprendimientoAgudoRetina: value,
+  };
+}
+
 onMounted(() => {
-    // Priorizar valores guardados en formData, luego documento actual, luego valores por defecto
-    desprendimientoAgudoRetina.value = formDataPrevioEspirometria.desprendimientoAgudoRetina || 
-                                       documentos.currentDocument?.desprendimientoAgudoRetina || 
-                                       'NO';
+  if (documentos.currentDocument) {
+    desprendimientoAgudoRetina.value = documentos.currentDocument.desprendimientoAgudoRetina || 'NO';
+  } else {
+    desprendimientoAgudoRetina.value = formDataStore.formDataPrevioEspirometria.desprendimientoAgudoRetina || 'NO';
+  }
+  syncToStore(desprendimientoAgudoRetina.value);
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para desprendimientoAgudoRetina
-    if (!formDataPrevioEspirometria.desprendimientoAgudoRetina) {
-        formDataPrevioEspirometria.desprendimientoAgudoRetina = desprendimientoAgudoRetina.value;
-    }
+  if (!formDataStore.formDataPrevioEspirometria.desprendimientoAgudoRetina) {
+    syncToStore(desprendimientoAgudoRetina.value);
+  }
 });
 
-// Sincronizar desprendimientoAgudoRetina con formData
 watch(desprendimientoAgudoRetina, (newValue) => {
-    formDataPrevioEspirometria.desprendimientoAgudoRetina = newValue;
+  syncToStore(newValue);
 });
 </script>
 
 <template>
-    <div>
-        <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">DESPRENDIMIENTO AGUDO DE RETINA</h1>
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">Contraindicaciones Absolutas</h2>
-        
-        <!-- Pregunta principal con mejor jerarquía -->
-        <div class="mb-8">
-            <p class="text-lg font-medium mb-4 text-gray-800">¿El trabajador tiene o ha tenido un desprendimiento de retina?</p>
-            
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
-            <div class="grid grid-cols-2 gap-3">
-                <!-- Opción NO -->
-                <label 
-                    :class="[
-                        'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        desprendimientoAgudoRetina === 'NO' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="NO" 
-                        v-model="desprendimientoAgudoRetina" 
-                        class="sr-only" 
-                    />
-                    <!-- Icono -->
-                    <div 
-                        :class="[
-                            'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
-                            desprendimientoAgudoRetina === 'NO' ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
-                        ]"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </div>
-                    <span 
-                        :class="[
-                            'text-base font-semibold transition-colors duration-200',
-                            desprendimientoAgudoRetina === 'NO' ? 'text-emerald-700' : 'text-gray-700'
-                        ]"
-                    >
-                        NO
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="desprendimientoAgudoRetina === 'NO'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-
-                <!-- Opción SI -->
-                <label 
-                    :class="[
-                        'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        desprendimientoAgudoRetina === 'SI' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="SI" 
-                        v-model="desprendimientoAgudoRetina" 
-                        class="sr-only" 
-                    />
-                    <!-- Icono -->
-                    <div 
-                        :class="[
-                            'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
-                            desprendimientoAgudoRetina === 'SI' ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
-                        ]"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <span 
-                        :class="[
-                            'text-base font-semibold transition-colors duration-200',
-                            desprendimientoAgudoRetina === 'SI' ? 'text-emerald-700' : 'text-gray-700'
-                        ]"
-                    >
-                        SÍ
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="desprendimientoAgudoRetina === 'SI'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-            </div>
-        </div>
-    </div>
+  <div class="pe-sino-step">
+    <template v-if="variant !== 'compact'">
+      <h1 class="text-2xl font-bold mb-4 text-gray-900">DESPRENDIMIENTO AGUDO DE RETINA</h1>
+      <h2 class="text-lg font-semibold mb-4 text-gray-700">Contraindicaciones Absolutas</h2>
+    </template>
+    <PeSiNoChips
+      v-model="desprendimientoAgudoRetina"
+      label="Desprendimiento agudo de retina"
+      question="¿Desprendimiento agudo de retina?"
+      :borderless="variant === 'compact'"
+    />
+  </div>
 </template>

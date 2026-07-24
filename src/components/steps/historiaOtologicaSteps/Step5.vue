@@ -1,139 +1,61 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted } from 'vue';
+import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import HoSiNoChips from './HoSiNoChips.vue';
 
-const { formDataHistoriaOtologica } = useFormDataStore();
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
+
+const formDataStore = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const zumbidoTinnitus = ref('NO');
 
+function syncToStore(value) {
+  formDataStore.formDataHistoriaOtologica = {
+    ...formDataStore.formDataHistoriaOtologica,
+    zumbidoTinnitus: value,
+  };
+}
+
 onMounted(() => {
-    if (documentos.currentDocument) {
-        // Si se está editando un documento, usa los valores existentes
-        zumbidoTinnitus.value = documentos.currentDocument.zumbidoTinnitus || 'NO';
-    } else {
-        // Si es un documento nuevo, usa valores predeterminados o lo que ya exista en formData
-        zumbidoTinnitus.value = formDataHistoriaOtologica.zumbidoTinnitus || 'NO';
-    }
+  if (documentos.currentDocument) {
+    zumbidoTinnitus.value = documentos.currentDocument.zumbidoTinnitus || 'NO';
+  } else {
+    zumbidoTinnitus.value = formDataStore.formDataHistoriaOtologica.zumbidoTinnitus || 'NO';
+  }
+  syncToStore(zumbidoTinnitus.value);
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para zumbidoTinnitus
-    if (!formDataHistoriaOtologica.zumbidoTinnitus) {
-        formDataHistoriaOtologica.zumbidoTinnitus = zumbidoTinnitus.value;
-    }
+  if (!formDataStore.formDataHistoriaOtologica.zumbidoTinnitus) {
+    syncToStore(zumbidoTinnitus.value);
+  }
 });
 
-// Sincronizar zumbidoTinnitus con formData
 watch(zumbidoTinnitus, (newValue) => {
-    formDataHistoriaOtologica.zumbidoTinnitus = newValue;
+  syncToStore(newValue);
 });
 </script>
 
 <template>
-    <div>
-        <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">ZUMBIDO (TINNITUS)</h1>
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">En los últimos 2 meses</h2>
-        
-        <!-- Pregunta principal con mejor jerarquía -->
-        <div class="mb-8">
-            <p class="text-lg font-medium mb-4 text-gray-800">¿Presencia de tinnitus?</p>
-            
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
-            <div class="grid grid-cols-2 gap-3">
-                <!-- Opción NO -->
-                <label 
-                    :class="[
-                        'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        zumbidoTinnitus === 'NO' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="NO" 
-                        v-model="zumbidoTinnitus" 
-                        class="sr-only" 
-                    />
-                    <!-- Icono -->
-                    <div 
-                        :class="[
-                            'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
-                            zumbidoTinnitus === 'NO' ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
-                        ]"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </div>
-                    <span 
-                        :class="[
-                            'text-base font-semibold transition-colors duration-200',
-                            zumbidoTinnitus === 'NO' ? 'text-emerald-700' : 'text-gray-700'
-                        ]"
-                    >
-                        NO
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="zumbidoTinnitus === 'NO'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-
-                <!-- Opción SI -->
-                <label 
-                    :class="[
-                        'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        zumbidoTinnitus === 'SI' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="SI" 
-                        v-model="zumbidoTinnitus" 
-                        class="sr-only" 
-                    />
-                    <!-- Icono -->
-                    <div 
-                        :class="[
-                            'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
-                            zumbidoTinnitus === 'SI' ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
-                        ]"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <span 
-                        :class="[
-                            'text-base font-semibold transition-colors duration-200',
-                            zumbidoTinnitus === 'SI' ? 'text-emerald-700' : 'text-gray-700'
-                        ]"
-                    >
-                        SÍ
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="zumbidoTinnitus === 'SI'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-            </div>
-        </div>
-    </div>
+  <div class="ho-sino-step">
+    <template v-if="variant !== 'compact'">
+      <h1 class="text-2xl font-bold mb-4 text-gray-900">ZUMBIDO (TINNITUS)</h1>
+      <h2 class="text-lg font-semibold mb-4 text-gray-700">En los últimos 2 meses</h2>
+    </template>
+    <HoSiNoChips
+      v-model="zumbidoTinnitus"
+      label="Zumbido (tinnitus)"
+      question="¿Presencia de tinnitus?"
+      :borderless="variant === 'compact'"
+    />
+  </div>
 </template>

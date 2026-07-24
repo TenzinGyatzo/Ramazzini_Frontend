@@ -1,6 +1,15 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted } from 'vue';
+import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataHistoriaClinica } = useFormDataStore();
 
@@ -31,12 +40,12 @@ watch(abortos, (newValue) => {
 <template>
     <div>
         <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">Antecedentes Gineco Obstétricos</h1>
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">ABORTOS</h2>
+        <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Antecedentes Gineco Obstétricos</h1>
+        <h2 :class="variant === 'compact' ? 'text-sm font-semibold mb-2 text-gray-700' : 'text-lg font-semibold mb-4 text-gray-700'">ABORTOS</h2>
         
         <!-- Pregunta principal con mejor jerarquía -->
-        <div class="mb-8">
-            <p class="text-lg font-medium mb-4 text-gray-800">¿La trabajadora ha experimentado pérdidas de embarazo antes de las 20 semanas? En caso afirmativo, ¿cuántas?</p>
+        <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
+            <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿La trabajadora ha experimentado pérdidas de embarazo antes de las 20 semanas? En caso afirmativo, ¿cuántas?</p>
             
             <!-- Diseño de Radio Buttons más Visual tipo Card sin iconos - 2 columnas -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -193,7 +202,7 @@ watch(abortos, (newValue) => {
                     />
                     <span 
                         :class="[
-                            'text-sm transition-colors duration-200',
+                            'text-xs transition-colors duration-200',
                             abortos === 'Más de 3 abortos' ? 'text-emerald-700 font-semibold' : 'text-gray-700'
                         ]"
                     >

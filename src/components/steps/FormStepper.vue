@@ -420,6 +420,23 @@ import {
   construirRutaPdfNotaAclaratoria,
   inicializarNotaAclaratoriaNueva,
 } from '@/helpers/notaAclaratoriaForm';
+import { isHcSectionsV2Enabled } from '@/composables/useHcSectionsV2';
+import { buildHistoriaClinicaSectionSteps } from '@/helpers/buildHistoriaClinicaSectionSteps';
+import { isEfSectionsV2Enabled } from '@/composables/useEfSectionsV2';
+import { buildExploracionFisicaSectionSteps } from '@/helpers/buildExploracionFisicaSectionSteps';
+import { isAptitudSectionsV2Enabled } from '@/composables/useAptitudSectionsV2';
+import { buildAptitudSectionSteps } from '@/helpers/buildAptitudSectionSteps';
+import { isAntidopingSectionsV2Enabled } from '@/composables/useAntidopingSectionsV2';
+import { buildAntidopingSectionSteps } from '@/helpers/buildAntidopingSectionSteps';
+import { isCertificadoSectionsV2Enabled } from '@/composables/useCertificadoSectionsV2';
+import { buildCertificadoSectionSteps } from '@/helpers/buildCertificadoSectionSteps';
+import { isHoSectionsV2Enabled } from '@/composables/useHoSectionsV2';
+import { buildHoSectionSteps } from '@/helpers/buildHoSectionSteps';
+import { isPeSectionsV2Enabled } from '@/composables/usePeSectionsV2';
+import { buildPeSectionSteps } from '@/helpers/buildPeSectionSteps';
+import { isNotaMedicaSectionsV2Enabled } from '@/composables/useNotaMedicaSectionsV2';
+import { buildNotaMedicaSectionSteps } from '@/helpers/buildNotaMedicaSectionSteps';
+import { legacyStepToSectionIndex as nmLegacyStepToSectionIndex } from '@/helpers/notaMedicaSections';
 
 export default {
   components: { Step1Antidoping, Step2Antidoping, Step1Aptitud, Step2Aptitud, Step3Aptitud, Step4Aptitud, Step5Aptitud, Step6Aptitud, Step7Aptitud, Step8Aptitud, Step9Aptitud, Step10Aptitud, Step11Aptitud, Step1Audiometria, Step2Audiometria, Step3Audiometria, Step4Audiometria, Step5Audiometria, Step6Audiometria, Step7Audiometria, Step1Certificado, Step2Certificado, Step1CertificadoExpedito, Step2CertificadoExpedito, Step3CertificadoExpedito, Step4CertificadoExpedito, Step5CertificadoExpedito, Step6CertificadoExpedito, Step7CertificadoExpedito, Step8CertificadoExpedito, Step1ExamenVista, Step2ExamenVista, Step3ExamenVista, Step4ExamenVista, Step5ExamenVista, Step6ExamenVista, Step7ExamenVista, Step8ExamenVista, Step9ExamenVista, Step1ExploracionFisica, Step2ExploracionFisica, Step3ExploracionFisica, Step4ExploracionFisica, Step5ExploracionFisica, Step6ExploracionFisica, Step7ExploracionFisica, Step8ExploracionFisica, Step9ExploracionFisica, Step10ExploracionFisica, Step11ExploracionFisica, Step12ExploracionFisica, Step13ExploracionFisica, Step14ExploracionFisica, Step15ExploracionFisica, Step16ExploracionFisica, Step17ExploracionFisica, Step18ExploracionFisica, Step19ExploracionFisica, Step20ExploracionFisica, Step21ExploracionFisica, Step22ExploracionFisica, Step23ExploracionFisica, Step24ExploracionFisica, Step25ExploracionFisica, Step26ExploracionFisica, Step27ExploracionFisica, Step28ExploracionFisica, Step29ExploracionFisica, Step30ExploracionFisica, Step31ExploracionFisica, Step1HistoriaClinica, Step2HistoriaClinica, Step3HistoriaClinica, Step4HistoriaClinica, Step5HistoriaClinica, Step6HistoriaClinica, Step7HistoriaClinica, Step8HistoriaClinica, Step9HistoriaClinica, Step10HistoriaClinica, Step11HistoriaClinica, Step12HistoriaClinica, Step13HistoriaClinica, Step14HistoriaClinica, Step15HistoriaClinica, Step16HistoriaClinica, Step17HistoriaClinica, Step18HistoriaClinica, Step19HistoriaClinica, Step20HistoriaClinica, Step21HistoriaClinica, Step22HistoriaClinica, Step23HistoriaClinica, Step24HistoriaClinica, Step25HistoriaClinica, Step26HistoriaClinica, Step27HistoriaClinica, Step28HistoriaClinica, Step29HistoriaClinica, Step30HistoriaClinica, Step31HistoriaClinica, Step32HistoriaClinica, Step33HistoriaClinica, Step34HistoriaClinica, Step35HistoriaClinica, Step36HistoriaClinica, Step37HistoriaClinica, Step38HistoriaClinica, Step39HistoriaClinica, Step40HistoriaClinica, Step41HistoriaClinica, Step42HistoriaClinica, Step43HistoriaClinica, Step44HistoriaClinica, Step45HistoriaClinica, Step46HistoriaClinica, Step1NotaMedica, Step2NotaMedica, Step3NotaMedica, Step4NotaMedica, Step5NotaMedica, Step6NotaMedica, Step7NotaMedica, Step8NotaMedica, Step9NotaMedica, Step10NotaMedica, Step11NotaMedica, Step12NotaMedica, Step13NotaMedica, Step14NotaMedica, Step1NotaAclaratoria, Step1ControlPrenatal, Step2ControlPrenatal, Step3ControlPrenatal, Step4ControlPrenatal, Step5ControlPrenatal, Step6ControlPrenatal, Step7ControlPrenatal, Step8ControlPrenatal, Step9ControlPrenatal, Step10ControlPrenatal, Step11ControlPrenatal, Step12ControlPrenatal, Step13ControlPrenatal, Step14ControlPrenatal, Step15ControlPrenatal, Step16ControlPrenatal, Step17ControlPrenatal, Step18ControlPrenatal, Step19ControlPrenatal, Step20ControlPrenatal, Step21ControlPrenatal, Step22ControlPrenatal, Step23ControlPrenatal, Step24ControlPrenatal, Step25ControlPrenatal, Step26ControlPrenatal, Step27ControlPrenatal, Step28ControlPrenatal, Step29ControlPrenatal, Step30ControlPrenatal, Step31ControlPrenatal, Step32ControlPrenatal, Step33ControlPrenatal, Step34ControlPrenatal, Step35ControlPrenatal, Step36ControlPrenatal, Step37ControlPrenatal, Step38ControlPrenatal, Step39ControlPrenatal, Step40ControlPrenatal, Step41ControlPrenatal, Step42ControlPrenatal, Step43ControlPrenatal, Step44ControlPrenatal, Step45ControlPrenatal, Step46ControlPrenatal, Step47ControlPrenatal, Step48ControlPrenatal, Step49ControlPrenatal, Step50ControlPrenatal, Step51ControlPrenatal, Step52ControlPrenatal, Step53ControlPrenatal, Step54ControlPrenatal, Step55ControlPrenatal, Step56ControlPrenatal, Step57ControlPrenatal, Step58ControlPrenatal, Step59ControlPrenatal, Step60ControlPrenatal, Step61ControlPrenatal, Step62ControlPrenatal, Step63ControlPrenatal, Step64ControlPrenatal, Step65ControlPrenatal, Step66ControlPrenatal, Step67ControlPrenatal, Step68ControlPrenatal, Step69ControlPrenatal, Step70ControlPrenatal, Step71ControlPrenatal, Step72ControlPrenatal, Step73ControlPrenatal, Step74ControlPrenatal, Step75ControlPrenatal, Step76ControlPrenatal, Step77ControlPrenatal, Step78ControlPrenatal, Step79ControlPrenatal, Step80ControlPrenatal, Step81ControlPrenatal, Step82ControlPrenatal, Step83ControlPrenatal, Step84ControlPrenatal, Step85ControlPrenatal, Step86ControlPrenatal, Step87ControlPrenatal, Step88ControlPrenatal, Step89ControlPrenatal, Step1HistoriaOtologica, Step2HistoriaOtologica, Step3HistoriaOtologica, Step4HistoriaOtologica, Step5HistoriaOtologica, Step6HistoriaOtologica, Step7HistoriaOtologica, Step8HistoriaOtologica, Step9HistoriaOtologica, Step10HistoriaOtologica, Step11HistoriaOtologica, Step12HistoriaOtologica, Step13HistoriaOtologica, Step14HistoriaOtologica, Step15HistoriaOtologica, Step16HistoriaOtologica, Step17HistoriaOtologica, Step18HistoriaOtologica, Step19HistoriaOtologica, Step20HistoriaOtologica, Step21HistoriaOtologica, Step22HistoriaOtologica, Step23HistoriaOtologica, Step24HistoriaOtologica, Step25HistoriaOtologica, Step1PrevioEspirometria, Step2PrevioEspirometria, Step3PrevioEspirometria, Step4PrevioEspirometria, Step5PrevioEspirometria, Step6PrevioEspirometria, Step7PrevioEspirometria, Step8PrevioEspirometria, Step9PrevioEspirometria, Step10PrevioEspirometria, Step11PrevioEspirometria, Step12PrevioEspirometria, Step13PrevioEspirometria, Step14PrevioEspirometria, Step15PrevioEspirometria, Step16PrevioEspirometria, Step17PrevioEspirometria, Step18PrevioEspirometria, Step19PrevioEspirometria, Step20PrevioEspirometria, Step21PrevioEspirometria, Step22PrevioEspirometria, Step23PrevioEspirometria, Step24PrevioEspirometria, Step25PrevioEspirometria, Step26PrevioEspirometria, Step27PrevioEspirometria, Step28PrevioEspirometria, Step1Receta, Step2Receta, Step3Receta, Step4Receta, Step1ConstanciaAptitud, Step1EntrevistaPsicologica, Step2EntrevistaPsicologica, Step3EntrevistaPsicologica, Step4EntrevistaPsicologica, Step5EntrevistaPsicologica, Step6EntrevistaPsicologica, Step7EntrevistaPsicologica, Step8EntrevistaPsicologica, Step9EntrevistaPsicologica, Step10EntrevistaPsicologica, Step11EntrevistaPsicologica, Step12EntrevistaPsicologica, Step13EntrevistaPsicologica, Step14EntrevistaPsicologica, Step15EntrevistaPsicologica, Step16EntrevistaPsicologica, Step17EntrevistaPsicologica, Step18EntrevistaPsicologica, Step19EntrevistaPsicologica, Step20EntrevistaPsicologica, Step21EntrevistaPsicologica, Step22EntrevistaPsicologica, Step1TrastornosEstadoAnimo, Step2TrastornosEstadoAnimo, Step3TrastornosEstadoAnimo, Step4TrastornosEstadoAnimo, Step5TrastornosEstadoAnimo, Step6TrastornosEstadoAnimo, Step7TrastornosEstadoAnimo, Step8TrastornosEstadoAnimo, Step9TrastornosEstadoAnimo, Step10TrastornosEstadoAnimo, Step11TrastornosEstadoAnimo, Step12TrastornosEstadoAnimo, Step13TrastornosEstadoAnimo, Step14TrastornosEstadoAnimo, Step15TrastornosEstadoAnimo, Step16TrastornosEstadoAnimo, Step17TrastornosEstadoAnimo, Step18TrastornosEstadoAnimo, Step1CuestionarioProdromalBreve, Step2CuestionarioProdromalBreve, Step3CuestionarioProdromalBreve, Step4CuestionarioProdromalBreve, Step5CuestionarioProdromalBreve, Step6CuestionarioProdromalBreve, Step7CuestionarioProdromalBreve, Step8CuestionarioProdromalBreve, Step9CuestionarioProdromalBreve, Step10CuestionarioProdromalBreve, Step11CuestionarioProdromalBreve, Step12CuestionarioProdromalBreve, Step13CuestionarioProdromalBreve, Step14CuestionarioProdromalBreve, Step15CuestionarioProdromalBreve, Step16CuestionarioProdromalBreve, Step17CuestionarioProdromalBreve, Step18CuestionarioProdromalBreve, Step19CuestionarioProdromalBreve, Step20CuestionarioProdromalBreve, Step21CuestionarioProdromalBreve, Step22CuestionarioProdromalBreve, Step1TrastornoLimitePersonalidad, Step2TrastornoLimitePersonalidad, Step3TrastornoLimitePersonalidad, Step4TrastornoLimitePersonalidad, Step5TrastornoLimitePersonalidad, Step6TrastornoLimitePersonalidad, Step7TrastornoLimitePersonalidad, Step8TrastornoLimitePersonalidad, Step9TrastornoLimitePersonalidad, Step10TrastornoLimitePersonalidad, Step11TrastornoLimitePersonalidad, Step1EventoSeguimientoCardiometabolico, Step2EventoSeguimientoCardiometabolico, Step3EventoSeguimientoCardiometabolico, Step4EventoSeguimientoCardiometabolico, Step5EventoSeguimientoCardiometabolico, Step6EventoSeguimientoCardiometabolico, Step7EventoSeguimientoCardiometabolico, Step8EventoSeguimientoCardiometabolico, Step9EventoSeguimientoCardiometabolico, Step1InformeLongitudinalCardiometabolico, Step2InformeLongitudinalCardiometabolico, Step3InformeLongitudinalCardiometabolico, ModalFaltanCampos, ModalCamposFaltantes, TreatmentConsentModal },
@@ -700,24 +717,32 @@ export default {
       documentos.setCurrentTypeOfDocument(route.params.tipoDocumento);
 
       if (documentos.currentTypeOfDocument === 'antidoping') {
-        stepsStore.setSteps([
-          { component: Step1Antidoping, name: 'Paso 1' },
-          { component: Step2Antidoping, name: 'Paso 2' },
-        ]);
+        if (isAntidopingSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(buildAntidopingSectionSteps());
+        } else {
+          stepsStore.setSteps([
+            { component: Step1Antidoping, name: 'Paso 1' },
+            { component: Step2Antidoping, name: 'Paso 2' },
+          ]);
+        }
       } else if (documentos.currentTypeOfDocument === 'aptitud') {
-        stepsStore.setSteps([
-          { component: Step1Aptitud, name: 'Paso 1' },
-          { component: Step2Aptitud, name: 'Paso 2' },
-          { component: Step3Aptitud, name: 'Paso 3' },
-          { component: Step4Aptitud, name: 'Paso 4' },
-          { component: Step5Aptitud, name: 'Paso 5' },
-          { component: Step6Aptitud, name: 'Paso 6' },
-          { component: Step7Aptitud, name: 'Paso 7' },
-          { component: Step8Aptitud, name: 'Paso 8' },
-          { component: Step9Aptitud, name: 'Paso 9' },
-          { component: Step10Aptitud, name: 'Paso 10' },
-          { component: Step11Aptitud, name: 'Paso 11' },
-        ]);
+        if (isAptitudSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(buildAptitudSectionSteps());
+        } else {
+          stepsStore.setSteps([
+            { component: Step1Aptitud, name: 'Paso 1' },
+            { component: Step2Aptitud, name: 'Paso 2' },
+            { component: Step3Aptitud, name: 'Paso 3' },
+            { component: Step4Aptitud, name: 'Paso 4' },
+            { component: Step5Aptitud, name: 'Paso 5' },
+            { component: Step6Aptitud, name: 'Paso 6' },
+            { component: Step7Aptitud, name: 'Paso 7' },
+            { component: Step8Aptitud, name: 'Paso 8' },
+            { component: Step9Aptitud, name: 'Paso 9' },
+            { component: Step10Aptitud, name: 'Paso 10' },
+            { component: Step11Aptitud, name: 'Paso 11' },
+          ]);
+        }
       } else if (documentos.currentTypeOfDocument === 'audiometria') {
         stepsStore.setSteps([
           { component: Step1Audiometria, name: 'Paso 1' },
@@ -729,10 +754,14 @@ export default {
           { component: Step7Audiometria, name: 'Paso 7' },
         ]);
       } else if (documentos.currentTypeOfDocument === 'certificado') {
-        stepsStore.setSteps([
-          { component: Step1Certificado, name: 'Paso 1' },
-          { component: Step2Certificado, name: 'Paso 2' },
-        ]);
+        if (isCertificadoSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(buildCertificadoSectionSteps());
+        } else {
+          stepsStore.setSteps([
+            { component: Step1Certificado, name: 'Paso 1' },
+            { component: Step2Certificado, name: 'Paso 2' },
+          ]);
+        }
       } else if (documentos.currentTypeOfDocument === 'certificadoExpedito') {
         stepsStore.setSteps([
           { component: Step1CertificadoExpedito, name: 'Paso 1' },
@@ -781,142 +810,160 @@ export default {
         
         stepsStore.setSteps(examenVistaSteps);
       } else if (documentos.currentTypeOfDocument === 'exploracionFisica') {
-        stepsStore.setSteps([
-          { component: Step1ExploracionFisica, name: 'Paso 1' },
-          { component: Step2ExploracionFisica, name: 'Paso 2' },
-          { component: Step3ExploracionFisica, name: 'Paso 3' },
-          { component: Step4ExploracionFisica, name: 'Paso 4' },
-          { component: Step5ExploracionFisica, name: 'Paso 5' },
-          { component: Step6ExploracionFisica, name: 'Paso 6' },
-          { component: Step7ExploracionFisica, name: 'Paso 7' },
-          { component: Step8ExploracionFisica, name: 'Paso 8' },
-          { component: Step9ExploracionFisica, name: 'Paso 9' },
-          { component: Step10ExploracionFisica, name: 'Paso 10' },
-          { component: Step11ExploracionFisica, name: 'Paso 11' },
-          { component: Step12ExploracionFisica, name: 'Paso 12' },
-          { component: Step13ExploracionFisica, name: 'Paso 13' },
-          { component: Step14ExploracionFisica, name: 'Paso 14' },
-          { component: Step15ExploracionFisica, name: 'Paso 15' },
-          { component: Step16ExploracionFisica, name: 'Paso 16' },
-          { component: Step17ExploracionFisica, name: 'Paso 17' },
-          { component: Step18ExploracionFisica, name: 'Paso 18' },
-          { component: Step19ExploracionFisica, name: 'Paso 19' },
-          { component: Step20ExploracionFisica, name: 'Paso 20' },
-          { component: Step21ExploracionFisica, name: 'Paso 21' },
-          { component: Step22ExploracionFisica, name: 'Paso 22' },
-          { component: Step23ExploracionFisica, name: 'Paso 23' },
-          { component: Step24ExploracionFisica, name: 'Paso 24' },
-          { component: Step25ExploracionFisica, name: 'Paso 25' },
-          { component: Step26ExploracionFisica, name: 'Paso 26' },
-          { component: Step27ExploracionFisica, name: 'Paso 27' },
-          { component: Step28ExploracionFisica, name: 'Paso 28' },
-          { component: Step29ExploracionFisica, name: 'Paso 29' },
-          { component: Step30ExploracionFisica, name: 'Paso 30' },
-          { component: Step31ExploracionFisica, name: 'Paso 31' },
-        ]);
+        if (isEfSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(buildExploracionFisicaSectionSteps());
+        } else {
+          stepsStore.setSteps([
+            { component: Step1ExploracionFisica, name: 'Paso 1' },
+            { component: Step2ExploracionFisica, name: 'Paso 2' },
+            { component: Step3ExploracionFisica, name: 'Paso 3' },
+            { component: Step4ExploracionFisica, name: 'Paso 4' },
+            { component: Step5ExploracionFisica, name: 'Paso 5' },
+            { component: Step6ExploracionFisica, name: 'Paso 6' },
+            { component: Step7ExploracionFisica, name: 'Paso 7' },
+            { component: Step8ExploracionFisica, name: 'Paso 8' },
+            { component: Step9ExploracionFisica, name: 'Paso 9' },
+            { component: Step10ExploracionFisica, name: 'Paso 10' },
+            { component: Step11ExploracionFisica, name: 'Paso 11' },
+            { component: Step12ExploracionFisica, name: 'Paso 12' },
+            { component: Step13ExploracionFisica, name: 'Paso 13' },
+            { component: Step14ExploracionFisica, name: 'Paso 14' },
+            { component: Step15ExploracionFisica, name: 'Paso 15' },
+            { component: Step16ExploracionFisica, name: 'Paso 16' },
+            { component: Step17ExploracionFisica, name: 'Paso 17' },
+            { component: Step18ExploracionFisica, name: 'Paso 18' },
+            { component: Step19ExploracionFisica, name: 'Paso 19' },
+            { component: Step20ExploracionFisica, name: 'Paso 20' },
+            { component: Step21ExploracionFisica, name: 'Paso 21' },
+            { component: Step22ExploracionFisica, name: 'Paso 22' },
+            { component: Step23ExploracionFisica, name: 'Paso 23' },
+            { component: Step24ExploracionFisica, name: 'Paso 24' },
+            { component: Step25ExploracionFisica, name: 'Paso 25' },
+            { component: Step26ExploracionFisica, name: 'Paso 26' },
+            { component: Step27ExploracionFisica, name: 'Paso 27' },
+            { component: Step28ExploracionFisica, name: 'Paso 28' },
+            { component: Step29ExploracionFisica, name: 'Paso 29' },
+            { component: Step30ExploracionFisica, name: 'Paso 30' },
+            { component: Step31ExploracionFisica, name: 'Paso 31' },
+          ]);
+        }
       } else if (documentos.currentTypeOfDocument === 'historiaClinica') {
-        const historiaClinicaSteps = [
-          { component: Step1HistoriaClinica, name: 'Paso 1' },
-          { component: Step2HistoriaClinica, name: 'Paso 2' },
-          { component: Step3HistoriaClinica, name: 'Paso 3' },
-          { component: Step4HistoriaClinica, name: 'Paso 4' },
-          { component: Step5HistoriaClinica, name: 'Paso 5' },
-          { component: Step6HistoriaClinica, name: 'Paso 6' },
-          { component: Step7HistoriaClinica, name: 'Paso 7' },
-          { component: Step8HistoriaClinica, name: 'Paso 8' },
-          { component: Step9HistoriaClinica, name: 'Paso 9' },
-          { component: Step10HistoriaClinica, name: 'Paso 10' },
-          { component: Step11HistoriaClinica, name: 'Paso 11' },
-          { component: Step12HistoriaClinica, name: 'Paso 12' },
-          { component: Step13HistoriaClinica, name: 'Paso 13' },
-          { component: Step14HistoriaClinica, name: 'Paso 14' },
-          { component: Step15HistoriaClinica, name: 'Paso 15' },
-          { component: Step16HistoriaClinica, name: 'Paso 16' },
-          { component: Step17HistoriaClinica, name: 'Paso 17' },
-          { component: Step18HistoriaClinica, name: 'Paso 18' },
-          { component: Step19HistoriaClinica, name: 'Paso 19' },
-          { component: Step20HistoriaClinica, name: 'Paso 20' },
-          { component: Step21HistoriaClinica, name: 'Paso 21' },
-          { component: Step22HistoriaClinica, name: 'Paso 22' },
-          { component: Step23HistoriaClinica, name: 'Paso 23' },
-          { component: Step24HistoriaClinica, name: 'Paso 24' },
-          { component: Step25HistoriaClinica, name: 'Paso 25' },
-          { component: Step26HistoriaClinica, name: 'Paso 26' },
-          { component: Step27HistoriaClinica, name: 'Paso 27' }
-        ];
+        if (isHcSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(
+            buildHistoriaClinicaSectionSteps(trabajadores.currentTrabajador?.sexo),
+          );
+        } else {
+          const historiaClinicaSteps = [
+            { component: Step1HistoriaClinica, name: 'Paso 1' },
+            { component: Step2HistoriaClinica, name: 'Paso 2' },
+            { component: Step3HistoriaClinica, name: 'Paso 3' },
+            { component: Step4HistoriaClinica, name: 'Paso 4' },
+            { component: Step5HistoriaClinica, name: 'Paso 5' },
+            { component: Step6HistoriaClinica, name: 'Paso 6' },
+            { component: Step7HistoriaClinica, name: 'Paso 7' },
+            { component: Step8HistoriaClinica, name: 'Paso 8' },
+            { component: Step9HistoriaClinica, name: 'Paso 9' },
+            { component: Step10HistoriaClinica, name: 'Paso 10' },
+            { component: Step11HistoriaClinica, name: 'Paso 11' },
+            { component: Step12HistoriaClinica, name: 'Paso 12' },
+            { component: Step13HistoriaClinica, name: 'Paso 13' },
+            { component: Step14HistoriaClinica, name: 'Paso 14' },
+            { component: Step15HistoriaClinica, name: 'Paso 15' },
+            { component: Step16HistoriaClinica, name: 'Paso 16' },
+            { component: Step17HistoriaClinica, name: 'Paso 17' },
+            { component: Step18HistoriaClinica, name: 'Paso 18' },
+            { component: Step19HistoriaClinica, name: 'Paso 19' },
+            { component: Step20HistoriaClinica, name: 'Paso 20' },
+            { component: Step21HistoriaClinica, name: 'Paso 21' },
+            { component: Step22HistoriaClinica, name: 'Paso 22' },
+            { component: Step23HistoriaClinica, name: 'Paso 23' },
+            { component: Step24HistoriaClinica, name: 'Paso 24' },
+            { component: Step25HistoriaClinica, name: 'Paso 25' },
+            { component: Step26HistoriaClinica, name: 'Paso 26' },
+            { component: Step27HistoriaClinica, name: 'Paso 27' }
+          ];
 
-        // Agregar pasos condicionalmente según el sexo del trabajador
-        if (trabajadores.currentTrabajador?.sexo === 'Femenino') {
+          // Agregar pasos condicionalmente según el sexo del trabajador
+          if (trabajadores.currentTrabajador?.sexo === 'Femenino') {
+            historiaClinicaSteps.push(
+              { component: Step28HistoriaClinica, name: 'Paso 28' },
+              { component: Step29HistoriaClinica, name: 'Paso 29' },
+              { component: Step30HistoriaClinica, name: 'Paso 30' },
+              { component: Step31HistoriaClinica, name: 'Paso 31' },
+              { component: Step32HistoriaClinica, name: 'Paso 32' },
+              { component: Step33HistoriaClinica, name: 'Paso 33' },
+              { component: Step34HistoriaClinica, name: 'Paso 34' },
+              { component: Step35HistoriaClinica, name: 'Paso 35' },
+              { component: Step36HistoriaClinica, name: 'Paso 36' },
+              { component: Step37HistoriaClinica, name: 'Paso 37' },
+              { component: Step38HistoriaClinica, name: 'Paso 38' },
+              { component: Step39HistoriaClinica, name: 'Paso 39' },
+              { component: Step40HistoriaClinica, name: 'Paso 40' },
+              { component: Step41HistoriaClinica, name: 'Paso 41' },
+            );
+          }
+
           historiaClinicaSteps.push(
-            { component: Step28HistoriaClinica, name: 'Paso 28' },
-            { component: Step29HistoriaClinica, name: 'Paso 29' },
-            { component: Step30HistoriaClinica, name: 'Paso 30' },
-            { component: Step31HistoriaClinica, name: 'Paso 31' },
-            { component: Step32HistoriaClinica, name: 'Paso 32' },
-            { component: Step33HistoriaClinica, name: 'Paso 33' },
-            { component: Step34HistoriaClinica, name: 'Paso 34' },
-            { component: Step35HistoriaClinica, name: 'Paso 35' },
-            { component: Step36HistoriaClinica, name: 'Paso 36' },
-            { component: Step37HistoriaClinica, name: 'Paso 37' },
-            { component: Step38HistoriaClinica, name: 'Paso 38' },
-            { component: Step39HistoriaClinica, name: 'Paso 39' },
-            { component: Step40HistoriaClinica, name: 'Paso 40' },
-            { component: Step41HistoriaClinica, name: 'Paso 41' },
+            { component: Step42HistoriaClinica, name: 'Paso 42' },
+            { component: Step43HistoriaClinica, name: 'Paso 43' },
+            { component: Step44HistoriaClinica, name: 'Paso 44' },
+            { component: Step45HistoriaClinica, name: 'Paso 45' },
+            { component: Step46HistoriaClinica, name: 'Paso 46' }
           );
+
+          stepsStore.setSteps(historiaClinicaSteps);
         }
-
-        historiaClinicaSteps.push(
-          { component: Step42HistoriaClinica, name: 'Paso 42' },
-          { component: Step43HistoriaClinica, name: 'Paso 43' },
-          { component: Step44HistoriaClinica, name: 'Paso 44' },
-          { component: Step45HistoriaClinica, name: 'Paso 45' },
-          { component: Step46HistoriaClinica, name: 'Paso 46' }
-        );
-
-        stepsStore.setSteps(historiaClinicaSteps);
       } else if (documentos.currentTypeOfDocument === 'notaMedica') {
-        const notaMedicaSteps = [
-          { component: Step1NotaMedica, name: 'Paso 1' },
-          { component: Step2NotaMedica, name: 'Paso 2' },
-        ];
-
-        if (showSiresUI.value) {
-          notaMedicaSteps.push({ component: Step3NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` });
-        }
-
-        notaMedicaSteps.push(
-          { component: Step4NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` },
-          { component: Step5NotaMedica, name: `Paso ${notaMedicaSteps.length + 2}` },
-          { component: Step6NotaMedica, name: `Paso ${notaMedicaSteps.length + 3}` },
-        );
-
-        if (showSiresUI.value) {
-          notaMedicaSteps.push(
-            { component: Step7NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` },
-            { component: Step8NotaMedica, name: `Paso ${notaMedicaSteps.length + 2}` },
+        const esMujerNotaMedica =
+          trabajadores.currentTrabajador?.sexo === 'Femenino';
+        if (isNotaMedicaSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(
+            buildNotaMedicaSectionSteps(showSiresUI.value, !!esMujerNotaMedica),
           );
+        } else {
+          const notaMedicaSteps = [
+            { component: Step1NotaMedica, name: 'Paso 1' },
+            { component: Step2NotaMedica, name: 'Paso 2' },
+          ];
+
+          if (showSiresUI.value) {
+            notaMedicaSteps.push({ component: Step3NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` });
+          }
+
+          notaMedicaSteps.push(
+            { component: Step4NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` },
+            { component: Step5NotaMedica, name: `Paso ${notaMedicaSteps.length + 2}` },
+            { component: Step6NotaMedica, name: `Paso ${notaMedicaSteps.length + 3}` },
+          );
+
+          if (showSiresUI.value) {
+            notaMedicaSteps.push(
+              { component: Step7NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` },
+              { component: Step8NotaMedica, name: `Paso ${notaMedicaSteps.length + 2}` },
+            );
+          }
+
+          if (
+            showSiresUI.value &&
+            trabajadores.currentTrabajador?.sexo === 'Femenino'
+          ) {
+            notaMedicaSteps.push({
+              component: StepEmbarazoNotaMedica,
+              name: `Paso ${notaMedicaSteps.length + 1}`,
+            });
+          }
+
+          notaMedicaSteps.push(
+            { component: Step9NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` },
+            { component: Step10NotaMedica, name: `Paso ${notaMedicaSteps.length + 2}` },
+            { component: Step11NotaMedica, name: `Paso ${notaMedicaSteps.length + 3}` },
+            { component: Step12NotaMedica, name: `Paso ${notaMedicaSteps.length + 4}` },
+            { component: Step13NotaMedica, name: `Paso ${notaMedicaSteps.length + 5}` },
+            { component: Step14NotaMedica, name: `Paso ${notaMedicaSteps.length + 6}` },
+          );
+
+          stepsStore.setSteps(notaMedicaSteps);
         }
-
-        if (
-          showSiresUI.value &&
-          trabajadores.currentTrabajador?.sexo === 'Femenino'
-        ) {
-          notaMedicaSteps.push({
-            component: StepEmbarazoNotaMedica,
-            name: `Paso ${notaMedicaSteps.length + 1}`,
-          });
-        }
-
-        notaMedicaSteps.push(
-          { component: Step9NotaMedica, name: `Paso ${notaMedicaSteps.length + 1}` },
-          { component: Step10NotaMedica, name: `Paso ${notaMedicaSteps.length + 2}` },
-          { component: Step11NotaMedica, name: `Paso ${notaMedicaSteps.length + 3}` },
-          { component: Step12NotaMedica, name: `Paso ${notaMedicaSteps.length + 4}` },
-          { component: Step13NotaMedica, name: `Paso ${notaMedicaSteps.length + 5}` },
-          { component: Step14NotaMedica, name: `Paso ${notaMedicaSteps.length + 6}` },
-        );
-
-        stepsStore.setSteps(notaMedicaSteps);
       } else if (documentos.currentTypeOfDocument === 'notaAclaratoria') {
         stepsStore.setSteps([
           { component: Step1NotaAclaratoria, name: 'Paso 1' },
@@ -1028,64 +1075,72 @@ export default {
           { component: Step89ControlPrenatal, name: 'Paso 89' },
         ]);
       } else if (documentos.currentTypeOfDocument === 'historiaOtologica') {
-        stepsStore.setSteps([
-          { component: Step1HistoriaOtologica, name: 'Paso 1' },
-          { component: Step2HistoriaOtologica, name: 'Paso 2' },
-          { component: Step3HistoriaOtologica, name: 'Paso 3' },
-          { component: Step4HistoriaOtologica, name: 'Paso 4' },
-          { component: Step5HistoriaOtologica, name: 'Paso 5' },
-          { component: Step6HistoriaOtologica, name: 'Paso 6' },
-          { component: Step7HistoriaOtologica, name: 'Paso 7' },
-          { component: Step8HistoriaOtologica, name: 'Paso 8' },
-          { component: Step9HistoriaOtologica, name: 'Paso 9' },
-          { component: Step10HistoriaOtologica, name: 'Paso 10' },
-          { component: Step11HistoriaOtologica, name: 'Paso 11' },
-          { component: Step12HistoriaOtologica, name: 'Paso 12' },
-          { component: Step13HistoriaOtologica, name: 'Paso 13' },
-          { component: Step14HistoriaOtologica, name: 'Paso 14' },
-          { component: Step15HistoriaOtologica, name: 'Paso 15' },
-          { component: Step16HistoriaOtologica, name: 'Paso 16' },
-          { component: Step17HistoriaOtologica, name: 'Paso 17' },
-          { component: Step18HistoriaOtologica, name: 'Paso 18' },
-          { component: Step19HistoriaOtologica, name: 'Paso 19' },
-          { component: Step20HistoriaOtologica, name: 'Paso 20' },
-          { component: Step21HistoriaOtologica, name: 'Paso 21' },
-          { component: Step22HistoriaOtologica, name: 'Paso 22' },
-          { component: Step23HistoriaOtologica, name: 'Paso 23' },
-          { component: Step24HistoriaOtologica, name: 'Paso 24' },
-          { component: Step25HistoriaOtologica, name: 'Paso 25' },
-        ]);
+        if (isHoSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(buildHoSectionSteps());
+        } else {
+          stepsStore.setSteps([
+            { component: Step1HistoriaOtologica, name: 'Paso 1' },
+            { component: Step2HistoriaOtologica, name: 'Paso 2' },
+            { component: Step3HistoriaOtologica, name: 'Paso 3' },
+            { component: Step4HistoriaOtologica, name: 'Paso 4' },
+            { component: Step5HistoriaOtologica, name: 'Paso 5' },
+            { component: Step6HistoriaOtologica, name: 'Paso 6' },
+            { component: Step7HistoriaOtologica, name: 'Paso 7' },
+            { component: Step8HistoriaOtologica, name: 'Paso 8' },
+            { component: Step9HistoriaOtologica, name: 'Paso 9' },
+            { component: Step10HistoriaOtologica, name: 'Paso 10' },
+            { component: Step11HistoriaOtologica, name: 'Paso 11' },
+            { component: Step12HistoriaOtologica, name: 'Paso 12' },
+            { component: Step13HistoriaOtologica, name: 'Paso 13' },
+            { component: Step14HistoriaOtologica, name: 'Paso 14' },
+            { component: Step15HistoriaOtologica, name: 'Paso 15' },
+            { component: Step16HistoriaOtologica, name: 'Paso 16' },
+            { component: Step17HistoriaOtologica, name: 'Paso 17' },
+            { component: Step18HistoriaOtologica, name: 'Paso 18' },
+            { component: Step19HistoriaOtologica, name: 'Paso 19' },
+            { component: Step20HistoriaOtologica, name: 'Paso 20' },
+            { component: Step21HistoriaOtologica, name: 'Paso 21' },
+            { component: Step22HistoriaOtologica, name: 'Paso 22' },
+            { component: Step23HistoriaOtologica, name: 'Paso 23' },
+            { component: Step24HistoriaOtologica, name: 'Paso 24' },
+            { component: Step25HistoriaOtologica, name: 'Paso 25' },
+          ]);
+        }
       } else if (documentos.currentTypeOfDocument === 'previoEspirometria') {
-        stepsStore.setSteps([
-          { component: Step1PrevioEspirometria, name: 'Paso 1' },
-          { component: Step2PrevioEspirometria, name: 'Paso 2' },
-          { component: Step3PrevioEspirometria, name: 'Paso 3' },
-          { component: Step4PrevioEspirometria, name: 'Paso 4' },
-          { component: Step5PrevioEspirometria, name: 'Paso 5' },
-          { component: Step6PrevioEspirometria, name: 'Paso 6' },
-          { component: Step7PrevioEspirometria, name: 'Paso 7' },
-          { component: Step8PrevioEspirometria, name: 'Paso 8' },
-          { component: Step9PrevioEspirometria, name: 'Paso 9' },
-          { component: Step10PrevioEspirometria, name: 'Paso 10' },
-          { component: Step11PrevioEspirometria, name: 'Paso 11' },
-          { component: Step12PrevioEspirometria, name: 'Paso 12' },
-          { component: Step13PrevioEspirometria, name: 'Paso 13' },
-          { component: Step14PrevioEspirometria, name: 'Paso 14' },
-          { component: Step15PrevioEspirometria, name: 'Paso 15' },
-          { component: Step16PrevioEspirometria, name: 'Paso 16' },
-          { component: Step17PrevioEspirometria, name: 'Paso 17' },
-          { component: Step18PrevioEspirometria, name: 'Paso 18' },
-          { component: Step19PrevioEspirometria, name: 'Paso 19' },
-          { component: Step20PrevioEspirometria, name: 'Paso 20' },
-          { component: Step21PrevioEspirometria, name: 'Paso 21' },
-          { component: Step22PrevioEspirometria, name: 'Paso 22' },
-          { component: Step23PrevioEspirometria, name: 'Paso 23' },
-          { component: Step24PrevioEspirometria, name: 'Paso 24' },
-          { component: Step25PrevioEspirometria, name: 'Paso 25' },
-          { component: Step26PrevioEspirometria, name: 'Paso 26' },
-          { component: Step27PrevioEspirometria, name: 'Paso 27' },
-          { component: Step28PrevioEspirometria, name: 'Paso 28' },
-        ]);
+        if (isPeSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(buildPeSectionSteps());
+        } else {
+          stepsStore.setSteps([
+            { component: Step1PrevioEspirometria, name: 'Paso 1' },
+            { component: Step2PrevioEspirometria, name: 'Paso 2' },
+            { component: Step3PrevioEspirometria, name: 'Paso 3' },
+            { component: Step4PrevioEspirometria, name: 'Paso 4' },
+            { component: Step5PrevioEspirometria, name: 'Paso 5' },
+            { component: Step6PrevioEspirometria, name: 'Paso 6' },
+            { component: Step7PrevioEspirometria, name: 'Paso 7' },
+            { component: Step8PrevioEspirometria, name: 'Paso 8' },
+            { component: Step9PrevioEspirometria, name: 'Paso 9' },
+            { component: Step10PrevioEspirometria, name: 'Paso 10' },
+            { component: Step11PrevioEspirometria, name: 'Paso 11' },
+            { component: Step12PrevioEspirometria, name: 'Paso 12' },
+            { component: Step13PrevioEspirometria, name: 'Paso 13' },
+            { component: Step14PrevioEspirometria, name: 'Paso 14' },
+            { component: Step15PrevioEspirometria, name: 'Paso 15' },
+            { component: Step16PrevioEspirometria, name: 'Paso 16' },
+            { component: Step17PrevioEspirometria, name: 'Paso 17' },
+            { component: Step18PrevioEspirometria, name: 'Paso 18' },
+            { component: Step19PrevioEspirometria, name: 'Paso 19' },
+            { component: Step20PrevioEspirometria, name: 'Paso 20' },
+            { component: Step21PrevioEspirometria, name: 'Paso 21' },
+            { component: Step22PrevioEspirometria, name: 'Paso 22' },
+            { component: Step23PrevioEspirometria, name: 'Paso 23' },
+            { component: Step24PrevioEspirometria, name: 'Paso 24' },
+            { component: Step25PrevioEspirometria, name: 'Paso 25' },
+            { component: Step26PrevioEspirometria, name: 'Paso 26' },
+            { component: Step27PrevioEspirometria, name: 'Paso 27' },
+            { component: Step28PrevioEspirometria, name: 'Paso 28' },
+          ]);
+        }
       } else if (documentos.currentTypeOfDocument === 'receta') {
         stepsStore.setSteps([
           { component: Step1Receta, name: 'Paso 1' },
@@ -1346,6 +1401,18 @@ export default {
     const isSubmitting = ref(false);
     const isValidating = ref(false);
 
+    /** Navega a un paso legacy de nota médica (remap a sección si V2). */
+    const goToNotaMedicaPaso = (paso, esMujer = false) => {
+      if (!paso) return;
+      if (isNotaMedicaSectionsV2Enabled(route.query)) {
+        stepsStore.goToStep(
+          nmLegacyStepToSectionIndex(paso, showSiresUI.value, !!esMujer),
+        );
+      } else {
+        stepsStore.goToStep(paso);
+      }
+    };
+
     const handleSubmit = async () => {
       if (isSubmitting.value || isValidating.value) return;
 
@@ -1456,7 +1523,7 @@ export default {
           esMujerNotaMedica,
         );
         if (!cie4CharsNota.valido) {
-          if (cie4CharsNota.paso) stepsStore.goToStep(cie4CharsNota.paso);
+          if (cie4CharsNota.paso) goToNotaMedicaPaso(cie4CharsNota.paso, esMujerNotaMedica);
           toast.open({
             message: cie4CharsNota.mensaje,
             type: 'error',
@@ -1470,7 +1537,7 @@ export default {
           esMujerNotaMedica,
         );
         if (!ramazziniScope.valido) {
-          if (ramazziniScope.paso) stepsStore.goToStep(ramazziniScope.paso);
+          if (ramazziniScope.paso) goToNotaMedicaPaso(ramazziniScope.paso, esMujerNotaMedica);
           toast.open({
             message: ramazziniScope.mensaje,
             type: 'error',
@@ -1484,7 +1551,7 @@ export default {
           esMujerNotaMedica,
         );
         if (!validacionEmbarazo.valido) {
-          if (validacionEmbarazo.paso) stepsStore.goToStep(validacionEmbarazo.paso);
+          if (validacionEmbarazo.paso) goToNotaMedicaPaso(validacionEmbarazo.paso, esMujerNotaMedica);
           toast.open({
             message: validacionEmbarazo.mensaje,
             type: 'error',
@@ -1499,7 +1566,7 @@ export default {
           esMujerNotaMedica,
         );
         if (!validacionNotaMedica.valido) {
-          if (validacionNotaMedica.paso) stepsStore.goToStep(validacionNotaMedica.paso);
+          if (validacionNotaMedica.paso) goToNotaMedicaPaso(validacionNotaMedica.paso, esMujerNotaMedica);
           toast.open({
             message: validacionNotaMedica.mensaje,
             type: 'error',
@@ -1545,7 +1612,25 @@ export default {
       
       if (!validacion.esValido) {
         // Mostrar modal con campos faltantes específicos
-        camposFaltantes.value = validacion.camposFaltantes;
+        // En Nota Médica V2, remapear índice legacy → índice de sección del wizard
+        const esMujerCamposFaltantes =
+          trabajadores.currentTrabajador?.sexo === 'Femenino';
+        camposFaltantes.value =
+          documentos.currentTypeOfDocument === 'notaMedica' &&
+          isNotaMedicaSectionsV2Enabled(route.query)
+            ? validacion.camposFaltantes.map((c) =>
+                c.paso != null
+                  ? {
+                      ...c,
+                      paso: nmLegacyStepToSectionIndex(
+                        c.paso,
+                        showSiresUI.value,
+                        !!esMujerCamposFaltantes,
+                      ),
+                    }
+                  : c,
+              )
+            : validacion.camposFaltantes;
         showCamposFaltantesModal.value = true;
         return; // No continuar con el envío
       }
@@ -1587,7 +1672,7 @@ export default {
             esMujer: esMujerNotaMedica,
           });
           if (!sis.ok) {
-            if (sis.paso) stepsStore.goToStep(sis.paso);
+            if (sis.paso) goToNotaMedicaPaso(sis.paso, esMujerNotaMedica);
             toast.open({
               message: sis.messageToast || 'Validación de diagnósticos no superada.',
               type: 'error',
@@ -1607,7 +1692,7 @@ export default {
             esMujer: esMujerNotaMedica,
           });
           if (!confirmacion.ok) {
-            if (confirmacion.paso) stepsStore.goToStep(confirmacion.paso);
+            if (confirmacion.paso) goToNotaMedicaPaso(confirmacion.paso, esMujerNotaMedica);
             toast.open({
               message: confirmacion.messageToast || 'Validación de confirmación diagnóstica no superada.',
               type: 'error',

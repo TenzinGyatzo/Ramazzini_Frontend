@@ -1,6 +1,27 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, toRefs, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
+const isCompact = computed(() => variant.value === 'compact');
+
+const detailLabelClass = computed(() =>
+  isCompact.value
+    ? 'text-sm font-medium mb-1.5 text-gray-800'
+    : 'text-lg font-medium mb-3 text-gray-800',
+);
+const detailInputClass = computed(() =>
+  isCompact.value
+    ? 'w-full p-2 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
+    : 'w-full p-3 border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200',
+);
 
 const { formDataHistoriaClinica } = useFormDataStore();
 
@@ -51,9 +72,11 @@ watch(accidenteLaboral, (newValue) => {
 });
 
 // Watch para establecer 'Defaults' cuando accidenteLaboral sea 'No' y enfocar input cuando sea 'Si'
-watch(accidenteLaboral, async (newValue) => {
+watch(accidenteLaboral, async (newValue, oldValue) => {
+    if (oldValue === undefined || oldValue === newValue) return;
     if (newValue === 'No') {
         formDataHistoriaClinica.accidenteLaboral = 'No';
+        formDataHistoriaClinica.accidenteLaboralEspecificar = 'Niega haber sufrido riesgos de trabajo';
         formDataHistoriaClinica.descripcionDelDano = 'Ninguno';
         formDataHistoriaClinica.secuelas = 'Sin secuelas';
     }
@@ -70,12 +93,12 @@ watch(accidenteLaboral, async (newValue) => {
 <template>
     <div>
         <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">Antecedentes Laborales</h1>
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">RIESGO DE TRABAJO</h2>
+        <h1 v-if="!isCompact" class="text-2xl font-bold mb-4 text-gray-900">Antecedentes Laborales</h1>
+        <h2 :class="isCompact ? 'text-sm font-semibold mb-2 text-gray-700' : 'text-lg font-semibold mb-4 text-gray-700'">RIESGO DE TRABAJO</h2>
         
         <!-- Pregunta principal con mejor jerarquía -->
-        <div class="mb-8">
-            <p class="text-lg font-medium mb-4 text-gray-800">¿El trabajador ha sufrido un riesgo de trabajo (accidente o enfermedad de trabajo)?</p>
+        <div :class="isCompact ? 'mb-3' : 'mb-8'">
+            <p :class="isCompact ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿El trabajador ha sufrido riesgos de trabajo? (accidente o enfermedad de trabajo)</p>
             
             <!-- Diseño de Radio Buttons más Visual tipo Card -->
             <div class="grid grid-cols-2 gap-3">
@@ -180,13 +203,13 @@ watch(accidenteLaboral, async (newValue) => {
             leave-from-class="opacity-100 transform translate-y-0"
             leave-to-class="opacity-0 transform -translate-y-2"
         >
-            <div v-if="accidenteLaboral === 'Si'" class="space-y-4">
+            <div v-if="accidenteLaboral === 'Si'" :class="isCompact ? 'space-y-2' : 'space-y-4'">
                 <div>
-                    <p class="text-lg font-medium mb-3 text-gray-800">Describa el riesgo de trabajo (accidente o enfermedad de trabajo):</p>
+                    <p :class="detailLabelClass">Describa el riesgo de trabajo (accidente o enfermedad de trabajo):</p>
                     <input 
                         ref="inputEspecificar"
                         type="text"
-                        class="w-full p-3 border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                        :class="detailInputClass"
                         v-model="formDataHistoriaClinica.accidenteLaboralEspecificar"
                         placeholder="Ej: Caída en planta, lumbalgia por esfuerzo repetitivo"
                         required
@@ -194,10 +217,10 @@ watch(accidenteLaboral, async (newValue) => {
                 </div>
 
                 <div>
-                    <p class="text-lg font-medium mb-3 text-gray-800">Describa el daño:</p>
+                    <p :class="detailLabelClass">Describa el daño:</p>
                     <input 
                         type="text"
-                        class="w-full p-3 border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                        :class="detailInputClass"
                         v-model="formDataHistoriaClinica.descripcionDelDano"
                         placeholder="Ej: Descripción del daño"
                         required
@@ -205,10 +228,10 @@ watch(accidenteLaboral, async (newValue) => {
                 </div>
 
                 <div>
-                    <p class="text-lg font-medium mb-3 text-gray-800">Describa las secuelas:</p>
+                    <p :class="detailLabelClass">Describa las secuelas:</p>
                     <input 
                         type="text"
-                        class="w-full p-3 border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                        :class="detailInputClass"
                         v-model="formDataHistoriaClinica.secuelas"
                         placeholder="Ej: Descripción de secuelas"
                         required

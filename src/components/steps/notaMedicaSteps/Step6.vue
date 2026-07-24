@@ -1,7 +1,16 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -167,10 +176,26 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
 
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-900 mb-4 uppercase">Signos Vitales</h2>
-    <p class="text-sm text-gray-600 mb-4">Marque "Se desconoce" si no se registró el dato.</p>
+    <h2
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
+    >
+      Signos Vitales
+    </h2>
+    <p
+      v-if="variant !== 'compact'"
+      class="text-sm text-gray-600 mb-4"
+    >
+      Marque "Se desconoce" si no se registró el dato.
+    </p>
+    <p
+      v-else
+      class="text-xs text-gray-600 mb-2"
+    >
+      Marque "Se desconoce" si no se registró el dato.
+    </p>
 
-    <h2>Tensión Arterial</h2>
+    <h2 :class="variant === 'compact' ? 'text-sm font-semibold text-gray-800 mb-2' : ''">Tensión Arterial</h2>
     <div class="flex gap-4 mb-4 flex-wrap">
       <div class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="tensionArterialSistolica">Sistólica (mmHg) <span class="text-red-500">*</span></label>
@@ -191,7 +216,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
         </p>
       </div>
       <div class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="tensionArterialDiastolica">Diastólica (mmHg) <span class="text-red-500">*</span></label>
+        <label for="tensionArterialDiastolica">Diastólica (mmHg)<span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input type="number"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"

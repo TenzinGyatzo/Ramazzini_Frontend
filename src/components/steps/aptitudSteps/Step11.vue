@@ -1,7 +1,16 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const mensajeCopiado = ref(false);
 
@@ -22,15 +31,13 @@ watch(medidasPreventivas, (newValue) => {
     formDataAptitud.medidasPreventivas = newValue;
 });
 
-const openSections = ref({});
+const openSection = ref(null);
 
 const toggle = (section) => {
-    openSections.value[section] = !openSections.value[section];
+    openSection.value = openSection.value === section ? null : section;
 };
 
-const isOpen = (section) => {
-    return !!openSections.value[section];
-};
+const isOpen = (section) => openSection.value === section;
 
 // Función para copiar el texto al portapapeles
 const copiarTexto = (texto) => {
@@ -48,128 +55,130 @@ const copiarTexto = (texto) => {
 </script>
 
 <template>
-    <h1 class="font-bold mb-4 text-gray-800 leading-5">Aptitud al Puesto</h1>
-    <div class="mb-4">
-        <h2 class="text-lg font-semibold mb-4 text-gray-800">Medidas Preventivas Específicas</h2>
+    <div>
+    <h1 v-if="variant !== 'compact'" class="font-bold mb-4 text-gray-800 leading-5">Aptitud al Puesto</h1>
+    <div :class="variant === 'compact' ? 'mb-2' : 'mb-4'">
+        <h2 v-if="variant !== 'compact'" class="text-lg font-semibold mb-4 text-gray-800">Medidas Preventivas Específicas</h2>
         <p class="text-sm font-medium mb-1 text-gray-800 leading-4">Descripción de medidas específicas recomendadas:</p>
-        <div class="font-light mb-4">
+        <div class="font-light mb-2">
             <textarea
-                class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-64"
+                :class="variant === 'compact'
+                  ? 'w-full p-2 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 min-h-[12rem]'
+                  : 'w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-64'"
                 v-model="formDataAptitud.medidasPreventivas" required>
             </textarea>
         </div>
 
         <div class="mb-4">
-            <p class="font-medium mb-1 text-gray-800 leading-5">Para cada una de las alteraciones encontradas debe de
-                haber una medida preventiva recomendada. </p>
+            <p class="font-sm mb-1 text-gray-800 leading-5">Se sugiere emitir recomendaciones para cada alteracion encontrada. </p>
 
             <!-- <p class="font-medium mb-1 text-gray-800 leading-5 mt-4">1. Separa cada recomendacion con punto y seguido.</p> -->
             
             <!-- Ejemplos -->
-            <p class="font-medium mb-1 text-gray-800 leading-5 mt-4">Ejemplos de recomendaciones:<span v-if="mensajeCopiado" class="font-medium mb-1 leading-5 ml-2 text-emerald-600 text-sm">¡Copiado!</span></p>
+            <p class="font-sm mb-1 text-gray-800 leading-5 mt-4">Ejemplos de recomendaciones:<span v-if="mensajeCopiado" class="font-medium mb-1 leading-5 ml-2 text-emerald-600 text-sm">¡Copiado!</span></p>
             
             <!-- Grid de botones compactos -->
             <div class="grid grid-cols-2 gap-2 mt-3">
                 <!-- Genérico -->
                 <button
-                    class="font-medium py-1.5 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group"
+                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
                     :class="isOpen('generico') 
                         ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
                         : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
                     @click="toggle('generico')">
-                    <span>Genérico</span>
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isOpen('generico') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="truncate">Genérico</span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('generico') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
 
                 <!-- Hernia Abdominal -->
                 <button
-                    class="font-medium py-1.5 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group"
+                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
                     :class="isOpen('Hernia') 
                         ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
                         : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
                     @click="toggle('Hernia')">
-                    <span>Hernia Abd.</span>
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isOpen('Hernia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="truncate">Hernia Abd.</span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('Hernia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
 
                 <!-- Obesidad -->
                 <button
-                    class="font-medium py-1.5 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group"
+                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
                     :class="isOpen('obesidad') 
                         ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
                         : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
                     @click="toggle('obesidad')">
-                    <span>Obesidad</span>
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isOpen('obesidad') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="truncate">Obesidad</span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('obesidad') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
 
-                <!-- Diabetes Tipo II -->
+                <!-- Diabetes II (etiqueta corta: evita word-break con scrollbar) -->
                 <button
-                    class="font-medium py-1.5 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group"
+                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
                     :class="isOpen('diabetesMellitus2') 
                         ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
                         : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
                     @click="toggle('diabetesMellitus2')">
-                    <span>Diabetes Tipo II</span>
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isOpen('diabetesMellitus2') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="truncate whitespace-nowrap">Diabetes II</span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('diabetesMellitus2') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
 
                 <!-- Hipertensión -->
                 <button
-                    class="font-medium py-1.5 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group"
+                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
                     :class="isOpen('hipertension') 
                         ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
                         : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
                     @click="toggle('hipertension')">
-                    <span>Hipertensión</span>
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isOpen('hipertension') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="truncate">Hipertensión</span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('hipertension') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
 
                 <!-- Hipoacusia -->
                 <button
-                    class="font-medium py-1.5 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group"
+                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
                     :class="isOpen('hipoacusia') 
                         ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
                         : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
                     @click="toggle('hipoacusia')">
-                    <span>Hipoacusia</span>
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isOpen('hipoacusia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="truncate">Hipoacusia</span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('hipoacusia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
 
                 <!-- Problemas Respiratorios -->
                 <button
-                    class="font-medium py-1.5 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group"
+                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
                     :class="isOpen('problemasRespiratorios') 
                         ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
                         : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
                     @click="toggle('problemasRespiratorios')">
-                    <span>Respiratorios</span>
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isOpen('problemasRespiratorios') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="truncate">Respiratorios</span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('problemasRespiratorios') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
 
                 <!-- Lumbalgia -->
                 <button
-                    class="font-medium py-1.5 px-3 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group"
+                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
                     :class="isOpen('lumbalgia') 
                         ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
                         : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
                     @click="toggle('lumbalgia')">
-                    <span>Lumbalgia</span>
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isOpen('lumbalgia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="truncate">Lumbalgia</span>
+                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('lumbalgia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
@@ -324,5 +333,6 @@ const copiarTexto = (texto) => {
             </transition>
 
         </div>
+    </div>
     </div>
 </template>

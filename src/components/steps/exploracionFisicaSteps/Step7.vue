@@ -1,59 +1,74 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import HallazgoSiNoChips from './HallazgoSiNoChips.vue';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const narizPregunta = ref('No');
 const nariz = ref('');
-
-// Referencia al textarea
 const textareaHallazgos = ref(null);
 
 onMounted(() => {
-    if (documentos.currentDocument) {
-        // Si se está editando un documento, usa los valores existentes
+    // Preferir formData (sesión) para no perder cambios al remontar la sección V2.
+    if (formDataExploracionFisica.narizPregunta !== undefined && formDataExploracionFisica.narizPregunta !== null && formDataExploracionFisica.narizPregunta !== '') {
+        narizPregunta.value = formDataExploracionFisica.narizPregunta;
+        nariz.value = formDataExploracionFisica.nariz || '';
+    } else if (formDataExploracionFisica.nariz !== undefined && formDataExploracionFisica.nariz !== null && formDataExploracionFisica.nariz !== '') {
+        nariz.value = formDataExploracionFisica.nariz;
+        narizPregunta.value = formDataExploracionFisica.narizPregunta || (formDataExploracionFisica.nariz !== 'Sin hallazgos' ? 'Si' : 'No');
+    } else if (documentos.currentDocument) {
         narizPregunta.value = documentos.currentDocument.narizPregunta || 'No';
         nariz.value = documentos.currentDocument.nariz || '';
     } else {
-        // Si es un documento nuevo, usa valores predeterminados o lo que ya exista en formData
         narizPregunta.value = formDataExploracionFisica.narizPregunta || 'No';
         nariz.value = formDataExploracionFisica.nariz || '';
     }
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para narizPregunta
     if (!formDataExploracionFisica.narizPregunta) {
         formDataExploracionFisica.narizPregunta = narizPregunta.value;
     }
-
     if (!formDataExploracionFisica.nariz) {
         formDataExploracionFisica.nariz = 'Sin hallazgos';
     }
 });
 
-// Sincronizar narizPregunta con formData
 watch(narizPregunta, (newValue) => {
     formDataExploracionFisica.narizPregunta = newValue;
 });
 
-// Sincronizar el contenido del textarea con formData
 watch(nariz, (newValue) => {
     formDataExploracionFisica.nariz = newValue;
 });
 
-// Watch para establecer 'Sin hallazgos' cuando narizPregunta sea 'No' y enfocar textarea cuando sea 'Si'
-watch(narizPregunta, async (newValue) => {
+watch(narizPregunta, async (newValue, oldValue) => {
+    // Solo cambios del usuario (no montaje / remount).
+    if (oldValue === undefined || oldValue === newValue) return;
     if (newValue === 'No') {
         formDataExploracionFisica.nariz = 'Sin hallazgos';
+        nariz.value = 'Sin hallazgos';
     }
     if (newValue === 'Si') {
-        formDataExploracionFisica.nariz = nariz.value;
-        // Esperar a que el DOM se actualice y luego enfocar el textarea
+        const cur = (nariz.value || formDataExploracionFisica.nariz || '').trim();
+        if (cur === 'Sin hallazgos') {
+            nariz.value = '';
+            formDataExploracionFisica.nariz = '';
+        } else {
+            formDataExploracionFisica.nariz = nariz.value || formDataExploracionFisica.nariz;
+        }
         await nextTick();
         if (textareaHallazgos.value) {
             textareaHallazgos.value.focus();
@@ -64,17 +79,23 @@ watch(narizPregunta, async (newValue) => {
 
 <template>
     <div>
-        <!-- Jerarquía Visual Mejorada -->
+        <template v-if="variant === 'compact'">
+            <HallazgoSiNoChips
+                label="NARIZ"
+                question="¿Presencia de hallazgos significativos?"
+                v-model="narizPregunta"
+                v-model:especificar="formDataExploracionFisica.nariz"
+                placeholder="Describa los hallazgos encontrados..."
+            />
+        </template>
+        <template v-else>
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Exploración Cabeza y Cuello</h1>
         <h2 class="text-lg font-semibold mb-4 text-gray-700">NARIZ</h2>
         
-        <!-- Pregunta principal con mejor jerarquía -->
         <div class="mb-8">
             <p class="text-lg font-medium mb-4 text-gray-800">¿Presencia de hallazgos significativos?</p>
             
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- Opción No -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -89,7 +110,6 @@ watch(narizPregunta, async (newValue) => {
                         v-model="narizPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -108,7 +128,6 @@ watch(narizPregunta, async (newValue) => {
                     >
                         No
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="narizPregunta === 'No'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -119,7 +138,6 @@ watch(narizPregunta, async (newValue) => {
                     </div>
                 </label>
 
-                <!-- Opción Si -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -134,7 +152,6 @@ watch(narizPregunta, async (newValue) => {
                         v-model="narizPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -153,7 +170,6 @@ watch(narizPregunta, async (newValue) => {
                     >
                         Sí
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="narizPregunta === 'Si'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -166,7 +182,6 @@ watch(narizPregunta, async (newValue) => {
             </div>
         </div>
 
-        <!-- Opciones adicionales con transición suave -->
         <transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 transform -translate-y-2"
@@ -188,5 +203,6 @@ watch(narizPregunta, async (newValue) => {
                 </div>
             </div>
         </transition>
+        </template>
     </div>
 </template>

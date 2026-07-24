@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted, toRefs } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -8,6 +8,15 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -66,12 +75,17 @@ watch(fechaNotaMedica, (newValue) => {
 
 <template>
   <div>
-    <!-- Jerarquía Visual Mejorada -->
-    <h1 class="text-2xl font-bold mb-4 text-gray-900">Nota Médica</h1>
+    <h1
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold mb-4 text-gray-900"
+    >
+      Nota Médica
+    </h1>
+
     
     <!-- Pregunta principal con mejor jerarquía -->
-    <div class="mb-8">
-      <p class="text-lg font-medium mb-4 text-gray-800">¿Tipo de consulta? <span class="text-red-500">*</span></p>
+    <div :class="variant === 'compact' ? 'mb-4' : 'mb-8'">
+      <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿Tipo de consulta? <span class="text-red-500">*</span></p>
       
       <!-- Diseño de Radio Buttons más Visual tipo Card -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -180,8 +194,8 @@ watch(fechaNotaMedica, (newValue) => {
     </div>
 
     <!-- Sección de fecha con mejor espaciado -->
-    <div class="mt-8">
-      <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de Consulta <span class="text-red-500">*</span></h2>
+    <div :class="variant === 'compact' ? 'mt-4' : 'mt-8'">
+      <h2 :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">Fecha de Consulta <span class="text-red-500">*</span></h2>
       <FormKit 
         type="date" 
         name="fechaNotaMedica" 

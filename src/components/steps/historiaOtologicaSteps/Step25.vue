@@ -1,6 +1,15 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, computed, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataHistoriaOtologica } = useFormDataStore();
 
@@ -110,9 +119,9 @@ const calcularResultadoAutomatico = () => {
     if (formDataHistoriaOtologica.servicioMilitar === 'SI') {
         hallazgosPrecaucion.push('Servicio militar');
     }
-    if (formDataHistoriaOtologica.tiempoExposicionRuidoLaboral && 
-        formDataHistoriaOtologica.tiempoExposicionRuidoLaboral !== 'NINGUNO') {
-        hallazgosPrecaucion.push(`Tiempo de exposición laboral: ${formDataHistoriaOtologica.tiempoExposicionRuidoLaboral}`);
+    if (formDataHistoriaOtologica.tiempoExposicionLaboral &&
+        formDataHistoriaOtologica.tiempoExposicionLaboral !== 'NINGUNO') {
+        hallazgosPrecaucion.push(`Tiempo de exposición laboral: ${formDataHistoriaOtologica.tiempoExposicionLaboral}`);
     }
     if (formDataHistoriaOtologica.usoProteccionAuditiva === 'A VECES' || 
         formDataHistoriaOtologica.usoProteccionAuditiva === 'NUNCA') {
@@ -231,7 +240,8 @@ watch(resultadoCuestionarioPersonalizado, (newValue) => {
 <template>
     <div class="dark-mode-input-surface">
         <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">RESULTADO DE CUESTIONARIO</h1>
+        <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">RESULTADO DE CUESTIONARIO</h1>
+        <p v-else class="text-sm font-semibold mb-2 text-gray-800">Resultado de cuestionario</p>
         <p class="text-lg font-medium mb-2 text-gray-800">¿Es recomendable realizar la audiometría?</p>
         
         <!-- Sección de Evaluación Automática -->

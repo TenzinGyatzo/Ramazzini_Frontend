@@ -1,59 +1,74 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import HallazgoSiNoChips from './HallazgoSiNoChips.vue';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const marchaPregunta = ref('No');
 const marcha = ref('');
-
-// Referencia al textarea
 const textareaHallazgos = ref(null);
 
 onMounted(() => {
-    if (documentos.currentDocument) {
-        // Si se está editando un documento, usa los valores existentes
+    // Preferir formData (sesión) para no perder cambios al remontar la sección V2.
+    if (formDataExploracionFisica.marchaPregunta !== undefined && formDataExploracionFisica.marchaPregunta !== null && formDataExploracionFisica.marchaPregunta !== '') {
+        marchaPregunta.value = formDataExploracionFisica.marchaPregunta;
+        marcha.value = formDataExploracionFisica.marcha || '';
+    } else if (formDataExploracionFisica.marcha !== undefined && formDataExploracionFisica.marcha !== null && formDataExploracionFisica.marcha !== '') {
+        marcha.value = formDataExploracionFisica.marcha;
+        marchaPregunta.value = formDataExploracionFisica.marchaPregunta || (formDataExploracionFisica.marcha !== 'Sin hallazgos' ? 'Si' : 'No');
+    } else if (documentos.currentDocument) {
         marchaPregunta.value = documentos.currentDocument.marchaPregunta || 'No';
         marcha.value = documentos.currentDocument.marcha || '';
     } else {
-        // Si es un documento nuevo, usa valores predeterminados o lo que ya exista en formData
         marchaPregunta.value = formDataExploracionFisica.marchaPregunta || 'No';
         marcha.value = formDataExploracionFisica.marcha || '';
     }
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para marchaPregunta
     if (!formDataExploracionFisica.marchaPregunta) {
         formDataExploracionFisica.marchaPregunta = marchaPregunta.value;
     }
-
     if (!formDataExploracionFisica.marcha) {
         formDataExploracionFisica.marcha = 'Sin hallazgos';
     }
 });
 
-// Sincronizar marchaPregunta con formData
 watch(marchaPregunta, (newValue) => {
     formDataExploracionFisica.marchaPregunta = newValue;
 });
 
-// Sincronizar el contenido del textarea con formData
 watch(marcha, (newValue) => {
     formDataExploracionFisica.marcha = newValue;
 });
 
-// Watch para establecer 'Sin hallazgos' cuando marchaPregunta sea 'No' y enfocar textarea cuando sea 'Si'
-watch(marchaPregunta, async (newValue) => {
+watch(marchaPregunta, async (newValue, oldValue) => {
+    // Solo cambios del usuario (no montaje / remount).
+    if (oldValue === undefined || oldValue === newValue) return;
     if (newValue === 'No') {
         formDataExploracionFisica.marcha = 'Sin hallazgos';
+        marcha.value = 'Sin hallazgos';
     }
     if (newValue === 'Si') {
-        formDataExploracionFisica.marcha = marcha.value;
-        // Esperar a que el DOM se actualice y luego enfocar el textarea
+        const cur = (marcha.value || formDataExploracionFisica.marcha || '').trim();
+        if (cur === 'Sin hallazgos') {
+            marcha.value = '';
+            formDataExploracionFisica.marcha = '';
+        } else {
+            formDataExploracionFisica.marcha = marcha.value || formDataExploracionFisica.marcha;
+        }
         await nextTick();
         if (textareaHallazgos.value) {
             textareaHallazgos.value.focus();
@@ -64,17 +79,23 @@ watch(marchaPregunta, async (newValue) => {
 
 <template>
     <div>
-        <!-- Jerarquía Visual Mejorada -->
+        <template v-if="variant === 'compact'">
+            <HallazgoSiNoChips
+                label="MARCHA"
+                question="¿Presencia de hallazgos significativos?"
+                v-model="marchaPregunta"
+                v-model:especificar="formDataExploracionFisica.marcha"
+                placeholder="Describa los hallazgos encontrados..."
+            />
+        </template>
+        <template v-else>
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Evaluación Neurológica Complementaria</h1>
         <h2 class="text-lg font-semibold mb-4 text-gray-700">MARCHA</h2>
         
-        <!-- Pregunta principal con mejor jerarquía -->
         <div class="mb-8">
             <p class="text-lg font-medium mb-4 text-gray-800">¿Presencia de hallazgos significativos?</p>
             
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- Opción No -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -89,7 +110,6 @@ watch(marchaPregunta, async (newValue) => {
                         v-model="marchaPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -108,7 +128,6 @@ watch(marchaPregunta, async (newValue) => {
                     >
                         No
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="marchaPregunta === 'No'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -119,7 +138,6 @@ watch(marchaPregunta, async (newValue) => {
                     </div>
                 </label>
 
-                <!-- Opción Si -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -134,7 +152,6 @@ watch(marchaPregunta, async (newValue) => {
                         v-model="marchaPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -153,7 +170,6 @@ watch(marchaPregunta, async (newValue) => {
                     >
                         Sí
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="marchaPregunta === 'Si'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -166,7 +182,6 @@ watch(marchaPregunta, async (newValue) => {
             </div>
         </div>
 
-        <!-- Opciones adicionales con transición suave -->
         <transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 transform -translate-y-2"
@@ -188,5 +203,6 @@ watch(marchaPregunta, async (newValue) => {
                 </div>
             </div>
         </transition>
+        </template>
     </div>
 </template>

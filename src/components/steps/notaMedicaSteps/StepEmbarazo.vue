@@ -1,9 +1,18 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { calcularEdad } from '@/helpers/dates';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -101,8 +110,16 @@ onUnmounted(syncFormData);
 
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-900 mb-4 uppercase">Embarazo</h2>
-    <p class="text-sm text-gray-600 mb-4">
+    <h2
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
+    >
+      Embarazo
+    </h2>
+    <p
+      v-if="variant !== 'compact'"
+      class="text-sm text-gray-600 mb-4"
+    >
       Registre la relación temporal del embarazo y el trimestre gestacional cuando aplique.
     </p>
 

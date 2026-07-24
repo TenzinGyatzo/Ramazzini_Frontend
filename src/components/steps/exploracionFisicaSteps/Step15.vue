@@ -1,58 +1,74 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import HallazgoSiNoChips from './HallazgoSiNoChips.vue';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const toraxPregunta = ref('No');
 const torax = ref('');
-
-// Referencia al textarea
 const textareaHallazgos = ref(null);
 
 onMounted(() => {
-    if (documentos.currentDocument) {
-        // Si se está editando un documento, usa los valores existentes
+    // Preferir formData (sesión) para no perder cambios al remontar la sección V2.
+    if (formDataExploracionFisica.toraxPregunta !== undefined && formDataExploracionFisica.toraxPregunta !== null && formDataExploracionFisica.toraxPregunta !== '') {
+        toraxPregunta.value = formDataExploracionFisica.toraxPregunta;
+        torax.value = formDataExploracionFisica.torax || '';
+    } else if (formDataExploracionFisica.torax !== undefined && formDataExploracionFisica.torax !== null && formDataExploracionFisica.torax !== '') {
+        torax.value = formDataExploracionFisica.torax;
+        toraxPregunta.value = formDataExploracionFisica.toraxPregunta || (formDataExploracionFisica.torax !== 'Sin hallazgos' ? 'Si' : 'No');
+    } else if (documentos.currentDocument) {
         toraxPregunta.value = documentos.currentDocument.toraxPregunta || 'No';
         torax.value = documentos.currentDocument.torax || '';
     } else {
-        // Si es un documento nuevo, usa valores predeterminados o lo que ya exista en formData
         toraxPregunta.value = formDataExploracionFisica.toraxPregunta || 'No';
         torax.value = formDataExploracionFisica.torax || '';
     }
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para toraxPregunta
     if (!formDataExploracionFisica.toraxPregunta) {
         formDataExploracionFisica.toraxPregunta = toraxPregunta.value;
     }
-
     if (!formDataExploracionFisica.torax) {
         formDataExploracionFisica.torax = 'Sin hallazgos';
     }
 });
 
-// Sincronizar toraxPregunta con formData
 watch(toraxPregunta, (newValue) => {
     formDataExploracionFisica.toraxPregunta = newValue;
 });
 
-// Sincronizar el contenido del textarea con formData
 watch(torax, (newValue) => {
     formDataExploracionFisica.torax = newValue;
 });
 
-// Watch para establecer 'Sin hallazgos' cuando toraxPregunta sea 'No' y enfocar textarea cuando sea 'Si'
-watch(toraxPregunta, async (newValue) => {
+watch(toraxPregunta, async (newValue, oldValue) => {
+    // Solo cambios del usuario (no montaje / remount).
+    if (oldValue === undefined || oldValue === newValue) return;
     if (newValue === 'No') {
         formDataExploracionFisica.torax = 'Sin hallazgos';
+        torax.value = 'Sin hallazgos';
     }
     if (newValue === 'Si') {
-        formDataExploracionFisica.torax = torax.value;
+        const cur = (torax.value || formDataExploracionFisica.torax || '').trim();
+        if (cur === 'Sin hallazgos') {
+            torax.value = '';
+            formDataExploracionFisica.torax = '';
+        } else {
+            formDataExploracionFisica.torax = torax.value || formDataExploracionFisica.torax;
+        }
         await nextTick();
         if (textareaHallazgos.value) {
             textareaHallazgos.value.focus();
@@ -63,6 +79,16 @@ watch(toraxPregunta, async (newValue) => {
 
 <template>
     <div>
+        <template v-if="variant === 'compact'">
+            <HallazgoSiNoChips
+                label="TÓRAX"
+                question="¿Presencia de hallazgos significativos?"
+                v-model="toraxPregunta"
+                v-model:especificar="formDataExploracionFisica.torax"
+                placeholder="Describa los hallazgos encontrados..."
+            />
+        </template>
+        <template v-else>
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Exploración de Tórax</h1>
         <h2 class="text-lg font-semibold mb-4 text-gray-700">TÓRAX</h2>
         
@@ -78,7 +104,12 @@ watch(toraxPregunta, async (newValue) => {
                             : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
                     ]"
                 >
-                    <input type="radio" value="No" v-model="toraxPregunta" class="sr-only" />
+                    <input 
+                        type="radio" 
+                        value="No" 
+                        v-model="toraxPregunta" 
+                        class="sr-only" 
+                    />
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -115,7 +146,12 @@ watch(toraxPregunta, async (newValue) => {
                             : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
                     ]"
                 >
-                    <input type="radio" value="Si" v-model="toraxPregunta" class="sr-only" />
+                    <input 
+                        type="radio" 
+                        value="Si" 
+                        v-model="toraxPregunta" 
+                        class="sr-only" 
+                    />
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -167,5 +203,6 @@ watch(toraxPregunta, async (newValue) => {
                 </div>
             </div>
         </transition>
+        </template>
     </div>
 </template>

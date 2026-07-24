@@ -1,59 +1,74 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import HallazgoSiNoChips from './HallazgoSiNoChips.vue';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const nevosPregunta = ref('No');
 const nevos = ref('');
-
-// Referencia al textarea
 const textareaHallazgos = ref(null);
 
 onMounted(() => {
-    if (documentos.currentDocument) {
-        // Si se está editando un documento, usa los valores existentes
+    // Preferir formData (sesión) para no perder cambios al remontar la sección V2.
+    if (formDataExploracionFisica.nevosPregunta !== undefined && formDataExploracionFisica.nevosPregunta !== null && formDataExploracionFisica.nevosPregunta !== '') {
+        nevosPregunta.value = formDataExploracionFisica.nevosPregunta;
+        nevos.value = formDataExploracionFisica.nevos || '';
+    } else if (formDataExploracionFisica.nevos !== undefined && formDataExploracionFisica.nevos !== null && formDataExploracionFisica.nevos !== '') {
+        nevos.value = formDataExploracionFisica.nevos;
+        nevosPregunta.value = formDataExploracionFisica.nevosPregunta || (formDataExploracionFisica.nevos !== 'Sin hallazgos' ? 'Si' : 'No');
+    } else if (documentos.currentDocument) {
         nevosPregunta.value = documentos.currentDocument.nevosPregunta || 'No';
         nevos.value = documentos.currentDocument.nevos || '';
     } else {
-        // Si es un documento nuevo, usa valores predeterminados o lo que ya exista en formData
         nevosPregunta.value = formDataExploracionFisica.nevosPregunta || 'No';
         nevos.value = formDataExploracionFisica.nevos || '';
     }
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para nevosPregunta
     if (!formDataExploracionFisica.nevosPregunta) {
         formDataExploracionFisica.nevosPregunta = nevosPregunta.value;
     }
-
     if (!formDataExploracionFisica.nevos) {
         formDataExploracionFisica.nevos = 'Sin hallazgos';
     }
 });
 
-// Sincronizar nevosPregunta con formData
 watch(nevosPregunta, (newValue) => {
     formDataExploracionFisica.nevosPregunta = newValue;
 });
 
-// Sincronizar el contenido del textarea con formData
 watch(nevos, (newValue) => {
     formDataExploracionFisica.nevos = newValue;
 });
 
-// Watch para establecer 'Sin hallazgos' cuando nevosPregunta sea 'No' y enfocar textarea cuando sea 'Si'
-watch(nevosPregunta, async (newValue) => {
+watch(nevosPregunta, async (newValue, oldValue) => {
+    // Solo cambios del usuario (no montaje / remount).
+    if (oldValue === undefined || oldValue === newValue) return;
     if (newValue === 'No') {
         formDataExploracionFisica.nevos = 'Sin hallazgos';
+        nevos.value = 'Sin hallazgos';
     }
     if (newValue === 'Si') {
-        formDataExploracionFisica.nevos = nevos.value;
-        // Esperar a que el DOM se actualice y luego enfocar el textarea
+        const cur = (nevos.value || formDataExploracionFisica.nevos || '').trim();
+        if (cur === 'Sin hallazgos') {
+            nevos.value = '';
+            formDataExploracionFisica.nevos = '';
+        } else {
+            formDataExploracionFisica.nevos = nevos.value || formDataExploracionFisica.nevos;
+        }
         await nextTick();
         if (textareaHallazgos.value) {
             textareaHallazgos.value.focus();
@@ -64,17 +79,23 @@ watch(nevosPregunta, async (newValue) => {
 
 <template>
     <div>
-        <!-- Jerarquía Visual Mejorada -->
+        <template v-if="variant === 'compact'">
+            <HallazgoSiNoChips
+                label="NEVOS"
+                question="¿Presencia de hallazgos significativos?"
+                v-model="nevosPregunta"
+                v-model:especificar="formDataExploracionFisica.nevos"
+                placeholder="Describa los hallazgos encontrados..."
+            />
+        </template>
+        <template v-else>
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Exploración de Piel</h1>
         <h2 class="text-lg font-semibold mb-4 text-gray-700">NEVOS</h2>
         
-        <!-- Pregunta principal con mejor jerarquía -->
         <div class="mb-8">
             <p class="text-lg font-medium mb-4 text-gray-800">¿Presencia de hallazgos significativos?</p>
             
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- Opción No -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -89,7 +110,6 @@ watch(nevosPregunta, async (newValue) => {
                         v-model="nevosPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -108,7 +128,6 @@ watch(nevosPregunta, async (newValue) => {
                     >
                         No
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="nevosPregunta === 'No'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -119,7 +138,6 @@ watch(nevosPregunta, async (newValue) => {
                     </div>
                 </label>
 
-                <!-- Opción Si -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -134,7 +152,6 @@ watch(nevosPregunta, async (newValue) => {
                         v-model="nevosPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -153,7 +170,6 @@ watch(nevosPregunta, async (newValue) => {
                     >
                         Sí
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="nevosPregunta === 'Si'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -166,7 +182,6 @@ watch(nevosPregunta, async (newValue) => {
             </div>
         </div>
 
-        <!-- Opciones adicionales con transición suave -->
         <transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 transform -translate-y-2"
@@ -188,5 +203,6 @@ watch(nevosPregunta, async (newValue) => {
                 </div>
             </div>
         </transition>
+        </template>
     </div>
 </template>

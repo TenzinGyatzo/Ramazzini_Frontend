@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -8,6 +8,15 @@ import {
   esExclusivoPorEtiqueta,
   aplicarCambioDerechohabiencia,
 } from '@/helpers/afiliacionCex';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -148,9 +157,20 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-900 mb-4 uppercase">Género y Derechohabiencia</h2>
+    <h2
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
+    >
+      Género y Derechohabiencia
+    </h2>
+    <p
+      v-else
+      class="text-sm font-semibold text-gray-800 mb-2"
+    >
+      Género y derechohabiencia
+    </p>
 
-    <div class="mb-6">
+    <div :class="variant === 'compact' ? 'mb-4' : 'mb-6'">
       <label for="genero" class="block text-base font-medium text-gray-800 mb-2">
         Género <span class="text-red-500">*</span>
       </label>

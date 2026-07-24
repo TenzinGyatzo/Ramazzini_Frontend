@@ -1,7 +1,16 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted } from 'vue';
+import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -50,7 +59,18 @@ function removeTratamiento(index) {
 
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-900 mb-4 uppercase">Tratamiento</h2>
+    <h2
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
+    >
+      Tratamiento
+    </h2>
+    <p
+      v-else
+      class="text-sm font-semibold text-gray-800 mb-2"
+    >
+      Tratamiento
+    </p>
 
     <div class="space-y-2">
       <div v-for="(item, index) in tratamiento" :key="index" class="flex gap-2 items-center">

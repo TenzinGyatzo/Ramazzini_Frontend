@@ -8,6 +8,11 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
+import { useHoSectionsV2 } from '@/composables/useHoSectionsV2';
+import {
+  getHoSectionIndex,
+  legacyStepToSectionIndex,
+} from '@/helpers/hoSections';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -15,10 +20,40 @@ const formData = useFormDataStore();
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
+const { hoSectionsV2Enabled } = useHoSectionsV2();
+
+const resolveNavStep = (legacyStep) => {
+  if (hoSectionsV2Enabled.value) {
+    return legacyStepToSectionIndex(legacyStep);
+  }
+  return legacyStep;
+};
 
 const goToStep = (stepNumber) => {
-  steps.goToStep(stepNumber);
+  steps.goToStep(resolveNavStep(stepNumber));
 };
+
+const isActiveLegacyStep = (legacyStep) => {
+  if (hoSectionsV2Enabled.value) return false;
+  return steps.currentStep === legacyStep;
+};
+
+const isActiveSection = (sectionId) => {
+  if (!hoSectionsV2Enabled.value) return false;
+  return steps.currentStep === getHoSectionIndex(sectionId);
+};
+
+/** Outline por fila (solo V1 legacy). */
+const rowOutlineClass = (legacyStep) =>
+  isActiveLegacyStep(legacyStep)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
+
+/** Outline por bloque de sección (solo V2). */
+const sectionOutlineClass = (sectionId) =>
+  isActiveSection(sectionId)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
 
 </script>
 
@@ -48,7 +83,7 @@ const goToStep = (stepNumber) => {
       <!-- Fecha -->
       <div 
         class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
+        :class="[sectionOutlineClass('fecha'), rowOutlineClass(1)]"
         @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataHistoriaOtologica.fechaHistoriaOtologica) }}</span></p>
@@ -106,7 +141,7 @@ const goToStep = (stepNumber) => {
     </div>
 
     <!-- En los últimos 2 meses -->
-    <div class="w-full">
+    <div class="w-full" :class="sectionOutlineClass('sintomas')">
       <h2 class="text-lg font-medium mb-1 text-center">EN LOS ÚLTIMOS DOS MESES</h2>
       <div class="flex flex-wrap gap-2">
         <!-- Tabla izquierda -->
@@ -120,21 +155,21 @@ const goToStep = (stepNumber) => {
             </thead>
             <tbody>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)" style="height: 1.75rem;"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 2 }">
+              :class="rowOutlineClass(2)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">DOLOR OÍDO</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.dolorOido === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.dolorOido }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(3)" style="height: 1.75rem;"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 3 }">
+              :class="rowOutlineClass(3)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">SUPURACIÓN OÍDO</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.supuracionOido === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.supuracionOido }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(4)" style="height: 1.75rem;"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 4 }">
+              :class="rowOutlineClass(4)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">MAREO O VÉRTIGO</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.mareoVertigo === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -154,21 +189,21 @@ const goToStep = (stepNumber) => {
             </thead>
             <tbody>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(5)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 5 }">
+                :class="rowOutlineClass(5)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">ZUMBIDO (TINNITUS)</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.zumbidoTinnitus === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.zumbidoTinnitus }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(6)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 6 }">
+                :class="rowOutlineClass(6)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">PÉRDIDA DE AUDICIÓN</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.perdidaAudicion === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.perdidaAudicion }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(7)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 7 }">
+                :class="rowOutlineClass(7)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">OÍDO TAPADO / PLENITUD</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.oidoTapadoPlenitud === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -181,8 +216,8 @@ const goToStep = (stepNumber) => {
     </div>
 
     <!-- Antecedentes personales -->
-    <div class="w-full">
-      <h2 class="text-lg font-medium mb-1 text-center">ANTEDENTES PERSONALES</h2>
+    <div class="w-full" :class="sectionOutlineClass('antecedentes')">
+      <h2 class="text-lg font-medium mb-1 text-center">ANTECEDENTES PERSONALES</h2>
       <div class="flex flex-wrap gap-2">
         <!-- Tabla izquierda -->
         <div class="w-full md:w-[calc(50%-0.25rem)]">
@@ -195,28 +230,28 @@ const goToStep = (stepNumber) => {
             </thead>
             <tbody>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(8)" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 8 }">
+              :class="rowOutlineClass(8)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">OTITIS FRECUENTES EN INFANCIA</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.otitisFrecuentesInfancia === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.otitisFrecuentesInfancia }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(9)" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 9 }">
+              :class="rowOutlineClass(9)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">CIRUGÍAS DE OÍDO</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.cirugiasOido === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.cirugiasOido }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(10)" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 10 }">
+              :class="rowOutlineClass(10)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">TRAUMATISMO CRANEAL</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.traumatismoCranealBarotrauma === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.traumatismoCranealBarotrauma }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(11)" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 11 }">
+              :class="rowOutlineClass(11)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">USO DE AUDÍFONOS</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.usoAudifonos === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -236,28 +271,28 @@ const goToStep = (stepNumber) => {
             </thead>
             <tbody>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(12)" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 12 }">
+              :class="rowOutlineClass(12)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">MENINGITIS U INFECCIÓN GRAVE</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.meningitisInfeccionGraveInfancia === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.meningitisInfeccionGraveInfancia }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(13)" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 13 }">
+              :class="rowOutlineClass(13)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">DIABETES</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.diabetes === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.diabetes }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(14)" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 14 }">
+              :class="rowOutlineClass(14)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">ENFERMEDAD RENAL</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.enfermedadRenal === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.enfermedadRenal }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(15)" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 15 }">
+              :class="rowOutlineClass(15)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">MEDICAMENTOS OTOXICOS</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.medicamentosOtotoxicos === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -270,7 +305,7 @@ const goToStep = (stepNumber) => {
     </div>
 
     <!-- Exposición a ruido -->
-    <div class="w-full">
+    <div class="w-full" :class="sectionOutlineClass('exposicion')">
       <h2 class="text-lg font-medium mb-1 text-center">EXPOSICIÓN A RUIDO</h2>
       <div class="flex flex-wrap gap-2">
         <!-- Tabla izquierda -->
@@ -284,20 +319,20 @@ const goToStep = (stepNumber) => {
             </thead>
             <tbody>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(16)"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 16 }">
+              :class="rowOutlineClass(16)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">TRABAJO EN AMBIENTES RUIDOSOS</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.trabajoAmbientesRuidosos === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.trabajoAmbientesRuidosos }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(17)"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 17 }">
+              :class="rowOutlineClass(17)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">TIEMPO DE EXPOSICIÓN A RUIDO LABORAL</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
                   {{ formData.formDataHistoriaOtologica.tiempoExposicionLaboral }}</td>
               </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(18)"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 18 }">
+                :class="rowOutlineClass(18)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">USO DE PROTECCIÓN AUDITIVA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataHistoriaOtologica.usoProteccionAuditiva === 'A VECES' ? 'text-orange-600 font-medium' : formData.formDataHistoriaOtologica.usoProteccionAuditiva === 'NUNCA' ? 'text-red-600 font-medium' : ''">
@@ -317,21 +352,21 @@ const goToStep = (stepNumber) => {
             </thead>
             <tbody>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(19)"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 19 }">
+              :class="rowOutlineClass(19)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">MÚSICA FUERTE CON AUDÍFONOS</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.musicaFuerteAudifonos === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.musicaFuerteAudifonos }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(20)"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 20 }">
+              :class="rowOutlineClass(20)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">ARMAS DE FUEGO O PASATIEMPOS RUIDOSOS</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.armasFuegoPasatiemposRuidosos === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.armasFuegoPasatiemposRuidosos }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(21)"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 21 }">
+              :class="rowOutlineClass(21)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">SERVICIO MILITAR</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.servicioMilitar === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -344,7 +379,7 @@ const goToStep = (stepNumber) => {
     </div>
 
     <!-- Sección inferior: Otros y Otoscopia lado a lado -->
-    <div class="w-full">
+    <div class="w-full" :class="sectionOutlineClass('otoscopia')">
       <div class="flex flex-wrap gap-2">
         <!-- Otros -->
         <div class="w-full md:w-[calc(50%-0.25rem)]">
@@ -358,14 +393,14 @@ const goToStep = (stepNumber) => {
             </thead>
             <tbody>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(22)"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 22 }">
+              :class="rowOutlineClass(22)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">ALERGIAS</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.alergias === 'SI' ? 'text-red-600 font-medium' : ''">
                   {{ formData.formDataHistoriaOtologica.alergias }}</td>
               </tr>
               <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 1.75rem;" @click="goToStep(23)"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 23 }">
+              :class="rowOutlineClass(23)">
                 <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">RESFRIADO DÍA DE PRUEBA</td>
                 <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                   :class="formData.formDataHistoriaOtologica.resfriadoDiaPrueba === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -376,7 +411,7 @@ const goToStep = (stepNumber) => {
         </div>
 
         <!-- Otoscopia -->
-        <div class="w-full md:w-[calc(50%-0.25rem)]" @click="goToStep(24)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 24 }">
+        <div class="w-full md:w-[calc(50%-0.25rem)]" @click="goToStep(24)" :class="rowOutlineClass(24)">
           <h2 class="text-lg font-medium mb-1 text-center">OTOSCOPIA</h2>
           <table class="table-auto w-full border-collapse border border-gray-200">
             <thead>
@@ -405,7 +440,7 @@ const goToStep = (stepNumber) => {
     </div>
 
     <!-- Resultado cuestionario -->
-    <div class="w-full" @click="goToStep(25)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 25 }">
+    <div class="w-full" @click="goToStep(25)" :class="[sectionOutlineClass('resultado'), rowOutlineClass(25)]">
       <h2 class="text-lg font-medium mb-1 text-center">RESULTADO CUESTIONARIO</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>

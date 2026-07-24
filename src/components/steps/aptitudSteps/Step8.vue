@@ -1,6 +1,15 @@
 <script setup>
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, watch, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataAptitud } = useFormDataStore();
 
@@ -22,13 +31,10 @@ onUnmounted(() => {
 
 <template>
     <div>
-        <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">APTITUD AL PUESTO</h1>
-        <h3 class="text-lg font-medium mb-6 text-gray-700">Selección de Aptitud</h3>
+        <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">APTITUD AL PUESTO</h1>
+        <h3 v-if="variant !== 'compact'" class="text-lg font-medium mb-6 text-gray-700">APTITUD AL PUESTO</h3>
         
-        <!-- Pregunta principal con mejor jerarquía -->
-        <div class="mb-8">
-            <p class="text-lg font-medium mb-6 text-gray-800">Seleccione la aptitud del trabajador para el puesto:</p>
+        <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
             
             <!-- Diseño de Radio Buttons más Visual tipo Card - Una sola columna -->
             <div class="grid grid-cols-1 gap-3">

@@ -12,6 +12,11 @@ import DocumentosAPI from '@/api/DocumentosAPI';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useUserStore } from '@/stores/user';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { useCertificadoSectionsV2 } from '@/composables/useCertificadoSectionsV2';
+import {
+  getCertificadoSectionIndex,
+  legacyStepToSectionIndex,
+} from '@/helpers/certificadoSections';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -21,6 +26,7 @@ const medicoFirmanteStore = useMedicoFirmanteStore();
 const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
+const { certificadoSectionsV2Enabled } = useCertificadoSectionsV2();
 
 const nombreCompletoMedico = computed(() => {
   const medico = medicoFirmanteStore.medicoFirmante;
@@ -165,9 +171,36 @@ watch(
 
 );
 
-const goToStep = (stepNumber) => {
-  steps.goToStep(stepNumber);
+const resolveNavStep = (legacyStep) => {
+  if (certificadoSectionsV2Enabled.value) {
+    return legacyStepToSectionIndex(legacyStep);
+  }
+  return legacyStep;
 };
+
+const goToStep = (stepNumber) => {
+  steps.goToStep(resolveNavStep(stepNumber));
+};
+
+const isActiveLegacyStep = (legacyStep) => {
+  if (certificadoSectionsV2Enabled.value) return false;
+  return steps.currentStep === legacyStep;
+};
+
+const isActiveSection = (sectionId) => {
+  if (!certificadoSectionsV2Enabled.value) return false;
+  return steps.currentStep === getCertificadoSectionIndex(sectionId);
+};
+
+const sectionOutlineClass = (sectionId) =>
+  isActiveSection(sectionId)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
+
+const rowOutlineClass = (legacyStep) =>
+  isActiveLegacyStep(legacyStep)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
 
 const camposExploracion = [
   'abdomen', 'boca', 'cadera', 'cicatrices', 'codos', 'coordinacion',
@@ -232,7 +265,7 @@ function formatearCampo(campo) {
 
       <!-- Fecha -->
       <div class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
+        :class="[sectionOutlineClass('certificado'), rowOutlineClass(1)]"
         @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataCertificado.fechaCertificado) }}</span></p>
@@ -361,7 +394,7 @@ function formatearCampo(campo) {
            <strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong> 
            de <strong>{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}</strong> años de edad.
 
-           &nbsp; <span :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }">[DESCRIPCIÓN DE LA EXPLORACIÓN DE LA FECHA MÁS CERCANA]</span>
+           &nbsp; <span :class="[sectionOutlineClass('certificado'), rowOutlineClass(1)]">[DESCRIPCIÓN DE LA EXPLORACIÓN DE LA FECHA MÁS CERCANA]</span>
          </template>
        </p>
 
@@ -369,7 +402,7 @@ function formatearCampo(campo) {
 
      <div class="w-full mb-4">
         <p class="text-justify">
-            Por lo anterior, se establece que <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido  + ' ' }}</strong><span v-if="proveedorSalud.pais === 'GT' && trabajadores.currentTrabajador.sexo === 'Femenino'"> </span><span class="cursor-pointer" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 2 }" @click="goToStep(2)">{{ formData.formDataCertificado.impedimentosFisicos ? formData.formDataCertificado.impedimentosFisicos : '[DESCRIPCIÓN DE IMPEDIMENTOS FÍSICOS]' }}.</span> Este certificado de salud no implica ningún tipo de garantía de que <span>{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el trabajador' : 'la trabajadora' }}</span> no se lesionará o enfermará en el futuro.
+            Por lo anterior, se establece que <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido  + ' ' }}</strong><span v-if="proveedorSalud.pais === 'GT' && trabajadores.currentTrabajador.sexo === 'Femenino'"> </span><span class="cursor-pointer" :class="[sectionOutlineClass('certificado'), rowOutlineClass(2)]" @click="goToStep(2)">{{ formData.formDataCertificado.impedimentosFisicos ? formData.formDataCertificado.impedimentosFisicos : '[DESCRIPCIÓN DE IMPEDIMENTOS FÍSICOS]' }}.</span> Este certificado de salud no implica ningún tipo de garantía de que <span>{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el trabajador' : 'la trabajadora' }}</span> no se lesionará o enfermará en el futuro.
         </p>
      </div>
      

@@ -1,59 +1,74 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import HallazgoSiNoChips from './HallazgoSiNoChips.vue';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const abdomenPregunta = ref('No');
 const abdomen = ref('');
-
-// Referencia al textarea
 const textareaHallazgos = ref(null);
 
 onMounted(() => {
-    if (documentos.currentDocument) {
-        // Si se está editando un documento, usa los valores existentes
+    // Preferir formData (sesión) para no perder cambios al remontar la sección V2.
+    if (formDataExploracionFisica.abdomenPregunta !== undefined && formDataExploracionFisica.abdomenPregunta !== null && formDataExploracionFisica.abdomenPregunta !== '') {
+        abdomenPregunta.value = formDataExploracionFisica.abdomenPregunta;
+        abdomen.value = formDataExploracionFisica.abdomen || '';
+    } else if (formDataExploracionFisica.abdomen !== undefined && formDataExploracionFisica.abdomen !== null && formDataExploracionFisica.abdomen !== '') {
+        abdomen.value = formDataExploracionFisica.abdomen;
+        abdomenPregunta.value = formDataExploracionFisica.abdomenPregunta || (formDataExploracionFisica.abdomen !== 'Sin hallazgos' ? 'Si' : 'No');
+    } else if (documentos.currentDocument) {
         abdomenPregunta.value = documentos.currentDocument.abdomenPregunta || 'No';
         abdomen.value = documentos.currentDocument.abdomen || '';
     } else {
-        // Si es un documento nuevo, usa valores predeterminados o lo que ya exista en formData
         abdomenPregunta.value = formDataExploracionFisica.abdomenPregunta || 'No';
         abdomen.value = formDataExploracionFisica.abdomen || '';
     }
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para abdomenPregunta
     if (!formDataExploracionFisica.abdomenPregunta) {
         formDataExploracionFisica.abdomenPregunta = abdomenPregunta.value;
     }
-
     if (!formDataExploracionFisica.abdomen) {
         formDataExploracionFisica.abdomen = 'Sin hallazgos';
     }
 });
 
-// Sincronizar abdomenPregunta con formData
 watch(abdomenPregunta, (newValue) => {
     formDataExploracionFisica.abdomenPregunta = newValue;
 });
 
-// Sincronizar el contenido del textarea con formData
 watch(abdomen, (newValue) => {
     formDataExploracionFisica.abdomen = newValue;
 });
 
-// Watch para establecer 'Sin hallazgos' cuando abdomenPregunta sea 'No' y enfocar textarea cuando sea 'Si'
-watch(abdomenPregunta, async (newValue) => {
+watch(abdomenPregunta, async (newValue, oldValue) => {
+    // Solo cambios del usuario (no montaje / remount).
+    if (oldValue === undefined || oldValue === newValue) return;
     if (newValue === 'No') {
         formDataExploracionFisica.abdomen = 'Sin hallazgos';
+        abdomen.value = 'Sin hallazgos';
     }
     if (newValue === 'Si') {
-        formDataExploracionFisica.abdomen = abdomen.value;
-        // Esperar a que el DOM se actualice y luego enfocar el textarea
+        const cur = (abdomen.value || formDataExploracionFisica.abdomen || '').trim();
+        if (cur === 'Sin hallazgos') {
+            abdomen.value = '';
+            formDataExploracionFisica.abdomen = '';
+        } else {
+            formDataExploracionFisica.abdomen = abdomen.value || formDataExploracionFisica.abdomen;
+        }
         await nextTick();
         if (textareaHallazgos.value) {
             textareaHallazgos.value.focus();
@@ -64,17 +79,23 @@ watch(abdomenPregunta, async (newValue) => {
 
 <template>
     <div>
-        <!-- Jerarquía Visual Mejorada -->
+        <template v-if="variant === 'compact'">
+            <HallazgoSiNoChips
+                label="ABDOMEN"
+                question="¿Presencia de hallazgos significativos?"
+                v-model="abdomenPregunta"
+                v-model:especificar="formDataExploracionFisica.abdomen"
+                placeholder="Describa los hallazgos encontrados..."
+            />
+        </template>
+        <template v-else>
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Exploración de Abdomen</h1>
         <h2 class="text-lg font-semibold mb-4 text-gray-700">ABDOMEN</h2>
         
-        <!-- Pregunta principal con mejor jerarquía -->
         <div class="mb-8">
             <p class="text-lg font-medium mb-4 text-gray-800">¿Presencia de hallazgos significativos?</p>
             
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- Opción No -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -89,7 +110,6 @@ watch(abdomenPregunta, async (newValue) => {
                         v-model="abdomenPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -108,7 +128,6 @@ watch(abdomenPregunta, async (newValue) => {
                     >
                         No
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="abdomenPregunta === 'No'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -119,7 +138,6 @@ watch(abdomenPregunta, async (newValue) => {
                     </div>
                 </label>
 
-                <!-- Opción Si -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -134,7 +152,6 @@ watch(abdomenPregunta, async (newValue) => {
                         v-model="abdomenPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -153,7 +170,6 @@ watch(abdomenPregunta, async (newValue) => {
                     >
                         Sí
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="abdomenPregunta === 'Si'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -166,7 +182,6 @@ watch(abdomenPregunta, async (newValue) => {
             </div>
         </div>
 
-        <!-- Opciones adicionales con transición suave -->
         <transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 transform -translate-y-2"
@@ -188,5 +203,6 @@ watch(abdomenPregunta, async (newValue) => {
                 </div>
             </div>
         </transition>
+        </template>
     </div>
 </template>

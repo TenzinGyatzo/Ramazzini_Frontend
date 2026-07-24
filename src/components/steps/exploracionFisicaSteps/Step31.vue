@@ -1,12 +1,27 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
+
 const trabajadores = useTrabajadoresStore();
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
+
+const textoClinicamenteSano = computed(() =>
+  trabajadores.currentTrabajador?.sexo === 'Femenino'
+    ? 'Se encuentra clínicamente sana'
+    : 'Se encuentra clínicamente sano',
+);
 
 // Valor local para la pregunta principal
 const resumenExploracionFisicaPregunta = ref('No');
@@ -63,43 +78,53 @@ const resumenAutomatico = computed(() => {
 });
 
 onMounted(() => {
-    const textoDefecto = trabajadores.currentTrabajador.sexo === 'Femenino'
-        ? 'Se encuentra clínicamente sana'
-        : 'Se encuentra clínicamente sano';
-    
-    if (documentos.currentDocument) {
-        // Si se está editando un documento
-        const resumenDoc = documentos.currentDocument.resumenExploracionFisica || '';
-        resumenExploracionFisica.value = resumenDoc;
-        
-        // Detectar automáticamente si debe estar en "Si" o "No"
-        // Si hay hallazgos automáticos o el resumen no es el texto por defecto, debe estar en "Si"
-        if (resumenAutomatico.value || (resumenDoc && resumenDoc !== textoDefecto)) {
-            resumenExploracionFisicaPregunta.value = 'Si';
-        } else {
-            resumenExploracionFisicaPregunta.value = documentos.currentDocument.resumenExploracionFisicaPregunta || 'No';
-        }
-    } else {
-        // Si es un documento nuevo, detectar automáticamente si hay hallazgos
+    const textoDefecto = textoClinicamenteSano.value;
+    const tieneSesion =
+        (formDataExploracionFisica.resumenExploracionFisicaPregunta !== undefined &&
+            formDataExploracionFisica.resumenExploracionFisicaPregunta !== null &&
+            formDataExploracionFisica.resumenExploracionFisicaPregunta !== '') ||
+        (formDataExploracionFisica.resumenExploracionFisica !== undefined &&
+            formDataExploracionFisica.resumenExploracionFisica !== null &&
+            formDataExploracionFisica.resumenExploracionFisica !== '');
+
+    // Preferir formData (sesión) para no perder cambios al remontar la sección V2.
+    if (tieneSesion) {
         if (resumenAutomatico.value) {
-            // Hay hallazgos significativos - siempre cargar el resumen automático
             resumenExploracionFisicaPregunta.value = 'Si';
-            resumenExploracionFisica.value = resumenAutomatico.value;
+            const valorSesion = formDataExploracionFisica.resumenExploracionFisica || '';
+            resumenExploracionFisica.value =
+                !valorSesion || valorSesion === textoDefecto
+                    ? resumenAutomatico.value
+                    : valorSesion;
             formDataExploracionFisica.resumenExploracionFisicaPregunta = 'Si';
-            formDataExploracionFisica.resumenExploracionFisica = resumenAutomatico.value;
+            formDataExploracionFisica.resumenExploracionFisica = resumenExploracionFisica.value;
         } else {
-            // No hay hallazgos - verificar si tiene un valor previo
             const valorPrevio = formDataExploracionFisica.resumenExploracionFisica;
-            
-            // Si el valor previo es el texto por defecto o está vacío, mantener en "No"
             if (!valorPrevio || valorPrevio === textoDefecto) {
                 resumenExploracionFisicaPregunta.value = 'No';
+                resumenExploracionFisica.value = textoDefecto;
             } else {
-                // Si tiene un valor personalizado, mantenerlo
-                resumenExploracionFisicaPregunta.value = formDataExploracionFisica.resumenExploracionFisicaPregunta || 'Si';
+                resumenExploracionFisicaPregunta.value =
+                    formDataExploracionFisica.resumenExploracionFisicaPregunta || 'Si';
                 resumenExploracionFisica.value = valorPrevio;
             }
         }
+    } else if (documentos.currentDocument) {
+        const resumenDoc = documentos.currentDocument.resumenExploracionFisica || '';
+        resumenExploracionFisica.value = resumenDoc;
+        if (resumenAutomatico.value || (resumenDoc && resumenDoc !== textoDefecto)) {
+            resumenExploracionFisicaPregunta.value = 'Si';
+        } else {
+            resumenExploracionFisicaPregunta.value =
+                documentos.currentDocument.resumenExploracionFisicaPregunta || 'No';
+        }
+    } else if (resumenAutomatico.value) {
+        resumenExploracionFisicaPregunta.value = 'Si';
+        resumenExploracionFisica.value = resumenAutomatico.value;
+        formDataExploracionFisica.resumenExploracionFisicaPregunta = 'Si';
+        formDataExploracionFisica.resumenExploracionFisica = resumenAutomatico.value;
+    } else {
+        resumenExploracionFisicaPregunta.value = 'No';
     }
 });
 
@@ -129,18 +154,14 @@ watch(resumenExploracionFisica, (newValue) => {
 });
 
 // Watch para establecer 'Se encuentra clínicamente sano/a' cuando resumenExploracionFisicaPregunta sea 'No' y enfocar textarea cuando sea 'Si'
-watch(resumenExploracionFisicaPregunta, async (newValue) => {
+watch(resumenExploracionFisicaPregunta, async (newValue, oldValue) => {
+    if (oldValue === undefined || oldValue === newValue) return;
     if (newValue === 'No') {
-        formDataExploracionFisica.resumenExploracionFisica = trabajadores.currentTrabajador.sexo === 'Femenino'
-            ? 'Se encuentra clínicamente sana'
-            : 'Se encuentra clínicamente sano';
+        formDataExploracionFisica.resumenExploracionFisica = textoClinicamenteSano.value;
         resumenExploracionFisica.value = formDataExploracionFisica.resumenExploracionFisica;
     }
     if (newValue === 'Si') {
-        // Cargar el resumen automático si hay hallazgos y no hay un resumen personalizado previo
-        const textoDefecto = trabajadores.currentTrabajador.sexo === 'Femenino'
-            ? 'Se encuentra clínicamente sana'
-            : 'Se encuentra clínicamente sano';
+        const textoDefecto = textoClinicamenteSano.value;
         
         // Si el resumen actual es el texto por defecto o está vacío, cargar hallazgos automáticos
         if (resumenAutomatico.value && (!resumenExploracionFisica.value || resumenExploracionFisica.value === textoDefecto)) {
@@ -163,17 +184,16 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
 
 <template>
     <div>
-        <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">Evaluación Exploración Física</h1>
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">RESUMEN</h2>
+        <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Evaluación Exploración Física</h1>
+        <h2 v-if="variant !== 'compact'" class="text-lg font-semibold mb-4 text-gray-700">RESUMEN</h2>
         
-        <!-- Pregunta principal con mejor jerarquía -->
-        <div class="mb-8">
-            <p class="text-lg font-medium mb-4 text-gray-800">¿Hay hallazgos significativos por resumir?</p>
+        <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
+            <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">
+                ¿Hay hallazgos significativos por resumir?
+            </p>
             
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
+            <!-- Botones grandes tipo card (igual que resumen HC) -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- Opción No -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -188,7 +208,6 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
                         v-model="resumenExploracionFisicaPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -207,7 +226,6 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
                     >
                         No
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="resumenExploracionFisicaPregunta === 'No'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -218,7 +236,6 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
                     </div>
                 </label>
 
-                <!-- Opción Si -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -233,7 +250,6 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
                         v-model="resumenExploracionFisicaPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -252,7 +268,6 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
                     >
                         Sí
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="resumenExploracionFisicaPregunta === 'Si'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -265,7 +280,6 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
             </div>
         </div>
 
-        <!-- Opciones adicionales con transición suave -->
         <transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 transform -translate-y-2"
@@ -274,13 +288,14 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
             leave-from-class="opacity-100 transform translate-y-0"
             leave-to-class="opacity-0 transform -translate-y-2"
         >
-            <div v-if="resumenExploracionFisicaPregunta === 'Si'" class="mt-6">
-                <p class="text-lg font-medium mb-3 text-gray-800">Resumen de hallazgos:</p>
+            <div v-if="resumenExploracionFisicaPregunta === 'Si'" :class="variant === 'compact' ? 'mt-3' : 'mt-6'">
+                <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
+                    Resumen de hallazgos:
+                </p>
                 
-                <!-- Mensaje informativo si hay hallazgos detectados -->
                 <div v-if="resumenAutomatico" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p class="text-sm text-blue-800">
-                        💡 Se han detectado hallazgos en los pasos anteriores. El resumen se ha cargado automáticamente, puede editarlo si lo desea.
+                        Se han detectado hallazgos en los pasos anteriores. El resumen se ha cargado automáticamente, puede editarlo si lo desea.
                     </p>
                 </div>
                 
@@ -289,7 +304,7 @@ watch(resumenExploracionFisicaPregunta, async (newValue) => {
                         ref="textareaHallazgos"
                         class="w-full p-3 border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200 min-h-[120px] resize-y"
                         v-model="resumenExploracionFisica"
-                        placeholder="Describa el resumen de los hallazgos..."
+                        placeholder="Describa los hallazgos relevantes..."
                         required
                     ></textarea>
                 </div>

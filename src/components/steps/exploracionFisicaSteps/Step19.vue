@@ -1,59 +1,74 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import HallazgoSiNoChips from './HallazgoSiNoChips.vue';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const tobillosPiesPregunta = ref('No');
 const tobillosPies = ref('');
-
-// Referencia al textarea
 const textareaHallazgos = ref(null);
 
 onMounted(() => {
-    if (documentos.currentDocument) {
-        // Si se está editando un documento, usa los valores existentes
+    // Preferir formData (sesión) para no perder cambios al remontar la sección V2.
+    if (formDataExploracionFisica.tobillosPiesPregunta !== undefined && formDataExploracionFisica.tobillosPiesPregunta !== null && formDataExploracionFisica.tobillosPiesPregunta !== '') {
+        tobillosPiesPregunta.value = formDataExploracionFisica.tobillosPiesPregunta;
+        tobillosPies.value = formDataExploracionFisica.tobillosPies || '';
+    } else if (formDataExploracionFisica.tobillosPies !== undefined && formDataExploracionFisica.tobillosPies !== null && formDataExploracionFisica.tobillosPies !== '') {
+        tobillosPies.value = formDataExploracionFisica.tobillosPies;
+        tobillosPiesPregunta.value = formDataExploracionFisica.tobillosPiesPregunta || (formDataExploracionFisica.tobillosPies !== 'Sin hallazgos' ? 'Si' : 'No');
+    } else if (documentos.currentDocument) {
         tobillosPiesPregunta.value = documentos.currentDocument.tobillosPiesPregunta || 'No';
         tobillosPies.value = documentos.currentDocument.tobillosPies || '';
     } else {
-        // Si es un documento nuevo, usa valores predeterminados o lo que ya exista en formData
         tobillosPiesPregunta.value = formDataExploracionFisica.tobillosPiesPregunta || 'No';
         tobillosPies.value = formDataExploracionFisica.tobillosPies || '';
     }
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para tobillosPiesPregunta
     if (!formDataExploracionFisica.tobillosPiesPregunta) {
         formDataExploracionFisica.tobillosPiesPregunta = tobillosPiesPregunta.value;
     }
-
     if (!formDataExploracionFisica.tobillosPies) {
         formDataExploracionFisica.tobillosPies = 'Sin hallazgos';
     }
 });
 
-// Sincronizar tobillosPiesPregunta con formData
 watch(tobillosPiesPregunta, (newValue) => {
     formDataExploracionFisica.tobillosPiesPregunta = newValue;
 });
 
-// Sincronizar el contenido del textarea con formData
 watch(tobillosPies, (newValue) => {
     formDataExploracionFisica.tobillosPies = newValue;
 });
 
-// Watch para establecer 'Sin hallazgos' cuando tobillosPiesPregunta sea 'No' y enfocar textarea cuando sea 'Si'
-watch(tobillosPiesPregunta, async (newValue) => {
+watch(tobillosPiesPregunta, async (newValue, oldValue) => {
+    // Solo cambios del usuario (no montaje / remount).
+    if (oldValue === undefined || oldValue === newValue) return;
     if (newValue === 'No') {
         formDataExploracionFisica.tobillosPies = 'Sin hallazgos';
+        tobillosPies.value = 'Sin hallazgos';
     }
     if (newValue === 'Si') {
-        formDataExploracionFisica.tobillosPies = tobillosPies.value;
-        // Esperar a que el DOM se actualice y luego enfocar el textarea
+        const cur = (tobillosPies.value || formDataExploracionFisica.tobillosPies || '').trim();
+        if (cur === 'Sin hallazgos') {
+            tobillosPies.value = '';
+            formDataExploracionFisica.tobillosPies = '';
+        } else {
+            formDataExploracionFisica.tobillosPies = tobillosPies.value || formDataExploracionFisica.tobillosPies;
+        }
         await nextTick();
         if (textareaHallazgos.value) {
             textareaHallazgos.value.focus();
@@ -64,17 +79,23 @@ watch(tobillosPiesPregunta, async (newValue) => {
 
 <template>
     <div>
-        <!-- Jerarquía Visual Mejorada -->
+        <template v-if="variant === 'compact'">
+            <HallazgoSiNoChips
+                label="TOBILLOS-PIES"
+                question="¿Presencia de hallazgos significativos?"
+                v-model="tobillosPiesPregunta"
+                v-model:especificar="formDataExploracionFisica.tobillosPies"
+                placeholder="Describa los hallazgos encontrados..."
+            />
+        </template>
+        <template v-else>
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Extremidades Inferiores</h1>
         <h2 class="text-lg font-semibold mb-4 text-gray-700">TOBILLOS-PIES</h2>
         
-        <!-- Pregunta principal con mejor jerarquía -->
         <div class="mb-8">
             <p class="text-lg font-medium mb-4 text-gray-800">¿Presencia de hallazgos significativos?</p>
             
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- Opción No -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -89,7 +110,6 @@ watch(tobillosPiesPregunta, async (newValue) => {
                         v-model="tobillosPiesPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -108,7 +128,6 @@ watch(tobillosPiesPregunta, async (newValue) => {
                     >
                         No
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="tobillosPiesPregunta === 'No'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -119,7 +138,6 @@ watch(tobillosPiesPregunta, async (newValue) => {
                     </div>
                 </label>
 
-                <!-- Opción Si -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -134,7 +152,6 @@ watch(tobillosPiesPregunta, async (newValue) => {
                         v-model="tobillosPiesPregunta" 
                         class="sr-only" 
                     />
-                    <!-- Icono -->
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -153,7 +170,6 @@ watch(tobillosPiesPregunta, async (newValue) => {
                     >
                         Sí
                     </span>
-                    <!-- Indicador de selección -->
                     <div 
                         v-if="tobillosPiesPregunta === 'Si'"
                         class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
@@ -166,7 +182,6 @@ watch(tobillosPiesPregunta, async (newValue) => {
             </div>
         </div>
 
-        <!-- Opciones adicionales con transición suave -->
         <transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 transform -translate-y-2"
@@ -188,5 +203,6 @@ watch(tobillosPiesPregunta, async (newValue) => {
                 </div>
             </div>
         </transition>
+        </template>
     </div>
 </template>

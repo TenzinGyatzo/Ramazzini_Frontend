@@ -1,86 +1,98 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted } from 'vue';
-import { useTrabajadoresStore } from '@/stores/trabajadores';
+import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import SiNoChips from './SiNoChips.vue';
 
-const trabajadores = useTrabajadoresStore();
-const { formDataCertificado } = useFormDataStore();
+const TEXTO_SIN_IMPEDIMENTO =
+  'no presenta impedimento físico para desarrollar el puesto que actualmente solicita';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
+
+const formDataStore = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valor local para la pregunta principal
 const impedimentosFisicosPregunta = ref('No');
-const impedimentosFisicos = ref ('');
+const impedimentosFisicos = ref('');
+
+function syncToStore(texto) {
+  formDataStore.formDataCertificado = {
+    ...formDataStore.formDataCertificado,
+    impedimentosFisicos: texto,
+  };
+}
 
 onMounted(() => {
-    if (documentos.currentDocument) {
-        if (documentos.currentDocument.impedimentosFisicos !== 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita')
-        impedimentosFisicos.value = documentos.currentDocument.impedimentosFisicos;
-        impedimentosFisicosPregunta.value = 'Si';
+  const doc = documentos.currentDocument;
+  if (doc?.impedimentosFisicos) {
+    const texto = doc.impedimentosFisicos;
+    const esDefault = texto === TEXTO_SIN_IMPEDIMENTO;
+    if (!esDefault) {
+      impedimentosFisicos.value = texto;
+      impedimentosFisicosPregunta.value = 'Si';
+      syncToStore(texto);
+    } else {
+      impedimentosFisicosPregunta.value = 'No';
+      syncToStore(TEXTO_SIN_IMPEDIMENTO);
     }
+  } else {
+    syncToStore(TEXTO_SIN_IMPEDIMENTO);
+  }
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para impedimentosFisicos
-    if (!formDataCertificado.impedimentosFisicos) {
-        formDataCertificado.impedimentosFisicos =
-            trabajadores.currentTrabajador.sexo === 'Femenino'
-                ? 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita'
-                : 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita';
-    }
+  if (!formDataStore.formDataCertificado.impedimentosFisicos) {
+    syncToStore(TEXTO_SIN_IMPEDIMENTO);
+  }
 });
 
-
-// Sincronizar valores con formData
 watch(impedimentosFisicos, (newValue) => {
-    formDataCertificado.impedimentosFisicos = newValue;
+  if (impedimentosFisicosPregunta.value === 'Si') {
+    syncToStore(newValue);
+  }
 });
 
-// Watch para establecer 'Default' cuando impedimentosFisicos sea 'No'
 watch(impedimentosFisicosPregunta, (newValue) => {
-    if (newValue === 'No') {
-        formDataCertificado.impedimentosFisicos =
-            trabajadores.currentTrabajador.sexo === 'Femenino'
-            ? 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita'
-            : 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita';
-    }
-    if (newValue === 'Si') {
-        formDataCertificado.impedimentosFisicos = impedimentosFisicos.value;
-    }
+  if (newValue === 'No') {
+    syncToStore(TEXTO_SIN_IMPEDIMENTO);
+  }
+  if (newValue === 'Si') {
+    syncToStore(impedimentosFisicos.value || '');
+  }
 });
 </script>
 
 <template>
-    <div>
-        <h1 class="font-bold mb-4 text-gray-800 leading-5">Certificado de Salud</h1>
-        <h2>IMPEDIMENTOS FÍSICOS</h2>
-        <!-- Pregunta principal -->
-        <div class="mb-4">
-            <p class="font-medium mb-1 text-gray-800 leading-5">¿Hay impedimentos físicos que se deban mencionar en el certificado?
-            </p>
-            <div class="flex items-center space-x-6 font-light">
-                <label class="flex items-center space-x-2">
-                    <input type="radio" value="No" v-model="impedimentosFisicosPregunta" class="form-radio accent-emerald-600" />
-                    <span>No</span>
-                </label>
-                <label class="flex items-center space-x-2">
-                    <input type="radio" value="Si" v-model="impedimentosFisicosPregunta" class="form-radio accent-emerald-600" />
-                    <span>Si</span>
-                </label>
-            </div>
-        </div>
+  <div class="certificado-step2">
+    <h1
+      v-if="variant !== 'compact'"
+      class="font-bold mb-4 text-gray-800 leading-5"
+    >
+      Certificado de Salud
+    </h1>
 
-        <!-- Opciones adicionales, solo visibles si el resultado es "Sí" -->
-        <div v-if="impedimentosFisicosPregunta === 'Si'" class="mt-4">
-            <p class="font-medium mb-2 text-gray-800">Resumen:</p>
-            <div class="font-light">
-                <textarea
-                    class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                    v-model="formDataCertificado.impedimentosFisicos"
-                    required
-                >
-                </textarea>
-            </div>
-        </div>
+    <SiNoChips
+      v-model="impedimentosFisicosPregunta"
+      label="Impedimentos físicos"
+      question="¿Hay impedimentos físicos que se deban mencionar en el certificado?"
+      borderless
+    />
+
+    <div v-if="impedimentosFisicosPregunta === 'Si'" class="mt-2">
+      <p class="text-sm font-semibold text-gray-800 mb-1.5">Resumen</p>
+      <textarea
+        class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 min-h-[96px] resize-y"
+        v-model="impedimentosFisicos"
+        placeholder="Describa los impedimentos físicos..."
+        required
+      />
     </div>
+  </div>
 </template>

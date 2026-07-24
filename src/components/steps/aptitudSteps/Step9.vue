@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import DocumentosAPI from '@/api/DocumentosAPI';
@@ -10,6 +10,15 @@ import {
   textoResumenCuestionarioProdromalBreve,
   textoResumenTrastornoLimitePersonalidad,
 } from '@/helpers/resumenesCuestionariosPsicologicosAptitud';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const trabajadores = useTrabajadoresStore();
 const { formDataAptitud } = useFormDataStore();
@@ -205,18 +214,22 @@ watch(
 </script>
 
 <template>
-  <h1 class="font-bold mb-4 text-gray-800 leading-5">Aptitud al Puesto</h1>
-  <div class="mb-4">
-    <h2 class="text-lg font-semibold mb-4 text-gray-800">Alteraciones de Salud</h2>
+  <div>
+  <h1 v-if="variant !== 'compact'" class="font-bold mb-4 text-gray-800 leading-5">Aptitud al Puesto</h1>
+  <div :class="variant === 'compact' ? 'mb-2' : 'mb-4'">
+    <h2 v-if="variant !== 'compact'" class="text-lg font-semibold mb-4 text-gray-800">Alteraciones de Salud</h2>
     <p class="text-sm font-medium mb-1 text-gray-800 leading-4">Descripción de alteraciones encontradas:</p>
-    <div class="font-light mb-4">
+    <div class="font-light mb-2">
       <textarea
-        class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-64"
+        :class="variant === 'compact'
+          ? 'w-full p-2 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 min-h-[14rem]'
+          : 'w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-80'"
         v-model="formDataAptitud.alteracionesSalud"
         :placeholder="textoBase || 'Cargando datos...'"
         required
       >
       </textarea>
     </div>
+  </div>
   </div>
 </template>

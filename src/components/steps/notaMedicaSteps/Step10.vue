@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, computed } from 'vue';
+import { watch, ref, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -13,6 +13,15 @@ import {
 import { useConfirmacionDiagnostica } from '@/composables/useConfirmacionDiagnostica';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -285,12 +294,27 @@ watch(() => userStore.user?._id, () => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <h2 class="text-2xl font-bold text-gray-900">DIAGNÓSTICO SECUNDARIO</h2>
+  <div :class="variant === 'compact' ? 'space-y-2.5' : 'space-y-2'">
+    <h2
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold text-gray-900"
+    >
+      DIAGNÓSTICO SECUNDARIO
+    </h2>
+    <p
+      v-else
+      class="text-sm font-bold text-gray-900 leading-tight"
+    >
+      Diagnóstico secundario
+    </p>
 
     <!-- 0. Pregunta inicial: ¿Registrar una comorbilidad? (No por defecto) -->
     <div>
-      <h3 class="text-base font-medium text-gray-700 mb-2">
+      <h3
+        :class="variant === 'compact'
+          ? 'text-xs text-gray-500 mb-1.5 leading-snug'
+          : 'text-base font-medium text-gray-700 mb-2'"
+      >
         ¿Registrar una comorbilidad?
       </h3>
       <div class="grid grid-cols-2 gap-3 mb-1">
@@ -337,7 +361,11 @@ watch(() => userStore.user?._id, () => {
     <div v-if="registrarComorbilidad === 1" class="space-y-6">
       <!-- Primera vez diagnóstico 2 (SIRES_NOM024) -->
       <div v-if="showSiresUI">
-        <h3 class="text-base font-medium text-gray-700 mb-2">
+        <h3
+          :class="variant === 'compact'
+            ? 'text-xs font-medium text-gray-600 mb-1.5'
+            : 'text-base font-medium text-gray-700 mb-2'"
+        >
           Primera vez diagnóstico 2 <span class="text-red-500">*</span>
         </h3>
         <div class="grid grid-cols-2 gap-3 mb-1">
@@ -388,9 +416,14 @@ watch(() => userStore.user?._id, () => {
           :required="true"
           :trabajadorId="trabajadores.currentTrabajadorId"
           :fechaConsulta="fechaNotaMedica"
+          :dense="variant === 'compact'"
           placeholder="Buscar segundo diagnóstico..."
         />
-        <p class="mt-1 text-xs text-gray-600">
+        <p
+          :class="variant === 'compact'
+            ? 'mt-1 text-xs text-gray-500'
+            : 'mt-1 text-xs text-gray-600'"
+        >
           Padecimiento distinto al diagnóstico principal que también está presente.
         </p>
         <Transition name="fade">

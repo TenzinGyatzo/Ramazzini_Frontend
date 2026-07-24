@@ -1,7 +1,17 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataHistoriaClinica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -57,17 +67,21 @@ watch(autoinmunes, async (newValue) => {
 
 <template>
     <div>
-        <!-- Jerarquía Visual Mejorada -->
+        <template v-if="variant === 'compact'">
+            <AntecedenteSiNoChips
+                label="AUTOINMUNES"
+                question="¿Antecedentes de enfermedades autoinmunes en la familia?"
+                v-model="autoinmunes"
+                v-model:especificar="formDataHistoriaClinica.autoinmunesEspecificar"
+                placeholder="Ej: Madre, Padre, Abuelo Materno, etc"
+            />
+        </template>
+        <template v-else>
         <h1 class="text-2xl font-bold mb-4 text-gray-900">Antecedentes Heredofamiliares</h1>
         <h2 class="text-lg font-semibold mb-4 text-gray-700">AUTOINMUNES</h2>
-        
-        <!-- Pregunta principal con mejor jerarquía -->
         <div class="mb-8">
             <p class="text-lg font-medium mb-4 text-gray-800">¿Antecedentes de enfermedades autoinmunes en la familia?</p>
-            
-            <!-- Diseño de Radio Buttons más Visual tipo Card -->
             <div class="grid grid-cols-2 gap-3">
-                <!-- Opción No -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -76,13 +90,7 @@ watch(autoinmunes, async (newValue) => {
                             : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
                     ]"
                 >
-                    <input 
-                        type="radio" 
-                        value="No" 
-                        v-model="autoinmunes" 
-                        class="sr-only" 
-                    />
-                    <!-- Icono -->
+                    <input type="radio" value="No" v-model="autoinmunes" class="sr-only" />
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -98,21 +106,13 @@ watch(autoinmunes, async (newValue) => {
                             'text-base font-semibold transition-colors duration-200',
                             autoinmunes === 'No' ? 'text-emerald-700' : 'text-gray-700'
                         ]"
-                    >
-                        No
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="autoinmunes === 'No'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
+                    >No</span>
+                    <div v-if="autoinmunes === 'No'" class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                         </svg>
                     </div>
                 </label>
-
-                <!-- Opción Si -->
                 <label 
                     :class="[
                         'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -121,13 +121,7 @@ watch(autoinmunes, async (newValue) => {
                             : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
                     ]"
                 >
-                    <input 
-                        type="radio" 
-                        value="Si" 
-                        v-model="autoinmunes" 
-                        class="sr-only" 
-                    />
-                    <!-- Icono -->
+                    <input type="radio" value="Si" v-model="autoinmunes" class="sr-only" />
                     <div 
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
@@ -143,14 +137,8 @@ watch(autoinmunes, async (newValue) => {
                             'text-base font-semibold transition-colors duration-200',
                             autoinmunes === 'Si' ? 'text-emerald-700' : 'text-gray-700'
                         ]"
-                    >
-                        Sí
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="autoinmunes === 'Si'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
+                    >Sí</span>
+                    <div v-if="autoinmunes === 'Si'" class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                         </svg>
@@ -158,8 +146,6 @@ watch(autoinmunes, async (newValue) => {
                 </label>
             </div>
         </div>
-
-        <!-- Opciones adicionales con transición suave -->
         <transition
             enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 transform -translate-y-2"
@@ -182,5 +168,6 @@ watch(autoinmunes, async (newValue) => {
                 </div>
             </div>
         </transition>
+        </template>
     </div>
 </template>

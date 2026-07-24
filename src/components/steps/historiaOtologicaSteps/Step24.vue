@@ -1,8 +1,18 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted } from 'vue';
+import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 
 const { formDataHistoriaOtologica } = useFormDataStore();
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
+
 
 // Valor local para la pregunta principal
 const otoscopiaOidoDerecho = ref('PERMEABLE');
@@ -43,11 +53,12 @@ watch(otoscopiaOidoIzquierdo, (newValue) => {
 <template>
     <div>
         <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-6 text-gray-900">OTOSCOPIA</h1>
+        <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">OTOSCOPIA</h1>
+        <p v-else class="text-sm font-semibold mb-2 text-gray-800">OTOSCOPIA</p>
         
         <!-- Sección Oído Derecho -->
-        <div class="mb-8">
-            <h2 class="text-lg font-semibold mb-4 text-gray-700">Oído Derecho</h2>
+        <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
+            <h2 :class="variant === 'compact' ? 'text-sm font-semibold mb-2 text-gray-800' : 'text-lg font-semibold mb-4 text-gray-700'">Oído Derecho</h2>
             
             <!-- Pregunta principal con mejor jerarquía -->
             <div class="mb-6">
@@ -127,7 +138,7 @@ watch(otoscopiaOidoIzquierdo, (newValue) => {
 
         <!-- Sección Oído Izquierdo -->
         <div class="mb-8">
-            <h2 class="text-lg font-semibold mb-4 text-gray-700">Oído Izquierdo</h2>
+            <h2 :class="variant === 'compact' ? 'text-sm font-semibold mb-2 text-gray-800' : 'text-lg font-semibold mb-4 text-gray-700'">Oído Izquierdo</h2>
             
             <!-- Pregunta principal con mejor jerarquía -->
             <div class="mb-6">

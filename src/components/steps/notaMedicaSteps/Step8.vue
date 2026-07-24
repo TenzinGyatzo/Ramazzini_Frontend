@@ -1,7 +1,16 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -78,8 +87,24 @@ const showConditionalFields = computed(() => !seDesconoceGlucemia.value);
 
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-900 mb-4 uppercase">Glucemia</h2>
-    <p class="text-sm text-gray-600 mb-4">Marque "Se desconoce" si no se registró el dato.</p>
+    <h2
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
+    >
+      Glucemia
+    </h2>
+    <p
+      v-if="variant !== 'compact'"
+      class="text-sm text-gray-600 mb-4"
+    >
+      Marque "Se desconoce" si no se registró el dato.
+    </p>
+    <p
+      v-else
+      class="text-xs text-gray-600 mb-2"
+    >
+      Marque "Se desconoce" si no se registró el dato.
+    </p>
 
     <div class="mb-6">
       <label for="glucemia">Glucemia (mg/dl) <span class="text-red-500">*</span></label>

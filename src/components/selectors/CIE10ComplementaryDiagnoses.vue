@@ -287,13 +287,17 @@ onUnmounted(() => {
     </div>
 
     <!-- Empty State -->
-    <div v-else class="py-5 text-center border-2 border-dashed border-emerald-100 rounded-lg">
-      <div class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2">
+    <div v-else class="py-4 text-center border-2 border-dashed border-emerald-100 rounded-lg">
+      <div class="w-10 h-4 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2">
         <i class="fas fa-notes-medical text-emerald-300 text-lg"></i>
       </div>
       <p class="text-xs text-emerald-600 font-medium">Sin diagnósticos complementarios</p>
       <p class="text-xs text-gray-400 mt-1">Puedes agregar hasta 5 códigos adicionales</p>
     </div>
+
+    <p class="text-xs text-gray-500 leading-snug">
+      Condiciones asociadas al diagnóstico principal que ayudan a describir mejor el cuadro clínico.
+    </p>
   </div>
 </template>
 

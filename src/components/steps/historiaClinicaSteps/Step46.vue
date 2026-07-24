@@ -1,8 +1,17 @@
 <script setup>
-    import { watch, ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
+    import { watch, ref, onMounted, onUnmounted, nextTick, computed, toRefs } from 'vue';
     import { useTrabajadoresStore } from '@/stores/trabajadores';
     import { useFormDataStore } from '@/stores/formDataStore';
     import { useDocumentosStore } from '@/stores/documentos';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
     
     const trabajadores = useTrabajadoresStore();
     const { formDataHistoriaClinica } = useFormDataStore();
@@ -153,11 +162,11 @@
     <template>
         <div>
             <!-- Jerarquía Visual Mejorada -->
-            <h1 class="text-2xl font-bold mb-4 text-gray-900">Resumen Historia Clínica</h1>
+            <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Resumen Historia Clínica</h1>
             
             <!-- Pregunta principal con mejor jerarquía -->
-            <div class="mb-8">
-                <p class="text-lg font-medium mb-4 text-gray-800">¿Hay hallazgos significativos por resumir?</p>
+            <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
+                <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿Hay hallazgos significativos por resumir?</p>
                 
                 <!-- Diseño de Radio Buttons más Visual tipo Card -->
                 <div class="grid grid-cols-2 gap-3">
@@ -262,9 +271,10 @@
                 leave-from-class="opacity-100 transform translate-y-0"
                 leave-to-class="opacity-0 transform -translate-y-2"
             >
-                <div v-if="resumenHistoriaClinicaPregunta === 'Si'" class="mt-6">
-                    <p class="text-lg font-medium mb-3 text-gray-800">Resumen de hallazgos:</p>
-                    
+                <div v-if="resumenHistoriaClinicaPregunta === 'Si'" :class="variant === 'compact' ? 'mt-3' : 'mt-6'">
+                    <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
+                        Resumen de hallazgos:
+                    </p>
                     <!-- Mensaje informativo si hay hallazgos detectados -->
                     <div v-if="resumenAutomatico" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <p class="text-sm text-blue-800">

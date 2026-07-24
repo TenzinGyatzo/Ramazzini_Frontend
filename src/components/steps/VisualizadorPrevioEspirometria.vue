@@ -8,6 +8,11 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
+import { usePeSectionsV2 } from '@/composables/usePeSectionsV2';
+import {
+  getPeSectionIndex,
+  legacyStepToSectionIndex,
+} from '@/helpers/peSections';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -15,10 +20,40 @@ const formData = useFormDataStore();
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
+const { peSectionsV2Enabled } = usePeSectionsV2();
+
+const resolveNavStep = (legacyStep) => {
+  if (peSectionsV2Enabled.value) {
+    return legacyStepToSectionIndex(legacyStep);
+  }
+  return legacyStep;
+};
 
 const goToStep = (stepNumber) => {
-  steps.goToStep(stepNumber);
+  steps.goToStep(resolveNavStep(stepNumber));
 };
+
+const isActiveLegacyStep = (legacyStep) => {
+  if (peSectionsV2Enabled.value) return false;
+  return steps.currentStep === legacyStep;
+};
+
+const isActiveSection = (sectionId) => {
+  if (!peSectionsV2Enabled.value) return false;
+  return steps.currentStep === getPeSectionIndex(sectionId);
+};
+
+/** Outline por fila (solo V1 legacy). */
+const rowOutlineClass = (legacyStep) =>
+  isActiveLegacyStep(legacyStep)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
+
+/** Outline por bloque de sección (solo V2). */
+const sectionOutlineClass = (sectionId) =>
+  isActiveSection(sectionId)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
 
 </script>
 
@@ -48,7 +83,7 @@ const goToStep = (stepNumber) => {
       <!-- Fecha -->
       <div 
         class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
+        :class="[sectionOutlineClass('fecha'), rowOutlineClass(1)]"
         @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataPrevioEspirometria.fechaPrevioEspirometria) }}</span></p>
@@ -97,7 +132,7 @@ const goToStep = (stepNumber) => {
         <!-- Columna izquierda -->
         <div class="w-full md:w-[calc(50%-0.25rem)]">
           <!-- Factores de riesgo respiratorio 2 - 6 -->
-          <div class="mb-4">
+          <div class="mb-4" :class="sectionOutlineClass('factoresRiesgo')">
             <h2 class="text-lg font-medium mb-1 text-center">FACTORES DE RIESGO RESPIRATORIO</h2>
             <table class="table-auto w-full border-collapse border border-gray-200">
               <thead>
@@ -108,7 +143,7 @@ const goToStep = (stepNumber) => {
               </thead>
               <tbody>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 2 }">
+                :class="rowOutlineClass(2)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">TABAQUISMO</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.tabaquismo === 'FUMA' ? 'text-red-600 font-medium' : formData.formDataPrevioEspirometria.tabaquismo === 'EXFUMADOR' ? 'text-orange-600 font-medium' : ''">
@@ -120,28 +155,28 @@ const goToStep = (stepNumber) => {
                     {{ formData.formDataPrevioEspirometria.cigarrosSemana }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(3)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 3 }">
+                :class="rowOutlineClass(3)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">EXPOSICIÓN A HUMOS Y BIOMASA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.exposicionHumosBiomasa === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.exposicionHumosBiomasa }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(4)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 4 }">
+                :class="rowOutlineClass(4)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">EXPOSICIÓN A POLVOS</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.exposicionLaboralPolvos === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.exposicionLaboralPolvos }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(5)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 5 }">
+                :class="rowOutlineClass(5)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">EXP. VAPORES Y GASES IRRITANTES</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.exposicionVaporesGasesIrritantes === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.exposicionVaporesGasesIrritantes }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(6)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 6 }">
+                :class="rowOutlineClass(6)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">TUBERC./INFEC. RESPIRATORIAS</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.antecedentesTuberculosisInfeccionesRespiratorias === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -152,7 +187,7 @@ const goToStep = (stepNumber) => {
           </div>
 
           <!-- Antecedentes médicos relevantes 13 - 16 -->
-          <div class="mb-4">
+          <div class="mb-4" :class="sectionOutlineClass('antecedentes')">
             <h2 class="text-lg font-medium mb-1 text-center">ANTECEDENTES MÉDICOS RELEVANTES</h2>
             <table class="table-auto w-full border-collapse border border-gray-200">
               <thead>
@@ -163,28 +198,28 @@ const goToStep = (stepNumber) => {
               </thead>
               <tbody>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(13)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 13 }">
+                :class="rowOutlineClass(13)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">ASMA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.asma === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.asma }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(14)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 14 }">
+                :class="rowOutlineClass(14)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">EPOC O BRONQUITIS CRÓNICA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.epocBronquitisCronica === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.epocBronquitisCronica }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(15)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 15 }">
+                :class="rowOutlineClass(15)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">FIBROSIS PULMONAR</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.fibrosisPulmonar === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.fibrosisPulmonar }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(16)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 16 }">
+                :class="rowOutlineClass(16)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">APNEA DEL SUEÑO</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.apneaSueno === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -195,7 +230,7 @@ const goToStep = (stepNumber) => {
           </div>
 
           <!-- Contraindicaciones relativas 18 - 22 -->
-          <div class="mb-4">
+          <div class="mb-4" :class="sectionOutlineClass('contraindRelativas')">
             <h2 class="text-lg font-medium mb-1 text-center">CONTRAINDICACIONES RELATIVAS</h2>
             <table class="table-auto w-full border-collapse border border-gray-200">
               <thead>
@@ -206,35 +241,35 @@ const goToStep = (stepNumber) => {
               </thead>
               <tbody>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(18)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 18 }">
+                :class="rowOutlineClass(18)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">CIRUGÍA RECIENTE</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.cirugiaReciente === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.cirugiaReciente }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(19)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 19 }">
+                :class="rowOutlineClass(19)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">INFECCIÓN RESPIRATORIA ACTIVA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.infeccionRespiratoriaActiva === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.infeccionRespiratoriaActiva }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(20)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 20 }">
+                :class="rowOutlineClass(20)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">EMBARAZO COMPLICADO</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.embarazoComplicado === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.embarazoComplicado }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(21)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 21 }">
+                :class="rowOutlineClass(21)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">DERRAME PLEURAL</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.derramePleural === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.derramePleural }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(22)" style="height: 1.75rem;"
-                :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 22 }">
+                :class="rowOutlineClass(22)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">NEUMOTÓRAX</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.neumotorax === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -248,7 +283,7 @@ const goToStep = (stepNumber) => {
         <!-- Columna derecha -->
         <div class="w-full md:w-[calc(50%-0.25rem)]">
           <!-- Síntomas respiratorios 7 - 12 -->
-          <div class="mb-4">
+          <div class="mb-4" :class="sectionOutlineClass('sintomas')">
             <h2 class="text-lg font-medium mb-1 text-center">SÍNTOMAS RESPIRATORIOS</h2>
             <table class="table-auto w-full border-collapse border border-gray-200">
               <thead>
@@ -259,42 +294,42 @@ const goToStep = (stepNumber) => {
               </thead>
               <tbody>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(7)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 7 }">
+                  :class="rowOutlineClass(7)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">TOS CRÓNICA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.tosCronica === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.tosCronica }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(8)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 8 }">
+                  :class="rowOutlineClass(8)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">EXPECTORACIÓN FRECUENTE</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.expectoracionFrecuente === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.expectoracionFrecuente }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(9)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 9 }">
+                  :class="rowOutlineClass(9)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">DISNEA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.disnea === 'EN REPOSO' ? 'text-red-600 font-medium' : formData.formDataPrevioEspirometria.disnea === 'AL ESFUERZO' ? 'text-orange-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.disnea }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(10)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 10 }">
+                  :class="rowOutlineClass(10)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">SIBILANCIAS</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.sibilancias === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.sibilancias }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(11)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 11 }">
+                  :class="rowOutlineClass(11)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">HEMOPTISIS</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.hemoptisis === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.hemoptisis }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(12)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 12 }">
+                  :class="rowOutlineClass(12)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">OTROS SÍNTOMAS</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.otrosSintomas && formData.formDataPrevioEspirometria.otrosSintomas !== 'NO' ? 'text-red-600 font-medium' : ''">
@@ -306,7 +341,7 @@ const goToStep = (stepNumber) => {
 
           <!-- Medicamentos actuales 17 -->
           <div class="mb-4" 
-          :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 17 }">
+          :class="[sectionOutlineClass('antecedentes'), rowOutlineClass(17)]">
             <h2 class="text-lg font-medium mb-1 text-center">MEDICAMENTOS ACTUALES</h2>
             <table class="table-auto w-full border-collapse border border-gray-200">
               <thead>
@@ -332,7 +367,7 @@ const goToStep = (stepNumber) => {
           </div>
 
           <!-- Contraindicaciones absolutas 23 - 27 -->
-          <div class="mb-4">
+          <div class="mb-4" :class="sectionOutlineClass('contraindAbsolutas')">
             <h2 class="text-lg font-medium mb-1 text-center">CONTRAINDICACIONES ABSOLUTAS</h2>
             <table class="table-auto w-full border-collapse border border-gray-200">
               <thead>
@@ -343,35 +378,35 @@ const goToStep = (stepNumber) => {
               </thead>
               <tbody>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(23)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 23 }">
+                  :class="rowOutlineClass(23)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">IAM/ANGINA INESTABLE</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.infartoAgudoAnginaInestable === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.infartoAgudoAnginaInestable }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(24)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 24 }">
+                  :class="rowOutlineClass(24)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">ANEURISMA AÓRTICO</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.aneurismaAorticoConocido === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.aneurismaAorticoConocido }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(25)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 25 }">
+                  :class="rowOutlineClass(25)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">INESTABILIDAD HEMODINÁMICA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.inestabilidadHemodinamicaGrave === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.inestabilidadHemodinamicaGrave }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(26)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 26 }">
+                  :class="rowOutlineClass(26)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">HIPERTENSIÓN INTRACRANEAL</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.hipertensionIntracraneal === 'SI' ? 'text-red-600 font-medium' : ''">
                     {{ formData.formDataPrevioEspirometria.hipertensionIntracraneal }}</td>
                 </tr>
                 <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(27)" style="height: 1.75rem;"
-                  :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 27 }">
+                  :class="rowOutlineClass(27)">
                   <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">DESPRENDIMIENTO DE RETINA</td>
                   <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300"
                     :class="formData.formDataPrevioEspirometria.desprendimientoAgudoRetina === 'SI' ? 'text-red-600 font-medium' : ''">
@@ -385,7 +420,7 @@ const goToStep = (stepNumber) => {
     </div>
 
     <!-- Resultado cuestionario -->
-    <div class="w-full" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 28 }">
+    <div class="w-full" :class="[sectionOutlineClass('resultado'), rowOutlineClass(28)]">
       <h2 class="text-lg font-medium mb-1 text-center">RESULTADO DEL CUESTIONARIO</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>

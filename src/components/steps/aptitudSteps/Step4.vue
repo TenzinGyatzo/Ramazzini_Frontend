@@ -1,97 +1,117 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { onMounted, toRefs, computed } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { useFormDataStore } from '@/stores/formDataStore';
 
-const { formDataAptitud } = useFormDataStore();
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
+const isCompact = computed(() => variant.value === 'compact');
 
+const labelClass = computed(() =>
+  isCompact.value
+    ? 'block text-sm font-medium text-gray-800 mb-1'
+    : 'block text-base font-medium leading-5 text-gray-800 mb-1',
+);
+const inputClass = computed(() =>
+  isCompact.value
+    ? 'w-full p-2 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
+    : 'w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500',
+);
+const fieldClass = computed(() => (isCompact.value ? 'mb-2' : 'mb-6'));
+
+const { formDataAptitud } = useFormDataStore();
 const today = format(new Date(), 'yyyy-MM-dd');
 
-onMounted(() => {
-    formDataAptitud.evaluacionAdicional3 = formDataAptitud.evaluacionAdicional3 || '';
-    formDataAptitud.fechaEvaluacionAdicional3 = formatDateYYYYMMDD(formDataAptitud.fechaEvaluacionAdicional3) || today;
-    formDataAptitud.resultadosEvaluacionAdicional3 = formDataAptitud.resultadosEvaluacionAdicional3 || '';
-});
-
 const evaluacionSugerencias = [
-    'Tipo de Sangre',
-    'Audiometría',
-    'Espirometría',
-    'Estudios de laboratorio',
-    'Rx simple de tórax',
-    'Rx columna lumbar',
-    'Rx rodillas',
-    'Electrocardiograma',
+  'Tipo de Sangre',
+  'Audiometría',
+  'Espirometría',
+  'Estudios de laboratorio',
+  'Rx simple de tórax',
+  'Rx columna lumbar',
+  'Rx rodillas',
+  'Electrocardiograma',
 ];
 
+onMounted(() => {
+  const nombre = (formDataAptitud.evaluacionAdicional3 || '').trim();
+  const resultados = (formDataAptitud.resultadosEvaluacionAdicional3 || '').trim();
+  const fechaRaw = formDataAptitud.fechaEvaluacionAdicional3;
+
+  if (fechaRaw) {
+    formDataAptitud.fechaEvaluacionAdicional3 = formatDateYYYYMMDD(fechaRaw);
+  } else if (!isCompact.value) {
+    // V1 fullscreen: al visitar el paso, fecha = hoy (comportamiento legacy).
+    formDataAptitud.fechaEvaluacionAdicional3 = today;
+  } else if (nombre || resultados) {
+    // Compact/V2: solo si el slot ya tiene datos; slots vacíos no revelados no se contaminan.
+    formDataAptitud.fechaEvaluacionAdicional3 = today;
+  }
+});
 </script>
 
-
 <template>
-    <div>
-        <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">EVALUACIÓN ADICIONAL 3</h1>
-        
-        <div class="space-y-6">
-            <!-- Campo 1: Nombre de evaluación -->
-            <div class="mb-6">
-                <label for="nombreEvaluacion" class="block text-base font-medium leading-5 text-gray-800 mb-1">
-                    Nombre de evaluación, prueba o estudio
-                </label>
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        name="nombreEvaluacion" 
-                        data-skip-validation
-                        class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        v-model="formDataAptitud.evaluacionAdicional3" 
-                        required
-                        list="evaluaciones-sugerencias"
-                        placeholder="Selecciona o escribe"
-                    />
-                    <!-- Datalist con opciones -->
-                    <datalist id="evaluaciones-sugerencias">
-                        <option v-for="sugerencia in evaluacionSugerencias" :key="sugerencia" :value="sugerencia">
-                            {{ sugerencia }}
-                        </option>
-                    </datalist>
-                </div>
-            </div>
+  <div>
+    <h1
+      v-if="!isCompact"
+      class="text-2xl font-bold mb-4 text-gray-900"
+    >EVALUACIÓN ADICIONAL 3</h1>
+    <h2
+      v-else
+      class="text-sm font-semibold mb-2 text-gray-800"
+    >EVALUACIÓN ADICIONAL 3</h2>
 
-            <!-- Campo 2: Fecha de resultados -->
-            <div class="mb-6">
-                <label for="fechaEvaluacion" class="block text-base font-medium leading-5 text-gray-800 mb-1">
-                    Fecha de resultados
-                </label>
-                <div class="relative">
-                    <input 
-                        type="date" 
-                        name="fechaEvaluacion" 
-                        class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        v-model="formDataAptitud.fechaEvaluacionAdicional3" 
-                        required
-                    />
-                </div>
-            </div>
+    <div :class="isCompact ? 'space-y-2' : 'space-y-6'">
+      <div :class="fieldClass">
+        <label :class="labelClass">
+          Nombre de evaluación, prueba o estudio
+        </label>
+        <input
+          type="text"
+          name="nombreEvaluacion3"
+          data-skip-validation
+          :class="inputClass"
+          v-model="formDataAptitud.evaluacionAdicional3"
+          :list="'evaluaciones-sugerencias-3'"
+          placeholder="Selecciona o escribe"
+        />
+        <datalist :id="'evaluaciones-sugerencias-3'">
+          <option v-for="sugerencia in evaluacionSugerencias" :key="sugerencia" :value="sugerencia" />
+        </datalist>
+      </div>
 
-            <!-- Campo 3: Resumen de resultados -->
-            <div class="mb-6">
-                <label for="resultadosEvaluacion" class="block text-base font-medium leading-5 text-gray-800 mb-1">
-                    Resumen de resultados y/o alteraciones encontradas
-                </label>
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        name="resultadosEvaluacion" 
-                        data-skip-validation
-                        class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        v-model="formDataAptitud.resultadosEvaluacionAdicional3" 
-                        required
-                        placeholder="Describe el resultado"
-                    />
-                </div>
-            </div>
-        </div>
+      <div :class="fieldClass">
+        <label :class="labelClass">
+          Fecha de resultados
+        </label>
+        <input
+          type="date"
+          name="fechaEvaluacion3"
+          :class="inputClass"
+          v-model="formDataAptitud.fechaEvaluacionAdicional3"
+        />
+      </div>
+
+      <div :class="isCompact ? 'mb-1' : 'mb-6'">
+        <label :class="labelClass">
+          Resumen de resultados y/o alteraciones encontradas
+        </label>
+        <input
+          type="text"
+          name="resultadosEvaluacion3"
+          data-skip-validation
+          :class="inputClass"
+          v-model="formDataAptitud.resultadosEvaluacionAdicional3"
+          placeholder="Describe el resultado"
+        />
+      </div>
     </div>
+  </div>
 </template>

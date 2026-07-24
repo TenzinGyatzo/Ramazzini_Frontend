@@ -1,6 +1,15 @@
 <script setup>
-import { watch, ref, onMounted, computed, nextTick } from 'vue';
+import { watch, ref, onMounted, computed, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataPrevioEspirometria } = useFormDataStore();
 
@@ -244,9 +253,9 @@ watch(resultadoCuestionarioPersonalizado, (newValue) => {
 
 <template>
     <div class="dark-mode-input-surface">
-        <!-- Jerarquía Visual Mejorada -->
-        <h1 class="text-2xl font-bold mb-4 text-gray-900">RESULTADO DE CUESTIONARIO</h1>
-        <p class="text-lg font-medium mb-2 text-gray-800">¿Es recomendable realizar la espirometría?</p>
+        <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">RESULTADO DE CUESTIONARIO</h1>
+        <p v-else class="text-sm font-semibold mb-2 text-gray-800">Resultado de cuestionario</p>
+        <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-2 text-gray-800'">¿Es recomendable realizar la espirometría?</p>
         
         <!-- Sección de Evaluación Automática -->
         <div class="mb-6 p-4 rounded-lg" :class="{

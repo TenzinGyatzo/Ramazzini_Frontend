@@ -9,6 +9,8 @@ import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { useNom024Fields } from '@/composables/useNom024Fields';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
+import { useNotaMedicaSectionsV2 } from '@/composables/useNotaMedicaSectionsV2';
+import { legacyStepToSectionIndex } from '@/helpers/notaMedicaSections';
 import {
   isPrimeraVezComorbilidadActiva,
   tieneComorbilidadDiagRegistrada,
@@ -29,10 +31,31 @@ const userStore = useUserStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 const { isSIRES } = useNom024Fields();
 const esMujer = computed(() => trabajadores.currentTrabajador?.sexo === 'Femenino');
+const { nmSectionsV2Enabled } = useNotaMedicaSectionsV2();
 
 const stepMap = computed(() =>
   getNotaMedicaStepMap(isSIRES.value, esMujer.value),
 );
+
+const resolveNavStep = (legacyStep) => {
+  if (legacyStep == null) return 1;
+  if (nmSectionsV2Enabled.value) {
+    return legacyStepToSectionIndex(legacyStep, isSIRES.value, esMujer.value);
+  }
+  return legacyStep;
+};
+
+const isNavActive = (legacyStep) => {
+  if (legacyStep == null) return false;
+  return steps.currentStep === resolveNavStep(legacyStep);
+};
+
+const navOutlineClass = (legacyStep, soft = false) => {
+  if (!isNavActive(legacyStep)) return '';
+  return soft
+    ? 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md'
+    : 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md';
+};
 
 const etiquetasRelacionEmbarazo = {
   0: 'Primera Vez',
@@ -70,7 +93,7 @@ async function loadAfiliacionLabels() {
 }
 
 const goToStep = (stepNumber) => {
-  steps.goToStep(stepNumber);
+  steps.goToStep(resolveNavStep(stepNumber));
 };
 
 // Helper functions para extraer código y descripción del formato "CODE - DESCRIPTION"
@@ -164,7 +187,7 @@ const muestraDiagnostico3 = computed(() =>
       <!-- Fecha y Motivo del Examen -->
       <div
         class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
+        :class="navOutlineClass(1)"
         @click="goToStep(1)">
         <p class="flex-1 md:flex-none font-light">Inicial ( <span class="font-medium">{{ formData.formDataNotaMedica.tipoNota === 'Inicial' ? 'X' :
           '&nbsp;' }}</span> )</p>
@@ -207,18 +230,18 @@ const muestraDiagnostico3 = computed(() =>
     <!-- Motivo de consulta -->
     <div v-if="formData.formDataNotaMedica.motivoConsulta" 
       class="w-full mb-1 cursor-pointer" 
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 2 }" @click="goToStep(2)">
+      :class="navOutlineClass(2)" @click="goToStep(2)">
       <p class="text-justify font-medium">
         Motivo de consulta: <span class="font-light">{{ formData.formDataNotaMedica.motivoConsulta }}</span> 
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 2 }" @click="goToStep(2)">
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(2, true)" @click="goToStep(2)">
       + Agregar Motivo de Consulta
     </div>
 
     <!-- Género y Derechohabiencia (SIRES only) -->
     <div v-if="isSIRES" class="w-full mb-1 cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.genero }"
+      :class="navOutlineClass(stepMap.genero)"
       @click="goToStep(stepMap.genero)">
       <p class="text-justify font-medium">
         <template v-if="formData.formDataNotaMedica.genero !== undefined">
@@ -236,23 +259,23 @@ const muestraDiagnostico3 = computed(() =>
     <!-- Antecedentes -->
     <div v-if="formData.formDataNotaMedica.antecedentes" 
       class="w-full mb-1 cursor-pointer" 
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === stepMap.antecedentes }" @click="goToStep(stepMap.antecedentes)">
+      :class="navOutlineClass(stepMap.antecedentes)" @click="goToStep(stepMap.antecedentes)">
       <p class="text-justify font-medium">
         Antecedentes: <span class="font-light">{{ formData.formDataNotaMedica.antecedentes }}</span> 
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.antecedentes }" @click="goToStep(stepMap.antecedentes)">+ Agregar Antecedentes</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.antecedentes, true)" @click="goToStep(stepMap.antecedentes)">+ Agregar Antecedentes</div>
 
     <!-- Exploración Física -->
-    <div v-if="formData.formDataNotaMedica.exploracionFisica" class="w-full mb-1 cursor-pointer" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.exploracion }" @click="goToStep(stepMap.exploracion)">
+    <div v-if="formData.formDataNotaMedica.exploracionFisica" class="w-full mb-1 cursor-pointer" :class="navOutlineClass(stepMap.exploracion)" @click="goToStep(stepMap.exploracion)">
       <p class="text-justify font-medium">
         Exploración Física: <span class="font-light">{{ formData.formDataNotaMedica.exploracionFisica }}</span> 
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.exploracion }" @click="goToStep(stepMap.exploracion)">+ Agregar Exploración Física</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.exploracion, true)" @click="goToStep(stepMap.exploracion)">+ Agregar Exploración Física</div>
 
     <!-- Signos Vitales -->
-    <div v-if="formData.formDataNotaMedica.tensionArterialSistolica || formData.formDataNotaMedica.tensionArterialDiastolica || formData.formDataNotaMedica.frecuenciaCardiaca || formData.formDataNotaMedica.frecuenciaRespiratoria || formData.formDataNotaMedica.temperatura || formData.formDataNotaMedica.saturacionOxigeno" class="w-full mb-1 cursor-pointer" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.signos }"
+    <div v-if="formData.formDataNotaMedica.tensionArterialSistolica || formData.formDataNotaMedica.tensionArterialDiastolica || formData.formDataNotaMedica.frecuenciaCardiaca || formData.formDataNotaMedica.frecuenciaRespiratoria || formData.formDataNotaMedica.temperatura || formData.formDataNotaMedica.saturacionOxigeno" class="w-full mb-1 cursor-pointer" :class="navOutlineClass(stepMap.signos)"
     @click="goToStep(stepMap.signos)">
       <p class="text-justify font-medium">
       Signos Vitales: 
@@ -273,11 +296,11 @@ const muestraDiagnostico3 = computed(() =>
       </template>
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.signos }" @click="goToStep(stepMap.signos)">+ Signos Vitales</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.signos, true)" @click="goToStep(stepMap.signos)">+ Signos Vitales</div>
 
     <!-- Somatometría (SIRES only) -->
     <div v-if="isSIRES" class="w-full mb-1 cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.somatometria }"
+      :class="navOutlineClass(stepMap.somatometria)"
       @click="goToStep(stepMap.somatometria)">
       <p class="text-justify font-medium">
         <template v-if="formData.formDataNotaMedica.peso && formData.formDataNotaMedica.peso !== 999">
@@ -300,7 +323,7 @@ const muestraDiagnostico3 = computed(() =>
 
     <!-- Glucemia (SIRES only) -->
     <div v-if="isSIRES" class="w-full mb-1 cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.glucemia }"
+      :class="navOutlineClass(stepMap.glucemia)"
       @click="goToStep(stepMap.glucemia)">
       <p class="text-justify font-medium">
         <template v-if="formData.formDataNotaMedica.glucemia && formData.formDataNotaMedica.glucemia !== 0">
@@ -319,7 +342,7 @@ const muestraDiagnostico3 = computed(() =>
     <div
       v-if="isSIRES && stepMap.embarazo"
       class="w-full mb-1 cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.embarazo }"
+      :class="navOutlineClass(stepMap.embarazo)"
       @click="goToStep(stepMap.embarazo)"
     >
       <template v-if="formData.formDataNotaMedica.relacionTemporalEmbarazo != null && formData.formDataNotaMedica.relacionTemporalEmbarazo !== -1">
@@ -346,7 +369,7 @@ const muestraDiagnostico3 = computed(() =>
     <div 
       v-if="formData.formDataNotaMedica.codigoCIE10Principal || formData.formDataNotaMedica.relacionTemporal !== undefined && formData.formDataNotaMedica.relacionTemporal !== null || (formData.formDataNotaMedica.codigosCIE10Complementarios && formData.formDataNotaMedica.codigosCIE10Complementarios.length > 0) || formData.formDataNotaMedica.confirmacionDiagnostica" 
       class="w-full mb-1 cursor-pointer" 
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.diagnostico }" 
+      :class="navOutlineClass(stepMap.diagnostico)" 
       @click="goToStep(stepMap.diagnostico)"
     >
     
@@ -375,13 +398,13 @@ const muestraDiagnostico3 = computed(() =>
         Confirmación Diagnóstica: <span class="font-light">{{ formData.formDataNotaMedica.confirmacionDiagnostica ? 'Sí' : 'No' }}</span>
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.diagnostico }" @click="goToStep(stepMap.diagnostico)">+ Agregar Diagnóstico Principal</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.diagnostico, true)" @click="goToStep(stepMap.diagnostico)">+ Agregar Diagnóstico Principal</div>
 
     <!-- Diagnóstico Secundario (Step 7) -->
     <div 
       v-if="muestraDiagnostico2"
       class="w-full mb-1 cursor-pointer" 
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.comorbilidad2 }" 
+      :class="navOutlineClass(stepMap.comorbilidad2)" 
       @click="goToStep(stepMap.comorbilidad2)"
     >
       <!-- Primera vez diagnóstico 2 (SIRES) -->
@@ -409,13 +432,13 @@ const muestraDiagnostico3 = computed(() =>
         </template>
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.comorbilidad2 }" @click="goToStep(stepMap.comorbilidad2)">+ Agregar Diagnóstico Secundario</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.comorbilidad2, true)" @click="goToStep(stepMap.comorbilidad2)">+ Agregar Diagnóstico Secundario</div>
 
     <!-- Diagnóstico 3 (Step 8) -->
     <div 
       v-if="muestraDiagnostico3"
       class="w-full mb-1 cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.comorbilidad3 }"
+      :class="navOutlineClass(stepMap.comorbilidad3)"
       @click="goToStep(stepMap.comorbilidad3)"
     >
       <p v-if="isSIRES && isPrimeraVezComorbilidadActiva(formData.formDataNotaMedica.primeraVezDiagnostico3)" class="text-justify font-medium mb-1">
@@ -428,13 +451,13 @@ const muestraDiagnostico3 = computed(() =>
         Confirmación Diagnóstica 3: <span class="font-light">{{ formData.formDataNotaMedica.confirmacionDiagnostica3 ? 'Sí' : 'No' }}</span>
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.comorbilidad3 }" @click="goToStep(stepMap.comorbilidad3)">+ Agregar Diagnóstico 3</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.comorbilidad3, true)" @click="goToStep(stepMap.comorbilidad3)">+ Agregar Diagnóstico 3</div>
 
     <!-- Tratamiento -->
     <div 
       v-if="formData.formDataNotaMedica.tratamiento && formData.formDataNotaMedica.tratamiento.length > 0"
       class="w-full mb-1 cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.tratamiento }"
+      :class="navOutlineClass(stepMap.tratamiento)"
       @click="goToStep(stepMap.tratamiento)"
     >
       <p class="text-justify font-medium">
@@ -451,13 +474,13 @@ const muestraDiagnostico3 = computed(() =>
         </span>
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.tratamiento }" @click="goToStep(stepMap.tratamiento)">+ Agregar Tratamiento</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.tratamiento, true)" @click="goToStep(stepMap.tratamiento)">+ Agregar Tratamiento</div>
 
     <!-- Recomendaciones -->
     <div 
       v-if="formData.formDataNotaMedica.recomendaciones && formData.formDataNotaMedica.recomendaciones.length > 0"
       class="w-full mb-1 cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepMap.recomendaciones }"
+      :class="navOutlineClass(stepMap.recomendaciones)"
       @click="goToStep(stepMap.recomendaciones)"
     >
       <p class="text-justify font-medium">
@@ -474,17 +497,17 @@ const muestraDiagnostico3 = computed(() =>
       </span>
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.recomendaciones }" @click="goToStep(stepMap.recomendaciones)">+ Agregar Recomendaciones</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.recomendaciones, true)" @click="goToStep(stepMap.recomendaciones)">+ Agregar Recomendaciones</div>
 
     <!-- Observaciones -->
     <div v-if="formData.formDataNotaMedica.observaciones" 
       class="w-full mb-1 cursor-pointer" 
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === stepMap.observaciones }" @click="goToStep(stepMap.observaciones)">
+      :class="navOutlineClass(stepMap.observaciones)" @click="goToStep(stepMap.observaciones)">
       <p class="text-justify font-medium">
         Observaciones: <span class="font-light">{{ formData.formDataNotaMedica.observaciones }}</span> 
       </p>
     </div>
-    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === stepMap.observaciones }" @click="goToStep(stepMap.observaciones)">+ Agregar Observaciones</div>
+    <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.observaciones, true)" @click="goToStep(stepMap.observaciones)">+ Agregar Observaciones</div>
 
   </div>
 </template>

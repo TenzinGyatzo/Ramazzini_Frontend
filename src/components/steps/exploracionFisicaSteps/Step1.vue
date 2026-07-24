@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted, toRefs } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -8,6 +8,15 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -54,12 +63,12 @@ watch(fechaExploracionFisica, (newValue) => {
 
 <template>
   <div>
-    <!-- Jerarquía Visual Mejorada -->
-    <h1 class="text-2xl font-bold mb-4 text-gray-900">Exploración Física</h1>
+    <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Exploración Física</h1>
     
-    <!-- Sección de fecha con mejor espaciado -->
-    <div class="mt-6">
-      <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de Exploración Física</h2>
+    <div :class="variant === 'compact' ? 'mt-1' : 'mt-6'">
+      <h2 :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
+        Fecha de Exploración Física
+      </h2>
       <FormKit 
         type="date" 
         name="fechaExploracionFisica" 

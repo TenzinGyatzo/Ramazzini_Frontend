@@ -8,6 +8,11 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { calcularEdad, calcularAntiguedad, convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
+import { useHcSectionsV2 } from '@/composables/useHcSectionsV2';
+import {
+  getHcSectionIndex,
+  legacyStepToSectionIndex,
+} from '@/helpers/historiaClinicaSections';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -15,6 +20,7 @@ const formDataPinia = useFormDataStore();
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
+const { hcSectionsV2Enabled } = useHcSectionsV2();
 
 /** Evita fallos si el payload o el store aún no son un objeto (p. ej. tras recargar). */
 const historiaClinicaData = computed(() => {
@@ -22,9 +28,49 @@ const historiaClinicaData = computed(() => {
   return raw != null && typeof raw === 'object' ? raw : {};
 });
 
-const goToStep = (stepNumber) => {
-  steps.goToStep(stepNumber);
+const resolveNavStep = (legacyStep) => {
+  if (hcSectionsV2Enabled.value) {
+    return legacyStepToSectionIndex(
+      legacyStep,
+      trabajadores.currentTrabajador?.sexo,
+    );
+  }
+  return legacyStep;
 };
+
+const goToStep = (stepNumber) => {
+  steps.goToStep(resolveNavStep(stepNumber));
+};
+
+/** V1: highlight por fila. V2: no marcar filas (se usa outline de sección). */
+const isActiveLegacyStep = (legacyStep) => {
+  if (hcSectionsV2Enabled.value) return false;
+  const sexo = trabajadores.currentTrabajador?.sexo;
+  if (sexo !== 'Femenino' && legacyStep >= 42 && legacyStep <= 46) {
+    return steps.currentStep + 14 === legacyStep;
+  }
+  return steps.currentStep === legacyStep;
+};
+
+/** V2: outline alrededor del bloque de sección completo. */
+const isActiveSection = (sectionId) => {
+  if (!hcSectionsV2Enabled.value) return false;
+  return (
+    steps.currentStep ===
+    getHcSectionIndex(sectionId, trabajadores.currentTrabajador?.sexo)
+  );
+};
+
+const sectionOutlineClass = (sectionId) =>
+  isActiveSection(sectionId)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
+
+const rowOutlineClass = (legacyStep) =>
+  isActiveLegacyStep(legacyStep)
+    ? 'outline outline-2 outline-yellow-500 rounded-md'
+    : '';
+
 
 const antecedentesHeredoFamiliares = ref([
   { name: 'NEFROPATÍAS', step: 2, key: 'nefropatias', specifyKey: 'nefropatiasEspecificar' },
@@ -98,7 +144,11 @@ const antecedentesLaborales = ref([
       <!-- Fecha y Motivo del Examen -->
       <div
         class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
+        :class="[
+          isActiveLegacyStep(1) || isActiveSection('motivo')
+            ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+            : '',
+        ]"
         @click="goToStep(1)">
         <p class="flex-1 md:flex-none">Ingreso ( {{ historiaClinicaData.motivoExamen === 'Ingreso' ? 'X' :
           '&nbsp;' }} )</p>
@@ -208,8 +258,8 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Antecedentes Heredofamiliares -->
-    <div class="w-full md:w-[calc(50%-0.5rem)]">
-      <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Heredofamiliares</h2>
+    <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('heredofamiliares')">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(2)">Antecedentes Heredofamiliares</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -223,7 +273,7 @@ const antecedentesLaborales = ref([
           <tr v-for="(item, index) in antecedentesHeredoFamiliares" :key="index"
             :class="[
               index % 2 === 0 ? 'bg-gray-50 cursor-pointer' : 'bg-white cursor-pointer',
-              steps.currentStep === item.step ? 'outline outline-2 outline-yellow-500 rounded-md' : ''
+              rowOutlineClass(item.step)
             ]"
             @click="goToStep(item.step)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">{{ item.name }}</td>
@@ -242,8 +292,8 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Antecedentes Personales Patológicos -->
-    <div class="w-full md:w-[calc(50%-0.5rem)]">
-      <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Personales Patológicos</h2>
+    <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('patologicos')">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(12)">Antecedentes Personales Patológicos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -257,7 +307,7 @@ const antecedentesLaborales = ref([
           <tr v-for="(item, index) in antecedentesPersonalesPatologicos" :key="index"
             :class="[
               index % 2 === 0 ? 'bg-gray-50 cursor-pointer' : 'bg-white cursor-pointer',
-              steps.currentStep === item.step ? 'outline outline-2 outline-yellow-500 rounded-md' : ''
+              rowOutlineClass(item.step)
             ]"
             @click="goToStep(item.step)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">{{ item.name }}</td>
@@ -276,8 +326,8 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Antecedentes Personales No Patológicos -->
-    <div class="w-full md:w-[calc(50%-0.5rem)]">
-      <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Personales No Patológicos</h2>
+    <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('noPatologicos')">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(22)">Antecedentes Personales No Patológicos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -291,7 +341,7 @@ const antecedentesLaborales = ref([
           <tr v-for="(item, index) in antecedentesPersonalesNoPatologicos" :key="index"
             :class="[
               index % 2 === 0 ? 'bg-gray-50 cursor-pointer' : 'bg-white cursor-pointer',
-              steps.currentStep === item.step ? 'outline outline-2 outline-yellow-500 rounded-md' : ''
+              rowOutlineClass(item.step)
             ]"
             @click="goToStep(item.step)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">{{ item.name }}</td>
@@ -310,8 +360,8 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Antecedentes Personales No Patológicos Parte 2 -->
-    <div class="w-full md:w-[calc(50%-0.5rem)]">
-      <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Personales No Patológicos</h2>
+    <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('noPatologicos')">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(25)">Antecedentes Personales No Patológicos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -325,7 +375,7 @@ const antecedentesLaborales = ref([
           <tr v-for="(item, index) in antecedentesPersonalesNoPatologicosParte2" :key="index"
             :class="[
               index % 2 === 0 ? 'bg-gray-50 cursor-pointer' : 'bg-white cursor-pointer',
-              steps.currentStep === item.step ? 'outline outline-2 outline-yellow-500 rounded-md' : ''
+              rowOutlineClass(item.step)
             ]"
             @click="goToStep(item.step)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">{{ item.name }}</td>
@@ -344,11 +394,11 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Antecedentes Gineco Obstétricos -->
-    <div v-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="w-full md:w-[calc(50%-0.5rem)]">
-      <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Gineco Obstétricos</h2>
+    <div v-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('ginecoObstetricos')">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(28)">Antecedentes Gineco Obstétricos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 28 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(28)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(28)" @click="goToStep(28)">
             <td class="w-1/2 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               MENARCA
             </td>
@@ -356,7 +406,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.menarca }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 29 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(29)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(29)" @click="goToStep(29)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               DURACIÓN PROMEDIO
             </td>
@@ -364,7 +414,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.duracionPromedio }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 30 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(30)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(30)" @click="goToStep(30)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               FRECUENCIA
             </td>
@@ -372,7 +422,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.frecuencia }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 31 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(31)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(31)" @click="goToStep(31)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               GESTAS
             </td>
@@ -380,7 +430,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.gestas }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 32 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(32)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(32)" @click="goToStep(32)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               PARTOS
             </td>
@@ -388,7 +438,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.partos }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 33 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(33)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(33)" @click="goToStep(33)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               CESÁREAS
             </td>
@@ -396,7 +446,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.cesareas }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 34 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(34)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(34)" @click="goToStep(34)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               ABORTOS
             </td>
@@ -409,11 +459,11 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Antecedentes Gineco Obstétricos Parte 2 -->
-    <div v-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="w-full md:w-[calc(50%-0.5rem)]">
-      <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Gineco Obstétricos</h2>
+    <div v-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('ginecoObstetricos')">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(35)">Antecedentes Gineco Obstétricos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="{ 'outline outline-2 outline-yellow-500 rounded-md': steps.currentStep === 35 }" @click="goToStep(35)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(35)" @click="goToStep(35)">
             <td class="w-1/2 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               F. U. MENSTRUACIÓN
             </td>
@@ -421,7 +471,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.fechaUltimaRegla }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="{ 'outline outline-2 outline-yellow-500 rounded-md': steps.currentStep === 36 }" @click="goToStep(36)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(36)" @click="goToStep(36)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               DOLOR MENSTRUAL
             </td>
@@ -429,7 +479,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.dolorMenstrual }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="{ 'outline outline-2 outline-yellow-500 rounded-md': steps.currentStep === 37 }" @click="goToStep(37)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(37)" @click="goToStep(37)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               EMBARAZO ACTUAL
             </td>
@@ -437,7 +487,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.embarazoActual }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="{ 'outline outline-2 outline-yellow-500 rounded-md': steps.currentStep === 38 }" @click="goToStep(38)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(38)" @click="goToStep(38)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               VIDA SEXUAL ACTIVA
             </td>
@@ -445,7 +495,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.vidaSexualActiva }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="{ 'outline outline-2 outline-yellow-500 rounded-md': steps.currentStep === 39 }" @click="goToStep(39)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(39)" @click="goToStep(39)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               PLANIFICACIÓN FAMILIAR
             </td>
@@ -453,7 +503,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.planificacionFamiliar }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="{ 'outline outline-2 outline-yellow-500 rounded-md': steps.currentStep === 40 }" @click="goToStep(40)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(40)" @click="goToStep(40)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               ÚLTIMO PAPANICOLAOU
             </td>
@@ -461,7 +511,7 @@ const antecedentesLaborales = ref([
               {{ historiaClinicaData.fechaUltimoPapanicolaou }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="{ 'outline outline-2 outline-yellow-500 rounded-md': steps.currentStep === 41 }" @click="goToStep(41)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="rowOutlineClass(41)" @click="goToStep(41)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               ÚLTIMA MASTROGRAFÍA
             </td>
@@ -474,8 +524,8 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Antecedentes Laborales -->
-    <div class="w-full">
-      <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Laborales</h2>
+    <div class="w-full" :class="sectionOutlineClass('laborales')">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(42)">Antecedentes Laborales</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -490,9 +540,7 @@ const antecedentesLaborales = ref([
           <tr v-for="(item, index) in antecedentesLaborales" :key="index"
             :class="[
               index % 2 === 0 ? 'bg-gray-50 cursor-pointer' : 'bg-white cursor-pointer',
-              trabajadores.currentTrabajador?.sexo === 'Masculino' ? 
-          (steps.currentStep + 14 === item.step ? 'outline outline-2 outline-yellow-500 rounded-md' : '') :
-          (steps.currentStep === item.step ? 'outline outline-2 outline-yellow-500 rounded-md' : '')
+              rowOutlineClass(item.step)
             ]"
             @click="goToStep(item.step)">
             <td class="w-1/10 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium text-center">{{ item.number }}</td>
@@ -514,8 +562,8 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Antecedentes de Riesgos de Trabajo -->
-    <div class="w-full md:w-[calc(50%-0.5rem)]" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-sm': (trabajadores.currentTrabajador?.sexo === 'Masculino' ? (steps.currentStep + 14 === 45) : (steps.currentStep === 45)) }">
-      <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Laborales</h2>
+    <div class="w-full md:w-[calc(50%-0.5rem)]" :class="[sectionOutlineClass('laborales'), isActiveLegacyStep(45) ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-sm' : '']">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(45)">Antecedentes Laborales</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
       <tbody>
         <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(45)">
@@ -555,8 +603,8 @@ const antecedentesLaborales = ref([
     </div>
 
     <!-- Resumen de Historia Clínica -->
-    <div class="w-full md:w-[calc(50%-0.5rem)]" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-sm': (trabajadores.currentTrabajador?.sexo === 'Masculino' ? (steps.currentStep + 14 === 46) : (steps.currentStep === 46)) }">
-      <h2 class="text-lg font-medium mb-1 text-center">Resumen de Historia Clínica</h2>
+    <div class="w-full md:w-[calc(50%-0.5rem)]" :class="[sectionOutlineClass('resumen'), isActiveLegacyStep(46) ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-sm' : '']">
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToStep(46)">Resumen de Historia Clínica</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
           <!-- Encabezado -->

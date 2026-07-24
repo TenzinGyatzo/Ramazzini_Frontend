@@ -119,7 +119,13 @@ export const useStepsStore = defineStore("steps", () => {
   // Ir a un paso específico
   const goToStep = (stepNumber: number) => {
     // Se usa el mapa de redirección para compensar la diferencia de pasos entre los trabajadores masculinos y femeninos
-    // debido a los antecedentes Gineco Obstétricos - SOLO para Historia Clínica
+    // debido a los antecedentes Gineco Obstétricos - SOLO para Historia Clínica granular (V1).
+    // En HC por secciones (V2) el array tiene ≤8 pasos y los índices ya son de sección.
+    const isHcSectionsMode =
+      documentos.currentTypeOfDocument === 'historiaClinica' &&
+      steps.value.length > 0 &&
+      steps.value.length <= 8;
+
     const redirectionMap: Record<number, number> = {
       42: 28,
       43: 29,
@@ -128,12 +134,12 @@ export const useStepsStore = defineStore("steps", () => {
       46: 32,
     };
   
-    // Solo aplicar redirección si el paso solicitado está en el mapa Y es Historia Clínica
+    // Solo aplicar redirección si el paso solicitado está en el mapa Y es Historia Clínica V1
     // Para otros documentos como Control Prenatal, no aplicar redirección
     if (
+      !isHcSectionsMode &&
       redirectionMap[stepNumber] &&
       trabajadores.currentTrabajador?.sexo !== 'Femenino' &&
-      // Verificar que sea Historia Clínica usando el tipo de documento actual
       documentos.currentTypeOfDocument === 'historiaClinica'
     ) {
       stepNumber = redirectionMap[stepNumber];

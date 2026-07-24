@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, computed } from 'vue';
+import { watch, ref, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
@@ -14,6 +14,15 @@ import {
 import { useConfirmacionDiagnostica } from '@/composables/useConfirmacionDiagnostica';
 import { useNom024Fields } from '@/composables/useNom024Fields';
 import { useUserStore } from '@/stores/user';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -411,14 +420,29 @@ watch(
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div :class="variant === 'compact' ? 'space-y-3' : 'space-y-2'">
 
-        <h2 class="text-2xl font-bold text-gray-900 mb-4 uppercase">Diagnóstico Principal</h2>
+        <h2
+            v-if="variant !== 'compact'"
+            class="text-2xl font-bold text-gray-900 mb-4 uppercase"
+        >
+            Diagnóstico Principal
+        </h2>
+        <p
+            v-else
+            class="text-sm font-bold text-gray-900 leading-tight"
+        >
+            Diagnóstico principal
+        </p>
 
         <!-- Relación Temporal (SIRES_NOM024) -->
         <div v-if="showSiresUI">
             <div class="flex items-center gap-2 mb-2">
-                <h3 class="text-base font-medium text-gray-700">
+                <h3
+                    :class="variant === 'compact'
+                        ? 'text-xs font-medium text-gray-600'
+                        : 'text-base font-medium text-gray-700'"
+                >
                     Relación Temporal <span v-if="cie10Required" class="text-red-500">*</span>
                 </h3>
                 <button
@@ -553,6 +577,7 @@ watch(
                     :required="cie10Required"
                     :trabajadorId="trabajadores.currentTrabajadorId"
                     :fechaConsulta="fechaNotaMedica"
+                    :dense="variant === 'compact'"
                     placeholder="Buscar código diagnóstico principal..."
                 />
                 <!-- Mensaje de error DIAGNOSTICO_SIS / sexo-edad para diagnóstico principal -->
@@ -591,8 +616,19 @@ watch(
         </div>
 
         <!-- 2. Diagnósticos Relacionados/Complementarios -->
-        <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-gray-800">Complementar Diagnóstico</h3>
+        <div :class="variant === 'compact' ? 'space-y-1.5 pt-1' : 'space-y-2'">
+            <h3
+                v-if="variant !== 'compact'"
+                class="text-lg font-semibold text-gray-800"
+            >
+                Complementar Diagnóstico
+            </h3>
+            <p
+                v-else
+                class="text-xs text-gray-500 leading-snug"
+            >
+                Complementar el diagnóstico principal
+            </p>
             
             <div>
                 <CIE10ComplementaryDiagnoses
@@ -600,13 +636,6 @@ watch(
                     :trabajadorId="trabajadores.currentTrabajadorId"
                     :fechaConsulta="fechaNotaMedica"
                 />
-                
-                <!-- Nota informativa -->
-                <div class="mt-1">
-                    <p class="text-xs text-gray-500">
-                        Condiciones asociadas al diagnóstico principal que ayudan a describir mejor el cuadro clínico.
-                    </p>
-                </div>
 
                 <!-- Avisos de duplicidad -->
                 <div v-if="principalInComplementariesError || complementariesDuplicateError" class="mt-3 space-y-2">

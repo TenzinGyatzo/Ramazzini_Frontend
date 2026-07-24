@@ -42,7 +42,6 @@ import {
   construirRutaPdfNotaAclaratoria,
   inicializarNotaAclaratoriaNueva,
 } from '@/helpers/notaAclaratoriaForm';
-
 const route = useRoute();
 const router = useRouter();
 const empresas = useEmpresasStore();
@@ -380,208 +379,6 @@ const goToStep = (stepNumber) => {
   steps.goToStep(stepNumber);
 };
 
-// Historia Clinica
-const heredoFamiliaresNegados = () => {
-  formData.formDataHistoriaClinica.nefropatias = 'No';
-  formData.formDataHistoriaClinica.nefropatiasEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.diabeticos = 'No';
-  formData.formDataHistoriaClinica.diabeticosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.hipertensivos = 'No';
-  formData.formDataHistoriaClinica.hipertensivosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.cardiopaticos = 'No';
-  formData.formDataHistoriaClinica.cardiopaticosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.neoplasicos = 'No';
-  formData.formDataHistoriaClinica.neoplasicosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.psiquiatricos = 'No';
-  formData.formDataHistoriaClinica.psiquiatricosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.epilepticos = 'No';
-  formData.formDataHistoriaClinica.epilepticosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.autoinmunes = 'No';
-  formData.formDataHistoriaClinica.autoinmunesEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.tuberculosis = 'No';
-  formData.formDataHistoriaClinica.tuberculosisEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.hepatopatias = 'No';
-  formData.formDataHistoriaClinica.hepatopatiasEspecificar = 'Negado';
-};
-
-const personalesPatologicosNegados = () => {
-  formData.formDataHistoriaClinica.lumbalgias = 'No';
-  formData.formDataHistoriaClinica.lumbalgiasEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.diabeticosPP = 'No';
-  formData.formDataHistoriaClinica.diabeticosPPEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.cardiopaticosPP = 'No';
-  formData.formDataHistoriaClinica.cardiopaticosPPEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.alergicos = 'No';
-  formData.formDataHistoriaClinica.alergicosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.hipertensivosPP = 'No';
-  formData.formDataHistoriaClinica.hipertensivosPPEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.respiratorios = 'No';
-  formData.formDataHistoriaClinica.respiratoriosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.epilepticosPP = 'No';
-  formData.formDataHistoriaClinica.epilepticosPPEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.accidentes = 'No';
-  formData.formDataHistoriaClinica.accidentesEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.quirurgicos = 'No';
-  formData.formDataHistoriaClinica.quirurgicosEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.otros = 'No';
-  formData.formDataHistoriaClinica.otrosEspecificar = 'Negado';
-};
-
-const personalesNoPatologicosNegados = () => {
-  formData.formDataHistoriaClinica.alcoholismo = 'No';
-  formData.formDataHistoriaClinica.alcoholismoEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.tabaquismo = 'No';
-  formData.formDataHistoriaClinica.tabaquismoEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.toxicomanias = 'No';
-  formData.formDataHistoriaClinica.toxicomaniasEspecificar = 'Negado';
-  formData.formDataHistoriaClinica.alimentacionDeficiente = 'No';
-  formData.formDataHistoriaClinica.alimentacionDeficienteEspecificar = 'Adecuada';
-  formData.formDataHistoriaClinica.actividadFisicaDeficiente = 'No';
-  formData.formDataHistoriaClinica.actividadFisicaDeficienteEspecificar = 'Adecuada';
-  formData.formDataHistoriaClinica.higienePersonalDeficiente = 'No';
-  formData.formDataHistoriaClinica.higienePersonalDeficienteEspecificar = 'Adecuada';
-};
-
-// Exploracion Fisica
-const marcarSinHallazgos = () => {
-  formData.formDataExploracionFisica.craneoCara = 'Sin hallazgos';
-  formData.formDataExploracionFisica.ojos = 'Sin hallazgos';
-  formData.formDataExploracionFisica.oidos = 'Sin hallazgos';
-  formData.formDataExploracionFisica.nariz = 'Sin hallazgos';
-  formData.formDataExploracionFisica.boca = 'Sin hallazgos';
-  formData.formDataExploracionFisica.cuello = 'Sin hallazgos';
-  formData.formDataExploracionFisica.hombros = 'Sin hallazgos';
-  formData.formDataExploracionFisica.codos = 'Sin hallazgos';
-  formData.formDataExploracionFisica.manos = 'Sin hallazgos';
-  formData.formDataExploracionFisica.reflejosOsteoTendinososSuperiores = 'Sin hallazgos';
-  formData.formDataExploracionFisica.vascularESuperiores = 'Sin hallazgos';
-  formData.formDataExploracionFisica.torax = 'Sin hallazgos';
-  formData.formDataExploracionFisica.abdomen = 'Sin hallazgos';
-  formData.formDataExploracionFisica.cadera = 'Sin hallazgos';
-  formData.formDataExploracionFisica.rodillas = 'Sin hallazgos';
-  formData.formDataExploracionFisica.tobillosPies = 'Sin hallazgos';
-  formData.formDataExploracionFisica.reflejosOsteoTendinososInferiores = 'Sin hallazgos';
-  formData.formDataExploracionFisica.vascularEInferiores = 'Sin hallazgos';
-  formData.formDataExploracionFisica.inspeccionColumna = 'Sin hallazgos';
-  formData.formDataExploracionFisica.movimientosColumna = 'Sin hallazgos';
-  formData.formDataExploracionFisica.lesionesPiel = 'Sin hallazgos';
-  formData.formDataExploracionFisica.cicatrices = 'Sin hallazgos';
-  formData.formDataExploracionFisica.nevos = 'Sin hallazgos';
-  formData.formDataExploracionFisica.coordinacion = 'Sin hallazgos';
-  formData.formDataExploracionFisica.sensibilidad = 'Sin hallazgos';
-  formData.formDataExploracionFisica.equilibrio = 'Sin hallazgos';
-  formData.formDataExploracionFisica.marcha = 'Sin hallazgos';
-};
-
-// Historia Otologica
-const ultimos2MesesNegados = () => {
-  formData.formDataHistoriaOtologica.dolorOido = 'NO';
-  formData.formDataHistoriaOtologica.supuracionOido = 'NO';
-  formData.formDataHistoriaOtologica.mareoVertigo = 'NO';
-  formData.formDataHistoriaOtologica.zumbidoTinnitus = 'NO';
-  formData.formDataHistoriaOtologica.perdidaAudicion = 'NO';
-  formData.formDataHistoriaOtologica.oidoTapadoPlenitud = 'NO';
-};
-
-const antecedentesOtologicosNegados = () => {
-  formData.formDataHistoriaOtologica.otitisFrecuentesInfancia = 'NO';
-  formData.formDataHistoriaOtologica.cirugiasOido = 'NO';
-  formData.formDataHistoriaOtologica.traumatismoCranealBarotrauma = 'NO';
-  formData.formDataHistoriaOtologica.usoAudifonos = 'NO';
-  formData.formDataHistoriaOtologica.meningitisInfeccionGraveInfancia = 'NO';
-  formData.formDataHistoriaOtologica.diabetes = 'NO';
-  formData.formDataHistoriaOtologica.enfermedadRenal = 'NO';
-  formData.formDataHistoriaOtologica.medicamentosOtotoxicos = 'NO';
-};
-
-const exposicionRuidosaNegada = () => {
-  formData.formDataHistoriaOtologica.trabajoAmbientesRuidosos = 'NO';
-  formData.formDataHistoriaOtologica.tiempoExposicionLaboral = 'NINGUNO';
-  formData.formDataHistoriaOtologica.usoProteccionAuditiva = 'NA';
-  formData.formDataHistoriaOtologica.musicaFuerteAudifonos = 'NO';
-  formData.formDataHistoriaOtologica.armasFuegoPasatiemposRuidosos = 'NO';
-  formData.formDataHistoriaOtologica.servicioMilitar = 'NO';
-};
-
-const otrosNegadosYOtoscopiaPermeable = () => {
-  formData.formDataHistoriaOtologica.alergias = 'NO';
-  formData.formDataHistoriaOtologica.resfriadoDiaPrueba = 'NO';
-  formData.formDataHistoriaOtologica.otoscopiaOidoDerecho = 'PERMEABLE';
-  formData.formDataHistoriaOtologica.otoscopiaOidoIzquierdo = 'PERMEABLE';
-};
-
-const marcarSinHallazgosOtologica = () => {
-  formData.formDataHistoriaOtologica.dolorOido = 'NO';
-  formData.formDataHistoriaOtologica.supuracionOido = 'NO';
-  formData.formDataHistoriaOtologica.mareoVertigo = 'NO';
-  formData.formDataHistoriaOtologica.zumbidoTinnitus = 'NO';
-  formData.formDataHistoriaOtologica.perdidaAudicion = 'NO';
-  formData.formDataHistoriaOtologica.oidoTapadoPlenitud = 'NO';
-  formData.formDataHistoriaOtologica.otitisFrecuentesInfancia = 'NO';
-  formData.formDataHistoriaOtologica.cirugiasOido = 'NO';
-  formData.formDataHistoriaOtologica.traumatismoCranealBarotrauma = 'NO';
-  formData.formDataHistoriaOtologica.usoAudifonos = 'NO';
-  formData.formDataHistoriaOtologica.meningitisInfeccionGraveInfancia = 'NO';
-  formData.formDataHistoriaOtologica.diabetes = 'NO';
-  formData.formDataHistoriaOtologica.enfermedadRenal = 'NO';
-  formData.formDataHistoriaOtologica.medicamentosOtotoxicos = 'NO';
-  formData.formDataHistoriaOtologica.trabajoAmbientesRuidosos = 'NO';
-  formData.formDataHistoriaOtologica.tiempoExposicionLaboral = 'NINGUNO';
-  formData.formDataHistoriaOtologica.usoProteccionAuditiva = 'NA';
-  formData.formDataHistoriaOtologica.musicaFuerteAudifonos = 'NO';
-  formData.formDataHistoriaOtologica.armasFuegoPasatiemposRuidosos = 'NO';
-  formData.formDataHistoriaOtologica.servicioMilitar = 'NO';
-  formData.formDataHistoriaOtologica.alergias = 'NO';
-  formData.formDataHistoriaOtologica.resfriadoDiaPrueba = 'NO';
-  formData.formDataHistoriaOtologica.otoscopiaOidoDerecho = 'PERMEABLE';
-  formData.formDataHistoriaOtologica.otoscopiaOidoIzquierdo = 'PERMEABLE';
-  formData.formDataHistoriaOtologica.resultadoCuestionario = 'PROCEDENTE';
-};
-
-// Cuestionario Previo Espirometria
-const noFumaFactoresRiesgoNegados = () => {
-  formData.formDataPrevioEspirometria.tabaquismo = 'NO FUMA';
-  formData.formDataPrevioEspirometria.cigarrosSemana = '0';
-  formData.formDataPrevioEspirometria.exposicionHumosBiomasa = 'NO';
-  formData.formDataPrevioEspirometria.exposicionLaboralPolvos = 'NO';
-  formData.formDataPrevioEspirometria.exposicionVaporesGasesIrritantes = 'NO';
-  formData.formDataPrevioEspirometria.antecedentesTuberculosisInfeccionesRespiratorias = 'NO';
-};
-
-const sintomasRespiratoriosNegados = () => {
-  formData.formDataPrevioEspirometria.tosCronica = 'NO';
-  formData.formDataPrevioEspirometria.expectoracionFrecuente = 'NO';
-  formData.formDataPrevioEspirometria.disnea = 'NINGUNA';
-  formData.formDataPrevioEspirometria.sibilancias = 'NO';
-  formData.formDataPrevioEspirometria.hemoptisis = 'NO';
-  formData.formDataPrevioEspirometria.otrosSintomas = 'NO';
-};
-
-const antecedentesMedicosRelevantesNegados = () => {
-  formData.formDataPrevioEspirometria.asma = 'NO';
-  formData.formDataPrevioEspirometria.epocBronquitisCronica = 'NO';
-  formData.formDataPrevioEspirometria.fibrosisPulmonar = 'NO';
-  formData.formDataPrevioEspirometria.apneaSueno = 'NO';
-  formData.formDataPrevioEspirometria.medicamentosActuales = 'NO';
-  formData.formDataPrevioEspirometria.medicamentosActualesEspecificar = 'NINGUNO';
-};
-
-const contraindicacionesRelativasNegadas = () => {
-  formData.formDataPrevioEspirometria.cirugiaReciente = 'NO';
-  formData.formDataPrevioEspirometria.infeccionRespiratoriaActiva = 'NO';
-  formData.formDataPrevioEspirometria.embarazoComplicado = 'NO';
-  formData.formDataPrevioEspirometria.derramePleural = 'NO';
-  formData.formDataPrevioEspirometria.neumotorax = 'NO';
-};
-
-const contraindicacionesAbsolutasNegadas = () => {
-  formData.formDataPrevioEspirometria.infartoAgudoAnginaInestable = 'NO';
-  formData.formDataPrevioEspirometria.aneurismaAorticoConocido = 'NO';
-  formData.formDataPrevioEspirometria.inestabilidadHemodinamicaGrave = 'NO';
-  formData.formDataPrevioEspirometria.hipertensionIntracraneal = 'NO';
-  formData.formDataPrevioEspirometria.desprendimientoAgudoRetina = 'NO';
-};
-
 // Entrevista Psicologica
 const entrevistaPsicologicaSinHallazgos = () => {
   formData.formDataEntrevistaPsicologica.apariencia = 'Adecuada';
@@ -734,20 +531,6 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           class=" flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div v-if="!disableEdit" class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
-              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                <span>Acción Rápida</span>
-              </p>
-              <button 
-                type="button"
-                @click="() => { goToStep(8); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>No más evaluaciones adicionales</span>
-              </button>
-            </div>
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorAptitud />
@@ -796,23 +579,6 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div v-if="!disableEdit" class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
-              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                <span>Acción Rápida</span>
-              </p>
-              <button 
-                type="button"
-                @click="() => { marcarSinHallazgos(); goToStep(31); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Sin hallazgos en la exploración</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-            </div>
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorExploracionFisica />
@@ -837,41 +603,6 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div v-if="!disableEdit" class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
-              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                <span>Acciones Rápidas</span>
-              </p>
-              <button 
-                type="button"
-                @click="() => { heredoFamiliaresNegados(); goToStep(12); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Heredofamiliares Negados</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { personalesPatologicosNegados(); goToStep(22); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Patológicos Negados</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { personalesNoPatologicosNegados(); goToStep(28); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-indigo-400 to-indigo-500 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>No Patológicos Negados</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-            </div>
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorHistoriaClinica />
@@ -1025,59 +756,6 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div v-if="!disableEdit && steps.currentStep !== 25" class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
-              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                <span>Acción Rápida</span>
-              </p>
-              <button 
-                type="button"
-                @click="() => { ultimos2MesesNegados(); goToStep(8); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Últimos 2 meses Negados</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { antecedentesOtologicosNegados(); goToStep(16); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Antecedentes Otologicos Negados</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { exposicionRuidosaNegada(); goToStep(22); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-indigo-400 to-indigo-500 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Exposición Ruidosa Negada</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { otrosNegadosYOtoscopiaPermeable(); goToStep(25); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Otros Negados y Otoscopia</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { marcarSinHallazgosOtologica(); goToStep(25); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Sin hallazgos / Sin exposición</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-            </div>
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorHistoriaOtologica />
@@ -1090,59 +768,6 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div v-if="!disableEdit && steps.currentStep !== 28" class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
-              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                <span>Acción Rápida</span>
-              </p>
-              <button 
-                type="button"
-                @click="() => { noFumaFactoresRiesgoNegados(); goToStep(7); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Factores de Riesgo Negados</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { sintomasRespiratoriosNegados(); goToStep(13); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Antecedentes Otologicos Negados</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { antecedentesMedicosRelevantesNegados(); goToStep(18); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-indigo-400 to-indigo-500 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Antecedentes Médicos Negados</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { contraindicacionesRelativasNegadas(); goToStep(23); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Contraind. Relativas Negadas</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-              <button 
-                type="button"
-                @click="() => { contraindicacionesAbsolutasNegadas(); goToStep(28); }"
-                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2">
-                <span>Contraind. Absolutas Negadas</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </button>
-            </div>
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorPrevioEspirometria />

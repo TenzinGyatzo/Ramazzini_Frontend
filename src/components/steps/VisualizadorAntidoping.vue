@@ -5,140 +5,126 @@ import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { computed } from 'vue';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
+import { useAntidopingSectionsV2 } from '@/composables/useAntidopingSectionsV2';
+import {
+  getAntidopingSectionIndex,
+  legacyStepToSectionIndex,
+} from '@/helpers/antidopingSections';
+import {
+  ANTIDOPING_PARAMETROS_ORDEN,
+  ANTIDOPING_PARAMETRO_LABELS_VISTA,
+  isCampoVisible,
+} from '@/helpers/antidopingParametros';
 
 const formData = useFormDataStore();
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
+const { antidopingSectionsV2Enabled } = useAntidopingSectionsV2();
+
+const resolveNavStep = (legacyStep) => {
+  if (antidopingSectionsV2Enabled.value) {
+    return legacyStepToSectionIndex(legacyStep);
+  }
+  return legacyStep;
+};
 
 const goToStep = (stepNumber) => {
-  steps.goToStep(stepNumber);
+  steps.goToStep(resolveNavStep(stepNumber));
 };
 
-// Función para determinar si un campo debe mostrarse
-const shouldShowField = (fieldName) => {
-  const tipoPrueba = formData.formDataAntidoping.tipoPrueba;
-  
-  // Si no hay tipo de prueba definido, mostrar por defecto
-  if (!tipoPrueba) {
-    return true;
-  }
-  
-  // Si es tipo 2 parámetros, solo mostrar marihuana y cocaína
-  if (tipoPrueba === '2') {
-    return fieldName === 'marihuana' || fieldName === 'cocaina';
-  }
-  
-  // Si es tipo 3 parámetros, mostrar marihuana, cocaína y anfetaminas
-  if (tipoPrueba === '3') {
-    return fieldName === 'marihuana' || fieldName === 'cocaina' || fieldName === 'anfetaminas';
-  }
-  
-  // Para todos los demás tipos (5, 6, 10), mostrar por defecto
-  return true;
+const isActiveLegacyStep = (legacyStep) => {
+  if (antidopingSectionsV2Enabled.value) return false;
+  return steps.currentStep === legacyStep;
 };
 
-// Computed para determinar si mostrar anfetaminas
-const showAnfetaminas = computed(() => {
-  return shouldShowField('anfetaminas');
-});
+const isActiveSection = (sectionId) => {
+  if (!antidopingSectionsV2Enabled.value) return false;
+  return steps.currentStep === getAntidopingSectionIndex(sectionId);
+};
 
-// Computed para determinar si mostrar metanfetaminas
-const showMetanfetaminas = computed(() => {
-  return shouldShowField('metanfetaminas');
-});
+const sectionOutlineClass = (sectionId) =>
+  isActiveSection(sectionId)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
 
-// Computed para determinar si mostrar opiaceos
-const showOpiaceos = computed(() => {
-  return shouldShowField('opiaceos');
-});
+const rowOutlineClass = (legacyStep) =>
+  isActiveLegacyStep(legacyStep)
+    ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
+    : '';
 
+/** Filas reactivas: dependen del objeto completo del store (reemplazo en sync). */
+const filasParametros = computed(() => {
+  const data = formData.formDataAntidoping || {};
+  return ANTIDOPING_PARAMETROS_ORDEN.filter((campo) =>
+    isCampoVisible(campo, data.tipoPrueba || '5'),
+  ).map((campo) => ({
+    campo,
+    label: ANTIDOPING_PARAMETRO_LABELS_VISTA[campo],
+    valor: data[campo] || '',
+  }));
+});
 </script>
 
 <template>
   <div
-    class="visualizador-antidoping border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg p-7 2xl:p-7 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-lg mx-auto">
+    class="visualizador-antidoping border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg p-7 2xl:p-7 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-lg mx-auto"
+  >
     <div class="flex justify-between items-start mb-4">
       <h2 class="text-lg font-medium">Información del Documento</h2>
-      <EstadoDocumentoBadgeAlt 
+      <EstadoDocumentoBadgeAlt
         v-if="isMX"
-        :estado="formData.formDataAntidoping.estado" 
-        :fechaFinalizacion="formData.formDataAntidoping.fechaFinalizacion" 
+        :estado="formData.formDataAntidoping.estado"
+        :fechaFinalizacion="formData.formDataAntidoping.fechaFinalizacion"
         :finalizadoPor="formData.formDataAntidoping.finalizadoPor"
         :fechaAnulacion="formData.formDataAntidoping.fechaAnulacion"
         :anuladoPor="formData.formDataAntidoping.anuladoPor"
         :razonAnulacion="formData.formDataAntidoping.razonAnulacion"
       />
     </div>
-    <table class="table-auto w-full border-collapse border border-gray-200">
+    <table
+      class="table-auto w-full border-collapse border border-gray-200"
+      :class="sectionOutlineClass('antidoping')"
+    >
       <thead>
         <tr class="bg-gray-200">
-          <th class="px-2 py-1 border border-gray-300 text-left whitespace-nowrap">Campo</th>
+          <th class="px-2 py-1 border border-gray-300 text-left whitespace-nowrap">
+            Campo
+          </th>
           <th class="px-2 py-1 border border-gray-300 text-left">Valor</th>
         </tr>
       </thead>
       <tbody>
-        <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(1)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Fecha Antidoping</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formatDateDDMMYYYY(formData.formDataAntidoping.fechaAntidoping) }}</td>
+        <tr
+          class="odd:bg-white even:bg-gray-50 cursor-pointer"
+          :class="rowOutlineClass(1)"
+          @click="goToStep(1)"
+        >
+          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">
+            Fecha Antidoping
+          </td>
+          <td class="px-2 py-1 border border-gray-300">
+            {{ formatDateDDMMYYYY(formData.formDataAntidoping.fechaAntidoping) }}
+          </td>
         </tr>
-        <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Marihuana (THC)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.marihuana }}</td>
-        </tr>
-        <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Cocaína (COC)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.cocaina }}</td>
-        </tr>
-        <tr v-if="showAnfetaminas" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Anfetaminas (AMP)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.anfetaminas || '' }}</td>
-        </tr>
-        <tr v-if="showMetanfetaminas" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Metanfetaminas (MET)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.metanfetaminas || '' }}</td>
-        </tr>
-        <tr v-if="showOpiaceos" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Opiáceos (OPI)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.opiaceos || '' }}</td>
-        </tr>
-        <tr v-if="formData.formDataAntidoping.benzodiacepinas" 
-          class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Benzodiacepinas (BZO)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.benzodiacepinas }}</td>
-        </tr>
-        <tr v-if="formData.formDataAntidoping.fenciclidina" 
-          class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Fenciclidina (PCP)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.fenciclidina }}</td>
-        </tr>
-        <tr v-if="formData.formDataAntidoping.metadona" 
-          class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Metadona (MTD)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.metadona }}</td>
-        </tr>
-        <tr v-if="formData.formDataAntidoping.barbituricos" 
-          class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Barbituricos (BAR)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.barbituricos }}</td>
-        </tr>
-        <tr v-if="formData.formDataAntidoping.antidepresivosTriciclicos" 
-          class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Antidepresivos T. (TCA)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.antidepresivosTriciclicos }}</td>
-        </tr>
-        <tr v-if="formData.formDataAntidoping.metilendioximetanfetamina" 
-          class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Metilendioximetanfetamina</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.metilendioximetanfetamina }}</td>
-        </tr>
-        <tr v-if="formData.formDataAntidoping.ketamina" 
-          class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)">
-          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">Ketamina (KET)</td>
-          <td class="px-2 py-1 border border-gray-300">{{ formData.formDataAntidoping.ketamina }}</td>
+        <tr
+          v-for="fila in filasParametros"
+          :key="fila.campo"
+          class="odd:bg-white even:bg-gray-50 cursor-pointer"
+          :class="rowOutlineClass(2)"
+          @click="goToStep(2)"
+        >
+          <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">
+            {{ fila.label }}
+          </td>
+          <td
+            class="px-2 py-1 border border-gray-300"
+            :class="fila.valor === 'Positivo' ? 'text-red-600 font-bold' : ''"
+          >
+            {{ fila.valor }}
+          </td>
         </tr>
       </tbody>
-
     </table>
   </div>
 </template>

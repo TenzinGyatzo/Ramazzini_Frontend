@@ -1,8 +1,34 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
+const isCompact = computed(() => variant.value === 'compact');
+
+const labelClass = computed(() =>
+  isCompact.value
+    ? 'block text-sm font-medium text-gray-800 mb-1'
+    : 'block text-base font-medium text-gray-800 mb-2',
+);
+const inputClass = computed(() =>
+  isCompact.value
+    ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
+    : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200',
+);
+const categoryClass = computed(() =>
+  isCompact.value
+    ? 'w-full py-2 px-2 text-center border border-gray-200 rounded-md text-sm cursor-not-allowed font-semibold'
+    : 'w-full p-3 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
+);
 
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -225,21 +251,22 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
 
 <template>
   <div>
-    <!-- Jerarquía Visual Mejorada -->
-    <h1 class="text-2xl font-bold mb-4 text-gray-900">SIGNOS VITALES</h1>
+    <h1 v-if="!isCompact" class="text-2xl font-bold mb-4 text-gray-900">SIGNOS VITALES</h1>
 
     <!-- Tensión Arterial -->
-    <div class="mb-6">
-      <h3 class="text-base font-semibold text-gray-800 mb-3">Tensión Arterial</h3>
-      <div class="grid grid-cols-2 gap-4 mb-3">
+    <div :class="isCompact ? 'mb-3' : 'mb-6'">
+      <h3 :class="isCompact ? 'text-sm font-semibold text-gray-800 mb-2' : 'text-base font-semibold text-gray-800 mb-3'">
+        Tensión Arterial
+      </h3>
+      <div :class="['grid grid-cols-2 gap-4', isCompact ? 'mb-2' : 'mb-3']">
         <div>
-          <label for="tensionArterialSistolica" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="tensionArterialSistolica" :class="labelClass">
             Sistólica (mmHg)
           </label>
           <input 
             type="number"
             id="tensionArterialSistolica"
-            class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+            :class="inputClass"
             v-model="tensionArterialSistolica" 
             min="60" 
             max="300"
@@ -259,13 +286,13 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
           </transition>
         </div>
         <div>
-          <label for="tensionArterialDiastolica" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="tensionArterialDiastolica" :class="labelClass">
             Diastólica (mmHg)
           </label>
           <input 
             type="number"
             id="tensionArterialDiastolica"
-            class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+            :class="inputClass"
             v-model="tensionArterialDiastolica" 
             min="40" 
             max="200"
@@ -289,7 +316,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
         <input 
           type="text"
           :class="[
-            'w-full p-3 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
+            categoryClass,
             categoriaTensionArterial === 'Óptima' ? 'bg-emerald-50 text-emerald-800' : '',
             categoriaTensionArterial === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
             categoriaTensionArterial === 'Alta' ? 'bg-yellow-50 text-yellow-800' : '',
@@ -302,7 +329,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
           title="Se determina automáticamente según los valores de presión arterial"
         />
         <div 
-          v-if="categoriaTensionArterial === 'Óptima'" 
+          v-if="categoriaTensionArterial === 'Óptima' && !isCompact" 
           class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -313,8 +340,8 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
     </div>
 
     <!-- Frecuencia Cardíaca -->
-    <div class="mb-6">
-      <label for="frecuenciaCardiaca" class="block text-base font-medium text-gray-800 mb-2">
+    <div :class="isCompact ? 'mb-3' : 'mb-6'">
+      <label for="frecuenciaCardiaca" :class="labelClass">
         Frecuencia Cardíaca (lpm)
       </label>
       <div class="grid grid-cols-2 gap-4">
@@ -322,7 +349,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
           <input 
             type="number"
             id="frecuenciaCardiaca"
-            class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+            :class="inputClass"
             v-model="frecuenciaCardiaca" 
             min="40" 
             max="150"
@@ -345,7 +372,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
           <input 
             type="text"
             :class="[
-              'w-full p-3 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
+              categoryClass,
               categoriaFrecuenciaCardiaca === 'Excelente' ? 'bg-emerald-50 text-emerald-800' : '',
               categoriaFrecuenciaCardiaca === 'Buena' ? 'bg-emerald-50 text-emerald-800' : '',
               categoriaFrecuenciaCardiaca === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
@@ -358,7 +385,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             title="Se determina automáticamente según la frecuencia cardiaca ingresada"
           />
           <div 
-            v-if="categoriaFrecuenciaCardiaca === 'Excelente' || categoriaFrecuenciaCardiaca === 'Buena'" 
+            v-if="!isCompact && (categoriaFrecuenciaCardiaca === 'Excelente' || categoriaFrecuenciaCardiaca === 'Buena')" 
             class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -370,8 +397,8 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
     </div>
 
     <!-- Frecuencia Respiratoria -->
-    <div class="mb-6">
-      <label for="frecuenciaRespiratoria" class="block text-base font-medium text-gray-800 mb-2">
+    <div :class="isCompact ? 'mb-3' : 'mb-6'">
+      <label for="frecuenciaRespiratoria" :class="labelClass">
         Frecuencia Respiratoria (rpm)
       </label>
       <div class="grid grid-cols-2 gap-4">
@@ -379,7 +406,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
           <input 
             type="number"
             id="frecuenciaRespiratoria"
-            class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+            :class="inputClass"
             v-model="frecuenciaRespiratoria" 
             min="12" 
             max="45"
@@ -402,7 +429,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
           <input 
             type="text"
             :class="[
-              'w-full p-3 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
+              categoryClass,
               categoriaFrecuenciaRespiratoria === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
               categoriaFrecuenciaRespiratoria === 'Bradipnea' ? 'bg-yellow-50 text-yellow-800' : '',
               categoriaFrecuenciaRespiratoria === 'Taquipnea' ? 'bg-yellow-50 text-yellow-800' : '',
@@ -413,7 +440,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             title="Se determina automáticamente según la frecuencia respiratoria ingresada"
           />
           <div 
-            v-if="categoriaFrecuenciaRespiratoria === 'Normal'" 
+            v-if="categoriaFrecuenciaRespiratoria === 'Normal' && !isCompact" 
             class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -425,8 +452,8 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
     </div>
 
     <!-- Saturación de Oxígeno -->
-    <div class="mb-4">
-      <label for="saturacionOxigeno" class="block text-base font-medium text-gray-800 mb-2">
+    <div :class="isCompact ? 'mb-2' : 'mb-4'">
+      <label for="saturacionOxigeno" :class="labelClass">
         Saturación de Oxígeno (%)
       </label>
       <div class="grid grid-cols-2 gap-4">
@@ -434,7 +461,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
           <input 
             type="number"
             id="saturacionOxigeno"
-            class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+            :class="inputClass"
             v-model="saturacionOxigeno" 
             min="80" 
             max="100"
@@ -457,7 +484,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
           <input 
             type="text"
             :class="[
-              'w-full p-3 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
+              categoryClass,
               categoriaSaturacionOxigeno === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
               categoriaSaturacionOxigeno === 'Aceptable' ? 'bg-emerald-50 text-emerald-800' : '',
               categoriaSaturacionOxigeno === 'Moderadamente baja' ? 'bg-yellow-50 text-yellow-800' : '',
@@ -469,7 +496,7 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             title="Se determina automáticamente según la saturación de oxígeno ingresada"
           />
           <div 
-            v-if="categoriaSaturacionOxigeno === 'Normal'" 
+            v-if="categoriaSaturacionOxigeno === 'Normal' && !isCompact" 
             class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -479,6 +506,5 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
         </div>
       </div>
     </div>
-
   </div>
 </template>

@@ -13,12 +13,15 @@ interface Props {
   placeholder?: string;
   trabajadorId?: string; // Para obtener datos del paciente
   fechaConsulta?: Date | string; // Para calcular edad
+  /** Etiqueta más densa (p. ej. stepper compacto) */
+  dense?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   required: false,
   label: 'Diagnóstico CIE-10',
   placeholder: 'Buscar por código o descripción...',
+  dense: false,
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -216,7 +219,12 @@ watch(() => props.modelValue, async (newVal) => {
 
 <template>
   <div class="relative w-full" ref="containerRef">
-    <label v-if="label" class="block text-sm font-semibold text-gray-700 mb-1">
+    <label
+      v-if="label"
+      :class="dense
+        ? 'block text-xs font-medium text-gray-600 mb-1'
+        : 'block text-sm font-semibold text-gray-700 mb-1'"
+    >
       {{ label }} <span v-if="required" class="text-red-500">*</span>
     </label>
     

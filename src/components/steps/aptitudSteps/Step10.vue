@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -8,6 +8,15 @@ import {
     obtenerCuatroTamizajesPsicologicosCercanos,
     construirTextoPaso4TamizajePsi,
 } from '@/helpers/tamizajePsicologicoPaso4Resultados';
+
+const props = defineProps({
+  variant: {
+    type: String,
+    default: 'fullscreen',
+    validator: (v) => ['fullscreen', 'compact'].includes(v),
+  },
+});
+const { variant } = toRefs(props);
 
 const mensajeCopiado = ref(false);
 
@@ -396,9 +405,10 @@ const generarTextoPrecargado = async () => {
 </script>
 
 <template>
-    <h1 class="font-bold mb-4 text-gray-800 leading-5">Aptitud al Puesto</h1>
-    <div class="mb-4">
-        <h2 class="text-lg font-semibold mb-4 text-gray-800">Resultados</h2>
+    <div>
+    <h1 v-if="variant !== 'compact'" class="font-bold mb-4 text-gray-800 leading-5">Aptitud al Puesto</h1>
+    <div :class="variant === 'compact' ? 'mb-2' : 'mb-4'">
+        <h2 v-if="variant !== 'compact'" class="text-lg font-semibold mb-4 text-gray-800">Resultados</h2>
         <p class="text-sm font-medium mb-1 text-gray-800 leading-4">Descripción de resultados:</p>
         <div class="font-light mb-4">
             <textarea
@@ -420,7 +430,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaAptaSinRestricciones')" class="space-y-2">
                 <!-- Opción 1: Capacidad físico-funcional -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block"
                     @click="toggle('agilidadFuerzaCardio')">
                     1. Capacidad físico-funcional
                 </button>
@@ -433,7 +443,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 2: Sin limitaciones osteomusculares -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('osteomuscularErgonomia')">
                     2. Sin limitaciones osteomusculares
                 </button>
@@ -446,7 +456,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 3: Sin condiciones que aumenten riesgo -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('exposicionRiesgos')">
                     3. Sin condiciones que aumenten riesgo
                 </button>
@@ -459,7 +469,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 4: Capacidad funcional general -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('capacidadFuncional')">
                     4. Capacidad funcional general
                 </button>
@@ -472,7 +482,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 5: Coordinación y tareas específicas -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('coordinacionTareas')">
                     5. Coordinación y tareas específicas
                 </button>
@@ -485,7 +495,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 6: Adaptación al puesto -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('adaptacionDemandas')">
                     6. Adaptación al puesto
                 </button>
@@ -500,7 +510,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaAptaConPrecaucion')" class="space-y-2">
                 <!-- Ejemplos -->
                 <button
-                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('hipertension1')">
                     Hipertensión
                 </button>
@@ -514,7 +524,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('diabetes1')">
                     Diabetes Tipo II
                 </button>
@@ -528,7 +538,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('obesidad1')">
                     Obesidad Clase II
                 </button>
@@ -543,7 +553,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('lumbalgia1')">
                     Lumbalgia Crónica
                 </button>
@@ -560,7 +570,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaAptaConRestricciones')" class="space-y-2">
                 <!-- Ejemplos -->
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('herniaAbdominal')">
                     Hernia abdominal
                 </button>
@@ -575,7 +585,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('problemaEspalda')">
                     Problema espalda
                 </button>
@@ -589,7 +599,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('varices')">
                     Várices en piernas
                 </button>
@@ -603,7 +613,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('malformacionMano')">
                     Malformación mano
                 </button>
@@ -618,7 +628,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('lesionRodilla')">
                     Lesión rodilla
                 </button>
@@ -636,7 +646,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaNoApta')" class="space-y-2">
                 <!-- Botón principal -->
                 <button
-                    class="bg-white text-red-600 border border-red-600 hover:bg-red-600 hover:text-white font-medium py-2 px-4 rounded-lg mt-2"
+                    class="bg-white text-red-600 border border-red-600 hover:bg-red-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('guiaNoApta')">
                     No Apta
                 </button>
@@ -667,7 +677,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaEvaluacionNoCompletada')" class="space-y-2">
                 <!-- Botón principal -->
                 <button
-                    class="bg-white text-gray-600 border border-gray-600 hover:bg-gray-600 hover:text-white font-medium py-2 px-4 rounded-lg mt-2"
+                    class="bg-white text-gray-600 border border-gray-600 hover:bg-gray-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('guiaEvaluacionNoCompletada')">
                     Evaluación No Completada
                 </button>
@@ -748,7 +758,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaAptoSinRestricciones')" class="space-y-2">
                 <!-- Opción 1: Capacidad físico-funcional -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block"
                     @click="toggle('agilidadFuerzaCardio')">
                     1. Capacidad físico-funcional
                 </button>
@@ -761,7 +771,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 2: Sin limitaciones osteomusculares -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('osteomuscularErgonomia')">
                     2. Sin limitaciones osteomusculares
                 </button>
@@ -774,7 +784,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 3: Sin condiciones que aumenten riesgo -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('exposicionRiesgos')">
                     3. Sin condiciones que aumenten riesgo
                 </button>
@@ -787,7 +797,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 4: Capacidad funcional general -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('capacidadFuncional')">
                     4. Capacidad funcional general
                 </button>
@@ -800,7 +810,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 5: Coordinación y tareas específicas -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('coordinacionTareas')">
                     5. Coordinación y tareas específicas
                 </button>
@@ -813,7 +823,7 @@ const generarTextoPrecargado = async () => {
 
                 <!-- Opción 6: Adaptación al puesto -->
                 <button
-                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('adaptacionDemandas')">
                     6. Adaptación al puesto
                 </button>
@@ -828,7 +838,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaAptoConPrecaucion')" class="space-y-2">
                 <!-- Ejemplos -->
                 <button
-                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('hipertension1')">
                     Hipertensión
                 </button>
@@ -842,7 +852,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('diabetes1')">
                     Diabetes Tipo II
                 </button>
@@ -856,7 +866,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('obesidad1')">
                     Obesidad Clase II
                 </button>
@@ -871,7 +881,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-yellow-600 border border-yellow-600 hover:bg-yellow-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('lumbalgia1')">
                     Lumbalgia Crónica
                 </button>
@@ -888,7 +898,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaAptoConRestricciones')" class="space-y-2">
                 <!-- Ejemplos -->
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('herniaAbdominal')">
                     Hernia abdominal
                 </button>
@@ -903,7 +913,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('problemaEspalda')">
                     Problema espalda
                 </button>
@@ -917,7 +927,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('varices')">
                     Várices en piernas
                 </button>
@@ -931,7 +941,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('malformacionMano')">
                     Malformación mano
                 </button>
@@ -946,7 +956,7 @@ const generarTextoPrecargado = async () => {
                 </div>
 
                 <button
-                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white font-medium py-2 px-4 rounded-lg block mt-2"
+                    class="bg-white text-orange-600 border border-orange-600 hover:bg-orange-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('lesionRodilla')">
                     Lesión rodilla
                 </button>
@@ -964,7 +974,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaNoApto')" class="space-y-2">
                 <!-- Botón principal -->
                 <button
-                    class="bg-white text-red-600 border border-red-600 hover:bg-red-600 hover:text-white font-medium py-2 px-4 rounded-lg mt-2"
+                    class="bg-white text-red-600 border border-red-600 hover:bg-red-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('guiaNoApto')">
                     No Apto
                 </button>
@@ -995,7 +1005,7 @@ const generarTextoPrecargado = async () => {
             <div v-if="shouldShowSection('guiaEvaluacionNoCompletada')" class="space-y-2">
                 <!-- Botón principal -->
                 <button
-                    class="bg-white text-gray-600 border border-gray-600 hover:bg-gray-600 hover:text-white font-medium py-2 px-4 rounded-lg mt-2"
+                    class="bg-white text-gray-600 border border-gray-600 hover:bg-gray-600 hover:text-white text-sm font-medium py-1.5 px-3 rounded-lg w-fit max-w-full text-left block mt-2"
                     @click="toggle('guiaEvaluacionNoCompletada')">
                     Evaluación No Completada
                 </button>
@@ -1062,5 +1072,6 @@ const generarTextoPrecargado = async () => {
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </template>
