@@ -1,4 +1,5 @@
 <script setup>
+import MicrostepAnchor from '../MicrostepAnchor.vue';
 import EfSectionStep from './EfSectionStep.vue';
 import EfMicroseccion from './EfMicroseccion.vue';
 import Step4 from './Step4.vue';
@@ -33,47 +34,101 @@ import Step30 from './Step30.vue';
 <template>
   <EfSectionStep title="Exploración física">
     <EfMicroseccion title="Cabeza y cuello">
-      <Step4 variant="compact" />
-      <Step5 variant="compact" />
-      <Step6 variant="compact" />
-      <Step7 variant="compact" />
-      <Step8 variant="compact" />
-      <Step9 variant="compact" />
+      <MicrostepAnchor :legacy-step="4">
+        <Step4 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="5">
+        <Step5 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="6">
+        <Step6 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="7">
+        <Step7 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="8">
+        <Step8 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="9">
+        <Step9 variant="compact" />
+      </MicrostepAnchor>
     </EfMicroseccion>
     <EfMicroseccion title="Extremidades superiores" show-divider>
-      <Step10 variant="compact" />
-      <Step11 variant="compact" />
-      <Step12 variant="compact" />
-      <Step13 variant="compact" />
-      <Step14 variant="compact" />
+      <MicrostepAnchor :legacy-step="10">
+        <Step10 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="11">
+        <Step11 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="12">
+        <Step12 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="13">
+        <Step13 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="14">
+        <Step14 variant="compact" />
+      </MicrostepAnchor>
     </EfMicroseccion>
     <EfMicroseccion title="Tórax" show-divider>
-      <Step15 variant="compact" />
+      <MicrostepAnchor :legacy-step="15">
+        <Step15 variant="compact" />
+      </MicrostepAnchor>
     </EfMicroseccion>
     <EfMicroseccion title="Abdomen" show-divider>
-      <Step16 variant="compact" />
+      <MicrostepAnchor :legacy-step="16">
+        <Step16 variant="compact" />
+      </MicrostepAnchor>
     </EfMicroseccion>
     <EfMicroseccion title="Extremidades inferiores" show-divider>
-      <Step17 variant="compact" />
-      <Step18 variant="compact" />
-      <Step19 variant="compact" />
-      <Step20 variant="compact" />
-      <Step21 variant="compact" />
+      <MicrostepAnchor :legacy-step="17">
+        <Step17 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="18">
+        <Step18 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="19">
+        <Step19 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="20">
+        <Step20 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="21">
+        <Step21 variant="compact" />
+      </MicrostepAnchor>
     </EfMicroseccion>
     <EfMicroseccion title="Columna" show-divider>
-      <Step22 variant="compact" />
-      <Step23 variant="compact" />
+      <MicrostepAnchor :legacy-step="22">
+        <Step22 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="23">
+        <Step23 variant="compact" />
+      </MicrostepAnchor>
     </EfMicroseccion>
     <EfMicroseccion title="Piel" show-divider>
-      <Step24 variant="compact" />
-      <Step25 variant="compact" />
-      <Step26 variant="compact" />
+      <MicrostepAnchor :legacy-step="24">
+        <Step24 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="25">
+        <Step25 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="26">
+        <Step26 variant="compact" />
+      </MicrostepAnchor>
     </EfMicroseccion>
     <EfMicroseccion title="Evaluación neurológica" show-divider>
-      <Step27 variant="compact" />
-      <Step28 variant="compact" />
-      <Step29 variant="compact" />
-      <Step30 variant="compact" />
+      <MicrostepAnchor :legacy-step="27">
+        <Step27 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="28">
+        <Step28 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="29">
+        <Step29 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="30">
+        <Step30 variant="compact" />
+      </MicrostepAnchor>
     </EfMicroseccion>
   </EfSectionStep>
 </template>

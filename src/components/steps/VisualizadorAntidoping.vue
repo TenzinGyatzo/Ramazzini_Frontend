@@ -10,6 +10,7 @@ import {
   getAntidopingSectionIndex,
   legacyStepToSectionIndex,
 } from '@/helpers/antidopingSections';
+import { shouldShowPinpointVisual } from '@/helpers/sectionPinpointVisual';
 import {
   ANTIDOPING_PARAMETROS_ORDEN,
   ANTIDOPING_PARAMETRO_LABELS_VISTA,
@@ -29,9 +30,23 @@ const resolveNavStep = (legacyStep) => {
   return legacyStep;
 };
 
+/** Fila/campo: sección + pinpoint */
 const goToStep = (stepNumber) => {
-  steps.goToStep(resolveNavStep(stepNumber));
+  steps.goToSection(resolveNavStep(stepNumber), stepNumber);
 };
+
+/** Título de sección: sin pinpoint */
+const goToSectionOnly = (stepNumber) => {
+  steps.goToSection(resolveNavStep(stepNumber), null);
+};
+
+const isPinnedLegacyStep = (legacyStep) =>
+  antidopingSectionsV2Enabled.value &&
+  steps.focusedLegacyStep === legacyStep &&
+  shouldShowPinpointVisual({
+    documentType: 'antidoping',
+    legacyStep,
+  });
 
 const isActiveLegacyStep = (legacyStep) => {
   if (antidopingSectionsV2Enabled.value) return false;
@@ -52,6 +67,9 @@ const rowOutlineClass = (legacyStep) =>
   isActiveLegacyStep(legacyStep)
     ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
     : '';
+const rowPinpointClass = (legacyStep) =>
+  isPinnedLegacyStep(legacyStep) ? 'pinpoint-row' : '';
+
 
 /** Filas reactivas: dependen del objeto completo del store (reemplazo en sync). */
 const filasParametros = computed(() => {
@@ -71,7 +89,7 @@ const filasParametros = computed(() => {
     class="visualizador-antidoping border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg p-7 2xl:p-7 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-lg mx-auto"
   >
     <div class="flex justify-between items-start mb-4">
-      <h2 class="text-lg font-medium">Información del Documento</h2>
+      <h2 class="text-lg font-medium cursor-pointer" @click="goToSectionOnly(1)">Información del Documento</h2>
       <EstadoDocumentoBadgeAlt
         v-if="isMX"
         :estado="formData.formDataAntidoping.estado"
@@ -97,7 +115,7 @@ const filasParametros = computed(() => {
       <tbody>
         <tr
           class="odd:bg-white even:bg-gray-50 cursor-pointer"
-          :class="rowOutlineClass(1)"
+          :class="[rowOutlineClass(1), rowPinpointClass(1)]"
           @click="goToStep(1)"
         >
           <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">
@@ -111,7 +129,7 @@ const filasParametros = computed(() => {
           v-for="fila in filasParametros"
           :key="fila.campo"
           class="odd:bg-white even:bg-gray-50 cursor-pointer"
-          :class="rowOutlineClass(2)"
+          :class="[rowOutlineClass(2), rowPinpointClass(2)]"
           @click="goToStep(2)"
         >
           <td class="px-2 py-1 border border-gray-300 font-medium whitespace-nowrap">
@@ -154,7 +172,13 @@ const filasParametros = computed(() => {
 .visualizador-antidoping thead tr.cursor-pointer:hover > th {
   background-color: #f0f0f0;
 }
-</style>
+
+.visualizador-antidoping tbody tr.pinpoint-row > td,
+.visualizador-antidoping tbody tr.pinpoint-row > th,
+.visualizador-antidoping thead tr.pinpoint-row > td,
+.visualizador-antidoping thead tr.pinpoint-row > th {
+  background-color: #dbeafe !important;
+}</style>
 
 <style>
 html.dark-mode .visualizador-antidoping tbody tr.cursor-pointer:hover,
@@ -164,5 +188,12 @@ html.dark-mode .visualizador-antidoping thead tr.cursor-pointer:hover,
 html.dark-mode .visualizador-antidoping thead tr.cursor-pointer:hover > td,
 html.dark-mode .visualizador-antidoping thead tr.cursor-pointer:hover > th {
   background-color: #475569 !important;
+}
+
+html.dark-mode .visualizador-antidoping tbody tr.pinpoint-row > td,
+html.dark-mode .visualizador-antidoping tbody tr.pinpoint-row > th,
+html.dark-mode .visualizador-antidoping thead tr.pinpoint-row > td,
+html.dark-mode .visualizador-antidoping thead tr.pinpoint-row > th {
+  background-color: #1e4a7a !important;
 }
 </style>

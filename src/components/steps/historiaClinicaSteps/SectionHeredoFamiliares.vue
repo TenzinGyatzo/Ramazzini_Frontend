@@ -1,4 +1,5 @@
 <script setup>
+import MicrostepAnchor from '../MicrostepAnchor.vue';
 import HcSectionStep from './HcSectionStep.vue';
 import Step2 from './Step2.vue';
 import Step3 from './Step3.vue';
@@ -14,15 +15,35 @@ import Step11 from './Step11.vue';
 
 <template>
   <HcSectionStep title="Antecedentes heredofamiliares">
-    <Step2 variant="compact" />
-    <Step3 variant="compact" />
-    <Step4 variant="compact" />
-    <Step5 variant="compact" />
-    <Step6 variant="compact" />
-    <Step7 variant="compact" />
-    <Step8 variant="compact" />
-    <Step9 variant="compact" />
-    <Step10 variant="compact" />
-    <Step11 variant="compact" />
+    <MicrostepAnchor :legacy-step="2">
+      <Step2 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="3">
+      <Step3 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="4">
+      <Step4 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="5">
+      <Step5 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="6">
+      <Step6 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="7">
+      <Step7 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="8">
+      <Step8 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="9">
+      <Step9 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="10">
+      <Step10 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="11">
+      <Step11 variant="compact" />
+    </MicrostepAnchor>
   </HcSectionStep>
 </template>

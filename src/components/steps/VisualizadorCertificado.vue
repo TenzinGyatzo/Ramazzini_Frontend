@@ -17,6 +17,7 @@ import {
   getCertificadoSectionIndex,
   legacyStepToSectionIndex,
 } from '@/helpers/certificadoSections';
+import { shouldShowPinpointVisual } from '@/helpers/sectionPinpointVisual';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -178,9 +179,23 @@ const resolveNavStep = (legacyStep) => {
   return legacyStep;
 };
 
+/** Fila/campo: sección + pinpoint */
 const goToStep = (stepNumber) => {
-  steps.goToStep(resolveNavStep(stepNumber));
+  steps.goToSection(resolveNavStep(stepNumber), stepNumber);
 };
+
+/** Título de sección: sin pinpoint */
+const goToSectionOnly = (stepNumber) => {
+  steps.goToSection(resolveNavStep(stepNumber), null);
+};
+
+const isPinnedLegacyStep = (legacyStep) =>
+  certificadoSectionsV2Enabled.value &&
+  steps.focusedLegacyStep === legacyStep &&
+  shouldShowPinpointVisual({
+    documentType: 'certificado',
+    legacyStep,
+  });
 
 const isActiveLegacyStep = (legacyStep) => {
   if (certificadoSectionsV2Enabled.value) return false;
@@ -201,6 +216,9 @@ const rowOutlineClass = (legacyStep) =>
   isActiveLegacyStep(legacyStep)
     ? 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md'
     : '';
+const rowPinpointClass = (legacyStep) =>
+  isPinnedLegacyStep(legacyStep) ? 'pinpoint-row' : '';
+
 
 const camposExploracion = [
   'abdomen', 'boca', 'cadera', 'cicatrices', 'codos', 'coordinacion',
@@ -265,7 +283,7 @@ function formatearCampo(campo) {
 
       <!-- Fecha -->
       <div class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        :class="[sectionOutlineClass('certificado'), rowOutlineClass(1)]"
+        :class="[sectionOutlineClass('certificado'), rowOutlineClass(1), rowPinpointClass(1)]"
         @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataCertificado.fechaCertificado) }}</span></p>
@@ -394,7 +412,7 @@ function formatearCampo(campo) {
            <strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong> 
            de <strong>{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}</strong> años de edad.
 
-           &nbsp; <span :class="[sectionOutlineClass('certificado'), rowOutlineClass(1)]">[DESCRIPCIÓN DE LA EXPLORACIÓN DE LA FECHA MÁS CERCANA]</span>
+           &nbsp; <span :class="[sectionOutlineClass('certificado'), rowOutlineClass(1), rowPinpointClass(1)]">[DESCRIPCIÓN DE LA EXPLORACIÓN DE LA FECHA MÁS CERCANA]</span>
          </template>
        </p>
 
@@ -402,7 +420,7 @@ function formatearCampo(campo) {
 
      <div class="w-full mb-4">
         <p class="text-justify">
-            Por lo anterior, se establece que <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido  + ' ' }}</strong><span v-if="proveedorSalud.pais === 'GT' && trabajadores.currentTrabajador.sexo === 'Femenino'"> </span><span class="cursor-pointer" :class="[sectionOutlineClass('certificado'), rowOutlineClass(2)]" @click="goToStep(2)">{{ formData.formDataCertificado.impedimentosFisicos ? formData.formDataCertificado.impedimentosFisicos : '[DESCRIPCIÓN DE IMPEDIMENTOS FÍSICOS]' }}.</span> Este certificado de salud no implica ningún tipo de garantía de que <span>{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el trabajador' : 'la trabajadora' }}</span> no se lesionará o enfermará en el futuro.
+            Por lo anterior, se establece que <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido  + ' ' }}</strong><span v-if="proveedorSalud.pais === 'GT' && trabajadores.currentTrabajador.sexo === 'Femenino'"> </span><span class="cursor-pointer" :class="[sectionOutlineClass('certificado'), rowOutlineClass(2), rowPinpointClass(2)]" @click="goToStep(2)">{{ formData.formDataCertificado.impedimentosFisicos ? formData.formDataCertificado.impedimentosFisicos : '[DESCRIPCIÓN DE IMPEDIMENTOS FÍSICOS]' }}.</span> Este certificado de salud no implica ningún tipo de garantía de que <span>{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el trabajador' : 'la trabajadora' }}</span> no se lesionará o enfermará en el futuro.
         </p>
      </div>
      
@@ -429,4 +447,15 @@ html.dark-mode .visualizador-certificado .cursor-pointer:hover {
   background-color: #475569 !important;
   color: #f8fafc !important;
 }
-</style>
+
+.visualizador-certificado tbody tr.pinpoint-row > td,
+.visualizador-certificado tbody tr.pinpoint-row > th,
+.visualizador-certificado thead tr.pinpoint-row > td,
+.visualizador-certificado thead tr.pinpoint-row > th,
+.visualizador-certificado .pinpoint-row {
+  background-color: #dbeafe !important;
+}
+
+html.dark-mode .visualizador-certificado .pinpoint-row {
+  background-color: #1e4a7a !important;
+}</style>

@@ -16,8 +16,19 @@ export const useStepsStore = defineStore("steps", () => {
   // Paso actual
   const currentStep = ref(1);
 
+  /** Legacy step (V1 index) resaltado dentro de la sección V2 activa; null = sin pinpoint. */
+  const focusedLegacyStep = ref<number | null>(null);
+
   // Bandera para evitar múltiples entradas rápidas
   const isNavigating = ref(false);
+
+  const setPinpoint = (legacyStep: number) => {
+    focusedLegacyStep.value = legacyStep;
+  };
+
+  const clearPinpoint = () => {
+    focusedLegacyStep.value = null;
+  };
 
   // Establece los pasos y marca los componentes como no reactivos
   const setSteps = (
@@ -31,6 +42,8 @@ export const useStepsStore = defineStore("steps", () => {
       ...step,
       component: markRaw(step.component),
     }));
+
+    clearPinpoint();
 
     if (options?.preserveCurrentStep && prevLen > 0) {
       // Incluir la pantalla «Completado» (paso = length + 1), no solo el último paso del formulario.
@@ -73,6 +86,7 @@ export const useStepsStore = defineStore("steps", () => {
     if (!validateCurrentStep()) return; // Detener navegación si la validación falla
 
     isNavigating.value = true;
+    clearPinpoint();
 
     // Lógica especial para controlPrenatal
     if (documentos.currentTypeOfDocument === 'controlPrenatal') {
@@ -106,6 +120,7 @@ export const useStepsStore = defineStore("steps", () => {
     if (isNavigating.value) return;
 
     isNavigating.value = true;
+    clearPinpoint();
 
     if (currentStep.value > 1) {
       currentStep.value--;
@@ -116,8 +131,15 @@ export const useStepsStore = defineStore("steps", () => {
     }, 300);
   };
 
-  // Ir a un paso específico
-  const goToStep = (stepNumber: number) => {
+  /**
+   * Navega a un índice de sección/paso.
+   * Con legacyStep → fija pinpoint (edición precisa desde visualizador).
+   * Sin legacyStep → limpia pinpoint (p. ej. título de sección o callers legacy).
+   */
+  const goToSection = (
+    sectionIndex: number,
+    legacyStep?: number | null,
+  ) => {
     // Se usa el mapa de redirección para compensar la diferencia de pasos entre los trabajadores masculinos y femeninos
     // debido a los antecedentes Gineco Obstétricos - SOLO para Historia Clínica granular (V1).
     // En HC por secciones (V2) el array tiene ≤8 pasos y los índices ya son de sección.
@@ -133,7 +155,9 @@ export const useStepsStore = defineStore("steps", () => {
       45: 31,
       46: 32,
     };
-  
+
+    let stepNumber = sectionIndex;
+
     // Solo aplicar redirección si el paso solicitado está en el mapa Y es Historia Clínica V1
     // Para otros documentos como Control Prenatal, no aplicar redirección
     if (
@@ -144,21 +168,35 @@ export const useStepsStore = defineStore("steps", () => {
     ) {
       stepNumber = redirectionMap[stepNumber];
     }
-  
+
     if (stepNumber >= 1 && stepNumber <= steps.value.length) {
       currentStep.value = stepNumber;
+      if (legacyStep != null && legacyStep > 0) {
+        setPinpoint(legacyStep);
+      } else {
+        clearPinpoint();
+      }
     } else {
       console.error(`El paso ${stepNumber} no es válido.`);
     }
   };
 
+  /** Wrapper: navega sin pinpoint (limpia). Preferir goToSection cuando se quiera pinpoint. */
+  const goToStep = (stepNumber: number) => {
+    goToSection(stepNumber, null);
+  };
+
   return {
     steps,
     currentStep,
+    focusedLegacyStep,
     setSteps,
+    setPinpoint,
+    clearPinpoint,
     validateCurrentStep,
     nextStep,
     previousStep,
+    goToSection,
     goToStep,
     showMissingFieldsModal,
   };

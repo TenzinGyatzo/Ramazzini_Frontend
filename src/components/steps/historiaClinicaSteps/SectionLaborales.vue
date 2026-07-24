@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import MicrostepAnchor from '../MicrostepAnchor.vue';
 import HcSectionStep from './HcSectionStep.vue';
 import Step42 from './Step42.vue';
 import Step43 from './Step43.vue';
@@ -55,7 +56,9 @@ function quitarUltimoTrabajo() {
 <template>
   <HcSectionStep title="Antecedentes laborales">
     <div class="space-y-3">
-      <Step45 variant="compact" />
+      <MicrostepAnchor :legacy-step="45">
+        <Step45 variant="compact" />
+      </MicrostepAnchor>
 
       <div class="border-t border-gray-200 my-3" role="separator" aria-hidden="true" />
 
@@ -67,7 +70,13 @@ function quitarUltimoTrabajo() {
         leave-from-class="opacity-100 transform translate-y-0"
         leave-to-class="opacity-0 transform -translate-y-2"
       >
-        <Step42 v-if="trabajosVisibles >= 1" key="trabajo-anterior-1" variant="compact" />
+        <MicrostepAnchor
+          v-if="trabajosVisibles >= 1"
+          :legacy-step="42"
+          key="trabajo-anterior-1"
+        >
+          <Step42 variant="compact" />
+        </MicrostepAnchor>
       </Transition>
       <Transition
         enter-active-class="transition-all duration-300 ease-out"
@@ -77,7 +86,13 @@ function quitarUltimoTrabajo() {
         leave-from-class="opacity-100 transform translate-y-0"
         leave-to-class="opacity-0 transform -translate-y-2"
       >
-        <Step43 v-if="trabajosVisibles >= 2" key="trabajo-anterior-2" variant="compact" />
+        <MicrostepAnchor
+          v-if="trabajosVisibles >= 2"
+          :legacy-step="43"
+          key="trabajo-anterior-2"
+        >
+          <Step43 variant="compact" />
+        </MicrostepAnchor>
       </Transition>
       <Transition
         enter-active-class="transition-all duration-300 ease-out"
@@ -87,7 +102,13 @@ function quitarUltimoTrabajo() {
         leave-from-class="opacity-100 transform translate-y-0"
         leave-to-class="opacity-0 transform -translate-y-2"
       >
-        <Step44 v-if="trabajosVisibles >= 3" key="trabajo-anterior-3" variant="compact" />
+        <MicrostepAnchor
+          v-if="trabajosVisibles >= 3"
+          :legacy-step="44"
+          key="trabajo-anterior-3"
+        >
+          <Step44 variant="compact" />
+        </MicrostepAnchor>
       </Transition>
 
       <div class="flex flex-wrap gap-2 pt-1 pb-2">

@@ -1,4 +1,5 @@
 <script setup>
+import MicrostepAnchor from '../MicrostepAnchor.vue';
 import HcSectionStep from './HcSectionStep.vue';
 import Step28 from './Step28.vue';
 import Step29 from './Step29.vue';
@@ -18,19 +19,47 @@ import Step41 from './Step41.vue';
 
 <template>
   <HcSectionStep title="Antecedentes gineco-obstétricos">
-    <Step28 variant="compact" />
-    <Step29 variant="compact" />
-    <Step30 variant="compact" />
-    <Step31 variant="compact" />
-    <Step32 variant="compact" />
-    <Step33 variant="compact" />
-    <Step34 variant="compact" />
-    <Step35 variant="compact" />
-    <Step36 variant="compact" />
-    <Step37 variant="compact" />
-    <Step38 variant="compact" />
-    <Step39 variant="compact" />
-    <Step40 variant="compact" />
-    <Step41 variant="compact" />
+    <MicrostepAnchor :legacy-step="28">
+      <Step28 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="29">
+      <Step29 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="30">
+      <Step30 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="31">
+      <Step31 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="32">
+      <Step32 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="33">
+      <Step33 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="34">
+      <Step34 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="35">
+      <Step35 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="36">
+      <Step36 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="37">
+      <Step37 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="38">
+      <Step38 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="39">
+      <Step39 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="40">
+      <Step40 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="41">
+      <Step41 variant="compact" />
+    </MicrostepAnchor>
   </HcSectionStep>
 </template>

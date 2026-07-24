@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { format } from 'date-fns';
+import MicrostepAnchor from '../MicrostepAnchor.vue';
 import AptitudSectionStep from './AptitudSectionStep.vue';
 import Step2 from './Step2.vue';
 import Step3 from './Step3.vue';
@@ -82,34 +83,59 @@ const transitionAttrs = {
       </p>
 
       <Transition v-bind="transitionAttrs">
-        <div v-if="evaluacionesVisibles >= 1" key="eval-1">
+        <MicrostepAnchor v-if="evaluacionesVisibles >= 1" :legacy-step="2" key="eval-1">
           <Step2 variant="compact" />
-        </div>
+        </MicrostepAnchor>
       </Transition>
       <Transition v-bind="transitionAttrs">
-        <div v-if="evaluacionesVisibles >= 2" key="eval-2" class="border-t border-gray-200/90 pt-3">
+        <MicrostepAnchor
+          v-if="evaluacionesVisibles >= 2"
+          :legacy-step="3"
+          key="eval-2"
+          class="border-t border-gray-200/90 pt-3"
+        >
           <Step3 variant="compact" />
-        </div>
+        </MicrostepAnchor>
       </Transition>
       <Transition v-bind="transitionAttrs">
-        <div v-if="evaluacionesVisibles >= 3" key="eval-3" class="border-t border-gray-200/90 pt-3">
+        <MicrostepAnchor
+          v-if="evaluacionesVisibles >= 3"
+          :legacy-step="4"
+          key="eval-3"
+          class="border-t border-gray-200/90 pt-3"
+        >
           <Step4 variant="compact" />
-        </div>
+        </MicrostepAnchor>
       </Transition>
       <Transition v-bind="transitionAttrs">
-        <div v-if="evaluacionesVisibles >= 4" key="eval-4" class="border-t border-gray-200/90 pt-3">
+        <MicrostepAnchor
+          v-if="evaluacionesVisibles >= 4"
+          :legacy-step="5"
+          key="eval-4"
+          class="border-t border-gray-200/90 pt-3"
+        >
           <Step5 variant="compact" />
-        </div>
+        </MicrostepAnchor>
       </Transition>
       <Transition v-bind="transitionAttrs">
-        <div v-if="evaluacionesVisibles >= 5" key="eval-5" class="border-t border-gray-200/90 pt-3">
+        <MicrostepAnchor
+          v-if="evaluacionesVisibles >= 5"
+          :legacy-step="6"
+          key="eval-5"
+          class="border-t border-gray-200/90 pt-3"
+        >
           <Step6 variant="compact" />
-        </div>
+        </MicrostepAnchor>
       </Transition>
       <Transition v-bind="transitionAttrs">
-        <div v-if="evaluacionesVisibles >= 6" key="eval-6" class="border-t border-gray-200/90 pt-3">
+        <MicrostepAnchor
+          v-if="evaluacionesVisibles >= 6"
+          :legacy-step="7"
+          key="eval-6"
+          class="border-t border-gray-200/90 pt-3"
+        >
           <Step7 variant="compact" />
-        </div>
+        </MicrostepAnchor>
       </Transition>
 
       <div class="flex flex-wrap gap-2 pt-1 pb-2">

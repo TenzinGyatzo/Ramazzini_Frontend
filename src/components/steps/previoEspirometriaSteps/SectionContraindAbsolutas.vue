@@ -1,4 +1,5 @@
 <script setup>
+import MicrostepAnchor from '../MicrostepAnchor.vue';
 import PeSectionStep from './PeSectionStep.vue';
 import Step23 from './Step23.vue';
 import Step24 from './Step24.vue';
@@ -9,10 +10,20 @@ import Step27 from './Step27.vue';
 
 <template>
   <PeSectionStep title="Contraindicaciones absolutas">
-    <Step23 variant="compact" />
-    <Step24 variant="compact" />
-    <Step25 variant="compact" />
-    <Step26 variant="compact" />
-    <Step27 variant="compact" />
+    <MicrostepAnchor :legacy-step="23">
+      <Step23 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="24">
+      <Step24 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="25">
+      <Step25 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="26">
+      <Step26 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="27">
+      <Step27 variant="compact" />
+    </MicrostepAnchor>
   </PeSectionStep>
 </template>

@@ -1,4 +1,5 @@
 <script setup>
+import MicrostepAnchor from '../MicrostepAnchor.vue';
 import HoSectionStep from './HoSectionStep.vue';
 import Step8 from './Step8.vue';
 import Step9 from './Step9.vue';
@@ -12,13 +13,29 @@ import Step15 from './Step15.vue';
 
 <template>
   <HoSectionStep title="Antecedentes personales">
-    <Step8 variant="compact" />
-    <Step9 variant="compact" />
-    <Step10 variant="compact" />
-    <Step11 variant="compact" />
-    <Step12 variant="compact" />
-    <Step13 variant="compact" />
-    <Step14 variant="compact" />
-    <Step15 variant="compact" />
+    <MicrostepAnchor :legacy-step="8">
+      <Step8 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="9">
+      <Step9 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="10">
+      <Step10 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="11">
+      <Step11 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="12">
+      <Step12 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="13">
+      <Step13 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="14">
+      <Step14 variant="compact" />
+    </MicrostepAnchor>
+    <MicrostepAnchor :legacy-step="15">
+      <Step15 variant="compact" />
+    </MicrostepAnchor>
   </HoSectionStep>
 </template>

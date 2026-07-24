@@ -11,6 +11,7 @@ import { useNom024Fields } from '@/composables/useNom024Fields';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
 import { useNotaMedicaSectionsV2 } from '@/composables/useNotaMedicaSectionsV2';
 import { legacyStepToSectionIndex } from '@/helpers/notaMedicaSections';
+import { shouldShowPinpointVisual } from '@/helpers/sectionPinpointVisual';
 import {
   isPrimeraVezComorbilidadActiva,
   tieneComorbilidadDiagRegistrada,
@@ -50,11 +51,30 @@ const isNavActive = (legacyStep) => {
   return steps.currentStep === resolveNavStep(legacyStep);
 };
 
+const isPinned = (legacyStep) =>
+  legacyStep != null &&
+  nmSectionsV2Enabled.value &&
+  steps.focusedLegacyStep === legacyStep &&
+  shouldShowPinpointVisual({
+    documentType: 'notaMedica',
+    legacyStep,
+    sexo: trabajadores.currentTrabajador?.sexo,
+    showSires: isSIRES.value,
+  });
+
 const navOutlineClass = (legacyStep, soft = false) => {
-  if (!isNavActive(legacyStep)) return '';
-  return soft
-    ? 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md'
-    : 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md';
+  const classes = [];
+  if (isNavActive(legacyStep)) {
+    classes.push(
+      soft
+        ? 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md'
+        : 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md',
+    );
+  }
+  if (isPinned(legacyStep)) {
+    classes.push('pinpoint-block');
+  }
+  return classes.join(' ');
 };
 
 const etiquetasRelacionEmbarazo = {
@@ -92,8 +112,14 @@ async function loadAfiliacionLabels() {
   }
 }
 
+/** Fila/campo: sección + pinpoint */
 const goToStep = (stepNumber) => {
-  steps.goToStep(resolveNavStep(stepNumber));
+  steps.goToSection(resolveNavStep(stepNumber), stepNumber);
+};
+
+/** Título de sección: sin pinpoint */
+const goToSectionOnly = (stepNumber) => {
+  steps.goToSection(resolveNavStep(stepNumber), null);
 };
 
 // Helper functions para extraer código y descripción del formato "CODE - DESCRIPTION"
@@ -525,5 +551,13 @@ const muestraDiagnostico3 = computed(() =>
 html.dark-mode .visualizador-nota-medica .cursor-pointer:hover {
   background-color: #475569 !important;
   color: #f8fafc !important;
+}
+
+.visualizador-nota-medica .pinpoint-block {
+  background-color: #dbeafe !important;
+}
+
+html.dark-mode .visualizador-nota-medica .pinpoint-block {
+  background-color: #1e4a7a !important;
 }
 </style>
