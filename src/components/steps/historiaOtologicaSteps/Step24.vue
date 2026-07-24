@@ -1,8 +1,10 @@
 <script setup>
 import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+import { useDocumentosStore } from '@/stores/documentos';
 
-const { formDataHistoriaOtologica } = useFormDataStore();
+const formDataStore = useFormDataStore();
+const documentos = useDocumentosStore();
 
 const props = defineProps({
   variant: {
@@ -13,39 +15,45 @@ const props = defineProps({
 });
 const { variant } = toRefs(props);
 
-
-// Valor local para la pregunta principal
 const otoscopiaOidoDerecho = ref('PERMEABLE');
 const otoscopiaOidoIzquierdo = ref('PERMEABLE');
 
+function syncToStore(od, oi) {
+  formDataStore.formDataHistoriaOtologica = {
+    ...formDataStore.formDataHistoriaOtologica,
+    otoscopiaOidoDerecho: od,
+    otoscopiaOidoIzquierdo: oi,
+  };
+}
+
 onMounted(() => {
-    // Verificar si formDataHistoriaOtologica.otoscopiaOidoDerecho tiene un valor y establecerlo en otoscopiaOidoDerecho
-    if (formDataHistoriaOtologica.otoscopiaOidoDerecho) {
-        otoscopiaOidoDerecho.value = formDataHistoriaOtologica.otoscopiaOidoDerecho;
-    }
-    if (formDataHistoriaOtologica.otoscopiaOidoIzquierdo) {
-        otoscopiaOidoIzquierdo.value = formDataHistoriaOtologica.otoscopiaOidoIzquierdo;
-    }
+  if (documentos.currentDocument) {
+    otoscopiaOidoDerecho.value =
+      documentos.currentDocument.otoscopiaOidoDerecho || 'PERMEABLE';
+    otoscopiaOidoIzquierdo.value =
+      documentos.currentDocument.otoscopiaOidoIzquierdo || 'PERMEABLE';
+  } else {
+    otoscopiaOidoDerecho.value =
+      formDataStore.formDataHistoriaOtologica.otoscopiaOidoDerecho || 'PERMEABLE';
+    otoscopiaOidoIzquierdo.value =
+      formDataStore.formDataHistoriaOtologica.otoscopiaOidoIzquierdo || 'PERMEABLE';
+  }
+  syncToStore(otoscopiaOidoDerecho.value, otoscopiaOidoIzquierdo.value);
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para otoscopiaOidoDerecho
-    if (!formDataHistoriaOtologica.otoscopiaOidoDerecho) {
-        formDataHistoriaOtologica.otoscopiaOidoDerecho = otoscopiaOidoDerecho.value;
-    }
-    if (!formDataHistoriaOtologica.otoscopiaOidoIzquierdo) {
-        formDataHistoriaOtologica.otoscopiaOidoIzquierdo = otoscopiaOidoIzquierdo.value;
-    }
+  const data = formDataStore.formDataHistoriaOtologica;
+  if (!data.otoscopiaOidoDerecho || !data.otoscopiaOidoIzquierdo) {
+    syncToStore(otoscopiaOidoDerecho.value, otoscopiaOidoIzquierdo.value);
+  }
 });
 
-// Sincronizar otoscopiaOidoDerecho con formData
 watch(otoscopiaOidoDerecho, (newValue) => {
-    formDataHistoriaOtologica.otoscopiaOidoDerecho = newValue;
+  syncToStore(newValue, otoscopiaOidoIzquierdo.value);
 });
 
-// Sincronizar otoscopiaOidoIzquierdo con formData
 watch(otoscopiaOidoIzquierdo, (newValue) => {
-    formDataHistoriaOtologica.otoscopiaOidoIzquierdo = newValue;
+  syncToStore(otoscopiaOidoDerecho.value, newValue);
 });
 
 </script>

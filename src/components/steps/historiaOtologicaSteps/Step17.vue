@@ -1,8 +1,10 @@
 <script setup>
 import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+import { useDocumentosStore } from '@/stores/documentos';
 
-const { formDataHistoriaOtologica } = useFormDataStore();
+const formDataStore = useFormDataStore();
+const documentos = useDocumentosStore();
 
 const props = defineProps({
   variant: {
@@ -13,27 +15,34 @@ const props = defineProps({
 });
 const { variant } = toRefs(props);
 
-
-// Valor local para la pregunta principal
 const tiempoExposicionLaboral = ref('NINGUNO');
 
+function syncToStore(value) {
+  formDataStore.formDataHistoriaOtologica = {
+    ...formDataStore.formDataHistoriaOtologica,
+    tiempoExposicionLaboral: value,
+  };
+}
+
 onMounted(() => {
-    // Verificar si formDataHistoriaOtologica.tiempoExposicionLaboral tiene un valor y establecerlo en tiempoExposicionLaboral
-    if (formDataHistoriaOtologica.tiempoExposicionLaboral) {
-        tiempoExposicionLaboral.value = formDataHistoriaOtologica.tiempoExposicionLaboral;
-    }
+  if (documentos.currentDocument) {
+    tiempoExposicionLaboral.value =
+      documentos.currentDocument.tiempoExposicionLaboral || 'NINGUNO';
+  } else {
+    tiempoExposicionLaboral.value =
+      formDataStore.formDataHistoriaOtologica.tiempoExposicionLaboral || 'NINGUNO';
+  }
+  syncToStore(tiempoExposicionLaboral.value);
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para tiempoExposicionLaboral
-    if (!formDataHistoriaOtologica.tiempoExposicionLaboral) {
-        formDataHistoriaOtologica.tiempoExposicionLaboral = tiempoExposicionLaboral.value;
-    }
+  if (!formDataStore.formDataHistoriaOtologica.tiempoExposicionLaboral) {
+    syncToStore(tiempoExposicionLaboral.value);
+  }
 });
 
-// Sincronizar tiempoExposicionLaboral con formData
 watch(tiempoExposicionLaboral, (newValue) => {
-    formDataHistoriaOtologica.tiempoExposicionLaboral = newValue;
+  syncToStore(newValue);
 });
 
 </script>

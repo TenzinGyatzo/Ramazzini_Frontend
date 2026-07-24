@@ -1,8 +1,10 @@
 <script setup>
 import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+import { useDocumentosStore } from '@/stores/documentos';
 
-const { formDataHistoriaOtologica } = useFormDataStore();
+const formDataStore = useFormDataStore();
+const documentos = useDocumentosStore();
 
 const props = defineProps({
   variant: {
@@ -13,27 +15,34 @@ const props = defineProps({
 });
 const { variant } = toRefs(props);
 
-
-// Valor local para la pregunta principal
 const usoProteccionAuditiva = ref('SIEMPRE');
 
+function syncToStore(value) {
+  formDataStore.formDataHistoriaOtologica = {
+    ...formDataStore.formDataHistoriaOtologica,
+    usoProteccionAuditiva: value,
+  };
+}
+
 onMounted(() => {
-    // Verificar si formDataHistoriaOtologica.usoProteccionAuditiva tiene un valor y establecerlo en usoProteccionAuditiva
-    if (formDataHistoriaOtologica.usoProteccionAuditiva) {
-        usoProteccionAuditiva.value = formDataHistoriaOtologica.usoProteccionAuditiva;
-    }
+  if (documentos.currentDocument) {
+    usoProteccionAuditiva.value =
+      documentos.currentDocument.usoProteccionAuditiva || 'SIEMPRE';
+  } else {
+    usoProteccionAuditiva.value =
+      formDataStore.formDataHistoriaOtologica.usoProteccionAuditiva || 'SIEMPRE';
+  }
+  syncToStore(usoProteccionAuditiva.value);
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para usoProteccionAuditiva
-    if (!formDataHistoriaOtologica.usoProteccionAuditiva) {
-        formDataHistoriaOtologica.usoProteccionAuditiva = usoProteccionAuditiva.value;
-    }
+  if (!formDataStore.formDataHistoriaOtologica.usoProteccionAuditiva) {
+    syncToStore(usoProteccionAuditiva.value);
+  }
 });
 
-// Sincronizar usoProteccionAuditiva con formData
 watch(usoProteccionAuditiva, (newValue) => {
-    formDataHistoriaOtologica.usoProteccionAuditiva = newValue;
+  syncToStore(newValue);
 });
 
 </script>
