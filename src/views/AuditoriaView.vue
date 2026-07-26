@@ -183,7 +183,6 @@ async function verifyAudit() {
               <option value="DOC_CREATE_DRAFT">Doc. borrador creado</option>
               <option value="DOC_UPDATE_DRAFT">Doc. borrador actualizado</option>
               <option value="DOC_FINALIZE">Doc. finalizado</option>
-              <!-- <option value="DOC_CREATE_CORRECTION">Doc. corrección/versión</option> -->
               <option value="DOC_ANULATE">Doc. anulado</option>
             </optgroup>
             <optgroup label="Accesos">
@@ -206,7 +205,6 @@ async function verifyAudit() {
               <option value="GIIS_EXPORT_FILE_GENERATED">GIIS archivo generado</option>
               <option value="GIIS_EXPORT_DOWNLOADED">GIIS descargado</option>
               <option value="AUDIT_EXPORT_DOWNLOAD">Export auditoría descargado</option>
-              <!-- <option value="SYSTEM_JOB">Job sistema</option> -->
             </optgroup>
             <optgroup label="Gestión de usuarios">
               <option value="USER_INVITATION_SENT">Invitación enviada</option>
