@@ -84,6 +84,7 @@ function chipClass(option: 'Si' | 'No') {
           type="button"
           :class="chipClass('No')"
           :aria-pressed="value === 'No'"
+          @pointerdown="value = 'No'"
           @click="value = 'No'"
         >
           No
@@ -92,6 +93,7 @@ function chipClass(option: 'Si' | 'No') {
           type="button"
           :class="chipClass('Si')"
           :aria-pressed="value === 'Si'"
+          @pointerdown="value = 'Si'"
           @click="value = 'Si'"
         >
           Sí

@@ -11,7 +11,7 @@ import Step2 from './Step2.vue';
       <Step1 variant="compact" />
     </MicrostepAnchor>
     <div class="py-2.5">
-      <div class="border-t border-gray-200" />
+      <div class="border-t border-gray-200 dark:border-slate-700" />
     </div>
     <MicrostepAnchor :legacy-step="2">
       <Step2 variant="compact" />

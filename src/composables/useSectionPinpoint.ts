@@ -39,7 +39,10 @@ function focusElement(el: HTMLElement): void {
 async function focusBestControl(
   anchor: HTMLElement,
   isStale: () => boolean,
+  opts?: { allowButtonFallback?: boolean },
 ): Promise<void> {
+  const allowButtonFallback = opts?.allowButtonFallback !== false;
+
   for (let attempt = 0; attempt < 6; attempt++) {
     if (isStale()) return;
 
@@ -66,7 +69,7 @@ async function focusBestControl(
     }
   }
 
-  if (isStale()) return;
+  if (isStale() || !allowButtonFallback) return;
   const fallback = anchor.querySelector(
     FOCUSABLE_SELECTOR,
   ) as HTMLElement | null;
@@ -92,8 +95,26 @@ function scrollAnchorTowardCenter(root: HTMLElement, anchor: HTMLElement): void 
   root.scrollTo({ top: nextTop, behavior: 'smooth' });
 }
 
+function waitForPointerIdle(root: HTMLElement): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      root.removeEventListener('pointerup', done, true);
+      root.removeEventListener('pointercancel', done, true);
+      window.clearTimeout(timeoutId);
+      // Un frame extra: el click se despacha justo después de pointerup.
+      requestAnimationFrame(() => resolve());
+    };
+    root.addEventListener('pointerup', done, true);
+    root.addEventListener('pointercancel', done, true);
+    const timeoutId = window.setTimeout(done, 320);
+  });
+}
+
 /**
- * Scroll + focus al microstep pinneado, y sync bidireccional vía focusin.
+ * Scroll + focus al microstep pinneado, y sync bidireccional vía focusin/pointerdown.
  * Montar en cada *SectionStep.vue pasando el contenedor scrolleable.
  */
 export function useSectionPinpoint(
@@ -105,6 +126,21 @@ export function useSectionPinpoint(
   let suppressFocusin = false;
   /** Cancela applies en vuelo cuando cambia el target. */
   let applyGeneration = 0;
+  /** Pointer activo dentro del panel (evita scroll que cancela el click del chip). */
+  let pointersDown = 0;
+
+  const pinFromTarget = (target: EventTarget | null) => {
+    const root = unref(scrollRoot);
+    if (!root || !(target instanceof Element)) return;
+    const anchor = target.closest('[data-legacy-step]');
+    if (!anchor || !root.contains(anchor)) return;
+    const raw = anchor.getAttribute('data-legacy-step');
+    const n = raw != null ? Number(raw) : NaN;
+    if (!Number.isFinite(n) || n <= 0) return;
+    if (steps.focusedLegacyStep !== n) {
+      steps.setPinpoint(n);
+    }
+  };
 
   const applyPinpoint = async (legacyStep: number | null) => {
     const generation = ++applyGeneration;
@@ -120,24 +156,44 @@ export function useSectionPinpoint(
     const anchor = findAnchor(root, legacyStep);
     if (!anchor) return;
 
-    scrollAnchorTowardCenter(root, anchor);
+    const active = document.activeElement;
+    const activeInAnchor =
+      active instanceof Element && anchor.contains(active);
+    const deferForUserGesture = pointersDown > 0 || activeInAnchor;
+
+    /**
+     * Si el usuario está en medio de un gesto (chip Sí/No) o ya enfocó este
+     * microstep, diferir scroll/focus hasta liberar el pointer. Scroll durante
+     * mousedown→mouseup cancela el click; no diferir también pierde el
+     * autoscroll al abrir el input de «Sí».
+     */
+    if (deferForUserGesture) {
+      if (pointersDown > 0) {
+        await waitForPointerIdle(root);
+      } else {
+        await new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 0);
+        });
+      }
+      if (isStale()) return;
+    }
+
+    const liveRoot = unref(scrollRoot);
+    if (!liveRoot) return;
+    const liveAnchor = findAnchor(liveRoot, legacyStep);
+    if (!liveAnchor) return;
+
+    scrollAnchorTowardCenter(liveRoot, liveAnchor);
     await nextTick();
     if (isStale()) return;
 
-    const active = document.activeElement;
-    if (
-      active instanceof Element &&
-      anchor.contains(active) &&
-      active.matches(TEXT_FOCUS_SELECTOR)
-    ) {
-      return;
-    }
-
     suppressFocusin = true;
     try {
-      await focusBestControl(anchor, isStale);
+      // Tras un click en chip, preferir el input de texto; no robar foco a botones.
+      await focusBestControl(liveAnchor, isStale, {
+        allowButtonFallback: !deferForUserGesture,
+      });
     } finally {
-      // Liberar tras el tick de focusin síncrono.
       await nextTick();
       suppressFocusin = false;
     }
@@ -152,31 +208,36 @@ export function useSectionPinpoint(
 
   const onFocusIn = (event: FocusEvent) => {
     if (suppressFocusin) return;
-    const root = unref(scrollRoot);
-    if (!root) return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const anchor = target.closest('[data-legacy-step]');
-    if (!anchor || !root.contains(anchor)) return;
-    const raw = anchor.getAttribute('data-legacy-step');
-    const n = raw != null ? Number(raw) : NaN;
-    if (!Number.isFinite(n) || n <= 0) return;
-    if (steps.focusedLegacyStep !== n) {
-      steps.setPinpoint(n);
-    }
+    pinFromTarget(event.target);
+  };
+
+  const onPointerDownCapture = (event: PointerEvent) => {
+    pointersDown += 1;
+    pinFromTarget(event.target);
+  };
+
+  const onPointerUpCapture = () => {
+    pointersDown = Math.max(0, pointersDown - 1);
   };
 
   onMounted(() => {
     const root = unref(scrollRoot);
     root?.addEventListener('focusin', onFocusIn);
+    root?.addEventListener('pointerdown', onPointerDownCapture, true);
+    root?.addEventListener('pointerup', onPointerUpCapture, true);
+    root?.addEventListener('pointercancel', onPointerUpCapture, true);
     void applyPinpoint(steps.focusedLegacyStep);
   });
 
   onUnmounted(() => {
     applyGeneration += 1;
     suppressFocusin = false;
+    pointersDown = 0;
     const root = unref(scrollRoot);
     root?.removeEventListener('focusin', onFocusIn);
+    root?.removeEventListener('pointerdown', onPointerDownCapture, true);
+    root?.removeEventListener('pointerup', onPointerUpCapture, true);
+    root?.removeEventListener('pointercancel', onPointerUpCapture, true);
     stopWatch();
   });
 }

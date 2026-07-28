@@ -137,7 +137,7 @@ const filasParametros = computed(() => {
           </td>
           <td
             class="px-2 py-1 border border-gray-300"
-            :class="fila.valor === 'Positivo' ? 'text-red-600 font-bold' : ''"
+            :class="fila.valor === 'Positivo' ? 'text-red-600 dark:text-rose-300 font-bold' : ''"
           >
             {{ fila.valor }}
           </td>
@@ -195,5 +195,9 @@ html.dark-mode .visualizador-antidoping tbody tr.pinpoint-row > th,
 html.dark-mode .visualizador-antidoping thead tr.pinpoint-row > td,
 html.dark-mode .visualizador-antidoping thead tr.pinpoint-row > th {
   background-color: #1e4a7a !important;
+}
+
+html.dark-mode .visualizador-antidoping .text-red-600 {
+  color: #fda4af !important;
 }
 </style>

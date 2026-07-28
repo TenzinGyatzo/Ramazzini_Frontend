@@ -156,7 +156,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"

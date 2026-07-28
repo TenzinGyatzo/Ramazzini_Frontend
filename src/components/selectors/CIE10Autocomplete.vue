@@ -240,7 +240,7 @@ watch(() => props.modelValue, async (newVal) => {
         @input="onInput"
         @keydown="handleKeyDown"
         :placeholder="placeholder"
-        class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all shadow-sm"
+        class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-all shadow-sm dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-400"
         v-bind="catalogSearchInputAttrs"
         role="combobox"
         :aria-expanded="showDropdown"
@@ -261,7 +261,7 @@ watch(() => props.modelValue, async (newVal) => {
     <!-- Dropdown results -->
     <div 
       v-if="showDropdown || errorMessage" 
-      class="absolute z-50 mt-1 w-full min-w-full max-w-2xl bg-white shadow-2xl max-h-80 rounded-xl py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none border border-emerald-50"
+      class="absolute z-50 mt-1 w-full min-w-full max-w-2xl bg-white shadow-2xl max-h-80 rounded-xl py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none border border-emerald-50 dark:bg-slate-800 dark:border-slate-600 dark:ring-slate-700"
       role="listbox"
     >
       <div v-if="errorMessage" class="px-4 py-2 text-rose-600 font-medium flex items-center gap-2">
@@ -277,7 +277,9 @@ watch(() => props.modelValue, async (newVal) => {
           @mouseenter="selectedIndex = index"
           :class="[
             'cursor-pointer select-none relative py-1.5 px-2.5 transition-colors',
-            selectedIndex === index ? 'bg-emerald-50 text-emerald-900' : 'text-gray-900'
+            selectedIndex === index
+              ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-100'
+              : 'text-gray-900 dark:text-slate-100 dark:hover:bg-slate-700'
           ]"
           role="option"
           :aria-selected="selectedIndex === index"

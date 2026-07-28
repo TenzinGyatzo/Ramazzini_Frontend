@@ -39,7 +39,7 @@ watch(exploracionFisica, (newValue) => {
 </script>
 
 <template>
-    <div>
+    <div class="nota-medica-dark-inputs">
         <h1
             v-if="variant !== 'compact'"
             class="text-2xl font-bold mb-4 text-gray-900"
@@ -81,7 +81,7 @@ watch(exploracionFisica, (newValue) => {
         <!-- Información adicional sobre cómo redactar -->
         <div
             v-if="variant !== 'compact'"
-            class="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+            class="nota-medica-tip mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg"
         >
             <div class="flex items-start space-x-3">
                 <div class="flex-shrink-0">

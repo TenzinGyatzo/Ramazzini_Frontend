@@ -294,7 +294,7 @@ watch(() => userStore.user?._id, () => {
 </script>
 
 <template>
-  <div :class="variant === 'compact' ? 'space-y-2.5' : 'space-y-2'">
+  <div class="nota-medica-dark-inputs" :class="variant === 'compact' ? 'space-y-2.5' : 'space-y-2'">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900"
@@ -322,8 +322,8 @@ watch(() => userStore.user?._id, () => {
           :class="[
             'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
             registrarComorbilidad === 0
-              ? 'border-emerald-600 bg-emerald-50 shadow-md'
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
+              ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
+              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
           ]"
         >
           <input type="radio" :value="0" v-model="registrarComorbilidad" class="sr-only" />
@@ -340,8 +340,8 @@ watch(() => userStore.user?._id, () => {
           :class="[
             'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
             registrarComorbilidad === 1
-              ? 'border-emerald-600 bg-emerald-50 shadow-md'
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
+              ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
+              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
           ]"
         >
           <input type="radio" :value="1" v-model="registrarComorbilidad" class="sr-only" />
@@ -373,8 +373,8 @@ watch(() => userStore.user?._id, () => {
             :class="[
               'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
               primeraVezDiagnostico2 === 0
-                ? 'border-emerald-600 bg-emerald-50 shadow-md'
-                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
+                ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
+                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
             ]"
           >
             <input type="radio" :value="0" v-model="primeraVezDiagnostico2" class="sr-only" />
@@ -391,8 +391,8 @@ watch(() => userStore.user?._id, () => {
             :class="[
               'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
               primeraVezDiagnostico2 === 1
-                ? 'border-emerald-600 bg-emerald-50 shadow-md'
-                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
+                ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
+                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
             ]"
           >
             <input type="radio" :value="1" v-model="primeraVezDiagnostico2" class="sr-only" />

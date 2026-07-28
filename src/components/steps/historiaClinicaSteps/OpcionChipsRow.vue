@@ -37,6 +37,7 @@ function chipClass(optionValue: string) {
         :class="chipClass(opt.value)"
         :aria-pressed="modelValue === opt.value"
         :title="opt.hint"
+        @pointerdown="select(opt.value)"
         @click="select(opt.value)"
       >
         {{ opt.label }}

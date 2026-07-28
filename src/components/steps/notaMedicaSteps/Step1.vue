@@ -74,7 +74,7 @@ watch(fechaNotaMedica, (newValue) => {
 </script>
 
 <template>
-  <div>
+  <div class="nota-medica-dark-inputs">
     <h1
       v-if="variant !== 'compact'"
       class="text-2xl font-bold mb-4 text-gray-900"
@@ -94,8 +94,8 @@ watch(fechaNotaMedica, (newValue) => {
           :class="[
             'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
             tipoNota === 'Inicial' 
-              ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
+              ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500' 
+              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
           ]"
         >
           <input 
@@ -128,8 +128,8 @@ watch(fechaNotaMedica, (newValue) => {
           :class="[
             'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out ',
             tipoNota === 'Seguimiento' 
-              ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
+              ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500' 
+              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
           ]"
         >
           <input 
@@ -162,8 +162,8 @@ watch(fechaNotaMedica, (newValue) => {
           :class="[
             'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
             tipoNota === 'Alta' 
-              ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
+              ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500' 
+              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
           ]"
         >
           <input 

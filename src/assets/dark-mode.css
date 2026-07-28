@@ -743,6 +743,18 @@ html.dark-mode .bg-amber-50 {
   background-color: rgba(120, 53, 15, 0.52) !important;
 }
 
+html.dark-mode .bg-amber-50\/30 {
+  background-color: rgba(120, 53, 15, 0.28) !important;
+}
+
+html.dark-mode .bg-emerald-50\/30 {
+  background-color: rgba(6, 78, 59, 0.28) !important;
+}
+
+html.dark-mode .bg-emerald-50\/50 {
+  background-color: rgba(6, 78, 59, 0.35) !important;
+}
+
 html.dark-mode .hover\:bg-amber-100:hover {
   background-color: #92400e !important;
 }
@@ -2573,6 +2585,49 @@ html.dark-mode .nota-medica-dark-inputs input[type='week']::-webkit-calendar-pic
 html.dark-mode .dark-mode-input-surface input[type='week']::-webkit-calendar-picker-indicator {
   filter: invert(1);
   opacity: 0.85;
+}
+
+/* Nota médica: disabled, alertas, radios y hovers que el remapeo global no cubre bien. */
+html.dark-mode .nota-medica-dark-inputs input:disabled,
+html.dark-mode .nota-medica-dark-inputs input[disabled],
+html.dark-mode .nota-medica-dark-inputs .disabled\:bg-gray-100:disabled {
+  background-color: #334155 !important;
+  color: #94a3b8 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs select option {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs .hover\:bg-gray-50:hover,
+html.dark-mode .nota-medica-dark-inputs label.hover\:bg-gray-50:hover {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs .bg-red-50 {
+  background-color: rgba(127, 29, 29, 0.35) !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs .border-red-200 {
+  border-color: #b91c1c !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs .bg-amber-50\/30 {
+  background-color: rgba(120, 53, 15, 0.28) !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs .bg-yellow-50 {
+  background-color: rgba(161, 98, 7, 0.28) !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs .text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .nota-medica-dark-inputs .bg-gray-200 {
+  background-color: #475569 !important;
 }
 
 /*

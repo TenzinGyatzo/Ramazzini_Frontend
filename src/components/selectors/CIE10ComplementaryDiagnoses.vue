@@ -162,11 +162,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="space-y-2.5 border border-emerald-100 rounded-xl p-2.5 bg-emerald-50/30">
+  <div class="space-y-2.5 border border-emerald-100 rounded-xl p-2.5 bg-emerald-50/30 dark:border-emerald-800/60 dark:bg-emerald-950/25">
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">
-        <i class="fas fa-list-ol text-emerald-900 text-sm"></i>
-        <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider inline-flex items-center flex-shrink-0">
+        <i class="fas fa-list-ol text-emerald-900 dark:text-emerald-300 text-sm"></i>
+        <h3 class="text-xs font-bold text-emerald-900 dark:text-emerald-200 uppercase tracking-wider inline-flex items-center flex-shrink-0">
           <span class="mx-1">Diagnósticos <br>Complementarios</span>
           <button
             ref="iconRef"
@@ -262,7 +262,7 @@ onUnmounted(() => {
       <div 
         v-for="(code, index) in modelValue" 
         :key="index"
-        class="flex items-center gap-3 py-2 px-3 bg-white border border-gray-100 rounded-lg shadow-sm group hover:border-emerald-200 transition-colors"
+        class="flex items-center gap-3 py-2 px-3 bg-white border border-gray-100 rounded-lg shadow-sm group hover:border-emerald-200 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:border-emerald-700"
       >
         <div class="flex-1 min-w-0">
           <CIE10Autocomplete
@@ -278,7 +278,7 @@ onUnmounted(() => {
         <button 
           type="button"
           @click="removeDiagnosis(index)"
-          class="flex-shrink-0 p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+          class="flex-shrink-0 p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
           title="Quitar diagnóstico"
         >
           <i class="fas fa-trash-alt text-sm"></i>
@@ -287,12 +287,12 @@ onUnmounted(() => {
     </div>
 
     <!-- Empty State -->
-    <div v-else class="py-4 text-center border-2 border-dashed border-emerald-100 rounded-lg">
-      <div class="w-10 h-4 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2">
+    <div v-else class="py-4 text-center border-2 border-dashed border-emerald-100 rounded-lg dark:border-emerald-800/70">
+      <div class="w-10 h-4 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2 dark:bg-emerald-950/50">
         <i class="fas fa-notes-medical text-emerald-300 text-lg"></i>
       </div>
-      <p class="text-xs text-emerald-600 font-medium">Sin diagnósticos complementarios</p>
-      <p class="text-xs text-gray-400 mt-1">Puedes agregar hasta 5 códigos adicionales</p>
+      <p class="text-xs text-emerald-600 dark:text-emerald-300 font-medium">Sin diagnósticos complementarios</p>
+      <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Puedes agregar hasta 5 códigos adicionales</p>
     </div>
 
     <p class="text-xs text-gray-500 leading-snug">

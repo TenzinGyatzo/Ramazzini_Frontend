@@ -39,7 +39,7 @@ watch(motivoConsulta, (newValue) => {
 </script>
 
 <template>
-    <div>
+    <div class="nota-medica-dark-inputs">
         <h1
             v-if="variant !== 'compact'"
             class="text-2xl font-bold mb-4 text-gray-900"

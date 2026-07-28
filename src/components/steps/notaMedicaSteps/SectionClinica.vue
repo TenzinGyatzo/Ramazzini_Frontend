@@ -20,7 +20,7 @@ const stepMap = computed(() => getNotaMedicaStepMap(isSIRES.value, esMujer.value
       <Step4 variant="compact" />
     </MicrostepAnchor>
     <div class="py-2.5">
-      <div class="border-t border-gray-200" />
+      <div class="border-t border-gray-200 dark:border-slate-700" />
     </div>
     <MicrostepAnchor :legacy-step="stepMap.exploracion">
       <Step5 variant="compact" />

@@ -70,12 +70,12 @@ function claseOpcionRelacion(valor) {
   const seleccionado = relacionTemporalEmbarazo.value === valor;
   if (edadFueraDeRango.value) {
     return seleccionado
-      ? 'border-emerald-600 bg-emerald-50 cursor-not-allowed opacity-90'
-      : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60';
+      ? 'border-emerald-600 bg-emerald-50 cursor-not-allowed opacity-90 dark:bg-emerald-950/50 dark:border-emerald-500'
+      : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-500';
   }
   return seleccionado
-    ? 'border-emerald-600 bg-emerald-50 shadow-md cursor-pointer'
-    : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 cursor-pointer';
+    ? 'border-emerald-600 bg-emerald-50 shadow-md cursor-pointer dark:bg-emerald-950/50 dark:border-emerald-500'
+    : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 cursor-pointer dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30';
 }
 
 onMounted(() => {
@@ -109,7 +109,7 @@ onUnmounted(syncFormData);
 </script>
 
 <template>
-  <div>
+  <div class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"
@@ -213,8 +213,8 @@ onUnmounted(syncFormData);
             :class="[
               'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200',
               trimestreGestacional === opcion.value
-                ? 'border-emerald-600 bg-emerald-50 shadow-md'
-                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50',
+                ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
+                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30',
             ]"
           >
             <input
