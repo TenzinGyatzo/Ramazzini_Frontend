@@ -39,11 +39,20 @@ const props = defineProps({
         required: true,
     },
     toggleRouteSelection: {
-        type: Function as PropType<(route: string, isSelected: boolean) => void>,
+        type: Function as PropType<(
+            doc: { documentId: string; documentType: string; filePath: string },
+            isSelected: boolean,
+        ) => void>,
         required: true,
     },
     selectedRoutes: {
         type: Array as PropType<string[]>,
+        required: true,
+    },
+    selectedDocuments: {
+        type: Array as PropType<
+            Array<{ documentId: string; documentType: string; filePath: string }>
+        >,
         required: true,
     },
     // Nuevas props para el modo eliminación
@@ -122,80 +131,87 @@ function construirRutaDocumento(
 }
 
 const documentoRutasInfo = computed(() => {
-    const map = new Map<string, string>();
-    const rutas: string[] = [];
-    const rutasDeletables: string[] = [];
+    const items: Array<{ documentId: string; documentType: string; filePath: string }> = [];
+    const itemsDeletables: Array<{ documentId: string; documentType: string; filePath: string }> = [];
 
-    const pushDoc = (doc: { _id?: string; estado?: string }, tipoLabel: string, store?: ReturnType<typeof useDocumentosStore>) => {
+    const pushDoc = (
+        doc: { _id?: string; estado?: string },
+        documentType: string,
+        tipoLabel: string,
+        store?: ReturnType<typeof useDocumentosStore>,
+    ) => {
         if (!doc._id) return;
-        const ruta = construirRutaDocumento(doc as { _id: string }, tipoLabel, store);
-        map.set(doc._id, ruta);
-        rutas.push(ruta);
+        const filePath = construirRutaDocumento(doc as { _id: string }, tipoLabel, store);
+        const item = { documentId: doc._id, documentType, filePath };
+        items.push(item);
         if (!isDocumentoInmutable(doc)) {
-            rutasDeletables.push(ruta);
+            itemsDeletables.push(item);
         }
     };
 
-    props.documents.notasAclaratorias?.forEach((doc) => pushDoc(doc, 'Nota Aclaratoria', documentosStore));
-    props.documents.constanciasAptitud?.forEach((doc) => pushDoc(doc, 'Constancia de Aptitud'));
-    props.documents.aptitudes?.forEach((doc) => pushDoc(doc, 'Aptitud'));
-    props.documents.historiasClinicas?.forEach((doc) => pushDoc(doc, 'Historia Clinica'));
-    props.documents.exploracionesFisicas?.forEach((doc) => pushDoc(doc, 'Exploracion Fisica'));
-    props.documents.examenesVista?.forEach((doc) => pushDoc(doc, 'Examen Vista'));
-    props.documents.audiometrias?.forEach((doc) => pushDoc(doc, 'Audiometria'));
-    props.documents.antidopings?.forEach((doc) => pushDoc(doc, 'Antidoping'));
-    props.documents.certificados?.forEach((doc) => pushDoc(doc, 'Certificado'));
-    props.documents.certificadosExpedito?.forEach((doc) => pushDoc(doc, 'Certificado Expedito'));
-    props.documents.documentosExternos?.forEach((doc) => pushDoc(doc, 'Documento Externo'));
-    props.documents.notasMedicas?.forEach((doc) => pushDoc(doc, 'Nota Medica'));
+    props.documents.notasAclaratorias?.forEach((doc) => pushDoc(doc, 'notaAclaratoria', 'Nota Aclaratoria', documentosStore));
+    props.documents.constanciasAptitud?.forEach((doc) => pushDoc(doc, 'constanciaAptitud', 'Constancia de Aptitud'));
+    props.documents.aptitudes?.forEach((doc) => pushDoc(doc, 'aptitud', 'Aptitud'));
+    props.documents.historiasClinicas?.forEach((doc) => pushDoc(doc, 'historiaClinica', 'Historia Clinica'));
+    props.documents.exploracionesFisicas?.forEach((doc) => pushDoc(doc, 'exploracionFisica', 'Exploracion Fisica'));
+    props.documents.examenesVista?.forEach((doc) => pushDoc(doc, 'examenVista', 'Examen Vista'));
+    props.documents.audiometrias?.forEach((doc) => pushDoc(doc, 'audiometria', 'Audiometria'));
+    props.documents.antidopings?.forEach((doc) => pushDoc(doc, 'antidoping', 'Antidoping'));
+    props.documents.certificados?.forEach((doc) => pushDoc(doc, 'certificado', 'Certificado'));
+    props.documents.certificadosExpedito?.forEach((doc) => pushDoc(doc, 'certificadoExpedito', 'Certificado Expedito'));
+    props.documents.documentosExternos?.forEach((doc) => pushDoc(doc, 'documentoExterno', 'Documento Externo'));
+    props.documents.notasMedicas?.forEach((doc) => pushDoc(doc, 'notaMedica', 'Nota Medica'));
     if (controlPrenatalEnabled.value) {
-        props.documents.controlPrenatal?.forEach((doc) => pushDoc(doc, 'Control Prenatal'));
+        props.documents.controlPrenatal?.forEach((doc) => pushDoc(doc, 'controlPrenatal', 'Control Prenatal'));
     }
-    props.documents.historiaOtologica?.forEach((doc) => pushDoc(doc, 'Historia Otologica'));
-    props.documents.previoEspirometria?.forEach((doc) => pushDoc(doc, 'Previo Espirometria'));
-    props.documents.recetas?.forEach((doc) => pushDoc(doc, 'Receta'));
-    props.documents.entrevistasPsicologicas?.forEach((doc) => pushDoc(doc, 'Entrevista Psicologica'));
-    props.documents.trastornosEstadoAnimo?.forEach((doc) => pushDoc(doc, 'Trastornos Estado Animo'));
-    props.documents.cuestionarioProdromalBreve?.forEach((doc) => pushDoc(doc, 'Cuestionario Prodromal Breve'));
-    props.documents.trastornoLimitePersonalidad?.forEach((doc) => pushDoc(doc, 'Trastorno Limite Personalidad'));
-    props.documents.eventoSeguimientoCardiometabolico?.forEach((doc) => pushDoc(doc, 'Evento Seguimiento Cardiometabolico'));
-    props.documents.informeLongitudinalCardiometabolico?.forEach((doc) => pushDoc(doc, 'Informe Longitudinal Cardiometabólico'));
+    props.documents.historiaOtologica?.forEach((doc) => pushDoc(doc, 'historiaOtologica', 'Historia Otologica'));
+    props.documents.previoEspirometria?.forEach((doc) => pushDoc(doc, 'previoEspirometria', 'Previo Espirometria'));
+    props.documents.recetas?.forEach((doc) => pushDoc(doc, 'receta', 'Receta'));
+    props.documents.entrevistasPsicologicas?.forEach((doc) => pushDoc(doc, 'entrevistaPsicologica', 'Entrevista Psicologica'));
+    props.documents.trastornosEstadoAnimo?.forEach((doc) => pushDoc(doc, 'trastornosEstadoAnimo', 'Trastornos Estado Animo'));
+    props.documents.cuestionarioProdromalBreve?.forEach((doc) => pushDoc(doc, 'cuestionarioProdromalBreve', 'Cuestionario Prodromal Breve'));
+    props.documents.trastornoLimitePersonalidad?.forEach((doc) => pushDoc(doc, 'trastornoLimitePersonalidad', 'Trastorno Limite Personalidad'));
+    props.documents.eventoSeguimientoCardiometabolico?.forEach((doc) => pushDoc(doc, 'eventoSeguimientoCardiometabolico', 'Evento Seguimiento Cardiometabolico'));
+    props.documents.informeLongitudinalCardiometabolico?.forEach((doc) => pushDoc(doc, 'informeLongitudinalCardiometabolico', 'Informe Longitudinal Cardiometabólico'));
 
-    return { map, rutas, rutasDeletables };
+    return { items, itemsDeletables };
 });
 
-const rutasPorDocumentoId = computed(() => documentoRutasInfo.value.map);
+const itemsDelGrupo = computed(() => documentoRutasInfo.value.items);
 
-const rutasDelGrupo = computed(() => documentoRutasInfo.value.rutas);
-
-const rutasDeletablesDelGrupo = computed(() => {
+const itemsDeletablesDelGrupo = computed(() => {
     if (!props.isDeletionMode || !documentImmutabilityEnabled.value) {
-        return rutasDelGrupo.value;
+        return itemsDelGrupo.value;
     }
-    return documentoRutasInfo.value.rutasDeletables;
+    return documentoRutasInfo.value.itemsDeletables;
 });
 
 const isDocumentoSelected = (documentoId: string | undefined) => {
     if (!documentoId) return false;
-    const ruta = rutasPorDocumentoId.value.get(documentoId);
-    return ruta ? props.selectedRoutes.includes(ruta) : false;
+    return props.selectedDocuments.some((d) => d.documentId === documentoId);
 };
 
 // Calcular cuántos documentos de este grupo están seleccionados
 const documentosSeleccionadosDelGrupo = computed(() => {
-    return rutasDelGrupo.value.filter(ruta => props.selectedRoutes.includes(ruta)).length;
+    const ids = new Set(itemsDelGrupo.value.map((i) => i.documentId));
+    return props.selectedDocuments.filter((d) => ids.has(d.documentId)).length;
 });
 
-// Determinar si todos los documentos eliminables están seleccionados (en modo eliminación usa rutasDeletablesDelGrupo)
+// Determinar si todos los documentos eliminables están seleccionados (en modo eliminación usa itemsDeletablesDelGrupo)
 const selectAll = computed({
     get: () => {
-        const rutasRelevantes = props.isDeletionMode ? rutasDeletablesDelGrupo.value : rutasDelGrupo.value;
-        return rutasRelevantes.length > 0 && rutasRelevantes.every(ruta => props.selectedRoutes.includes(ruta));
+        const itemsRelevantes = props.isDeletionMode ? itemsDeletablesDelGrupo.value : itemsDelGrupo.value;
+        return (
+            itemsRelevantes.length > 0 &&
+            itemsRelevantes.every((item) =>
+                props.selectedDocuments.some((d) => d.documentId === item.documentId),
+            )
+        );
     },
     set: (value: boolean) => {
-        const rutasAplicar = props.isDeletionMode ? rutasDeletablesDelGrupo.value : rutasDelGrupo.value;
-        rutasAplicar.forEach(ruta => {
-            props.toggleRouteSelection(ruta, value);
+        const itemsAplicar = props.isDeletionMode ? itemsDeletablesDelGrupo.value : itemsDelGrupo.value;
+        itemsAplicar.forEach((item) => {
+            props.toggleRouteSelection(item, value);
         });
     }
 });
@@ -205,7 +221,7 @@ const toggleSelectAll = () => {
 };
 
 // Total de documentos eliminables (para mostrar en modo eliminación cuando hay inmutables)
-const totalDeletables = computed(() => rutasDeletablesDelGrupo.value.length);
+const totalDeletables = computed(() => itemsDeletablesDelGrupo.value.length);
 const hayDocumentosNoEliminables = computed(() =>
     props.isDeletionMode && documentImmutabilityEnabled.value && totalDeletables.value < totalDocumentos.value
 );

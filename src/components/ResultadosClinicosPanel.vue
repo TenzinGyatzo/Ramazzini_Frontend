@@ -903,6 +903,7 @@ import { authRequestConfig } from '@/lib/attachAuthToken';
 import {
   buildClinicalFileUrl,
   headClinicalFile,
+  registrarDescargaArchivoClinico,
 } from '@/lib/clinicalFiles';
 import { VPdfViewer, Locales, useLicense } from '@vue-pdf-viewer/viewer';
 import { useResultadosClinicosStore, type ResultadoClinico } from '@/stores/resultadosClinicos';
@@ -2080,12 +2081,33 @@ const resetImagePosition = () => {
 
 const descargarPdfActual = async () => {
   if (!currentPdfUrl.value) return;
-  const response = await axios.get(currentPdfUrl.value, { responseType: 'blob' });
-  const blob = response.data;
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'documento.pdf';
-  link.click();
+  try {
+    const response = await axios.get(currentPdfUrl.value, {
+      responseType: 'blob',
+      ...authRequestConfig(),
+    });
+    const blob = response.data;
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'documento.pdf';
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    const doc = documentoVinculado.value;
+    const documentId = doc?._id || formData.value.idDocumentoExterno;
+    if (documentId && props.trabajadorId) {
+      void registrarDescargaArchivoClinico({
+        documentId: String(documentId),
+        documentType: 'documentoExterno',
+        trabajadorId: props.trabajadorId,
+        filename: 'documento.pdf',
+        mediaKind: 'pdf',
+        origen: 'resultados-clinicos',
+      });
+    }
+  } catch (error) {
+    console.error('Error al descargar el PDF:', error);
+  }
 };
 
 const imprimirPdfActual = () => {
@@ -2094,12 +2116,33 @@ const imprimirPdfActual = () => {
 
 const descargarImagenActual = async () => {
   if (!currentImageUrl.value) return;
-  const response = await axios.get(currentImageUrl.value, { responseType: 'blob' });
-  const blob = response.data;
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'imagen.jpg';
-  link.click();
+  try {
+    const response = await axios.get(currentImageUrl.value, {
+      responseType: 'blob',
+      ...authRequestConfig(),
+    });
+    const blob = response.data;
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'imagen.jpg';
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    const doc = documentoVinculado.value;
+    const documentId = doc?._id || formData.value.idDocumentoExterno;
+    if (documentId && props.trabajadorId) {
+      void registrarDescargaArchivoClinico({
+        documentId: String(documentId),
+        documentType: 'documentoExterno',
+        trabajadorId: props.trabajadorId,
+        filename: 'imagen.jpg',
+        mediaKind: 'image',
+        origen: 'resultados-clinicos',
+      });
+    }
+  } catch (error) {
+    console.error('Error al descargar la imagen:', error);
+  }
 };
 
 const getTipoSangreLabel = (tipo?: string) => {

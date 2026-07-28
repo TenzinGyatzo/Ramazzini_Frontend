@@ -91,7 +91,39 @@ const showResultadosClinicosPanel = ref(false);
 const selectedDocumentId = ref<string | null>(null);
 const selectedDocumentName = ref<string>('');
 const selectedDocumentType = ref<string | null>(null);
-const selectedRoutes = ref<string[]>([]);
+
+type SelectedClinicalDocument = {
+  documentId: string;
+  documentType: string;
+  filePath: string;
+};
+
+const selectedDocuments = ref<SelectedClinicalDocument[]>([]);
+/** Rutas derivadas (compatibilidad con paneles de eliminación). */
+const selectedRoutes = computed(() =>
+  selectedDocuments.value.map((d) => d.filePath),
+);
+
+const toggleDocumentSelection = (
+  doc: SelectedClinicalDocument,
+  isSelected: boolean,
+) => {
+  if (isSelected) {
+    if (
+      !selectedDocuments.value.some(
+        (d) => d.documentId === doc.documentId && d.filePath === doc.filePath,
+      )
+    ) {
+      selectedDocuments.value.push(doc);
+    }
+  } else {
+    selectedDocuments.value = selectedDocuments.value.filter(
+      (d) =>
+        !(d.documentId === doc.documentId && d.filePath === doc.filePath),
+    );
+  }
+};
+
 const isDeletionMode = ref(false);
 const periodoDePruebaFinalizado = ref<boolean | null>(null);
 const estadoSuscripcion = ref<string | null>(null);
@@ -475,16 +507,6 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
   }
 };
 
-const toggleRouteSelection = (route: string, isSelected: boolean) => {
-    if (isSelected) {
-        if (!selectedRoutes.value.includes(route)) {
-            selectedRoutes.value.push(route);
-        }
-    } else {
-        selectedRoutes.value = selectedRoutes.value.filter(r => r !== route);
-    }
-};
-
 const documentImmutabilityEnabled = computed(() => proveedorSaludStore.documentImmutabilityEnabled);
 const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
 
@@ -528,7 +550,9 @@ const toggleDeletionMode = () => {
             yearData.previoEspirometria?.forEach(d => checkDoc(d, 'previoEspirometria', 'Previo Espirometria'));
         });
         if (rutasInmutables.length > 0) {
-            selectedRoutes.value = selectedRoutes.value.filter(r => !rutasInmutables.includes(r));
+            selectedDocuments.value = selectedDocuments.value.filter(
+              (d) => !rutasInmutables.includes(d.filePath),
+            );
         }
     }
 };
@@ -551,10 +575,10 @@ const handleCloseResultadosPanel = async () => {
 };
 
 const handleDeleteSelected = async () => {
-    if (selectedRoutes.value.length === 0) return;
+    if (selectedDocuments.value.length === 0) return;
         
     try {
-        const totalSeleccionados = selectedRoutes.value.length;
+        const totalSeleccionados = selectedDocuments.value.length;
         toast.open({ 
             message: `Eliminando ${totalSeleccionados} documento${totalSeleccionados !== 1 ? 's' : ''}...`, 
             type: "info" 
@@ -858,7 +882,7 @@ const handleDeleteSelected = async () => {
         }
         
         // Limpiar selección después de eliminar
-        selectedRoutes.value = [];
+        selectedDocuments.value = [];
         isDeletionMode.value = false;
         
         // Recargar documentos y resultados
@@ -1434,8 +1458,9 @@ const añoMasReciente = computed(() => {
                     @abrirModalFinalizar="toggleFinalizeModal"
                     @abrirModalUpdate="toggleDocumentoExternoUpdateModal"
                     @openSubscriptionModal="showSubscriptionModal = true"
-                    :toggleRouteSelection="toggleRouteSelection"
+                    :toggleRouteSelection="toggleDocumentSelection"
                     :selectedRoutes="selectedRoutes"
+                    :selectedDocuments="selectedDocuments"
                     :isDeletionMode="isDeletionMode"
                     :toggleDeletionMode="toggleDeletionMode"
                     :onDeleteSelected="handleDeleteSelected"
@@ -1531,7 +1556,7 @@ const añoMasReciente = computed(() => {
 
         <!-- Panel de botones deslizante -->
         <div class="relative flex justify-center md:justify-start">
-          <SlidingButtonPanel v-if="!isDeletionMode" :selectedRoutes="selectedRoutes" />
+          <SlidingButtonPanel v-if="!isDeletionMode" :selectedDocuments="selectedDocuments" />
           <DeletionButtonPanel 
             v-if="isDeletionMode" 
             :selectedRoutes="selectedRoutes" 

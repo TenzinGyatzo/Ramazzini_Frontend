@@ -5,6 +5,7 @@ import {
     buildClinicalFileUrl,
     fetchClinicalFileBlob,
     headClinicalFile,
+    registrarDescargaArchivoClinico,
 } from '@/lib/clinicalFiles';
 import { obtenerResultadoBinauralAudiometria } from '@/helpers/audiometriaCalculos';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
@@ -310,7 +311,7 @@ const extractRelativeClinicalPath = (urlOrPath) => {
 };
 
 // Función dinámica para descargar un archivo basado en el documento// Función dinámica para descargar un archivo basado en el documento
-const descargarArchivo = async (documento, tipoDocumento) => {
+const descargarArchivo = async (documento, tipoDocumento, origen = 'lista') => {
     try {
         if (isPdfGenerating.value) {
             getToast()?.open?.({
@@ -349,7 +350,7 @@ const descargarArchivo = async (documento, tipoDocumento) => {
             nombreArchivoReal = nombreArchivo;
         }
 
-        await descargarYGuardarArchivo(ruta, nombreArchivo, nombreArchivoReal);
+        await descargarYGuardarArchivo(ruta, nombreArchivo, nombreArchivoReal, origen);
 
     } catch (error) {
         console.error('Error al descargar el archivo:', error);
@@ -357,7 +358,7 @@ const descargarArchivo = async (documento, tipoDocumento) => {
     }
 };
 
-const descargarYGuardarArchivo = async (ruta, nombreArchivo, nombreArchivoReal) => {
+const descargarYGuardarArchivo = async (ruta, nombreArchivo, nombreArchivoReal, origen = 'lista') => {
     try {
         const relativePath = joinClinicalPath(ruta, nombreArchivoReal);
         const response = await axios.get(buildClinicalFileUrl(relativePath), {
@@ -377,6 +378,18 @@ const descargarYGuardarArchivo = async (ruta, nombreArchivo, nombreArchivoReal) 
 
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
+
+        const trabajadorId = trabajadores.currentTrabajadorId;
+        if (props.documentoId && props.documentoTipo && trabajadorId) {
+            void registrarDescargaArchivoClinico({
+                documentId: props.documentoId,
+                documentType: props.documentoTipo,
+                trabajadorId,
+                filename: nombreArchivo,
+                mediaKind: 'pdf',
+                origen,
+            });
+        }
 
     } catch (error) {
         console.error('Error al descargar o guardar el archivo:', error);
@@ -1571,7 +1584,7 @@ const descargarPdfActual = async () => {
 
             if (documento) {
                 // Usar la misma lógica que descargarArchivo
-                await descargarArchivo(documento, tipoDocumento);
+                await descargarArchivo(documento, tipoDocumento, 'visor');
             } else {
                 // Fallback al método original si no se puede identificar el documento
                 const relativePath = extractRelativeClinicalPath(currentPdfUrl.value);
@@ -1587,6 +1600,18 @@ const descargarPdfActual = async () => {
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
+
+                const trabajadorId = trabajadores.currentTrabajadorId;
+                if (props.documentoId && props.documentoTipo && trabajadorId) {
+                    void registrarDescargaArchivoClinico({
+                        documentId: props.documentoId,
+                        documentType: props.documentoTipo,
+                        trabajadorId,
+                        filename: 'documento.pdf',
+                        mediaKind: 'pdf',
+                        origen: 'visor',
+                    });
+                }
             }
         } catch (error) {
             console.error('Error al descargar el PDF:', error);
@@ -1615,24 +1640,30 @@ const descargarImagenActual = async () => {
                 ? await fetchClinicalFileBlob(relativePath)
                 : await (await fetch(currentImageUrl.value)).blob();
 
+            let nombreArchivo = 'imagen.jpg';
             if (props.documentoExterno && props.documentoTipo.toLowerCase().replace(/\s+/g, '') === 'documentoexterno') {
                 const extension = obtenerExtensionArchivo(props.documentoExterno);
-                const nombreArchivo = `${props.documentoExterno.nombreDocumento} ${convertirFechaISOaDDMMYYYY(props.documentoExterno.fechaDocumento)}.${extension}`;
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = nombreArchivo;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
-            } else {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'imagen.jpg';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
+                nombreArchivo = `${props.documentoExterno.nombreDocumento} ${convertirFechaISOaDDMMYYYY(props.documentoExterno.fechaDocumento)}.${extension}`;
+            }
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = nombreArchivo;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            const trabajadorId = trabajadores.currentTrabajadorId;
+            if (props.documentoId && props.documentoTipo && trabajadorId) {
+                void registrarDescargaArchivoClinico({
+                    documentId: props.documentoId,
+                    documentType: props.documentoTipo,
+                    trabajadorId,
+                    filename: nombreArchivo,
+                    mediaKind: 'image',
+                    origen: 'visor',
+                });
             }
         } catch (error) {
             console.error('Error al descargar la imagen:', error);
@@ -1651,12 +1682,17 @@ const handleCheckboxChange = (event, documento, tipoDocumento) => {
     const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
 
     if (ruta) {
+        const selection = {
+            documentId: documento?._id || props.documentoId,
+            documentType: props.documentoTipo,
+            filePath: ruta,
+        };
         // Documentos FINALIZADO/ANULADO no se pueden seleccionar para eliminación
         if (!isDeletableInBulkMode.value && isChecked) {
-            props.toggleRouteSelection(ruta, false);
+            props.toggleRouteSelection(selection, false);
             return;
         }
-        props.toggleRouteSelection(ruta, isChecked);
+        props.toggleRouteSelection(selection, isChecked);
     }
 };
 

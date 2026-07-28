@@ -15,60 +15,34 @@ const loading = ref(false);
 
 const today = new Date();
 
+/** Orden de fusión por documentType camelCase de dominio. */
 const documentOrder = {
-  "Nota Aclaratoria": 1,
-  "Constancia de Aptitud": 2,
-  Aptitud: 3,
-  "Historia Clinica": 4,
-  "Exploracion Fisica": 5,
-  "Examen Vista": 6,
-  "Historia Otologica": 7,
-  Audiometria: 8,
-  Antidoping: 9,
-  Certificado: 10,
-  "Previo Espirometria": 11,
-  "Documento Externo": 12,
-  "Nota Medica": 13,
-  "Control Prenatal": 14,
-  "Certificado Expedito": 15,
-  "Receta": 16,
-  "Entrevista Psicologica": 17,
-  "Trastornos Estado Animo": 18,
-  "Cuestionario Prodromal Breve": 19,
-  "Trastorno Limite Personalidad": 20,
-  "Evento Seguimiento Cardiometabolico": 21,
-  "Informe Longitudinal Cardiometabolico": 22,
+  notaAclaratoria: 1,
+  constanciaAptitud: 2,
+  aptitud: 3,
+  historiaClinica: 4,
+  exploracionFisica: 5,
+  examenVista: 6,
+  historiaOtologica: 7,
+  audiometria: 8,
+  antidoping: 9,
+  certificado: 10,
+  previoEspirometria: 11,
+  documentoExterno: 12,
+  notaMedica: 13,
+  controlPrenatal: 14,
+  certificadoExpedito: 15,
+  receta: 16,
+  entrevistaPsicologica: 17,
+  trastornosEstadoAnimo: 18,
+  cuestionarioProdromalBreve: 19,
+  trastornoLimitePersonalidad: 20,
+  eventoSeguimientoCardiometabolico: 21,
+  informeLongitudinalCardiometabolico: 22,
 };
 
-// Importante: verificar tipos más específicos ANTES que los genéricos (ej. Certificado Expedito antes de Certificado)
-const getDocumentType = (route) => {
-  if (route.includes("Nota Aclaratoria")) return "Nota Aclaratoria";
-  if (route.includes("Constancia de Aptitud")) return "Constancia de Aptitud";
-  if (route.includes("Aptitud")) return "Aptitud";
-  if (route.includes("Historia Clinica")) return "Historia Clinica";
-  if (route.includes("Exploracion Fisica")) return "Exploracion Fisica";
-  if (route.includes("Examen Vista")) return "Examen Vista";
-  if (route.includes("Historia Otologica")) return "Historia Otologica";
-  if (route.includes("Audiometria")) return "Audiometria";
-  if (route.includes("Antidoping")) return "Antidoping";
-  if (route.includes("Certificado Expedito")) return "Certificado Expedito";
-  if (route.includes("Certificado")) return "Certificado";
-  if (route.includes("Previo Espirometria")) return "Previo Espirometria";
-  if (route.includes("Nota Medica")) return "Nota Medica";
-  if (controlPrenatalEnabled.value && route.includes("Control Prenatal")) return "Control Prenatal";
-  if (route.includes("Receta")) return "Receta";
-  if (route.includes("Entrevista Psicologica")) return "Entrevista Psicologica";
-  if (route.includes("Trastornos Estado Animo")) return "Trastornos Estado Animo";
-  if (route.includes("Cuestionario Prodromal Breve")) return "Cuestionario Prodromal Breve";
-  if (route.includes("Trastorno Limite Personalidad")) return "Trastorno Limite Personalidad";
-  if (route.includes("Evento Seguimiento Cardiometabolico")) return "Evento Seguimiento Cardiometabolico";
-  if (route.includes("Informe Longitudinal Cardiometabolico")) return "Informe Longitudinal Cardiometabolico";
-  return "Documento Externo"; // Para cualquier otro caso
-};
-
-// Props
 const props = defineProps({
-  selectedRoutes: {
+  selectedDocuments: {
     type: Array,
     required: true,
   },
@@ -76,9 +50,8 @@ const props = defineProps({
 
 const isVisible = ref(true);
 
-// Watch para ocultar el panel cuando se limpian las rutas seleccionadas
 watch(
-  () => props.selectedRoutes.length,
+  () => props.selectedDocuments.length,
   (newLength) => {
     if (newLength === 0) {
       isVisible.value = false;
@@ -92,37 +65,57 @@ watch(
 const handleClick = async () => {
   if (loading.value) return;
   loading.value = true;
-  // Ordenar las rutas seleccionadas
-  const orderedRoutes = props.selectedRoutes
-    .filter((route) => controlPrenatalEnabled.value || !route.includes('Control Prenatal'))
+
+  const trabajadorId = trabajadores.currentTrabajadorId;
+  if (!trabajadorId) {
+    loading.value = false;
+    return;
+  }
+
+  const orderedDocuments = props.selectedDocuments
+    .filter(
+      (doc) =>
+        controlPrenatalEnabled.value || doc.documentType !== "controlPrenatal",
+    )
     .sort((a, b) => {
-    const aType = getDocumentType(a);
-    const bType = getDocumentType(b);
-    return (
-      (documentOrder[aType] || Infinity) - (documentOrder[bType] || Infinity)
-    );
-  });
+      return (
+        (documentOrder[a.documentType] || Infinity) -
+        (documentOrder[b.documentType] || Infinity)
+      );
+    });
+
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_API_URL}/document-merger/merge`,
-      { filePaths: orderedRoutes },
-      { responseType: 'blob', ...authRequestConfig() }
+      {
+        trabajadorId,
+        documents: orderedDocuments.map((d) => ({
+          documentId: d.documentId,
+          documentType: d.documentType,
+          filePath: d.filePath,
+        })),
+      },
+      { responseType: "blob", ...authRequestConfig() },
     );
-    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const blob = new Blob([response.data], { type: "application/pdf" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `${
-      [trabajadores.currentTrabajador.primerApellido, trabajadores.currentTrabajador.segundoApellido, trabajadores.currentTrabajador.nombre]
+      [
+        trabajadores.currentTrabajador.primerApellido,
+        trabajadores.currentTrabajador.segundoApellido,
+        trabajadores.currentTrabajador.nombre,
+      ]
         .filter(Boolean)
-        .join(' ')
+        .join(" ")
     } ${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}.pdf`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   } catch (error) {
-    console.error('Error al enviar las rutas al backend:', error);
+    console.error("Error al enviar los documentos al backend:", error);
     mostrarModalFaltanPdfs.value = true;
   } finally {
     loading.value = false;
@@ -224,4 +217,3 @@ html.dark-mode .sliding-download-button:focus-visible {
   box-shadow: 0 0 0 2px #34d399 !important;
 }
 </style>
-
