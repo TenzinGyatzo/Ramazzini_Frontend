@@ -467,11 +467,6 @@ function formatearCampo(campo) {
   /* Cambia el color según tu diseño */
 }
 
-html.dark-mode .visualizador-certificado .cursor-pointer:hover {
-  background-color: #475569 !important;
-  color: #f8fafc !important;
-}
-
 .visualizador-certificado tbody tr.pinpoint-row > td,
 .visualizador-certificado tbody tr.pinpoint-row > th,
 .visualizador-certificado thead tr.pinpoint-row > td,
@@ -479,7 +474,19 @@ html.dark-mode .visualizador-certificado .cursor-pointer:hover {
 .visualizador-certificado .pinpoint-row {
   background-color: #dbeafe !important;
 }
+</style>
 
+<style>
+html.dark-mode .visualizador-certificado .cursor-pointer:hover {
+  background-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+html.dark-mode .visualizador-certificado tbody tr.pinpoint-row > td,
+html.dark-mode .visualizador-certificado tbody tr.pinpoint-row > th,
+html.dark-mode .visualizador-certificado thead tr.pinpoint-row > td,
+html.dark-mode .visualizador-certificado thead tr.pinpoint-row > th,
 html.dark-mode .visualizador-certificado .pinpoint-row {
   background-color: #1e4a7a !important;
-}</style>
+}
+</style>

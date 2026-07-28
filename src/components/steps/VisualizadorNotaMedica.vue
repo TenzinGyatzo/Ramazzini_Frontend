@@ -548,13 +548,15 @@ const muestraDiagnostico3 = computed(() =>
   /* Cambia el color según tu diseño */
 }
 
+.visualizador-nota-medica .pinpoint-block {
+  background-color: #dbeafe !important;
+}
+</style>
+
+<style>
 html.dark-mode .visualizador-nota-medica .cursor-pointer:hover {
   background-color: #475569 !important;
   color: #f8fafc !important;
-}
-
-.visualizador-nota-medica .pinpoint-block {
-  background-color: #dbeafe !important;
 }
 
 html.dark-mode .visualizador-nota-medica .pinpoint-block {

@@ -49,8 +49,11 @@ const isPinned = computed(
   background-color: #dbeafe; /* blue-100 */
   border-radius: 0.375rem;
 }
+</style>
 
-:global(html.dark-mode) .microstep-pinpoint {
-  background-color: #1e4a7a;
+<!-- Sin scoped: :global(html.dark-mode) .clase se compilaba mal a html.dark-mode { … }. -->
+<style>
+html.dark-mode .microstep-pinpoint {
+  background-color: #1e4a7a !important;
 }
 </style>

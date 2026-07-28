@@ -36,6 +36,15 @@ html.dark-mode .bg-gray-50 {
   background-color: #1e293b !important;
 }
 
+/* Opacidad Tailwind: .bg-gray-50 no cubre .bg-gray-50/40 (p. ej. paneles Sections V2). */
+html.dark-mode .bg-gray-50\/40 {
+  background-color: rgb(15 23 42 / 0.7) !important; /* slate-900/70 */
+}
+
+html.dark-mode .bg-gray-50\/50 {
+  background-color: rgb(15 23 42 / 0.8) !important;
+}
+
 html.dark-mode .bg-gray-100 {
   background-color: #334155 !important;
 }
@@ -3852,4 +3861,42 @@ html.dark-mode .modal-resumen-importacion .modal-resumen-importacion-btn-purple 
 
 html.dark-mode .modal-resumen-importacion .modal-resumen-importacion-btn-purple:hover {
   background-color: rgba(107, 33, 168, 0.45) !important;
+}
+
+/*
+ * Sections V2 — pinpoint (azul) y outline de sección (amarillo).
+ * Red de seguridad con especificidad alta: el azul claro (#dbeafe) vive en
+ * scoped con !important + [data-v-*]; sin esto el pinpoint queda ilegible
+ * en dark mode (y :global(html.dark-mode) .microstep-pinpoint se compilaba mal).
+ */
+html.dark-mode body .microstep-pinpoint {
+  background-color: #1e4a7a !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode body .microstep-pinpoint .text-gray-800,
+html.dark-mode body .microstep-pinpoint .text-gray-700 {
+  color: #f8fafc !important;
+}
+
+html.dark-mode body .microstep-pinpoint .text-gray-500,
+html.dark-mode body .microstep-pinpoint .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode body .pinpoint-block,
+html.dark-mode body .pinpoint-row,
+html.dark-mode body tr.pinpoint-row > td,
+html.dark-mode body tr.pinpoint-row > th,
+html.dark-mode body [class*='visualizador'] .pinpoint-block,
+html.dark-mode body [class*='visualizador'] .pinpoint-row,
+html.dark-mode body [class*='visualizador'] tbody tr.pinpoint-row > td,
+html.dark-mode body [class*='visualizador'] tbody tr.pinpoint-row > th,
+html.dark-mode body [class*='visualizador'] thead tr.pinpoint-row > td,
+html.dark-mode body [class*='visualizador'] thead tr.pinpoint-row > th {
+  background-color: #1e4a7a !important;
+}
+
+html.dark-mode body .outline-yellow-500 {
+  outline-color: #eab308 !important;
 }
