@@ -11,16 +11,33 @@ import { useResidenciaGeoCoherence, initializeResidenciaGeoFields } from '@/comp
 import PaisNacimientoAutocomplete from '@/components/selectors/PaisNacimientoAutocomplete.vue';
 import EstadoAutocomplete from '@/components/selectors/EstadoAutocomplete.vue';
 import ResidenciaGeoAutocomplete from '@/components/selectors/ResidenciaGeoAutocomplete.vue';
-import { convertirFechaISOaYYYYMMDD, calcularEdadPrecisa } from '@/helpers/dates';
-import { extractApiErrorMessage } from '@/helpers/apiErrors';
+import { convertirFechaISOaYYYYMMDD, isBirthDateInRegistrationRange, getRegistrationBirthDateInputBounds, buildRegistrationAgeRangeMessage } from '@/helpers/dates';
+import { extractApiErrorMessage, extractCurpA1Issues, isCurpA1ApiError } from '@/helpers/apiErrors';
 import {
-  isPaisNacimientoNoEspecificado,
-  PAIS_NACIMIENTO_NO_ESPECIFICADO_FIRMANTE_MESSAGE,
+  isPaisProhibidoFirmante,
+  PAIS_PROHIBIDO_FIRMANTE_MESSAGE,
 } from '@/helpers/paisNacimiento';
-import { FIRMANTE_EDAD_MINIMA, FIRMANTE_EDAD_MAXIMA } from '../../formkit.config';
-import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { isMexicoPais } from '@/helpers/geoSelectorRules';
+import { FIRMANTE_EDAD_MINIMA, FIRMANTE_EDAD_MAXIMA, PERSON_NAME_MAX_LENGTH, PERSON_NAME_VALIDATION_MESSAGE, PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE, PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE } from '../../formkit.config';
+import {
+  formatearTituloProfesional,
+  formatearTituloYNombreFirmante,
+} from '@/helpers/nombres';
 import { useFirmanteIdentificationReadOnly } from '@/composables/useFirmanteIdentificationReadOnly';
 import { processSignatorySignature } from '@/helpers/processProviderLogo';
+import CurpInlineFeedback from '@/components/CurpInlineFeedback.vue';
+import CurpRelatedFieldMessages from '@/components/CurpRelatedFieldMessages.vue';
+import FechaNacimientoRegistroFeedback from '@/components/FechaNacimientoRegistroFeedback.vue';
+import { useCurpLiveValidation } from '@/composables/useCurpLiveValidation';
+import { useCurpInconvenientWordSubmitGuard } from '@/composables/useCurpInconvenientWordSubmitGuard';
+import ModalCurpInconvenientWordConfirm from '@/components/ModalCurpInconvenientWordConfirm.vue';
+import { useCurpFieldUppercase } from '@/composables/useCurpInputUppercase';
+import { useFirmantePersonNameNormalization } from '@/composables/useFirmantePersonNameNormalization';
+import {
+  TRABAJADOR_SEXO_CURP_OPTIONS,
+  isTrabajadorSexoCurp,
+  parseSexoCurpValue,
+} from '@/helpers/trabajadorSexoCurp';
 
 const medicoFirmante = useMedicoFirmanteStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -35,6 +52,7 @@ const {
   entidadNacimientoRequired,
   showEntidadNacimiento,
   sexoRequired,
+  sexoCurpRequired,
 } = useCurpPolicy();
 
 const { geoFieldsRequired } = useNom024Fields();
@@ -54,7 +72,7 @@ const nom024ResidenciaFields = ref({
   paisResidencia: '',
 });
 
-useResidenciaGeoCoherence(nom024ResidenciaFields);
+useResidenciaGeoCoherence(nom024ResidenciaFields, 'firmante');
 
 const firmaPreview = ref(null);
 const firmaArchivo = ref(null);
@@ -78,6 +96,7 @@ const formularioMedicoFirmante = ref({
   nombre: "",
   curp: "",
   sexo: "",
+  sexoCURP: "",
   entidadNacimiento: "",
   primerApellido: "",
   segundoApellido: "",
@@ -94,39 +113,104 @@ const formularioMedicoFirmante = ref({
   numeroCredencialAdicional2: ""
 });
 
-useEntidadPaisNacimientoCoherence(formularioMedicoFirmante);
+const {
+  normalizePersonNameField,
+  normalizePersonNamesFromForm,
+  normalizePersonNamesFromRecord,
+} = useFirmantePersonNameNormalization(
+  formularioMedicoFirmante,
+  isSIRES,
+  isSinRegimen,
+);
+
+useEntidadPaisNacimientoCoherence(formularioMedicoFirmante, 'firmante');
+
+useCurpFieldUppercase(
+  () => formularioMedicoFirmante.value.curp,
+  (value) => {
+    formularioMedicoFirmante.value.curp = value;
+  },
+);
+
+const curpForValidation = computed(() => formularioMedicoFirmante.value.curp || '');
+const curpDemographics = computed(() => ({
+  fechaNacimiento: formularioMedicoFirmante.value.fechaNacimiento || null,
+  sexo: isSIRES.value ? null : formularioMedicoFirmante.value.sexo || null,
+  sexoCURP: parseSexoCurpValue(formularioMedicoFirmante.value.sexoCURP),
+  useSexoCurpForValidation: isSIRES.value,
+  entidadNacimiento: formularioMedicoFirmante.value.entidadNacimiento || null,
+  nombre: formularioMedicoFirmante.value.nombre || null,
+  primerApellido: formularioMedicoFirmante.value.primerApellido || null,
+  segundoApellido: formularioMedicoFirmante.value.segundoApellido || null,
+}));
+const curpLiveOptions = computed(() => ({
+  allowGenericCurp: !isMexicoPais(Number(formularioMedicoFirmante.value.paisNacimiento)),
+  // Vacío lo maneja FormKit (required); no mostrar mensaje inline de CURP vacía.
+  required: false,
+}));
+const {
+  issues: curpIssues,
+  invalidPositions: curpInvalidPositions,
+  warningPositions: curpWarningPositions,
+  validPositions: curpValidPositions,
+  relatedFieldErrors: curpRelatedFieldErrors,
+  relatedFieldMessages: curpRelatedFieldMessages,
+  hasBlockingErrors: curpHasBlockingErrors,
+  curpPrefixSuggestion,
+  applySuggestedPrefix,
+  setServerIssues,
+  clearServerIssues,
+} = useCurpLiveValidation({
+  curp: curpForValidation,
+  demographics: curpDemographics,
+  options: curpLiveOptions,
+});
+
+const {
+  showModal: showCurpInconvenientConfirm,
+  detectedWord: curpInconvenientWord,
+  confirmOrProceed: confirmCurpInconvenientWordIfNeeded,
+  onConfirm: confirmCurpInconvenientWord,
+  onCancel: cancelCurpInconvenientWord,
+} = useCurpInconvenientWordSubmitGuard();
+watch(curpForValidation, () => clearServerIssues());
+
+const applyCurpSuggestion = () => {
+  if (isCurpFieldReadOnly.value) return;
+  const next = applySuggestedPrefix();
+  if (next != null) {
+    formularioMedicoFirmante.value.curp = next;
+  }
+};
+
+const insertGenericCURP = () => {
+  formularioMedicoFirmante.value.curp = 'XXXX999999XXXXXX99';
+};
 
 // Mantener isMX solo para lógica no-regulatoria
 const isMX = computed(() => proveedorSaludStore.proveedorSalud?.pais === 'MX');
 
-function formatDateInputValue(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+const fechaNacimientoBounds = computed(() =>
+  getRegistrationBirthDateInputBounds(
+    FIRMANTE_EDAD_MINIMA,
+    FIRMANTE_EDAD_MAXIMA,
+  ),
+);
 
-const fechaNacimientoMax = computed(() => {
-  const limite = new Date();
-  limite.setFullYear(limite.getFullYear() - FIRMANTE_EDAD_MINIMA);
-  return formatDateInputValue(limite);
-});
-
-const fechaNacimientoMin = computed(() => {
-  const limite = new Date();
-  limite.setFullYear(limite.getFullYear() - FIRMANTE_EDAD_MAXIMA);
-  return formatDateInputValue(limite);
-});
+const fechaNacimientoMax = computed(() => fechaNacimientoBounds.value.max);
+const fechaNacimientoMin = computed(() => fechaNacimientoBounds.value.min);
 
 // Sincronizar formulario y residencia cuando cambia el registro cargado (mismo patrón que ModalTrabajadores)
 watch(
   () => medicoFirmante.medicoFirmante,
   (firmante) => {
     if (firmante?._id) {
+      const normalizedNames = normalizePersonNamesFromRecord(firmante);
       Object.assign(formularioMedicoFirmante.value, {
-        nombre: firmante.nombre || "",
+        nombre: normalizedNames.nombre || "",
         curp: firmante.curp || "",
         sexo: firmante.sexo || "",
+        sexoCURP: firmante.sexoCURP ?? "",
         entidadNacimiento: firmante.entidadNacimiento || "",
         tituloProfesional: firmante.tituloProfesional || "",
         universidad: firmante.universidad || "",
@@ -141,8 +225,8 @@ watch(
           : "",
         nombreCredencialAdicional2: firmante.nombreCredencialAdicional2 || "",
         numeroCredencialAdicional2: firmante.numeroCredencialAdicional2 || "",
-        primerApellido: firmante.primerApellido || "",
-        segundoApellido: firmante.segundoApellido || "",
+        primerApellido: normalizedNames.primerApellido || "",
+        segundoApellido: normalizedNames.segundoApellido || "",
       });
       nom024ResidenciaFields.value.entidadResidencia = firmante.entidadResidencia || "";
       nom024ResidenciaFields.value.municipioResidencia = firmante.municipioResidencia || "";
@@ -155,7 +239,7 @@ watch(
       nom024ResidenciaFields.value.paisResidencia = "";
     }
     if (firmante?._id) {
-      initializeResidenciaGeoFields(nom024ResidenciaFields);
+      initializeResidenciaGeoFields(nom024ResidenciaFields, 'init', 'firmante');
     }
   },
   { immediate: true },
@@ -163,6 +247,28 @@ watch(
 
 const formSubmitAttempted = ref(false);
 provide('formSubmitAttempted', formSubmitAttempted);
+
+const personNameValidationMessages = {
+  required: 'Este campo es obligatorio',
+  personNameValidation: PERSON_NAME_VALIDATION_MESSAGE,
+  personNameOptionalValidation: PERSON_NAME_VALIDATION_MESSAGE,
+  personNameCharactersValidation: PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE,
+  personNameOptionalCharactersValidation: PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE,
+  personNameCharactersSinRegimenValidation: PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE,
+  personNameOptionalCharactersSinRegimenValidation: PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE,
+};
+
+const requiredPersonNameValidation = computed(() =>
+  isSinRegimen.value
+    ? 'required|personNameValidation|personNameCharactersSinRegimenValidation'
+    : 'required|personNameValidation|personNameCharactersValidation',
+);
+
+const optionalPersonNameValidation = computed(() =>
+  isSinRegimen.value
+    ? 'personNameOptionalValidation|personNameOptionalCharactersSinRegimenValidation'
+    : 'personNameOptionalValidation|personNameOptionalCharactersValidation',
+);
 
 const onFormSubmitInvalid = () => {
   formSubmitAttempted.value = true;
@@ -191,7 +297,10 @@ const piePaginaFirmante = computed(() => ({
   nombre: formularioMedicoFirmante.value.nombre || "",
   primerApellido: formularioMedicoFirmante.value.primerApellido || "",
   segundoApellido: formularioMedicoFirmante.value.segundoApellido || "",
-  nombreCompleto: formatearTituloYNombreFirmante(formularioMedicoFirmante.value),
+  nombreCompleto: formatearTituloYNombreFirmante(
+    formularioMedicoFirmante.value,
+    proveedorSaludStore.regimenRegulatorio,
+  ),
   tituloProfesional: formularioMedicoFirmante.value.tituloProfesional || "",
   universidad: formularioMedicoFirmante.value.universidad || "",
   numeroCedulaProfesional: formularioMedicoFirmante.value.numeroCedulaProfesional || "",
@@ -302,10 +411,18 @@ const handleSubmit = async (data) => {
         }
     }
 
-    if (isPaisNacimientoNoEspecificado(formularioMedicoFirmante.value.paisNacimiento)) {
+    if (isPaisProhibidoFirmante(formularioMedicoFirmante.value.paisNacimiento)) {
         toast.open({
             type: "error",
-            message: PAIS_NACIMIENTO_NO_ESPECIFICADO_FIRMANTE_MESSAGE,
+            message: PAIS_PROHIBIDO_FIRMANTE_MESSAGE,
+        });
+        return;
+    }
+
+    if (isPaisProhibidoFirmante(nom024ResidenciaFields.value.paisResidencia)) {
+        toast.open({
+            type: "error",
+            message: PAIS_PROHIBIDO_FIRMANTE_MESSAGE,
         });
         return;
     }
@@ -313,16 +430,36 @@ const handleSubmit = async (data) => {
     if (curpRequired.value && (!data.curp || data.curp.trim() === '')) {
         toast.open({
             type: "error",
-            message: "El CURP es obligatorio para firmantes en régimen SIRES_NOM024",
+            message: "El CURP es obligatorio para firmantes",
         });
         return;
     }
 
+    if (showCurpField.value && curpHasBlockingErrors.value) {
+        toast.open({
+            type: 'error',
+            message: 'Revisa la CURP: hay errores que debes corregir antes de guardar.',
+        });
+        return;
+    }
+
+    if (showCurpField.value) {
+        const confirmed = await confirmCurpInconvenientWordIfNeeded(
+            formularioMedicoFirmante.value.curp,
+        );
+        if (!confirmed) {
+            return;
+        }
+    }
+
     const sexo = data.sexo || formularioMedicoFirmante.value.sexo;
-    if (sexoRequired.value && !sexo) {
+    const sexoCURP = parseSexoCurpValue(
+      data.sexoCURP ?? formularioMedicoFirmante.value.sexoCURP,
+    );
+    if (sexoCurpRequired.value && !isTrabajadorSexoCurp(sexoCURP)) {
         toast.open({
             type: "error",
-            message: "El sexo es obligatorio para firmantes en régimen SIRES_NOM024",
+            message: "El sexo CURP es obligatorio para firmantes",
         });
         return;
     }
@@ -331,7 +468,7 @@ const handleSubmit = async (data) => {
     if (entidadNacimientoRequired.value && !entidadNacimiento) {
         toast.open({
             type: "error",
-            message: "La entidad de nacimiento es obligatoria para firmantes en régimen SIRES_NOM024",
+            message: "La entidad de nacimiento es obligatoria para firmantes",
         });
         return;
     }
@@ -340,28 +477,28 @@ const handleSubmit = async (data) => {
         if (!nom024ResidenciaFields.value.paisResidencia && nom024ResidenciaFields.value.paisResidencia !== 0) {
             toast.open({
                 type: "error",
-                message: "El país de residencia es obligatorio para firmantes en régimen SIRES_NOM024",
+                message: "El país de residencia es obligatorio para firmantes",
             });
             return;
         }
         if (!nom024ResidenciaFields.value.entidadResidencia) {
             toast.open({
                 type: "error",
-                message: "La entidad de residencia es obligatoria para firmantes en régimen SIRES_NOM024",
+                message: "La entidad de residencia es obligatoria para firmantes",
             });
             return;
         }
         if (!nom024ResidenciaFields.value.municipioResidencia) {
             toast.open({
                 type: "error",
-                message: "El municipio de residencia es obligatorio para firmantes en régimen SIRES_NOM024",
+                message: "El municipio de residencia es obligatorio para firmantes",
             });
             return;
         }
         if (!nom024ResidenciaFields.value.localidadResidencia) {
             toast.open({
                 type: "error",
-                message: "La localidad de residencia es obligatoria para firmantes en régimen SIRES_NOM024",
+                message: "La localidad de residencia es obligatoria para firmantes",
             });
             return;
         }
@@ -376,29 +513,31 @@ const handleSubmit = async (data) => {
         return;
     }
 
-    const edad = calcularEdadPrecisa(fechaNacimiento);
-    if (edad < FIRMANTE_EDAD_MINIMA) {
+    if (
+      !isBirthDateInRegistrationRange(
+        fechaNacimiento,
+        new Date(),
+        FIRMANTE_EDAD_MINIMA,
+        FIRMANTE_EDAD_MAXIMA,
+      )
+    ) {
         toast.open({
             type: "error",
-            message: "El médico firmante debe tener al menos 18 años cumplidos",
-        });
-        return;
-    }
-    if (edad > FIRMANTE_EDAD_MAXIMA) {
-        toast.open({
-            type: "error",
-            message: "El médico firmante no puede tener más de 90 años cumplidos",
+            message: buildRegistrationAgeRangeMessage(
+              FIRMANTE_EDAD_MINIMA,
+              FIRMANTE_EDAD_MAXIMA,
+              fechaNacimiento,
+            ),
         });
         return;
     }
 
     const formData = new FormData();
 
+    const normalizedNames = normalizePersonNamesFromForm();
     const baseData = {
       ...data,
-      nombre: formularioMedicoFirmante.value.nombre,
-      primerApellido: formularioMedicoFirmante.value.primerApellido,
-      segundoApellido: formularioMedicoFirmante.value.segundoApellido,
+      ...normalizedNames,
       curp: formularioMedicoFirmante.value.curp,
       fechaNacimiento,
       paisNacimiento: formularioMedicoFirmante.value.paisNacimiento,
@@ -407,7 +546,10 @@ const handleSubmit = async (data) => {
       paisResidencia: nom024ResidenciaFields.value.paisResidencia,
       municipioResidencia: nom024ResidenciaFields.value.municipioResidencia,
       localidadResidencia: nom024ResidenciaFields.value.localidadResidencia,
-      sexo: sexo || formularioMedicoFirmante.value.sexo,
+      ...(isSIRES.value && isTrabajadorSexoCurp(sexoCURP)
+        ? { sexoCURP }
+        : {}),
+      ...(isSinRegimen.value && sexo ? { sexo } : {}),
     };
 
     const submitData = preserveImmutableIdentificationFields(
@@ -460,6 +602,14 @@ const handleSubmit = async (data) => {
 
     } catch (error) {
         console.error("Error al crear o actualizar el médico firmante:", error);
+        if (isCurpA1ApiError(error)) {
+            setServerIssues(extractCurpA1Issues(error));
+            toast.open({
+                message: 'Revisa la CURP: no coincide con los datos capturados.',
+                type: 'error',
+            });
+            return;
+        }
         toast.open({
             message: extractApiErrorMessage(
                 error,
@@ -475,7 +625,16 @@ const volver = () => {
     router.push({ name: 'inicio' });
 };
 
-const titulos = ['Dr.', 'Dra.'];
+const TITULOS_MEDICO = ['Dr.', 'Dra.'];
+const titulos = computed(() =>
+  TITULOS_MEDICO.map((value) => ({
+    value,
+    label: formatearTituloProfesional(
+      value,
+      proveedorSaludStore.regimenRegulatorio,
+    ),
+  })),
+);
 const siONo = ['Si', 'No'];
 
 const baseURL = import.meta.env.VITE_API_URL || 'https://ramazzini.app';
@@ -511,35 +670,65 @@ const firmaSrc = computed(() => {
                         @submit="handleSubmit"
                         @submit-invalid="onFormSubmitInvalid">
 
+                        <div class="space-y-3">
                         <!-- Campo CURP - Visible según política regulatoria -->
-                        <div v-if="showCurpField" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <FormKit
-                                type="text"
-                                name="curp"
-                                placeholder="Ej. GALJ850101HDFRPN09"
-                                maxlength="18"
-                                :disabled="isCurpFieldReadOnly"
-                                :validation="curpRequired ? 'required' : ''"
-                                :validation-messages="curpRequired ? { required: 'El CURP es obligatorio' } : {}"
-                                v-model="formularioMedicoFirmante.curp"
-                            >
-                                <template #label>
-                                    <span class="text-base text-gray-700">
-                                        CURP (Clave Única de Registro de Población)
-                                        <span v-if="curpRequired" class="text-red-500">*</span>
-                                    </span>
-                                </template>
-                            </FormKit>
-
-                            <p class="flex items-center -mt-5 md:mt-0">
-                                <span class="text-xs text-gray-600 mt-0 md:mt-3 mb-5 md:mb-0">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    CURP de 18 caracteres (ej. GALJ850101HDFRPN09)
-                                    <br v-if="isSIRES">
-                                    <span v-if="isSIRES" class="text-amber-700 font-medium">Obligatorio para régimen SIRES_NOM024</span>
-                                </span>
-                            </p>
-
+                        <div
+                            v-if="showCurpField || medicoFirmante.medicoFirmante?.folio"
+                            class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
+                        >
+                            <div v-if="showCurpField">
+                              <FormKit
+                                  type="text"
+                                  name="curp"
+                                  placeholder="Ej. GALJ850101HDFRPN09"
+                                  maxlength="18"
+                                  :disabled="isCurpFieldReadOnly"
+                                  :validation="curpRequired ? 'required' : ''"
+                                  :validation-messages="curpRequired ? { required: 'El CURP es obligatorio' } : {}"
+                                  v-model="formularioMedicoFirmante.curp"
+                              >
+                                  <template #label>
+                                      <span class="flex w-full items-baseline justify-between gap-2">
+                                          <span class="text-base text-gray-700">
+                                              CURP<span v-if="curpRequired" class="text-red-500">*</span>
+                                          </span>
+                                          <button
+                                              v-if="!isMexicoPais(Number(formularioMedicoFirmante.paisNacimiento)) && !isCurpFieldReadOnly"
+                                              type="button"
+                                              @click.stop.prevent="insertGenericCURP"
+                                              class="shrink-0 text-xs font-normal text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200"
+                                              title="Usar CURP genérica para firmante extranjero (XXXX999999XXXXXX99)"
+                                          >
+                                              <i class="fas fa-info-circle mr-1"></i>
+                                              Usar CURP genérica
+                                          </button>
+                                      </span>
+                                  </template>
+                              </FormKit>
+                              <CurpInlineFeedback
+                                  :curp="formularioMedicoFirmante.curp"
+                                  :invalid-positions="curpInvalidPositions"
+                                  :warning-positions="curpWarningPositions"
+                                  :valid-positions="curpValidPositions"
+                                  :issues="curpIssues"
+                                  :suggestion="curpPrefixSuggestion"
+                                  :can-apply-suggestion="!isCurpFieldReadOnly"
+                                  @apply-suggestion="applyCurpSuggestion"
+                              />
+                            </div>
+                            <div v-if="medicoFirmante.medicoFirmante?.folio">
+                              <label class="block font-medium text-lg text-gray-700 mb-1">
+                                Folio (Identificador en la UM)
+                              </label>
+                              <div
+                                class="w-full h-15 p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-mono text-sm flex items-center"
+                              >
+                                {{ medicoFirmante.medicoFirmante.folio }}
+                              </div>
+                              <p class="text-xs text-gray-500 mt-1">
+                                Identificador único de 18 caracteres. Generado automáticamente al registrar.
+                              </p>
+                            </div>
                         </div>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -552,79 +741,155 @@ const firmaSrc = computed(() => {
                                 v-model="formularioMedicoFirmante.tituloProfesional"
                             />
 
-                            <FormKit
-                                type="text"
-                                label="Nombre(s)"
-                                name="nombre"
-                                placeholder="Ej. Juan Alfonso"
-                                validation="required"
-                                :disabled="isCurpConformationReadOnly"
-                                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                                v-model="formularioMedicoFirmante.nombre"
-                            />
+                            <div>
+                              <FormKit
+                                  type="text"
+                                  name="nombre"
+                                  placeholder="Ej. Juan Alfonso"
+                                  :validation="requiredPersonNameValidation"
+                                  :maxlength="PERSON_NAME_MAX_LENGTH"
+                                  :disabled="isCurpConformationReadOnly"
+                                  :validation-messages="personNameValidationMessages"
+                                  v-model="formularioMedicoFirmante.nombre"
+                                  @blur="normalizePersonNameField('nombre')"
+                              >
+                                  <template #label>
+                                      <span class="text-lg font-medium text-gray-700">
+                                          Nombre(s)<span class="text-red-500">*</span>
+                                      </span>
+                                  </template>
+                              </FormKit>
+                              <CurpRelatedFieldMessages
+                                v-if="showCurpField"
+                                :messages="curpRelatedFieldMessages.nombre"
+              
+                              />
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <FormKit
-                                type="text"
-                                label="Primer Apellido"
-                                name="primerApellido"
-                                placeholder="Ej. Pérez"
-                                validation="required"
-                                :disabled="isCurpConformationReadOnly"
-                                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                                v-model="formularioMedicoFirmante.primerApellido"
-                            />
+                            <div>
+                              <FormKit
+                                  type="text"
+                                  name="primerApellido"
+                                  placeholder="Ej. Pérez"
+                                  :validation="requiredPersonNameValidation"
+                                  :maxlength="PERSON_NAME_MAX_LENGTH"
+                                  :disabled="isCurpConformationReadOnly"
+                                  :validation-messages="personNameValidationMessages"
+                                  v-model="formularioMedicoFirmante.primerApellido"
+                                  @blur="normalizePersonNameField('primerApellido')"
+                              >
+                                  <template #label>
+                                      <span class="text-lg font-medium text-gray-700">
+                                          Primer Apellido<span class="text-red-500">*</span>
+                                      </span>
+                                  </template>
+                              </FormKit>
+                              <CurpRelatedFieldMessages
+                                v-if="showCurpField"
+                                :messages="curpRelatedFieldMessages.primerApellido"
+              
+                              />
+                            </div>
 
-                            <FormKit
-                                type="text"
-                                label="Segundo Apellido"
-                                name="segundoApellido"
-                                placeholder="Ej. Galeana"
-                                :disabled="isCurpConformationReadOnly"
-                                v-model="formularioMedicoFirmante.segundoApellido"
-                            />
+                            <div>
+                              <FormKit
+                                  type="text"
+                                  label="Segundo Apellido"
+                                  name="segundoApellido"
+                                  placeholder="Ej. Galeana"
+                                  :validation="optionalPersonNameValidation"
+                                  :maxlength="PERSON_NAME_MAX_LENGTH"
+                                  :disabled="isCurpConformationReadOnly"
+                                  :validation-messages="personNameValidationMessages"
+                                  v-model="formularioMedicoFirmante.segundoApellido"
+                                  @blur="normalizePersonNameField('segundoApellido')"
+                              />
+                              <CurpRelatedFieldMessages
+                                v-if="showCurpField"
+                                :messages="curpRelatedFieldMessages.segundoApellido"
+              
+                              />
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <FormKit
-                                type="select"
-                                name="sexo"
-                                placeholder='Selecciona "Masculino" o "Femenino"'
-                                :options="['Masculino', 'Femenino']"
-                                :disabled="isCurpConformationReadOnly"
-                                :validation="sexoRequired ? 'required' : ''"
-                                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                                v-model="formularioMedicoFirmante.sexo"
-                            >
-                                <template #label>
-                                    <span class="text-lg font-medium text-gray-700">
-                                        Sexo
-                                        <span v-if="sexoRequired" class="text-red-500">*</span>
-                                    </span>
-                                </template>
-                            </FormKit>
+                            <div v-if="isSIRES">
+                              <FormKit
+                                  type="select"
+                                  name="sexoCURP"
+                                  placeholder="-Seleccione sexo CURP-"
+                                  :options="TRABAJADOR_SEXO_CURP_OPTIONS"
+                                  :disabled="isCurpConformationReadOnly"
+                                  :validation="sexoCurpRequired ? 'required' : ''"
+                                  :validation-messages="{ required: 'Este campo es obligatorio' }"
+                                  v-model="formularioMedicoFirmante.sexoCURP"
+                              >
+                                  <template #label>
+                                      <span class="text-lg font-medium text-gray-700">
+                                          Sexo CURP
+                                          <span v-if="sexoCurpRequired" class="text-red-500">*</span>
+                                      </span>
+                                  </template>
+                              </FormKit>
+                              <CurpRelatedFieldMessages
+                                v-if="showCurpField"
+                                :messages="curpRelatedFieldMessages.sexoCURP"
+              
+                              />
+                            </div>
+                            <div v-else>
+                              <FormKit
+                                  type="select"
+                                  name="sexo"
+                                  placeholder='Selecciona "Masculino" o "Femenino"'
+                                  :options="['Masculino', 'Femenino']"
+                                  :disabled="isCurpConformationReadOnly"
+                                  v-model="formularioMedicoFirmante.sexo"
+                              >
+                                  <template #label>
+                                      <span class="text-lg font-medium text-gray-700">Sexo</span>
+                                  </template>
+                              </FormKit>
+                              <CurpRelatedFieldMessages
+                                v-if="showCurpField"
+                                :messages="curpRelatedFieldMessages.sexo"
+              
+                              />
+                            </div>
 
-                            <FormKit
-                                type="date"
-                                name="fechaNacimiento"
-                                :disabled="isCurpConformationReadOnly"
-                                validation="required|fechaNacimientoFirmanteValidation"
-                                :validation-messages="{
-                                    required: 'La fecha de nacimiento es obligatoria',
-                                    fechaNacimientoFirmanteValidation: 'La fecha debe corresponder a una edad entre 18 y 90 años cumplidos',
-                                }"
-                                :min="fechaNacimientoMin"
-                                :max="fechaNacimientoMax"
-                                v-model="formularioMedicoFirmante.fechaNacimiento"
-                            >
-                                <template #label>
-                                    <span class="text-lg font-medium text-gray-700">
-                                        Fecha de nacimiento
-                                        <span class="text-red-500">*</span>
-                                    </span>
-                                </template>
-                            </FormKit>
+                            <div>
+                              <FormKit
+                                  type="date"
+                                  name="fechaNacimiento"
+                                  :disabled="isCurpConformationReadOnly"
+                                  validation="required"
+                                  :validation-messages="{
+                                      required: 'La fecha de nacimiento es obligatoria',
+                                  }"
+                                  :min="fechaNacimientoMin"
+                                  :max="fechaNacimientoMax"
+                                  v-model="formularioMedicoFirmante.fechaNacimiento"
+                              >
+                                  <template #label>
+                                      <span class="text-lg font-medium text-gray-700">
+                                          Fecha de nacimiento
+                                          <span class="text-red-500">*</span>
+                                      </span>
+                                  </template>
+                              </FormKit>
+                              <FechaNacimientoRegistroFeedback
+                                :min-years="FIRMANTE_EDAD_MINIMA"
+                                :max-years="FIRMANTE_EDAD_MAXIMA"
+                                :fecha-nacimiento="formularioMedicoFirmante.fechaNacimiento"
+                              />
+                              <CurpRelatedFieldMessages
+                                v-if="showCurpField"
+                                :messages="curpRelatedFieldMessages.fechaNacimiento"
+              
+                              />
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -681,28 +946,38 @@ const firmaSrc = computed(() => {
                                 placeholder="Buscar por nombre de país..."
                                 :required="paisNacimientoRequired"
                                 :disabled="isCurpConformationReadOnly"
-                                exclude-no-especificado
+                                geo-context="firmante"
                             />
+                        </div>
+
                         </div>
 
                         <div v-if="showEntidadNacimiento" class="mt-4 mb-2">
                             <div class="mb-4">
                                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Nacimiento</h4>
                                 <div class="grid gap-3 sm:grid-cols-2">
-                                    <EstadoAutocomplete
-                                        v-model="formularioMedicoFirmante.entidadNacimiento"
-                                        label="Entidad de Nacimiento"
-                                        placeholder="Buscar por nombre del estado"
-                                        :required="geoFieldsRequired"
-                                        :disabled="isCurpConformationReadOnly"
-                                    />
+                                    <div>
+                                      <EstadoAutocomplete
+                                          v-model="formularioMedicoFirmante.entidadNacimiento"
+                                          label="Entidad de Nacimiento"
+                                          placeholder="Buscar por nombre del estado"
+                                          :required="geoFieldsRequired"
+                                          :disabled="isCurpConformationReadOnly"
+                                          geo-context="firmante"
+                                          :pais-nacimiento="formularioMedicoFirmante.paisNacimiento"
+                                      />
+                                      <CurpRelatedFieldMessages
+                                        :messages="curpRelatedFieldMessages.entidadNacimiento"
+                                        class="mt-1"
+                                      />
+                                    </div>
 
                                     <PaisNacimientoAutocomplete
                                         v-model="formularioMedicoFirmante.paisNacimiento"
                                         label="País de nacimiento"
                                         placeholder="Buscar por nombre de país..."
                                         :required="paisNacimientoRequired"
-                                        exclude-no-especificado
+                                        geo-context="firmante"
                                     />
                                 </div>
                             </div>
@@ -718,6 +993,7 @@ const firmaSrc = computed(() => {
                                     @update:municipioResidencia="nom024ResidenciaFields.municipioResidencia = $event"
                                     @update:localidadResidencia="nom024ResidenciaFields.localidadResidencia = $event"
                                     :required="geoFieldsRequired"
+                                    geo-context="firmante"
                                 >
                                     <template #pais>
                                         <PaisNacimientoAutocomplete
@@ -725,6 +1001,7 @@ const firmaSrc = computed(() => {
                                             label="País de residencia"
                                             placeholder="Buscar por nombre de país..."
                                             :required="geoFieldsRequired"
+                                            geo-context="firmante"
                                         />
                                     </template>
                                 </ResidenciaGeoAutocomplete>
@@ -870,6 +1147,13 @@ const firmaSrc = computed(() => {
             </Transition>
         </div>
     </Transition>
+
+    <ModalCurpInconvenientWordConfirm
+      :open="showCurpInconvenientConfirm"
+      :word="curpInconvenientWord"
+      @confirm="confirmCurpInconvenientWord"
+      @close="cancelCurpInconvenientWord"
+    />
 </template>
 
 <style scoped>

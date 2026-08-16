@@ -8,6 +8,7 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 
 const props = defineProps({
   variant: {
@@ -23,6 +24,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
+const { fechaDocumentoMax } = useSiresDocumentDateMax();
 
 // Valor local para la pregunta principal
 const tipoNota = ref('Inicial');
@@ -200,6 +202,7 @@ watch(fechaNotaMedica, (newValue) => {
         type="date" 
         name="fechaNotaMedica" 
         placeholder="Seleccione una fecha"
+        :max="fechaDocumentoMax"
         v-model="fechaNotaMedica" 
       />
     </div>

@@ -5,6 +5,9 @@ import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+
+const proveedorSaludStore = useProveedorSaludStore();
 
 interface FirmanteBase {
   nombre: string;
@@ -64,7 +67,10 @@ const estadoDisplay = computed(() => {
 
 const formatFirmanteNombre = (firmante: Firmante | null | undefined): string | null => {
   if (!firmante?.nombre?.trim()) return null;
-  return formatearTituloYNombreFirmante(firmante) || null;
+  return formatearTituloYNombreFirmante(
+    firmante,
+    proveedorSaludStore.regimenRegulatorio,
+  ) || null;
 };
 
 // Función para obtener userId de finalizadoPor/anuladoPor

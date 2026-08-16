@@ -243,6 +243,13 @@ const validateDiag2Sis = async () => {
   diagnostico2SisError.value = '';
   if (registrarComorbilidad.value === 0) return;
 
+  const principalRegistrado = !!extractCode(formDataNotaMedica.codigoCIE10Principal);
+  if (!principalRegistrado) {
+    diagnostico2SisError.value =
+      'Debe registrar primero el diagnóstico principal antes del diagnóstico 2.';
+    return;
+  }
+
   const trabajador = trabajadores.currentTrabajador;
   if (!trabajador) return;
 

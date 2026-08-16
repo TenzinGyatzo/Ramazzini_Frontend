@@ -123,52 +123,59 @@ const normalizeGeoValue = (value) => {
 };
 
 // Función para manejar el envío del formulario
+const isSubmitting = ref(false);
+
 const handleSubmit = async (data) => {
-  // Obtener el ID del usuario actual
-  const currentUserId = await ensureUserLoaded();
-  
-  if (!currentUserId) {
-    toast.open({ message: 'No se pudo identificar al usuario. Por favor, inicie sesión nuevamente.', type: 'error' });
-    return;
-  }
-
-  // Normalizar valores geográficos dependiendo de si es México o no
-  let cpValue = isMX.value ? normalizeGeoValue(formulario.value.codigoPostal) : normalizeGeoValue(data.codigoPostal);
-  let estadoValue = isMX.value ? normalizeGeoValue(formulario.value.estado) : normalizeGeoValue(data.estado);
-  let municipioValue = isMX.value ? normalizeGeoValue(formulario.value.municipio) : normalizeGeoValue(data.municipio);
-
-  // Asegurar formato de nombre propio (Title Case) para estado y municipio
-  estadoValue = toTitleCase(estadoValue);
-  municipioValue = toTitleCase(municipioValue);
-
-  const centroTrabajoData = {
-    nombreCentro: data.nombreCentro,
-    direccionCentro: data.direccionCentro,
-    codigoPostal: cpValue,
-    estado: estadoValue,
-    municipio: municipioValue,
-    idEmpresa: data.idEmpresa,
-    createdBy: currentUserId,
-    updatedBy: currentUserId
-  };
-
-  // console.log('Centro de trabajo:', centroTrabajoData);
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
 
   try {
-    if (centrosTrabajo.currentCentroTrabajo?._id) {
-      // Actualizar centro de trabajo
-      await centrosTrabajo.updateCentroTrabajoById(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajo._id, centroTrabajoData);
-      toast.open({ message: 'Centro de trabajo actualizado con éxito' });
-    } else {
-      // Crear nuevo centro de trabajo
-      await centrosTrabajo.createCentroTrabajo(empresas.currentEmpresaId, centroTrabajoData);
-      toast.open({ message: 'Centro de trabajo creado con éxito' });
+    // Obtener el ID del usuario actual
+    const currentUserId = await ensureUserLoaded();
+
+    if (!currentUserId) {
+      toast.open({ message: 'No se pudo identificar al usuario. Por favor, inicie sesión nuevamente.', type: 'error' });
+      return;
     }
-    forceClose();
-    centrosTrabajo.fetchCentrosTrabajo(empresas.currentEmpresaId);
-  } catch (error) {
-    console.error('Error al crear o actualizar el centro:', error);
-    toast.open({ message: 'Hubo un error, por favor intente nuevamente.', type: 'error' });
+
+    // Normalizar valores geográficos dependiendo de si es México o no
+    let cpValue = isMX.value ? normalizeGeoValue(formulario.value.codigoPostal) : normalizeGeoValue(data.codigoPostal);
+    let estadoValue = isMX.value ? normalizeGeoValue(formulario.value.estado) : normalizeGeoValue(data.estado);
+    let municipioValue = isMX.value ? normalizeGeoValue(formulario.value.municipio) : normalizeGeoValue(data.municipio);
+
+    // Asegurar formato de nombre propio (Title Case) para estado y municipio
+    estadoValue = toTitleCase(estadoValue);
+    municipioValue = toTitleCase(municipioValue);
+
+    const centroTrabajoData = {
+      nombreCentro: data.nombreCentro,
+      direccionCentro: data.direccionCentro,
+      codigoPostal: cpValue,
+      estado: estadoValue,
+      municipio: municipioValue,
+      idEmpresa: data.idEmpresa,
+      createdBy: currentUserId,
+      updatedBy: currentUserId
+    };
+
+    try {
+      if (centrosTrabajo.currentCentroTrabajo?._id) {
+        // Actualizar centro de trabajo
+        await centrosTrabajo.updateCentroTrabajoById(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajo._id, centroTrabajoData);
+        toast.open({ message: 'Centro de trabajo actualizado con éxito' });
+      } else {
+        // Crear nuevo centro de trabajo
+        await centrosTrabajo.createCentroTrabajo(empresas.currentEmpresaId, centroTrabajoData);
+        toast.open({ message: 'Centro de trabajo creado con éxito' });
+      }
+      forceClose();
+      centrosTrabajo.fetchCentrosTrabajo(empresas.currentEmpresaId);
+    } catch (error) {
+      console.error('Error al crear o actualizar el centro:', error);
+      toast.open({ message: 'Hubo un error, por favor intente nuevamente.', type: 'error' });
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -251,8 +258,8 @@ const handleSubmit = async (data) => {
             <FormKit type="hidden" name="idEmpresa" :value="empresas.currentEmpresaId" />
 
             <hr class="my-3">
-            <FormKit type="submit" :disabled="centrosTrabajo.loadingModal">
-              <span v-if="centrosTrabajo.loadingModal">Guardando...</span>
+            <FormKit type="submit" :disabled="isSubmitting">
+              <span v-if="isSubmitting">Guardando...</span>
               <span v-else>{{ centrosTrabajo.currentCentroTrabajo._id ? 'Actualizar Centro' : 'Guardar Centro' }}</span>
             </FormKit>
           </FormKit>

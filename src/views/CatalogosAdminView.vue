@@ -25,6 +25,7 @@ const limit = ref(50);
 const searchQ = ref("");
 const loading = ref(false);
 const typesLoading = ref(false);
+const formSaving = ref(false);
 const initialLoadDone = ref(false);
 
 const showPageSpinner = computed(
@@ -213,7 +214,8 @@ function buildPayload(): Record<string, unknown> {
 }
 
 async function saveForm() {
-  if (!selectedType.value) return;
+  if (!selectedType.value || formSaving.value) return;
+  formSaving.value = true;
   try {
     const payload = buildPayload();
     if (formMode.value === "create") {
@@ -232,6 +234,8 @@ async function saveForm() {
     await loadEntries();
   } catch {
     notify("No se pudo guardar el registro", "error");
+  } finally {
+    formSaving.value = false;
   }
 }
 
@@ -663,10 +667,12 @@ onMounted(async () => {
           </button>
           <button
             type="button"
-            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="formSaving"
             @click="saveForm"
           >
-            Guardar
+            <span v-if="formSaving">Guardando...</span>
+            <span v-else>Guardar</span>
           </button>
         </div>
       </div>

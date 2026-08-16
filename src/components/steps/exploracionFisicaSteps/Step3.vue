@@ -3,6 +3,10 @@ import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import {
+  SOMATOMETRIA_SIGNOS_RANGES,
+  mensajeErrorSomatometriaSignosField,
+} from '@/helpers/somatometriaSignosRanges';
 
 const props = defineProps({
   variant: {
@@ -207,45 +211,25 @@ function setCategoriaSaturacionOxigeno() {
 }
 
 // Computed para mostrar mensajes de error
-const mensajeErrorTensionSistolica = computed(() => {
-  return tensionArterialSistolica.value < 60 
-    ? 'Debe ser mínimo 60' 
-    : tensionArterialSistolica.value > 300 
-      ? 'Debe ser máximo 300' 
-      : '';
-});
+const mensajeErrorTensionSistolica = computed(() =>
+  mensajeErrorSomatometriaSignosField('tensionArterialSistolica', tensionArterialSistolica.value),
+);
 
-const mensajeErrorTensionDiastolica = computed(() => {
-  return tensionArterialDiastolica.value < 40 
-    ? 'Debe ser mínimo 40' 
-    : tensionArterialDiastolica.value > 200 
-      ? 'Debe ser máximo 200' 
-      : '';
-});
+const mensajeErrorTensionDiastolica = computed(() =>
+  mensajeErrorSomatometriaSignosField('tensionArterialDiastolica', tensionArterialDiastolica.value),
+);
 
-const mensajeErrorFrecuenciaCardiaca = computed(() => {
-  return frecuenciaCardiaca.value < 40 
-    ? 'Debe ser mínimo 40' 
-    : frecuenciaCardiaca.value > 150 
-      ? 'Debe ser máximo 150' 
-      : '';
-});
+const mensajeErrorFrecuenciaCardiaca = computed(() =>
+  mensajeErrorSomatometriaSignosField('frecuenciaCardiaca', frecuenciaCardiaca.value),
+);
 
-const mensajeErrorFrecuenciaRespiratoria = computed(() => {
-  return frecuenciaRespiratoria.value < 12 
-    ? 'Debe ser mínimo 12' 
-    : frecuenciaRespiratoria.value > 45 
-      ? 'Debe ser máximo 45' 
-      : '';
-});
+const mensajeErrorFrecuenciaRespiratoria = computed(() =>
+  mensajeErrorSomatometriaSignosField('frecuenciaRespiratoria', frecuenciaRespiratoria.value),
+);
 
-const mensajeErrorSaturacionOxigeno = computed(() => {
-  return saturacionOxigeno.value < 80 
-    ? 'Debe ser mínimo 80' 
-    : saturacionOxigeno.value > 100 
-      ? 'Debe ser máximo 100' 
-      : '';
-});
+const mensajeErrorSaturacionOxigeno = computed(() =>
+  mensajeErrorSomatometriaSignosField('saturacionOxigeno', saturacionOxigeno.value),
+);
 
 </script>
 
@@ -268,9 +252,9 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             id="tensionArterialSistolica"
             :class="inputClass"
             v-model="tensionArterialSistolica" 
-            min="60" 
-            max="300"
-            placeholder="60-300"
+            :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min" 
+            :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max"
+            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max}`"
           >
           <transition
             enter-active-class="transition-all duration-200 ease-out"
@@ -294,9 +278,9 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             id="tensionArterialDiastolica"
             :class="inputClass"
             v-model="tensionArterialDiastolica" 
-            min="40" 
-            max="200"
-            placeholder="40-200"
+            :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min" 
+            :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max"
+            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max}`"
           />
           <transition
             enter-active-class="transition-all duration-200 ease-out"
@@ -351,9 +335,9 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             id="frecuenciaCardiaca"
             :class="inputClass"
             v-model="frecuenciaCardiaca" 
-            min="40" 
-            max="150"
-            placeholder="40-150"
+            :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min" 
+            :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max"
+            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max}`"
           />
           <transition
             enter-active-class="transition-all duration-200 ease-out"
@@ -408,9 +392,9 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             id="frecuenciaRespiratoria"
             :class="inputClass"
             v-model="frecuenciaRespiratoria" 
-            min="12" 
-            max="45"
-            placeholder="12-45"
+            :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min" 
+            :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max"
+            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max}`"
           />
           <transition
             enter-active-class="transition-all duration-200 ease-out"
@@ -463,9 +447,9 @@ const mensajeErrorSaturacionOxigeno = computed(() => {
             id="saturacionOxigeno"
             :class="inputClass"
             v-model="saturacionOxigeno" 
-            min="80" 
-            max="100"
-            placeholder="80-100"
+            :min="SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.min" 
+            :max="SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.max"
+            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.min}-${SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.max}`"
           />
           <transition
             enter-active-class="transition-all duration-200 ease-out"

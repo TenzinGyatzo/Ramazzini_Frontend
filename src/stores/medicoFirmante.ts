@@ -8,6 +8,7 @@ interface MedicoFirmante {
     _id: string;
     nombre: string;
     curp?: string; // NOM-024: CURP del profesional de salud
+    folio?: string; // NOM-024: Identificador en la UM (generado al crear)
     primerApellido?: string;
     segundoApellido?: string;
     tituloProfesional?: string;
@@ -23,6 +24,8 @@ interface MedicoFirmante {
     numeroCredencialAdicional2?: string;
     paisNacimiento?: number;
     fechaNacimiento?: string;
+    sexo?: string;
+    sexoCURP?: number;
     firma?: {
         data: string;
         contentType: string

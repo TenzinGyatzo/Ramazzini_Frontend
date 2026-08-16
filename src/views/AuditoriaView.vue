@@ -146,7 +146,7 @@ async function verifyAudit() {
 <template>
   <div class="auditoria-view">
     <h1 class="title">Trail de auditoría</h1>
-    <p class="subtitle">Consulta de eventos por expediente, actor y fecha (NOM-024).</p>
+    <p class="subtitle">Consulta de eventos por expediente, actor y fecha.</p>
 
     <div
       v-if="!isPrincipal"
@@ -162,7 +162,7 @@ async function verifyAudit() {
       class="rounded-lg bg-amber-50 border border-amber-200 p-4 text-amber-800"
     >
       <p class="font-medium">Auditoría solo disponible para proveedores SIRES</p>
-      <p class="text-sm mt-1">Su proveedor no está en régimen SIRES (NOM-024).</p>
+      <p class="text-sm mt-1">Su proveedor no está sujeto al régimen SIRES (NOM-024).</p>
     </div>
 
     <template v-else>

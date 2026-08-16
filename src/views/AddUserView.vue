@@ -10,6 +10,7 @@ const userStore = useUserStore();
 const toast = inject("toast");
 const registroExitoso = ref(false);
 const showPassword = ref(false);
+const isSubmitting = ref(false);
 
 const roles = [
   { value: "Médico", label: "Médico" },
@@ -28,6 +29,9 @@ const formDataUser = reactive({
 });
 
 const handleSubmit = async () => {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
+
   try {
     const userPayload = {
       username: formDataUser.username,
@@ -59,6 +63,8 @@ const handleSubmit = async () => {
       message: `Error: ${error.response.data.message}`,
       position: "bottom-right",
     });
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -172,7 +178,10 @@ const volver = () => {
           </button>
           <!-- Botón de Actualizar -->
           <div class="w-full sm:w-1/2">
-            <FormKit type="submit">Registrar </FormKit>
+            <FormKit type="submit" :disabled="isSubmitting">
+              <span v-if="isSubmitting">Registrando...</span>
+              <span v-else>Registrar</span>
+            </FormKit>
           </div>
         </div>
       </FormKit>

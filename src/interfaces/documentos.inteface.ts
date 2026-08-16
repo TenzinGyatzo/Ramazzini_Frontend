@@ -548,7 +548,9 @@ export interface NotaMedica {
     resultadoObtenidoaTravesde?: number;
     relacionTemporalEmbarazo?: number;
     trimestreGestacional?: number;
+    diagnosticoTextoPrincipal?: string;
     diagnosticoTexto?: string;
+    diagnosticoTexto3?: string;
     tratamiento?: string;
     recomendaciones?: string;
     observaciones?: string;

@@ -1,13 +1,13 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import { formatDateDDMMYYYY } from '@/helpers/dates';
+import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
-import { calcularEdad } from '@/helpers/dates';
 import DocumentosAPI from '@/api/DocumentosAPI';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useUserStore } from '@/stores/user';
@@ -22,6 +22,7 @@ import { shouldShowPinpointVisual } from '@/helpers/sectionPinpointVisual';
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
+const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataCertificado.fechaCertificado);
 const steps = useStepsStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
 const userStore = useUserStore();
@@ -32,7 +33,10 @@ const { certificadoSectionsV2Enabled } = useCertificadoSectionsV2();
 const nombreCompletoMedico = computed(() => {
   const medico = medicoFirmanteStore.medicoFirmante;
   if (!medico) return '';
-  return formatearTituloYNombreFirmante(medico);
+  return formatearTituloYNombreFirmante(
+    medico,
+    proveedorSaludStore.regimenRegulatorio,
+  );
 });
 
 const exploracionesFisicas = ref([]);
@@ -383,14 +387,14 @@ function formatearCampo(campo) {
          <template v-if="proveedorSalud.pais === 'PA'">
            Que, habiendo practicado reconocimiento médico en esta fecha, {{ trabajadores.currentTrabajador.sexo === 'Femenino' ? 'a la' : 'al' }} C. 
            <strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong>, 
-           de <strong>{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}</strong> años de edad, se hace constar la práctica del examen médico conforme a los procedimientos establecidos.
+           de <strong>{{ edad }}</strong> años de edad, se hace constar la práctica del examen médico conforme a los procedimientos establecidos.
          </template>
          <template v-else>
            Que, habiendo practicado reconocimiento médico en esta fecha, {{ proveedorSalud.pais === 'GT' 
              ? ' '
              : (trabajadores.currentTrabajador.sexo === 'Femenino' ? 'a la' : 'al') + ' C. ' }}
            <strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong> 
-           de <strong>{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}</strong> años de edad.
+           de <strong>{{ edad }}</strong> años de edad.
 
            <template v-if="nearestExploracionFisica">
              Presenta IMC: {{ nearestExploracionFisica.indiceMasaCorporal }} ({{ nearestExploracionFisica.categoriaIMC }}). 
@@ -427,14 +431,14 @@ function formatearCampo(campo) {
          <template v-if="proveedorSalud.pais === 'PA'">
            Que, habiendo practicado reconocimiento médico en esta fecha, {{ trabajadores.currentTrabajador.sexo === 'Femenino' ? 'a la' : 'al' }} C. 
            <strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong>, 
-           de <strong>{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}</strong> años de edad, se hace constar la práctica del examen médico conforme a los procedimientos establecidos.
+           de <strong>{{ edad }}</strong> años de edad, se hace constar la práctica del examen médico conforme a los procedimientos establecidos.
          </template>
          <template v-else>
            Que, habiendo practicado reconocimiento médico en esta fecha, {{ proveedorSalud.pais === 'GT' 
              ? 'a '
              : (trabajadores.currentTrabajador.sexo === 'Femenino' ? 'a la' : 'al') + ' C. ' }}
            <strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong> 
-           de <strong>{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}</strong> años de edad.
+           de <strong>{{ edad }}</strong> años de edad.
 
            &nbsp; <span :class="[sectionOutlineClass('certificado'), rowOutlineClass(1), rowPinpointClass(1)]">[DESCRIPCIÓN DE LA EXPLORACIÓN DE LA FECHA MÁS CERCANA]</span>
          </template>

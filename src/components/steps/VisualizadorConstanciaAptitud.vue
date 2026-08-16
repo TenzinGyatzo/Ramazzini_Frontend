@@ -125,7 +125,10 @@ const nombreCompletoMedico = computed(() => {
   const medico = medicoFirmanteStore.medicoFirmante;
   if (!medico) return 'Nombre del Emisor';
 
-  return formatearTituloYNombreFirmante(medico) || 'Nombre del Emisor';
+  return formatearTituloYNombreFirmante(
+    medico,
+    proveedorSaludStore.regimenRegulatorio,
+  ) || 'Nombre del Emisor';
 });
 
 const cargoEmisor = computed(() => {

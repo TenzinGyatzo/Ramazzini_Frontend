@@ -2,7 +2,6 @@
 import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
-import { useTrabajadoresStore } from '@/stores/trabajadores';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import {
   esExclusivoPorEtiqueta,
@@ -20,9 +19,9 @@ const { variant } = toRefs(props);
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
-const trabajadores = useTrabajadoresStore();
 
-const genero = ref(0);
+/** null = sin selección (placeholder); 0 = "No especificado" (valor CEX válido) */
+const genero = ref(null);
 const derechohabienciaSeleccion = ref([]);
 const afiliacionOptions = ref([]);
 const catalogLoading = ref(false);
@@ -50,9 +49,15 @@ const optionsByCode = computed(() => {
 function getValFromSource(field, defaultVal) {
   const formVal = formDataNotaMedica[field];
   const docVal = documentos.currentDocument?.[field];
-  if (formVal !== undefined) return formVal;
-  if (docVal !== undefined) return docVal;
+  if (formVal !== undefined && formVal !== null) return formVal;
+  if (docVal !== undefined && docVal !== null) return docVal;
   return defaultVal;
+}
+
+function normalizeGenero(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 function syncFormData() {
@@ -126,11 +131,8 @@ async function loadAfiliacionOptions(savedCodes) {
 }
 
 onMounted(async () => {
-  const sexo = trabajadores.currentTrabajador?.sexo;
-  const defaultGenero = sexo === 'Masculino' ? 1 : sexo === 'Femenino' ? 2 : 0;
-
-  const savedGenero = getValFromSource('genero', defaultGenero);
-  genero.value = savedGenero;
+  // Sin precarga: solo restaurar valor ya guardado en el formulario/documento
+  genero.value = normalizeGenero(getValFromSource('genero', null));
 
   const savedDerecho = getValFromSource('derechohabiencia', '0');
   let savedCodes = [];
@@ -143,7 +145,6 @@ onMounted(async () => {
 
   await loadAfiliacionOptions(savedCodes);
 
-  // Si el default vacío debe ser "0" y existe esa opción vigente, no forzar selección
   syncFormData();
 });
 
@@ -179,6 +180,9 @@ onUnmounted(() => {
         v-model="genero"
         class="w-full p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
       >
+        <option :value="null" disabled>
+          -Seleccionar-
+        </option>
         <option v-for="opt in generoOptions" :key="opt.value" :value="opt.value">
           {{ opt.label }}
         </option>

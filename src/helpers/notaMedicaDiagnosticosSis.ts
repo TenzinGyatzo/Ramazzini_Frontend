@@ -19,6 +19,7 @@ import {
   extractCIE10Code,
   normalizeCIE10Code,
   findCIE10Rule,
+  isR69XFamily,
   validateCIE10SexAge,
   type CIE10SexAgeValidationParams,
 } from './cie10';
@@ -203,6 +204,9 @@ function limpiarCamposComorbilidadSinRegistrar(
   if (label === '2') {
     delete formData.diagnosticoTexto;
   }
+  if (label === '3') {
+    delete formData.diagnosticoTexto3;
+  }
 }
 
 /**
@@ -306,26 +310,43 @@ function parseTipoPersonalCeList(raw: unknown): number[] {
     .filter((n) => !Number.isNaN(n));
 }
 
-function isTipoPersonalAllowedForDiagnostico1(
+export function isTipoPersonalAllowedForDiagnostico1(
   relacionTemporal: unknown,
   tipoPersonal: number | null,
   tipoPersonal1VezCe: number[],
   tipoPersonalSubsecCe: number[],
-): { allowed: boolean; requiresTipoPersonal: boolean } {
+): {
+  allowed: boolean;
+  requiresTipoPersonal: boolean;
+  emptyAuthorizedList: boolean;
+} {
   const rt = typeof relacionTemporal === 'number' ? relacionTemporal : null;
   if (rt !== 0 && rt !== 1) {
-    return { allowed: true, requiresTipoPersonal: false };
+    return {
+      allowed: true,
+      requiresTipoPersonal: false,
+      emptyAuthorizedList: false,
+    };
   }
   const list = rt === 0 ? tipoPersonal1VezCe : tipoPersonalSubsecCe;
   if (list.length === 0) {
-    return { allowed: true, requiresTipoPersonal: false };
+    return {
+      allowed: false,
+      requiresTipoPersonal: true,
+      emptyAuthorizedList: true,
+    };
   }
   if (tipoPersonal == null) {
-    return { allowed: false, requiresTipoPersonal: true };
+    return {
+      allowed: false,
+      requiresTipoPersonal: true,
+      emptyAuthorizedList: false,
+    };
   }
   return {
     allowed: list.includes(tipoPersonal),
     requiresTipoPersonal: true,
+    emptyAuthorizedList: false,
   };
 }
 
@@ -372,6 +393,17 @@ async function validateDiagnostico23Core(
     }
 
     if (
+      label === '2' &&
+      !extractCode(p.codigoCIE10Principal)
+    ) {
+      return fail(
+        paso,
+        'No puede registrar el diagnóstico 2 sin haber registrado antes el diagnóstico principal.',
+        'Debe registrar primero el diagnóstico principal antes del diagnóstico 2.',
+      );
+    }
+
+    if (
       label === '3' &&
       !tieneComorbilidadDiagRegistrada(
         p.primeraVezDiagnostico2,
@@ -392,6 +424,18 @@ async function validateDiagnostico23Core(
       );
     }
     return null;
+  }
+
+  if (
+    params.showSiresUI &&
+    label === '2' &&
+    !extractCode(p.codigoCIE10Principal)
+  ) {
+    return fail(
+      paso,
+      'No puede registrar el diagnóstico 2 sin haber registrado antes el diagnóstico principal.',
+      'Debe registrar primero el diagnóstico principal antes del diagnóstico 2.',
+    );
   }
 
   if (
@@ -429,6 +473,26 @@ async function validateDiagnostico23Core(
       `Diagnóstico ${label}: el código ${norm} no está en el catálogo DIAGNOSTICO_SIS.`,
       `El código ${norm} no está en el catálogo DIAGNOSTICO_SIS.`,
     );
+  }
+
+  const diag1Norm = norm4Chars(p.codigoCIE10Principal);
+  if (diag1Norm && norm === diag1Norm && !isR69XFamily(p.codigoCIE10Principal as string)) {
+    return fail(
+      paso,
+      `El diagnóstico ${label} debe ser diferente al diagnóstico principal.`,
+      `El diagnóstico ${label} debe ser diferente al diagnóstico principal.`,
+    );
+  }
+
+  if (label === '3') {
+    const diag2Norm = norm4Chars(p.codigoCIEDiagnostico2);
+    if (diag2Norm && norm === diag2Norm && !isR69XFamily(p.codigoCIEDiagnostico2 as string)) {
+      return fail(
+        paso,
+        'El diagnóstico 3 debe ser diferente al diagnóstico 2.',
+        'El diagnóstico 3 debe ser diferente al diagnóstico 2.',
+      );
+    }
   }
 
   const rule = await findCIE10Rule(norm);
@@ -532,6 +596,13 @@ async function validateDiagnosticoPrincipal(
     );
     if (!tpCheck.allowed) {
       const temporalLabel = p.relacionTemporal === 1 ? 'subsecuente' : 'primera vez';
+      if (tpCheck.emptyAuthorizedList) {
+        return failPrincipal(
+          pasoPrinc,
+          `El diagnóstico principal (${norm}) no autoriza ningún tipo de personal en relación temporal ${temporalLabel}.`,
+          `Este diagnóstico no autoriza ningún tipo de personal (${temporalLabel}).`,
+        );
+      }
       if (tpCheck.requiresTipoPersonal && tipoRes.value == null) {
         return failPrincipal(
           pasoPrinc,

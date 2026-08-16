@@ -5,6 +5,14 @@ import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
 import { useCatalogListKeyboard } from '@/helpers/useCatalogListKeyboard';
 import { sortEstadosByCode } from '@/helpers/geoCatalogSort';
 import { getResidenciaUiState } from '@/helpers/residenciaGeoRules';
+import {
+  buildEntidadSentinelOptions,
+  filterEntidadCatalogEntries,
+  getAllowedEntidadCodesForPaisNacimiento,
+  isNonMexicoPais,
+  normalizePaisCode,
+} from '@/helpers/geoSelectorRules';
+import { GIIS_ENTIDAD_NO_APLICA } from '@/helpers/giisResidenciaGeo';
 
 const { catalogSearchInputAttrs } = useCatalogSearchInput();
 
@@ -36,6 +44,14 @@ const props = defineProps({
   paisResidencia: {
     type: [String, Number],
     default: ''
+  },
+  paisNacimiento: {
+    type: [String, Number],
+    default: ''
+  },
+  geoContext: {
+    type: String,
+    default: 'trabajador'
   }
 });
 
@@ -49,25 +65,35 @@ const selectedEntry = ref(null);
 const error = ref('');
 const hasBlurred = ref(false);
 
-// Intentar obtener el estado de validación del formulario desde el contexto
 const formSubmitAttempted = inject('formSubmitAttempted', ref(false));
 
-// Computed para determinar si debe mostrar error de validación requerida
-// Muestra el error si el campo es requerido, está vacío, y (el usuario hizo blur o el formulario intentó enviarse)
 const showRequiredError = computed(() => {
   const isEmpty = !props.modelValue || props.modelValue.trim() === '';
   return props.required && isEmpty && (hasBlurred.value || formSubmitAttempted.value);
 });
 
-// Debounce timer local
 let debounceTimer = null;
 
-// NE (Renapo) solo aplica en nacimiento; no está en catálogo DGIS.
-const sentinelOptions = [
-  { code: 'NE', description: 'Extranjero' }
-];
-
 const isResidenciaMode = computed(() => props.mode === 'residencia');
+
+const activePais = computed(() => {
+  if (isResidenciaMode.value) {
+    return normalizePaisCode(props.paisResidencia);
+  }
+  return normalizePaisCode(props.paisNacimiento);
+});
+
+const allowedEntidadCodes = computed(() => {
+  if (isResidenciaMode.value) {
+    return getResidenciaUiState({
+      paisResidencia: props.paisResidencia,
+      entidadResidencia: props.modelValue,
+      municipioResidencia: '',
+      localidadResidencia: '',
+    }, props.geoContext).entidad.allowedEntidadCodes;
+  }
+  return getAllowedEntidadCodesForPaisNacimiento(activePais.value, props.geoContext);
+});
 
 const residenciaUiState = computed(() => {
   if (!isResidenciaMode.value) return null;
@@ -76,41 +102,87 @@ const residenciaUiState = computed(() => {
     entidadResidencia: props.modelValue,
     municipioResidencia: '',
     localidadResidencia: '',
-  });
+  }, props.geoContext);
 });
 
-const isInputDisabled = computed(
-  () => props.disabled || (residenciaUiState.value?.entidad.locked ?? false),
+const nacimientoForeignLocked = computed(
+  () => !isResidenciaMode.value && isNonMexicoPais(activePais.value),
 );
 
-const filterEstadosForMode = (entries) => {
-  const sorted = sortEstadosByCode(entries || []);
-  if (!isResidenciaMode.value) {
-    return [...sentinelOptions, ...sorted];
+const isInputDisabled = computed(
+  () =>
+    props.disabled ||
+    (residenciaUiState.value?.entidad.locked ?? false) ||
+    nacimientoForeignLocked.value,
+);
+
+const sentinelOptions = computed(() => {
+  const allowed = allowedEntidadCodes.value;
+  if (!allowed) return [];
+  return buildEntidadSentinelOptions(allowed);
+});
+
+const filterEstadosForMode = (entries, { prependAllSentinels = true } = {}) => {
+  const sorted = filterEntidadCatalogEntries(
+    sortEstadosByCode(entries || []),
+    props.geoContext,
+  );
+  const allowed = allowedEntidadCodes.value;
+
+  // Typed search: keep only sentinels already present in `entries` (query matches).
+  if (!prependAllSentinels) {
+    if (!allowed) return sorted;
+    return sorted.filter((entry) => allowed.includes(entry.code));
   }
 
-  const allowed = residenciaUiState.value?.entidad.allowedEntidadCodes;
-  if (!allowed) return sorted;
-  return sorted.filter((entry) => allowed.includes(entry.code));
+  if (!allowed) {
+    return [...sentinelOptions.value, ...sorted];
+  }
+
+  const fromCatalog = sorted.filter((entry) => allowed.includes(entry.code));
+  const catalogCodes = new Set(fromCatalog.map((e) => e.code));
+  const missingSentinels = filterEntidadCatalogEntries(
+    sentinelOptions.value,
+    props.geoContext,
+  ).filter((s) => !catalogCodes.has(s.code));
+
+  return [...missingSentinels, ...fromCatalog];
 };
 
-// Cargar datos iniciales si hay un modelValue
+const allSentinelOptions = computed(() => buildEntidadSentinelOptions([
+  'NE', '00', '88', '99',
+]));
+
+async function resolveEstadoEntry(code) {
+  const sentinel = allSentinelOptions.value.find((s) => s.code === code);
+  if (sentinel) {
+    selectedEntry.value = sentinel;
+    query.value = `${sentinel.description} (${sentinel.code})`;
+    return;
+  }
+  const { data } = await CatalogsAPI.getEstadoByCode(code);
+  if (data) {
+    selectedEntry.value = data;
+    query.value = `${data.description} (${data.code})`;
+  }
+}
+
+watch(
+  nacimientoForeignLocked,
+  (locked) => {
+    if (!locked) return;
+    if (props.modelValue !== GIIS_ENTIDAD_NO_APLICA) {
+      emit('update:modelValue', GIIS_ENTIDAD_NO_APLICA);
+    }
+  },
+  { immediate: true },
+);
+
 onMounted(async () => {
   if (props.modelValue) {
     try {
       loading.value = true;
-      // Verificar si es un centinela primero
-      const sentinel = sentinelOptions.find(s => s.code === props.modelValue);
-      if (sentinel) {
-        selectedEntry.value = sentinel;
-        query.value = `${sentinel.description} (${sentinel.code})`;
-      } else {
-        const { data } = await CatalogsAPI.getEstadoByCode(props.modelValue);
-        if (data) {
-          selectedEntry.value = data;
-          query.value = `${data.description} (${data.code})`;
-        }
-      }
+      await resolveEstadoEntry(props.modelValue);
     } catch (err) {
       console.error('Error al cargar estado inicial:', err);
       query.value = props.modelValue;
@@ -120,28 +192,16 @@ onMounted(async () => {
   }
 });
 
-// Sincronizar query cuando cambia modelValue externamente
 watch(() => props.modelValue, async (newVal) => {
   if (!newVal) {
     query.value = '';
     selectedEntry.value = null;
     return;
   }
-  
+
   if (selectedEntry.value?.code !== newVal) {
     try {
-      // Verificar si es un centinela primero
-      const sentinel = sentinelOptions.find(s => s.code === newVal);
-      if (sentinel) {
-        selectedEntry.value = sentinel;
-        query.value = `${sentinel.description} (${sentinel.code})`;
-      } else {
-        const { data } = await CatalogsAPI.getEstadoByCode(newVal);
-        if (data) {
-          selectedEntry.value = data;
-          query.value = `${data.description} (${data.code})`;
-        }
-      }
+      await resolveEstadoEntry(newVal);
     } catch (err) {
       query.value = newVal;
     }
@@ -169,7 +229,6 @@ const loadAllEstados = async () => {
 
 const performSearch = async (val) => {
   if (!val || val.length < 2) {
-    // Si no hay query, cargar todos los estados
     await loadAllEstados();
     return;
   }
@@ -177,21 +236,18 @@ const performSearch = async (val) => {
   loading.value = true;
   try {
     const { data } = await CatalogsAPI.searchEstados(val);
-    
-    // Agregar centinelas al inicio de los resultados si la búsqueda coincide
-    const lowerQuery = val.toLowerCase();
-    const matchingSentinels = isResidenciaMode.value
-      ? []
-      : sentinelOptions.filter(
-          (s) =>
-            s.code.toLowerCase().includes(lowerQuery) ||
-            s.description.toLowerCase().includes(lowerQuery),
-        );
 
-    results.value = filterEstadosForMode([
-      ...matchingSentinels,
-      ...(data || []),
-    ]);
+    const lowerQuery = val.toLowerCase();
+    const matchingSentinels = sentinelOptions.value.filter(
+      (s) =>
+        s.code.toLowerCase().includes(lowerQuery) ||
+        s.description.toLowerCase().includes(lowerQuery),
+    );
+
+    results.value = filterEstadosForMode(
+      [...matchingSentinels, ...(data || [])],
+      { prependAllSentinels: false },
+    );
     showResults.value = true;
   } catch (err) {
     console.error('Error al buscar estados:', err);
@@ -206,7 +262,7 @@ const onInput = (e) => {
 
   const val = e.target.value;
   query.value = val;
-  
+
   if (!val) {
     emit('update:modelValue', '');
     selectedEntry.value = null;
@@ -217,7 +273,6 @@ const onInput = (e) => {
 
   resetHighlight();
 
-  // Implementación local de debounce
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     performSearch(val);
@@ -232,13 +287,12 @@ const selectResult = (result) => {
   emit('update:modelValue', result.code);
   emit('select', result);
   error.value = '';
-  hasBlurred.value = true; // Marcar como blurred cuando se selecciona
+  hasBlurred.value = true;
 };
 
 const onFocus = () => {
   if (isInputDisabled.value) return;
 
-  // Si no hay resultados y no hay query, cargar todos los estados
   if (results.value.length === 0 && !query.value) {
     loadAllEstados();
   } else if (results.value.length > 0) {
@@ -271,7 +325,7 @@ const {
       {{ label }}
       <span v-if="required" class="text-red-500">*</span>
     </label>
-    
+
     <div class="relative">
       <input
         type="text"
@@ -289,7 +343,7 @@ const {
         :placeholder="placeholder"
         v-bind="catalogSearchInputAttrs"
       />
-      
+
       <div v-if="loading" class="absolute right-3 top-3.5">
         <svg class="animate-spin h-5 w-5 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -302,12 +356,10 @@ const {
       <i class="fas fa-exclamation-triangle mr-1"></i> {{ error }}
     </div>
 
-    <!-- Mensaje de error de validación requerida (estilo FormKit) -->
     <div v-if="showRequiredError" class="text-red-700 text-sm mb-0 mt-1">
       Este campo es obligatorio
     </div>
 
-    <!-- Resultados -->
     <ul
       v-if="showResults && results.length > 0"
       :id="listboxId"
@@ -336,24 +388,17 @@ const {
       </li>
     </ul>
 
-    <div v-else-if="showResults && query.length >= 2 && !loading" 
+    <div v-else-if="showResults && query.length >= 2 && !loading"
          class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
       No se encontraron estados para "{{ query }}"
     </div>
 
     <p class="text-xs text-gray-500 mt-1">
       <i class="fas fa-info-circle mr-1"></i>
-      <template v-if="isResidenciaMode">
-        (ej. 25=Sinaloa, 14=Jalisco). Escriba para buscar.
-      </template>
-      <template v-else>
-        (ej. 25=Sinaloa, 14=Jalisco). Escriba para buscar.
-      </template>
+      (ej. 25=Sinaloa, 14=Jalisco). Escriba para buscar.
     </p>
   </div>
 </template>
 
 <style scoped>
-/* Estilos opcionales */
 </style>
-

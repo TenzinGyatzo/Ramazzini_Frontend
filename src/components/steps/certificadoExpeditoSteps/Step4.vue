@@ -3,6 +3,10 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import {
+  SOMATOMETRIA_SIGNOS_RANGES,
+  mensajeErrorSomatometriaSignosField,
+} from '@/helpers/somatometriaSignosRanges';
 
 const { formDataCertificadoExpedito } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -71,21 +75,13 @@ function setCategoriaIMC() {
   categoriaIMC.value = categoria;
 }
 
-const mensajeErrorPeso = computed(() => {
-  return peso.value < 45 
-    ? 'Debe ser mínimo 45' 
-    : peso.value > 200 
-      ? 'Debe ser máximo 200'   
-      : '';
-});
+const mensajeErrorPeso = computed(() =>
+  mensajeErrorSomatometriaSignosField('peso', peso.value),
+);
 
-const mensajeErrorAltura = computed(() => {
-  return altura.value < 1.40 
-    ? 'Debe ser mínimo 1.40 m' 
-    : altura.value > 2.20 
-      ? 'Debe ser máximo 2.20 m' 
-      : '';
-});
+const mensajeErrorAltura = computed(() =>
+  mensajeErrorSomatometriaSignosField('altura', altura.value),
+);
 
 </script>
 
@@ -99,14 +95,14 @@ const mensajeErrorAltura = computed(() => {
         <label for="peso">Peso (Kg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="peso" min="45" max="200" step="0.1">
+          v-model="peso" :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min" :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max" step="0.1">
         <p v-if="mensajeErrorPeso" class="text-red-500 text-sm mt-1">{{ mensajeErrorPeso }}</p>
       </div>
       <div>
         <label for="altura">Altura (m)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="altura" step="0.01" min="1.40" max="2.20" />
+          v-model="altura" step="0.01" :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min" :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max" />
         <p v-if="mensajeErrorAltura" class="text-red-500 text-sm mt-1">{{ mensajeErrorAltura }}</p>
       </div>
     </div>

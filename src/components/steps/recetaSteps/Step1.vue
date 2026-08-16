@@ -8,12 +8,14 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const { formDataReceta } = useFormDataStore();
 const documentos = useDocumentosStore();
+const { fechaDocumentoMax } = useSiresDocumentDateMax();
 
 // Valor local para la pregunta principal
 const today = format(new Date(), 'yyyy-MM-dd');
@@ -67,6 +69,7 @@ watch(fechaReceta, (newValue) => {
         type="date" 
         name="fechaReceta" 
         placeholder="Seleccione una fecha"
+        :max="fechaDocumentoMax"
         v-model="fechaReceta" 
       />
     </div>

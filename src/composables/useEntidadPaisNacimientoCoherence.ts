@@ -1,42 +1,42 @@
 import { watch, type Ref } from 'vue';
+import {
+  getExcludedEntidadCodes,
+  isEntidadAllowedForPaisNacimiento,
+  isEntidadEstatal,
+  isNonMexicoPais,
+  normalizePaisCode,
+  PAIS_MEXICO,
+  type GeoFormContext,
+} from '@/helpers/geoSelectorRules';
+import { GIIS_ENTIDAD_NO_APLICA } from '@/helpers/giisResidenciaGeo';
 
-export const PAIS_NACIMIENTO_MEXICO = 142;
+export const PAIS_NACIMIENTO_MEXICO = PAIS_MEXICO;
 export const PAIS_NACIMIENTO_NO_ESPECIFICADO = 248;
-
-const ENTIDADES_SIN_AUTO_PAIS = ['NE', '00'];
 
 export interface FirmanteNacimientoFields {
   entidadNacimiento: string;
   paisNacimiento: string | number;
 }
 
-function normalizePaisNacimiento(
-  value: string | number | null | undefined,
-): number | null {
-  if (value === '' || value == null) return null;
-  const num = typeof value === 'number' ? value : Number(value);
-  return Number.isNaN(num) ? null : num;
+const NON_MEXICO_ENTIDAD_CODES = ['NE', '00', '88', '99'];
+
+function isNonMexicoEntidad(entidad: string): boolean {
+  return NON_MEXICO_ENTIDAD_CODES.includes(entidad);
 }
 
-function applyPaisToEntidad(
+function applyForeignNacimiento(formulario: FirmanteNacimientoFields): void {
+  formulario.entidadNacimiento = GIIS_ENTIDAD_NO_APLICA;
+}
+
+function clearEntidadIfInvalid(
   formulario: FirmanteNacimientoFields,
-  paisNum: number,
+  paisNum: number | null,
+  geoContext: GeoFormContext,
 ): void {
-  if (paisNum === PAIS_NACIMIENTO_NO_ESPECIFICADO) {
-    if (formulario.entidadNacimiento !== '00') {
-      formulario.entidadNacimiento = '00';
-    }
-    return;
-  }
+  const entidad = formulario.entidadNacimiento?.trim().toUpperCase();
+  if (!entidad) return;
 
-  if (paisNum !== PAIS_NACIMIENTO_MEXICO) {
-    if (formulario.entidadNacimiento !== 'NE') {
-      formulario.entidadNacimiento = 'NE';
-    }
-    return;
-  }
-
-  if (ENTIDADES_SIN_AUTO_PAIS.includes(formulario.entidadNacimiento)) {
+  if (!isEntidadAllowedForPaisNacimiento(entidad, paisNum, geoContext)) {
     formulario.entidadNacimiento = '';
   }
 }
@@ -44,21 +44,38 @@ function applyPaisToEntidad(
 /**
  * Coherencia NOM-024: sincronización bidireccional entidad de nacimiento ↔ país de nacimiento.
  *
- * - País 248 (NO ESPECIFICADO) → entidad 00 (No disponible)
- * - País distinto de 142 (México) → entidad NE (Extranjero)
- * - País 142 + entidad NE/00 → limpiar entidad para permitir selección estatal
+ * - País ≠ México → fuerza entidad 88 (NO APLICA), igual que residencia
+ * - Cambio a México: limpia entidad si ya no es válida (p. ej. 88)
  * - Entidad estatal MX (01-32) → país 142
+ * - Entidad NE/00/88/99 con país 142 → limpia país
  */
 export function useEntidadPaisNacimientoCoherence(
   formulario: Ref<FirmanteNacimientoFields>,
+  geoContext: GeoFormContext = 'trabajador',
 ) {
   watch(
     () => formulario.value.entidadNacimiento,
     (entidad) => {
       if (!entidad) return;
-      if (ENTIDADES_SIN_AUTO_PAIS.includes(entidad)) return;
-      if (normalizePaisNacimiento(formulario.value.paisNacimiento) !== PAIS_NACIMIENTO_MEXICO) {
-        formulario.value.paisNacimiento = PAIS_NACIMIENTO_MEXICO;
+
+      const normalized = entidad.trim().toUpperCase();
+      if (getExcludedEntidadCodes(geoContext).includes(normalized)) {
+        formulario.value.entidadNacimiento = '';
+        return;
+      }
+
+      if (isEntidadEstatal(entidad)) {
+        if (normalizePaisCode(formulario.value.paisNacimiento) !== PAIS_MEXICO) {
+          formulario.value.paisNacimiento = PAIS_MEXICO;
+        }
+        return;
+      }
+
+      if (isNonMexicoEntidad(entidad)) {
+        const paisNum = normalizePaisCode(formulario.value.paisNacimiento);
+        if (paisNum === PAIS_MEXICO) {
+          formulario.value.paisNacimiento = '';
+        }
       }
     },
   );
@@ -66,9 +83,12 @@ export function useEntidadPaisNacimientoCoherence(
   watch(
     () => formulario.value.paisNacimiento,
     (pais) => {
-      const paisNum = normalizePaisNacimiento(pais);
-      if (paisNum == null) return;
-      applyPaisToEntidad(formulario.value, paisNum);
+      const paisNum = normalizePaisCode(pais);
+      if (isNonMexicoPais(paisNum)) {
+        applyForeignNacimiento(formulario.value);
+        return;
+      }
+      clearEntidadIfInvalid(formulario.value, paisNum, geoContext);
     },
     { immediate: true },
   );

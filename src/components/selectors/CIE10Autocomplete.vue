@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
-import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
 
 const { catalogSearchInputAttrs } = useCatalogSearchInput();
@@ -26,8 +25,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['update:modelValue']);
 
-const trabajadoresStore = useTrabajadoresStore();
-
 // Local state
 const searchTerm = ref('');
 const results = ref<any[]>([]);
@@ -36,47 +33,6 @@ const showDropdown = ref(false);
 const selectedIndex = ref(-1);
 const errorMessage = ref('');
 const containerRef = ref<HTMLElement | null>(null);
-
-// Computed: Mapear sexo a numérico (Masculino→1, Femenino→2)
-const sexoNumeric = computed(() => {
-  if (!props.trabajadorId || !trabajadoresStore.currentTrabajador) {
-    return undefined;
-  }
-  const sexo = trabajadoresStore.currentTrabajador.sexo;
-  if (sexo === 'Masculino' || sexo === 'masculino') return 1;
-  if (sexo === 'Femenino' || sexo === 'femenino') return 2;
-  return undefined;
-});
-
-// Computed: Calcular edad
-const edad = computed(() => {
-  if (!props.trabajadorId || !props.fechaConsulta || !trabajadoresStore.currentTrabajador?.fechaNacimiento) {
-    return undefined;
-  }
-  try {
-    const fechaNac = new Date(trabajadoresStore.currentTrabajador.fechaNacimiento);
-    const fechaConsulta = typeof props.fechaConsulta === 'string' 
-      ? new Date(props.fechaConsulta) 
-      : props.fechaConsulta;
-    
-    if (isNaN(fechaNac.getTime()) || isNaN(fechaConsulta.getTime())) {
-      return undefined;
-    }
-
-    let edadCalculada = fechaConsulta.getFullYear() - fechaNac.getFullYear();
-    const monthDiff = fechaConsulta.getMonth() - fechaNac.getMonth();
-    const dayDiff = fechaConsulta.getDate() - fechaNac.getDate();
-
-    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-      edadCalculada--;
-    }
-
-    return edadCalculada;
-  } catch (error) {
-    console.error('Error calculating age:', error);
-    return undefined;
-  }
-});
 
 // Debounce timer
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -94,12 +50,7 @@ const performSearch = async (query: string) => {
   
   try {
     const limit = 50;
-    const { data } = await CatalogsAPI.searchCIE10(
-      query,
-      limit,
-      sexoNumeric.value,
-      edad.value
-    );
+    const { data } = await CatalogsAPI.searchCIE10(query, limit);
     results.value = data || [];
     showDropdown.value = true;
     selectedIndex.value = -1;

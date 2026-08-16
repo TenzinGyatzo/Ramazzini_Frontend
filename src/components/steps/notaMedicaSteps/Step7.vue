@@ -3,6 +3,14 @@ import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
+import {
+  NOTA_MEDICA_CEX_RANGES,
+  NOTA_MEDICA_CEX_SENTINEL,
+  isBlankOrZero,
+  isExplicitCexUnknown,
+  parseOptionalNumber,
+  mensajeErrorCexField,
+} from '@/helpers/notaMedicaCexRanges';
 
 const props = defineProps({
   variant: {
@@ -17,9 +25,9 @@ const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
 const trabajadores = useTrabajadoresStore();
 
-const peso = ref(70);
-const talla = ref(170);
-const circunferenciaCintura = ref(80);
+const peso = ref(null);
+const talla = ref(null);
+const circunferenciaCintura = ref(null);
 const indiceMasaCorporal = ref(null);
 const categoriaIMC = ref('');
 const categoriaCircunferenciaCintura = ref('');
@@ -28,12 +36,31 @@ const seDesconocePeso = ref(false);
 const seDesconoceTalla = ref(false);
 const seDesconoceCircunferencia = ref(false);
 
-function getValFromSource(field, defaultVal) {
+function getValFromSource(field) {
   const formVal = formDataNotaMedica[field];
   const docVal = documentos.currentDocument?.[field];
-  if (formVal !== undefined) return formVal;
-  if (docVal !== undefined) return docVal;
-  return defaultVal;
+  if (formVal !== undefined && formVal !== null) return formVal;
+  if (docVal !== undefined && docVal !== null) return docVal;
+  return undefined;
+}
+
+function resolveInitial(field, saved) {
+  if (saved === undefined || saved === null || saved === '') {
+    if (documentos.currentDocument) {
+      return { seDesconoce: true, display: null };
+    }
+    return { seDesconoce: false, display: null };
+  }
+  if (isExplicitCexUnknown(field, saved)) {
+    return { seDesconoce: true, display: null };
+  }
+  return { seDesconoce: false, display: Number(saved) };
+}
+
+function toPersistedValue(field, seDesconoce, display) {
+  if (seDesconoce) return NOTA_MEDICA_CEX_SENTINEL[field];
+  if (isBlankOrZero(display)) return null;
+  return Number(display);
 }
 
 function calcularIMC() {
@@ -44,7 +71,7 @@ function calcularIMC() {
   }
   const p = Number(peso.value);
   const t = Number(talla.value);
-  if (p > 0 && t > 0) {
+  if (Number.isFinite(p) && Number.isFinite(t) && p > 0 && t > 0) {
     const tallaMt = t / 100;
     const imc = p / (tallaMt ** 2);
     indiceMasaCorporal.value = Math.round(imc * 100) / 100;
@@ -65,89 +92,126 @@ function setCategoriaIMC(imc) {
   else categoriaIMC.value = 'Obesidad clase III';
 }
 
-function esFemenino() {
-  const genero = formDataNotaMedica.genero;
+/**
+ * Umbral clínico para riesgo por cintura.
+ * Femenino → cortes mujer; Masculino / Intersexual / no definido → cortes hombre
+ * (mismo criterio que ESC: no-femenino usa umbral masculino).
+ */
+function usaUmbralCinturaFemenino() {
+  const sexo = String(trabajadores.currentTrabajador?.sexo ?? '')
+    .trim()
+    .toLowerCase();
+  if (sexo === 'femenino' || sexo === 'mujer' || sexo === 'f') return true;
+  if (
+    sexo === 'masculino' ||
+    sexo === 'hombre' ||
+    sexo === 'm' ||
+    sexo === 'h' ||
+    sexo === 'intersexual'
+  ) {
+    return false;
+  }
+
+  // Fallback: género CEX (2=Femenino; resto incl. 6=Intersexual → umbral masculino)
+  const genero = Number(formDataNotaMedica.genero);
   if (genero === 2) return true;
-  if (genero === 1) return false;
-  const sexo = trabajadores.currentTrabajador?.sexo;
-  if (sexo === 'Femenino') return true;
-  if (sexo === 'Masculino') return false;
-  return null;
+  return false;
 }
 
 function setCategoriaCircunferencia() {
-  if (seDesconoceCircunferencia.value) { categoriaCircunferenciaCintura.value = ''; return; }
+  if (seDesconoceCircunferencia.value) {
+    categoriaCircunferenciaCintura.value = '';
+    return;
+  }
   const c = Number(circunferenciaCintura.value);
-  const fem = esFemenino();
-  if (fem === true) {
+  if (!Number.isFinite(c) || c <= 0) {
+    categoriaCircunferenciaCintura.value = '';
+    return;
+  }
+
+  if (usaUmbralCinturaFemenino()) {
     if (c <= 80) categoriaCircunferenciaCintura.value = 'Normal';
     else if (c <= 88) categoriaCircunferenciaCintura.value = 'Riesgo elevado';
     else categoriaCircunferenciaCintura.value = 'Riesgo muy elevado';
-  } else if (fem === false) {
+  } else {
     if (c <= 90) categoriaCircunferenciaCintura.value = 'Normal';
     else if (c <= 100) categoriaCircunferenciaCintura.value = 'Riesgo elevado';
     else categoriaCircunferenciaCintura.value = 'Riesgo muy elevado';
-  } else {
-    categoriaCircunferenciaCintura.value = '';
   }
 }
 
 function syncFormData() {
-  // CEX: "Se desconoce" → null (validador skipea; transformer mapea peso/talla→999, circunferencia→0)
-  formDataNotaMedica.peso = seDesconocePeso.value ? null : peso.value;
-  formDataNotaMedica.talla = seDesconoceTalla.value ? null : talla.value;
-  formDataNotaMedica.circunferenciaCintura = seDesconoceCircunferencia.value ? null : circunferenciaCintura.value;
+  formDataNotaMedica.peso = toPersistedValue('peso', seDesconocePeso.value, peso.value);
+  formDataNotaMedica.talla = toPersistedValue('talla', seDesconoceTalla.value, talla.value);
+  formDataNotaMedica.circunferenciaCintura = toPersistedValue(
+    'circunferenciaCintura',
+    seDesconoceCircunferencia.value,
+    circunferenciaCintura.value,
+  );
   formDataNotaMedica.indiceMasaCorporal = indiceMasaCorporal.value;
   formDataNotaMedica.categoriaIMC = categoriaIMC.value;
   formDataNotaMedica.categoriaCircunferenciaCintura = categoriaCircunferenciaCintura.value;
 }
 
+function finalizeEmptyAsUnknown() {
+  if (!seDesconocePeso.value && isBlankOrZero(peso.value)) {
+    seDesconocePeso.value = true;
+    peso.value = null;
+  }
+  if (!seDesconoceTalla.value && isBlankOrZero(talla.value)) {
+    seDesconoceTalla.value = true;
+    talla.value = null;
+  }
+  if (!seDesconoceCircunferencia.value && isBlankOrZero(circunferenciaCintura.value)) {
+    seDesconoceCircunferencia.value = true;
+    circunferenciaCintura.value = null;
+  }
+  calcularIMC();
+  setCategoriaCircunferencia();
+}
+
 onMounted(() => {
-  const savedPeso = getValFromSource('peso', 70);
-  const savedTalla = getValFromSource('talla', 170);
-  const savedCintura = getValFromSource('circunferenciaCintura', 80);
+  const initPeso = resolveInitial('peso', getValFromSource('peso'));
+  const initTalla = resolveInitial('talla', getValFromSource('talla'));
+  const initCintura = resolveInitial(
+    'circunferenciaCintura',
+    getValFromSource('circunferenciaCintura'),
+  );
 
-  // null/999/0 = "Se desconoce" (retrocompatibilidad con docs guardados antes)
-  seDesconocePeso.value = savedPeso == null || savedPeso === 999;
-  seDesconoceTalla.value = savedTalla == null || savedTalla === 999;
-  seDesconoceCircunferencia.value = savedCintura == null || savedCintura === 0;
+  seDesconocePeso.value = initPeso.seDesconoce;
+  seDesconoceTalla.value = initTalla.seDesconoce;
+  seDesconoceCircunferencia.value = initCintura.seDesconoce;
+  peso.value = initPeso.display;
+  talla.value = initTalla.display;
+  circunferenciaCintura.value = initCintura.display;
 
-  // Input muestra 0 cuando "Se desconoce"
-  peso.value = seDesconocePeso.value ? 0 : savedPeso;
-  talla.value = seDesconoceTalla.value ? 0 : savedTalla;
-  circunferenciaCintura.value = seDesconoceCircunferencia.value ? 0 : savedCintura;
+  const savedIMC = getValFromSource('indiceMasaCorporal');
+  const savedCatIMC = getValFromSource('categoriaIMC');
 
-  const savedIMC = getValFromSource('indiceMasaCorporal', null);
-  const savedCatIMC = getValFromSource('categoriaIMC', '');
-  const savedCatCintura = getValFromSource('categoriaCircunferenciaCintura', '');
-
-  if (savedIMC != null) {
+  if (savedIMC != null && !seDesconocePeso.value && !seDesconoceTalla.value) {
     indiceMasaCorporal.value = savedIMC;
-    categoriaIMC.value = savedCatIMC;
-    categoriaCircunferenciaCintura.value = savedCatCintura;
+    categoriaIMC.value = savedCatIMC || '';
+    if (!categoriaIMC.value) setCategoriaIMC(savedIMC);
   } else {
     calcularIMC();
-    setCategoriaCircunferencia();
   }
+  setCategoriaCircunferencia();
 
   syncFormData();
 });
 
 watch(seDesconocePeso, (v) => {
-  if (v) peso.value = 0;
-  else peso.value = peso.value || 70;
+  if (v) peso.value = null;
   calcularIMC();
   syncFormData();
 });
 watch(seDesconoceTalla, (v) => {
-  if (v) talla.value = 0;
-  else talla.value = talla.value || 170;
+  if (v) talla.value = null;
   calcularIMC();
   syncFormData();
 });
 watch(seDesconoceCircunferencia, (v) => {
-  if (v) circunferenciaCintura.value = 0;
-  else circunferenciaCintura.value = circunferenciaCintura.value || 80;
+  if (v) circunferenciaCintura.value = null;
   setCategoriaCircunferencia();
   syncFormData();
 });
@@ -162,33 +226,42 @@ watch(circunferenciaCintura, () => {
   syncFormData();
 });
 
+// Recalcular si llega sexo/género después (p. ej. intersexual / carga async)
+watch(
+  () => [
+    trabajadores.currentTrabajador?.sexo,
+    formDataNotaMedica.genero,
+    seDesconoceCircunferencia.value,
+    circunferenciaCintura.value,
+  ],
+  () => {
+    setCategoriaCircunferencia();
+    syncFormData();
+  },
+);
+
 onUnmounted(() => {
+  finalizeEmptyAsUnknown();
   syncFormData();
 });
 
-const mensajeErrorPeso = computed(() => {
-  if (seDesconocePeso.value) return '';
-  const v = Number(peso.value);
-  if (v < 1) return 'CEX: mínimo 1 kg';
-  if (v > 400) return 'CEX: máximo 400 kg';
-  return '';
-});
+const mensajeErrorPeso = computed(() =>
+  mensajeErrorCexField('peso', peso.value, seDesconocePeso.value),
+);
 
-const mensajeErrorTalla = computed(() => {
-  if (seDesconoceTalla.value) return '';
-  const v = Number(talla.value);
-  if (v < 30) return 'CEX: mínimo 30 cm';
-  if (v > 220) return 'CEX: máximo 220 cm';
-  return '';
-});
+const mensajeErrorTalla = computed(() =>
+  mensajeErrorCexField('talla', talla.value, seDesconoceTalla.value),
+);
 
-const mensajeErrorCircunferencia = computed(() => {
-  if (seDesconoceCircunferencia.value) return '';
-  const v = Number(circunferenciaCintura.value);
-  if (v < 20) return 'CEX: mínimo 20 cm';
-  if (v > 300) return 'CEX: máximo 300 cm';
-  return '';
-});
+const mensajeErrorCircunferencia = computed(() =>
+  mensajeErrorCexField(
+    'circunferenciaCintura',
+    circunferenciaCintura.value,
+    seDesconoceCircunferencia.value,
+  ),
+);
+
+const ranges = NOTA_MEDICA_CEX_RANGES;
 </script>
 
 <template>
@@ -213,7 +286,6 @@ const mensajeErrorCircunferencia = computed(() => {
     </p>
 
     <div class="flex gap-4 mb-4 flex-wrap">
-      <!-- Peso -->
       <div class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="peso">Peso (kg) <span class="text-red-500">*</span></label>
         <div class="mt-1">
@@ -221,9 +293,10 @@ const mensajeErrorCircunferencia = computed(() => {
             type="number"
             id="peso"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            v-model.number="peso"
-            :min="1"
-            :max="400"
+            :value="peso ?? ''"
+            @input="peso = parseOptionalNumber($event.target.value)"
+            :min="ranges.peso.min"
+            :max="ranges.peso.max"
             step="0.001"
             placeholder="1-400"
             :disabled="seDesconocePeso"
@@ -236,7 +309,6 @@ const mensajeErrorCircunferencia = computed(() => {
         <p v-if="mensajeErrorPeso" class="text-red-500 text-sm mt-1">{{ mensajeErrorPeso }}</p>
       </div>
 
-      <!-- Talla -->
       <div class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="talla">Talla (cm) <span class="text-red-500">*</span></label>
         <div class="mt-1">
@@ -244,9 +316,10 @@ const mensajeErrorCircunferencia = computed(() => {
             type="number"
             id="talla"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            v-model.number="talla"
-            :min="30"
-            :max="220"
+            :value="talla ?? ''"
+            @input="talla = parseOptionalNumber($event.target.value)"
+            :min="ranges.talla.min"
+            :max="ranges.talla.max"
             step="1"
             placeholder="30-220"
             :disabled="seDesconoceTalla"
@@ -260,7 +333,6 @@ const mensajeErrorCircunferencia = computed(() => {
       </div>
     </div>
 
-    <!-- IMC -->
     <div class="mb-4">
       <label class="block text-base font-medium text-gray-800 mb-2">Índice de Masa Corporal</label>
       <div class="grid grid-cols-2 gap-4">
@@ -288,7 +360,6 @@ const mensajeErrorCircunferencia = computed(() => {
       </div>
     </div>
 
-    <!-- Circunferencia de Cintura -->
     <div class="mb-4">
       <label>Circunferencia de Cintura (cm) <span class="text-red-500">*</span></label>
       <div class="grid grid-cols-2 gap-4 mt-1">
@@ -296,9 +367,11 @@ const mensajeErrorCircunferencia = computed(() => {
           <input
             type="number"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            v-model.number="circunferenciaCintura"
-            :min="20"
-            :max="300"
+            :value="circunferenciaCintura ?? ''"
+            @input="circunferenciaCintura = parseOptionalNumber($event.target.value)"
+            :min="ranges.circunferenciaCintura.min"
+            :max="ranges.circunferenciaCintura.max"
+            step="1"
             placeholder="20-300"
             :disabled="seDesconoceCircunferencia"
           />

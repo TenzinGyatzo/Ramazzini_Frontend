@@ -8,12 +8,14 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const { formDataTrastornoLimitePersonalidad } = useFormDataStore();
 const documentos = useDocumentosStore();
+const { fechaDocumentoMax } = useSiresDocumentDateMax();
 
 // Obtener la fecha actual en formato YYYY-MM-DD
 const today = format(new Date(), 'yyyy-MM-dd');
@@ -61,6 +63,7 @@ watch(fechaTrastornoLimitePersonalidad, (newValue) => {
         type="date" 
         name="fechaTrastornoLimitePersonalidad" 
         placeholder="Seleccione una fecha"
+        :max="fechaDocumentoMax"
         v-model="fechaTrastornoLimitePersonalidad" 
       />
     </div>

@@ -40,11 +40,12 @@ export function useNom024Fields() {
   /** Campo con etiqueta CURP (solo proveedores en México) */
   const showWorkerCurpField = computed(() => isMxProveedor.value);
 
+  /** Solo required/optional: el formato y cruce A1 los maneja useCurpLiveValidation. */
   const mxWorkerCurpValidationRules = computed((): string => {
     if (workerCurpRequired.value) {
-      return 'required|curpRenapoValidation';
+      return 'required';
     }
-    return 'optional|curpRenapoValidation';
+    return 'optional';
   });
 
   /**

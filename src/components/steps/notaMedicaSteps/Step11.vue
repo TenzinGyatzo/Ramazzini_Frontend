@@ -49,6 +49,11 @@ const codigoCIEDiagnostico3 = ref(
   ''
 );
 const confirmacionDiagnostica3 = ref(false);
+const diagnosticoTexto3 = ref(
+  formDataNotaMedica.diagnosticoTexto3 ||
+  documentos.currentDocument?.diagnosticoTexto3 ||
+  ''
+);
 
 // Computed: fechaNotaMedica para calcular edad
 const fechaNotaMedica = computed(() => {
@@ -96,6 +101,7 @@ const limpiarComorbilidad3EnStore = () => {
   delete formDataNotaMedica.primeraVezDiagnostico3;
   formDataNotaMedica.codigoCIEDiagnostico3 = '';
   delete formDataNotaMedica.confirmacionDiagnostica3;
+  delete formDataNotaMedica.diagnosticoTexto3;
 };
 
 onMounted(async () => {
@@ -127,6 +133,9 @@ onMounted(async () => {
   if (codigoCIEDiagnostico3.value && !formDataNotaMedica.codigoCIEDiagnostico3) {
     formDataNotaMedica.codigoCIEDiagnostico3 = codigoCIEDiagnostico3.value;
   }
+  if (diagnosticoTexto3.value && !formDataNotaMedica.diagnosticoTexto3) {
+    formDataNotaMedica.diagnosticoTexto3 = diagnosticoTexto3.value;
+  }
   scheduleValidateDiag3Sis();
 });
 
@@ -147,6 +156,7 @@ onUnmounted(() => {
     } else {
       formDataNotaMedica.confirmacionDiagnostica3 = undefined;
     }
+    formDataNotaMedica.diagnosticoTexto3 = diagnosticoTexto3.value || '';
   }
 });
 
@@ -155,6 +165,7 @@ watch(registrarComorbilidad, (val) => {
     primeraVezDiagnostico3.value = null;
     codigoCIEDiagnostico3.value = '';
     confirmacionDiagnostica3.value = false;
+    diagnosticoTexto3.value = '';
     limpiarComorbilidad3EnStore();
   }
   scheduleValidateDiag3Sis();
@@ -189,6 +200,10 @@ watch(primeraVezDiagnostico3, (newValue) => {
     formDataNotaMedica.confirmacionDiagnostica3 = undefined;
   }
   scheduleValidateDiag3Sis();
+});
+
+watch(diagnosticoTexto3, (newValue) => {
+  formDataNotaMedica.diagnosticoTexto3 = newValue || '';
 });
 
 // Validación de duplicidades CIE-10 para diagnóstico 3
@@ -476,6 +491,22 @@ watch(() => userStore.user?._id, () => {
         <p class="text-xs text-amber-700">
           <i class="fas fa-exclamation-triangle"></i>
           Requerida para diagnósticos crónicos (Diabetes, HTA) o Cáncer en menores de 18 años
+        </p>
+      </div>
+
+      <!-- 4. Descripción complementaria -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Descripción complementaria
+        </label>
+        <input
+          class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+          v-model="diagnosticoTexto3"
+          placeholder="Descripción del diagnóstico..."
+          data-skip-validation
+        />
+        <p class="mt-1 text-xs text-gray-500">
+          Puede complementar el diagnóstico codificado con texto libre adicional
         </p>
       </div>
     </div>

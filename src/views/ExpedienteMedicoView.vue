@@ -37,6 +37,7 @@ import ResultadosClinicosPanel from '@/components/ResultadosClinicosPanel.vue';
 import ResultadosClinicosSubsection from '@/components/ResultadosClinicosSubsection.vue';
 import ExpedienteHeaderSkeleton from '@/components/skeletons/ExpedienteHeaderSkeleton.vue';
 import { invalidateExpedienteConteosCache } from '@/helpers/expedienteResumenTrabajador';
+import { useBorradoresNotaMedica } from '@/composables/useBorradoresNotaMedica';
 
 const toast: any = inject('toast');
 const {
@@ -65,6 +66,8 @@ const formData = useFormDataStore();
 const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const resultadosClinicos = useResultadosClinicosStore();
+const { fetchBorradoresPendientes, invalidateBorradoresNotaMedicaCache } =
+  useBorradoresNotaMedica();
 
 const { canCreateDocument, getRestrictionMessage, executeIfCanManageDocumentosExternos } =
   usePermissionRestrictions();
@@ -146,6 +149,10 @@ onMounted(async () => {
   
   // Cargar datos del firmante para validación
   await loadFirmanteData();
+
+  if (userStore.user?._id && proveedorSaludStore.isSIRES) {
+    await fetchBorradoresPendientes({ userId: userStore.user._id });
+  }
 });
 
 const toggleDocumentoExternoModal = () => {
@@ -342,6 +349,16 @@ const handleFinalizeDocument = async () => {
     showFinalizeModal.value = false;
     await documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!);
     invalidateExpedienteConteosForCurrentTrabajador();
+
+    if (selectedDocumentType.value === 'notaMedica' && proveedorSaludStore.isSIRES) {
+      invalidateBorradoresNotaMedicaCache();
+      if (userStore.user?._id) {
+        await fetchBorradoresPendientes({
+          userId: userStore.user._id,
+          force: true,
+        });
+      }
+    }
   } catch (error: any) {
     console.error("Error al finalizar el documento:", error);
     const message = error.response?.data?.message || "Error al finalizar el documento, por favor intente nuevamente.";

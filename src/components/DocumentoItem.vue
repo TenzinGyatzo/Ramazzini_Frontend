@@ -41,6 +41,7 @@ import BadgeNotaAclaratoria from './badges/BadgeNotaAclaratoria.vue';
 import DocumentHoverPreview from './DocumentHoverPreview.vue';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useUserStore } from '@/stores/user';
+import { useBorradoresNotaMedica } from '@/composables/useBorradoresNotaMedica';
 
 const router = useRouter();
 
@@ -1740,6 +1741,27 @@ const props = defineProps({
     trastornoLimitePersonalidad: [Object, String],
     eventoSeguimientoCardiometabolico: [Object, String],
     informeLongitudinalCardiometabolico: [Object, String],
+});
+
+const {
+  getBorradorPendiente,
+  getBadgeLabel,
+  getBadgeClass,
+  borradoresHabilitados,
+} = useBorradoresNotaMedica();
+
+const notaMedicaBorradorPendiente = computed(() => {
+  if (!borradoresHabilitados.value) {
+    return null;
+  }
+  if (!props.notaMedica || typeof props.notaMedica !== 'object') {
+    return null;
+  }
+  const estado = props.notaMedica.estado;
+  if (estado && estado !== 'borrador') {
+    return null;
+  }
+  return getBorradorPendiente(props.notaMedica._id);
 });
 
 const currentDocumentData = computed(() => {
@@ -3913,6 +3935,13 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                     :anuladoPor="notaMedica.anuladoPor"
                                     :razonAnulacion="notaMedica.razonAnulacion"
                                 />
+                                <span
+                                    v-if="notaMedicaBorradorPendiente"
+                                    class="px-2 py-1 text-xs font-medium rounded-full border"
+                                    :class="getBadgeClass(notaMedicaBorradorPendiente.nivelUrgencia)"
+                                >
+                                    {{ getBadgeLabel(notaMedicaBorradorPendiente.nivelUrgencia) }}
+                                </span>
                             </div>
                         </div>
 

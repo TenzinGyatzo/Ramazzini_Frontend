@@ -11,6 +11,7 @@ import {
 import { ref, nextTick, watch, computed, onMounted } from 'vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import InformesAPI from '@/api/InformesAPI';
+import { formatearTituloProfesional } from '@/helpers/nombres';
 
 const props = defineProps<{
   refsGraficas: Record<string, any>;
@@ -229,7 +230,7 @@ const crearPortada = (): Content[] => {
                     {
                         text: [
                             { text: 'Responsable Médico', style: 'portadaLabelRight' },
-                            { text: '\n' + (`${props.tituloMedicoFirmante || ''} ${props.nombreMedicoFirmante || ''}`.trim() || '—'), style: 'portadaValueRight' }
+                            { text: '\n' + (`${formatearTituloProfesional(props.tituloMedicoFirmante, proveedorSaludStore.regimenRegulatorio)} ${props.nombreMedicoFirmante || ''}`.trim() || '—'), style: 'portadaValueRight' }
                         ],
                         margin: [0, 0, 0, 20],
                         alignment: 'right'

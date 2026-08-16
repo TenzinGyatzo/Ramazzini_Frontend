@@ -75,7 +75,6 @@ describe('Step6 NotaMedica - CIE-10 Required Marker', () => {
             template: '<div data-testid="cie10-autocomplete"><slot name="label">{{ label }}</slot></div>',
             props: ['label', 'required'],
           },
-          CIE10ComplementaryDiagnoses: true,
         },
       },
     });

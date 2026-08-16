@@ -10,6 +10,8 @@ import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 import { useCurrentUser } from '@/composables/useCurrentUser';
+import { invalidateBorradoresNotaMedicaCache } from '@/composables/useBorradoresNotaMedica';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 interface Props {
   documentType: string;
@@ -26,6 +28,7 @@ const documentosStore = useDocumentosStore();
 const medicoStore = useMedicoFirmanteStore();
 const enfermeraStore = useEnfermeraFirmanteStore();
 const tecnicoStore = useTecnicoFirmanteStore();
+const proveedorSaludStore = useProveedorSaludStore();
 const { currentUser, ensureUserLoaded } = useCurrentUser();
 
 // Estados reactivos
@@ -85,7 +88,10 @@ const elaboradorData = computed(() => {
 
   return {
     tipo,
-    nombreLinea: formatearTituloYNombreFirmante(firmante) || 'No disponible',
+    nombreLinea: formatearTituloYNombreFirmante(
+      firmante,
+      proveedorSaludStore.regimenRegulatorio,
+    ) || 'No disponible',
     cedulaProfesional: firmante.numeroCedulaProfesional 
       ? `Cédula Profesional No. ${firmante.numeroCedulaProfesional}`
       : null,
@@ -118,7 +124,10 @@ const finalizadorData = computed(() => {
 
   return {
     tipo,
-    nombreLinea: formatearTituloYNombreFirmante(firmante) || 'No disponible',
+    nombreLinea: formatearTituloYNombreFirmante(
+      firmante,
+      proveedorSaludStore.regimenRegulatorio,
+    ) || 'No disponible',
     cedulaProfesional: firmante.numeroCedulaProfesional 
       ? `Cédula Profesional No. ${firmante.numeroCedulaProfesional}`
       : null,
@@ -214,6 +223,9 @@ const loadFirmanteData = async () => {
 const handleConfirm = async () => {
   loading.value = true;
   try {
+    if (props.documentType === 'notaMedica') {
+      invalidateBorradoresNotaMedicaCache();
+    }
     emit('confirmFinalize');
   } finally {
     loading.value = false;

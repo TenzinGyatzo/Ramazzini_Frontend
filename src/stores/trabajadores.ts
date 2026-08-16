@@ -6,8 +6,8 @@ import EmpresasAPI from "@/api/EmpresasAPI";
 
 interface Trabajador {
   _id: string;
-  primerApellido: string;
-  segundoApellido: string;
+  primerApellido?: string;
+  segundoApellido?: string;
   nombre: string;
   fechaNacimiento: string;
   sexo: string;

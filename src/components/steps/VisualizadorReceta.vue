@@ -5,7 +5,7 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/dates';
+import { formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 

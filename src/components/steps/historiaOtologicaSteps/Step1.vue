@@ -8,6 +8,7 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 
 const props = defineProps({
   variant: {
@@ -23,6 +24,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const formDataStore = useFormDataStore();
 const documentos = useDocumentosStore();
+const { fechaDocumentoMax } = useSiresDocumentDateMax();
 
 const today = format(new Date(), 'yyyy-MM-dd');
 const fechaHistoriaOtologica = ref(today);
@@ -93,6 +95,7 @@ watch(fechaHistoriaOtologica, (newValue) => {
         v-if="variant === 'compact'"
         type="date"
         v-model="fechaHistoriaOtologica"
+        :max="fechaDocumentoMax"
         class="ho-date-compact w-full max-w-xs border border-gray-300 rounded-md px-2.5 py-1 text-sm text-gray-700 bg-white h-9 leading-none focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
       />
       <FormKit
@@ -100,6 +103,7 @@ watch(fechaHistoriaOtologica, (newValue) => {
         type="date"
         name="fechaHistoriaOtologica"
         placeholder="Seleccione una fecha"
+        :max="fechaDocumentoMax"
         v-model="fechaHistoriaOtologica"
       />
     </div>

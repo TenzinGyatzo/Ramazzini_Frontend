@@ -3,6 +3,17 @@ import { ref, watch, onMounted, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
 import { useCatalogListKeyboard } from '@/helpers/useCatalogListKeyboard';
+import {
+  PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE,
+  PAIS_NACIMIENTO_NO_ESPECIFICADO_LABEL,
+  PAIS_NACIMIENTO_SE_IGNORA_CODE,
+  PAIS_NACIMIENTO_SE_IGNORA_LABEL,
+  sortPaisesForSelector,
+} from '@/helpers/paisNacimiento';
+import {
+  filterPaisCatalogEntries,
+  getExcludedPaisCodes,
+} from '@/helpers/geoSelectorRules';
 
 const { catalogSearchInputAttrs } = useCatalogSearchInput();
 
@@ -26,6 +37,10 @@ const props = defineProps({
   excludeNoEspecificado: {
     type: Boolean,
     default: false
+  },
+  geoContext: {
+    type: String,
+    default: 'trabajador'
   },
   disabled: {
     type: Boolean,
@@ -52,24 +67,43 @@ const showRequiredError = computed(() => {
 
 let debounceTimer = null;
 
-import {
-  PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE,
-  PAIS_NACIMIENTO_NO_ESPECIFICADO_LABEL,
-  sortPaisesForSelector,
-} from '@/helpers/paisNacimiento';
+const sentinelOptions = [
+  {
+    code: PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE,
+    description: PAIS_NACIMIENTO_NO_ESPECIFICADO_LABEL,
+  },
+  {
+    code: PAIS_NACIMIENTO_SE_IGNORA_CODE,
+    description: PAIS_NACIMIENTO_SE_IGNORA_LABEL,
+  },
+];
 
-// Opción centinela: NO ESPECIFICADO (CATALOG_KEY 248 en cat_pais)
-const sentinelOption = {
-  code: PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE,
-  description: PAIS_NACIMIENTO_NO_ESPECIFICADO_LABEL,
-};
+const effectiveExcludeCodes = computed(() => {
+  const fromContext = getExcludedPaisCodes(props.geoContext);
+  if (props.excludeNoEspecificado && !fromContext.includes(PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE)) {
+    return [...fromContext, PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE];
+  }
+  return fromContext;
+});
 
-function orderPaisesForSelector(items = []) {
-  const merged = props.excludeNoEspecificado
-    ? items
-    : [sentinelOption, ...items];
+function orderPaisesForSelector(items = [], { includeAllSentinels = true } = {}) {
+  const filtered = filterPaisCatalogEntries(items, props.geoContext);
+  const merged =
+    props.geoContext === 'trabajador' && includeAllSentinels
+      ? [
+          ...sentinelOptions.filter(
+            (s) => !effectiveExcludeCodes.value.includes(s.code),
+          ),
+          ...filtered,
+        ]
+      : filtered;
   return sortPaisesForSelector(merged, {
-    excludeNoEspecificado: props.excludeNoEspecificado,
+    geoContext: props.geoContext,
+    excludeNoEspecificado: effectiveExcludeCodes.value.includes(PAIS_NACIMIENTO_NO_ESPECIFICADO_CODE),
+    excludeSeIgnora: effectiveExcludeCodes.value.includes(PAIS_NACIMIENTO_SE_IGNORA_CODE),
+    excludeCodes: effectiveExcludeCodes.value,
+    // Only inject missing sentinels when showing the full list (focus / short query).
+    injectMissingSentinels: includeAllSentinels,
   });
 }
 
@@ -84,21 +118,26 @@ function formatPaisDisplay(entry) {
   return description && code ? `${description} (${code})` : description || code;
 }
 
+async function resolveInitialEntry(val) {
+  const sentinel = sentinelOptions.find((s) => s.code === val);
+  if (sentinel) {
+    selectedEntry.value = sentinel;
+    query.value = formatPaisDisplay(sentinel);
+    return;
+  }
+  const { data } = await CatalogsAPI.getPaisByCatalogKey(val);
+  if (data) {
+    selectedEntry.value = data;
+    query.value = formatPaisDisplay(data);
+  }
+}
+
 onMounted(async () => {
   const val = normalizeModelValue(props.modelValue);
   if (val) {
     try {
       loading.value = true;
-      if (val === sentinelOption.code) {
-        selectedEntry.value = sentinelOption;
-        query.value = formatPaisDisplay(sentinelOption);
-      } else {
-        const { data } = await CatalogsAPI.getPaisByCatalogKey(val);
-        if (data) {
-          selectedEntry.value = data;
-          query.value = formatPaisDisplay(data);
-        }
-      }
+      await resolveInitialEntry(val);
     } catch (err) {
       console.error('Error al cargar país inicial:', err);
       query.value = val;
@@ -118,16 +157,7 @@ watch(() => props.modelValue, async (newVal) => {
 
   if (selectedEntry.value?.code !== val) {
     try {
-      if (val === sentinelOption.code) {
-        selectedEntry.value = sentinelOption;
-        query.value = formatPaisDisplay(sentinelOption);
-      } else {
-        const { data } = await CatalogsAPI.getPaisByCatalogKey(val);
-        if (data) {
-          selectedEntry.value = data;
-          query.value = formatPaisDisplay(data);
-        }
-      }
+      await resolveInitialEntry(val);
     } catch (err) {
       query.value = val;
     }
@@ -165,18 +195,18 @@ const performSearch = async (val) => {
   try {
     const { data } = await CatalogsAPI.searchPaises(val, 50);
     const lowerQuery = val.toLowerCase();
-    const matchingSentinels = [];
-    if (
-      !props.excludeNoEspecificado &&
-      (sentinelOption.code.includes(lowerQuery) ||
-        sentinelOption.description.toLowerCase().includes(lowerQuery))
-    ) {
-      matchingSentinels.push(sentinelOption);
-    }
-    results.value = orderPaisesForSelector([
-      ...matchingSentinels,
-      ...(data || []),
-    ]);
+    const matchingSentinels = props.geoContext === 'trabajador'
+      ? sentinelOptions.filter(
+          (s) =>
+            !effectiveExcludeCodes.value.includes(s.code) &&
+            (s.code.includes(lowerQuery) ||
+              s.description.toLowerCase().includes(lowerQuery)),
+        )
+      : [];
+    results.value = orderPaisesForSelector(
+      [...matchingSentinels, ...(data || [])],
+      { includeAllSentinels: false },
+    );
     showResults.value = true;
   } catch (err) {
     console.error('Error al buscar países:', err);

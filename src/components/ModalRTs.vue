@@ -34,6 +34,7 @@ const fechaAltaHabilitada = computed(() => {
 
 const modo = ref('listado');
 const rtEnEdicion = ref(null); // será un objeto con los datos del RT si se edita
+const isSubmitting = ref(false);
 const userId = userStore.user._id;
 
 const formModeActive = computed(() => modo.value !== 'listado');
@@ -83,8 +84,10 @@ const toggleDeleteModal = (id, rt) => {
 // console.log('trabajadores.currentTrabajador', trabajadoresStore.currentTrabajador);
 
 const handleSubmit = async () => {
-  try {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
 
+  try {
     const trabajadorId = trabajadoresStore.currentTrabajador?._id;
     if (!trabajadorId) return;
 
@@ -161,6 +164,8 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error(error);
     toast.open({ message: 'Error al guardar el Riesgo de Trabajo.', type: 'error' });
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -523,8 +528,13 @@ const sugerenciasNatLesion = [ "Contusión", "Traumatismo", "Fractura", "Luxaci�
             <button @click="cancelFormEdit" class="modal-rts-btn-secondary w-1/2 py-2 bg-white border text-gray-700 font-medium rounded-lg hover:bg-gray-100">
               Cancelar
             </button>
-            <button @click="handleSubmit" class="w-1/2 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-              Guardar
+            <button
+              @click="handleSubmit"
+              :disabled="isSubmitting"
+              class="w-1/2 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isSubmitting">Guardando...</span>
+              <span v-else>Guardar</span>
             </button>
           </div>
         </div>

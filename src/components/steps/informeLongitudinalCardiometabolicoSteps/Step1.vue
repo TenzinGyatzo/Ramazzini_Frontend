@@ -10,6 +10,7 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import SeguimientoProgramadoCardiometabolicoAPI from '@/api/SeguimientoProgramadoCardiometabolicoAPI';
 import { derivarMetricasSeguimientoYEventos } from '@/helpers/informeLongitudinalOperativo';
 import { snapshotEventoConcentradoIlc } from '@/helpers/informeLongitudinalTratamiento';
@@ -20,6 +21,7 @@ const trabajadores = useTrabajadoresStore();
 const formDataStore = useFormDataStore();
 const { formDataInformeLongitudinalCardiometabolico } = storeToRefs(formDataStore);
 const documentos = useDocumentosStore();
+const { fechaDocumentoMax } = useSiresDocumentDateMax();
 const route = useRoute();
 /** Ref reactivo del store: asegura que los eventos CM aparezcan al terminar `fetchAllDocuments`. */
 const { documentsByYear } = storeToRefs(documentos);
@@ -375,13 +377,26 @@ onMounted(async () => {
       <FormKit
         type="date"
         name="fechaInformeLongitudinalCardiometabolico"
+        :max="fechaDocumentoMax"
         v-model="fechaInformeLongitudinalCardiometabolico"
       />
 
       <h2 class="text-lg font-medium text-gray-800 pt-2">Periodo del informe</h2>
       <div class="flex flex-col sm:flex-row gap-4">
-        <FormKit type="date" name="periodoInicio" label="Inicio" v-model="periodoInicio" />
-        <FormKit type="date" name="periodoFin" label="Fin" v-model="periodoFin" />
+        <FormKit
+          type="date"
+          name="periodoInicio"
+          label="Inicio"
+          :max="fechaDocumentoMax"
+          v-model="periodoInicio"
+        />
+        <FormKit
+          type="date"
+          name="periodoFin"
+          label="Fin"
+          :max="fechaDocumentoMax"
+          v-model="periodoFin"
+        />
       </div>
 
       <p class="text-xs text-gray-500">{{ AYUDA_RANGO }}</p>

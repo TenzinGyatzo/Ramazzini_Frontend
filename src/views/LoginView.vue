@@ -9,6 +9,7 @@ const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
 const showPassword = ref(false);
+const isLoggingIn = ref(false);
 
 const lockoutRetrySeconds = ref(0);
 const lockoutMessage = ref("");
@@ -60,7 +61,8 @@ onUnmounted(() => {
 });
 
 const handleLogin = async () => {
-  if (lockoutRetrySeconds.value > 0) return;
+  if (lockoutRetrySeconds.value > 0 || isLoggingIn.value) return;
+  isLoggingIn.value = true;
   try {
     const response = await AuthAPI.login(email.value, password.value, {
       loginContext: "PRIMARY_LOGIN",
@@ -108,6 +110,8 @@ const handleLogin = async () => {
       console.error("Error inesperado:", error);
       errorMessage.value = "Ocurrió un error inesperado";
     }
+  } finally {
+    isLoggingIn.value = false;
   }
 };
 
@@ -154,10 +158,10 @@ const handleLogin = async () => {
       </div>
       <button
         type="submit"
-        :disabled="lockoutRetrySeconds > 0"
+        :disabled="lockoutRetrySeconds > 0 || isLoggingIn"
         class="w-full sm:text-xl md:text-2xl bg-emerald-600 hover:bg-emerald-700 text-white uppercase rounded-lg px-8 py-1 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md hover:shadow-lg hover:text-gray-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
       >
-        {{ lockoutRetrySeconds > 0 ? 'Espera...' : 'Entrar' }}
+        {{ lockoutRetrySeconds > 0 ? 'Espera...' : (isLoggingIn ? 'Entrando...' : 'Entrar') }}
       </button>
       <!-- Mensaje de bloqueo por demasiados intentos (429) -->
       <div v-if="lockoutRetrySeconds > 0 || lockoutMessage" 

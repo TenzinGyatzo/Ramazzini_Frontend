@@ -48,6 +48,7 @@ const resultadoVinculado = ref(null);
 const showSelectorResultados = ref(false);
 const resultadoSeleccionado = ref('');
 const pendingDesvincularDocumentoModal = ref(false);
+const isSubmitting = ref(false);
 
 const buildFormState = () => ({
   nombreDocumento: nombreDocumento.value,
@@ -180,6 +181,8 @@ watch(
 
 // Función para manejar el envío del formulario
 const handleSubmit = async () => {
+  if (isSubmitting.value) return;
+
   // Prevenir edición si el documento está bloqueado (finalizado o anulado)
   if (isBloqueado.value) {
     return;
@@ -194,35 +197,41 @@ const handleSubmit = async () => {
     return;
   }
 
-  const fechaISO = convertirYYYYMMDDaISO(fechaDocumento.value);
+  isSubmitting.value = true;
 
-  const updatedData = {
-    _id: idDocumento.value,
-    nombreDocumento: nombreDocumento.value,
-    fechaDocumento: fechaISO,
-    notasDocumento: notasDocumento.value,
-    idTrabajador: idTrabajador.value
-  };
+  try {
+    const fechaISO = convertirYYYYMMDDaISO(fechaDocumento.value);
 
-  await documentos.updateDocument(
-    'documentoExterno',
-    trabajadores.currentTrabajadorId,
-    updatedData._id,
-    updatedData
-  );
+    const updatedData = {
+      _id: idDocumento.value,
+      nombreDocumento: nombreDocumento.value,
+      fechaDocumento: fechaISO,
+      notasDocumento: notasDocumento.value,
+      idTrabajador: idTrabajador.value
+    };
 
-  if (pendingDesvincularDocumentoModal.value && resultadoVinculado.value?._id) {
-    await resultadosClinicosStore.desvincularDocumento(resultadoVinculado.value._id);
-    resultadoVinculado.value = null;
+    await documentos.updateDocument(
+      'documentoExterno',
+      trabajadores.currentTrabajadorId,
+      updatedData._id,
+      updatedData
+    );
+
+    if (pendingDesvincularDocumentoModal.value && resultadoVinculado.value?._id) {
+      await resultadosClinicosStore.desvincularDocumento(resultadoVinculado.value._id);
+      resultadoVinculado.value = null;
+    }
+    pendingDesvincularDocumentoModal.value = false;
+    toast.open({
+      message: 'Documento Externo actualizado correctamente',
+      type: 'success',
+    });
+
+    emit('updateData');
+    forceClose();
+  } finally {
+    isSubmitting.value = false;
   }
-  pendingDesvincularDocumentoModal.value = false;
-  toast.open({
-    message: 'Documento Externo actualizado correctamente',
-    type: 'success',
-  });
-
-  emit('updateData');
-  forceClose(); 
 };
 
 // Función para iniciar el proceso de vinculación
@@ -512,8 +521,9 @@ const abrirResultadoParaEdicion = () => {
             :disabled="isBloqueado" />
 
           <hr class="my-3">
-          <FormKit v-if="!isBloqueado" type="submit">
-            <span>Guardar</span>
+          <FormKit v-if="!isBloqueado" type="submit" :disabled="isSubmitting">
+            <span v-if="isSubmitting">Guardando...</span>
+            <span v-else>Guardar</span>
           </FormKit>
 
           <div v-if="isBloqueado" class="text-xs md:text-sm mt-6 mb-4 font-medium flex items-center justify-center gap-2"

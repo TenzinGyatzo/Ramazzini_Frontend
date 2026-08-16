@@ -4,12 +4,14 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
-import { calcularEdad, formatDateDDMMYYYY } from '@/helpers/dates';
+import { formatDateDDMMYYYY } from '@/helpers/dates';
+import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
+const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataEntrevistaPsicologica.fechaEntrevistaPsicologica);
 const stepsStore = useStepsStore();
 
 const fd = computed(() => formData.formDataEntrevistaPsicologica);
@@ -68,7 +70,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
               EDAD
             </td>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">
-              {{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}
+              {{ edad }}
             </td>
           </tr>
           <tr class="odd:bg-white even:bg-gray-50">

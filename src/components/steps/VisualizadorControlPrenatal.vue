@@ -5,13 +5,15 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { calcularEdad, calcularAntiguedad, convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
+import { convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
+import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
+const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataControlPrenatal.fechaInicioControlPrenatal);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
@@ -84,7 +86,7 @@ const goToStep = (stepNumber) => {
               EDAD
             </td>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">
-              {{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}
+              {{ edad }}
             </td>
           </tr>
           <tr class="odd:bg-white even:bg-gray-50">
@@ -106,7 +108,7 @@ const goToStep = (stepNumber) => {
               ANTIGUEDAD
             </td>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">
-              {{ calcularAntiguedad(trabajadores.currentTrabajador.fechaIngreso) }}
+              {{ antiguedad }}
             </td>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               TELÉFONO

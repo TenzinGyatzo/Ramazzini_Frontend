@@ -108,7 +108,9 @@ async function searchPaises() {
       return;
     }
     const { data } = await CatalogsAPI.searchPaises(query, 50);
-    paisResults.value = sortPaisesForSelector(data || []);
+    paisResults.value = sortPaisesForSelector(data || [], {
+      injectMissingSentinels: false,
+    });
   } catch {
     paisResults.value = [];
   } finally {

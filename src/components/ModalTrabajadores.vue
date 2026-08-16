@@ -5,9 +5,9 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useCurrentUser } from '@/composables/useCurrentUser';
-import { convertirFechaISOaYYYYMMDD, calcularEdad, calcularAntiguedad } from '@/helpers/dates';
+import { convertirFechaISOaYYYYMMDD, calcularEdad, calcularAntiguedad, isBirthDateInRegistrationRange, getRegistrationBirthDateInputBounds, buildRegistrationAgeRangeMessage } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
-import { extractApiErrorMessage } from '@/helpers/apiErrors';
+import { extractApiErrorMessage, extractCurpA1Issues, isCurpA1ApiError } from '@/helpers/apiErrors';
 import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 import api from '@/lib/axios';
 import EmpresasSelector from './EmpresasSelector.vue';
@@ -18,6 +18,7 @@ import { useNom024Fields } from '@/composables/useNom024Fields';
 import { useEntidadPaisNacimientoCoherence } from '@/composables/useEntidadPaisNacimientoCoherence';
 import { useResidenciaGeoCoherence, initializeResidenciaGeoFields } from '@/composables/useEntidadPaisResidenciaCoherence';
 import { isGenericCurp } from '@/helpers/isGenericCurp';
+import { requiresGenericCurpForEntidadNacimiento } from '@/helpers/giisResidenciaGeo';
 import {
   getWorkerImmutablePayloadFields,
   isPaisNacimientoReadOnlyForWorker,
@@ -31,6 +32,35 @@ import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
+import ModalCurpInconvenientWordConfirm from '@/components/ModalCurpInconvenientWordConfirm.vue';
+import { useCurpInconvenientWordSubmitGuard } from '@/composables/useCurpInconvenientWordSubmitGuard';
+import CurpInlineFeedback from '@/components/CurpInlineFeedback.vue';
+import CurpRelatedFieldMessages from '@/components/CurpRelatedFieldMessages.vue';
+import FechaNacimientoRegistroFeedback from '@/components/FechaNacimientoRegistroFeedback.vue';
+import { useCurpLiveValidation } from '@/composables/useCurpLiveValidation';
+import { useCurpInputUppercase } from '@/composables/useCurpInputUppercase';
+import {
+  TRABAJADOR_SEXO_CURP_OPTIONS,
+  parseSexoCurpValue,
+} from '@/helpers/trabajadorSexoCurp';
+import {
+  PERSON_NAME_MAX_LENGTH,
+  PERSON_NAME_VALIDATION_MESSAGE,
+  PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE,
+  PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE,
+  TRABAJADOR_EDAD_MINIMA,
+  TRABAJADOR_EDAD_MAXIMA,
+} from '../../formkit.config';
+
+const personNameValidationMessages = {
+  required: 'Este campo es obligatorio',
+  personNameValidation: PERSON_NAME_VALIDATION_MESSAGE,
+  personNameOptionalValidation: PERSON_NAME_VALIDATION_MESSAGE,
+  personNameCharactersValidation: PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE,
+  personNameOptionalCharactersValidation: PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE,
+  personNameCharactersSinRegimenValidation: PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE,
+  personNameOptionalCharactersSinRegimenValidation: PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE,
+};
 
 const posibleDuplicadoRegistro = ref(null);
 const showFusionModal = ref(false);
@@ -48,27 +78,15 @@ const formatDireccion = (centro) => {
 
 const toast = inject('toast');
 
-const EDAD_MINIMA_TRABAJADOR = 18;
-const EDAD_MAXIMA_TRABAJADOR = 70;
+const fechaNacimientoBounds = computed(() =>
+  getRegistrationBirthDateInputBounds(
+    TRABAJADOR_EDAD_MINIMA,
+    TRABAJADOR_EDAD_MAXIMA,
+  ),
+);
 
-function formatDateInputValue(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-const fechaNacimientoMax = computed(() => {
-  const limite = new Date();
-  limite.setFullYear(limite.getFullYear() - EDAD_MINIMA_TRABAJADOR);
-  return formatDateInputValue(limite);
-});
-
-const fechaNacimientoMin = computed(() => {
-  const limite = new Date();
-  limite.setFullYear(limite.getFullYear() - EDAD_MAXIMA_TRABAJADOR);
-  return formatDateInputValue(limite);
-});
+const fechaNacimientoMax = computed(() => fechaNacimientoBounds.value.max);
+const fechaNacimientoMin = computed(() => fechaNacimientoBounds.value.min);
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -79,6 +97,18 @@ const { geoFieldsRequired, workerCurpRequired, workerIdentificationImmutable, is
 
 const personNameRegime = computed(() =>
   resolveWorkerPersonNameRegime(isSIRES.value, isSinRegimen.value),
+);
+
+const requiredPersonNameValidation = computed(() =>
+  isSinRegimen.value
+    ? 'required|personNameValidation|personNameCharactersSinRegimenValidation'
+    : 'required|personNameValidation|personNameCharactersValidation',
+);
+
+const optionalPersonNameValidation = computed(() =>
+  isSinRegimen.value
+    ? 'personNameOptionalValidation|personNameOptionalCharactersSinRegimenValidation'
+    : 'personNameOptionalValidation|personNameOptionalCharactersValidation',
 );
 
 const isEditingTrabajador = computed(() => !!trabajadores.currentTrabajador?._id);
@@ -93,7 +123,7 @@ const isWorkerIdentificationReadOnly = computed(() =>
   workerIdentificationImmutable.value,
 );
 
-const isCurpFieldReadOnly = computed(() =>
+const isCurpIdentificationReadOnly = computed(() =>
   isWorkerIdentificationReadOnly.value && !hasGenericCurpStored.value,
 );
 
@@ -174,6 +204,7 @@ const empresaSeleccionada = ref(null);
 const centrosDisponibles = ref([]);
 const centroSeleccionado = ref(null);
 const transferenciaEnProceso = ref(false);
+const isSubmitting = ref(false);
 const loadingEmpresas = ref(false);
 // Cache simple para resultados de empresas por contexto
 const cacheEmpresas = new Map();
@@ -268,12 +299,8 @@ const identificadorPersonalPlaceholder = computed(() => {
   }
 });
 
-const curpRenapoValidationMessage =
-  'CURP debe tener 18 caracteres en formato RENAPO (ej: ROAJ850102HDFLRN08) o CURP genérica (XXXX999999XXXXXX99).';
-
 const mxCurpValidationMessages = {
   required: 'Este campo es obligatorio',
-  curpRenapoValidation: curpRenapoValidationMessage,
 };
 
 // Validación condicional para campos NOM-024: requeridos solo para SIRES_NOM024
@@ -286,7 +313,17 @@ const nom024NacimientoFields = ref({
   paisNacimiento: trabajadores.currentTrabajador?.paisNacimiento ?? '',
 });
 
-useEntidadPaisNacimientoCoherence(nom024NacimientoFields);
+const requiresGenericCurp = computed(() =>
+  requiresGenericCurpForEntidadNacimiento(
+    nom024NacimientoFields.value.entidadNacimiento,
+  ),
+);
+
+const isCurpFieldReadOnly = computed(() =>
+  isCurpIdentificationReadOnly.value || requiresGenericCurp.value,
+);
+
+useEntidadPaisNacimientoCoherence(nom024NacimientoFields, 'trabajador');
 
 const nom024ResidenciaFields = ref({
   entidadResidencia: trabajadores.currentTrabajador?.entidadResidencia || '',
@@ -295,10 +332,12 @@ const nom024ResidenciaFields = ref({
   paisResidencia: trabajadores.currentTrabajador?.paisResidencia ?? '',
 });
 
-useResidenciaGeoCoherence(nom024ResidenciaFields);
+useResidenciaGeoCoherence(nom024ResidenciaFields, 'trabajador');
 
 // Ref para el valor del CURP (para poder actualizarlo programáticamente)
 const curpValue = ref(trabajadores.currentTrabajador?.curp || '');
+
+useCurpInputUppercase(curpValue);
 
 // Watch para sincronizar curpValue con el trabajador actual
 watch(() => trabajadores.currentTrabajador?.curp, (newCurp) => {
@@ -306,16 +345,86 @@ watch(() => trabajadores.currentTrabajador?.curp, (newCurp) => {
 }, { immediate: true });
 
 const formData = ref({});
+const fechaNacimientoRegistro = computed(
+  () =>
+    formData.value?.fechaNacimiento
+    || convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaNacimiento)
+    || '',
+);
 const primerApellidoField = ref('');
 const segundoApellidoField = ref('');
 const nombreField = ref('');
+
+const curpDemographics = computed(() => ({
+  fechaNacimiento: formData.value?.fechaNacimiento
+    || convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaNacimiento)
+    || null,
+  sexo: formData.value?.sexo || trabajadores.currentTrabajador?.sexo || null,
+  sexoCURP: parseSexoCurpValue(
+    formData.value?.sexoCURP ?? trabajadores.currentTrabajador?.sexoCURP,
+  ),
+  useSexoCurpForValidation: isSIRES.value,
+  entidadNacimiento: nom024NacimientoFields.value.entidadNacimiento || null,
+  nombre: nombreField.value || null,
+  primerApellido: primerApellidoField.value || null,
+  segundoApellido: segundoApellidoField.value || null,
+}));
+
+const curpLiveOptions = computed(() => ({
+  allowGenericCurp: true,
+  requireGenericCurp: requiresGenericCurp.value,
+  // Vacío lo maneja FormKit (required); no mostrar "CURP no puede estar vacía" inline.
+  required: false,
+}));
+
+const {
+  issues: curpIssues,
+  invalidPositions: curpInvalidPositions,
+  warningPositions: curpWarningPositions,
+  validPositions: curpValidPositions,
+  relatedFieldErrors: curpRelatedFieldErrors,
+  relatedFieldMessages: curpRelatedFieldMessages,
+  hasBlockingErrors: curpHasBlockingErrors,
+  curpPrefixSuggestion,
+  applySuggestedPrefix,
+  setServerIssues,
+  clearServerIssues,
+} = useCurpLiveValidation({
+  curp: curpValue,
+  demographics: curpDemographics,
+  options: curpLiveOptions,
+});
+
+const {
+  showModal: showCurpInconvenientConfirm,
+  detectedWord: curpInconvenientWord,
+  confirmOrProceed: confirmCurpInconvenientWordIfNeeded,
+  onConfirm: confirmCurpInconvenientWord,
+  onCancel: cancelCurpInconvenientWord,
+} = useCurpInconvenientWordSubmitGuard();
+
+watch(curpValue, () => {
+  clearServerIssues();
+});
+
+const applyCurpSuggestion = () => {
+  if (isCurpFieldReadOnly.value) return;
+  const next = applySuggestedPrefix();
+  if (next != null) {
+    curpValue.value = next;
+  }
+};
 
 const syncWorkerPersonNameFields = () => {
   const worker = trabajadores.currentTrabajador;
   const regime = personNameRegime.value;
 
   primerApellidoField.value = normalizeWorkerPersonName(worker?.primerApellido, regime);
-  segundoApellidoField.value = normalizeWorkerPersonName(worker?.segundoApellido, regime);
+  const hasPrimer = String(primerApellidoField.value || '').trim() !== '';
+  // Sin primer apellido no puede haber segundo (evita estado inválido al hidratar).
+  segundoApellidoField.value = hasPrimer
+    ? normalizeWorkerPersonName(worker?.segundoApellido, regime)
+    : '';
   nombreField.value = normalizeWorkerPersonName(worker?.nombre, regime);
 };
 
@@ -323,6 +432,14 @@ watch(
   [() => trabajadores.currentTrabajador, personNameRegime],
   syncWorkerPersonNameFields,
   { immediate: true },
+);
+
+const hasPrimerApellido = computed(
+  () => String(primerApellidoField.value || '').trim() !== '',
+);
+
+const isSegundoApellidoDisabled = computed(
+  () => isCurpConformationReadOnly.value || !hasPrimerApellido.value,
 );
 
 const normalizePersonNameField = (field) => {
@@ -336,6 +453,16 @@ const normalizePersonNameField = (field) => {
   if (!target) return;
 
   target.value = normalizeWorkerPersonName(target.value, personNameRegime.value);
+
+  if (field === 'primerApellido' && String(target.value || '').trim() === '') {
+    segundoApellidoField.value = '';
+  }
+};
+
+const clearSegundoApellidoIfNoPrimer = () => {
+  if (String(primerApellidoField.value || '').trim() !== '') return;
+  if (String(segundoApellidoField.value || '').trim() === '') return;
+  segundoApellidoField.value = '';
 };
 
 const buildFormState = () => ({
@@ -374,10 +501,25 @@ const {
     !trabajadores.loadingModal,
 });
 
+const GENERIC_CURP = 'XXXX999999XXXXXX99';
+
 // Función para insertar CURP genérico (para paciente desconocido o extranjero)
 const insertGenericCURP = () => {
-  curpValue.value = 'XXXX999999XXXXXX99';
+  curpValue.value = GENERIC_CURP;
 };
+
+watch(
+  requiresGenericCurp,
+  (required) => {
+    if (!required) return;
+    // No pisar CURP real inmutable de identificación
+    if (isCurpIdentificationReadOnly.value) return;
+    if (curpValue.value !== GENERIC_CURP) {
+      curpValue.value = GENERIC_CURP;
+    }
+  },
+  { immediate: true },
+);
 
 // Watch para sincronizar valores cuando cambia el trabajador actual
 watch(() => trabajadores.currentTrabajador, (trabajador) => {
@@ -387,7 +529,7 @@ watch(() => trabajadores.currentTrabajador, (trabajador) => {
   nom024ResidenciaFields.value.municipioResidencia = trabajador?.municipioResidencia || '';
   nom024ResidenciaFields.value.localidadResidencia = trabajador?.localidadResidencia || '';
   nom024ResidenciaFields.value.paisResidencia = trabajador?.paisResidencia ?? '';
-  initializeResidenciaGeoFields(nom024ResidenciaFields);
+  initializeResidenciaGeoFields(nom024ResidenciaFields, 'init', 'trabajador');
 }, { immediate: true });
 
 // Variables para contar trabajadores por centro
@@ -491,8 +633,28 @@ const onFormSubmitInvalid = () => {
 };
 
 const handleSubmit = async (data) => {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
+
+  try {
   formSubmitAttempted.value = false; // Resetear cuando el submit es exitoso
   if (!proveedorSaludStore.proveedorSalud) return;
+
+  if (isMxProveedor.value && curpHasBlockingErrors.value) {
+    formSubmitAttempted.value = true;
+    toast.open({
+      message: 'Revisa la CURP: hay errores que debes corregir antes de guardar.',
+      type: 'error',
+    });
+    return;
+  }
+
+  if (isMxProveedor.value) {
+    const confirmed = await confirmCurpInconvenientWordIfNeeded(curpValue.value);
+    if (!confirmed) {
+      return;
+    }
+  }
 
   // Obtener el ID del usuario actual
   const currentUserId = await ensureUserLoaded();
@@ -516,31 +678,48 @@ const handleSubmit = async (data) => {
     }
   }
 
-  // Validar rango de edad permitido para registro: 18-70 años
+  // Validar rango de edad permitido para registro: 18-100 años (duración exacta)
   if (data.fechaNacimiento) {
-    const edad = calcularEdad(data.fechaNacimiento);
-    if (edad < EDAD_MINIMA_TRABAJADOR) {
+    const edadValida = isBirthDateInRegistrationRange(
+      data.fechaNacimiento,
+      new Date(),
+      TRABAJADOR_EDAD_MINIMA,
+      TRABAJADOR_EDAD_MAXIMA,
+    );
+    if (!edadValida) {
       toast.open({
-        message: 'No se puede registrar un menor de edad. El trabajador debe tener al menos 18 años cumplidos.',
-        type: 'error'
-      });
-      return;
-    }
-    if (edad > EDAD_MAXIMA_TRABAJADOR) {
-      toast.open({
-        message: 'No se puede registrar un trabajador mayor de 70 años.',
+        message: buildRegistrationAgeRangeMessage(
+          TRABAJADOR_EDAD_MINIMA,
+          TRABAJADOR_EDAD_MAXIMA,
+          data.fechaNacimiento,
+        ),
         type: 'error'
       });
       return;
     }
   }
 
+  clearSegundoApellidoIfNoPrimer();
+  const primerApellidoNorm = normalizeWorkerPersonName(
+    data.primerApellido ?? primerApellidoField.value,
+    personNameRegime.value,
+  );
+  const segundoApellidoNorm = primerApellidoNorm
+    ? normalizeWorkerPersonName(
+        data.segundoApellido ?? segundoApellidoField.value,
+        personNameRegime.value,
+      )
+    : '';
+
   const trabajadorData = {
-    primerApellido: normalizeWorkerPersonName(data.primerApellido, personNameRegime.value),
-    segundoApellido: normalizeWorkerPersonName(data.segundoApellido, personNameRegime.value),
+    primerApellido: primerApellidoNorm,
+    segundoApellido: segundoApellidoNorm,
     nombre: normalizeWorkerPersonName(data.nombre, personNameRegime.value),
     fechaNacimiento: data.fechaNacimiento,
     sexo: data.sexo,
+    ...(isSIRES.value && data.sexoCURP != null && data.sexoCURP !== ''
+      ? { sexoCURP: parseSexoCurpValue(data.sexoCURP) }
+      : {}),
     escolaridad: data.escolaridad,
     puesto: data.puesto,
     telefono: data.telefono,
@@ -618,6 +797,15 @@ const handleSubmit = async (data) => {
   } catch (error) {
     console.error('Error al crear o actualizar al trabajador:', error);
 
+    if (isCurpA1ApiError(error)) {
+      setServerIssues(extractCurpA1Issues(error));
+      toast.open({
+        message: 'Revisa la CURP: no coincide con los datos capturados.',
+        type: 'error',
+      });
+      return;
+    }
+
     toast.open({
       message: extractApiErrorMessage(
         error,
@@ -625,6 +813,9 @@ const handleSubmit = async (data) => {
       ),
       type: 'error',
     });
+  }
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -899,16 +1090,52 @@ const {
                   :placeholder="identificadorPersonalPlaceholder"
                   :validation="mxWorkerCurpValidationRules"
                   :validation-messages="mxCurpValidationMessages"
-                  maxlength="30"
+                  maxlength="18"
                   :disabled="isCurpFieldReadOnly"
                   v-model="curpValue"
                 >
                   <template #label>
-                    <span class="font-medium text-lg text-gray-700">
-                      {{ identificadorPersonalLabel }}<span v-if="workerCurpRequired" class="text-red-500">*</span>
+                    <span class="flex w-full items-baseline justify-between gap-2">
+                      <span class="font-medium text-lg text-gray-700">
+                        {{ identificadorPersonalLabel }}<span v-if="workerCurpRequired" class="text-red-500">*</span>
+                      </span>
+                      <button
+                        v-if="!isCurpFieldReadOnly && !requiresGenericCurp"
+                        type="button"
+                        @click.stop.prevent="insertGenericCURP"
+                        class="shrink-0 text-xs font-normal text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200"
+                        title="Usar CURP genérica para paciente desconocido o extranjero (XXXX999999XXXXXX99)"
+                      >
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Usar CURP genérica
+                      </button>
+                      <span
+                        v-else-if="requiresGenericCurp"
+                        class="shrink-0 text-xs font-normal text-gray-500"
+                        title="Con entidad NO ESPECIFICADO o SE IGNORA solo aplica la CURP genérica"
+                      >
+                        CURP genérica obligatoria
+                      </span>
                     </span>
                   </template>
                 </FormKit>
+                <p
+                  v-if="isMxProveedor && requiresGenericCurp"
+                  class="text-xs text-gray-500 mt-1 mb-2"
+                >
+                  Para «NO ESPECIFICADO» o «SE IGNORA», debe usarse XXXX999999XXXXXX99.
+                </p>
+                <CurpInlineFeedback
+                  v-if="isMxProveedor"
+                  :curp="curpValue"
+                  :invalid-positions="curpInvalidPositions"
+                  :warning-positions="curpWarningPositions"
+                  :valid-positions="curpValidPositions"
+                  :issues="curpIssues"
+                  :suggestion="requiresGenericCurp ? null : curpPrefixSuggestion"
+                  :can-apply-suggestion="!isCurpFieldReadOnly && !requiresGenericCurp"
+                  @apply-suggestion="applyCurpSuggestion"
+                />
                 <!-- LATAM: identificador local (DPI, cédula, etc.) sin validación de formato -->
                 <FormKit
                   v-else
@@ -927,60 +1154,145 @@ const {
                   </template>
                 </FormKit>
               </div>
-              <div class="flex items-center">
-                <!-- Botón sutil para insertar CURP genérico (solo para MX) -->
-                <button
-                  v-if="isMxProveedor && !isCurpFieldReadOnly"
-                  type="button"
-                  @click.prevent="insertGenericCURP"
-                  class="mt-0 mb-4 md:mt-4 md:mb-0 text-xs text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200"
-                  title="Usar CURP genérico para paciente desconocido o extranjero (XXXX999999XXXXXX99)"
-                >
-                  <i class="fas fa-info-circle mr-1"></i>
-                  Usar CURP genérico <br class="hidden md:block">(desconocido/extranjero)
-                </button>
+              <!-- Folio NOM-024: solo lectura, a la derecha de CURP cuando ya existe -->
+              <div>
+                <template v-if="trabajadores.currentTrabajador?.folio">
+                  <label class="block font-medium text-lg text-gray-700 mb-1">
+                    Folio (Identificador en la UM)
+                  </label>
+                  <div
+                    class="w-full h-15 p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-mono text-sm flex items-center"
+                  >
+                    {{ trabajadores.currentTrabajador.folio }}
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Identificador único de 18 caracteres. Generado automáticamente al registrar.
+                  </p>
+                </template>
               </div>
-              <FormKit type="text" name="primerApellido" placeholder="Apellido paterno"
-                  validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
+              <div>
+                <FormKit type="text" label="Primer Apellido" name="primerApellido" placeholder="Apellido paterno"
+                    :validation="optionalPersonNameValidation"
+                    :validation-messages="personNameValidationMessages"
+                    :maxlength="PERSON_NAME_MAX_LENGTH"
+                    :disabled="isCurpConformationReadOnly"
+                    v-model="primerApellidoField"
+                    @blur="normalizePersonNameField('primerApellido')" />
+                <CurpRelatedFieldMessages
+                  v-if="isMxProveedor"
+                  :messages="curpRelatedFieldMessages.primerApellido"
+
+                />
+              </div>
+              <div>
+                <FormKit type="text" label="Segundo Apellido" name="segundoApellido" placeholder="Apellido materno"
+                    :validation="optionalPersonNameValidation"
+                    :validation-messages="personNameValidationMessages"
+                    :maxlength="PERSON_NAME_MAX_LENGTH"
+                    :disabled="isSegundoApellidoDisabled"
+                    v-model="segundoApellidoField"
+                    @blur="normalizePersonNameField('segundoApellido')" />
+                <p
+                  v-if="!hasPrimerApellido && !isCurpConformationReadOnly"
+                  class="text-xs text-gray-500 mt-1"
+                >
+                  Capture primero el primer apellido para habilitar el segundo.
+                </p>
+                <CurpRelatedFieldMessages
+                  v-if="isMxProveedor"
+                  :messages="curpRelatedFieldMessages.segundoApellido"
+
+                />
+              </div>
+              <div>
+                <FormKit type="text" name="nombre" placeholder="Nombres del trabajador"
+                    :validation="requiredPersonNameValidation"
+                    :validation-messages="personNameValidationMessages"
+                    :maxlength="PERSON_NAME_MAX_LENGTH"
+                    :disabled="isCurpConformationReadOnly"
+                    v-model="nombreField"
+                    @blur="normalizePersonNameField('nombre')">
+                  <template #label>
+                    <span class="font-medium text-lg text-gray-700">Nombre(s)<span class="text-red-500">*</span></span>
+                  </template>
+                </FormKit>
+                <CurpRelatedFieldMessages
+                  v-if="isMxProveedor"
+                  :messages="curpRelatedFieldMessages.nombre"
+
+                />
+              </div>
+              <div v-if="isSIRES" class="grid gap-3 grid-cols-2">
+                <div>
+                  <FormKit type="select" name="sexo" placeholder="-Selecciona-"
+                    :options="['Masculino', 'Femenino', 'Intersexual']" validation="required"
+                    :validation-messages="{ required: 'Este campo es obligatorio' }"
+                    :disabled="isCurpConformationReadOnly"
+                    :value="trabajadores.currentTrabajador?.sexo || ''">
+                    <template #label>
+                      <span class="font-medium text-lg text-gray-700">
+                        Sexo Biológico<span class="text-red-500">*</span>
+                      </span>
+                    </template>
+                  </FormKit>
+                </div>
+                <div>
+                  <FormKit type="select" name="sexoCURP" placeholder="-Selecciona-"
+                    :options="TRABAJADOR_SEXO_CURP_OPTIONS"
+                    validation="required"
+                    :validation-messages="{ required: 'Este campo es obligatorio' }"
+                    :disabled="isCurpConformationReadOnly"
+                    :value="trabajadores.currentTrabajador?.sexoCURP ?? ''">
+                    <template #label>
+                      <span class="font-medium text-lg text-gray-700">Sexo CURP<span class="text-red-500">*</span></span>
+                    </template>
+                  </FormKit>
+                  <CurpRelatedFieldMessages
+                    v-if="isMxProveedor"
+                    :messages="curpRelatedFieldMessages.sexoCURP"
+  
+                  />
+                </div>
+              </div>
+              <div v-else>
+                <FormKit type="select" name="sexo" placeholder="-Seleccione un sexo-"
+                  :options="['Masculino', 'Femenino', 'Intersexual']" validation="required"
+                  :validation-messages="{ required: 'Este campo es obligatorio' }"
                   :disabled="isCurpConformationReadOnly"
-                  v-model="primerApellidoField"
-                  @blur="normalizePersonNameField('primerApellido')">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Primer Apellido<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
-              <FormKit type="text" label="Segundo Apellido" name="segundoApellido" placeholder="Apellido materno"
+                  :value="trabajadores.currentTrabajador?.sexo || ''">
+                  <template #label>
+                    <span class="font-medium text-lg text-gray-700">Sexo<span class="text-red-500">*</span></span>
+                  </template>
+                </FormKit>
+                <CurpRelatedFieldMessages
+                  v-if="isMxProveedor"
+                  :messages="curpRelatedFieldMessages.sexo"
+
+                />
+              </div>
+              <div>
+                <FormKit type="date" name="fechaNacimiento"
+                  validation="required"
+                  :validation-messages="{ required: 'Este campo es obligatorio' }"
+                  :min="fechaNacimientoMin"
+                  :max="fechaNacimientoMax"
                   :disabled="isCurpConformationReadOnly"
-                  v-model="segundoApellidoField"
-                  @blur="normalizePersonNameField('segundoApellido')" />
-              <FormKit type="text" name="nombre" placeholder="Nombres del trabajador"
-                  validation="required" :validation-messages="{ required: 'Este campo es obligatorio' }"
-                  :disabled="isCurpConformationReadOnly"
-                  v-model="nombreField"
-                  @blur="normalizePersonNameField('nombre')">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Nombre(s)<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
-              <FormKit type="select" name="sexo" placeholder="-Seleccione un sexo-"
-                :options="['Masculino', 'Femenino', 'Intersexual']" validation="required"
-                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                :disabled="isCurpConformationReadOnly"
-                :value="trabajadores.currentTrabajador?.sexo || ''">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Sexo<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
-              <FormKit type="date" name="fechaNacimiento" validation="required"
-                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                :min="fechaNacimientoMin"
-                :max="fechaNacimientoMax"
-                :disabled="isCurpConformationReadOnly"
-                :value="convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaNacimiento) || ''">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Fecha de Nacimiento<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
+                  :value="convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaNacimiento) || ''">
+                  <template #label>
+                    <span class="font-medium text-lg text-gray-700">Fecha de Nacimiento<span class="text-red-500">*</span></span>
+                  </template>
+                </FormKit>
+                <FechaNacimientoRegistroFeedback
+                  :min-years="TRABAJADOR_EDAD_MINIMA"
+                  :max-years="TRABAJADOR_EDAD_MAXIMA"
+                  :fecha-nacimiento="fechaNacimientoRegistro"
+                />
+                <CurpRelatedFieldMessages
+                  v-if="isMxProveedor"
+                  :messages="curpRelatedFieldMessages.fechaNacimiento"
+
+                />
+              </div>
               <FormKit type="select" name="escolaridad"
                 placeholder="-Seleccione último concluido-" :options="nivelesEscolaridad" validation="required"
                 :validation-messages="{ required: 'Este campo es obligatorio' }"
@@ -1034,15 +1346,6 @@ const {
                     nssValidation: 'Debe tener 4-30 caracteres alfanuméricos'
                   }"
                   maxlength="30" :value="trabajadores.currentTrabajador?.nss || ''" />
-              <!-- Folio NOM-024: solo lectura, generado por el sistema para trabajadores nuevos -->
-              <div v-if="trabajadores.currentTrabajador?.folio" class="lg:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Folio (Identificador en la UM)</label>
-                <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-700 font-mono text-sm">
-                  {{ trabajadores.currentTrabajador.folio }}
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Identificador único de 18 caracteres. Generado automáticamente al registrar.</p>
-              </div>
-
               <!-- NOM-024 Identification Fields (solo visible para SIRES_NOM024) -->
               <div v-if="isSIRES" class="lg:col-span-2 mt-4">
                 
@@ -1050,13 +1353,20 @@ const {
                 <div class="mb-4">
                   <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Nacimiento</h4>
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <EstadoAutocomplete
-                      v-model="nom024NacimientoFields.entidadNacimiento"
-                      label="Entidad de Nacimiento"
-                      placeholder="Buscar por nombre del estado"
-                      :required="geoFieldsRequired"
-                      :disabled="isCurpConformationReadOnly"
-                    />
+                    <div>
+                      <EstadoAutocomplete
+                        v-model="nom024NacimientoFields.entidadNacimiento"
+                        label="Entidad de Nacimiento"
+                        placeholder="Buscar por nombre del estado"
+                        :required="geoFieldsRequired"
+                        :disabled="isCurpConformationReadOnly"
+                        geo-context="trabajador"
+                        :pais-nacimiento="nom024NacimientoFields.paisNacimiento"
+                      />
+                      <CurpRelatedFieldMessages
+                        :messages="curpRelatedFieldMessages.entidadNacimiento"
+                      />
+                    </div>
                     
                     <PaisNacimientoAutocomplete
                       v-model="nom024NacimientoFields.paisNacimiento"
@@ -1064,6 +1374,7 @@ const {
                       placeholder="Buscar por nombre de país..."
                       :required="geoFieldsRequired"
                       :disabled="isPaisNacimientoReadOnly"
+                      geo-context="trabajador"
                     />
                   </div>
                 </div>
@@ -1080,6 +1391,7 @@ const {
                     @update:municipioResidencia="nom024ResidenciaFields.municipioResidencia = $event"
                     @update:localidadResidencia="nom024ResidenciaFields.localidadResidencia = $event"
                     :required="geoFieldsRequired"
+                    geo-context="trabajador"
                   >
                     <template #pais>
                       <PaisNacimientoAutocomplete
@@ -1087,6 +1399,7 @@ const {
                         label="País de residencia"
                         placeholder="Buscar por nombre de país..."
                         :required="geoFieldsRequired"
+                        geo-context="trabajador"
                       />
                     </template>
                   </ResidenciaGeoAutocomplete>
@@ -1143,8 +1456,8 @@ const {
             <FormKit type="hidden" name="idCentroTrabajo" :value="centrosTrabajo.currentCentroTrabajoId" />
 
             <hr class="my-3">
-            <FormKit type="submit" :disabled="trabajadores.loadingModal">
-              <span v-if="trabajadores.loadingModal">Guardando...</span>
+            <FormKit type="submit" :disabled="isSubmitting">
+              <span v-if="isSubmitting">Guardando...</span>
               <span v-else>{{ trabajadores.currentTrabajador._id ? 'Actualizar Trabajador' : 'Guardar Trabajador'
                 }}</span>
             </FormKit>
@@ -1162,6 +1475,13 @@ const {
       :open="showDiscardConfirm"
       @continue-editing="continueEditing"
       @discard="confirmDiscard"
+    />
+
+    <ModalCurpInconvenientWordConfirm
+      :open="showCurpInconvenientConfirm"
+      :word="curpInconvenientWord"
+      @confirm="confirmCurpInconvenientWord"
+      @close="cancelCurpInconvenientWord"
     />
 
     <!-- Modal de transferencia -->

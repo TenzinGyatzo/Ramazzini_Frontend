@@ -1,22 +1,29 @@
 <script setup>
 import { ref, computed } from 'vue';
 
+const props = defineProps({
+  isSubmitting: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const emit = defineEmits(['close', 'confirm']);
 
 const reason = ref('');
 const confirmChecked = ref(false);
 
 const canSubmit = computed(() => {
-  return reason.value.trim().length > 0 && confirmChecked.value;
+  return reason.value.trim().length > 0 && confirmChecked.value && !props.isSubmitting;
 });
 
 const handleSubmit = () => {
-  if (canSubmit.value) {
-    emit('confirm', reason.value.trim());
-  }
+  if (!canSubmit.value || props.isSubmitting) return;
+  emit('confirm', reason.value.trim());
 };
 
 const handleClose = () => {
+  if (props.isSubmitting) return;
   reason.value = '';
   confirmChecked.value = false;
   emit('close');
@@ -51,7 +58,8 @@ const features = [
           </h2>
           <button
             @click="handleClose"
-            class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 rounded p-1"
+            :disabled="isSubmitting"
+            class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 rounded p-1 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Cerrar modal"
           >
             <i class="fa-solid fa-times text-xl"></i>
@@ -136,7 +144,8 @@ const features = [
       <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-lg flex justify-end gap-3">
         <button
           @click="handleClose"
-          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+          :disabled="isSubmitting"
+          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancelar
         </button>
@@ -150,7 +159,8 @@ const features = [
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           ]"
         >
-          Confirmar Cambio
+          <span v-if="isSubmitting">Guardando...</span>
+          <span v-else>Confirmar Cambio</span>
         </button>
       </div>
     </div>

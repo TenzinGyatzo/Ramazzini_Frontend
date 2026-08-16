@@ -2,6 +2,10 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import {
+  SOMATOMETRIA_SIGNOS_RANGES,
+  mensajeErrorSomatometriaSignosField,
+} from '@/helpers/somatometriaSignosRanges';
 
 const { formDataCertificadoExpedito } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -162,45 +166,25 @@ function setCategoriaTemperaturaCorporal() {
 }
 
 // Computed para mostrar mensajes de error
-const mensajeErrorTensionSistolica = computed(() => {
-  return tensionArterialSistolica.value < 60 
-    ? 'Debe ser mínimo 60' 
-    : tensionArterialSistolica.value > 200 
-      ? 'Debe ser máximo 200' 
-      : '';
-});
+const mensajeErrorTensionSistolica = computed(() =>
+  mensajeErrorSomatometriaSignosField('tensionArterialSistolica', tensionArterialSistolica.value),
+);
 
-const mensajeErrorTensionDiastolica = computed(() => {
-  return tensionArterialDiastolica.value < 40 
-    ? 'Debe ser mínimo 40' 
-    : tensionArterialDiastolica.value > 150 
-      ? 'Debe ser máximo 150' 
-      : '';
-});
+const mensajeErrorTensionDiastolica = computed(() =>
+  mensajeErrorSomatometriaSignosField('tensionArterialDiastolica', tensionArterialDiastolica.value),
+);
 
-const mensajeErrorFrecuenciaCardiaca = computed(() => {
-  return frecuenciaCardiaca.value < 40 
-    ? 'Debe ser mínimo 40' 
-    : frecuenciaCardiaca.value > 150 
-      ? 'Debe ser máximo 150' 
-      : '';
-});
+const mensajeErrorFrecuenciaCardiaca = computed(() =>
+  mensajeErrorSomatometriaSignosField('frecuenciaCardiaca', frecuenciaCardiaca.value),
+);
 
-const mensajeErrorFrecuenciaRespiratoria = computed(() => {
-  return frecuenciaRespiratoria.value < 12 
-    ? 'Debe ser mínimo 12' 
-    : frecuenciaRespiratoria.value > 45 
-      ? 'Debe ser máximo 45' 
-      : '';
-});
+const mensajeErrorFrecuenciaRespiratoria = computed(() =>
+  mensajeErrorSomatometriaSignosField('frecuenciaRespiratoria', frecuenciaRespiratoria.value),
+);
 
-const mensajeErrorTemperaturaCorporal = computed(() => {
-  return temperaturaCorporal.value < 35.0 
-    ? 'Debe ser mínimo 35.0' 
-    : temperaturaCorporal.value > 40.0 
-      ? 'Debe ser máximo 40.0' 
-      : '';
-});
+const mensajeErrorTemperaturaCorporal = computed(() =>
+  mensajeErrorSomatometriaSignosField('temperaturaCorporal', temperaturaCorporal.value),
+);
 
 </script>
 
@@ -215,7 +199,7 @@ const mensajeErrorTemperaturaCorporal = computed(() => {
         <label for="tensionArterialSistolica">Sistólica (mmHg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="tensionArterialSistolica" min="60" max="200">
+          v-model="tensionArterialSistolica" :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min" :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max">
         <p v-if="mensajeErrorTensionSistolica" class="text-red-500 text-sm mt-1">
         {{ mensajeErrorTensionSistolica }}
         </p>
@@ -224,7 +208,7 @@ const mensajeErrorTemperaturaCorporal = computed(() => {
         <label for="tensionArterialDiastolica">Diastólica (mmHg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="tensionArterialDiastolica" min="40" max="150" />
+          v-model="tensionArterialDiastolica" :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min" :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max" />
         <p v-if="mensajeErrorTensionDiastolica" class="text-red-500 text-sm mt-1">
           {{ mensajeErrorTensionDiastolica }}
         </p>
@@ -239,7 +223,7 @@ const mensajeErrorTemperaturaCorporal = computed(() => {
       <div>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="frecuenciaCardiaca" min="40" max="150" />
+          v-model="frecuenciaCardiaca" :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min" :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max" />
         <p v-if="mensajeErrorFrecuenciaCardiaca" class="text-red-500 text-sm mt-1">
           {{ mensajeErrorFrecuenciaCardiaca }}
         </p>
@@ -256,7 +240,7 @@ const mensajeErrorTemperaturaCorporal = computed(() => {
       <div>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="frecuenciaRespiratoria" min="12" max="45" />
+          v-model="frecuenciaRespiratoria" :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min" :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max" />
         <p v-if="mensajeErrorFrecuenciaRespiratoria" class="text-red-500 text-sm mt-1">
           {{ mensajeErrorFrecuenciaRespiratoria }}
         </p>
@@ -273,7 +257,7 @@ const mensajeErrorTemperaturaCorporal = computed(() => {
       <div>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="temperaturaCorporal" min="35.0" max="40.0" step="0.1" />
+          v-model="temperaturaCorporal" :min="SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.min" :max="SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.max" step="0.1" />
         <p v-if="mensajeErrorTemperaturaCorporal" class="text-red-500 text-sm mt-1">
           {{ mensajeErrorTemperaturaCorporal }}
         </p>

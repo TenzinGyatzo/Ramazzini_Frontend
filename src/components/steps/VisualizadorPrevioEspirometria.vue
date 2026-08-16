@@ -5,7 +5,8 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/dates';
+import { formatDateDDMMYYYY } from '@/helpers/dates';
+import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import { usePeSectionsV2 } from '@/composables/usePeSectionsV2';
@@ -18,6 +19,7 @@ import { shouldShowPinpointVisual } from '@/helpers/sectionPinpointVisual';
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
+const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataPrevioEspirometria.fechaPrevioEspirometria);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
@@ -123,7 +125,7 @@ const sectionOutlineClass = (sectionId) =>
               EDAD
             </td>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">
-              {{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}
+              {{ edad }}
             </td>
           </tr>
           <tr class="odd:bg-white even:bg-gray-50">

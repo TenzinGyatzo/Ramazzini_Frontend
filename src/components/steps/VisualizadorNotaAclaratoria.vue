@@ -6,7 +6,8 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useDocumentosStore } from '@/stores/documentos';
-import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/dates';
+import { formatDateDDMMYYYY } from '@/helpers/dates';
+import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
@@ -15,6 +16,7 @@ import { resolveNombreFirmantePorReferencia } from '@/helpers/firmantePorUsuario
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
+const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataNotaAclaratoria.fechaNotaAclaratoria);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const documentos = useDocumentosStore();
@@ -263,11 +265,11 @@ const getAlcanceBadgeClasses = (alcance) => {
         <div class="w-full mb-1">
           <p class="text-justify font-light">
             Se trata de <span class="font-medium">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'un trabajador' : 'una trabajadora' }}</span> de 
-            <span class="font-medium">{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }} años</span> de edad, que labora en la empresa 
+            <span class="font-medium">{{ edad }} años</span> de edad, que labora en la empresa 
             <span class="font-medium">{{ empresas.currentEmpresa.nombreComercial }}</span>, ocupando el puesto de 
             <span class="font-medium">{{ trabajadores.currentTrabajador.puesto }}</span>, con escolaridad 
-            <span class="font-medium">{{ trabajadores.currentTrabajador.escolaridad }}</span><template v-if="calcularAntiguedad(trabajadores.currentTrabajador.fechaIngreso) !== '-'"> y una antigüedad de 
-            <span class="font-medium">{{ calcularAntiguedad(trabajadores.currentTrabajador.fechaIngreso) }}</span></template>. Estado civil: 
+            <span class="font-medium">{{ trabajadores.currentTrabajador.escolaridad }}</span><template v-if="antiguedad !== '-'"> y una antigüedad de 
+            <span class="font-medium">{{ antiguedad }}</span></template>. Estado civil: 
             <span class="font-medium">{{ trabajadores.currentTrabajador.estadoCivil }}</span>.
             <span v-if="trabajadores.currentTrabajador.curp"> CURP: <span class="font-medium">{{ trabajadores.currentTrabajador.curp }}</span></span>.
             <span v-if="trabajadores.currentTrabajador.numeroEmpleado"> Número de empleado: <span class="font-medium">{{ trabajadores.currentTrabajador.numeroEmpleado }}</span></span>.

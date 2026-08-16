@@ -3,12 +3,22 @@
  * Soporta message string, array, objeto anidado (VALIDATION_ERROR A1) y errors[] NOM-024.
  */
 
+import type { CurpIssue } from '@/utils/curp';
+import { issuesFromA1Details } from '@/utils/curp';
+
 interface CurpA1ErrorPayload {
   code?: string;
   ruleId?: string;
   summary?: string;
   userMessages?: string[];
   message?: string;
+  details?: Array<{
+    field?: string;
+    expected?: string;
+    gotFromCurp?: string;
+    code?: string;
+    positions?: number[];
+  }>;
 }
 
 function isCurpA1Payload(value: unknown): value is CurpA1ErrorPayload {
@@ -17,7 +27,7 @@ function isCurpA1Payload(value: unknown): value is CurpA1ErrorPayload {
   }
 
   const payload = value as CurpA1ErrorPayload;
-  return payload.ruleId === 'A1' || payload.code === 'VALIDATION_ERROR';
+  return payload.ruleId === 'A1';
 }
 
 function extractCurpA1Message(payload: CurpA1ErrorPayload): string | null {
@@ -110,6 +120,48 @@ function extractMessageFromData(data: Record<string, unknown>): string | null {
   }
 
   return null;
+}
+
+function getResponseData(error: unknown): Record<string, unknown> | null {
+  const axiosError = error as {
+    response?: { data?: Record<string, unknown> };
+  };
+  return axiosError.response?.data ?? null;
+}
+
+function resolveA1Payload(
+  data: Record<string, unknown>,
+): CurpA1ErrorPayload | null {
+  if (isCurpA1Payload(data)) {
+    return data;
+  }
+  const message = data.message;
+  if (message && typeof message === 'object' && isCurpA1Payload(message)) {
+    return message;
+  }
+  return null;
+}
+
+/**
+ * Extrae issues CURP A1 desde un error de API para feedback inline.
+ * Toast debe usar un mensaje corto; el detalle va inline.
+ */
+export function extractCurpA1Issues(error: unknown): CurpIssue[] {
+  const data = getResponseData(error);
+  if (!data) return [];
+
+  const payload = resolveA1Payload(data);
+  if (!payload?.details || !Array.isArray(payload.details)) {
+    return [];
+  }
+
+  return issuesFromA1Details(payload.details);
+}
+
+export function isCurpA1ApiError(error: unknown): boolean {
+  const data = getResponseData(error);
+  if (!data) return false;
+  return resolveA1Payload(data) !== null;
 }
 
 export function extractApiErrorMessage(

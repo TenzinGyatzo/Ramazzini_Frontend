@@ -307,6 +307,8 @@ const normalizeGeoValue = (value) => {
 };
 
 const handleSubmit = async (data) => {
+  if (proveedorSalud.saving) return;
+
   const formData = new FormData();
   const proveedorActual = proveedorSalud.proveedorSalud;
   const isUpdate = !!proveedorActual?._id;
@@ -418,6 +420,7 @@ const volver = () => {
 };
 
 const handleRegimenChange = async (reason) => {
+  if (proveedorSalud.saving) return;
   try {
     await proveedorSalud.changeRegimenRegulatorio('SIRES_NOM024', reason);
     toast.open({
@@ -619,7 +622,7 @@ const logoSrc = computed(() => {
 
               <!-- Switch para Activar Semaforización -->
               <div>
-                <label class="block mt-4 font-medium text-lg text-gray-700">Activar Semaforización de Resultados🚦</label>
+                <label class="block mt-4 font-medium text-lg text-gray-700">Semaforización de Resultados🚦</label>
                 
                 <button
                   type="button"
@@ -839,7 +842,7 @@ const logoSrc = computed(() => {
               </RouterLink>
               <!-- Botón de Actualizar -->
               <div class="w-full sm:w-1/2">
-                <FormKit type="submit">
+                <FormKit type="submit" :disabled="proveedorSalud.saving">
                   <span v-if="proveedorSalud.saving">Guardando...</span>
                   <span v-else>Actualizar Datos</span>
                 </FormKit>
@@ -853,6 +856,7 @@ const logoSrc = computed(() => {
       <!-- Modal de cambio de régimen -->
       <ChangeRegimenModal
         v-if="showChangeRegimenModal"
+        :is-submitting="proveedorSalud.saving"
         @close="showChangeRegimenModal = false"
         @confirm="handleRegimenChange"
       />

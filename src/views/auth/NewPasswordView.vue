@@ -10,6 +10,7 @@ const router = useRouter();
 const token = route.params.token;
 
 const validToken = ref(false);
+const isSubmitting = ref(false);
 
 onMounted(async () => {
   try {
@@ -25,6 +26,8 @@ onMounted(async () => {
 });
 
 const handleSubmit = async ({ password }) => {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
   try {
     const { data } = await AuthAPI.updatePassword(token, { password });
     toast.open({
@@ -45,6 +48,8 @@ const handleSubmit = async ({ password }) => {
     setTimeout(() => {
       router.push({ name: "login" });
     }, 3000);
+  } finally {
+    isSubmitting.value = false;
   }
 };
 </script>
@@ -83,8 +88,9 @@ const handleSubmit = async ({ password }) => {
         />
 
         <div class="w-full mt-6">
-          <FormKit type="submit">
-            <span class="mr-2">Guardar</span>
+          <FormKit type="submit" :disabled="isSubmitting">
+            <span v-if="isSubmitting" class="mr-2">Guardando...</span>
+            <span v-else class="mr-2">Guardar</span>
           </FormKit>
         </div>
       </FormKit>

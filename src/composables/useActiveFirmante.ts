@@ -3,6 +3,7 @@ import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 /**
  * Composable para obtener el firmante activo del usuario actual
@@ -14,6 +15,7 @@ export function useActiveFirmante() {
   const medicoFirmanteStore = useMedicoFirmanteStore();
   const enfermeraFirmanteStore = useEnfermeraFirmanteStore();
   const tecnicoFirmanteStore = useTecnicoFirmanteStore();
+  const proveedorSaludStore = useProveedorSaludStore();
 
   /**
    * Determina el firmante activo según prioridad
@@ -53,7 +55,10 @@ export function useActiveFirmante() {
       return 'Profesional no identificado';
     }
 
-    return formatearTituloYNombreFirmante(firmanteData.firmante) || 'Profesional no identificado';
+    return formatearTituloYNombreFirmante(
+      firmanteData.firmante,
+      proveedorSaludStore.regimenRegulatorio,
+    ) || 'Profesional no identificado';
   });
 
   return {

@@ -70,7 +70,12 @@ const {
   onClose: closeModal,
 });
 
+const isSubmitting = ref(false);
+
 const handleSubmit = async () => {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
+
   try {
     const trabajadorId = trabajadores.currentTrabajador?._id;
     const empresaId = empresas.currentEmpresaId;
@@ -87,6 +92,8 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error(error);
     toast.open({ message: 'Error al actualizar los agentes de riesgo.', type: 'error' });
+  } finally {
+    isSubmitting.value = false;
   }
 };
 </script>
@@ -149,9 +156,13 @@ const handleSubmit = async () => {
           </div>
         </div>
 
-        <button @click="handleSubmit"
-          class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all">
-          Guardar cambios
+        <button
+          @click="handleSubmit"
+          :disabled="isSubmitting"
+          class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span v-if="isSubmitting">Guardando...</span>
+          <span v-else>Guardar cambios</span>
         </button>
 
         <button @click="requestDismiss"

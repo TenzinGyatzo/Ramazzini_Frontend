@@ -1,8 +1,21 @@
 import { generateClasses } from "@formkit/themes";
-import { calcularEdadPrecisa } from "./src/helpers/dates";
+import { isBirthDateInRegistrationRange } from "./src/helpers/dates";
+import {
+  PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE,
+  PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE,
+  validatePersonNameCharactersRule,
+} from "./src/helpers/personNameCharacterValidation";
 
 export const FIRMANTE_EDAD_MINIMA = 18;
 export const FIRMANTE_EDAD_MAXIMA = 90;
+export const TRABAJADOR_EDAD_MINIMA = 18;
+export const TRABAJADOR_EDAD_MAXIMA = 100;
+export const PERSON_NAME_MIN_LENGTH = 2;
+export const PERSON_NAME_MAX_LENGTH = 50;
+
+export const PERSON_NAME_VALIDATION_MESSAGE = `Debe tener entre ${PERSON_NAME_MIN_LENGTH} y ${PERSON_NAME_MAX_LENGTH} caracteres.`;
+
+export { PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE, PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE };
 
 const rfcValidation = ({ value }) => {
   // Validación flexible para identificadores de empresa (RFC, Registro Patronal, etc.)
@@ -73,8 +86,62 @@ const curpRenapoValidation = ({ value }) => {
 
 const fechaNacimientoFirmanteValidation = ({ value }) => {
   if (!value) return false;
-  const edad = calcularEdadPrecisa(value);
-  return edad >= FIRMANTE_EDAD_MINIMA && edad <= FIRMANTE_EDAD_MAXIMA;
+  return isBirthDateInRegistrationRange(
+    value,
+    new Date(),
+    FIRMANTE_EDAD_MINIMA,
+    FIRMANTE_EDAD_MAXIMA,
+  );
+};
+
+const fechaNacimientoTrabajadorValidation = ({ value }) => {
+  if (!value) return false;
+  return isBirthDateInRegistrationRange(
+    value,
+    new Date(),
+    TRABAJADOR_EDAD_MINIMA,
+    TRABAJADOR_EDAD_MAXIMA,
+  );
+};
+
+const isValidPersonNameLength = (value) => {
+  const normalized = String(value ?? '').trim().replace(/\s+/g, ' ');
+  return (
+    normalized.length >= PERSON_NAME_MIN_LENGTH &&
+    normalized.length <= PERSON_NAME_MAX_LENGTH
+  );
+};
+
+const personNameValidation = ({ value }) => isValidPersonNameLength(value);
+
+const personNameOptionalValidation = ({ value }) => {
+  const trimmed = String(value ?? '').trim();
+  if (trimmed === '') return true;
+  return isValidPersonNameLength(trimmed);
+};
+
+const personNameCharactersValidation = ({ value }) => {
+  const trimmed = String(value ?? '').trim();
+  if (trimmed === '') return true;
+  return validatePersonNameCharactersRule(trimmed, 'SIRES_NOM024');
+};
+
+const personNameOptionalCharactersValidation = ({ value }) => {
+  const trimmed = String(value ?? '').trim();
+  if (trimmed === '') return true;
+  return validatePersonNameCharactersRule(trimmed, 'SIRES_NOM024');
+};
+
+const personNameCharactersSinRegimenValidation = ({ value }) => {
+  const trimmed = String(value ?? '').trim();
+  if (trimmed === '') return true;
+  return validatePersonNameCharactersRule(trimmed, 'SIN_REGIMEN');
+};
+
+const personNameOptionalCharactersSinRegimenValidation = ({ value }) => {
+  const trimmed = String(value ?? '').trim();
+  if (trimmed === '') return true;
+  return validatePersonNameCharactersRule(trimmed, 'SIN_REGIMEN');
 };
 
 const config = {
@@ -82,18 +149,19 @@ const config = {
     classes: generateClasses({
       global: {
         wrapper: "space-y-0 mb-0",
-        message: "text-red-700 text-sm mb-0",
+        messages: "empty:hidden m-0 p-0",
+        message: "text-red-700 text-sm mt-0.5 mb-2 leading-snug",
         label: "block font-medium text-lg text-gray-700",
         input:
-         "w-full h-15 p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3",
+         "w-full h-15 p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-0",
       },
       select: {
         input:
-          "w-full h-15 p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3",
+          "w-full h-15 p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-0",
       },
       date: {
         input:
-          "w-full h-15 p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-3",
+          "w-full h-15 p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mb-0",
       },
       submit: {
         input:
@@ -118,6 +186,13 @@ const config = {
       curpValidation,
       curpRenapoValidation,
       fechaNacimientoFirmanteValidation,
+      fechaNacimientoTrabajadorValidation,
+      personNameValidation,
+      personNameOptionalValidation,
+      personNameCharactersValidation,
+      personNameOptionalCharactersValidation,
+      personNameCharactersSinRegimenValidation,
+      personNameOptionalCharactersSinRegimenValidation,
     },
   },
 };

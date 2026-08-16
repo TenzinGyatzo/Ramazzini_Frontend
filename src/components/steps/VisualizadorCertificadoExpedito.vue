@@ -1,13 +1,13 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { formatDateDDMMYYYY } from '@/helpers/dates';
+import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
-import { calcularEdad } from '@/helpers/dates';
 import DocumentosAPI from '@/api/DocumentosAPI';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useUserStore } from '@/stores/user';
@@ -16,6 +16,7 @@ import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
+const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataCertificadoExpedito.fechaCertificadoExpedito);
 const steps = useStepsStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
 const userStore = useUserStore();
@@ -25,7 +26,10 @@ const isMX = computed(() => proveedorSaludStore.isMX);
 const nombreCompletoMedico = computed(() => {
   const medico = medicoFirmanteStore.medicoFirmante;
   if (!medico) return '';
-  return formatearTituloYNombreFirmante(medico);
+  return formatearTituloYNombreFirmante(
+    medico,
+    proveedorSaludStore.regimenRegulatorio,
+  );
 });
 
 const user = computed(() => userStore.user);
@@ -147,7 +151,7 @@ function getGradoSaludFormateado(gradoSalud) {
             ? ' '
             : (trabajadores.currentTrabajador.sexo === 'Femenino' ? 'a la' : 'al') + ' C. ' }}
           <span class="font-medium">{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</span> 
-          de <span class="font-medium">{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}</span> años de edad. Concluyo que:
+          de <span class="font-medium">{{ edad }}</span> años de edad. Concluyo que:
         </p>
      </div>
 
@@ -157,7 +161,7 @@ function getGradoSaludFormateado(gradoSalud) {
             ? ' '
             : (trabajadores.currentTrabajador.sexo === 'Femenino' ? 'a la' : 'al') + ' C. ' }}
           <span class="font-medium">{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</span> 
-          de <span class="font-medium">{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }}</span> años de edad. Concluyo que:
+          de <span class="font-medium">{{ edad }}</span> años de edad. Concluyo que:
         </p>
      </div>
 

@@ -3,6 +3,10 @@ import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import {
+  SOMATOMETRIA_SIGNOS_RANGES,
+  mensajeErrorSomatometriaSignosField,
+} from '@/helpers/somatometriaSignosRanges';
 
 const props = defineProps({
   variant: {
@@ -137,29 +141,17 @@ function setCategoriaCircunferenciaCintura() {
   formDataExploracionFisica.categoriaCircunferenciaCintura = categoria;
 }
 
-const mensajeErrorPeso = computed(() => {
-  return peso.value < 45 
-    ? 'Debe ser mínimo 45' 
-    : peso.value > 200 
-      ? 'Debe ser máximo 200' 
-      : '';
-});
+const mensajeErrorPeso = computed(() =>
+  mensajeErrorSomatometriaSignosField('peso', peso.value),
+);
 
-const mensajeErrorAltura = computed(() => {
-  return altura.value < 1.40 
-    ? 'Debe ser mínimo 1.40 m' 
-    : altura.value > 2.20 
-      ? 'Debe ser máximo 2.20 m' 
-      : '';
-});
+const mensajeErrorAltura = computed(() =>
+  mensajeErrorSomatometriaSignosField('altura', altura.value),
+);
 
-const mensajeErrorCircunferenciaCintura = computed(() => {
-  return circunferenciaCintura.value < 50 
-    ? 'Debe ser mínimo 50 cm' 
-    : circunferenciaCintura.value > 160 
-      ? 'Debe ser máximo 160 cm' 
-      : '';
-});
+const mensajeErrorCircunferenciaCintura = computed(() =>
+  mensajeErrorSomatometriaSignosField('circunferenciaCintura', circunferenciaCintura.value),
+);
 </script>
 
 <template>
@@ -179,10 +171,10 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
             ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
             : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
           v-model="peso" 
-          min="45" 
-          max="200" 
+          :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min" 
+          :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max" 
           step="0.1"
-          placeholder="45-200"
+          :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.peso.min}-${SOMATOMETRIA_SIGNOS_RANGES.peso.max}`"
         >
         <transition
           enter-active-class="transition-all duration-200 ease-out"
@@ -210,9 +202,9 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
             : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
           v-model="altura" 
           step="0.01" 
-          min="1.40" 
-          max="2.20"
-          placeholder="1.40-2.20"
+          :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min" 
+          :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max"
+          :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.altura.min}-${SOMATOMETRIA_SIGNOS_RANGES.altura.max}`"
         />
         <transition
           enter-active-class="transition-all duration-200 ease-out"
@@ -293,8 +285,9 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
                 ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
                 : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
               v-model="circunferenciaCintura" 
-              min="50"
-              placeholder="50-160"
+              :min="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min"
+              :max="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max"
+              :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min}-${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max}`"
             />
           </div>
           <transition

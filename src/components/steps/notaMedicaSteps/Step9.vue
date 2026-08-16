@@ -5,8 +5,6 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import CIE10Autocomplete from '@/components/selectors/CIE10Autocomplete.vue';
-import CIE10ComplementaryDiagnoses from '@/components/selectors/CIE10ComplementaryDiagnoses.vue';
-import { validateCIE10Duplicates, validateCIE10SexAge, extractCIE10Code } from '@/helpers/cie10';
 import {
   validateDiagnosticoPrincipalSis,
   fetchMedicoEnfermeraFirmantes,
@@ -35,7 +33,7 @@ const showSiresUI = computed(() => proveedorSaludStore.showSiresUI);
 const esMujer = computed(() => trabajadores.currentTrabajador?.sexo === 'Femenino');
 
 const codigoCIE10Principal = ref('');
-const codigosCIE10Complementarios = ref([]);
+const diagnosticoTextoPrincipal = ref('');
 
 // NOM-024 GIIS-B015: Nuevos campos
 const relacionTemporal = ref(null); // 0=Primera Vez, 1=Subsecuente
@@ -111,7 +109,7 @@ onMounted(async () => {
     // Cargar desde documento existente
     if (documentos.currentDocument) {
         codigoCIE10Principal.value = documentos.currentDocument.codigoCIE10Principal || '';
-        codigosCIE10Complementarios.value = documentos.currentDocument.codigosCIE10Complementarios || [];
+        diagnosticoTextoPrincipal.value = documentos.currentDocument.diagnosticoTextoPrincipal || '';
         relacionTemporal.value = documentos.currentDocument.relacionTemporal ?? null;
         confirmacionDiagnostica.value = documentos.currentDocument.confirmacionDiagnostica ?? false;
     }
@@ -120,8 +118,8 @@ onMounted(async () => {
     if (formDataNotaMedica.codigoCIE10Principal) {
         codigoCIE10Principal.value = formDataNotaMedica.codigoCIE10Principal;
     }
-    if (formDataNotaMedica.codigosCIE10Complementarios) {
-        codigosCIE10Complementarios.value = formDataNotaMedica.codigosCIE10Complementarios;
+    if (formDataNotaMedica.diagnosticoTextoPrincipal) {
+        diagnosticoTextoPrincipal.value = formDataNotaMedica.diagnosticoTextoPrincipal;
     }
     if (formDataNotaMedica.relacionTemporal !== undefined) {
         relacionTemporal.value = formDataNotaMedica.relacionTemporal;
@@ -156,14 +154,13 @@ onMounted(async () => {
     document.addEventListener('keydown', relacionTemporalEscapeKeyHandler);
 
     scheduleValidatePrincipalSis();
-    validateComplementariesSexAge();
 });
 
 onUnmounted(() => {
     if (principalSisDebounceTimer) clearTimeout(principalSisDebounceTimer);
     // Guardar en formData
     formDataNotaMedica.codigoCIE10Principal = codigoCIE10Principal.value || '';
-    formDataNotaMedica.codigosCIE10Complementarios = codigosCIE10Complementarios.value || [];
+    formDataNotaMedica.diagnosticoTextoPrincipal = diagnosticoTextoPrincipal.value || '';
     if (showSiresUI.value) {
         formDataNotaMedica.relacionTemporal = relacionTemporal.value ?? undefined;
     } else {
@@ -191,9 +188,9 @@ watch(codigoCIE10Principal, () => {
     scheduleValidatePrincipalSis();
 });
 
-watch(codigosCIE10Complementarios, (newValue) => {
-    formDataNotaMedica.codigosCIE10Complementarios = newValue;
-}, { deep: true });
+watch(diagnosticoTextoPrincipal, (newValue) => {
+    formDataNotaMedica.diagnosticoTextoPrincipal = newValue || '';
+});
 
 watch(relacionTemporal, (newValue) => {
     if (!showSiresUI.value) {
@@ -285,32 +282,8 @@ const getRelacionTemporalTooltipPosition = () => {
 let relacionTemporalClickOutsideHandler = null;
 let relacionTemporalEscapeKeyHandler = null;
 
-// Validación de duplicidades CIE-10
-const cie10Validation = computed(() => {
-  return validateCIE10Duplicates({
-    codigoCIE10Principal: codigoCIE10Principal.value,
-    codigosCIE10Complementarios: codigosCIE10Complementarios.value,
-    codigoCIEDiagnostico2: null, // En Step6 no validamos diagnóstico 2
-    codigoCIEDiagnostico3: null // En Step6 no validamos diagnóstico 3
-  });
-});
-
-// Mensajes de error específicos para mostrar en Step6
-const principalInComplementariesError = computed(() => {
-  return cie10Validation.value.issues.find(
-    issue => issue.type === 'principal_in_complementaries'
-  )?.message || null;
-});
-
-const complementariesDuplicateError = computed(() => {
-  return cie10Validation.value.issues.find(
-    issue => issue.type === 'complementaries_duplicate'
-  )?.message || null;
-});
-
 // Validación DIAGNOSTICO_SIS del diagnóstico principal (inline)
 const principalSisError = ref('');
-const complementariesSexAgeErrors = ref([]);
 let principalSisDebounceTimer = null;
 
 const loadFirmantes = async () => {
@@ -360,55 +333,20 @@ const scheduleValidatePrincipalSis = () => {
   }, 350);
 };
 
-// Validación de sexo/edad para complementarios
-const validateComplementariesSexAge = async () => {
-  complementariesSexAgeErrors.value = [];
-
-  const trabajador = trabajadores.currentTrabajador;
-  if (!trabajador || !trabajador.sexo || !trabajador.fechaNacimiento) {
-    return;
-  }
-
-  try {
-    const issues = await validateCIE10SexAge({
-      codigoCIE10Principal: null,
-      codigosCIE10Complementarios: codigosCIE10Complementarios.value,
-      codigoCIEDiagnostico2: null,
-      codigoCIEDiagnostico3: null,
-      trabajadorSexo: trabajador.sexo,
-      trabajadorFechaNacimiento: new Date(trabajador.fechaNacimiento),
-      fechaNotaMedica: fechaNotaMedica.value
-    });
-
-    const complementariesIssues = issues.filter(
-      issue => issue.field === 'codigosCIE10Complementarios'
-    );
-    if (complementariesIssues.length > 0) {
-      complementariesSexAgeErrors.value = complementariesIssues.map(issue => issue.messageInline);
-    }
-  } catch (error) {
-    console.error('Error validando sexo/edad CIE-10 complementarios:', error);
-  }
-};
-
 // Watchers para recalcular validación cuando cambien los valores
 watch(fechaNotaMedica, () => {
   scheduleValidatePrincipalSis();
-  validateComplementariesSexAge();
 });
-watch(codigosCIE10Complementarios, validateComplementariesSexAge, { deep: true });
 watch(
   () => trabajadores.currentTrabajador?.sexo,
   () => {
     scheduleValidatePrincipalSis();
-    validateComplementariesSexAge();
   }
 );
 watch(
   () => trabajadores.currentTrabajador?.fechaNacimiento,
   () => {
     scheduleValidatePrincipalSis();
-    validateComplementariesSexAge();
   }
 );
 watch(
@@ -615,57 +553,20 @@ watch(
             </p>
         </div>
 
-        <!-- 2. Diagnósticos Relacionados/Complementarios -->
-        <div :class="variant === 'compact' ? 'space-y-1.5 pt-1' : 'space-y-2'">
-            <h3
-                v-if="variant !== 'compact'"
-                class="text-lg font-semibold text-gray-800"
-            >
-                Complementar Diagnóstico
-            </h3>
-            <p
-                v-else
-                class="text-xs text-gray-500 leading-snug"
-            >
-                Complementar el diagnóstico principal
+        <!-- 2. Descripción complementaria -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Descripción complementaria
+            </label>
+            <input
+                class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                v-model="diagnosticoTextoPrincipal"
+                placeholder="Descripción del diagnóstico..."
+                data-skip-validation
+            />
+            <p class="mt-1 text-xs text-gray-500">
+                Puede complementar el diagnóstico codificado con texto libre adicional
             </p>
-            
-            <div>
-                <CIE10ComplementaryDiagnoses
-                    v-model="codigosCIE10Complementarios"
-                    :trabajadorId="trabajadores.currentTrabajadorId"
-                    :fechaConsulta="fechaNotaMedica"
-                />
-
-                <!-- Avisos de duplicidad -->
-                <div v-if="principalInComplementariesError || complementariesDuplicateError" class="mt-3 space-y-2">
-                    <Transition name="fade">
-                        <div v-if="principalInComplementariesError" class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
-                            <i class="fas fa-exclamation-triangle mt-0.5"></i>
-                            <span class="flex-1 font-medium">{{ principalInComplementariesError }}</span>
-                        </div>
-                    </Transition>
-                    <Transition name="fade">
-                        <div v-if="complementariesDuplicateError" class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
-                            <i class="fas fa-exclamation-triangle mt-0.5"></i>
-                            <span class="flex-1 font-medium">{{ complementariesDuplicateError }}</span>
-                        </div>
-                    </Transition>
-                </div>
-
-                <!-- Mensajes de error por sexo/edad para complementarios -->
-                <div v-if="complementariesSexAgeErrors.length > 0" class="mt-2 space-y-2">
-                    <TransitionGroup name="fade">
-                        <div v-for="(error, index) in complementariesSexAgeErrors" 
-                             :key="index"
-                             class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
-                            <i class="fas fa-exclamation-triangle mt-0.5"></i>
-                            <span class="flex-1 font-medium">{{ error }}</span>
-                        </div>
-                    </TransitionGroup>
-                </div>
-
-            </div>
         </div>
     </div>
 </template>

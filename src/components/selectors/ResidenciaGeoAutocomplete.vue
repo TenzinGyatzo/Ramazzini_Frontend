@@ -15,6 +15,10 @@ import {
   isEntidadResidenciaEspecial,
 } from '@/helpers/giisResidenciaGeo';
 import {
+  filterLocalidadCatalogEntries,
+  filterMunicipioCatalogEntries,
+} from '@/helpers/geoSelectorRules';
+import {
   buildLocalidadSentinelOption,
   buildMunicipioSentinelOption,
   getResidenciaUiState,
@@ -45,6 +49,10 @@ const props = defineProps({
   required: {
     type: Boolean,
     default: false,
+  },
+  geoContext: {
+    type: String,
+    default: 'trabajador',
   },
 });
 
@@ -79,7 +87,7 @@ const residenciaFields = computed(() => ({
   localidadResidencia: props.localidadResidencia,
 }));
 
-const uiState = computed(() => getResidenciaUiState(residenciaFields.value));
+const uiState = computed(() => getResidenciaUiState(residenciaFields.value, props.geoContext));
 
 const municipioLocked = computed(() => uiState.value.municipio.locked);
 const localidadLocked = computed(() => uiState.value.localidad.locked);
@@ -110,14 +118,26 @@ let municipioDebounceTimer = null;
 let localidadDebounceTimer = null;
 
 const buildMunicipioSentinels = () =>
-  uiState.value.municipio.sentinelCodes.map((code) =>
-    buildMunicipioSentinelOption(code),
+  filterMunicipioCatalogEntries(
+    uiState.value.municipio.sentinelCodes.map((code) =>
+      buildMunicipioSentinelOption(code),
+    ),
+    props.geoContext,
   );
 
 const buildLocalidadSentinels = () =>
-  uiState.value.localidad.sentinelCodes.map((code) =>
-    buildLocalidadSentinelOption(code),
+  filterLocalidadCatalogEntries(
+    uiState.value.localidad.sentinelCodes.map((code) =>
+      buildLocalidadSentinelOption(code),
+    ),
+    props.geoContext,
   );
+
+const filterMunicipiosForContext = (entries) =>
+  filterMunicipioCatalogEntries(sortMunicipiosByCode(entries || []), props.geoContext);
+
+const filterLocalidadesForContext = (entries) =>
+  filterLocalidadCatalogEntries(entries || [], props.geoContext);
 
 const resolveMunicipioSentinel = (estadoCode, municipioCode) => {
   if (isEntidadResidenciaEspecial(estadoCode)) {
@@ -177,7 +197,7 @@ const loadMunicipiosForEstado = async (estadoCode) => {
 
   try {
     const { data } = await CatalogsAPI.getMunicipios(estadoCode);
-    municipiosDisponibles.value = sortMunicipiosByCode(data || []);
+    municipiosDisponibles.value = filterMunicipiosForContext(data || []);
   } catch (err) {
     console.error('Error al cargar municipios:', err);
     municipiosDisponibles.value = [];
@@ -202,7 +222,7 @@ const loadAllMunicipios = async () => {
     const { data } = await CatalogsAPI.getMunicipios(props.estadoResidencia);
     municipioResults.value = [
       ...buildMunicipioSentinels(),
-      ...sortMunicipiosByCode(data || []),
+      ...filterMunicipiosForContext(data || []),
     ];
     municipioShowResults.value = true;
   } catch (err) {
@@ -239,7 +259,7 @@ const loadAllLocalidades = async () => {
     );
     localidadResults.value = [
       ...buildLocalidadSentinels(),
-      ...(data || []),
+      ...filterLocalidadesForContext(data || []),
     ];
     localidadShowResults.value = true;
   } catch (err) {
@@ -293,7 +313,7 @@ const searchMunicipio = async (query) => {
 
     municipioResults.value = [
       ...matchingSentinels,
-      ...sortMunicipiosByCode(data || []),
+      ...filterMunicipiosForContext(data || []),
     ];
     municipioShowResults.value = true;
   } catch (err) {
@@ -335,7 +355,10 @@ const searchLocalidad = async (query) => {
         sentinel.description.toLowerCase().includes(lowerQuery),
     );
 
-    localidadResults.value = [...matchingSentinels, ...(data || [])];
+    localidadResults.value = [
+      ...matchingSentinels,
+      ...filterLocalidadesForContext(data || []),
+    ];
     localidadShowResults.value = true;
   } catch (err) {
     console.error('Error al buscar localidades:', err);
@@ -657,6 +680,7 @@ const {
           :required="required"
           mode="residencia"
           :pais-residencia="paisResidencia"
+          :geo-context="geoContext"
         />
       </div>
 

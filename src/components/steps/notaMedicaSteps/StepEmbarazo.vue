@@ -46,7 +46,7 @@ function aplicarNoAplicaPorEdad() {
 const edadTrabajadora = computed(() => {
   const fechaNac = trabajadores.currentTrabajador?.fechaNacimiento;
   if (!fechaNac) return null;
-  return calcularEdad(fechaNac);
+  return calcularEdad(fechaNac, formDataNotaMedica.fechaNotaMedica ?? undefined);
 });
 
 const edadFueraDeRango = computed(() => {

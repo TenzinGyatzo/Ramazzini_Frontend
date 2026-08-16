@@ -1,12 +1,15 @@
 <script setup>
-import { inject } from 'vue';
+import { inject, ref } from 'vue';
 import { FormKit } from '@formkit/vue';
 import { reset } from '@formkit/core';
 import AuthAPI from '@/api/AuthAPI';
 
 const toast = inject('toast');
+const isSubmitting = ref(false);
 
 const handleSubmit = async (email) => {
+    if (isSubmitting.value) return;
+    isSubmitting.value = true;
     try {
         const { data } = await AuthAPI.forgotPassword(email);
         toast.open({
@@ -21,6 +24,8 @@ const handleSubmit = async (email) => {
             message: error.response.data.msg,
             position: 'top-left',
         });
+    } finally {
+        isSubmitting.value = false;
     }
 };
 
@@ -56,8 +61,9 @@ const handleSubmit = async (email) => {
             />
 
             <div class="w-full mt-6">
-            <FormKit type="submit">
-                <span class="mr-2">Enviar Instrucciones</span>
+            <FormKit type="submit" :disabled="isSubmitting">
+                <span v-if="isSubmitting" class="mr-2">Enviando...</span>
+                <span v-else class="mr-2">Enviar Instrucciones</span>
             </FormKit>
             </div>
         </FormKit>

@@ -59,6 +59,8 @@ describe('normalizeNotaMedicaDiagnosticosPv', () => {
       primeraVezDiagnostico3: null,
       codigoCIEDiagnostico3: 'B000',
       confirmacionDiagnostica2: false,
+      diagnosticoTexto: 'texto diag 2',
+      diagnosticoTexto3: 'texto diag 3',
     };
     normalizeNotaMedicaDiagnosticosPv(form);
     expect(form.primeraVezDiagnostico2).toBeUndefined();
@@ -66,6 +68,8 @@ describe('normalizeNotaMedicaDiagnosticosPv', () => {
     expect(form.primeraVezDiagnostico3).toBeUndefined();
     expect(form.codigoCIEDiagnostico3).toBe('');
     expect(form.confirmacionDiagnostica2).toBeUndefined();
+    expect(form.diagnosticoTexto).toBeUndefined();
+    expect(form.diagnosticoTexto3).toBeUndefined();
   });
 
   it('elimina -1 residual y no persiste no aplica en el formulario', () => {
@@ -121,7 +125,11 @@ describe('validateDiagnostico2Sis / validateDiagnostico3Sis', () => {
   it('exige código cuando pv es 0 o 1', async () => {
     const r0 = await validateDiagnostico2Sis({
       ...baseParams,
-      formData: { primeraVezDiagnostico2: 0, codigoCIEDiagnostico2: '' },
+      formData: {
+        codigoCIE10Principal: 'A000',
+        primeraVezDiagnostico2: 0,
+        codigoCIEDiagnostico2: '',
+      },
     });
     expect(r0.ok).toBe(false);
 
@@ -159,6 +167,19 @@ describe('validateDiagnostico2Sis / validateDiagnostico3Sis', () => {
     expect(fail.messageInline).toMatch(/oncología pediátrica|medicina del trabajo/i);
   });
 
+  it('bloquea diag2 si no hay diagnóstico principal (SIRES)', async () => {
+    const result = await validateDiagnostico2Sis({
+      ...baseParams,
+      formData: {
+        primeraVezDiagnostico2: 1,
+        codigoCIEDiagnostico2: 'B000',
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.messageInline).toMatch(/diagnóstico principal/i);
+    expect(result.messageToast).toMatch(/diagnóstico principal/i);
+  });
+
   it('bloquea diag3 si no hay comorbilidad 2 registrada (SIRES)', async () => {
     const result = await validateDiagnostico3Sis({
       ...baseParams,
@@ -170,6 +191,18 @@ describe('validateDiagnostico2Sis / validateDiagnostico3Sis', () => {
     });
     expect(result.ok).toBe(false);
     expect(result.messageInline).toMatch(/diagnóstico 2/i);
+  });
+
+  it('SIN_REGIMEN: bloquea diag2 sin diagnóstico principal', async () => {
+    const result = await validateDiagnostico2Sis({
+      ...baseParams,
+      showSiresUI: false,
+      formData: {
+        codigoCIEDiagnostico2: 'A000',
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.messageInline).toMatch(/diagnóstico principal/i);
   });
 
   it('SIN_REGIMEN: permite diag2 solo con código CIE', async () => {

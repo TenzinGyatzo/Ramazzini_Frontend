@@ -1,0 +1,10 @@
+export * from './curp-field-messages';
+export * from './curp-validation-catalog';
+export * from './curp-validator';
+export * from './validate-curp-live';
+export * from './curp-name.types';
+export * from './curp-name-segments';
+export * from './curp-position-diff';
+export * from './curp-inconvenient-words';
+export * from './suggest-curp-prefix';
+export { isGenericCurp } from '@/helpers/isGenericCurp';

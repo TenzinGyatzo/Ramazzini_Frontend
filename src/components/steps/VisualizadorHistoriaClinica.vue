@@ -5,8 +5,9 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { calcularEdad, calcularAntiguedad, convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
+import { convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
+import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import { useHcSectionsV2 } from '@/composables/useHcSectionsV2';
 import {
@@ -28,6 +29,10 @@ const historiaClinicaData = computed(() => {
   const raw = formDataPinia.formDataHistoriaClinica;
   return raw != null && typeof raw === 'object' ? raw : {};
 });
+
+const { edad, antiguedad } = useEdadAntiguedadDocumento(
+  () => historiaClinicaData.value.fechaHistoriaClinica,
+);
 
 const resolveNavStep = (legacyStep) => {
   if (hcSectionsV2Enabled.value) {
@@ -213,7 +218,7 @@ const antecedentesLaborales = ref([
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">
               {{
                 trabajadores.currentTrabajador?.fechaNacimiento
-                  ? calcularEdad(trabajadores.currentTrabajador.fechaNacimiento)
+                  ? edad
                   : ''
               }}
             </td>
@@ -237,7 +242,7 @@ const antecedentesLaborales = ref([
               ANTIGUEDAD
             </td>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">
-              {{ calcularAntiguedad(trabajadores.currentTrabajador?.fechaIngreso ?? '') }}
+              {{ antiguedad }}
             </td>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               TELÉFONO

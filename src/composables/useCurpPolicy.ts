@@ -52,7 +52,10 @@ export function useCurpPolicy() {
     return policy.value?.regime === 'SIN_REGIMEN';
   });
 
-  const sexoRequired = computed<boolean>(() => isSIRES.value);
+  /** SIN_REGIMEN: sexo opcional en formulario (alertas de perfil aparte). */
+  const sexoRequired = computed<boolean>(() => false);
+
+  const sexoCurpRequired = computed<boolean>(() => isSIRES.value);
 
   return {
     curpRequired,
@@ -65,5 +68,6 @@ export function useCurpPolicy() {
     isSinRegimen,
     isMX,
     sexoRequired,
+    sexoCurpRequired,
   };
 }

@@ -5,7 +5,8 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { calcularEdad, calcularAntiguedad, formatDateDDMMYYYY } from '@/helpers/dates';
+import { formatDateDDMMYYYY } from '@/helpers/dates';
+import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { useNom024Fields } from '@/composables/useNom024Fields';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
@@ -26,6 +27,7 @@ import { formatDerechohabienciaLabels } from '@/helpers/afiliacionCex';
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
+const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataNotaMedica.fechaNotaMedica);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const userStore = useUserStore();
@@ -242,11 +244,11 @@ const muestraDiagnostico3 = computed(() =>
     <div class="w-full mb-1">
       <p class="text-justify font-light">
         Se trata de <span class="font-medium">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'un trabajador' : 'una trabajadora' }}</span> de 
-        <span class="font-medium">{{ calcularEdad(trabajadores.currentTrabajador.fechaNacimiento) }} años</span> de edad, que labora en la empresa 
+        <span class="font-medium">{{ edad }} años</span> de edad, que labora en la empresa 
         <span class="font-medium">{{ empresas.currentEmpresa.nombreComercial }}</span>, ocupando el puesto de 
         <span class="font-medium">{{ trabajadores.currentTrabajador.puesto }}</span>, con escolaridad 
-        <span class="font-medium">{{ trabajadores.currentTrabajador.escolaridad }}</span><template v-if="calcularAntiguedad(trabajadores.currentTrabajador.fechaIngreso) !== '-'"> y una antigüedad de 
-        <span class="font-medium">{{ calcularAntiguedad(trabajadores.currentTrabajador.fechaIngreso) }}</span></template>. Estado civil: 
+        <span class="font-medium">{{ trabajadores.currentTrabajador.escolaridad }}</span><template v-if="antiguedad !== '-'"> y una antigüedad de 
+        <span class="font-medium">{{ antiguedad }}</span></template>. Estado civil: 
         <span class="font-medium">{{ trabajadores.currentTrabajador.estadoCivil }}</span>.
         <span v-if="trabajadores.currentTrabajador.numeroEmpleado"> Número de empleado: <span class="font-medium">{{ trabajadores.currentTrabajador.numeroEmpleado }}</span></span>.
       </p>
@@ -393,7 +395,7 @@ const muestraDiagnostico3 = computed(() =>
 
     <!-- Diagnóstico Principal -->
     <div 
-      v-if="formData.formDataNotaMedica.codigoCIE10Principal || formData.formDataNotaMedica.relacionTemporal !== undefined && formData.formDataNotaMedica.relacionTemporal !== null || (formData.formDataNotaMedica.codigosCIE10Complementarios && formData.formDataNotaMedica.codigosCIE10Complementarios.length > 0) || formData.formDataNotaMedica.confirmacionDiagnostica" 
+      v-if="formData.formDataNotaMedica.codigoCIE10Principal || formData.formDataNotaMedica.relacionTemporal !== undefined && formData.formDataNotaMedica.relacionTemporal !== null || formData.formDataNotaMedica.diagnosticoTextoPrincipal || (formData.formDataNotaMedica.codigosCIE10Complementarios && formData.formDataNotaMedica.codigosCIE10Complementarios.length > 0) || formData.formDataNotaMedica.confirmacionDiagnostica" 
       class="w-full mb-1 cursor-pointer" 
       :class="navOutlineClass(stepMap.diagnostico)" 
       @click="goToStep(stepMap.diagnostico)"
@@ -408,8 +410,13 @@ const muestraDiagnostico3 = computed(() =>
       <p v-if="formData.formDataNotaMedica.codigoCIE10Principal" class="text-justify font-medium mb-1">
         Diagnóstico Principal: <span class="font-light">{{ extractDescription(formData.formDataNotaMedica.codigoCIE10Principal) || extractCode(formData.formDataNotaMedica.codigoCIE10Principal) }}</span>
       </p>
+
+      <!-- Descripción complementaria (diagnóstico principal) -->
+      <p v-if="formData.formDataNotaMedica.diagnosticoTextoPrincipal" class="text-justify font-medium mb-1">
+        Descripción complementaria: <span class="font-light">{{ formData.formDataNotaMedica.diagnosticoTextoPrincipal }}</span>
+      </p>
       
-      <!-- CIE-10 Secundarios -->
+      <!-- CIE-10 Secundarios (notas históricas) -->
       <p v-if="formData.formDataNotaMedica.codigosCIE10Complementarios && formData.formDataNotaMedica.codigosCIE10Complementarios.length > 0" class="font-medium mb-1">
         Diagnosticos relacionados al diagnostico principal: 
         <span class="font-light text-justify">
@@ -475,6 +482,9 @@ const muestraDiagnostico3 = computed(() =>
       </p>
       <p v-if="muestraConfirmacionDiagnostica3 && formData.formDataNotaMedica.confirmacionDiagnostica3 !== undefined" class="text-justify font-medium mb-1">
         Confirmación Diagnóstica 3: <span class="font-light">{{ formData.formDataNotaMedica.confirmacionDiagnostica3 ? 'Sí' : 'No' }}</span>
+      </p>
+      <p v-if="formData.formDataNotaMedica.diagnosticoTexto3" class="text-justify font-medium">
+        Descripción complementaria: <span class="font-light">{{ formData.formDataNotaMedica.diagnosticoTexto3 }}</span>
       </p>
     </div>
     <div v-else class="w-full cursor-pointer text-gray-500 italic" :class="navOutlineClass(stepMap.comorbilidad3, true)" @click="goToStep(stepMap.comorbilidad3)">+ Agregar Diagnóstico 3</div>

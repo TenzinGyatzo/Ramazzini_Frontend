@@ -10,6 +10,7 @@ export const FIRMANTE_IMMUTABLE_PAYLOAD_FIELDS = [
   'segundoApellido',
   'fechaNacimiento',
   'sexo',
+  'sexoCURP',
   'entidadNacimiento',
   'paisNacimiento',
 ] as const;
@@ -22,6 +23,7 @@ export type FirmanteRecord = {
   segundoApellido?: string;
   fechaNacimiento?: string | Date;
   sexo?: string;
+  sexoCURP?: number;
   entidadNacimiento?: string;
   paisNacimiento?: number | string;
 } | null | undefined;

@@ -8,9 +8,11 @@ interface TecnicoFirmante {
   _id: string;
   nombre: string;
   curp?: string;
+  folio?: string; // NOM-024: Identificador en la UM (generado al crear)
   primerApellido?: string;
   segundoApellido?: string;
   sexo?: string;
+  sexoCURP?: number;
   tituloProfesional?: string;
   numeroCedulaProfesional?: string;
   nombreCredencialAdicional?: string;

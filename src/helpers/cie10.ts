@@ -49,7 +49,7 @@ export function normalizeCIE10Code(value: string | null | undefined): string | n
  * Tipo para los issues de validación
  */
 export interface CIE10ValidationIssue {
-  type: 'principal_in_complementaries' | 'complementaries_duplicate' | 'diagnostico2_equals_principal' | 'diagnostico2_equals_complementary' | 'diagnostico3_equals_principal' | 'diagnostico3_equals_complementary' | 'diagnostico3_equals_diagnostico2' | 'diagnostico3_sin_diagnostico2';
+  type: 'principal_in_complementaries' | 'complementaries_duplicate' | 'diagnostico2_equals_principal' | 'diagnostico2_equals_complementary' | 'diagnostico2_sin_principal' | 'diagnostico3_equals_principal' | 'diagnostico3_equals_complementary' | 'diagnostico3_equals_diagnostico2' | 'diagnostico3_sin_diagnostico2';
   code: string;
   message: string;
 }
@@ -117,8 +117,19 @@ export function validateCIE10Duplicates(payload: CIE10ValidationPayload): CIE10V
     payload.primeraVezDiagnostico2 === 0 || payload.primeraVezDiagnostico2 === 1;
   const pv3Activo =
     payload.primeraVezDiagnostico3 === 0 || payload.primeraVezDiagnostico3 === 1;
+  const diag2Registrado = pv2Activo || !!codigoDiagnostico2;
 
-  // Regla 0: Diagnóstico 3 requiere diagnóstico 2 registrado
+  // Regla 0a: Diagnóstico 2 requiere diagnóstico principal
+  if (diag2Registrado && !codigoPrincipal) {
+    issues.push({
+      type: 'diagnostico2_sin_principal',
+      code: codigoDiagnostico2 || '',
+      message:
+        'No puede registrar el diagnóstico 2 sin haber registrado antes el diagnóstico principal.',
+    });
+  }
+
+  // Regla 0b: Diagnóstico 3 requiere diagnóstico 2 registrado
   if (pv3Activo && !pv2Activo) {
     issues.push({
       type: 'diagnostico3_sin_diagnostico2',
@@ -267,6 +278,8 @@ export function generateBlockingToastMessage(issue: CIE10ValidationIssue): strin
       return `No puedes continuar: el código ${code} del diagnóstico 3 es igual a un diagnóstico complementario.`;
     case 'diagnostico3_equals_diagnostico2':
       return `No puedes continuar: el código ${code} del diagnóstico 3 es igual al diagnóstico 2.`;
+    case 'diagnostico2_sin_principal':
+      return 'No puedes continuar: debe registrar primero el diagnóstico principal antes del diagnóstico 2.';
     case 'diagnostico3_sin_diagnostico2':
       return 'No puedes continuar: debe registrar primero el diagnóstico 2 (comorbilidad) antes del diagnóstico 3.';
     default:
@@ -306,64 +319,142 @@ export interface CIE10Rule {
   diaCaInfantil?: boolean;
 }
 
-/**
- * Parsea un límite de edad del catálogo CIE-10
- * Formato: 3 dígitos + unidad (A/D/M/Y)
- * Ejemplos: "010A" (10 años), "028D" (28 días), "120A" (120 años), "NO" (sin límite)
- * 
- * @param value - Valor del límite de edad del catálogo (LINF/LSUP)
- * @returns Edad en años (número) o null si no hay límite
- */
-export function parseAgeLimit(value: string | null | undefined): number | null {
+export type CatalogAgeUnit = 'D' | 'M' | 'A';
+
+export interface CatalogAgeLimit {
+  value: number;
+  unit: CatalogAgeUnit;
+}
+
+/** Parsea LINF/LSUP a unidades nativas del catálogo. NO/vacío/inválido → null. */
+export function parseCatalogAgeLimit(
+  value: string | null | undefined,
+): CatalogAgeLimit | null {
   if (!value || typeof value !== 'string') {
     return null;
   }
 
   const trimmed = value.trim().toUpperCase();
-
-  // "NO" significa sin límite
   if (trimmed === 'NO' || trimmed === '') {
     return null;
   }
 
-  // Formato: 3 dígitos + unidad (A/D/M/Y)
-  // Ejemplos: "010A", "028D", "120A"
   const match = trimmed.match(/^(\d{3})([ADMY])$/);
-  
   if (!match) {
-    // Si el formato no coincide, intentar parsear como número plano (fallback)
+    return null;
+  }
+
+  const numericValue = parseInt(match[1], 10);
+  if (isNaN(numericValue) || numericValue < 0) {
+    return null;
+  }
+
+  const rawUnit = match[2];
+  const unit: CatalogAgeUnit = rawUnit === 'Y' ? 'A' : (rawUnit as CatalogAgeUnit);
+  return { value: numericValue, unit };
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function addCatalogAgeLimit(birthDate: Date, limit: CatalogAgeLimit): Date {
+  const result = startOfDay(birthDate);
+  if (limit.unit === 'D') {
+    result.setDate(result.getDate() + limit.value);
+    return result;
+  }
+  if (limit.unit === 'M') {
+    result.setMonth(result.getMonth() + limit.value);
+    return result;
+  }
+  result.setFullYear(result.getFullYear() + limit.value);
+  return result;
+}
+
+/**
+ * Parsea un límite de edad del catálogo CIE-10 a años (legado).
+ * Preferir parseCatalogAgeLimit + isAgeAllowedForLinfLsup.
+ */
+export function parseAgeLimit(value: string | null | undefined): number | null {
+  const parsed = parseCatalogAgeLimit(value);
+  if (!parsed) {
+    if (!value || typeof value !== 'string') {
+      return null;
+    }
+    const trimmed = value.trim().toUpperCase();
+    if (trimmed === 'NO' || trimmed === '') {
+      return null;
+    }
     const numValue = parseInt(trimmed, 10);
-    if (!isNaN(numValue) && numValue >= 0) {
+    if (!isNaN(numValue) && numValue >= 0 && /^\d+$/.test(trimmed)) {
       return numValue;
     }
     return null;
   }
 
-  const numericValue = parseInt(match[1], 10);
-  const unit = match[2];
-
-  if (isNaN(numericValue) || numericValue < 0) {
-    return null;
-  }
-
-  // Convertir a años según la unidad
-  switch (unit) {
-    case 'A': // Años (Años)
-    case 'Y': // Años (alternativa)
-      return numericValue;
-
-    case 'D': // Días (Días)
-      // Convertir días a años: días / 365.25 (considerando años bisiestos)
-      return numericValue / 365.25;
-
-    case 'M': // Meses (Meses)
-      // Convertir meses a años: meses / 12
-      return numericValue / 12;
-
+  switch (parsed.unit) {
+    case 'A':
+      return parsed.value;
+    case 'D':
+      return parsed.value / 365.25;
+    case 'M':
+      return parsed.value / 12;
     default:
-      // Unidad desconocida, asumir años como fallback
-      return numericValue;
+      return parsed.value;
   }
+}
+
+export type SexoBiologicoGiis = 1 | 2 | 3;
+
+/** LSEX DIAGNOSTICO_SIS: HOMBRE | MUJER | NO. Intersexual no restringe. */
+export function isSexAllowedForLsex(
+  lsex: string | null | undefined,
+  sexoBiologico: SexoBiologicoGiis | null,
+): boolean {
+  if (sexoBiologico === 3) return true;
+  if (!lsex || lsex.trim().toUpperCase() === 'NO') return true;
+  if (sexoBiologico === null) return true;
+
+  const lsexUpper = lsex.trim().toUpperCase();
+  const sexoLabel =
+    sexoBiologico === 1 ? 'HOMBRE' : sexoBiologico === 2 ? 'MUJER' : null;
+  if (!sexoLabel) return true;
+  if (lsexUpper === 'HOMBRE' || lsexUpper === 'MUJER') {
+    return lsexUpper === sexoLabel;
+  }
+  return true;
+}
+
+/**
+ * Valida LINF/LSUP por fechas de calendario (unidad D/M/A).
+ * Intervalo cerrado: el día exacto del límite es válido.
+ */
+export function isAgeAllowedForLinfLsup(
+  linf: string | null | undefined,
+  lsup: string | null | undefined,
+  fechaNacimiento: Date | null | undefined,
+  fechaNotaMedica: Date | null | undefined,
+): boolean {
+  if (!fechaNacimiento || !fechaNotaMedica) return true;
+  if (isNaN(fechaNacimiento.getTime()) || isNaN(fechaNotaMedica.getTime())) {
+    return true;
+  }
+
+  const birth = startOfDay(fechaNacimiento);
+  const ref = startOfDay(fechaNotaMedica);
+  const linfParsed = parseCatalogAgeLimit(linf);
+  const lsupParsed = parseCatalogAgeLimit(lsup);
+
+  if (linfParsed) {
+    const minDate = addCatalogAgeLimit(birth, linfParsed);
+    if (ref.getTime() < minDate.getTime()) return false;
+  }
+  if (lsupParsed) {
+    const maxDate = addCatalogAgeLimit(birth, lsupParsed);
+    if (ref.getTime() > maxDate.getTime()) return false;
+  }
+  return true;
 }
 
 /**
@@ -583,34 +674,18 @@ export async function validateCIE10SexAge(
       return;
     }
 
-    // Validar sexo (intersexual: solo aplica LINF/LSUP)
-    let sexoViolation = false;
-    if (sexoTrabajador !== 'INTERSEXUAL' && rule.lsex && rule.lsex !== 'NO') {
-      if (rule.lsex === 'HOMBRE' && sexoTrabajador !== 'HOMBRE') {
-        sexoViolation = true;
-      } else if (rule.lsex === 'MUJER' && sexoTrabajador !== 'MUJER') {
-        sexoViolation = true;
-      }
-      // "SI" generalmente significa solo HOMBRE en algunos catálogos
-      // Por seguridad, si el trabajador es MUJER y LSEX es "SI", considerar violación
-      if (rule.lsex === 'SI' && sexoTrabajador === 'MUJER') {
-        sexoViolation = true;
-      }
-    }
+    const sexoBiologico: SexoBiologicoGiis | null =
+      sexoTrabajador === 'HOMBRE' ? 1 : sexoTrabajador === 'MUJER' ? 2 : 3;
+    const sexoViolation =
+      sexoTrabajador !== 'INTERSEXUAL' &&
+      !isSexAllowedForLsex(rule.lsex, sexoBiologico);
 
-    // Validar edad
-    let edadViolation = false;
-    if (rule.linf || rule.lsup) {
-      const linfParsed = rule.linf ? parseAgeLimit(rule.linf) : null;
-      const lsupParsed = rule.lsup ? parseAgeLimit(rule.lsup) : null;
-
-      if (linfParsed !== null && edadTrabajador < linfParsed) {
-        edadViolation = true;
-      }
-      if (lsupParsed !== null && edadTrabajador > lsupParsed) {
-        edadViolation = true;
-      }
-    }
+    const edadViolation = !isAgeAllowedForLinfLsup(
+      rule.linf,
+      rule.lsup,
+      params.trabajadorFechaNacimiento,
+      params.fechaNotaMedica,
+    );
 
     // Crear issues si hay violaciones
     if (sexoViolation || edadViolation) {

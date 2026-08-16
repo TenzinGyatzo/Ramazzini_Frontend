@@ -43,6 +43,17 @@ export function isEntidadResidenciaEspecial(
   );
 }
 
+/** Trabajadores: entidad 00/99 exige CURP genérica XXXX999999XXXXXX99. */
+export function requiresGenericCurpForEntidadNacimiento(
+  entidad: string | undefined | null,
+): boolean {
+  const normalized = normalizeEntidadResidencia(entidad);
+  return (
+    normalized === GIIS_ENTIDAD_NO_ESPECIFICADO ||
+    normalized === GIIS_ENTIDAD_SE_IGNORA
+  );
+}
+
 export function getGiisGeoForEntidadResidencia(entidad: string): {
   municipio: string;
   localidad: string;

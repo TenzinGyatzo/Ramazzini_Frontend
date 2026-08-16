@@ -1,4 +1,15 @@
 import {
+  getAllowedEntidadCodesForPaisResidencia,
+  getExcludedEntidadCodes,
+  getMexicoEntidadResidenciaAllowedCodes,
+  isEntidadAllowedForPaisResidencia,
+  isEntidadEstatal,
+  isMexicoPais,
+  isNonMexicoPais,
+  normalizePaisCode,
+  type GeoFormContext,
+} from './geoSelectorRules';
+import {
   GIIS_ENTIDAD_NO_APLICA,
   GIIS_ENTIDAD_NO_ESPECIFICADO,
   GIIS_ENTIDAD_SE_IGNORA,
@@ -50,29 +61,25 @@ export type ResidenciaCoherenceTrigger =
 export function normalizePaisResidencia(
   value: string | number | null | undefined,
 ): number | null {
-  if (value === '' || value == null) return null;
-  const num = typeof value === 'number' ? value : Number(value);
-  return Number.isNaN(num) ? null : num;
+  return normalizePaisCode(value);
 }
 
 export function isMexicoResidenciaPais(
   pais: number | null | undefined,
 ): boolean {
-  return pais === PAIS_RESIDENCIA_MEXICO;
+  return isMexicoPais(pais);
 }
 
 export function isForeignResidenciaPais(
   pais: number | null | undefined,
 ): boolean {
-  return pais != null && pais !== PAIS_RESIDENCIA_MEXICO;
+  return isNonMexicoPais(pais);
 }
 
 export function isEntidadEstatalResidencia(
   entidad: string | undefined | null,
 ): boolean {
-  const normalized = normalizeEntidadResidencia(entidad);
-  const num = parseInt(normalized, 10);
-  return !Number.isNaN(num) && num >= 1 && num <= 32;
+  return isEntidadEstatal(entidad);
 }
 
 export function isMunicipioGiisSentinel(code: string | undefined | null): boolean {
@@ -95,25 +102,19 @@ export function isLocalidadGiisSentinel(code: string | undefined | null): boolea
   );
 }
 
-export function getMexicoEntidadAllowedCodes(): string[] {
-  const estatales = Array.from({ length: 32 }, (_, index) =>
-    String(index + 1).padStart(2, '0'),
-  );
-  return [GIIS_ENTIDAD_NO_ESPECIFICADO, GIIS_ENTIDAD_SE_IGNORA, ...estatales];
-}
-
-export function isEntidadAllowedForMexico(entidad: string): boolean {
-  return getMexicoEntidadAllowedCodes().includes(
-    normalizeEntidadResidencia(entidad),
-  );
-}
-
-export function getResidenciaUiState(fields: ResidenciaFields): ResidenciaUiState {
+export function getResidenciaUiState(
+  fields: ResidenciaFields,
+  geoContext: GeoFormContext = 'trabajador',
+): ResidenciaUiState {
   const pais = normalizePaisResidencia(fields.paisResidencia);
   const entidad = normalizeEntidadResidencia(fields.entidadResidencia);
   const municipio = String(fields.municipioResidencia ?? '').trim();
+  const allowedEntidadCodes = getAllowedEntidadCodesForPaisResidencia(
+    pais,
+    geoContext,
+  );
 
-  if (isForeignResidenciaPais(pais)) {
+  if (isNonMexicoPais(pais)) {
     return {
       entidad: {
         locked: true,
@@ -137,7 +138,7 @@ export function getResidenciaUiState(fields: ResidenciaFields): ResidenciaUiStat
     return {
       entidad: {
         locked: false,
-        allowedEntidadCodes: getMexicoEntidadAllowedCodes(),
+        allowedEntidadCodes,
       },
       municipio: {
         locked: true,
@@ -156,7 +157,7 @@ export function getResidenciaUiState(fields: ResidenciaFields): ResidenciaUiStat
     return {
       entidad: {
         locked: false,
-        allowedEntidadCodes: getMexicoEntidadAllowedCodes(),
+        allowedEntidadCodes,
       },
       municipio: {
         locked: true,
@@ -176,17 +177,26 @@ export function getResidenciaUiState(fields: ResidenciaFields): ResidenciaUiStat
       municipio === GIIS_MUNICIPIO_NO_ESPECIFICADO ||
       municipio === GIIS_MUNICIPIO_SE_IGNORA;
 
+    const municipioSentinels =
+      geoContext === 'firmante'
+        ? []
+        : [GIIS_MUNICIPIO_NO_ESPECIFICADO, GIIS_MUNICIPIO_SE_IGNORA];
+    const localidadSentinels =
+      geoContext === 'firmante' ||
+      !municipio ||
+      municipio === GIIS_MUNICIPIO_NO_ESPECIFICADO ||
+      municipio === GIIS_MUNICIPIO_SE_IGNORA
+        ? []
+        : [GIIS_LOCALIDAD_NO_ESPECIFICADO, GIIS_LOCALIDAD_SE_IGNORA];
+
     return {
       entidad: {
         locked: false,
-        allowedEntidadCodes: getMexicoEntidadAllowedCodes(),
+        allowedEntidadCodes,
       },
       municipio: {
         locked: false,
-        sentinelCodes: [
-          GIIS_MUNICIPIO_NO_ESPECIFICADO,
-          GIIS_MUNICIPIO_SE_IGNORA,
-        ],
+        sentinelCodes: municipioSentinels,
       },
       localidad: {
         locked: municipioLocked,
@@ -196,10 +206,27 @@ export function getResidenciaUiState(fields: ResidenciaFields): ResidenciaUiStat
             : municipio === GIIS_MUNICIPIO_SE_IGNORA
               ? GIIS_LOCALIDAD_SE_IGNORA
               : undefined,
-        sentinelCodes: [
-          GIIS_LOCALIDAD_NO_ESPECIFICADO,
-          GIIS_LOCALIDAD_SE_IGNORA,
-        ],
+        sentinelCodes: localidadSentinels,
+      },
+    };
+  }
+
+  if (isEntidadResidenciaEspecial(entidad)) {
+    const geo = getGiisGeoForEntidadResidencia(entidad);
+    return {
+      entidad: {
+        locked: false,
+        allowedEntidadCodes,
+      },
+      municipio: {
+        locked: true,
+        forcedValue: geo?.municipio,
+        sentinelCodes: [],
+      },
+      localidad: {
+        locked: true,
+        forcedValue: geo?.localidad,
+        sentinelCodes: [],
       },
     };
   }
@@ -207,7 +234,8 @@ export function getResidenciaUiState(fields: ResidenciaFields): ResidenciaUiStat
   return {
     entidad: {
       locked: false,
-      allowedEntidadCodes: pais === null ? undefined : getMexicoEntidadAllowedCodes(),
+      allowedEntidadCodes:
+        pais === null ? undefined : getMexicoEntidadResidenciaAllowedCodes(geoContext),
     },
     municipio: {
       locked: !entidad,
@@ -280,9 +308,36 @@ function applyMunicipioBranch(
   }
 }
 
+function clearInvalidResidenciaFields(
+  formulario: ResidenciaFields,
+  geoContext: GeoFormContext,
+): void {
+  const pais = normalizePaisResidencia(formulario.paisResidencia);
+  const entidad = normalizeEntidadResidencia(formulario.entidadResidencia);
+  if (!entidad) return;
+
+  const excluded = getExcludedEntidadCodes(geoContext);
+  if (excluded.includes(entidad)) {
+    formulario.entidadResidencia = '';
+    formulario.municipioResidencia = '';
+    formulario.localidadResidencia = '';
+    return;
+  }
+
+  if (
+    pais != null &&
+    !isEntidadAllowedForPaisResidencia(entidad, pais, geoContext)
+  ) {
+    formulario.entidadResidencia = '';
+    formulario.municipioResidencia = '';
+    formulario.localidadResidencia = '';
+  }
+}
+
 export function applyResidenciaCoherence(
   formulario: ResidenciaFields,
   trigger: ResidenciaCoherenceTrigger = 'init',
+  geoContext: GeoFormContext = 'trabajador',
 ): void {
   const pais = normalizePaisResidencia(formulario.paisResidencia);
 
@@ -291,17 +346,8 @@ export function applyResidenciaCoherence(
     return;
   }
 
-  if (trigger === 'pais' || trigger === 'init') {
-    const entidad = normalizeEntidadResidencia(formulario.entidadResidencia);
-    if (
-      entidad === GIIS_ENTIDAD_NO_APLICA ||
-      entidad === RENAPO_ENTIDAD_EXTRANJERO ||
-      (entidad && !isEntidadAllowedForMexico(entidad))
-    ) {
-      formulario.entidadResidencia = '';
-      formulario.municipioResidencia = '';
-      formulario.localidadResidencia = '';
-    }
+  if (trigger === 'pais' || trigger === 'entidad' || trigger === 'init') {
+    clearInvalidResidenciaFields(formulario, geoContext);
   }
 
   const entidad = normalizeEntidadResidencia(formulario.entidadResidencia);
@@ -309,16 +355,17 @@ export function applyResidenciaCoherence(
   if (
     (trigger === 'entidad' || trigger === 'init') &&
     entidad &&
-    isEntidadAllowedForMexico(entidad) &&
-    !isMexicoResidenciaPais(normalizePaisResidencia(formulario.paisResidencia))
+    isEntidadEstatalResidencia(entidad) &&
+    !isMexicoResidenciaPais(pais)
   ) {
     formulario.paisResidencia = PAIS_RESIDENCIA_MEXICO;
   }
 
-  if (!entidad) return;
+  const currentEntidad = normalizeEntidadResidencia(formulario.entidadResidencia);
+  if (!currentEntidad) return;
 
   if (trigger === 'pais' || trigger === 'entidad' || trigger === 'init') {
-    applyEntidadBranch(formulario, entidad);
+    applyEntidadBranch(formulario, currentEntidad);
   }
 
   const municipio = String(formulario.municipioResidencia ?? '').trim();
@@ -330,7 +377,7 @@ export function applyResidenciaCoherence(
     trigger === 'municipio' ||
     trigger === 'init'
   ) {
-    if (isEntidadEstatalResidencia(entidad)) {
+    if (isEntidadEstatalResidencia(currentEntidad)) {
       applyMunicipioBranch(formulario, municipio);
     }
   }
@@ -419,3 +466,9 @@ export function buildLocalidadSentinelOption(code: string) {
     description: LOCALIDAD_SENTINEL_LABELS[code] ?? code,
   };
 }
+
+// Re-export for backward compatibility
+export {
+  getMunicipioSentinelCodesForSelector,
+  getLocalidadSentinelCodesForSelector,
+} from './geoSelectorRules';

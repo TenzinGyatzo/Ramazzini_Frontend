@@ -161,52 +161,54 @@ const handleDrop = (event) => {
 };
 
 const proveedorSalud = computed(() => proveedorSaludStore.proveedorSalud);
+const isSubmitting = ref(false);
 
 // Función para manejar el envío del formulario
 const handleSubmit = async (data) => {
-
-  // Obtener el ID del usuario actual
-  const currentUserId = await ensureUserLoaded();
-  
-  if (!currentUserId) {
-    toast.open({ message: 'No se pudo identificar al usuario. Por favor, inicie sesión nuevamente.', type: 'error' });
-    return;
-  }
-
-  const formData = new FormData();
-
-  // Añadir los datos del formulario al FormData 
-  formData.append('nombreComercial', data.nombreComercial);
-  formData.append('razonSocial', data.razonSocial);
-  formData.append('RFC', data.RFC);
-  formData.append('giroDeEmpresa', data.giroDeEmpresa);
-  formData.append('createdBy', currentUserId);
-  formData.append('updatedBy', currentUserId);
-  formData.append('idProveedorSalud', proveedorSaludStore.proveedorSalud._id);
-
-  // Añadir el archivo del logotipo si existe
-  if (logotipoArchivo.value) {
-    formData.append('logotipoEmpresa', logotipoArchivo.value);
-  }
-
-  // Depuramos el contenido de FormData
-  // for (let [key, value] of formData.entries()) {
-  //     console.log(`${key}:`, value);
-  // }
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
 
   try {
-    if (empresas.currentEmpresa?._id) {
-      await empresas.updateEmpresaById(empresas.currentEmpresa._id, formData);
-      toast.open({ message: 'Empresa actualizada con éxito' });	
-    } else {
-      await empresas.createEmpresa(formData);
-      toast.open({ message: 'Empresa creada exitosamente' });	
+    // Obtener el ID del usuario actual
+    const currentUserId = await ensureUserLoaded();
+
+    if (!currentUserId) {
+      toast.open({ message: 'No se pudo identificar al usuario. Por favor, inicie sesión nuevamente.', type: 'error' });
+      return;
     }
-    forceClose();
-    empresas.fetchEmpresas(proveedorSaludStore.proveedorSalud._id);
-  } catch (error) {
-    console.log('Error al crear o actualizar la empresa:', error);
-    toast.open({ message: 'Hubo un error, por favor intente nuevamente.', type: 'error' });
+
+    const formData = new FormData();
+
+    // Añadir los datos del formulario al FormData
+    formData.append('nombreComercial', data.nombreComercial);
+    formData.append('razonSocial', data.razonSocial);
+    formData.append('RFC', data.RFC);
+    formData.append('giroDeEmpresa', data.giroDeEmpresa);
+    formData.append('createdBy', currentUserId);
+    formData.append('updatedBy', currentUserId);
+    formData.append('idProveedorSalud', proveedorSaludStore.proveedorSalud._id);
+
+    // Añadir el archivo del logotipo si existe
+    if (logotipoArchivo.value) {
+      formData.append('logotipoEmpresa', logotipoArchivo.value);
+    }
+
+    try {
+      if (empresas.currentEmpresa?._id) {
+        await empresas.updateEmpresaById(empresas.currentEmpresa._id, formData);
+        toast.open({ message: 'Empresa actualizada con éxito' });
+      } else {
+        await empresas.createEmpresa(formData);
+        toast.open({ message: 'Empresa creada exitosamente' });
+      }
+      forceClose();
+      empresas.fetchEmpresas(proveedorSaludStore.proveedorSalud._id);
+    } catch (error) {
+      console.log('Error al crear o actualizar la empresa:', error);
+      toast.open({ message: 'Hubo un error, por favor intente nuevamente.', type: 'error' });
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -348,8 +350,8 @@ const handleSubmit = async (data) => {
                 @click="requestDismiss">
                 Cerrar
               </button>
-              <FormKit type="submit" :disabled="empresas.loadingModal" outer-class="w-full sm:w-auto">
-                <span v-if="empresas.loadingModal">Guardando...</span>
+              <FormKit type="submit" :disabled="isSubmitting" outer-class="w-full sm:w-auto">
+                <span v-if="isSubmitting">Guardando...</span>
                 <span v-else>{{ empresas.currentEmpresa._id ? 'Actualizar Empresa' : 'Guardar Empresa' }}</span>
               </FormKit>
             </div>

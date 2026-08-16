@@ -16,6 +16,16 @@ import {
   getRamazziniLetraBlockMessage,
   getRamazziniLetraFromCatalogKey,
 } from '@/helpers/cie10RamazziniScope';
+import {
+  NOTA_MEDICA_CEX_MESSAGES,
+  validateNotaMedicaCexField,
+  validateNotaMedicaCexQuantities,
+  type NotaMedicaCexField,
+} from '@/helpers/notaMedicaCexRanges';
+import {
+  validateSomatometriaSignosField,
+  type SomatometriaSignosField,
+} from '@/helpers/somatometriaSignosRanges';
 
 // Helper para validar campos requeridos según el tipo de documento
 export interface CampoFaltante {
@@ -54,6 +64,22 @@ function validarNumero(numero: any): boolean {
   if (esValorVacio(numero)) return false;
   const num = Number(numero);
   return !isNaN(num) && isFinite(num);
+}
+
+function validarNumeroEnRango(field: SomatometriaSignosField) {
+  return (valor: any): boolean => {
+    if (!validarNumero(valor)) return false;
+    return validateSomatometriaSignosField(field, valor) === null;
+  };
+}
+
+/** Si está vacío no bloquea; si hay valor, debe estar en rango. */
+function validarNumeroEnRangoOpcional(field: SomatometriaSignosField) {
+  return (valor: any): boolean => {
+    if (esValorVacio(valor)) return true;
+    if (!validarNumero(valor)) return false;
+    return validateSomatometriaSignosField(field, valor) === null;
+  };
 }
 
 // Función para validar campos de texto
@@ -222,12 +248,13 @@ const camposRequeridosPorTipo: Record<string, Array<{
   certificadoExpedito: [
     { campo: 'fechaCertificadoExpedito', nombre: 'Fecha del certificado', tipo: 'fecha', paso: 1, validacion: validarFecha },
     { campo: 'cuerpoCertificado', nombre: 'Cuerpo del certificado', tipo: 'texto', paso: 2, validacion: validarTexto },
-    { campo: 'tensionArterialSistolica', nombre: 'Tensión Arterial', tipo: 'medida', paso: 3, validacion: validarNumero },
-    { campo: 'frecuenciaCardiaca', nombre: 'Frecuencia Cardíaca', tipo: 'medida', paso: 3, validacion: validarNumero },
-    { campo: 'frecuenciaRespiratoria', nombre: 'Frecuencia Respiratoria', tipo: 'medida', paso: 3, validacion: validarNumero },
-    { campo: 'temperaturaCorporal', nombre: 'Temperatura Corporal', tipo: 'medida', paso: 3, validacion: validarNumero },
-    { campo: 'peso', nombre: 'Peso', tipo: 'medida', paso: 4, validacion: validarNumero },
-    { campo: 'altura', nombre: 'Altura', tipo: 'medida', paso: 4, validacion: validarNumero },
+    { campo: 'tensionArterialSistolica', nombre: 'Tensión Arterial', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('tensionArterialSistolica') },
+    { campo: 'tensionArterialDiastolica', nombre: 'Tensión Arterial Diastólica', tipo: 'medida', paso: 3, validacion: validarNumeroEnRangoOpcional('tensionArterialDiastolica') },
+    { campo: 'frecuenciaCardiaca', nombre: 'Frecuencia Cardíaca', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaCardiaca') },
+    { campo: 'frecuenciaRespiratoria', nombre: 'Frecuencia Respiratoria', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaRespiratoria') },
+    { campo: 'temperaturaCorporal', nombre: 'Temperatura Corporal', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('temperaturaCorporal') },
+    { campo: 'peso', nombre: 'Peso', tipo: 'medida', paso: 4, validacion: validarNumeroEnRango('peso') },
+    { campo: 'altura', nombre: 'Altura', tipo: 'medida', paso: 4, validacion: validarNumeroEnRango('altura') },
     { campo: 'impedimentosFisicos', nombre: 'Impedimentos Físicos', tipo: 'texto', paso: 5, validacion: validarTexto },
     { campo: 'gradoSalud', nombre: 'Grado de Salud', tipo: 'seleccion', paso: 6, validacion: validarSeleccion },
     { campo: 'aptitudPuesto', nombre: 'Aptitud Puesto', tipo: 'seleccion', paso: 7, validacion: validarSeleccion },
@@ -242,14 +269,15 @@ const camposRequeridosPorTipo: Record<string, Array<{
 
   exploracionFisica: [
     { campo: 'fechaExploracionFisica', nombre: 'Fecha de exploración física', tipo: 'fecha', paso: 1, validacion: validarFecha },
-    { campo: 'peso', nombre: 'Peso', tipo: 'medida', paso: 2, validacion: validarNumero },
-    { campo: 'altura', nombre: 'Altura', tipo: 'medida', paso: 2, validacion: validarNumero },
+    { campo: 'peso', nombre: 'Peso', tipo: 'medida', paso: 2, validacion: validarNumeroEnRango('peso') },
+    { campo: 'altura', nombre: 'Altura', tipo: 'medida', paso: 2, validacion: validarNumeroEnRango('altura') },
     { campo: 'indiceMasaCorporal', nombre: 'IMC', tipo: 'medida', paso: 2, validacion: validarNumero },
-    { campo: 'circunferenciaCintura', nombre: 'Circunferencia Cintura', tipo: 'medida', paso: 2, validacion: validarNumero },
-    { campo: 'tensionArterialSistolica', nombre: 'Tensión Arterial', tipo: 'medida', paso: 3, validacion: validarNumero },
-    { campo: 'frecuenciaCardiaca', nombre: 'Frecuencia Cardíaca', tipo: 'medida', paso: 3, validacion: validarNumero },
-    { campo: 'frecuenciaRespiratoria', nombre: 'Frecuencia Respiratoria', tipo: 'medida', paso: 3, validacion: validarNumero },
-    { campo: 'saturacionOxigeno', nombre: 'Saturación de Oxígeno', tipo: 'medida', paso: 3, validacion: validarNumero },
+    { campo: 'circunferenciaCintura', nombre: 'Circunferencia Cintura', tipo: 'medida', paso: 2, validacion: validarNumeroEnRango('circunferenciaCintura') },
+    { campo: 'tensionArterialSistolica', nombre: 'Tensión Arterial', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('tensionArterialSistolica') },
+    { campo: 'tensionArterialDiastolica', nombre: 'Tensión Arterial Diastólica', tipo: 'medida', paso: 3, validacion: validarNumeroEnRangoOpcional('tensionArterialDiastolica') },
+    { campo: 'frecuenciaCardiaca', nombre: 'Frecuencia Cardíaca', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaCardiaca') },
+    { campo: 'frecuenciaRespiratoria', nombre: 'Frecuencia Respiratoria', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaRespiratoria') },
+    { campo: 'saturacionOxigeno', nombre: 'Saturación de Oxígeno', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('saturacionOxigeno') },
   ],
 
   historiaClinica: [
@@ -1085,18 +1113,66 @@ export function validarNotaMedicaPreSubmit(
     };
   }
 
-  // 4. sistolica >= diastolica cuando ambas > 0
-  const sistolica = Number(df.tensionArterialSistolica);
-  const diastolica = Number(df.tensionArterialDiastolica);
-  if (sistolica > 0 && diastolica > 0 && sistolica < diastolica) {
+  // 4. Cantidades CEX GIIS-B015 (rangos, formato, TA, glucemia condicional)
+  const cexError = validateNotaMedicaCexQuantities(df, {
+    includeSomatometriaGlucemia: isSIRES,
+  });
+  if (cexError) {
     return {
       valido: false,
-      mensaje: 'La presión sistólica debe ser mayor o igual a la diastólica',
-      paso: stepMap.signos,
+      mensaje: cexError,
+      paso: pasoParaErrorCexNotaMedica(cexError, df, stepMap, isSIRES),
     };
   }
 
   return { valido: true };
+}
+
+function pasoParaErrorCexNotaMedica(
+  mensaje: string,
+  df: Record<string, unknown>,
+  stepMap: ReturnType<typeof getNotaMedicaStepMap>,
+  isSIRES: boolean,
+): number {
+  if (
+    mensaje === NOTA_MEDICA_CEX_MESSAGES.taRelacion ||
+    mensaje === NOTA_MEDICA_CEX_MESSAGES.taPareja
+  ) {
+    return stepMap.signos;
+  }
+  if (
+    mensaje === NOTA_MEDICA_CEX_MESSAGES.tipoMedicion ||
+    mensaje === NOTA_MEDICA_CEX_MESSAGES.resultadoObtenidoaTravesde
+  ) {
+    return stepMap.glucemia ?? stepMap.signos;
+  }
+
+  const signosFields: NotaMedicaCexField[] = [
+    'tensionArterialSistolica',
+    'tensionArterialDiastolica',
+    'frecuenciaCardiaca',
+    'frecuenciaRespiratoria',
+    'temperatura',
+    'saturacionOxigeno',
+  ];
+  for (const field of signosFields) {
+    if (validateNotaMedicaCexField(field, df[field]) === mensaje) {
+      return stepMap.signos;
+    }
+  }
+
+  if (isSIRES) {
+    for (const field of ['peso', 'talla', 'circunferenciaCintura'] as NotaMedicaCexField[]) {
+      if (validateNotaMedicaCexField(field, df[field]) === mensaje) {
+        return stepMap.somatometria ?? stepMap.signos;
+      }
+    }
+    if (validateNotaMedicaCexField('glucemia', df.glucemia) === mensaje) {
+      return stepMap.glucemia ?? stepMap.signos;
+    }
+  }
+
+  return stepMap.signos;
 }
 
 /** Valida coherencia de campos de embarazo en nota médica SIRES. */

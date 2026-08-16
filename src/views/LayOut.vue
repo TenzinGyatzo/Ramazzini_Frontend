@@ -20,6 +20,12 @@ import {
   isConfidentialityAgreementPending,
   confidentialityAgreementAccepted,
 } from "@/composables/useConfidentialityAgreement";
+import {
+  isTrabajadorSexoCurp,
+  parseSexoCurpValue,
+} from "@/helpers/trabajadorSexoCurp";
+import { useBorradoresNotaMedica } from "@/composables/useBorradoresNotaMedica";
+import ModalBorradoresPendientes from "@/components/modals/ModalBorradoresPendientes.vue";
 
 const {
   isOpen: eliminacionOpen,
@@ -47,6 +53,18 @@ const tecnicoFirmanteStore = useTecnicoFirmanteStore();
 const empresas = useEmpresasStore();
 const route = useRoute();
 const router = useRouter();
+const {
+  propios: borradoresPropios,
+  equipo: borradoresEquipo,
+  hasPendientes: hasBorradoresPendientes,
+  nivelMaximo: borradoresNivelMaximo,
+  fetchBorradoresPendientes,
+  mostrarBanner: shouldShowBorradoresBanner,
+  mensajeBanner: mensajeBorradoresBanner,
+  getBannerBorderClass,
+  getBannerIconClass,
+  dismissBanner: dismissBorradoresBanner,
+} = useBorradoresNotaMedica();
 const datosCargados = ref(false);
 const empresasCargadas = ref(false); 
 
@@ -153,6 +171,8 @@ const isGuideMenuOpen = ref(false);
 const guideMenuRef = ref<HTMLElement | null>(null);
 const isNotificationVisible = ref(false);
 const isNotificationEmpresasVisible = ref(false);
+const isNotificationBorradoresVisible = ref(false);
+const showModalBorradoresPendientes = ref(false);
 const configNotificationSuppressed = ref(false);
 const empresasNotificationSuppressed = ref(false);
 
@@ -186,6 +206,38 @@ const closeNotificationEmpresas = () => {
   isNotificationEmpresasVisible.value = false;
   empresasNotificationSuppressed.value = true;
 };
+
+const closeNotificationBorradores = () => {
+  isNotificationBorradoresVisible.value = false;
+  if (user.user?._id) {
+    dismissBorradoresBanner(user.user._id);
+  }
+};
+
+const mostrarBannerBorradores = computed(() => {
+  if (!datosCargados.value || !user.user?._id) return false;
+  return shouldShowBorradoresBanner(user.user._id);
+});
+
+const mensajeBannerBorradores = computed(() =>
+  mensajeBorradoresBanner(user.isPrincipal()),
+);
+
+const borradoresBannerBottom = computed(() => {
+  let offsetRem = 1.5;
+  if (datosCargados.value && mostrarMensajePendiente.value && isNotificationVisible.value) {
+    offsetRem += 6.5;
+  }
+  if (
+    datosCargados.value &&
+    empresasCargadas.value &&
+    empresas.empresas.length === 0 &&
+    isNotificationEmpresasVisible.value
+  ) {
+    offsetRem += 6.5;
+  }
+  return `${offsetRem}rem`;
+});
 
 onMounted(() => {
   syncThemeFromEnvironment();
@@ -323,7 +375,13 @@ const camposPendientesEnfermera = computed(() => {
 
   if (!enfermera?.nombre) pendientes.push("Nombre");
   if (!enfermera?.primerApellido) pendientes.push("Primer Apellido");
-  if (!enfermera?.sexo) pendientes.push("Sexo");
+  if (proveedorSaludStore.isSIRES) {
+    if (!isTrabajadorSexoCurp(parseSexoCurpValue(enfermera?.sexoCURP))) {
+      pendientes.push("Sexo CURP");
+    }
+  } else if (!enfermera?.sexo) {
+    pendientes.push("Sexo");
+  }
   if (!enfermera?.tituloProfesional) pendientes.push("Título Profesional");
   if (!enfermera?.numeroCedulaProfesional) pendientes.push("Número de Registro/Cédula Profesional");
 
@@ -337,7 +395,13 @@ const camposPendientesTecnicoEvaluador = computed(() => {
 
   if (!tecnico?.nombre) pendientes.push("Nombre");
   if (!tecnico?.primerApellido) pendientes.push("Primer Apellido");
-  if (!tecnico?.sexo) pendientes.push("Sexo");
+  if (proveedorSaludStore.isSIRES) {
+    if (!isTrabajadorSexoCurp(parseSexoCurpValue(tecnico?.sexoCURP))) {
+      pendientes.push("Sexo CURP");
+    }
+  } else if (!tecnico?.sexo) {
+    pendientes.push("Sexo");
+  }
   if (!tecnico?.tituloProfesional) pendientes.push("Título Profesional (recomendado)");
   if (!tecnico?.numeroCedulaProfesional) pendientes.push("Registro/Cédula Profesional (recomendado)");
 
@@ -623,6 +687,27 @@ const colorNotificacion = computed(() => {
   }
 });
 
+function tryShowBorradoresNotification() {
+  if (!datosCargados.value || !mostrarBannerBorradores.value) return;
+  setTimeout(() => {
+    if (mostrarBannerBorradores.value) {
+      isNotificationBorradoresVisible.value = true;
+    }
+  }, 1200);
+}
+
+async function loadBorradoresPendientes(force = false) {
+  if (!datosCargados.value || !user.user?._id || isConfidentialityAgreementPending()) {
+    return;
+  }
+  if (!proveedorSaludStore.isSIRES) {
+    isNotificationBorradoresVisible.value = false;
+    return;
+  }
+  await fetchBorradoresPendientes({ userId: user.user._id, force });
+  tryShowBorradoresNotification();
+}
+
 function tryShowConfigNotification() {
   if (configNotificationSuppressed.value) return;
   if (!datosCargados.value || !mostrarMensajePendiente.value) return;
@@ -649,11 +734,26 @@ watch(() => user.user?._id, (newId, oldId) => {
     empresasNotificationSuppressed.value = false;
     isNotificationVisible.value = false;
     isNotificationEmpresasVisible.value = false;
+    isNotificationBorradoresVisible.value = false;
   }
 });
 
 watch([datosCargados, mostrarMensajePendiente], () => {
   tryShowConfigNotification();
+});
+
+watch([datosCargados, mostrarBannerBorradores, hasBorradoresPendientes], () => {
+  if (mostrarBannerBorradores.value) {
+    tryShowBorradoresNotification();
+  } else {
+    isNotificationBorradoresVisible.value = false;
+  }
+});
+
+watch(datosCargados, (loaded) => {
+  if (loaded) {
+    loadBorradoresPendientes();
+  }
 });
 
 watch([empresasCargadas, () => empresas.empresas.length], () => {
@@ -870,6 +970,46 @@ const isHomeRoute = computed(() => route.name === 'inicio');
         </div>
       </div>
     </Transition>
+
+    <!-- Tercera notificación: borradores de notas médicas -->
+    <Transition name="slide-up">
+      <div
+        v-if="datosCargados && proveedorSaludStore.isSIRES && mostrarBannerBorradores && isNotificationBorradoresVisible"
+        class="hidden sm:block fixed bottom-6 right-6 z-50 bg-white text-gray-700 rounded-xl shadow-lg p-4 max-w-sm transform hover:scale-105 transition-transform duration-500 ease-in-out border-l-4"
+        :class="getBannerBorderClass(borradoresNivelMaximo)"
+        :style="{ bottom: borradoresBannerBottom }"
+      >
+        <div class="flex items-start gap-3">
+          <i :class="[getBannerIconClass(borradoresNivelMaximo), 'text-xl mt-1']"></i>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-800 mb-2">
+              {{ mensajeBannerBorradores }}
+            </p>
+            <button
+              type="button"
+              class="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition-colors duration-200"
+              @click="showModalBorradoresPendientes = true"
+            >
+              Ver detalle
+            </button>
+          </div>
+          <button
+            class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+            @click="closeNotificationBorradores"
+          >
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </Transition>
+
+    <ModalBorradoresPendientes
+      v-if="showModalBorradoresPendientes && proveedorSaludStore.isSIRES"
+      :propios="borradoresPropios"
+      :equipo="borradoresEquipo"
+      :show-equipo="user.isPrincipal()"
+      @closeModal="showModalBorradoresPendientes = false"
+    />
 
     <!-- Botón del engrane mejorado -->
     <Transition name="delayed-appear">

@@ -35,10 +35,10 @@ describe('useNom024Fields', () => {
 
     expect(showWorkerCurpField.value).toBe(true);
     expect(workerCurpRequired.value).toBe(false);
-    expect(workerCurpValidationRules.value).toBe('optional|curpRenapoValidation');
+    expect(workerCurpValidationRules.value).toBe('optional');
   });
 
-  it('returns required RENAPO rules for MX + SIRES', () => {
+  it('returns required rules for MX + SIRES', () => {
     const store = useProveedorSaludStore();
     store.proveedorSalud = {
       ...baseProveedor,
@@ -56,7 +56,7 @@ describe('useNom024Fields', () => {
     const { workerCurpValidationRules, workerCurpRequired } = useNom024Fields();
 
     expect(workerCurpRequired.value).toBe(true);
-    expect(workerCurpValidationRules.value).toBe('required|curpRenapoValidation');
+    expect(workerCurpValidationRules.value).toBe('required');
   });
 
   it('returns no validation rules for non-MX providers', () => {

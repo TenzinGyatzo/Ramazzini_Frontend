@@ -2,6 +2,15 @@ import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+
+function regimenActualParaDisplay(): string | undefined {
+  try {
+    return useProveedorSaludStore().regimenRegulatorio;
+  } catch {
+    return undefined;
+  }
+}
 
 export type UsuarioReferencia =
   | string
@@ -88,7 +97,10 @@ export async function resolveNombreFirmantePorReferencia(
   if (userId) {
     const firmante = await getFirmanteByUserIdCached(userId);
     if (firmante) {
-      return formatearTituloYNombreFirmante(firmante);
+      return formatearTituloYNombreFirmante(
+        firmante,
+        regimenActualParaDisplay(),
+      );
     }
   }
   return fallbackNombreFromReferencia(value);
@@ -110,7 +122,10 @@ export async function prefetchNombresFirmantes(
     userIds.map(async (userId) => {
       const firmante = await getFirmanteByUserIdCached(userId);
       if (!firmante) return null;
-      return [userId, formatearTituloYNombreFirmante(firmante)] as const;
+      return [
+        userId,
+        formatearTituloYNombreFirmante(firmante, regimenActualParaDisplay()),
+      ] as const;
     }),
   );
 

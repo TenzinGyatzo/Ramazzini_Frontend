@@ -8,6 +8,7 @@ const toast = inject("toast");
 const userStore = useUserStore();
 const usuarios = ref([]);
 const loading = ref(true);
+const savingConfig = ref(false);
 const fechaInicio = ref(null);
 const fechaFin = ref(null);
 const periodoPredefinido = ref('');
@@ -341,6 +342,8 @@ const cerrarModalReglas = () => {
 };
 
 const guardarConfiguracion = async () => {
+  if (savingConfig.value) return;
+  savingConfig.value = true;
   try {
     await UserProductivityAPI.updateReglasPuntaje(user.value.idProveedorSalud, configuracionPuntos.value);
     toast.open({
@@ -356,6 +359,8 @@ const guardarConfiguracion = async () => {
       message: "Error al guardar las reglas de puntaje",
       position: "top-right",
     });
+  } finally {
+    savingConfig.value = false;
   }
 };
 
@@ -1120,10 +1125,12 @@ const getInputClasses = (colorClass) => {
                 </button>
                 <button
                   @click="guardarConfiguracion"
-                  class="productivity-reglas-modal__btn-save px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                  :disabled="savingConfig"
+                  class="productivity-reglas-modal__btn-save px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i class="fas fa-save mr-2"></i>
-                  Guardar Configuración
+                  <span v-if="savingConfig">Guardando...</span>
+                  <span v-else>Guardar Configuración</span>
                 </button>
               </div>
             </div>
