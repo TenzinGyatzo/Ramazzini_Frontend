@@ -34,7 +34,7 @@ export function stripPersonNameAccents(value: string): string {
     .replace(/Ñ/g, ENYE_UPPER_PLACEHOLDER);
 
   for (const [char, placeholder] of Object.entries(DIERESIS_PLACEHOLDERS)) {
-    protectedValue = protectedValue.replaceAll(char, placeholder);
+    protectedValue = protectedValue.split(char).join(placeholder);
   }
 
   let stripped = protectedValue
@@ -42,12 +42,12 @@ export function stripPersonNameAccents(value: string): string {
     .replace(/[\u0300-\u036f]/g, '');
 
   for (const [placeholder, char] of Object.entries(DIERESIS_RESTORE)) {
-    stripped = stripped.replaceAll(placeholder, char);
+    stripped = stripped.split(placeholder).join(char);
   }
 
   return stripped
-    .replaceAll(ENYE_LOWER_PLACEHOLDER, 'ñ')
-    .replaceAll(ENYE_UPPER_PLACEHOLDER, 'Ñ')
+    .split(ENYE_LOWER_PLACEHOLDER).join('ñ')
+    .split(ENYE_UPPER_PLACEHOLDER).join('Ñ')
     .normalize('NFC');
 }
 

@@ -132,12 +132,16 @@ function getResponseData(error: unknown): Record<string, unknown> | null {
 function resolveA1Payload(
   data: Record<string, unknown>,
 ): CurpA1ErrorPayload | null {
+  const nestedMessage = data.message;
   if (isCurpA1Payload(data)) {
     return data;
   }
-  const message = data.message;
-  if (message && typeof message === 'object' && isCurpA1Payload(message)) {
-    return message;
+  if (
+    nestedMessage &&
+    typeof nestedMessage === 'object' &&
+    isCurpA1Payload(nestedMessage)
+  ) {
+    return nestedMessage;
   }
   return null;
 }
