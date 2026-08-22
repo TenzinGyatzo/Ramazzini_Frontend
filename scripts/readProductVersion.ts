@@ -2,35 +2,53 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-/** Debe coincidir con `**Versión vigente del software:** \`vX.Y.Z\`` en `backend/CHANGELOG.md`. */
-const VIGENTE_RE =
-  /\*\*Versión vigente del software:\*\*\s*`(v\d+\.\d+\.\d+)`/m
+/** Fallback documentado de la línea SIRES si falta el archivo o el campo parseable. */
+export const SIRES_EDITION_FALLBACK = 'v1.0.3'
 
-function readVersionFromPackageJson(): string {
+/** Fallback documentado de la línea comercial. Nunca usar 1.0.3 / package.json. */
+export const COMMERCIAL_EDITION_FALLBACK = 'v2.0.0'
+
+const VIGENTE_LINEA_RE =
+  /\*\*Versión vigente de la línea (SIRES|comercial):\*\*\s*`(v\d+\.\d+\.\d+)`/m
+
+function changelogDir(): string {
   const scriptDir = dirname(fileURLToPath(import.meta.url))
-  const pkgPath = join(scriptDir, '..', 'package.json')
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version?: string }
-  const [major = '0', minor = '0', patch = '0'] = String(
-    pkg.version ?? '0.0.0',
-  ).split('.')
-  return `v${major}.${minor}.${patch}`
+  return join(scriptDir, '..', '..', 'backend')
 }
 
-export function readProductVersionFromChangelog(changelogPath: string): string {
+export function readEditionVersionFromChangelog(
+  changelogPath: string,
+  expectedLinea: 'SIRES' | 'comercial',
+  fallback: string,
+): string {
   if (!existsSync(changelogPath)) {
     console.warn(
-      `[readProductVersion] No existe ${changelogPath}; usando version de frontend/package.json`,
+      `[readProductVersion] No existe ${changelogPath}; usando fallback ${fallback} (línea ${expectedLinea})`,
     )
-    return readVersionFromPackageJson()
+    return fallback
   }
 
   const text = readFileSync(changelogPath, 'utf-8')
-  const m = text.match(VIGENTE_RE)
-  if (!m) {
+  const m = text.match(VIGENTE_LINEA_RE)
+  if (!m || m[1] !== expectedLinea) {
     console.warn(
-      `[readProductVersion] Formato de version no encontrado en CHANGELOG; usando package.json`,
+      `[readProductVersion] Formato de versión de la línea ${expectedLinea} no encontrado en ${changelogPath}; usando fallback ${fallback}`,
     )
-    return readVersionFromPackageJson()
+    return fallback
   }
-  return m[1]
+  return m[2]
+}
+
+export function readSiresEditionVersion(changelogPath?: string): string {
+  const path = changelogPath ?? join(changelogDir(), 'CHANGELOG-SIRES.md')
+  return readEditionVersionFromChangelog(path, 'SIRES', SIRES_EDITION_FALLBACK)
+}
+
+export function readCommercialEditionVersion(changelogPath?: string): string {
+  const path = changelogPath ?? join(changelogDir(), 'CHANGELOG-RAMAZZINI.md')
+  return readEditionVersionFromChangelog(
+    path,
+    'comercial',
+    COMMERCIAL_EDITION_FALLBACK,
+  )
 }

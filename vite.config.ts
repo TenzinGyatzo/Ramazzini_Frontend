@@ -2,12 +2,19 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
-import { readProductVersionFromChangelog } from './scripts/readProductVersion'
+import {
+  readCommercialEditionVersion,
+  readSiresEditionVersion,
+} from './scripts/readProductVersion'
 
-const changelogPath = fileURLToPath(
-  new URL('../backend/CHANGELOG.md', import.meta.url),
+const siresChangelogPath = fileURLToPath(
+  new URL('../backend/CHANGELOG-SIRES.md', import.meta.url),
 )
-const appVersion = readProductVersionFromChangelog(changelogPath)
+const commercialChangelogPath = fileURLToPath(
+  new URL('../backend/CHANGELOG-RAMAZZINI.md', import.meta.url),
+)
+const siresVersion = readSiresEditionVersion(siresChangelogPath)
+const commercialVersion = readCommercialEditionVersion(commercialChangelogPath)
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -15,7 +22,8 @@ export default defineConfig({
     vue(),
   ],
   define: {
-    __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_VERSION_SIRES__: JSON.stringify(siresVersion),
+    __APP_VERSION_COMMERCIAL__: JSON.stringify(commercialVersion),
   },
   resolve: {
     alias: {

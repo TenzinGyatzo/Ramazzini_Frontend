@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
 import { ref, onMounted } from 'vue';
+import { useEditionLabel } from '@/composables/useEditionLabel';
 
-const appVersion = __APP_VERSION__;
+const { editionLabel } = useEditionLabel();
 
 const randomNumber = ref(0);
 
@@ -44,9 +45,10 @@ const contents = [
       <RouterView />
       <p
         class="absolute bottom-4 left-4 text-xs text-gray-400"
-        :title="`Versión ${appVersion}`"
+        data-testid="edition-label"
+        :title="editionLabel"
       >
-        {{ appVersion }}
+        {{ editionLabel }}
       </p>
     </div>
 

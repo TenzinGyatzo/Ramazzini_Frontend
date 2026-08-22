@@ -9,6 +9,7 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useRoute, useRouter } from 'vue-router';
 import { useRiesgoTrabajoStore } from '@/stores/riesgosTrabajo';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
+import { useEditionLabel } from '@/composables/useEditionLabel';
 
 const route = useRoute();
 const router = useRouter();
@@ -110,7 +111,7 @@ const showDocumentoSection = computed(() => documentos.currentTypeOfDocument && 
 const showAnalyticsSection = computed(() => empresas.currentEmpresaId && hasVisitedDashboard.value);
 const showRiesgosSection = computed(() => empresas.currentEmpresaId && hasVisitedRiesgosTrabajo.value);
 
-const appVersion = __APP_VERSION__;
+const { editionLabel } = useEditionLabel();
 
 </script>
 
@@ -361,9 +362,10 @@ const appVersion = __APP_VERSION__;
       </button>
       <p
         class="sidebar-version"
-        :title="`Versión ${appVersion}`"
+        data-testid="edition-label"
+        :title="editionLabel"
       >
-        {{ appVersion }}
+        {{ editionLabel }}
       </p>
     </div>
   </div>
