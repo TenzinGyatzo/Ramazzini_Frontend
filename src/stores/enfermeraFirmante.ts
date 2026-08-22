@@ -24,6 +24,7 @@ interface EnfermeraFirmante {
         contentType: string
     };
     idUser: string;
+    tieneDocumentoClinicoFinalizado?: boolean;
 }
 
 // Define el store

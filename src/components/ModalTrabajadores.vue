@@ -21,7 +21,6 @@ import { isGenericCurp } from '@/helpers/isGenericCurp';
 import { requiresGenericCurpForEntidadNacimiento } from '@/helpers/giisResidenciaGeo';
 import {
   getWorkerImmutablePayloadFields,
-  isPaisNacimientoReadOnlyForWorker,
 } from '@/helpers/workerPaisNacimientoImmutability';
 import { normalizeProveedorPaisCode } from '@/helpers/proveedorPais';
 import {
@@ -117,33 +116,44 @@ const hasGenericCurpStored = computed(() =>
   isGenericCurp(trabajadores.currentTrabajador?.curp),
 );
 
+const hasFinalizedClinicalDocument = computed(() =>
+  Boolean(trabajadores.currentTrabajador?.tieneDocumentoClinicoFinalizado),
+);
+
 const isWorkerIdentificationReadOnly = computed(() =>
   isSIRES.value &&
   isEditingTrabajador.value &&
   workerIdentificationImmutable.value,
 );
 
-const isCurpIdentificationReadOnly = computed(() =>
-  isWorkerIdentificationReadOnly.value && !hasGenericCurpStored.value,
+const isIdentificationLocked = computed(
+  () =>
+    isWorkerIdentificationReadOnly.value &&
+    (!hasGenericCurpStored.value || hasFinalizedClinicalDocument.value),
 );
 
-const isCurpConformationReadOnly = computed(() =>
-  isWorkerIdentificationReadOnly.value && !hasGenericCurpStored.value,
+const isCurpConformationReadOnly = computed(
+  () => isIdentificationLocked.value,
 );
 
-const isPaisNacimientoReadOnly = computed(() =>
-  isPaisNacimientoReadOnlyForWorker(
-    trabajadores.currentTrabajador,
-    isWorkerIdentificationReadOnly.value,
-  ),
+const isSexoBiologicoReadOnly = computed(
+  () =>
+    isWorkerIdentificationReadOnly.value && hasFinalizedClinicalDocument.value,
+);
+
+const isPaisNacimientoReadOnly = computed(
+  () => isIdentificationLocked.value,
 );
 
 const identificationSectionNotice = computed(() => {
   if (!isWorkerIdentificationReadOnly.value) return '';
+  if (hasFinalizedClinicalDocument.value) {
+    return 'Los datos de identificación y el sexo biológico no pueden modificarse porque el trabajador ya tiene un documento clínico finalizado.';
+  }
   if (hasGenericCurpStored.value) {
     return 'Complete la CURP real y los datos de nacimiento; después quedarán bloqueados.';
   }
-  return 'Los datos de identificación no pueden modificarse tras el registro.';
+  return 'Los datos de identificación no pueden modificarse tras el registro. El sexo biológico sigue siendo editable hasta que exista un documento clínico finalizado.';
 });
 
 function omitImmutableIdentificationFields(payload) {
@@ -152,7 +162,9 @@ function omitImmutableIdentificationFields(payload) {
   }
 
   const omitSet = new Set(
-    getWorkerImmutablePayloadFields(trabajadores.currentTrabajador ?? {}),
+    getWorkerImmutablePayloadFields(trabajadores.currentTrabajador ?? {}, {
+      hasFinalizedClinicalDocument: hasFinalizedClinicalDocument.value,
+    }),
   );
 
   const result = { ...payload };
@@ -319,8 +331,8 @@ const requiresGenericCurp = computed(() =>
   ),
 );
 
-const isCurpFieldReadOnly = computed(() =>
-  isCurpIdentificationReadOnly.value || requiresGenericCurp.value,
+const isCurpFieldReadOnly = computed(
+  () => isIdentificationLocked.value || requiresGenericCurp.value,
 );
 
 useEntidadPaisNacimientoCoherence(nom024NacimientoFields, 'trabajador');
@@ -513,7 +525,7 @@ watch(
   (required) => {
     if (!required) return;
     // No pisar CURP real inmutable de identificación
-    if (isCurpIdentificationReadOnly.value) return;
+    if (isIdentificationLocked.value) return;
     if (curpValue.value !== GENERIC_CURP) {
       curpValue.value = GENERIC_CURP;
     }
@@ -1227,7 +1239,7 @@ const {
                   <FormKit type="select" name="sexo" placeholder="-Selecciona-"
                     :options="['Masculino', 'Femenino', 'Intersexual']" validation="required"
                     :validation-messages="{ required: 'Este campo es obligatorio' }"
-                    :disabled="isCurpConformationReadOnly"
+                    :disabled="isSexoBiologicoReadOnly"
                     :value="trabajadores.currentTrabajador?.sexo || ''">
                     <template #label>
                       <span class="font-medium text-lg text-gray-700">

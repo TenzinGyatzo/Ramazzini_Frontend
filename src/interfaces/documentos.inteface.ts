@@ -566,6 +566,8 @@ export interface NotaMedica {
     estado?: DocumentoEstado;
     fechaFinalizacion?: string;
     finalizadoPor?: string;
+    primeraVezAnio?: number;
+    primeraVezUneme?: number;
 }
 
 export interface NotaAclaratoria {

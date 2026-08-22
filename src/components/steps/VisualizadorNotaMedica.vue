@@ -36,6 +36,16 @@ const { isSIRES } = useNom024Fields();
 const esMujer = computed(() => trabajadores.currentTrabajador?.sexo === 'Femenino');
 const { nmSectionsV2Enabled } = useNotaMedicaSectionsV2();
 
+const etiquetaPrimeraVezAnio = computed(() => {
+  const n = formData.formDataNotaMedica;
+  const estado = n.estado;
+  const persistido =
+    estado === 'finalizado' || estado === 'anulado'
+      ? n.primeraVezAnio === 1
+      : n.esPrimeraVezAnioPreview === true;
+  return persistido ? 'Sí' : 'No';
+});
+
 const stepMap = computed(() =>
   getNotaMedicaStepMap(isSIRES.value, esMujer.value),
 );
@@ -225,6 +235,12 @@ const muestraDiagnostico3 = computed(() =>
           'X' : '&nbsp;' }}</span> )</p>
         <p class="w-full md:w-auto ml-4 font-light">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataNotaMedica.fechaNotaMedica) }}</span></p>
+        <p
+          v-if="isSIRES"
+          class="w-full md:w-auto ml-4 font-light"
+        >
+          Primera consulta del año: <span class="font-medium">{{ etiquetaPrimeraVezAnio }}</span>
+        </p>
       </div>
     </div>
 

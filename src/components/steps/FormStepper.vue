@@ -1494,6 +1494,12 @@ export default {
           delete formData.formDataNotaMedica.relacionTemporal;
         }
 
+        if (formData.formDataNotaMedica.primeraVezUnemeAplica !== true) {
+          delete formData.formDataNotaMedica.primeraVezUneme;
+        }
+        delete formData.formDataNotaMedica.esPrimeraVezAnioPreview;
+        delete formData.formDataNotaMedica.primeraVezAnio;
+
         normalizeNotaMedicaDiagnosticosPv(
           formData.formDataNotaMedica,
           showSiresUI.value,
@@ -1635,6 +1641,15 @@ export default {
         return; // No continuar con el envío
       }
 
+      if (
+        documentos.currentTypeOfDocument === 'notaMedica' &&
+        datosLimpios
+      ) {
+        delete datosLimpios.primeraVezUnemeAplica;
+        delete datosLimpios.esPrimeraVezAnioPreview;
+        delete datosLimpios.primeraVezAnio;
+      }
+
       // VALIDACIÓN NOTA MÉDICA (async): catálogo CIE-10, firmantes y confirmación diagnóstica
       if (documentos.currentTypeOfDocument === 'notaMedica') {
         const esMujerNotaMedica =
@@ -1709,6 +1724,9 @@ export default {
         }
 
         datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
+        delete datosLimpios.primeraVezUnemeAplica;
+        delete datosLimpios.esPrimeraVezAnioPreview;
+        delete datosLimpios.primeraVezAnio;
       }
 
       isSubmitting.value = true;

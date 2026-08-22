@@ -366,8 +366,8 @@ const handleSubmit = async (data) => {
     formData.append("municipio", municipioValue);
   }
 
-  // CLUES opcional: solo si se incluye en el payload; si ya existía y se deja vacío, enviar "" para borrarlo
-  const cluesValue = (formulario.value.clues || "").trim();
+  // CLUES solo aplica en México. Si se deja vacío o el país no es MX, enviar "" para borrarlo si ya existía.
+  const cluesValue = isMX.value ? (formulario.value.clues || "").trim() : "";
   const hadClues = (proveedorActual?.clues || "").trim() !== "";
   if (cluesValue) {
     formData.append("clues", cluesValue);
@@ -638,9 +638,9 @@ const logoSrc = computed(() => {
                 <p class="mt-2 text-sm text-gray-600 hidden sm:block">La semaforización permite el uso de colores en los resultados de los informes (<span class="text-emerald-700">Apto sin restricciones</span>, <span class="text-amber-700">Apto con restricciones</span>, <span class="text-red-700">No apto</span>) haciéndolo más claro y fácil de entender.</p>
               </div>
 
-              <!-- Campo CLUES (NOM-024) -->
+              <!-- Campo CLUES (NOM-024): solo México -->
               <CLUESAutocomplete
-                v-if="cluesFieldVisible"
+                v-if="isMX && cluesFieldVisible"
                 class="sm:col-span-2 mb-4"
                 v-model="formulario.clues"
                 :required="false"
@@ -663,8 +663,8 @@ const logoSrc = computed(() => {
                 </div>
               </div> -->
 
-              <!-- Sección Régimen Regulatorio -->
-              <div class="sm:col-span-2 mb-4 p-4 border rounded-lg bg-gray-50">
+              <!-- Sección Régimen Regulatorio: solo México -->
+              <div v-if="isMX" class="sm:col-span-2 mb-4 p-4 border rounded-lg bg-gray-50">
                 <h3 class="font-medium text-lg text-gray-700 mb-3">
                   Régimen Regulatorio
                 </h3>

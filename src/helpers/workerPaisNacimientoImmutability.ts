@@ -1,7 +1,4 @@
 import { isGenericCurp } from '@/helpers/isGenericCurp';
-import { PAIS_NACIMIENTO_MEXICO } from '@/composables/useEntidadPaisNacimientoCoherence';
-
-const MEXICAN_ENTIDAD_NACIMIENTO_PATTERN = /^(0[1-9]|[12][0-9]|3[0-2])$/;
 
 export const WORKER_IMMUTABLE_PAYLOAD_FIELDS = [
   'curp',
@@ -9,7 +6,7 @@ export const WORKER_IMMUTABLE_PAYLOAD_FIELDS = [
   'primerApellido',
   'segundoApellido',
   'fechaNacimiento',
-  'sexo',
+  'sexoCURP',
   'entidadNacimiento',
   'paisNacimiento',
 ] as const;
@@ -19,68 +16,37 @@ export const WORKER_CURP_CONFORMATION_PAYLOAD_FIELDS = [
   'primerApellido',
   'segundoApellido',
   'fechaNacimiento',
-  'sexo',
+  'sexoCURP',
   'entidadNacimiento',
+  'paisNacimiento',
 ] as const;
 
 export interface StoredWorkerIdentification {
   curp?: string;
   paisNacimiento?: string | number | null;
   entidadNacimiento?: string;
+  tieneDocumentoClinicoFinalizado?: boolean;
 }
 
-export function isMexicanEntidadNacimiento(code: string | undefined): boolean {
-  if (!code) return false;
-  return MEXICAN_ENTIDAD_NACIMIENTO_PATTERN.test(code.trim().toUpperCase());
-}
-
-function hasStoredPaisNacimiento(paisNacimiento: unknown): boolean {
-  return paisNacimiento !== null && paisNacimiento !== undefined && paisNacimiento !== '';
-}
-
-export function isPaisNacimientoImmutable(storedWorker: StoredWorkerIdentification): boolean {
-  if (isGenericCurp(storedWorker.curp)) {
-    return false;
-  }
-
-  if (!hasStoredPaisNacimiento(storedWorker.paisNacimiento)) {
-    return false;
-  }
-
-  if (Number(storedWorker.paisNacimiento) !== PAIS_NACIMIENTO_MEXICO) {
-    return false;
-  }
-
-  return isMexicanEntidadNacimiento(storedWorker.entidadNacimiento);
+export interface WorkerImmutablePayloadOptions {
+  hasFinalizedClinicalDocument?: boolean;
 }
 
 export function getWorkerImmutablePayloadFields(
   storedWorker: StoredWorkerIdentification,
+  options?: WorkerImmutablePayloadOptions,
 ): readonly string[] {
-  let fields = [...WORKER_IMMUTABLE_PAYLOAD_FIELDS];
+  const hasAttention =
+    options?.hasFinalizedClinicalDocument === true ||
+    storedWorker.tieneDocumentoClinicoFinalizado === true;
+
+  if (hasAttention) {
+    return [...WORKER_IMMUTABLE_PAYLOAD_FIELDS, 'sexo'];
+  }
 
   if (isGenericCurp(storedWorker.curp)) {
-    const exempt = new Set<string>([
-      'curp',
-      ...WORKER_CURP_CONFORMATION_PAYLOAD_FIELDS,
-    ]);
-    fields = fields.filter((field) => !exempt.has(field));
+    return [];
   }
 
-  if (!isPaisNacimientoImmutable(storedWorker)) {
-    fields = fields.filter((field) => field !== 'paisNacimiento');
-  }
-
-  return fields;
-}
-
-export function isPaisNacimientoReadOnlyForWorker(
-  storedWorker: StoredWorkerIdentification | null | undefined,
-  isIdentificationImmutableContext: boolean,
-): boolean {
-  if (!isIdentificationImmutableContext || !storedWorker) {
-    return false;
-  }
-
-  return isPaisNacimientoImmutable(storedWorker);
+  return [...WORKER_IMMUTABLE_PAYLOAD_FIELDS];
 }

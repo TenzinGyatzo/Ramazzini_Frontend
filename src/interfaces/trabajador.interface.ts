@@ -32,6 +32,7 @@ export interface Trabajador {
   folio?: string;
   tieneDuplicadoPendiente?: boolean;
   alertasPendientesCount?: number;
+  tieneDocumentoClinicoFinalizado?: boolean;
 }
 
 export interface DuplicateWorkerSummary {

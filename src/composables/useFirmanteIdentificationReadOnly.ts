@@ -9,7 +9,6 @@ export const FIRMANTE_IMMUTABLE_PAYLOAD_FIELDS = [
   'primerApellido',
   'segundoApellido',
   'fechaNacimiento',
-  'sexo',
   'sexoCURP',
   'entidadNacimiento',
   'paisNacimiento',
@@ -26,6 +25,7 @@ export type FirmanteRecord = {
   sexoCURP?: number;
   entidadNacimiento?: string;
   paisNacimiento?: number | string;
+  tieneDocumentoClinicoFinalizado?: boolean;
 } | null | undefined;
 
 function formatStoredFieldForSubmit(
@@ -59,23 +59,34 @@ export function useFirmanteIdentificationReadOnly(
     isGenericCurp(firmante.value?.curp),
   );
 
-  const isFirmanteIdentificationReadOnly = computed(
+  const hasFinalizedClinicalDocument = computed(() =>
+    Boolean(firmante.value?.tieneDocumentoClinicoFinalizado),
+  );
+
+  const isSiresIdentificationContext = computed(
     () =>
       isSIRES.value &&
       isEditingFirmante.value &&
       workerIdentificationImmutable.value,
   );
 
-  const isCurpFieldReadOnly = computed(
-    () => isFirmanteIdentificationReadOnly.value && !hasGenericCurpStored.value,
+  const isIdentificationLocked = computed(
+    () =>
+      isSiresIdentificationContext.value &&
+      (!hasGenericCurpStored.value || hasFinalizedClinicalDocument.value),
   );
 
+  const isCurpFieldReadOnly = computed(() => isIdentificationLocked.value);
+
   const isCurpConformationReadOnly = computed(
-    () => isFirmanteIdentificationReadOnly.value && !hasGenericCurpStored.value,
+    () => isIdentificationLocked.value,
   );
 
   const identificationSectionNotice = computed(() => {
-    if (!isFirmanteIdentificationReadOnly.value) return '';
+    if (!isSiresIdentificationContext.value) return '';
+    if (hasFinalizedClinicalDocument.value) {
+      return 'Los datos de identificación no pueden modificarse porque ya se finalizó un documento clínico.';
+    }
     if (hasGenericCurpStored.value) {
       return 'Complete la CURP real y los datos de nacimiento; después quedarán bloqueados.';
     }
@@ -86,7 +97,7 @@ export function useFirmanteIdentificationReadOnly(
     payload: T,
     storedRecord?: FirmanteRecord,
   ): T {
-    if (!isFirmanteIdentificationReadOnly.value || hasGenericCurpStored.value) {
+    if (!isIdentificationLocked.value) {
       return payload;
     }
 
@@ -105,7 +116,8 @@ export function useFirmanteIdentificationReadOnly(
   return {
     isEditingFirmante,
     hasGenericCurpStored,
-    isFirmanteIdentificationReadOnly,
+    hasFinalizedClinicalDocument,
+    isFirmanteIdentificationReadOnly: isIdentificationLocked,
     isCurpFieldReadOnly,
     isCurpConformationReadOnly,
     identificationSectionNotice,

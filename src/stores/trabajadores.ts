@@ -21,6 +21,8 @@ interface Trabajador {
   numeroEmpleado: string;
   nss: string;
   curp?: string;
+  sexoCURP?: number;
+  tieneDocumentoClinicoFinalizado?: boolean;
   // NOM-024 Person Identification Fields
   entidadNacimiento?: string;
   paisNacimiento?: number | string;

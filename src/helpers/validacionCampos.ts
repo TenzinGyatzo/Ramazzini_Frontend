@@ -137,6 +137,17 @@ function validarSiNo(valor: any): boolean {
   return valor === 'Sí' || valor === 'No';
 }
 
+function esCeroOUno(valor: any): boolean {
+  const n = typeof valor === 'string' ? Number(valor) : valor;
+  return n === 0 || n === 1;
+}
+
+/** GIIS-B015: 0|1 obligatorio solo si el prompt UNEME aplica en captura. */
+function validarPrimeraVezUnemeSiAplica(valor: any, datos?: any): boolean {
+  if (datos?.primeraVezUnemeAplica !== true) return true;
+  return esCeroOUno(valor);
+}
+
 /** Obligatorio solo si `alteracionesPensamiento === 'Sí'` */
 function validarDescripcionAlteracionesPensamientoSiAplica(valor: any, datos?: any): boolean {
   if (!datos || datos.alteracionesPensamiento !== 'Sí') return true;
@@ -291,6 +302,13 @@ const camposRequeridosPorTipo: Record<string, Array<{
     { campo: 'motivoConsulta', nombre: 'Motivo de consulta', tipo: 'texto', paso: 2, validacion: validarTexto },
     { campo: 'codigoCIE10Principal', nombre: 'Diagnóstico principal', tipo: 'seleccion', paso: 6, validacion: validarSeleccion },
     { campo: 'relacionTemporal', nombre: 'Relación temporal', tipo: 'seleccion', paso: 6, validacion: validarRelacionTemporal },
+    {
+      campo: 'primeraVezUneme',
+      nombre: '¿Es la primera consulta del año en una Unidad de Especialidades Médicas?',
+      tipo: 'seleccion',
+      paso: 1,
+      validacion: validarPrimeraVezUnemeSiAplica,
+    },
   ],
 
   notaAclaratoria: [
@@ -922,7 +940,9 @@ export function validarCamposRequeridos(
 
   if (tipoDocumento === 'notaMedica' && options?.showSiresUI === false) {
     camposRequeridos = camposRequeridos.filter(
-      (campo) => campo.campo !== 'relacionTemporal',
+      (campo) =>
+        campo.campo !== 'relacionTemporal' &&
+        campo.campo !== 'primeraVezUneme',
     );
   }
 
@@ -1079,6 +1099,15 @@ export function validarNotaMedicaPreSubmit(
   const df = datosFormulario;
   const hoy = new Date();
   hoy.setHours(23, 59, 59, 999);
+
+  if (isSIRES && df.primeraVezUnemeAplica === true && !esCeroOUno(df.primeraVezUneme)) {
+    return {
+      valido: false,
+      mensaje:
+        'Debe indicar si es la primera consulta del año en una Unidad de Especialidades Médicas',
+      paso: 1,
+    };
+  }
 
   const fechaNotaMedica = df.fechaNotaMedica ? new Date(df.fechaNotaMedica) : null;
   const fn = trabajador?.fechaNacimiento ? new Date(trabajador.fechaNacimiento) : null;

@@ -35,6 +35,7 @@ interface MedicoFirmante {
         contentType: string
     };
     idUser: string;
+    tieneDocumentoClinicoFinalizado?: boolean;
 }
 
 // Define el store

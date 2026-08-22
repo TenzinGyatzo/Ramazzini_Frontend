@@ -29,6 +29,7 @@ interface TecnicoFirmante {
     contentType: string;
   };
   idUser: string;
+  tieneDocumentoClinicoFinalizado?: boolean;
 }
 
 export const useTecnicoFirmanteStore = defineStore("tecnicoFirmante", () => {
