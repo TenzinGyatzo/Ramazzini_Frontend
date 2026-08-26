@@ -7,6 +7,7 @@ export interface AuditEventItem {
   proveedorSaludId?: string;
   actorId: string;
   actorSnapshot?: { username?: string; email?: string; role?: string } | null;
+  regime?: 'SIRES_NOM024' | 'SIN_REGIMEN' | null;
   timestamp: string;
   actionType: string;
   resourceType?: string | null;

@@ -91,7 +91,7 @@ export function useRegulatoryPolicy() {
   );
 
   /**
-   * Indica si el trail de auditoría NOM-024 está habilitado
+   * Indica si el trail de auditoría está habilitado
    */
   const auditTrailEnabled = computed<boolean>(() =>
     proveedorSaludStore.auditTrailEnabled

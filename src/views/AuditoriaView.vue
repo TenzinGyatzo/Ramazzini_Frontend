@@ -161,8 +161,8 @@ async function verifyAudit() {
       v-else-if="!auditTrailEnabled"
       class="rounded-lg bg-amber-50 border border-amber-200 p-4 text-amber-800"
     >
-      <p class="font-medium">Auditoría solo disponible para proveedores SIRES</p>
-      <p class="text-sm mt-1">Su proveedor no está sujeto al régimen SIRES (NOM-024).</p>
+      <p class="font-medium">Auditoría no disponible</p>
+      <p class="text-sm mt-1">El trail de auditoría no está habilitado para su proveedor.</p>
     </div>
 
     <template v-else>
@@ -257,6 +257,7 @@ async function verifyAudit() {
             <tr>
               <th>Fecha / Hora</th>
               <th>Actor</th>
+              <th>Régimen</th>
               <th>Acción</th>
               <th>Recurso (tipo)</th>
               <th>Recurso (ID)</th>
@@ -268,6 +269,9 @@ async function verifyAudit() {
               <td class="cell-actor" :title="ev.actorSnapshot?.email ?? ev.actorId">
                 {{ ev.actorSnapshot?.email ?? ev.actorId }}
               </td>
+              <td class="cell-long" :title="ev.regime ?? undefined">
+                {{ ev.regime ?? "—" }}
+              </td>
               <td class="cell-long" :title="ev.actionType">{{ ev.actionType }}</td>
               <td class="cell-long" :title="ev.resourceType ?? undefined">
                 {{ ev.resourceType ?? "—" }}
@@ -277,7 +281,7 @@ async function verifyAudit() {
               </td>
             </tr>
             <tr v-if="items.length === 0 && !loading">
-              <td colspan="5">Sin resultados. Ajuste filtros y pulse Buscar.</td>
+              <td colspan="6">Sin resultados. Ajuste filtros y pulse Buscar.</td>
             </tr>
           </tbody>
         </table>
@@ -391,19 +395,23 @@ async function verifyAudit() {
 }
 .audit-table th:nth-child(2),
 .audit-table td:nth-child(2) {
-  width: 24%;
+  width: 20%;
 }
 .audit-table th:nth-child(3),
 .audit-table td:nth-child(3) {
-  width: 20%;
+  width: 14%;
 }
 .audit-table th:nth-child(4),
 .audit-table td:nth-child(4) {
-  width: 20%;
+  width: 18%;
 }
 .audit-table th:nth-child(5),
 .audit-table td:nth-child(5) {
-  width: 19%;
+  width: 18%;
+}
+.audit-table th:nth-child(6),
+.audit-table td:nth-child(6) {
+  width: 18%;
 }
 .audit-table th {
   background: #f5f5f5;

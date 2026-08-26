@@ -278,8 +278,8 @@ router.beforeEach((to, from) => {
         }
       }
 
-      if (requiresSiresAudit && !proveedorSaludStore.isSIRES) {
-        console.warn("Acceso denegado: auditoría solo disponible para proveedores SIRES");
+      if (requiresSiresAudit && !proveedorSaludStore.auditTrailEnabled) {
+        console.warn("Acceso denegado: auditoría no habilitada para este proveedor");
         return next({ name: "inicio" });
       }
 
