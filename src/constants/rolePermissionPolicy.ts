@@ -155,6 +155,7 @@ export const DOCUMENT_TYPES_BY_PERMISSION: Record<
     'trastornoLimitePersonalidad',
     'eventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico',
+    'informeLongitudinalAudiometrico',
     'seguimientoProgramadoCardiometabolico',
   ],
 };
@@ -276,6 +277,7 @@ export const DOCUMENT_DISPLAY_NAMES: Record<string, string> = {
   trastornoLimitePersonalidad: 'Cuestionario Trastorno Límite de la Personalidad',
   eventoSeguimientoCardiometabolico: 'Evento de Seguimiento Cardiometabólico',
   informeLongitudinalCardiometabolico: 'Informe Longitudinal Cardiometabólico',
+  informeLongitudinalAudiometrico: 'Informe longitudinal de seguimiento audiométrico',
   seguimientoProgramadoCardiometabolico: 'Seguimiento Programado Cardiometabólico',
 };
 

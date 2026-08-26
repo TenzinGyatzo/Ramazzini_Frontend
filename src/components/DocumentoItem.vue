@@ -138,6 +138,7 @@ const obtenerNombreTipoDocumento = (tipo) => {
     'notaAclaratoria': 'Nota Aclaratoria',
     'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
     'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
+    'informeLongitudinalAudiometrico': 'Informe longitudinal de seguimiento audiométrico',
     // Plural
     'antidopings': 'Antidoping',
     'aptitudes': 'Aptitud',
@@ -1577,6 +1578,10 @@ const descargarPdfActual = async () => {
                     documento = props.informeLongitudinalCardiometabolico;
                     tipoDocumento = 'Informe Longitudinal Cardiometabolico';
                     break;
+                case 'informelongitudinalaudiometrico':
+                    documento = props.informeLongitudinalAudiometrico;
+                    tipoDocumento = 'Informe Longitudinal Audiometrico';
+                    break;
                 case 'documentoexterno':
                     documento = props.documentoExterno;
                     tipoDocumento = 'Documento Externo';
@@ -1741,6 +1746,7 @@ const props = defineProps({
     trastornoLimitePersonalidad: [Object, String],
     eventoSeguimientoCardiometabolico: [Object, String],
     informeLongitudinalCardiometabolico: [Object, String],
+    informeLongitudinalAudiometrico: [Object, String],
 });
 
 const {
@@ -1770,7 +1776,8 @@ const currentDocumentData = computed(() => {
            props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica ||
            props.notaAclaratoria || props.controlPrenatal || props.historiaOtologica || props.previoEspirometria ||
            props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad ||
-           props.eventoSeguimientoCardiometabolico || props.informeLongitudinalCardiometabolico;
+           props.eventoSeguimientoCardiometabolico || props.informeLongitudinalCardiometabolico ||
+           props.informeLongitudinalAudiometrico;
 });
 
 const trackedPdfStatus = ref(null);
@@ -1870,6 +1877,7 @@ const fechaCamposOrigen = {
     'trastornoLimitePersonalidad': 'fechaTrastornoLimitePersonalidad',
     'eventoSeguimientoCardiometabolico': 'fechaEventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'fechaInformeLongitudinalCardiometabolico',
+    'informeLongitudinalAudiometrico': 'fechaInformeLongitudinalAudiometrico',
 };
 
 // Mapeo de tipos singulares a plurales para buscar en el store
@@ -1895,6 +1903,7 @@ const tipoSingularAPlural = {
     'trastornoLimitePersonalidad': 'trastornoLimitePersonalidad',
     'eventoSeguimientoCardiometabolico': 'eventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'informeLongitudinalCardiometabolico',
+    'informeLongitudinalAudiometrico': 'informeLongitudinalAudiometrico',
 };
 
 // Función para normalizar tipo de documento a plural
@@ -2110,6 +2119,7 @@ const documentoNombre = computed(() => {
     if (props.trastornoLimitePersonalidad) return 'Trastorno Límite Personalidad';
     if (props.eventoSeguimientoCardiometabolico) return 'Evento de Seguimiento Cardiometabólico';
     if (props.informeLongitudinalCardiometabolico) return 'Informe Longitudinal Cardiometabólico';
+    if (props.informeLongitudinalAudiometrico) return 'Informe longitudinal de seguimiento audiométrico';
     if (props.notaAclaratoria) return 'Nota Aclaratoria';
     if (props.controlPrenatal) return 'Control Prenatal';
     if (props.historiaOtologica) return 'Historia Otológica';
@@ -2552,6 +2562,7 @@ const construirRutaYNombrePDF = () => {
     'trastornolimitepersonalidad': props.trastornoLimitePersonalidad,
     'eventoseguimientocardiometabolico': props.eventoSeguimientoCardiometabolico,
     'informelongitudinalcardiometabolico': props.informeLongitudinalCardiometabolico,
+    'informelongitudinalaudiometrico': props.informeLongitudinalAudiometrico,
   }[tipoSinEspacios];
 
   // Verificar que el documento exista
@@ -2560,7 +2571,7 @@ const construirRutaYNombrePDF = () => {
     return { ruta: null, nombre: null, updatedAt: null };
   }
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
 
   // Nombres de documentos (DEBEN coincidir con los del backend para construir rutas correctas)
   const tiposDocumentos = {
@@ -2585,6 +2596,7 @@ const construirRutaYNombrePDF = () => {
     'trastornolimitepersonalidad': 'Trastorno Limite Personalidad',
     'eventoseguimientocardiometabolico': 'Evento Seguimiento Cardiometabolico',
     'informelongitudinalcardiometabolico': 'Informe Longitudinal Cardiometabolico',
+    'informelongitudinalaudiometrico': 'Informe Longitudinal Audiometrico',
   };
 
   const tipoDocumentoFormateado = tiposDocumentos[tipoSinEspacios];
@@ -2763,7 +2775,7 @@ onUnmounted(() => {
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico], () => {
+watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico, props.informeLongitudinalAudiometrico], () => {
   pdfCheckScheduled = false;
   schedulePdfCheck();
 }, { deep: true });
@@ -4893,6 +4905,74 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     </div>
                 </div>
 
+                <!-- Informe Longitudinal Audiometrico -->
+                <div v-if="typeof informeLongitudinalAudiometrico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, informeLongitudinalAudiometrico, 'Informe Longitudinal Audiometrico')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${informeLongitudinalAudiometrico.rutaPDF}`,
+                            `Informe Longitudinal Audiometrico ${convertirFechaISOaDDMMYYYY(informeLongitudinalAudiometrico.fechaInformeLongitudinalAudiometrico)}.pdf`,
+                            informeLongitudinalAudiometrico.updatedAt ? new Date(informeLongitudinalAudiometrico.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${informeLongitudinalAudiometrico.rutaPDF}`,
+                            `Informe Longitudinal Audiometrico ${convertirFechaISOaDDMMYYYY(informeLongitudinalAudiometrico.fechaInformeLongitudinalAudiometrico)}.pdf`,
+                            informeLongitudinalAudiometrico.updatedAt ? new Date(informeLongitudinalAudiometrico.updatedAt).getTime() : null,
+                            'Informe Longitudinal Audiometrico')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-sky-100 rounded-lg mr-4 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-ear-listen text-sky-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Informe longitudinal audiométrico
+                                </h3>
+                                <BadgeNotaAclaratoria
+                                    v-if="tieneNotasAclaratorias"
+                                    :documentoId="documentoId"
+                                    :documentoTipo="documentoTipo"
+                                    class="hidden sm:flex ml-2"
+                                />
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(informeLongitudinalAudiometrico.fechaInformeLongitudinalAudiometrico) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="informeLongitudinalAudiometrico.estado"
+                                    :fechaFinalizacion="informeLongitudinalAudiometrico.fechaFinalizacion"
+                                    :finalizadoPor="informeLongitudinalAudiometrico.finalizadoPor"
+                                    :fechaAnulacion="informeLongitudinalAudiometrico.fechaAnulacion"
+                                    :anuladoPor="informeLongitudinalAudiometrico.anuladoPor"
+                                    :razonAnulacion="informeLongitudinalAudiometrico.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Estudios</p>
+                                    <p class="font-medium text-xs sm:text-sm">{{ informeLongitudinalAudiometrico.numeroAudiometriasIncluidas ?? '—' }}</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Criterio</p>
+                                    <p class="font-medium text-xs sm:text-sm">{{ informeLongitudinalAudiometrico.versionCriterio || 'v1.0-deltas' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Botones de acción -->
@@ -4921,6 +5001,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     'Trastorno Limite Personalidad': trastornoLimitePersonalidad,
                     'Evento Seguimiento Cardiometabolico': eventoSeguimientoCardiometabolico,
                     'Informe Longitudinal Cardiometabolico': informeLongitudinalCardiometabolico,
+                    'Informe Longitudinal Audiometrico': informeLongitudinalAudiometrico,
                 }" :key="key">
                     <button v-if="documento && documento.rutaDocumento"
                         @click="descargarArchivo(documento, key)"

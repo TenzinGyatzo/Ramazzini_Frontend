@@ -30,6 +30,7 @@ const fechaCamposOrigen = {
     'constanciasAptitud': 'fechaConstanciaAptitud',
     'eventoSeguimientoCardiometabolico': 'fechaEventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'fechaInformeLongitudinalCardiometabolico',
+    'informeLongitudinalAudiometrico': 'fechaInformeLongitudinalAudiometrico',
 };
 
 // Mapeo de nombres de documentos (DEBEN coincidir con los del backend para Nota Aclaratoria)
@@ -64,6 +65,7 @@ const documentoNombres = {
     'constanciasAptitud': 'Constancia de Aptitud',
     'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
     'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
+    'informeLongitudinalAudiometrico': 'Informe Longitudinal Audiometrico',
 };
 
 // Mapeo de tipos singulares a plurales para buscar en el store
@@ -86,6 +88,7 @@ const tipoSingularAPlural: Record<string, string> = {
     'constanciaAptitud': 'constanciasAptitud',
     'eventoSeguimientoCardiometabolico': 'eventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'informeLongitudinalCardiometabolico',
+    'informeLongitudinalAudiometrico': 'informeLongitudinalAudiometrico',
 };
 
 // Función para normalizar tipo de documento a plural
@@ -202,6 +205,7 @@ export const obtenerFechaDocumento = (documento) => {
         'fechaTrastornoLimitePersonalidad',
         'fechaEventoSeguimientoCardiometabolico',
         'fechaInformeLongitudinalCardiometabolico',
+        'fechaInformeLongitudinalAudiometrico',
     ];
 
     for (const campo of camposFecha) {

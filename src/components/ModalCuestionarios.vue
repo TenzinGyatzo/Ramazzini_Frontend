@@ -62,6 +62,7 @@ const QUESTIONNAIRE_TIPO_MAP = {
   'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
   'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
   'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
+  'informe-longitudinal-audiometrico': 'informeLongitudinalAudiometrico',
 };
 
 const closeModal = () => {
@@ -92,6 +93,7 @@ const questionnaireToDocumentType = {
   'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
   'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
   'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
+  'informe-longitudinal-audiometrico': 'informeLongitudinalAudiometrico',
 };
 
 const openModalSeguimientosProgramados = () => {
@@ -305,6 +307,21 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
       },
     });
     closeModal();
+  } else if (questionnaireType === 'informe-longitudinal-audiometrico') {
+    await navigateWithTreatmentConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'informeLongitudinalAudiometrico',
+        },
+      },
+    });
+    closeModal();
   }
 };
 </script>
@@ -406,6 +423,10 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               <button type="button" @click="handleQuestionnaireSelect('historia-otologica')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-ear-deaf text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Historia Otológica (Previo a Audiometría)
+              </button>
+              <button type="button" @click="handleQuestionnaireSelect('informe-longitudinal-audiometrico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
+                <i class="fas fa-chart-line text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Informe longitudinal de seguimiento audiométrico
               </button>
               <button type="button" @click="handleQuestionnaireSelect('previo-espirometria')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-lungs text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>

@@ -34,6 +34,7 @@ import VisualizadorCuestionarioProdromalBreve from '@/components/steps/Visualiza
 import VisualizadorTrastornoLimitePersonalidad from '@/components/steps/VisualizadorTrastornoLimitePersonalidad.vue';
 import VisualizadorEventoSeguimientoCardiometabolico from '@/components/steps/VisualizadorEventoSeguimientoCardiometabolico.vue';
 import VisualizadorInformeLongitudinalCardiometabolico from '@/components/steps/VisualizadorInformeLongitudinalCardiometabolico.vue';
+import VisualizadorInformeLongitudinalAudiometrico from '@/components/steps/VisualizadorInformeLongitudinalAudiometrico.vue';
 import {
   ORIENTACION_SIN_HALLAZGO,
   CONCLUSION_SIN_HALLAZGOS,
@@ -83,11 +84,13 @@ const exploracionesEscListas = ref(
 );
 
 const informeCmDocumentsListas = ref(
-  String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico',
+  String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico' &&
+    String(route.params.tipoDocumento || '') !== 'informeLongitudinalAudiometrico',
 );
 
 const informeCmDocumentoHidratado = ref(
-  String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico' ||
+  (String(route.params.tipoDocumento || '') !== 'informeLongitudinalCardiometabolico' &&
+    String(route.params.tipoDocumento || '') !== 'informeLongitudinalAudiometrico') ||
     !String(route.params.idDocumento || ''),
 );
 
@@ -102,7 +105,10 @@ const datosListos = computed(() => {
   if (documentos.currentTypeOfDocument === 'eventoSeguimientoCardiometabolico') {
     return exploracionesEscListas.value;
   }
-  if (documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico') {
+  if (
+    documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico' ||
+    documentos.currentTypeOfDocument === 'informeLongitudinalAudiometrico'
+  ) {
     return informeCmDocumentsListas.value && informeCmDocumentoHidratado.value;
   }
   return true;
@@ -184,9 +190,10 @@ const inicializarDesdeRuta = () => {
     bootstrapNotaAclaratoriaSiCorresponde();
   }
 
-  const esInformeCm =
-    String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico';
-  const editandoInformeCm = esInformeCm && !!String(documentoId.value || '');
+  const esInformeAgregador =
+    String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico' ||
+    String(tipoDocumento.value || '') === 'informeLongitudinalAudiometrico';
+  const editandoInformeCm = esInformeAgregador && !!String(documentoId.value || '');
 
   // Cargar documento si existe, o limpiar si es nuevo documento
   if (documentoId.value && tipoDocumento.value) {
@@ -270,7 +277,8 @@ const inicializarDesdeRuta = () => {
   }
 
   if (
-    String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico' &&
+    (String(tipoDocumento.value || '') === 'informeLongitudinalCardiometabolico' ||
+      String(tipoDocumento.value || '') === 'informeLongitudinalAudiometrico') &&
     trabajadores.currentTrabajadorId
   ) {
     informeCmDocumentsListas.value = false;
@@ -340,6 +348,7 @@ watchEffect(async () => {
       trastornoLimitePersonalidad: formData.formDataTrastornoLimitePersonalidad,
       eventoSeguimientoCardiometabolico: formData.formDataEventoSeguimientoCardiometabolico,
       informeLongitudinalCardiometabolico: formData.formDataInformeLongitudinalCardiometabolico,
+      informeLongitudinalAudiometrico: formData.formDataInformeLongitudinalAudiometrico,
     };
 
     const documentoForm = documentoMap[tipoActual];
@@ -939,6 +948,18 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
           </div>
           <div class="w-full xl:w-3/4">
             <VisualizadorInformeLongitudinalCardiometabolico />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'informeLongitudinalAudiometrico'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/4">
+            <FormStepper />
+          </div>
+          <div class="w-full xl:w-3/4">
+            <VisualizadorInformeLongitudinalAudiometrico />
           </div>
         </div>
       </Transition>

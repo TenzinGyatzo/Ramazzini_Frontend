@@ -101,6 +101,7 @@ const documentTypeLabels = {
   trastornoLimitePersonalidad: "Trastorno Limite Personalidad",
   eventoSeguimientoCardiometabolico: "Evento Seguimiento Cardiometabolico",
   informeLongitudinalCardiometabolico: "Informe Longitudinal Cardiometabolico",
+  informeLongitudinalAudiometrico: "Informe Longitudinal Audiometrico",
 };
 
 // Computed properties para mejorar la legibilidad

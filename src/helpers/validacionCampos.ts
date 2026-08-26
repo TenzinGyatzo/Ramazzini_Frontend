@@ -198,6 +198,10 @@ function validarListaEventosIncluidosNoVacia(valor: any): boolean {
   });
 }
 
+function validarIdAudiometriaBasal(valor: any): boolean {
+  return validarMongoIdFlexible(valor);
+}
+
 function validarNumeroEnteroNoNegativo(valor: any): boolean {
   if (esValorVacio(valor) && valor !== 0) return false;
   const n = Number(valor);
@@ -914,6 +918,58 @@ const camposRequeridosPorTipo: Record<string, Array<{
       validacion: validarMongoIdFlexible,
     },
   ],
+
+  informeLongitudinalAudiometrico: [
+    {
+      campo: 'fechaInformeLongitudinalAudiometrico',
+      nombre: 'Fecha del informe longitudinal',
+      tipo: 'fecha',
+      paso: 1,
+      validacion: validarFecha,
+    },
+    {
+      campo: 'periodoInicio',
+      nombre: 'Inicio del periodo',
+      tipo: 'fecha',
+      paso: 1,
+      validacion: validarFecha,
+    },
+    {
+      campo: 'periodoFin',
+      nombre: 'Fin del periodo (no anterior al inicio)',
+      tipo: 'fecha',
+      paso: 1,
+      validacion: validarPeriodoFinNoAnterior,
+    },
+    {
+      campo: 'idAudiometriaBasal',
+      nombre: 'Audiometría basal seleccionada',
+      tipo: 'texto',
+      paso: 1,
+      validacion: validarIdAudiometriaBasal,
+    },
+    {
+      campo: 'audiometriasSubsecuentesIncluidas',
+      nombre: 'Al menos una audiometría subsecuente',
+      tipo: 'lista',
+      paso: 1,
+      validacion: validarListaEventosIncluidosNoVacia,
+    },
+    {
+      campo: 'interpretacionLongitudinal',
+      nombre: 'Interpretación longitudinal del médico',
+      tipo: 'texto',
+      paso: 2,
+      validacion: validarTexto,
+    },
+    {
+      campo: 'idTrabajador',
+      nombre: 'Trabajador',
+      tipo: 'texto',
+      paso: 1,
+      validacion: validarMongoIdFlexible,
+    },
+  ],
 };
 
 // Función principal para validar campos requeridos
@@ -1038,6 +1094,7 @@ export const DOCUMENT_TYPE_DATE_FIELDS: Record<string, string> = {
   trastornoLimitePersonalidad: 'fechaTrastornoLimitePersonalidad',
   eventoSeguimientoCardiometabolico: 'fechaEventoSeguimientoCardiometabolico',
   informeLongitudinalCardiometabolico: 'fechaInformeLongitudinalCardiometabolico',
+  informeLongitudinalAudiometrico: 'fechaInformeLongitudinalAudiometrico',
 };
 
 /** Valida que la fecha no sea futura (solo aplica en régimen SIRES). */

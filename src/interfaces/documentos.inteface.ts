@@ -172,6 +172,10 @@ export interface Aptitud {
 export interface Audiometria {
     _id: string;
     fechaAudiometria: string;
+    metodoAudiometria?: string;
+    perdidaMonauralOD_AMA?: number;
+    perdidaMonauralOI_AMA?: number;
+    perdidaAuditivaBilateralAMA?: number;
     oidoDerecho125?: number;
     oidoDerecho250?: number;
     oidoDerecho500?: number;
@@ -1115,6 +1119,111 @@ export interface InformeLongitudinalCardiometabolico {
   graficaEvolucionPresionArterial?: string;
   graficaEvolucionPesoImc?: string;
   graficaEvolucionPerfilLipidico?: string;
+  rutaPDF?: string;
+  pdfStatus?: PdfStatus;
+  createdBy?: unknown;
+  updatedBy?: unknown;
+  createdAt?: string;
+  updatedAt?: string;
+  estado?: DocumentoEstado;
+  fechaFinalizacion?: string;
+  finalizadoPor?: string;
+  fechaAnulacion?: string;
+  anuladoPor?: string;
+  razonAnulacion?: string;
+}
+
+export type RolAudiometriaEnInforme = 'basal' | 'subsecuente';
+
+export interface AudiometriaConcentradaLongitudinal {
+  idAudiometriaOriginal?: string;
+  fechaAudiometria?: string;
+  metodoAudiometria?: string;
+  rolEnInforme?: RolAudiometriaEnInforme;
+  oidoDerecho125?: number | null;
+  oidoDerecho250?: number | null;
+  oidoDerecho500?: number | null;
+  oidoDerecho1000?: number | null;
+  oidoDerecho2000?: number | null;
+  oidoDerecho3000?: number | null;
+  oidoDerecho4000?: number | null;
+  oidoDerecho6000?: number | null;
+  oidoDerecho8000?: number | null;
+  oidoIzquierdo125?: number | null;
+  oidoIzquierdo250?: number | null;
+  oidoIzquierdo500?: number | null;
+  oidoIzquierdo1000?: number | null;
+  oidoIzquierdo2000?: number | null;
+  oidoIzquierdo3000?: number | null;
+  oidoIzquierdo4000?: number | null;
+  oidoIzquierdo6000?: number | null;
+  oidoIzquierdo8000?: number | null;
+  porcentajePerdidaOD?: number | null;
+  porcentajePerdidaOI?: number | null;
+  perdidaMonauralOD_AMA?: number | null;
+  perdidaMonauralOI_AMA?: number | null;
+  perdidaAuditivaBilateralAMA?: number | null;
+  hipoacusiaBilateralCombinada?: number | null;
+  diagnosticoAudiometria?: string;
+  interpretacionAudiometrica?: string;
+  frecuenciasFaltantes?: number[];
+  estudioIncompleto?: boolean;
+}
+
+export interface AntecedenteExposicionRuidoLongitudinal {
+  fuente?: string;
+  idHistoriaOtologica?: string;
+  trabajoAmbientesRuidosos?: string;
+  tiempoExposicionLaboral?: string;
+  usoProteccionAuditiva?: string;
+  ruidoEnAgentesRiesgoActuales?: boolean;
+  textoLibre?: string;
+}
+
+export interface CeldaDeltaAudiometrico {
+  frecuenciaHz: number;
+  deltaDb?: number | null;
+}
+
+export interface FilaMatrizDeltaAudiometrico {
+  idAudiometriaOriginal?: string;
+  fechaAudiometria?: string;
+  oido: 'Derecho' | 'Izquierdo';
+  deltas: CeldaDeltaAudiometrico[];
+}
+
+export interface ResumenCronologicoAudiometrico {
+  idAudiometriaOriginal?: string;
+  fechaAudiometria?: string;
+  tipo?: RolAudiometriaEnInforme;
+  metodoAudiometria?: string;
+  resultadoOD?: string;
+  resultadoOI?: string;
+  cambioRespectoBasal?: string;
+}
+
+export interface InformeLongitudinalAudiometrico {
+  _id?: string;
+  fechaInformeLongitudinalAudiometrico: string;
+  periodoInicio: string;
+  periodoFin: string;
+  idTrabajador?: string;
+  idAudiometriaBasal?: string;
+  audiometriasSubsecuentesIncluidas?: string[];
+  numeroAudiometriasIncluidas?: number;
+  audiometriaBasalConcentrada?: AudiometriaConcentradaLongitudinal;
+  audiometriasSubsecuentesConcentradas?: AudiometriaConcentradaLongitudinal[];
+  antecedenteExposicionRuido?: AntecedenteExposicionRuidoLongitudinal;
+  matrizDeltas?: FilaMatrizDeltaAudiometrico[];
+  resumenCronologico?: ResumenCronologicoAudiometrico[];
+  advertencias?: string[];
+  borradorInterpretacionObjetiva?: string;
+  interpretacionLongitudinal?: string;
+  recomendacionesSeguimientoAudiometrico?: string;
+  criterioComparacion?: string;
+  versionCriterio?: string;
+  graficaAudiogramaOidoDerecho?: string;
+  graficaAudiogramaOidoIzquierdo?: string;
   rutaPDF?: string;
   pdfStatus?: PdfStatus;
   createdBy?: unknown;

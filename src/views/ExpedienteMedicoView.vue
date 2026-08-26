@@ -380,6 +380,7 @@ const documentTypeLabels = {
   previoEspirometria: "Previo Espirometria",
   eventoSeguimientoCardiometabolico: "Evento de Seguimiento Cardiometabólico",
   informeLongitudinalCardiometabolico: "Informe Longitudinal Cardiometabólico",
+  informeLongitudinalAudiometrico: "Informe longitudinal de seguimiento audiométrico",
 };
 
 const fetchData = async (force = false) => {
@@ -853,6 +854,19 @@ const handleDeleteSelected = async () => {
                     });
                 }
             });
+
+            yearData.informeLongitudinalAudiometrico?.forEach(informeLongitudinalAudiometrico => {
+                const rutaBase = obtenerRutaDocumento(informeLongitudinalAudiometrico, 'Informe Longitudinal Audiometrico');
+                const fecha = obtenerFechaDocumento(informeLongitudinalAudiometrico) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(informeLongitudinalAudiometrico, 'Informe Longitudinal Audiometrico', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (informeLongitudinalAudiometrico._id && selectedRoutes.value.includes(ruta)) {
+                    documentosAEliminar.push({
+                        id: informeLongitudinalAudiometrico._id,
+                        tipo: 'informeLongitudinalAudiometrico',
+                    });
+                }
+            });
         });
 
         const excluidosPorInmutables = totalSeleccionados - documentosAEliminar.length;
@@ -956,7 +970,8 @@ const totalDocumentosCreados = computed(() => {
       (yearData.cuestionarioProdromalBreve?.length || 0) +
       (yearData.trastornoLimitePersonalidad?.length || 0) +
       (yearData.eventoSeguimientoCardiometabolico?.length || 0) + 
-      (yearData.informeLongitudinalCardiometabolico?.length || 0)
+      (yearData.informeLongitudinalCardiometabolico?.length || 0) +
+      (yearData.informeLongitudinalAudiometrico?.length || 0)
     );
   }, 0);
 });

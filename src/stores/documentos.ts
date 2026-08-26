@@ -25,6 +25,7 @@ import type {
   TrastornoLimitePersonalidad,
   EventoSeguimientoCardiometabolico,
   InformeLongitudinalCardiometabolico,
+  InformeLongitudinalAudiometrico,
 } from "@/interfaces/documentos.inteface";
 
 export type DocumentsByYear = {
@@ -51,6 +52,7 @@ export type DocumentsByYear = {
     trastornoLimitePersonalidad?: TrastornoLimitePersonalidad[];
     eventoSeguimientoCardiometabolico?: EventoSeguimientoCardiometabolico[];
     informeLongitudinalCardiometabolico?: InformeLongitudinalCardiometabolico[];
+    informeLongitudinalAudiometrico?: InformeLongitudinalAudiometrico[];
   };
 };
 
@@ -121,6 +123,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     'trastornoLimitePersonalidad',
     'eventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico',
+    'informeLongitudinalAudiometrico',
   ] as const;
 
   function isTooManyRequestsError(error: unknown): boolean {
@@ -199,6 +202,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
       trastornoLimitePersonalidad: "fechaTrastornoLimitePersonalidad",
       eventoSeguimientoCardiometabolico: "fechaEventoSeguimientoCardiometabolico",
       informeLongitudinalCardiometabolico: "fechaInformeLongitudinalCardiometabolico",
+      informeLongitudinalAudiometrico: "fechaInformeLongitudinalAudiometrico",
     };
 
     return documento?.[fechaCampos[tipoDocumento]] || "";

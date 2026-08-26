@@ -113,7 +113,8 @@ const totalDocumentos = computed(() => {
            (props.documents.cuestionarioProdromalBreve?.length || 0) +
            (props.documents.trastornoLimitePersonalidad?.length || 0) +
            (props.documents.eventoSeguimientoCardiometabolico?.length || 0) +
-           (props.documents.informeLongitudinalCardiometabolico?.length || 0)
+           (props.documents.informeLongitudinalCardiometabolico?.length || 0) +
+           (props.documents.informeLongitudinalAudiometrico?.length || 0)
     );
 });
 
@@ -165,6 +166,7 @@ const documentoRutasInfo = computed(() => {
         props.documents.controlPrenatal?.forEach((doc) => pushDoc(doc, 'controlPrenatal', 'Control Prenatal'));
     }
     props.documents.historiaOtologica?.forEach((doc) => pushDoc(doc, 'historiaOtologica', 'Historia Otologica'));
+    props.documents.informeLongitudinalAudiometrico?.forEach((doc) => pushDoc(doc, 'informeLongitudinalAudiometrico', 'Informe Longitudinal Audiometrico'));
     props.documents.previoEspirometria?.forEach((doc) => pushDoc(doc, 'previoEspirometria', 'Previo Espirometria'));
     props.documents.recetas?.forEach((doc) => pushDoc(doc, 'receta', 'Receta'));
     props.documents.entrevistasPsicologicas?.forEach((doc) => pushDoc(doc, 'entrevistaPsicologica', 'Entrevista Psicologica'));
@@ -490,6 +492,26 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                         :isDeletionMode="isDeletionMode"
                         :isSelected="isDocumentoSelected(audiometria._id)"
                         @eliminarDocumento="$emit('eliminarDocumento', audiometria._id, convertirFechaISOaDDMMYYYY(audiometria.fechaAudiometria), 'audiometria')"
+                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
+                        @openSubscriptionModal="emit('openSubscriptionModal')"
+                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
+                    />
+                </div>
+            </div>
+
+            <!-- Informe Longitudinal Audiometrico -->
+            <div v-if="documents.informeLongitudinalAudiometrico && documents.informeLongitudinalAudiometrico.length > 0">
+                <div v-for="(informeLongitudinalAudiometrico, index) in documents.informeLongitudinalAudiometrico" :key="informeLongitudinalAudiometrico._id"
+                     class="transition-all duration-200 hover:bg-gray-50"
+>
+                    <DocumentoItem
+                        :informeLongitudinalAudiometrico="informeLongitudinalAudiometrico"
+                        :documentoId="informeLongitudinalAudiometrico._id"
+                        :documentoTipo="'informeLongitudinalAudiometrico'"
+                        :toggleRouteSelection="toggleRouteSelection"
+                        :isDeletionMode="isDeletionMode"
+                        :isSelected="isDocumentoSelected(informeLongitudinalAudiometrico._id)"
+                        @eliminarDocumento="$emit('eliminarDocumento', informeLongitudinalAudiometrico._id, convertirFechaISOaDDMMYYYY(informeLongitudinalAudiometrico.fechaInformeLongitudinalAudiometrico), 'informeLongitudinalAudiometrico')"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @openSubscriptionModal="emit('openSubscriptionModal')"
                         @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
