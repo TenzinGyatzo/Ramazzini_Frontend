@@ -23,7 +23,7 @@ export interface RegulatoryPolicy {
         notaAclaratoriaEnabled: boolean;
         cluesFieldVisible: boolean; // CLUES visible solo en SIRES
         dailyConsentEnabled: boolean; // Consentimiento diario habilitado solo en SIRES
-        confidentialityAgreementEnabled: boolean; // Acuerdo de confidencialidad SIRES
+        confidentialityAgreementEnabled: boolean; // Acuerdo de confidencialidad (SIRES y SIN_REGIMEN)
         auditTrailEnabled: boolean; // Trail de auditoría (consulta/exportación/registro)
         workerIdentificationImmutable: boolean; // Identificación trabajador inmutable post-alta
         controlPrenatalEnabled: boolean; // Documento Control Prenatal (solo SIN_REGIMEN)
