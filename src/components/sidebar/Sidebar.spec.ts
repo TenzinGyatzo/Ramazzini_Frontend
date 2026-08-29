@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import Sidebar from './Sidebar.vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useSidebarStore } from '@/stores/sidebar';
 
 function createSiresPolicy() {
   return {
@@ -140,5 +141,42 @@ describe('Sidebar — folio de edición', () => {
     expect(el.text()).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
     expect(el.attributes('title')).toBe(el.text());
     expect(el.text()).not.toContain('v2.0.0');
+  });
+});
+
+describe('Sidebar — Inicio', () => {
+  it('muestra el subtítulo Resumen de trabajo', async () => {
+    setActivePinia(createPinia());
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { template: '<div />' } }],
+    });
+    await router.push('/');
+    await router.isReady();
+
+    const wrapper = mount(Sidebar, {
+      global: {
+        plugins: [createPinia(), router],
+        provide: { toast: { open: vi.fn() } },
+        renderStubDefaultSlot: true,
+        stubs: {
+          SidebarLink: true,
+          Transition: true,
+        },
+      },
+    });
+    expect(wrapper.text()).toContain('Resumen de trabajo');
+  });
+
+  it('expone Cerrar sesión en el footer', async () => {
+    const wrapper = await mountSidebar();
+    const sidebar = useSidebarStore();
+    sidebar.collapsed = false;
+    await wrapper.vm.$nextTick();
+    const logout = wrapper.get('[data-testid="sidebar-logout"]');
+    expect(logout.element.tagName).toBe('BUTTON');
+    expect(logout.attributes('aria-label')).toBe('Cerrar sesión');
+    expect(logout.attributes('title')).toBe('Cerrar sesión');
+    expect(logout.text()).toContain('Cerrar sesión');
   });
 });

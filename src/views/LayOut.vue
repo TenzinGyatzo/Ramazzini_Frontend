@@ -19,6 +19,7 @@ import { useEliminacion } from "@/composables/useEliminacion";
 import {
   isConfidentialityAgreementPending,
   confidentialityAgreementAccepted,
+  shouldHoldInicioDataUntilAgreement,
 } from "@/composables/useConfidentialityAgreement";
 import {
   isTrabajadorSexoCurp,
@@ -26,6 +27,8 @@ import {
 } from "@/helpers/trabajadorSexoCurp";
 import { useBorradoresNotaMedica } from "@/composables/useBorradoresNotaMedica";
 import ModalBorradoresPendientes from "@/components/modals/ModalBorradoresPendientes.vue";
+import { inicioResumenState } from "@/composables/inicioResumenCache";
+import { resolveInicioLayoutPresentation } from "@/composables/inicioLayoutPresentation";
 
 const {
   isOpen: eliminacionOpen,
@@ -751,10 +754,19 @@ watch([datosCargados, mostrarBannerBorradores, hasBorradoresPendientes], () => {
 });
 
 watch(datosCargados, (loaded) => {
-  if (loaded) {
+  if (loaded && route.name !== 'inicio') {
     loadBorradoresPendientes();
   }
 });
+
+watch(
+  () => route.name,
+  (name, prev) => {
+    if (prev === 'inicio' && name !== 'inicio') {
+      loadBorradoresPendientes();
+    }
+  },
+);
 
 watch([empresasCargadas, () => empresas.empresas.length], () => {
   tryShowEmpresasNotification();
@@ -825,7 +837,21 @@ watch(mostrarTooltipTecnicoEvaluador, (nuevoValor) => {
   }
 });
 
-const isHomeRoute = computed(() => route.name === 'inicio');
+const inicioLayout = computed(() =>
+  resolveInicioLayoutPresentation({
+    routeName: route.name,
+    hasActivity: Boolean(inicioResumenState.resumen.value?.hasActivity),
+    hasTrabajadores: Boolean(inicioResumenState.resumen.value?.hasTrabajadores),
+    hasError:
+      Boolean(inicioResumenState.error.value) &&
+      !shouldHoldInicioDataUntilAgreement(),
+    userId: user.user?._id,
+    loading: inicioResumenState.loading.value,
+    lastFetchedAt: inicioResumenState.lastFetchedAt.value,
+  }),
+);
+const showWelcomeHome = computed(() => inicioLayout.value.showWelcomeHome);
+const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
 
 </script>
 
@@ -833,7 +859,7 @@ const isHomeRoute = computed(() => route.name === 'inicio');
   <main
     :class="[
       'flex flex-col items-center p-4 md:p-10 md:w-full overflow-x-auto',
-      isHomeRoute ? 'home-layout min-h-dvh max-h-dvh overflow-y-auto' : 'min-h-screen',
+      showWelcomeHome ? 'home-layout min-h-dvh max-h-dvh overflow-y-auto' : 'min-h-screen',
     ]"
   >
     
@@ -847,10 +873,14 @@ const isHomeRoute = computed(() => route.name === 'inicio');
     </div>
 
     <!-- Logo Ramazzini: tamaño/posición original por ruta; v-show evita remontaje; aspect-ratio evita CLS al cargar img -->
-    <div class="layout-logo-region flex w-full flex-shrink-0 justify-center">
+    <div
+      v-show="showWelcomeHome || showCompactLogo"
+      class="layout-logo-region flex w-full flex-shrink-0 justify-center"
+    >
       <RouterLink
-        v-show="isHomeRoute"
+        v-show="showWelcomeHome"
         :to="{ name: 'inicio' }"
+        data-testid="layout-brand-logo"
         class="home-logo-link layout-nav-link logo-transition mt-14 block aspect-[1397/1403] w-1/2 transform cursor-pointer transition-transform duration-300 ease hover:scale-105 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 2xl:w-1/8"
       >
         <img
@@ -865,8 +895,9 @@ const isHomeRoute = computed(() => route.name === 'inicio');
       </RouterLink>
 
       <RouterLink
-        v-show="!isHomeRoute"
+        v-show="showCompactLogo"
         :to="{ name: 'inicio' }"
+        data-testid="layout-compact-logo"
         class="layout-nav-link logo-transition mb-5 mt-3 block aspect-[5210/1403] w-2/3 transform cursor-pointer transition-transform duration-300 ease hover:scale-105 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 2xl:w-1/6"
       >
         <img
@@ -880,42 +911,17 @@ const isHomeRoute = computed(() => route.name === 'inicio');
       </RouterLink>
     </div>
 
-    <!-- Contenido principal: inicio solo anima entrada; desmontaje instantáneo al navegar -->
+    <!-- Contenido principal -->
     <Transition appear name="slide-up-in-only" @leave="(_, done) => done()">
-      <div v-if="isHomeRoute" class="home-content mx-auto flex w-full flex-col items-center">
-        <h1 class="home-title text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl py-5 text-center text-slate-700 font-medium bg-gradient-to-r from-slate-700 to-gray-600 bg-clip-text text-transparent">
-          Ramazzini
-        </h1>
-        <p class="home-subtitle text-xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl xl:w-2/3 py-2 text-center text-gray-600">
-          La aplicación para la creación y gestión de informes de exámenes médicos laborales.
-        </p>
-        <p class="home-greeting text-gray-600 text-sm sm:text-lg my-4 text-center">Hola, {{ user.getUsername }}</p>
-        
-        <!-- Botones de acción -->
-        <div class="home-actions grid gap-4 w-full max-w-md mt-2">
-          <RouterLink
-            :to="{ name: 'empresas' }"
-            class="home-cta-btn layout-nav-link button-transition block w-full transform rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-3 text-center text-lg font-medium uppercase tracking-wide text-white shadow-lg transition-all duration-300 ease hover:scale-105 hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl sm:text-xl md:text-2xl">
-            VER MIS CLIENTES
-          </RouterLink>
-
-          <div class="flex justify-center">
-            <a href="/login">
-              <button
-                class="home-logout-btn button-transition transform rounded-lg border-2 border-gray-300 px-4 py-1 text-sm uppercase text-gray-800 shadow-md transition-all duration-300 ease hover:scale-105 hover:bg-red-600 hover:text-gray-200 hover:shadow-lg sm:text-base md:text-lg"
-                @click="user.logout">
-                <i class="fa-solid fa-sign-out-alt mr-3"></i>
-                CERRAR SESIÓN
-              </button>
-            </a>
-          </div>
-        </div>
+      <div
+        :class="[
+          showWelcomeHome ? 'home-content w-full max-w-screen-2xl' : 'w-full max-w-screen-2xl',
+          (inicioLayout.showInicioHub || inicioLayout.isInicioLoading) ? 'flex flex-1 flex-col' : '',
+        ]"
+      >
+        <RouterView />
       </div>
     </Transition>
-
-    <div v-if="!isHomeRoute" class="w-full max-w-screen-2xl">
-      <RouterView />
-    </div>
 
     <!-- Notificaciones separadas con transiciones independientes -->
     
@@ -974,7 +980,8 @@ const isHomeRoute = computed(() => route.name === 'inicio');
     <!-- Tercera notificación: borradores de notas médicas -->
     <Transition name="slide-up">
       <div
-        v-if="datosCargados && proveedorSaludStore.isSIRES && mostrarBannerBorradores && isNotificationBorradoresVisible"
+        v-if="datosCargados && proveedorSaludStore.isSIRES && mostrarBannerBorradores && isNotificationBorradoresVisible && inicioLayout.showNmBanner"
+        data-testid="layout-nm-banner"
         class="hidden sm:block fixed bottom-6 right-6 z-50 bg-white text-gray-700 rounded-xl shadow-lg p-4 max-w-sm transform hover:scale-105 transition-transform duration-500 ease-in-out border-l-4"
         :class="getBannerBorderClass(borradoresNivelMaximo)"
         :style="{ bottom: borradoresBannerBottom }"

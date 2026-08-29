@@ -10,6 +10,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useRiesgoTrabajoStore } from '@/stores/riesgosTrabajo';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { useEditionLabel } from '@/composables/useEditionLabel';
+import { useUserStore } from '@/stores/user';
 
 const route = useRoute();
 const router = useRouter();
@@ -20,6 +21,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const riesgosTrabajo = useRiesgoTrabajoStore();
+const user = useUserStore();
 
 const isMounted = ref(false);
 const hasVisitedDashboard = ref(false);
@@ -156,7 +158,7 @@ const { editionLabel } = useEditionLabel();
             :class="{ 'fade-in': isMounted }"
             @click.stop>
             <p>Inicio</p>
-            <p class="font-light text-xs">Volver al inicio</p>
+            <p class="font-light text-xs" data-testid="inicio-sidebar-subtitle">Resumen de trabajo</p>
           </SidebarLink>
         </Transition>
 
@@ -360,6 +362,17 @@ const { editionLabel } = useEditionLabel();
         :title="sidebar.collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'"
         :aria-label="sidebar.collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'">
         <i class="fas fa-angle-double-left"></i>
+      </button>
+      <button
+        type="button"
+        data-testid="sidebar-logout"
+        class="sidebar-logout"
+        :title="'Cerrar sesión'"
+        :aria-label="'Cerrar sesión'"
+        @click.stop="user.logout()"
+      >
+        <i class="fas fa-sign-out-alt"></i>
+        <span v-if="!sidebar.collapsed">Cerrar sesión</span>
       </button>
       <p
         class="sidebar-version"
@@ -593,6 +606,33 @@ const { editionLabel } = useEditionLabel();
 
 .collapse-button.collapsed:hover i {
   transform: rotate(180deg);
+}
+
+.sidebar-logout {
+  width: 100%;
+  margin-top: 0.5rem;
+  height: 2.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-logout:hover {
+  background: rgba(220, 38, 38, 0.35);
+  color: #fff;
+}
+
+.sidebar-logout:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
 }
 
 .sidebar-version {

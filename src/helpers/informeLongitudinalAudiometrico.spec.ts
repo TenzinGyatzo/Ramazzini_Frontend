@@ -197,7 +197,7 @@ describe('derivarCamposInformeLongitudinalAudiometrico', () => {
 
 describe('refrescarAudiometriasConcentradasEnInforme', () => {
   it('recalcula Δ desde audiometrías vivas del expediente', () => {
-    const form = {
+    const form: Parameters<typeof refrescarAudiometriasConcentradasEnInforme>[0] = {
       idAudiometriaBasal: 'b',
       audiometriasSubsecuentesIncluidas: ['s'],
       antecedenteExposicionRuido: { textoLibre: 'nota' },

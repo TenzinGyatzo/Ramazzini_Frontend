@@ -4,6 +4,7 @@ import AuthAPI from "@/api/AuthAPI";
 import AssignmentsAPI from "@/api/AssignmentsAPI";
 import { useRouter } from "vue-router";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
+import { invalidateInicioResumenCache } from "@/composables/inicioResumenCache";
 
 // Define el tipo para el objeto usuario
 interface User {
@@ -77,6 +78,7 @@ export const useUserStore = defineStore("user", () => {
         centrosTrabajoAsignados.value = [];
         fetchUserPromise = null;
         invalidateTenantUsersCache();
+        invalidateInicioResumenCache();
     }
 
     async function fetchUser(force = false) {

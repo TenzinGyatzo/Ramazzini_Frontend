@@ -6,9 +6,10 @@ import AcuerdoConfidencialidadAPI from '@/api/AcuerdoConfidencialidadAPI';
 
 export const confidentialityAgreementRequired = ref(false);
 export const confidentialityAgreementAccepted = ref(true);
+export const confidentialityAgreementChecking = ref(false);
 
 const isLoading = ref(false);
-const isChecking = ref(false);
+const isChecking = confidentialityAgreementChecking;
 const agreementText = ref('');
 const footerConsent = ref('');
 const currentVersion = ref('');
@@ -25,6 +26,11 @@ const publicRouteNames = [
 
 export function isConfidentialityAgreementPending(): boolean {
   return confidentialityAgreementRequired.value && !confidentialityAgreementAccepted.value;
+}
+
+/** Evita pedir datos clínicos (Inicio) hasta saber si el acuerdo ya está aceptado. */
+export function shouldHoldInicioDataUntilAgreement(): boolean {
+  return isChecking.value || isConfidentialityAgreementPending();
 }
 
 export async function refreshConfidentialityAgreementStatus(): Promise<void> {

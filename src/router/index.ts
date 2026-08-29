@@ -50,10 +50,15 @@ const router = createRouter({
     },
     {
       path: "/",
-      name: "inicio",
       component: LayOut,
       meta: { requiresAuth: true },
       children: [
+        {
+          path: "",
+          name: "inicio",
+          component: () => import("../views/InicioView.vue"),
+          meta: { requiresAuth: true },
+        },
         {
           path: "/registrar-usuario",
           name: "add-user",

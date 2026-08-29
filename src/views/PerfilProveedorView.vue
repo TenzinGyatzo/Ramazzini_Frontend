@@ -207,6 +207,7 @@ const colorOptions = [
   { name: "Turquesa Oscuro", hex: "#138496" },
   { name: "Turquesa", hex: "#17A2B8" },
   { name: "Azul Claro", hex: "#2BB9D9" },
+  { name: "Verde Teal", hex: "#006763" },
   { name: "Verde Oscuro", hex: "#1E7E34" },
   { name: "Verde Médico", hex: "#28A745" },
   { name: "Rojo Oscuro", hex: "#C82333" },
