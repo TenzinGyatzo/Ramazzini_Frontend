@@ -246,6 +246,7 @@ const handleSubmit = async (data) => {
 
           <FormKit type="form" :actions="false" incomplete-message="Por favor complete todos los campos"
             @submit="handleSubmit" @input="formData = $event">
+            <div class="grid gap-3">
             <FormKit type="text" name="nombreComercial"
               placeholder="Nombre comercial de la empresa" validation="required"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
@@ -254,7 +255,7 @@ const handleSubmit = async (data) => {
                 <span class="font-medium text-lg text-gray-700">Nombre Comercial<span class="text-red-500">*</span></span>
               </template>
             </FormKit>
-            <div class="grid grid-cols-1 md:grid-cols-2 md:gap-x-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-3">
               <FormKit type="text" label="Razón Social" name="razonSocial" placeholder="Razón social de la empresa"
                 :value="empresas.currentEmpresa?.razonSocial || ''" />
               <FormKit type="text" label="RFC/Registro Patronal" name="RFC" placeholder="RFC o Registro Patronal" validation="rfcValidation" :validation-messages="{
@@ -265,8 +266,8 @@ const handleSubmit = async (data) => {
               :value="empresas.currentEmpresa?.giroDeEmpresa || ''" />
 
             <!-- Área de arrastrar y soltar para el logotipo -->
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mt-4 mb-2">Logotipo</label>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Logotipo</label>
               <div 
                 class="border-2 border-dashed rounded-lg min-h-[7rem] sm:min-h-[9rem] max-w-full sm:max-w-md md:max-w-lg mx-auto px-4 py-5 sm:p-6 text-center transition-all duration-200 cursor-pointer"
                 :class="[
@@ -321,6 +322,7 @@ const handleSubmit = async (data) => {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
 
             <!-- Mostrar la vista previa del logotipo -->
@@ -386,5 +388,6 @@ const handleSubmit = async (data) => {
 /* Estilo para colorear asteriscos de campos obligatorios en FormKit */
 :deep(.formkit-label) {
   color: #374151; /* Color base del texto del label */
+  margin-bottom: 0.25rem;
 }
 </style>

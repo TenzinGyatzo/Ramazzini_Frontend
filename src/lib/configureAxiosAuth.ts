@@ -4,6 +4,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import { useSessionLockStore } from '@/stores/sessionLock';
+import { resetPostHogIdentity } from '@/utils/posthogIdentity';
 
 let refreshPromise: Promise<void> | null = null;
 
@@ -92,6 +93,7 @@ export function configureAxiosAuth(instance: AxiosInstance): AxiosInstance {
           }
           return Promise.reject(refreshError);
         }
+        resetPostHogIdentity();
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }

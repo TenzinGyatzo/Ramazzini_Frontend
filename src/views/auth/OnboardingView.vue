@@ -450,6 +450,7 @@ onMounted(() => {
         incomplete-message="Por favor, valide que los datos sean correctos*"
         @submit="handleSubmitStep1"
       >
+        <div class="grid gap-3">
         <FormKit
           type="text"
           label="¿Cuál es tu nombre?"
@@ -487,7 +488,7 @@ onMounted(() => {
           validation="required"
         />
 
-        <div class="relative mt-4" ref="passwordContainer">
+        <div class="relative" ref="passwordContainer">
           <FormKit
             :type="showPassword ? 'text' : 'password'"
             label="¿Qué contraseña deseas usar?"
@@ -509,6 +510,7 @@ onMounted(() => {
           >
             <i :class="showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
           </button>
+        </div>
         </div>
 
         <div class="w-full pr-2 mt-4">
@@ -533,6 +535,7 @@ onMounted(() => {
         incomplete-message="Por favor, valide los datos*"
         @submit="handleSubmitStep2"
       >
+        <div class="grid gap-3">
         <FormKit
           type="text"
           label="¿Cuál es tu nombre o razón social?"
@@ -545,7 +548,6 @@ onMounted(() => {
           autocomplete="organization"
         />
         <CountrySelect
-          class="mb-4"
           label="¿En qué país te encuentras?"
           placeholder="Selecciona tu país"
           v-model="formDataProveedorSalud.pais"
@@ -556,7 +558,7 @@ onMounted(() => {
         <Transition name="fade">
           <div 
             v-if="showCountryMessage && isMX" 
-            class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded flex items-start gap-2"
+            class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded flex items-start gap-2"
           >
             <i class="fas fa-info-circle text-blue-600 mt-0.5"></i>
             <p class="text-sm text-blue-800">
@@ -582,9 +584,9 @@ onMounted(() => {
             v-if="isMX"
             v-model="formDataProveedorSalud.regimenRegulatorio"
             @update:declaracion="formDataProveedorSalud.declaracionAceptada = $event"
-            class="my-4"
           />
         </Transition>
+        </div>
         
         <FormKit
           type="hidden"
@@ -693,5 +695,11 @@ onMounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+:deep(.formkit-label),
+:deep(.country-phone-input-label),
+:deep(.country-select-label) {
+  margin-bottom: 0.25rem;
 }
 </style>

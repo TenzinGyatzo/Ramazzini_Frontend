@@ -5,6 +5,7 @@ import AssignmentsAPI from "@/api/AssignmentsAPI";
 import { useRouter } from "vue-router";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { invalidateInicioResumenCache } from "@/composables/inicioResumenCache";
+import { resetPostHogIdentity } from "@/utils/posthogIdentity";
 
 // Define el tipo para el objeto usuario
 interface User {
@@ -122,6 +123,7 @@ export const useUserStore = defineStore("user", () => {
     
     
     function logout() {
+        resetPostHogIdentity();
         clearUser();
         const proveedorSaludStore = useProveedorSaludStore();
         proveedorSaludStore.clear();

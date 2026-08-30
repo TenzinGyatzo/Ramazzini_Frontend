@@ -214,6 +214,7 @@ const handleSubmit = async (data) => {
 
           <FormKit type="form" :actions="false" incomplete-message="Por favor complete todos los campos"
             @submit="handleSubmit" @input="formData = $event">
+            <div class="grid gap-3">
             <FormKit type="text" name="nombreCentro"
               placeholder="Nombre del centro, área, departamento o proyecto" validation="required"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
@@ -231,15 +232,12 @@ const handleSubmit = async (data) => {
                 @select="handleCPSelect"
                 label="Código Postal"
                 placeholder="Ej. 81200, Colinas del Río..."
-                class="mb-4"
               />
 
-              <div class="mb-4">
-                <MexicoGeoSelect
-                  v-model:estado="formulario.estado"
-                  v-model:municipio="formulario.municipio"
-                />
-              </div>
+              <MexicoGeoSelect
+                v-model:estado="formulario.estado"
+                v-model:municipio="formulario.municipio"
+              />
             </template>
 
             <template v-else>
@@ -254,6 +252,7 @@ const handleSubmit = async (data) => {
               <FormKit type="text" label="Ciudad/Municipio/Corregimiento" name="municipio" placeholder="Ej. Juárez, Léon, Cuernavaca"
                 :value="centrosTrabajo.currentCentroTrabajo?.municipio || ''" />
             </template>
+            </div>
 
             <FormKit type="hidden" name="idEmpresa" :value="empresas.currentEmpresaId" />
 
@@ -282,6 +281,10 @@ const handleSubmit = async (data) => {
 
 
 <style scoped>
+:deep(.formkit-label) {
+  margin-bottom: 0.25rem;
+}
+
 .fade-slow-enter-from,
 .fade-slow-leave-to {
   opacity: 0;

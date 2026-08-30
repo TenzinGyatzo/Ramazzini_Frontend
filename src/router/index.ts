@@ -3,6 +3,9 @@ import LayOut from "../views/LayOut.vue";
 import axios from "axios";
 import { useUserStore } from "@/stores/user";
 import { usePostHog } from "../composables/usePostHog";
+import { buildAnalyticsPageProperties } from "@/utils/sanitizeAnalyticsPath";
+import { resetPostHogIdentity } from "@/utils/posthogIdentity";
+import { registerAnalyticsRouter } from "@/utils/sanitizePosthogEvent";
 import { useUserPermissions } from "@/composables/useUserPermissions";
 import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
@@ -210,19 +213,17 @@ const router = createRouter({
   ],
 });
 
+registerAnalyticsRouter(router);
 const { posthog, identifyUser } = usePostHog(); // Inicializamos PostHog
 
-router.afterEach((to, from) => {
+router.afterEach((to) => {
   finishNavigationProgress();
-  posthog.capture('$pageview', {
-    path: to.fullPath,
-    name: to.name,
-  });
+  posthog.capture('$pageview', buildAnalyticsPageProperties(to));
 });
 
 router.beforeEach((to, from) => {
   if (from.path !== to.path) {
-    posthog.capture('$pageleave')
+    posthog.capture('$pageleave', buildAnalyticsPageProperties(from));
     startNavigationProgress();
   }
 })
@@ -335,6 +336,7 @@ router.beforeEach((to, from) => {
       } else {
         console.error("Error inesperado:", error);
       }
+      resetPostHogIdentity();
       next("/login");
     }
   });
