@@ -3486,43 +3486,37 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
-                            <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
-                                    <span class="max-w-56">
+                            <div class="flex items-center mb-1 min-w-0">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center min-w-0 max-[390px]:text-base">
+                                    <span
+                                        class="block max-w-full min-w-0 truncate"
+                                        :title="documentoExterno.nombreDocumento">
                                         <i v-if="verificandoPDF" class="fas fa-spinner fa-spin mr-0.5 text-yellow-500 text-sm"></i>
                                         <i v-else-if="!pdfDisponible" class="fas fa-exclamation-triangle mr-0.5 text-rose-500 text-sm" title="Documento externo no disponible"></i>
-                                        <!-- <i v-else class="fas fa-check-circle mr-0.5 text-emerald-500 text-sm" title="Documento disponible"></i> -->
                                         {{ documentoExterno.nombreDocumento }}
                                     </span>
                                     <span
                                       v-if="documentoExterno.idResultadoClinico && documentoExterno.resultadoClinico"
-                                      class="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-1"
+                                      class="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-1 shrink-0"
                                       :title="`Resultado: ${getResultadoTipoLabel(documentoExterno.resultadoClinico.tipoEstudio)}`"
                                     >
                                       <i class="fas fa-link text-emerald-600"></i>
                                       <span class="hidden md:inline">{{ getResultadoTipoLabel(documentoExterno.resultadoClinico.tipoEstudio) }}</span>
-                                    </span>
-                                    <span class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full"
-                                          :class="obtenerExtensionArchivo(documentoExterno) === 'pdf' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'">
-                                        {{ obtenerExtensionArchivo(documentoExterno).toUpperCase() }}
                                     </span>
                                 </h3>
                                 <BadgeNotaAclaratoria
                                     v-if="tieneNotasAclaratorias"
                                     :documentoId="documentoId"
                                     :documentoTipo="documentoTipo"
-                                    class="hidden sm:flex ml-2"
+                                    class="hidden sm:flex ml-2 shrink-0"
                                 />
-                                <span v-else class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                                    Documento Externo
-                                </span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <p class="text-sm text-gray-500 flex items-center">
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(documentoExterno.fechaDocumento) }}
                                 </p>
-                                <span class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full"
+                                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
                                     :class="obtenerExtensionArchivo(documentoExterno) === 'pdf' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'">
                                     {{ obtenerExtensionArchivo(documentoExterno).toUpperCase() }}
                                 </span>
@@ -3541,12 +3535,16 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
 
                         <!-- Información adicional (pantallas grandes) -->
-                        <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
+                        <div
+                            v-if="documentoExterno.notasDocumento && String(documentoExterno.notasDocumento).trim() && String(documentoExterno.notasDocumento).trim() !== 'undefined'"
+                            class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
                                 <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
                                     <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Notas</p>
-                                    <p class="font-medium text-gray-800 text-sm truncate max-w-full">
-                                        {{ documentoExterno.notasDocumento.trim() !== '' && documentoExterno.notasDocumento.trim() !== 'undefined' ? documentoExterno.notasDocumento : 'Sin notas' }}
+                                    <p
+                                        class="font-medium text-gray-800 text-sm truncate max-w-full"
+                                        :title="documentoExterno.notasDocumento">
+                                        {{ documentoExterno.notasDocumento }}
                                     </p>
                                 </div>
                             </div>
