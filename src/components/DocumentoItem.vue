@@ -942,9 +942,14 @@ const abrirDocumentoExterno = async (documento) => {
 
 // Función para obtener la extensión del archivo
 const obtenerExtensionArchivo = (documento) => {
-    const nombreArchivo = `${documento.nombreDocumento} ${convertirFechaISOaDDMMYYYY(documento.fechaDocumento)}${documento.extension}`;
-    const archivo = documento.rutaDocumento.includes('.') ? documento.rutaDocumento.split('/').pop() : nombreArchivo;
-    return archivo.split('.').pop().toLowerCase();
+    if (documento?.extension) {
+        return String(documento.extension).replace(/^\./, '').toLowerCase();
+    }
+    const nombreArchivo = `${documento?.nombreDocumento || ''} ${convertirFechaISOaDDMMYYYY(documento?.fechaDocumento)}${documento?.extension || ''}`;
+    const ultimoSegmento = String(documento?.rutaDocumento || '').split(/[/\\]/).pop() || '';
+    const candidato = ultimoSegmento.includes('.') ? ultimoSegmento : nombreArchivo;
+    const ext = candidato.split('.').pop();
+    return ext && ext !== candidato ? ext.toLowerCase() : '';
 };
 
 // Función para construir la ruta completa
