@@ -17,7 +17,11 @@ import {
 } from './informeLongitudinalAudiometrico';
 import type { AudiometriaConcentradaLongitudinal } from '@/interfaces/documentos.inteface';
 
-function estudio(parcial: Partial<AudiometriaConcentradaLongitudinal>): AudiometriaConcentradaLongitudinal {
+function estudio(
+  parcial: Partial<Omit<AudiometriaConcentradaLongitudinal, 'fechaAudiometria'>> & {
+    fechaAudiometria?: string | Date;
+  },
+): AudiometriaConcentradaLongitudinal {
   return {
     idAudiometriaOriginal: 'a1',
     fechaAudiometria: '2023-03-15',
@@ -40,7 +44,7 @@ function estudio(parcial: Partial<AudiometriaConcentradaLongitudinal>): Audiomet
     perdidaMonauralOD_AMA: 0,
     perdidaMonauralOI_AMA: 0,
     ...parcial,
-  };
+  } as AudiometriaConcentradaLongitudinal;
 }
 
 describe('calcularDeltaDb', () => {
