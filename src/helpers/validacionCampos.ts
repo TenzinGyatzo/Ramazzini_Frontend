@@ -956,10 +956,17 @@ const camposRequeridosPorTipo: Record<string, Array<{
       validacion: validarListaEventosIncluidosNoVacia,
     },
     {
-      campo: 'interpretacionLongitudinal',
-      nombre: 'Interpretación longitudinal del médico',
+      campo: 'interpretacionOidoDerecho',
+      nombre: 'Interpretación del oído derecho',
       tipo: 'texto',
       paso: 2,
+      validacion: validarTexto,
+    },
+    {
+      campo: 'interpretacionOidoIzquierdo',
+      nombre: 'Interpretación del oído izquierdo',
+      tipo: 'texto',
+      paso: 3,
       validacion: validarTexto,
     },
     {

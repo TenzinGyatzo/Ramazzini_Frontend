@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   calcularDeltaDb,
   clasificarMagnitudDeltaIla,
-  construirAdvertenciasIla,
   construirBorradorInterpretacionIla,
+  construirBorradorInterpretacionOidoIla,
   construirMatrizDeltasIla,
+  filasMatrizPorOidoIla,
+  audiometriasDesdeDocumentsByYear,
   construirResumenCronologicoIla,
   derivarCamposInformeLongitudinalAudiometrico,
-  etiquetaSeveridadUmbralesIla,
+  esAudiometriaAnulada,
+  etiquetaResultadoResumenIla,
   formatearDeltaConSigno,
   refrescarAudiometriasConcentradasEnInforme,
   snapshotAudiometriaConcentradaIla,
@@ -123,16 +126,81 @@ describe('matriz y resumen', () => {
     expect(resumen[0].cambioRespectoBasal).toBe('Referencia');
     expect(resumen[1].cambioRespectoBasal).toContain('4000 Hz OI');
   });
-});
 
-describe('etiquetaSeveridadUmbralesIla', () => {
-  it('clasifica Normal cuando el promedio es ≤20', () => {
-    expect(etiquetaSeveridadUmbralesIla(estudio({}), 'Derecho')).toBe('Normal');
+  it('ordena el resumen de más antigua a más reciente aunque las fechas vengan mezcladas', () => {
+    const basal = estudio({
+      idAudiometriaOriginal: 'b',
+      fechaAudiometria: new Date('2023-06-15T00:00:00.000Z'),
+      rolEnInforme: 'basal',
+    });
+    const s2024 = estudio({
+      idAudiometriaOriginal: 's24',
+      fechaAudiometria: '2024-06-15',
+      rolEnInforme: 'subsecuente',
+    });
+    const s2025 = estudio({
+      idAudiometriaOriginal: 's25',
+      fechaAudiometria: '2025-06-24',
+      rolEnInforme: 'subsecuente',
+    });
+    const s2026 = estudio({
+      idAudiometriaOriginal: 's26',
+      fechaAudiometria: new Date('2026-06-18T00:00:00.000Z'),
+      rolEnInforme: 'subsecuente',
+    });
+    const matriz = construirMatrizDeltasIla(basal, [s2025, s2024, s2026]);
+    const resumen = construirResumenCronologicoIla(basal, [s2025, s2024, s2026], matriz);
+    expect(resumen.map((r) => r.idAudiometriaOriginal)).toEqual(['b', 's24', 's25', 's26']);
+    expect(matriz.map((f) => f.idAudiometriaOriginal)).toEqual([
+      's24', 's24', 's25', 's25', 's26', 's26',
+    ]);
+    expect(filasMatrizPorOidoIla(matriz, 'Derecho').map((f) => f.idAudiometriaOriginal)).toEqual([
+      's24', 's25', 's26',
+    ]);
+    expect(filasMatrizPorOidoIla(matriz, 'Izquierdo').every((f) => f.oido === 'Izquierdo')).toBe(true);
   });
 });
 
-describe('borrador e advertencias', () => {
-  it('describe incrementos sin atribuir causalidad laboral', () => {
+describe('resultado del método en el resumen', () => {
+  it('reporta AMA/LFT sin etiqueta de severidad casera', () => {
+    const basal = estudio({});
+    const resumen = construirResumenCronologicoIla(basal, [], []);
+    expect(resumen[0].resultadoOD).toBe('PA 0 %');
+    expect(resumen[0].resultadoOD).not.toMatch(/Normal|Leve|Moderada|Grave|Profunda/);
+  });
+
+  it('muestra HBC para LFT y PA para AMA', () => {
+    expect(etiquetaResultadoResumenIla('LFT 44 %', 'LFT')).toBe('HBC 44 %');
+    expect(etiquetaResultadoResumenIla('PA 44 %', 'LFT')).toBe('HBC 44 %');
+    expect(etiquetaResultadoResumenIla('AMA 0 %', 'AMA')).toBe('PA 0 %');
+  });
+});
+
+describe('esAudiometriaAnulada', () => {
+  it('detecta estado anulado', () => {
+    expect(esAudiometriaAnulada({ estado: 'anulado' })).toBe(true);
+    expect(esAudiometriaAnulada({ estado: 'finalizado' })).toBe(false);
+    expect(esAudiometriaAnulada({ estado: 'borrador' })).toBe(false);
+  });
+});
+
+describe('audiometriasDesdeDocumentsByYear', () => {
+  it('omite audiometrías anuladas y conserva borrador y finalizado', () => {
+    const list = audiometriasDesdeDocumentsByYear({
+      2024: {
+        audiometrias: [
+          { _id: 'a', estado: 'borrador', idTrabajador: 't1' },
+          { _id: 'b', estado: 'finalizado', idTrabajador: 't1' },
+          { _id: 'c', estado: 'anulado', idTrabajador: 't1' },
+        ],
+      },
+    }, 't1');
+    expect(list.map((a) => String(a._id))).toEqual(['a', 'b']);
+  });
+});
+
+describe('borrador de interpretación', () => {
+  it('describe incrementos de umbral sin frase de causalidad', () => {
     const basal = estudio({});
     const sub = estudio({
       idAudiometriaOriginal: 's',
@@ -147,24 +215,28 @@ describe('borrador e advertencias', () => {
     expect(texto).toContain('15/03/2023');
     expect(texto).toContain('4000 Hz');
     expect(texto).not.toMatch(/deterioro por ruido/i);
-    expect(texto).toContain('no atribuye causalidad');
+    expect(texto).not.toMatch(/atribuye causalidad/i);
   });
 
-  it('advierte mezcla AMA/LFT y estudio anterior a la basal', () => {
-    const ads = construirAdvertenciasIla({
-      basal: estudio({ metodoAudiometria: 'AMA', fechaAudiometria: '2024-01-01' }),
-      subsecuentes: [
-        estudio({
-          idAudiometriaOriginal: 's',
-          metodoAudiometria: 'LFT',
-          fechaAudiometria: '2023-01-01',
-          rolEnInforme: 'subsecuente',
-        }),
-      ],
+  it('genera un borrador independiente por oído', () => {
+    const basal = estudio({});
+    const sub = estudio({
+      idAudiometriaOriginal: 's',
+      fechaAudiometria: '2025-03-15',
+      rolEnInforme: 'subsecuente',
+      oidoIzquierdo3000: 35,
+      oidoIzquierdo4000: 45,
+      oidoIzquierdo6000: 40,
     });
-    expect(ads.some((a) => a.includes('AMA y LFT'))).toBe(true);
-    expect(ads.some((a) => a.includes('anterior a la basal'))).toBe(true);
-    expect(ads.some((a) => a.includes('calibración'))).toBe(true);
+    const matriz = construirMatrizDeltasIla(basal, [sub]);
+    const derecho = construirBorradorInterpretacionOidoIla(basal, matriz, 'Derecho');
+    const izquierdo = construirBorradorInterpretacionOidoIla(basal, matriz, 'Izquierdo');
+    expect(derecho).toContain('oído derecho');
+    expect(derecho).toContain('no se observan incrementos');
+    expect(derecho).not.toContain('4000 Hz');
+    expect(izquierdo).toContain('oído izquierdo');
+    expect(izquierdo).toContain('4000 Hz');
+    expect(izquierdo).not.toContain('oído derecho');
   });
 });
 

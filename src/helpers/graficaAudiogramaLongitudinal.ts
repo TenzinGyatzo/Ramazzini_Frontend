@@ -28,7 +28,9 @@ export function buildAudiogramaLongitudinalChartData(
   oido: OidoIla,
   basal?: AudiometriaConcentradaLongitudinal | null,
   subsecuentes: AudiometriaConcentradaLongitudinal[] = [],
+  options: { puntoCompacto?: boolean } = {},
 ) {
+  const compacto = !!options.puntoCompacto;
   const datasets: Record<string, unknown>[] = [];
   const ordenados = [...subsecuentes].sort((a, b) =>
     toYyyyMmDd(a.fechaAudiometria).localeCompare(toYyyyMmDd(b.fechaAudiometria)),
@@ -43,9 +45,9 @@ export function buildAudiogramaLongitudinalChartData(
       data: serieUmbrales(est, oido),
       borderColor: COLOR_INTERMEDIA,
       backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      pointRadius: 3,
-      pointHoverRadius: 5,
+      borderWidth: compacto ? 1 : 1.5,
+      pointRadius: compacto ? 1.5 : 3,
+      pointHoverRadius: compacto ? 3 : 5,
       tension: 0,
       spanGaps: false,
       pointBackgroundColor: COLOR_INTERMEDIA,
@@ -59,9 +61,9 @@ export function buildAudiogramaLongitudinalChartData(
       data: serieUmbrales(basal, oido),
       borderColor: COLOR_BASAL,
       backgroundColor: 'transparent',
-      borderWidth: 3,
-      pointRadius: 5,
-      pointHoverRadius: 7,
+      borderWidth: compacto ? 2 : 3,
+      pointRadius: compacto ? 2.5 : 5,
+      pointHoverRadius: compacto ? 4 : 7,
       tension: 0,
       spanGaps: false,
       pointBackgroundColor: COLOR_BASAL,
@@ -75,9 +77,9 @@ export function buildAudiogramaLongitudinalChartData(
       data: serieUmbrales(reciente, oido),
       borderColor: colorReciente,
       backgroundColor: 'transparent',
-      borderWidth: 2.5,
-      pointRadius: 5,
-      pointHoverRadius: 7,
+      borderWidth: compacto ? 1.75 : 2.5,
+      pointRadius: compacto ? 2.5 : 5,
+      pointHoverRadius: compacto ? 4 : 7,
       tension: 0,
       spanGaps: false,
       pointBackgroundColor: colorReciente,
@@ -95,12 +97,14 @@ export function buildAudiogramaLongitudinalChartConfig(
   oido: OidoIla,
   basal?: AudiometriaConcentradaLongitudinal | null,
   subsecuentes: AudiometriaConcentradaLongitudinal[] = [],
-  options: { isDark?: boolean } = {},
+  options: { isDark?: boolean; puntoCompacto?: boolean } = {},
 ) {
   const baseOptions = buildAudiometriaChartOptions(options);
   return {
     type: 'line' as const,
-    data: buildAudiogramaLongitudinalChartData(oido, basal, subsecuentes),
+    data: buildAudiogramaLongitudinalChartData(oido, basal, subsecuentes, {
+      puntoCompacto: options.puntoCompacto,
+    }),
     options: {
       ...baseOptions,
       plugins: {

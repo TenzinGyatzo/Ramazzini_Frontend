@@ -7,10 +7,11 @@ ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip,
 
 defineProps({
   data: Object,
-  options: Object
+  options: Object,
+  height: { type: Number, default: 220 },
 })
 </script>
 
 <template>
-  <Line :data="data" :options="options" :height="220" />
+  <Line :data="data" :options="options" :height="height" />
 </template>

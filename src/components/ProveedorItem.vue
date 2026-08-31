@@ -134,7 +134,7 @@ const formatCurrency = (amount) => {
 </script>
 
 <template>
-    <div class="text-sm grid grid-cols-1 md:grid-cols-4 w-full max-w-3xl mx-auto bg-white border p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out h-102">
+    <div class="text-sm grid grid-cols-1 md:grid-cols-4 w-full max-w-3xl xl:max-w-none mx-auto bg-white border p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out h-102">
         <div class="col-span-3">
             <p class="text-gray-600"><strong>🏢 Negocio:</strong> {{ nombre || 'No disponible' }}</p>
             <template v-if="usuarioPrincipal">

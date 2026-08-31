@@ -364,7 +364,7 @@ onMounted(() => {
               Cargando detalle de proveedores…
             </div>
             <Transition name="collapse" appear>
-              <div v-if="seccionesExpanded.activos && !seccionesLoading.activos" class="grid grid-cols-1 gap-6">
+              <div v-if="seccionesExpanded.activos && !seccionesLoading.activos" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <ProveedorItem
                   v-for="proveedor in proveedoresAgrupados.activos"
                   :key="proveedor._id"
@@ -386,7 +386,7 @@ onMounted(() => {
               Cargando detalle de proveedores…
             </div>
             <Transition name="collapse" appear>
-              <div v-if="seccionesExpanded.cancelados && !seccionesLoading.cancelados" class="grid grid-cols-1 gap-6">
+              <div v-if="seccionesExpanded.cancelados && !seccionesLoading.cancelados" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <ProveedorItem
                   v-for="proveedor in proveedoresAgrupados.cancelados"
                   :key="proveedor._id"
@@ -424,7 +424,7 @@ onMounted(() => {
                     Cargando detalle…
                   </div>
                   <Transition name="collapse" appear>
-                    <div v-if="seccionesExpanded.periodoGratuitoActivo && !seccionesLoading.periodoGratuitoActivo" class="grid grid-cols-1 gap-6">
+                    <div v-if="seccionesExpanded.periodoGratuitoActivo && !seccionesLoading.periodoGratuitoActivo" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                       <ProveedorItem
                         v-for="proveedor in proveedoresAgrupados.sinSuscripcion.periodoGratuitoActivo"
                         :key="proveedor._id"
@@ -446,7 +446,7 @@ onMounted(() => {
                     Cargando detalle…
                   </div>
                   <Transition name="collapse" appear>
-                    <div v-if="seccionesExpanded.periodoGratuitoFinalizado && !seccionesLoading.periodoGratuitoFinalizado" class="grid grid-cols-1 gap-6">
+                    <div v-if="seccionesExpanded.periodoGratuitoFinalizado && !seccionesLoading.periodoGratuitoFinalizado" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                       <ProveedorItem
                         v-for="proveedor in proveedoresAgrupados.sinSuscripcion.periodoGratuitoFinalizado"
                         :key="proveedor._id"

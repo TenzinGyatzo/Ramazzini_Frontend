@@ -12,13 +12,10 @@ import type {
 } from '@/interfaces/documentos.inteface';
 
 export const FRECUENCIAS_MATRIZ_ILA = [500, 1000, 2000, 3000, 4000, 6000, 8000] as const;
-export const FRECUENCIAS_AUDIOGRAMA_ILA = [125, 250, 500, 1000, 2000, 3000, 4000, 6000, 8000] as const;
 export const CRITERIO_COMPARACION_ILA = 'solo_diferencias';
 export const VERSION_CRITERIO_ILA = 'v1.0-deltas';
 export const PIE_COLOR_MAGNITUD_ILA =
   'El color indica magnitud del Δ en dB, no un criterio NIOSH, OSHA ni NOM-011. La interpretación corresponde al médico.';
-export const ADVERTENCIA_SIN_CALIBRACION_ILA =
-  'No hay información de equipo ni calibración en las audiometrías incluidas.';
 
 export type OidoIla = 'Derecho' | 'Izquierdo';
 export type MagnitudDeltaIla = 'gris' | 'verde' | 'amarillo' | 'rojo' | 'vacio';
@@ -42,6 +39,10 @@ function mongoIdStr(x: unknown): string {
     return String((x as { _id: unknown })._id);
   }
   return String(x);
+}
+
+export function esAudiometriaAnulada(estudio: { estado?: unknown } | null | undefined): boolean {
+  return String(estudio?.estado || '').toLowerCase() === 'anulado';
 }
 
 function toNumberOrNull(v: unknown): number | null {
@@ -157,6 +158,35 @@ export function formatearDeltaConSigno(deltaDb: number | null | undefined): stri
   return String(deltaDb);
 }
 
+export function claveFechaOrdenIla(v?: string | Date | null): string {
+  if (v == null || v === '') return '';
+  if (typeof v === 'string') {
+    const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+  const d = v instanceof Date ? v : new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export function ordenarPorFechaAscIla<T extends { fechaAudiometria?: string | Date | null }>(
+  items: T[],
+): T[] {
+  return [...items].sort((a, b) =>
+    claveFechaOrdenIla(a.fechaAudiometria).localeCompare(claveFechaOrdenIla(b.fechaAudiometria)),
+  );
+}
+
+export function filasMatrizPorOidoIla(
+  matriz: FilaMatrizDeltaAudiometrico[] | null | undefined,
+  oido: OidoIla,
+): FilaMatrizDeltaAudiometrico[] {
+  return ordenarPorFechaAscIla((matriz || []).filter((f) => f.oido === oido));
+}
+
 export function construirMatrizDeltasIla(
   basal: AudiometriaConcentradaLongitudinal | null | undefined,
   subsecuentes: AudiometriaConcentradaLongitudinal[],
@@ -164,9 +194,7 @@ export function construirMatrizDeltasIla(
   if (!basal) return [];
   const filas: FilaMatrizDeltaAudiometrico[] = [];
   const oidos: OidoIla[] = ['Derecho', 'Izquierdo'];
-  const ordenados = [...subsecuentes].sort((a, b) =>
-    String(a.fechaAudiometria || '').localeCompare(String(b.fechaAudiometria || '')),
-  );
+  const ordenados = ordenarPorFechaAscIla(subsecuentes);
   for (const sub of ordenados) {
     for (const oido of oidos) {
       filas.push({
@@ -183,46 +211,39 @@ export function construirMatrizDeltasIla(
   return filas;
 }
 
-function promedioUmbralesConCaida(estudio: AudiometriaConcentradaLongitudinal, oido: OidoIla): number | null {
-  const valores = FRECUENCIAS_AUDIOGRAMA_ILA
-    .map((freq) => umbralOido(estudio, oido, freq))
-    .filter((v): v is number => v != null);
-  if (valores.length < 3) return null;
-  const conCaida = valores.filter((v) => v > 20);
-  const base = conCaida.length >= 2 ? conCaida : valores;
-  return base.reduce((a, b) => a + b, 0) / base.length;
-}
-
-export function etiquetaSeveridadUmbralesIla(
-  estudio: AudiometriaConcentradaLongitudinal,
-  oido: OidoIla,
-): string {
-  const promedio = promedioUmbralesConCaida(estudio, oido);
-  if (promedio == null) return 'Insuficiente';
-  if (promedio <= 20) return 'Normal';
-  if (promedio <= 40) return 'Leve';
-  if (promedio <= 60) return 'Moderada';
-  if (promedio <= 80) return 'Grave';
-  return 'Profunda';
-}
-
 function resultadoMetodoOriginal(
   estudio: AudiometriaConcentradaLongitudinal,
   oido: OidoIla,
 ): string {
   const metodo = String(estudio.metodoAudiometria || '').toUpperCase();
-  const etiqueta = etiquetaSeveridadUmbralesIla(estudio, oido);
   if (metodo === 'AMA') {
     const pct = oido === 'Derecho' ? estudio.perdidaMonauralOD_AMA : estudio.perdidaMonauralOI_AMA;
     const pctTxt = pct == null ? '—' : `${pct} %`;
-    return `AMA ${pctTxt} · ${etiqueta}`;
+    return `PA ${pctTxt}`;
   }
   if (metodo === 'LFT') {
     const pct = oido === 'Derecho' ? estudio.porcentajePerdidaOD : estudio.porcentajePerdidaOI;
     const pctTxt = pct == null ? '—' : `${pct} %`;
-    return `LFT ${pctTxt} · ${etiqueta}`;
+    return `HBC ${pctTxt}`;
   }
-  return etiqueta;
+  return metodo || '—';
+}
+
+export function etiquetaResultadoResumenIla(
+  texto?: string | null,
+  metodo?: string | null,
+): string {
+  const s = String(texto || '').trim();
+  if (!s) return '—';
+  const m = String(metodo || '').toUpperCase();
+  const etiqueta = m === 'LFT' ? 'HBC' : m === 'AMA' ? 'PA' : '';
+  if (etiqueta) {
+    const resto = s.replace(/^(AMA|LFT|HBC|PA)\b\s*/i, '');
+    return resto ? `${etiqueta} ${resto}` : etiqueta;
+  }
+  if (/^AMA\b/i.test(s)) return s.replace(/^AMA\b/i, 'PA');
+  if (/^LFT\b/i.test(s)) return s.replace(/^LFT\b/i, 'HBC');
+  return s;
 }
 
 function maxDeltaFila(fila: FilaMatrizDeltaAudiometrico | undefined): {
@@ -273,9 +294,7 @@ export function construirResumenCronologicoIla(
   matriz: FilaMatrizDeltaAudiometrico[],
 ): ResumenCronologicoAudiometrico[] {
   if (!basal) return [];
-  const todos = [basal, ...subsecuentes].sort((a, b) =>
-    String(a.fechaAudiometria || '').localeCompare(String(b.fechaAudiometria || '')),
-  );
+  const todos = ordenarPorFechaAscIla([basal, ...subsecuentes]);
   return todos.map((est) => ({
     idAudiometriaOriginal: est.idAudiometriaOriginal,
     fechaAudiometria: est.fechaAudiometria,
@@ -304,6 +323,49 @@ function formatFechaHumana(v?: string | Date | null): string {
   }
 }
 
+function cambiosPositivosOido(
+  matriz: FilaMatrizDeltaAudiometrico[],
+  oido: OidoIla,
+): { freq: number; delta: number }[] {
+  const cambios: { freq: number; delta: number }[] = [];
+  for (const fila of matriz) {
+    if (fila.oido !== oido) continue;
+    for (const celda of fila.deltas || []) {
+      if (celda.deltaDb == null || celda.deltaDb <= 0) continue;
+      cambios.push({ freq: celda.frecuenciaHz, delta: celda.deltaDb });
+    }
+  }
+  return cambios;
+}
+
+function fraseCambiosOidoIla(cambios: { freq: number; delta: number }[], oidoTxt: string): string {
+  if (!cambios.length) {
+    return `En el ${oidoTxt} no se observan incrementos de umbral en las frecuencias comparadas.`;
+  }
+  const freqs = [...new Set(cambios.filter((c) => c.delta >= 5).map((c) => c.freq))].sort((a, b) => a - b);
+  const mayor = cambios.reduce((acc, c) => (c.delta > acc.delta ? c : acc), cambios[0]);
+  if (freqs.length) {
+    return `Se identifica incremento de los umbrales auditivos en las frecuencias de ${freqs.join(', ')} Hz del ${oidoTxt}. El mayor cambio se presenta en ${mayor.freq} Hz, con una diferencia de ${mayor.delta} dB.`;
+  }
+  return `En el ${oidoTxt} hay variaciones menores a 5 dB; el mayor cambio es de ${formatearDeltaConSigno(mayor.delta)} dB en ${mayor.freq} Hz.`;
+}
+
+export function construirBorradorInterpretacionOidoIla(
+  basal: AudiometriaConcentradaLongitudinal | null | undefined,
+  matriz: FilaMatrizDeltaAudiometrico[],
+  oido: OidoIla,
+): string {
+  if (!basal) {
+    return 'Seleccione una audiometría basal para generar el borrador objetivo.';
+  }
+  const fechaBasal = formatFechaHumana(basal.fechaAudiometria);
+  const oidoTxt = oido === 'Derecho' ? 'oído derecho' : 'oído izquierdo';
+  return [
+    `En comparación con la audiometría basal del ${fechaBasal}, se describen las variaciones de umbral tonal del ${oidoTxt} (Δ = umbral subsecuente − umbral basal).`,
+    fraseCambiosOidoIla(cambiosPositivosOido(matriz, oido), oidoTxt),
+  ].join(' ');
+}
+
 export function construirBorradorInterpretacionIla(
   basal: AudiometriaConcentradaLongitudinal | null | undefined,
   matriz: FilaMatrizDeltaAudiometrico[],
@@ -311,107 +373,51 @@ export function construirBorradorInterpretacionIla(
   if (!basal) {
     return 'Seleccione una audiometría basal para generar el borrador objetivo.';
   }
-  const fechaBasal = formatFechaHumana(basal.fechaAudiometria);
-  const porOido: Record<OidoIla, { freq: number; delta: number }[]> = {
-    Derecho: [],
-    Izquierdo: [],
-  };
-  for (const fila of matriz) {
-    for (const celda of fila.deltas || []) {
-      if (celda.deltaDb == null || celda.deltaDb <= 0) continue;
-      porOido[fila.oido].push({ freq: celda.frecuenciaHz, delta: celda.deltaDb });
-    }
-  }
-
-  const frases: string[] = [
-    `En comparación con la audiometría basal del ${fechaBasal}, se describen las variaciones de umbral tonal (Δ = umbral subsecuente − umbral basal).`,
-  ];
-
-  for (const oido of ['Izquierdo', 'Derecho'] as OidoIla[]) {
-    const cambios = porOido[oido];
-    const oidoTxt = oido === 'Derecho' ? 'oído derecho' : 'oído izquierdo';
-    if (!cambios.length) {
-      frases.push(`En el ${oidoTxt} no se observan incrementos de umbral en las frecuencias comparadas.`);
-      continue;
-    }
-    const freqs = [...new Set(cambios.filter((c) => c.delta >= 5).map((c) => c.freq))].sort((a, b) => a - b);
-    const mayor = cambios.reduce((acc, c) => (c.delta > acc.delta ? c : acc), cambios[0]);
-    if (freqs.length) {
-      frases.push(
-        `Se identifica incremento de los umbrales auditivos en las frecuencias de ${freqs.join(', ')} Hz del ${oidoTxt}. El mayor cambio se presenta en ${mayor.freq} Hz, con una diferencia de ${mayor.delta} dB.`,
-      );
-    } else {
-      frases.push(
-        `En el ${oidoTxt} hay variaciones menores a 5 dB; el mayor cambio es de ${formatearDeltaConSigno(mayor.delta)} dB en ${mayor.freq} Hz.`,
-      );
-    }
-  }
-
-  frases.push(
-    'Esto no atribuye causalidad al ruido laboral. AMA y LFT interpretan cada estudio por separado; el seguimiento longitudinal se basa en los umbrales tonales originales.',
-  );
-  return frases.join(' ');
+  return [
+    construirBorradorInterpretacionOidoIla(basal, matriz, 'Derecho'),
+    construirBorradorInterpretacionOidoIla(basal, matriz, 'Izquierdo'),
+  ].join(' ');
 }
 
-export function construirAdvertenciasIla(opts: {
-  basal?: AudiometriaConcentradaLongitudinal | null;
-  subsecuentes?: AudiometriaConcentradaLongitudinal[];
-  exposicion?: AntecedenteExposicionRuidoLongitudinal | null;
-}): string[] {
-  const advertencias: string[] = [];
-  const basal = opts.basal;
-  const subs = opts.subsecuentes || [];
-  if (!basal) {
-    advertencias.push('No se ha seleccionado una audiometría basal.');
-    return advertencias;
-  }
-  if (!subs.length) {
-    advertencias.push('Seleccione al menos una audiometría subsecuente para el seguimiento.');
-  }
+export function textoInterpretacionOidoIla(
+  form: Pick<
+    InformeLongitudinalAudiometrico,
+    'interpretacionOidoDerecho' | 'interpretacionOidoIzquierdo' | 'interpretacionLongitudinal'
+  > | null | undefined,
+  oido: OidoIla,
+): string {
+  const nuevo =
+    oido === 'Derecho' ? form?.interpretacionOidoDerecho : form?.interpretacionOidoIzquierdo;
+  if (nuevo && String(nuevo).trim()) return String(nuevo).trim();
+  return '';
+}
 
-  const todos = [basal, ...subs];
-  for (const est of todos) {
-    const fecha = formatFechaHumana(est.fechaAudiometria);
-    const rol = est.rolEnInforme === 'basal' ? 'basal' : 'subsecuente';
-    if (est.estudioIncompleto || (est.frecuenciasFaltantes || []).length) {
-      const freqs = (est.frecuenciasFaltantes || []).join(', ');
-      advertencias.push(
-        `Estudio ${rol} del ${fecha}: frecuencias de comparación faltantes o sin medición (${freqs || 'varias'} Hz).`,
-      );
-    }
+export function textoInterpretacionLegadoIla(
+  form: Pick<
+    InformeLongitudinalAudiometrico,
+    'interpretacionOidoDerecho' | 'interpretacionOidoIzquierdo' | 'interpretacionLongitudinal'
+  > | null | undefined,
+): string {
+  if (textoInterpretacionOidoIla(form, 'Derecho') || textoInterpretacionOidoIla(form, 'Izquierdo')) {
+    return '';
   }
+  return String(form?.interpretacionLongitudinal || '').trim();
+}
 
-  const metodos = new Set(
-    todos.map((e) => String(e.metodoAudiometria || '').toUpperCase()).filter(Boolean),
-  );
-  if (metodos.has('AMA') && metodos.has('LFT')) {
-    advertencias.push(
-      'La serie incluye estudios AMA y LFT. Las clasificaciones de cada método no son directamente comparables; el seguimiento usa umbrales tonales originales.',
-    );
-  }
-
-  const tBasal = Date.parse(String(basal.fechaAudiometria || ''));
-  for (const sub of subs) {
-    const tSub = Date.parse(String(sub.fechaAudiometria || ''));
-    if (Number.isFinite(tBasal) && Number.isFinite(tSub) && tSub < tBasal) {
-      advertencias.push(
-        `La audiometría del ${formatFechaHumana(sub.fechaAudiometria)} es anterior a la basal seleccionada.`,
-      );
-    }
-  }
-
-  advertencias.push(ADVERTENCIA_SIN_CALIBRACION_ILA);
-
-  const exp = opts.exposicion;
-  const hayHistoria =
-    exp?.trabajoAmbientesRuidosos ||
-    exp?.tiempoExposicionLaboral ||
-    exp?.usoProteccionAuditiva;
-  if (!hayHistoria && !exp?.ruidoEnAgentesRiesgoActuales && !String(exp?.textoLibre || '').trim()) {
-    advertencias.push('Exposición a ruido no documentada en historia otológica ni en agentes de riesgo actuales.');
-  }
-
-  return advertencias;
+export function sincronizarInterpretacionLongitudinalIla(form: {
+  interpretacionOidoDerecho?: string;
+  interpretacionOidoIzquierdo?: string;
+  interpretacionLongitudinal?: string;
+}): void {
+  const od = String(form.interpretacionOidoDerecho || '').trim();
+  const oi = String(form.interpretacionOidoIzquierdo || '').trim();
+  if (!od && !oi) return;
+  form.interpretacionLongitudinal = [
+    od ? `Oído derecho:\n${od}` : '',
+    oi ? `Oído izquierdo:\n${oi}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 export function snapshotExposicionRuidoIla(opts: {
@@ -448,6 +454,8 @@ export function derivarCamposInformeLongitudinalAudiometrico(opts: {
   | 'resumenCronologico'
   | 'advertencias'
   | 'borradorInterpretacionObjetiva'
+  | 'borradorInterpretacionOidoDerecho'
+  | 'borradorInterpretacionOidoIzquierdo'
   | 'numeroAudiometriasIncluidas'
   | 'criterioComparacion'
   | 'versionCriterio'
@@ -460,17 +468,18 @@ export function derivarCamposInformeLongitudinalAudiometrico(opts: {
   );
   const matrizDeltas = construirMatrizDeltasIla(basal, subsecuentes);
   const resumenCronologico = construirResumenCronologicoIla(basal, subsecuentes, matrizDeltas);
-  const advertencias = construirAdvertenciasIla({
-    basal,
-    subsecuentes,
-    exposicion: opts.exposicion,
-  });
   return {
     audiometriaBasalConcentrada: basal || undefined,
     audiometriasSubsecuentesConcentradas: subsecuentes,
     matrizDeltas,
     resumenCronologico,
-    advertencias,
+    advertencias: [],
+    borradorInterpretacionOidoDerecho: construirBorradorInterpretacionOidoIla(basal, matrizDeltas, 'Derecho'),
+    borradorInterpretacionOidoIzquierdo: construirBorradorInterpretacionOidoIla(
+      basal,
+      matrizDeltas,
+      'Izquierdo',
+    ),
     borradorInterpretacionObjetiva: construirBorradorInterpretacionIla(basal, matrizDeltas),
     numeroAudiometriasIncluidas: (basal ? 1 : 0) + subsecuentes.length,
     criterioComparacion: CRITERIO_COMPARACION_ILA,
@@ -492,6 +501,7 @@ export function audiometriasDesdeDocumentsByYear(
       if (!e || typeof e !== 'object') continue;
       const a = e as AudiometriaFuente;
       if (tid && a.idTrabajador && mongoIdStr(a.idTrabajador) !== tid) continue;
+      if (esAudiometriaAnulada(a)) continue;
       out.push(a);
     }
   }
@@ -529,6 +539,8 @@ export function refrescarAudiometriasConcentradasEnInforme(
     resumenCronologico?: InformeLongitudinalAudiometrico['resumenCronologico'];
     advertencias?: string[];
     borradorInterpretacionObjetiva?: string;
+    borradorInterpretacionOidoDerecho?: string;
+    borradorInterpretacionOidoIzquierdo?: string;
     numeroAudiometriasIncluidas?: number;
     criterioComparacion?: string;
     versionCriterio?: string;

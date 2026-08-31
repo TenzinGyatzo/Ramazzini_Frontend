@@ -15,6 +15,7 @@ import {
   CRITERIO_COMPARACION_ILA,
   VERSION_CRITERIO_ILA,
   derivarCamposInformeLongitudinalAudiometrico,
+  esAudiometriaAnulada,
   snapshotExposicionRuidoIla,
 } from '@/helpers/informeLongitudinalAudiometrico';
 
@@ -73,6 +74,7 @@ const audiometriasDesdeStore = computed(() => {
   return out
     .filter((e) => {
       if (!e) return false;
+      if (esAudiometriaAnulada(e)) return false;
       if (!tid || !e.idTrabajador) return true;
       return mongoIdStr(e.idTrabajador) === mongoIdStr(tid);
     })
@@ -96,7 +98,6 @@ const fechaInforme = ref(
 );
 const idBasal = ref(mongoIdStr(formDataInformeLongitudinalAudiometrico.value.idAudiometriaBasal));
 const idsSubsecuentes = ref(idsArrayFromForm(formDataInformeLongitudinalAudiometrico.value.audiometriasSubsecuentesIncluidas));
-const textoExposicion = ref(formDataInformeLongitudinalAudiometrico.value.antecedenteExposicionRuido?.textoLibre || '');
 const periodoPorDefectoAplicado = ref(false);
 
 function fechaEnPeriodo(fechaCampo, inicio, fin) {
@@ -111,14 +112,6 @@ const audiometriasEnRango = computed(() =>
   audiometriasDesdeStore.value.filter((e) =>
     fechaEnPeriodo(e.fechaAudiometria, periodoInicio.value, periodoFin.value),
   ),
-);
-
-const exposicionPreview = computed(() =>
-  snapshotExposicionRuidoIla({
-    historias: historiasOtologicasDesdeStore.value,
-    agentesRiesgoActuales: trabajadores.currentTrabajador?.agentesRiesgoActuales || [],
-    textoLibre: textoExposicion.value,
-  }),
 );
 
 function sincronizarPayloadInforme() {
@@ -140,7 +133,7 @@ function sincronizarPayloadInforme() {
   const exposicion = snapshotExposicionRuidoIla({
     historias: historiasOtologicasDesdeStore.value,
     agentesRiesgoActuales: trabajadores.currentTrabajador?.agentesRiesgoActuales || [],
-    textoLibre: textoExposicion.value,
+    textoLibre: fd.antecedenteExposicionRuido?.textoLibre,
   });
   fd.antecedenteExposicionRuido = exposicion;
   Object.assign(fd, derivarCamposInformeLongitudinalAudiometrico({
@@ -177,13 +170,12 @@ watch(
     if (String(documentos.currentTypeOfDocument || '') !== 'informeLongitudinalAudiometrico') return;
     idBasal.value = mongoIdStr(doc.idAudiometriaBasal);
     idsSubsecuentes.value = idsArrayFromForm(doc.audiometriasSubsecuentesIncluidas);
-    textoExposicion.value = doc.antecedenteExposicionRuido?.textoLibre || '';
   },
   { immediate: true },
 );
 
 watch(
-  [fechaInforme, periodoInicio, periodoFin, idBasal, idsSubsecuentes, textoExposicion, audiometriasDesdeStore],
+  [fechaInforme, periodoInicio, periodoFin, idBasal, idsSubsecuentes, audiometriasDesdeStore],
   () => sincronizarPayloadInforme(),
   { deep: true },
 );
@@ -287,19 +279,6 @@ onMounted(() => {
           </li>
         </ul>
         <p v-else class="text-sm text-gray-500">No hay audiometrías en el periodo.</p>
-      </div>
-
-      <div class="border border-gray-200 rounded-lg p-4 space-y-2">
-        <h3 class="text-base font-semibold text-gray-800">Antecedente de exposición a ruido</h3>
-        <p class="text-sm text-gray-700">
-          Ambientes ruidosos: <span class="font-medium">{{ exposicionPreview.trabajoAmbientesRuidosos || '—' }}</span>
-          · Tiempo: <span class="font-medium">{{ exposicionPreview.tiempoExposicionLaboral || '—' }}</span>
-          · EPP: <span class="font-medium">{{ exposicionPreview.usoProteccionAuditiva || '—' }}</span>
-        </p>
-        <p class="text-xs text-gray-500">
-          Ruido en agentes de riesgo actuales: {{ exposicionPreview.ruidoEnAgentesRiesgoActuales ? 'Sí' : 'No documentado' }}
-        </p>
-        <FormKit type="textarea" name="textoLibreExposicion" label="Nota adicional (opcional)" v-model="textoExposicion" />
       </div>
     </div>
   </div>

@@ -17,13 +17,13 @@ export function generarGraficasIla(
     return {
       graficaAudiogramaOidoDerecho: exportarGraficaAltaResolucion(
         buildAudiogramaLongitudinalChartConfig('Derecho', basal, subsecuentes),
-        1100,
-        420,
+        1400,
+        520,
       ),
       graficaAudiogramaOidoIzquierdo: exportarGraficaAltaResolucion(
         buildAudiogramaLongitudinalChartConfig('Izquierdo', basal, subsecuentes),
-        1100,
-        420,
+        1400,
+        520,
       ),
     };
   } catch (err) {

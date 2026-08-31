@@ -1218,7 +1218,11 @@ export interface InformeLongitudinalAudiometrico {
   resumenCronologico?: ResumenCronologicoAudiometrico[];
   advertencias?: string[];
   borradorInterpretacionObjetiva?: string;
+  borradorInterpretacionOidoDerecho?: string;
+  borradorInterpretacionOidoIzquierdo?: string;
   interpretacionLongitudinal?: string;
+  interpretacionOidoDerecho?: string;
+  interpretacionOidoIzquierdo?: string;
   recomendacionesSeguimientoAudiometrico?: string;
   criterioComparacion?: string;
   versionCriterio?: string;
