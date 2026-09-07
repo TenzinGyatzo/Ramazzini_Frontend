@@ -13,6 +13,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref, defineAs
 import { Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
 import { enqueuePdfAvailabilityCheck } from '@/composables/usePdfAvailabilityQueue';
 import { usePdfGenerationTracker } from '@/composables/usePdfGenerationTracker';
+import { generarInformePdf } from '@/composables/useGenerarInformePdf';
 import { usePdfGenerationStore } from '@/stores/pdfGeneration';
 import { getToast } from '@/utils/toast';
 
@@ -1171,7 +1172,7 @@ const schedulePdfHover = (event, ruta, nombrePDF, updatedAt, title) => {
                 src: '',
                 title: title || 'Documento PDF',
                 pdfAvailable: false,
-                isRegenerable: !isPdfFailed.value,
+                isRegenerable: true,
                 openAction: () => {
                     if (!isPdfGenerating.value) {
                         mostrarModalPdfEliminado.value = true;
@@ -2642,20 +2643,52 @@ const abrirNotaAclaratoria = (notaAclaratoria) => {
   abrirPdf(notaAclaratoria.rutaPDF, nombreArchivo, updatedAt);
 };
 
-const manejarRegeneracionDesdePadre = async () => {
-  trackedPdfStatus.value = 'ready';
-  if (currentDocumentData.value && typeof currentDocumentData.value === 'object') {
-    currentDocumentData.value.pdfStatus = 'ready';
+const iniciarRegeneracionPdf = () => {
+  if (isPdfGenerating.value) {
+    getToast()?.open?.({
+      message: 'El PDF aún se está generando. Espere un momento.',
+      type: 'warning',
+    });
+    return;
   }
-  pdfDisponible.value = true;
-  await abrirDocumentoCorrespondiente();      // Abre visor
-  await nextTick();                           // Espera a que DOM actualice
-  mostrarModalPdfEliminado.value = false;     // Cierra el modal
-  // Verificar disponibilidad después de regenerar
-  setTimeout(() => {
-    pdfCheckScheduled = false;
-    schedulePdfCheck();
-  }, 1000); // Pequeño delay para asegurar que el PDF se haya generado
+
+  mostrarModalPdfEliminado.value = false;
+  pdfGenerationStore.markLocalGenerating(props.documentoId);
+
+  const doc = currentDocumentData.value;
+  void generarInformePdf({
+    tipo: props.documentoTipo,
+    empresaId: empresas.currentEmpresaId,
+    trabajadorId: trabajadores.currentTrabajadorId,
+    documentoId: props.documentoId,
+    userId: user.value._id,
+    documento: doc && typeof doc === 'object' ? doc : null,
+  })
+    .then(() => {
+      trackedPdfStatus.value = 'ready';
+      if (currentDocumentData.value && typeof currentDocumentData.value === 'object') {
+        currentDocumentData.value.pdfStatus = 'ready';
+      }
+      pdfDisponible.value = true;
+      pdfGenerationStore.clearLocalGenerating(props.documentoId);
+      getToast()?.open?.({
+        message: 'PDF listo — Clic en el documento para verlo',
+        type: 'success',
+      });
+      pdfCheckScheduled = false;
+      schedulePdfCheck();
+    })
+    .catch((error) => {
+      console.error('Error al regenerar el PDF:', error);
+      trackedPdfStatus.value = 'failed';
+      if (currentDocumentData.value && typeof currentDocumentData.value === 'object') {
+        currentDocumentData.value.pdfStatus = 'failed';
+      }
+      getToast()?.open?.({
+        message: 'No se pudo regenerar el PDF.',
+        type: 'error',
+      });
+    });
 };
 
 /*
@@ -2793,13 +2826,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
             <ModalPdfEliminado
                 v-if="mostrarModalPdfEliminado && !isPdfGenerating"
                 :tipo="documentoTipo.toLowerCase().replace(/\s+/g, '')"
-                :empresaId="empresas.currentEmpresaId"
-                :trabajadorId="trabajadores.currentTrabajadorId"
-                :documentoId="documentoId"
-                :userId="user._id"
-                :getPdfMetadata="construirRutaYNombrePDF"
                 :pdfStatus="pdfStatusEffective"
-                @regenerado="manejarRegeneracionDesdePadre"
+                @iniciar="iniciarRegeneracionPdf"
                 @close="mostrarModalPdfEliminado = false"
             />
         </transition>

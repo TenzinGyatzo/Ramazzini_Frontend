@@ -63,6 +63,13 @@ export function useRegulatoryPolicy() {
   );
 
   /**
+   * Timeout de inactividad en milisegundos (15 min SIRES, 30 min SIN_REGIMEN)
+   */
+  const sessionTimeoutMs = computed<number | null>(() =>
+    proveedorSaludStore.sessionTimeoutMs
+  );
+
+  /**
    * Indica si el campo CLUES debe ser visible
    */
   const cluesFieldVisible = computed<boolean>(() => 
@@ -150,6 +157,7 @@ export function useRegulatoryPolicy() {
     giisExportEnabled,
     documentImmutabilityEnabled,
     sessionTimeoutEnabled,
+    sessionTimeoutMs,
     cluesFieldVisible,
     showSiresUI,
     dailyConsentEnabled,

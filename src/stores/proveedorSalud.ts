@@ -16,6 +16,7 @@ export interface RegulatoryPolicy {
     regime: 'SIRES_NOM024' | 'SIN_REGIMEN';
     features: {
         sessionTimeoutEnabled: boolean;
+        sessionTimeoutMs?: number;
         enforceDocumentImmutabilityUI: boolean;
         documentImmutabilityEnabled: boolean;
         showSiresUI: boolean;
@@ -333,6 +334,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     const isSIRES = computed(() => regulatoryPolicy.value?.regime === 'SIRES_NOM024');
     const isSinRegimen = computed(() => regulatoryPolicy.value?.regime === 'SIN_REGIMEN');
     const sessionTimeoutEnabled = computed(() => regulatoryPolicy.value?.features.sessionTimeoutEnabled ?? false);
+    const sessionTimeoutMs = computed(() => regulatoryPolicy.value?.features.sessionTimeoutMs ?? null);
     const showSiresUI = computed(() => regulatoryPolicy.value?.features.showSiresUI ?? false);
     const notaAclaratoriaEnabled = computed(() => regulatoryPolicy.value?.features.notaAclaratoriaEnabled ?? false);
     const documentImmutabilityEnabled = computed(() => regulatoryPolicy.value?.features.documentImmutabilityEnabled ?? false);
@@ -364,6 +366,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         isSinRegimen,
         // Features
         sessionTimeoutEnabled,
+        sessionTimeoutMs,
         showSiresUI,
         notaAclaratoriaEnabled,
         documentImmutabilityEnabled,

@@ -15,6 +15,7 @@ describe('useRegulatoryPolicy', () => {
     regime: 'SIRES_NOM024' as const,
     features: {
       sessionTimeoutEnabled: true,
+      sessionTimeoutMs: 900_000,
       enforceDocumentImmutabilityUI: true,
       documentImmutabilityEnabled: true,
       showSiresUI: true,
@@ -33,7 +34,8 @@ describe('useRegulatoryPolicy', () => {
   const createSinRegimenPolicy = () => ({
     regime: 'SIN_REGIMEN' as const,
     features: {
-      sessionTimeoutEnabled: false,
+      sessionTimeoutEnabled: true,
+      sessionTimeoutMs: 1_800_000,
       enforceDocumentImmutabilityUI: false,
       documentImmutabilityEnabled: false,
       showSiresUI: false,
@@ -63,6 +65,7 @@ describe('useRegulatoryPolicy', () => {
       giisExportEnabled,
       documentImmutabilityEnabled,
       sessionTimeoutEnabled,
+      sessionTimeoutMs,
       cluesFieldVisible,
       cie10PrincipalRequired,
       curpFirmantesRequired,
@@ -76,6 +79,7 @@ describe('useRegulatoryPolicy', () => {
     expect(giisExportEnabled.value).toBe(true);
     expect(documentImmutabilityEnabled.value).toBe(true);
     expect(sessionTimeoutEnabled.value).toBe(true);
+    expect(sessionTimeoutMs.value).toBe(900_000);
     expect(cluesFieldVisible.value).toBe(true);
     expect(cie10PrincipalRequired.value).toBe(true);
     expect(curpFirmantesRequired.value).toBe(true);
@@ -97,6 +101,7 @@ describe('useRegulatoryPolicy', () => {
       giisExportEnabled,
       documentImmutabilityEnabled,
       sessionTimeoutEnabled,
+      sessionTimeoutMs,
       cluesFieldVisible,
       cie10PrincipalRequired,
       curpFirmantesRequired,
@@ -109,7 +114,8 @@ describe('useRegulatoryPolicy', () => {
     expect(notaAclaratoriaEnabled.value).toBe(false);
     expect(giisExportEnabled.value).toBe(false);
     expect(documentImmutabilityEnabled.value).toBe(false);
-    expect(sessionTimeoutEnabled.value).toBe(false);
+    expect(sessionTimeoutEnabled.value).toBe(true);
+    expect(sessionTimeoutMs.value).toBe(1_800_000);
     expect(cluesFieldVisible.value).toBe(false);
     expect(cie10PrincipalRequired.value).toBe(false);
     expect(curpFirmantesRequired.value).toBe(false);

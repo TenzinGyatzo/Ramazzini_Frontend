@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
@@ -13,11 +13,15 @@ export function useSessionTimeout() {
   // Estado de bloqueo
   const isLocked = ref(false);
   const lockedAt = ref<string | null>(null);
-  
-  const TIMEOUT_MS =
-    Number(import.meta.env.VITE_SIRES_SESSION_INACTIVITY_MS) || 900_000;
+
+  const timeoutMs = computed(() => proveedorSaludStore.sessionTimeoutMs);
+  const timeoutMinutes = computed(() => {
+    const ms = timeoutMs.value;
+    return ms ? ms / 60000 : 0;
+  });
   
   let timeoutId: number | null = null;
+  let listenersBound = false;
 
   // Rutas que no deben disparar el bloqueo ni el timer
   const publicRoutes = ['login', 'auth', 'onboarding', 'confirm-account', 'forgot-password', 'new-password'];
@@ -25,29 +29,31 @@ export function useSessionTimeout() {
   const resetTimer = () => {
     if (timeoutId) {
       clearTimeout(timeoutId);
+      timeoutId = null;
     }
     
     // No iniciar el timer si:
     // - Está bloqueado
     // - Estamos en una ruta pública
     // - No hay usuario
-    // - El timeout NO está habilitado por la policy (solo SIRES_NOM024)
+    // - El timeout NO está habilitado por la policy
+    // - No hay timeout resuelto en la policy
     if (
       isLocked.value || 
       publicRoutes.includes(route.name as string) || 
       !userStore.user ||
-      !proveedorSaludStore.sessionTimeoutEnabled
+      !proveedorSaludStore.sessionTimeoutEnabled ||
+      !timeoutMs.value
     ) {
       return;
     }
 
     timeoutId = window.setTimeout(() => {
       lockSession();
-    }, TIMEOUT_MS);
+    }, timeoutMs.value);
   };
 
   const lockSession = () => {
-    // Solo bloquear si el timeout está habilitado por la policy
     if (
       !publicRoutes.includes(route.name as string) && 
       userStore.user &&
@@ -72,31 +78,40 @@ export function useSessionTimeout() {
   const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
 
   const handleUserActivity = () => {
-    // Solo procesar actividad si el timeout está habilitado
     if (proveedorSaludStore.sessionTimeoutEnabled) {
       resetTimer();
     }
   };
 
+  const bindListeners = () => {
+    if (listenersBound) {
+      return;
+    }
+    events.forEach(event => {
+      window.addEventListener(event, handleUserActivity);
+    });
+    listenersBound = true;
+  };
+
+  const unbindListeners = () => {
+    if (!listenersBound) {
+      return;
+    }
+    events.forEach(event => {
+      window.removeEventListener(event, handleUserActivity);
+    });
+    listenersBound = false;
+  };
+
   onMounted(() => {
-    // Solo registrar listeners si el timeout está habilitado por la policy
     if (proveedorSaludStore.sessionTimeoutEnabled) {
-      events.forEach(event => {
-        window.addEventListener(event, handleUserActivity);
-      });
-      
-      // Iniciar timer si ya hay un usuario y no estamos en ruta pública
+      bindListeners();
       resetTimer();
     }
   });
 
   onUnmounted(() => {
-    // Solo remover listeners si fueron registrados
-    if (proveedorSaludStore.sessionTimeoutEnabled) {
-      events.forEach(event => {
-        window.removeEventListener(event, handleUserActivity);
-      });
-    }
+    unbindListeners();
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -126,22 +141,22 @@ export function useSessionTimeout() {
   // Vigilar cambios en sessionTimeoutEnabled para activar/desactivar el timeout
   watch(() => proveedorSaludStore.sessionTimeoutEnabled, (enabled) => {
     if (enabled) {
-      // Si se habilita, registrar listeners y iniciar timer
-      events.forEach(event => {
-        window.addEventListener(event, handleUserActivity);
-      });
+      bindListeners();
       resetTimer();
     } else {
-      // Si se deshabilita, limpiar timer y remover listeners
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
       }
-      events.forEach(event => {
-        window.removeEventListener(event, handleUserActivity);
-      });
+      unbindListeners();
       isLocked.value = false;
       lockedAt.value = null;
+    }
+  });
+
+  watch(() => proveedorSaludStore.sessionTimeoutMs, () => {
+    if (proveedorSaludStore.sessionTimeoutEnabled) {
+      resetTimer();
     }
   });
 
@@ -157,9 +172,8 @@ export function useSessionTimeout() {
   return {
     isLocked,
     lockedAt,
-    timeoutMinutes: TIMEOUT_MS / 60000,
+    timeoutMinutes,
     unlockSession,
     lockSession
   };
 }
-

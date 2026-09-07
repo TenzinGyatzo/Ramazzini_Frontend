@@ -1,6 +1,4 @@
 <script>
-import axios from 'axios';
-import { authRequestConfig } from '@/lib/attachAuthToken';
 import { ref, onMounted, onUnmounted, inject, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -12,9 +10,7 @@ import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 import DocumentosAPI from '@/api/DocumentosAPI';
-import { generarGraficaAudiometria } from '@/helpers/generarGraficaAudiometria';
-import { generarGraficasIlc } from '@/helpers/generarGraficasIlc';
-import { generarGraficasIla } from '@/helpers/generarGraficasIla';
+import { generarInformePdf } from '@/composables/useGenerarInformePdf';
 import { usePdfGenerationStore } from '@/stores/pdfGeneration';
 
 import Step1Antidoping from '../steps/antidopingSteps/Step1.vue';
@@ -1909,7 +1905,6 @@ export default {
         const empresaId = empresas.currentEmpresaId;
         const centroTrabajoId = centrosTrabajo.currentCentroTrabajoId;
         const userId = user.value._id;
-        const apiEndpoint = `${import.meta.env.VITE_API_URL}/informes/${tipoDocEnviado}/${empresaId}/${trabajadorId}/${documentId}/${userId}`;
         const documentoGuardado = response;
         const pdfGenerationStore = usePdfGenerationStore();
 
@@ -1932,85 +1927,19 @@ export default {
           documentos.currentTypeOfDocument = null;
         });
 
-        void (async () => {
-          try {
-            try {
-              await DocumentosAPI.markPdfGenerating(
-                tipoDocEnviado,
-                trabajadorId,
-                documentId,
-              );
-            } catch (markError) {
-              console.warn('No se pudo marcar pdfStatus generating:', markError);
-            }
-
-            if (tipoDocEnviado === 'audiometria') {
-              const graficaBase64 = generarGraficaAudiometria(documentoGuardado);
-              await axios.post(
-                apiEndpoint,
-                { grafica: graficaBase64 },
-                authRequestConfig(),
-              );
-            } else if (tipoDocEnviado === 'informeLongitudinalCardiometabolico') {
-              const graficas = generarGraficasIlc(
-                documentoGuardado?.eventosConcentrados,
-              );
-              try {
-                await DocumentosAPI.updateDocument(
-                  tipoDocEnviado,
-                  trabajadorId,
-                  documentId,
-                  {
-                    ...graficas,
-                    idTrabajador: trabajadorId,
-                    fechaInformeLongitudinalCardiometabolico:
-                      documentoGuardado.fechaInformeLongitudinalCardiometabolico,
-                    updatedBy: userId,
-                  },
-                );
-              } catch (persistError) {
-                console.warn(
-                  'No se pudieron persistir gráficas ILC (se envían en POST):',
-                  persistError,
-                );
-              }
-              await axios.post(apiEndpoint, graficas, authRequestConfig());
-            } else if (tipoDocEnviado === 'informeLongitudinalAudiometrico') {
-              const graficas = generarGraficasIla(
-                documentoGuardado?.audiometriaBasalConcentrada,
-                documentoGuardado?.audiometriasSubsecuentesConcentradas || [],
-              );
-              try {
-                await DocumentosAPI.updateDocument(
-                  tipoDocEnviado,
-                  trabajadorId,
-                  documentId,
-                  {
-                    ...graficas,
-                    idTrabajador: trabajadorId,
-                    fechaInformeLongitudinalAudiometrico:
-                      documentoGuardado.fechaInformeLongitudinalAudiometrico,
-                    updatedBy: userId,
-                  },
-                );
-              } catch (persistError) {
-                console.warn(
-                  'No se pudieron persistir gráficas ILA (se envían en POST):',
-                  persistError,
-                );
-              }
-              await axios.post(apiEndpoint, graficas, authRequestConfig());
-            } else {
-              await axios.get(apiEndpoint, authRequestConfig());
-            }
-          } catch (bgError) {
-            console.error(
-              'Error al generar PDF en background tras guardar documento:',
-              bgError,
-            );
-            pdfGenerationStore.clearLocalGenerating(documentId);
-          }
-        })();
+        void generarInformePdf({
+          tipo: tipoDocEnviado,
+          empresaId,
+          trabajadorId,
+          documentoId: documentId,
+          userId,
+          documento: documentoGuardado,
+        }).catch((bgError) => {
+          console.error(
+            'Error al generar PDF en background tras guardar documento:',
+            bgError,
+          );
+        });
 
         return;
       } catch (error) {

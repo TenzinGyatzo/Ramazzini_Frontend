@@ -3,12 +3,82 @@ import { ref, watch, computed } from "vue";
 import axios from "axios";
 import { authRequestConfig } from "@/lib/attachAuthToken";
 import { useTrabajadoresStore } from "@/stores/trabajadores";
+import { useEmpresasStore } from "@/stores/empresas";
+import { useUserStore } from "@/stores/user";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
+import { usePdfGenerationStore } from "@/stores/pdfGeneration";
+import { generarInformePdf } from "@/composables/useGenerarInformePdf";
+import { headClinicalFile } from "@/lib/clinicalFiles";
+import { getToast } from "@/utils/toast";
 import ModalFaltanPdfs from "./ModalFaltanPdfs.vue";
 
 const trabajadores = useTrabajadoresStore();
+const empresas = useEmpresasStore();
+const userStore = useUserStore();
+const pdfGenerationStore = usePdfGenerationStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
+
+const props = defineProps({
+  selectedDocuments: {
+    type: Array,
+    required: true,
+  },
+});
+
+const isDocumentoExterno = (tipo) =>
+  String(tipo || "")
+    .replace(/\s+/g, "")
+    .toLowerCase() === "documentoexterno";
+
+const faltantesClinicos = ref([]);
+const faltantesExternos = ref([]);
+
+const pendingRegenDocuments = computed(() =>
+  faltantesClinicos.value.filter(
+    (doc) => !pdfGenerationStore.isLocalGenerating(doc.documentId),
+  ),
+);
+
+const canRegenerate = computed(() => pendingRegenDocuments.value.length > 0);
+
+const modalVariant = computed(() => {
+  const hasClinicos = faltantesClinicos.value.length > 0;
+  const hasExternos = faltantesExternos.value.length > 0;
+  if (hasClinicos && hasExternos) return "mixto";
+  if (hasExternos) return "externos";
+  return "clinicos";
+});
+
+const clasificarFaltantes = async (docs) => {
+  const clinicos = [];
+  const externos = [];
+
+  await Promise.all(
+    (docs || []).map(async (doc) => {
+      const esExterno = isDocumentoExterno(doc?.documentType);
+      const tieneIdentidad = !!doc?.documentId && !!doc?.documentType;
+      if (!tieneIdentidad) return;
+
+      const disponible = doc?.filePath
+        ? await headClinicalFile(doc.filePath, {
+            probe: esExterno ? "external" : "regenerable",
+            ...(esExterno ? {} : { contentType: "application/pdf" }),
+          })
+        : false;
+
+      if (disponible) return;
+      if (esExterno) {
+        externos.push(doc);
+      } else {
+        clinicos.push(doc);
+      }
+    }),
+  );
+
+  faltantesClinicos.value = clinicos;
+  faltantesExternos.value = externos;
+};
 
 const mostrarModalFaltanPdfs = ref(false);
 const loading = ref(false);
@@ -40,13 +110,6 @@ const documentOrder = {
   eventoSeguimientoCardiometabolico: 21,
   informeLongitudinalCardiometabolico: 22,
 };
-
-const props = defineProps({
-  selectedDocuments: {
-    type: Array,
-    required: true,
-  },
-});
 
 const isVisible = ref(true);
 
@@ -116,10 +179,60 @@ const handleClick = async () => {
     document.body.removeChild(a);
   } catch (error) {
     console.error("Error al enviar los documentos al backend:", error);
+    await clasificarFaltantes(orderedDocuments);
     mostrarModalFaltanPdfs.value = true;
   } finally {
     loading.value = false;
   }
+};
+
+const regenerarPdfsSeleccionados = () => {
+  const lote = pendingRegenDocuments.value;
+  if (!lote.length) {
+    getToast()?.open?.({
+      message:
+        "No hay PDFs ausentes que se puedan regenerar. Quita los externos o espera a que terminen de generarse.",
+      type: "warning",
+    });
+    return;
+  }
+
+  const empresaId = empresas.currentEmpresaId;
+  const trabajadorId = trabajadores.currentTrabajadorId;
+  const userId = userStore.user?._id;
+  if (!empresaId || !trabajadorId || !userId) {
+    getToast()?.open?.({
+      message: "No se pudo regenerar: faltan datos de empresa, trabajador o usuario.",
+      type: "error",
+    });
+    return;
+  }
+
+  void Promise.allSettled(
+    lote.map((doc) =>
+      generarInformePdf({
+        tipo: doc.documentType,
+        empresaId,
+        trabajadorId,
+        documentoId: doc.documentId,
+        userId,
+      }),
+    ),
+  ).then((results) => {
+    const listos = results.filter((r) => r.status === "fulfilled").length;
+    const fallidos = results.length - listos;
+    if (fallidos === 0) {
+      getToast()?.open?.({
+        message: "PDFs listos — Pulsa Combinar y descargar de nuevo",
+        type: "success",
+      });
+      return;
+    }
+    getToast()?.open?.({
+      message: `${listos} listos, ${fallidos} no se pudieron regenerar`,
+      type: "error",
+    });
+  });
 };
 </script>
 
@@ -127,6 +240,9 @@ const handleClick = async () => {
   <transition name="fade">
     <ModalFaltanPdfs
       v-if="mostrarModalFaltanPdfs"
+      :canRegenerate="canRegenerate"
+      :variant="modalVariant"
+      @regenerar="regenerarPdfsSeleccionados"
       @close="mostrarModalFaltanPdfs = false"
     />
   </transition>
