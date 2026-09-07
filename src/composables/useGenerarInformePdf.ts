@@ -135,7 +135,11 @@ export async function generarInformePdf(
         await axios.post(apiEndpoint, persistidas, authRequestConfig());
         return;
       }
-      const graficas = generarGraficasIlc(doc?.eventosConcentrados);
+      const graficas = generarGraficasIlc(
+        Array.isArray(doc.eventosConcentrados)
+          ? doc.eventosConcentrados
+          : undefined,
+      );
       try {
         await DocumentosAPI.updateDocument(tipoApi, trabajadorId, documentoId, {
           ...graficas,
