@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { formatDateDDMMYYYY } from '@/helpers/dates';
 import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -18,6 +19,8 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataCertificadoExpedito.fechaCertificadoExpedito);
 const steps = useStepsStore();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
 const medicoFirmanteStore = useMedicoFirmanteStore();
 const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -71,6 +74,7 @@ function getGradoSaludFormateado(gradoSalud) {
 
 <template>
   <div
+    ref="scrollRoot"
     class="visualizador-certificado-expedito flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
@@ -94,7 +98,7 @@ function getGradoSaludFormateado(gradoSalud) {
 
       <!-- Fecha -->
       <div class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
+        data-paso="1" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
         @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataCertificadoExpedito.fechaCertificadoExpedito) }}</span></p>
@@ -167,17 +171,17 @@ function getGradoSaludFormateado(gradoSalud) {
 
      <!-- Cuerpo del certificado -->
      <div v-if="formData.formDataCertificadoExpedito.cuerpoCertificado" class="w-full cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 2 }"
+      data-paso="2" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 2 }"
       @click="goToStep(2)"
       >
         <p class="text-justify font-medium">
             {{ formData.formDataCertificadoExpedito.cuerpoCertificado }}
         </p>
      </div>
-     <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 2 }" @click="goToStep(2)">+ Agregar cuerpo del certificado</div>
+     <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" data-paso="2" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 2 }" @click="goToStep(2)">+ Agregar cuerpo del certificado</div>
 
       <!-- Signos Vitales -->
-      <div v-if="formData.formDataCertificadoExpedito.tensionArterialSistolica || formData.formDataCertificadoExpedito.tensionArterialDiastolica || formData.formDataCertificadoExpedito.frecuenciaCardiaca || formData.formDataCertificadoExpedito.frecuenciaRespiratoria || formData.formDataCertificadoExpedito.temperaturaCorporal" class="w-full mb-1 cursor-pointer" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 3 }"
+      <div v-if="formData.formDataCertificadoExpedito.tensionArterialSistolica || formData.formDataCertificadoExpedito.tensionArterialDiastolica || formData.formDataCertificadoExpedito.frecuenciaCardiaca || formData.formDataCertificadoExpedito.frecuenciaRespiratoria || formData.formDataCertificadoExpedito.temperaturaCorporal" class="w-full mb-1 cursor-pointer" data-paso="3" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 3 }"
       @click="goToStep(3)">
         <p class="text-center font-medium">
         <template v-if="formData.formDataCertificadoExpedito.tensionArterialSistolica || formData.formDataCertificadoExpedito.tensionArterialDiastolica">
@@ -194,10 +198,10 @@ function getGradoSaludFormateado(gradoSalud) {
         </template>
         </p>
       </div>
-      <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 3 }" @click="goToStep(3)">+ Agregar Signos Vitales</div>
+      <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" data-paso="3" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 3 }" @click="goToStep(3)">+ Agregar Signos Vitales</div>
 
       <!-- Somatometría -->
-      <div v-if="formData.formDataCertificadoExpedito.peso || formData.formDataCertificadoExpedito.altura || formData.formDataCertificadoExpedito.indiceMasaCorporal" class="w-full mb-1 cursor-pointer" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 4 }"
+      <div v-if="formData.formDataCertificadoExpedito.peso || formData.formDataCertificadoExpedito.altura || formData.formDataCertificadoExpedito.indiceMasaCorporal" class="w-full mb-1 cursor-pointer" data-paso="4" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 4 }"
       @click="goToStep(4)">
         <p class="text-center font-medium">
         <template v-if="formData.formDataCertificadoExpedito.peso">
@@ -211,35 +215,35 @@ function getGradoSaludFormateado(gradoSalud) {
         </template>
         </p>
       </div>
-      <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 4 }" @click="goToStep(4)">+ Agregar Somatometría</div>
+      <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" data-paso="4" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 4 }" @click="goToStep(4)">+ Agregar Somatometría</div>
 
      <div class="w-full">
         <p class="text-justify">
-            Por lo anterior, se establece que <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido + ' ' }}</strong><span v-if="proveedorSalud.pais === 'GT' && trabajadores.currentTrabajador.sexo === 'Femenino'"> </span><span class="cursor-pointer" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 5 }" @click="goToStep(5)">{{ formData.formDataCertificadoExpedito.impedimentosFisicos ? formData.formDataCertificadoExpedito.impedimentosFisicos : '[DESCRIPCIÓN DE IMPEDIMENTOS FÍSICOS]' }}</span> <span class="cursor-pointer" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 6 }" @click="goToStep(6)">{{ formData.formDataCertificadoExpedito.gradoSalud ? `y se encuentra actualmente en ${getGradoSaludFormateado(formData.formDataCertificadoExpedito.gradoSalud)} estado de salud.` : '[GRADO DE SALUD]' }}</span> Este certificado de salud no implica ningún tipo de garantía de que <span>{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el trabajador' : 'la trabajadora' }}</span> no se lesionará o enfermará en el futuro.
+            Por lo anterior, se establece que <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido + ' ' }}</strong><span v-if="proveedorSalud.pais === 'GT' && trabajadores.currentTrabajador.sexo === 'Femenino'"> </span><span class="cursor-pointer" data-paso="5" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 5 }" @click="goToStep(5)">{{ formData.formDataCertificadoExpedito.impedimentosFisicos ? formData.formDataCertificadoExpedito.impedimentosFisicos : '[DESCRIPCIÓN DE IMPEDIMENTOS FÍSICOS]' }}</span> <span class="cursor-pointer" data-paso="6" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 6 }" @click="goToStep(6)">{{ formData.formDataCertificadoExpedito.gradoSalud ? `y se encuentra actualmente en ${getGradoSaludFormateado(formData.formDataCertificadoExpedito.gradoSalud)} estado de salud.` : '[GRADO DE SALUD]' }}</span> Este certificado de salud no implica ningún tipo de garantía de que <span>{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el trabajador' : 'la trabajadora' }}</span> no se lesionará o enfermará en el futuro.
         </p>
      </div>
 
      <!-- Aptitud -->
      <div v-if="formData.formDataCertificadoExpedito.aptitudPuesto" class="w-full cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 7 }"
+      data-paso="7" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 7 }"
       @click="goToStep(7)"
       >
         <p class="text-justify font-medium">
             {{ formData.formDataCertificadoExpedito.aptitudPuesto.toUpperCase() }} para laborar. {{ formData.formDataCertificadoExpedito.descripcionSobreAptitud }}
         </p>
      </div>
-     <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 7 }" @click="goToStep(7)">+ Agregar Aptitud</div>
+     <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" data-paso="7" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 7 }" @click="goToStep(7)">+ Agregar Aptitud</div>
      
      <!-- Observaciones -->
      <div v-if="formData.formDataCertificadoExpedito.observaciones" class="w-full cursor-pointer"
-      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 8 }"
+      data-paso="8" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 8 }"
       @click="goToStep(8)"
       >
         <p class="text-justify font-medium">
             {{ formData.formDataCertificadoExpedito.observaciones.toUpperCase() }}
         </p>
      </div>
-     <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 8 }" @click="goToStep(8)">+ Agregar Observaciones</div>
+     <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" data-paso="8" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 8 }" @click="goToStep(8)">+ Agregar Observaciones</div>
 
      <!-- Salida -->
      <div class="w-full mb-4">

@@ -1,4 +1,5 @@
 <script setup>
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { onMounted, ref, watch, computed } from 'vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -34,6 +35,9 @@ const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 const { aptitudSectionsV2Enabled } = useAptitudSectionsV2();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
+
 
 // Lógica para traerse la data de los documentos con fecha más cercana a la aptitud
 const historiasClinicas = ref([]);
@@ -600,6 +604,7 @@ const trastornoLimitePersonalidadResumen = computed(() =>
 
 <template>
   <div
+    ref="scrollRoot"
     class="visualizador-aptitud flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
@@ -624,7 +629,7 @@ const trastornoLimitePersonalidadResumen = computed(() =>
       <!-- Fecha -->
       <div class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
         :class="[sectionOutlineClass('fecha'), rowOutlineClass(1), rowPinpointClass(1)]"
-        @click="goToStep(1)">
+        :data-paso="resolveNavStep(1)" @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
            formatDateDDMMYYYY(formData.formDataAptitud.fechaAptitudPuesto) }}</span></p>
       </div>
@@ -822,54 +827,54 @@ const trastornoLimitePersonalidadResumen = computed(() =>
               convertirFechaISOaDDMMYYYY(nearestTrastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ trastornoLimitePersonalidadResumen }}</td>
           </tr>
-          <tr v-if="formData.formDataAptitud.evaluacionAdicional1" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(2)"
+          <tr v-if="formData.formDataAptitud.evaluacionAdicional1" class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(2)" @click="goToStep(2)"
             :class="[rowOutlineClass(2), rowPinpointClass(2)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">{{ formData.formDataAptitud.evaluacionAdicional1.toUpperCase() }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formatDateDDMMYYYY(formData.formDataAptitud.fechaEvaluacionAdicional1) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formData.formDataAptitud.resultadosEvaluacionAdicional1 }}</td>
           </tr>
-          <tr v-else :class="[rowOutlineClass(2), rowPinpointClass(2)]"></tr>
-          <tr v-if="formData.formDataAptitud.evaluacionAdicional2" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(3)"
+          <tr v-else :data-paso="resolveNavStep(2)" :class="[rowOutlineClass(2), rowPinpointClass(2)]"></tr>
+          <tr v-if="formData.formDataAptitud.evaluacionAdicional2" class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(3)" @click="goToStep(3)"
             :class="[rowOutlineClass(3), rowPinpointClass(3)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">{{ formData.formDataAptitud.evaluacionAdicional2.toUpperCase() }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formatDateDDMMYYYY(formData.formDataAptitud.fechaEvaluacionAdicional2) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formData.formDataAptitud.resultadosEvaluacionAdicional2 }}</td>
           </tr>
-          <tr v-else :class="[rowOutlineClass(3), rowPinpointClass(3)]"></tr>
-          <tr v-if="formData.formDataAptitud.evaluacionAdicional3" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(4)"
+          <tr v-else :data-paso="resolveNavStep(3)" :class="[rowOutlineClass(3), rowPinpointClass(3)]"></tr>
+          <tr v-if="formData.formDataAptitud.evaluacionAdicional3" class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(4)" @click="goToStep(4)"
             :class="[rowOutlineClass(4), rowPinpointClass(4)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">{{ formData.formDataAptitud.evaluacionAdicional3.toUpperCase() }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formatDateDDMMYYYY(formData.formDataAptitud.fechaEvaluacionAdicional3) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formData.formDataAptitud.resultadosEvaluacionAdicional3 }}</td>
           </tr>
-          <tr v-else :class="[rowOutlineClass(4), rowPinpointClass(4)]"></tr>
-          <tr v-if="formData.formDataAptitud.evaluacionAdicional4" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(5)"
+          <tr v-else :data-paso="resolveNavStep(4)" :class="[rowOutlineClass(4), rowPinpointClass(4)]"></tr>
+          <tr v-if="formData.formDataAptitud.evaluacionAdicional4" class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(5)" @click="goToStep(5)"
             :class="[rowOutlineClass(5), rowPinpointClass(5)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">{{ formData.formDataAptitud.evaluacionAdicional4.toUpperCase() }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formatDateDDMMYYYY(formData.formDataAptitud.fechaEvaluacionAdicional4) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formData.formDataAptitud.resultadosEvaluacionAdicional4 }}</td>
           </tr>
-          <tr v-else :class="[rowOutlineClass(5), rowPinpointClass(5)]"></tr>
-          <tr v-if="formData.formDataAptitud.evaluacionAdicional5" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(6)"
+          <tr v-else :data-paso="resolveNavStep(5)" :class="[rowOutlineClass(5), rowPinpointClass(5)]"></tr>
+          <tr v-if="formData.formDataAptitud.evaluacionAdicional5" class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(6)" @click="goToStep(6)"
             :class="[rowOutlineClass(6), rowPinpointClass(6)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">{{ formData.formDataAptitud.evaluacionAdicional5.toUpperCase() }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formatDateDDMMYYYY(formData.formDataAptitud.fechaEvaluacionAdicional5) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formData.formDataAptitud.resultadosEvaluacionAdicional5 }}</td>
           </tr>
-          <tr v-else :class="[rowOutlineClass(6), rowPinpointClass(6)]"></tr>
-          <tr v-if="formData.formDataAptitud.evaluacionAdicional6" class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(7)"
+          <tr v-else :data-paso="resolveNavStep(6)" :class="[rowOutlineClass(6), rowPinpointClass(6)]"></tr>
+          <tr v-if="formData.formDataAptitud.evaluacionAdicional6" class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(7)" @click="goToStep(7)"
             :class="[rowOutlineClass(7), rowPinpointClass(7)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">{{ formData.formDataAptitud.evaluacionAdicional6.toUpperCase() }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formatDateDDMMYYYY(formData.formDataAptitud.fechaEvaluacionAdicional6) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ formData.formDataAptitud.resultadosEvaluacionAdicional6 }}</td>
           </tr>
-          <tr v-else :class="[rowOutlineClass(7), rowPinpointClass(7)]"></tr>
+          <tr v-else :data-paso="resolveNavStep(7)" :class="[rowOutlineClass(7), rowPinpointClass(7)]"></tr>
         </tbody>
       </table>
     </div>
 
     <!-- Aptitud al Puesto -->
-    <div class="w-full cursor-pointer" @click="goToStep(8)" 
+    <div class="w-full cursor-pointer" :data-paso="resolveNavStep(8)" @click="goToStep(8)" 
       :class="[sectionOutlineClass('aptitud'), rowOutlineClass(8), rowPinpointClass(8)]">
       <table class="table-auto w-full border-collapse border border-gray-200 ">
         <thead>
@@ -931,7 +936,7 @@ const trastornoLimitePersonalidadResumen = computed(() =>
           </tr>
         </thead>
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 3.9rem;" @click='goToStep(9)'
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 3.9rem;" :data-paso="resolveNavStep(9)" @click='goToStep(9)'
           :class="[sectionOutlineClass('alteraciones'), rowOutlineClass(9), rowPinpointClass(9)]">
             <td class="w-1/6 text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               Alteraciones a la salud
@@ -940,7 +945,7 @@ const trastornoLimitePersonalidadResumen = computed(() =>
               {{ formData.formDataAptitud.alteracionesSalud }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 3.9rem;" @click='goToStep(10)'
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 3.9rem;" :data-paso="resolveNavStep(10)" @click='goToStep(10)'
           :class="[sectionOutlineClass('resultados'), rowOutlineClass(10), rowPinpointClass(10)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               Resultados
@@ -949,7 +954,7 @@ const trastornoLimitePersonalidadResumen = computed(() =>
               {{ formData.formDataAptitud.resultados }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 3.9rem;" @click='goToStep(11)'
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" style="height: 3.9rem;" :data-paso="resolveNavStep(11)" @click='goToStep(11)'
           :class="[sectionOutlineClass('medidas'), rowOutlineClass(11), rowPinpointClass(11)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               Medidas Preventivas Específicas

@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -24,6 +25,9 @@ const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 const { efSectionsV2Enabled } = useEfSectionsV2();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
+
 
 const resolveNavStep = (legacyStep) => {
   if (efSectionsV2Enabled.value) {
@@ -79,6 +83,7 @@ const rowPinpointClass = (legacyStep) =>
 
 <template>
   <div
+    ref="scrollRoot"
     class="visualizador-exploracion-fisica flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
@@ -104,7 +109,7 @@ const rowPinpointClass = (legacyStep) =>
       <div 
         class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
         :class="[sectionOutlineClass('fecha'), rowOutlineClass(1), rowPinpointClass(1)]"
-        @click="goToStep(1)">
+        :data-paso="resolveNavStep(1)" @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataExploracionFisica.fechaExploracionFisica) }}</span></p>
       </div>
@@ -162,7 +167,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Somatometría -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('somatometria')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(2)">SOMATOMETRÍA</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(2)" @click="goToSectionOnly(2)">SOMATOMETRÍA</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -172,20 +177,20 @@ const rowPinpointClass = (legacyStep) =>
           </tr>
         </thead>
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(2), rowPinpointClass(2)]" @click="goToStep(2)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(2), rowPinpointClass(2)]" :data-paso="resolveNavStep(2)" @click="goToStep(2)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">PESO</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.peso ? `${formData.formDataExploracionFisica.peso} kg` : '' }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">-</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(2), rowPinpointClass(2)]" @click="goToStep(2)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(2), rowPinpointClass(2)]" :data-paso="resolveNavStep(2)" @click="goToStep(2)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">ALTURA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.altura ? `${formData.formDataExploracionFisica.altura} m` : '' }}
             </td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">-</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(2), rowPinpointClass(2)]" @click="goToStep(2)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(2), rowPinpointClass(2)]" :data-paso="resolveNavStep(2)" @click="goToStep(2)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">ÍNDICE DE MASA CORPORAL</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.indiceMasaCorporal }}</td>
@@ -193,7 +198,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.categoriaIMC }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(2), rowPinpointClass(2)]" @click="goToStep(2)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(2), rowPinpointClass(2)]" :data-paso="resolveNavStep(2)" @click="goToStep(2)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">CIRCUNFERENCIA CINTURA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.circunferenciaCintura
@@ -208,7 +213,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Signos Vitales -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('signosVitales')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(3)">SIGNOS VITALES</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(3)" @click="goToSectionOnly(3)">SIGNOS VITALES</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -218,7 +223,7 @@ const rowPinpointClass = (legacyStep) =>
           </tr>
         </thead>
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(3), rowPinpointClass(3)]" @click="goToStep(3)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(3), rowPinpointClass(3)]" :data-paso="resolveNavStep(3)" @click="goToStep(3)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">TENSIÓN ARTERIAL</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.categoriaTensionArterial ?
@@ -228,7 +233,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.categoriaTensionArterial }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(3), rowPinpointClass(3)]" @click="goToStep(3)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(3), rowPinpointClass(3)]" :data-paso="resolveNavStep(3)" @click="goToStep(3)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">FRECUENCIA CARDIACA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.frecuenciaCardiaca ?
@@ -237,7 +242,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.categoriaFrecuenciaCardiaca }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(3), rowPinpointClass(3)]" @click="goToStep(3)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(3), rowPinpointClass(3)]" :data-paso="resolveNavStep(3)" @click="goToStep(3)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">FRECUENCIA RESPIRATORIA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.frecuenciaRespiratoria ?
@@ -246,7 +251,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.categoriaFrecuenciaRespiratoria }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(3), rowPinpointClass(3)]" @click="goToStep(3)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="[rowOutlineClass(3), rowPinpointClass(3)]" :data-paso="resolveNavStep(3)" @click="goToStep(3)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">SATURACIÓN DE OXÍGENO</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.saturacionOxigeno ?
@@ -261,7 +266,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Cabeza y Cuello -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('exploracion')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(4)">CABEZA Y CUELLO</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(4)" @click="goToSectionOnly(4)">CABEZA Y CUELLO</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -271,42 +276,42 @@ const rowPinpointClass = (legacyStep) =>
         </thead>
         <tbody>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(4)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(4)" @click="goToStep(4)" 
             :class="[rowOutlineClass(4), rowPinpointClass(4)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">CRÁNEO CARA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.craneoCara }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(5)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(5)" @click="goToStep(5)" 
             :class="[rowOutlineClass(5), rowPinpointClass(5)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">OJOS</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.ojos }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(6)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(6)" @click="goToStep(6)" 
             :class="[rowOutlineClass(6), rowPinpointClass(6)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">OÍDOS</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.oidos }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(7)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(7)" @click="goToStep(7)" 
             :class="[rowOutlineClass(7), rowPinpointClass(7)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">NARIZ</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.nariz }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(8)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(8)" @click="goToStep(8)" 
             :class="[rowOutlineClass(8), rowPinpointClass(8)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">BOCA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.boca }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(9)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(9)" @click="goToStep(9)" 
             :class="[rowOutlineClass(9), rowPinpointClass(9)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">CUELLO</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
@@ -318,7 +323,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Extremidades Superiores -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('exploracion')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(10)">EXTREMIDADES SUPERIORES</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(10)" @click="goToSectionOnly(10)">EXTREMIDADES SUPERIORES</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -328,7 +333,7 @@ const rowPinpointClass = (legacyStep) =>
         </thead>
         <tbody>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(10)"
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(10)" @click="goToStep(10)"
             :class="[rowOutlineClass(10), rowPinpointClass(10)]"
             style="height: 1.57rem;">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">HOMBROS</td>
@@ -336,7 +341,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.hombros }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(11)"
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(11)" @click="goToStep(11)"
             :class="[rowOutlineClass(11), rowPinpointClass(11)]" 
             style="height: 1.57rem;">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">CODOS</td>
@@ -344,7 +349,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.codos }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(12)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(12)" @click="goToStep(12)" 
             :class="[rowOutlineClass(12), rowPinpointClass(12)]" 
             style="height: 1.57rem;">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">MANOS</td>
@@ -352,7 +357,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.manos }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(13)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(13)" @click="goToStep(13)" 
             :class="[rowOutlineClass(13), rowPinpointClass(13)]" 
             style="height: 1.57rem;">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">REFLEJOS O.T.</td>
@@ -360,7 +365,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.reflejosOsteoTendinososSuperiores }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(14)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(14)" @click="goToStep(14)" 
             :class="[rowOutlineClass(14), rowPinpointClass(14)]" 
             style="height: 1.57rem;">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">VASCULAR</td>
@@ -373,7 +378,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Tórax -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('exploracion')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(15)">TÓRAX</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(15)" @click="goToSectionOnly(15)">TÓRAX</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -385,7 +390,7 @@ const rowPinpointClass = (legacyStep) =>
           <tr 
             class="odd:bg-white even:bg-gray-50 cursor-pointer" 
             :class="[rowOutlineClass(15), rowPinpointClass(15)]" 
-            @click="goToStep(15)">
+            :data-paso="resolveNavStep(15)" @click="goToStep(15)">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">TÓRAX</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.torax }}</td>
@@ -396,7 +401,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Abdomen -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('exploracion')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(16)">ABDOMEN</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(16)" @click="goToSectionOnly(16)">ABDOMEN</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -408,7 +413,7 @@ const rowPinpointClass = (legacyStep) =>
           <tr 
             class="odd:bg-white even:bg-gray-50 cursor-pointer" 
             :class="[rowOutlineClass(16), rowPinpointClass(16)]"
-            @click="goToStep(16)">
+            :data-paso="resolveNavStep(16)" @click="goToStep(16)">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">ABDOMEN</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.abdomen }}</td>
@@ -419,7 +424,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Extremidades Inferiores -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('exploracion')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(17)">EXTREMIDADES INFERIORES</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(17)" @click="goToSectionOnly(17)">EXTREMIDADES INFERIORES</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -428,31 +433,31 @@ const rowPinpointClass = (legacyStep) =>
           </tr>
         </thead>
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(17)"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(17)" @click="goToStep(17)"
           :class="[rowOutlineClass(17), rowPinpointClass(17)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">CADERA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.cadera }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(18)"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(18)" @click="goToStep(18)"
           :class="[rowOutlineClass(18), rowPinpointClass(18)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">RODILLAS</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.rodillas }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(19)"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(19)" @click="goToStep(19)"
           :class="[rowOutlineClass(19), rowPinpointClass(19)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">TOBILLOS-PIES</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.tobillosPies }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(20)"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(20)" @click="goToStep(20)"
           :class="[rowOutlineClass(20), rowPinpointClass(20)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">REFLEJOS O.T.</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.reflejosOsteoTendinososInferiores }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(21)"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(21)" @click="goToStep(21)"
           :class="[rowOutlineClass(21), rowPinpointClass(21)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">VASCULAR</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
@@ -464,7 +469,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Columna -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('exploracion')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(22)">COLUMNA</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(22)" @click="goToSectionOnly(22)">COLUMNA</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -474,7 +479,7 @@ const rowPinpointClass = (legacyStep) =>
         </thead>
         <tbody>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(22)"
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(22)" @click="goToStep(22)"
             :class="[rowOutlineClass(22), rowPinpointClass(22)]"
             style="height: 3.25rem;">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">INSPECCIÓN</td>
@@ -482,7 +487,7 @@ const rowPinpointClass = (legacyStep) =>
               {{ formData.formDataExploracionFisica.inspeccionColumna }}</td>
           </tr>
           <tr 
-            class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(23)" 
+            class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(23)" @click="goToStep(23)" 
             :class="[rowOutlineClass(23), rowPinpointClass(23)]"
             style="height: 3.25rem;">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">MOVIMIENTOS</td>
@@ -495,7 +500,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Piel -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('exploracion')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(24)">PIEL</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(24)" @click="goToSectionOnly(24)">PIEL</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -504,19 +509,19 @@ const rowPinpointClass = (legacyStep) =>
           </tr>
         </thead>
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(24)" style="height: 1.75rem;"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(24)" @click="goToStep(24)" style="height: 1.75rem;"
           :class="[rowOutlineClass(24), rowPinpointClass(24)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">LESIONES</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.lesionesPiel }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(25)" style="height: 1.75rem;"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(25)" @click="goToStep(25)" style="height: 1.75rem;"
           :class="[rowOutlineClass(25), rowPinpointClass(25)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">CICATRICES</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.cicatrices }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(26)" style="height: 1.75rem;"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(26)" @click="goToStep(26)" style="height: 1.75rem;"
           :class="[rowOutlineClass(26), rowPinpointClass(26)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">NEVOS</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
@@ -528,7 +533,7 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Neurológico -->
     <div class="w-full md:w-[calc(50%-0.5rem)]" :class="sectionOutlineClass('exploracion')">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(27)">NEUROLÓGICO</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(27)" @click="goToSectionOnly(27)">NEUROLÓGICO</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <thead>
           <tr class="bg-gray-200">
@@ -537,25 +542,25 @@ const rowPinpointClass = (legacyStep) =>
           </tr>
         </thead>
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(27)"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(27)" @click="goToStep(27)"
             :class="[rowOutlineClass(27), rowPinpointClass(27)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">COORDINACIÓN</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.coordinacion }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(28)"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(28)" @click="goToStep(28)"
             :class="[rowOutlineClass(28), rowPinpointClass(28)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">SENSIBILIDAD</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.sensibilidad }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(29)" 
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(29)" @click="goToStep(29)" 
             :class="[rowOutlineClass(29), rowPinpointClass(29)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">EQUILIBRIO</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.equilibrio }}</td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(30)"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(30)" @click="goToStep(30)"
             :class="[rowOutlineClass(30), rowPinpointClass(30)]">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">MARCHA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
@@ -567,17 +572,17 @@ const rowPinpointClass = (legacyStep) =>
 
     <!-- Resumen de Exploración Física -->
     <div class="w-full" :class="[sectionOutlineClass('resumen'), rowOutlineClass(31), rowPinpointClass(31)]">
-      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" @click="goToSectionOnly(31)">RESUMEN EXPLORACIÓN FÍSICA</h2>
+      <h2 class="text-lg font-medium mb-1 text-center cursor-pointer" :data-paso="resolveNavStep(31)" @click="goToSectionOnly(31)">RESUMEN EXPLORACIÓN FÍSICA</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
           <!-- Encabezado -->
-          <tr class="bg-gray-200 cursor-pointer" :class="[rowOutlineClass(31), rowPinpointClass(31)]" @click="goToStep(31)">
+          <tr class="bg-gray-200 cursor-pointer" :class="[rowOutlineClass(31), rowPinpointClass(31)]" :data-paso="resolveNavStep(31)" @click="goToStep(31)">
             <td class="w-1/2 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light text-center">
               RESUMEN
             </td>
           </tr>
           <!-- Fila combinada -->
-          <tr class="bg-white cursor-pointer" :class="[rowOutlineClass(31), rowPinpointClass(31)]" @click="goToStep(31)">
+          <tr class="bg-white cursor-pointer" :class="[rowOutlineClass(31), rowPinpointClass(31)]" :data-paso="resolveNavStep(31)" @click="goToStep(31)">
             <td class="w-1/2 text-xs sm:text-sm px-2 py-0 border border-gray-300 text-center align-middle"
               style="height: calc(2 * 1.3rem);">
               {{ formData.formDataExploracionFisica.resumenExploracionFisica }}

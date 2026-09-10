@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, onMounted, nextTick, watch } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { storeToRefs } from 'pinia';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -65,6 +66,8 @@ const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataI
 const documentos = useDocumentosStore();
 const { documentsByYear } = storeToRefs(documentos);
 const steps = useStepsStore();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 const isHtmlDark = useHtmlDarkMode();
@@ -1223,10 +1226,11 @@ defineExpose({
 
 <template>
   <div
+    ref="scrollRoot"
     class="visualizador-historia-otologica flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-4 sm:p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
   >
     <!-- Encabezado -->
-    <div class="w-full space-y-1.5 border-b border-slate-200 pb-3">
+    <div data-paso="1" class="w-full space-y-1.5 border-b border-slate-200 pb-3">
       <div class="flex flex-wrap items-start justify-between gap-2">
         <div class="flex-1 min-w-0">
           <p class="text-center text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
@@ -1350,6 +1354,7 @@ defineExpose({
     <div class="w-full space-y-4 pt-1.5 text-sm sm:text-base">
       <!-- Riesgo e interpretación (paso 2) -->
       <div
+        data-paso="2"
         class="w-full cursor-pointer rounded-lg ring-1 ring-slate-200/70 bg-white p-3 sm:p-4 space-y-4"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 2 }"
         @click="goToStep(2)"
@@ -1379,6 +1384,7 @@ defineExpose({
 
       <!-- Trayectoria y seguimiento (paso 3) -->
       <div
+        data-paso="3"
         class="w-full cursor-pointer rounded-lg ring-1 ring-slate-200/70 bg-white p-3 sm:p-4 space-y-4"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 3 }"
         @click="goToStep(3)"

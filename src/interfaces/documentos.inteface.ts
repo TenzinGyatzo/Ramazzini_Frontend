@@ -1223,7 +1223,19 @@ export interface InformeLongitudinalAudiometrico {
   interpretacionLongitudinal?: string;
   interpretacionOidoDerecho?: string;
   interpretacionOidoIzquierdo?: string;
-  recomendacionesSeguimientoAudiometrico?: string;
+  cambioUmbralOidoDerecho?: string;
+  cambioUmbralOidoIzquierdo?: string;
+  conclusionesSeguimientoAudiometrico?: string;
+  decisionesConclusionIla?: {
+    evolucion?: string;
+    distribucionHallazgos?: string;
+    relacionLaboral?: string;
+    confirmacion?: string;
+  };
+  borradorConclusionesSeguimientoAudiometrico?: string;
+  versionConstructorConclusionesIla?: string;
+  recomendacionesSeguimientoAudiometrico?: string[] | string;
+  recomendacionesIlaInicializadas?: boolean;
   criterioComparacion?: string;
   versionCriterio?: string;
   graficaAudiogramaOidoDerecho?: string;

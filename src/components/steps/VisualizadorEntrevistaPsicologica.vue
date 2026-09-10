@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -13,6 +14,8 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataEntrevistaPsicologica.fechaEntrevistaPsicologica);
 const stepsStore = useStepsStore();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => stepsStore.currentStep);
 
 const fd = computed(() => formData.formDataEntrevistaPsicologica);
 
@@ -34,6 +37,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
 
 <template>
   <div
+    ref="scrollRoot"
     class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha (paso 1) -->
@@ -46,7 +50,8 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
 
       <div
         class="w-full md:w-[calc(25%-0.5rem)] flex flex-wrap gap-2 justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 1 }"
+        data-paso="1"
+            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 1 }"
         @click="irASiExiste(1)"
       >
         <p class="w-full md:w-auto">
@@ -107,6 +112,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         <tbody>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="2"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 2 }"
             @click="irASiExiste(2)"
           >
@@ -117,6 +123,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="3"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 3 }"
             @click="irASiExiste(3)"
           >
@@ -127,6 +134,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="4"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 4 }"
             @click="irASiExiste(4)"
           >
@@ -137,6 +145,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="5"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 5 }"
             @click="irASiExiste(5)"
           >
@@ -147,6 +156,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="6"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 6 }"
             @click="irASiExiste(6)"
           >
@@ -173,6 +183,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         <tbody>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="7"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 7 }"
             @click="irASiExiste(7)"
           >
@@ -183,6 +194,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="8"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 8 }"
             @click="irASiExiste(8)"
           >
@@ -193,6 +205,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="9"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 9 }"
             @click="irASiExiste(9)"
           >
@@ -220,6 +233,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         <tbody>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="10"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 10 }"
             @click="irASiExiste(10)"
           >
@@ -231,7 +245,8 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         </tbody>
         <tbody
           class="cursor-pointer"
-          :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 11 }"
+          data-paso="11"
+            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 11 }"
           @click="irASiExiste(11)"
         >
           <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
@@ -268,7 +283,8 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         </thead>
         <tbody
           class="cursor-pointer"
-          :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 12 }"
+          data-paso="12"
+            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 12 }"
           @click="irASiExiste(12)"
         >
           <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
@@ -307,6 +323,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         <tbody>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="13"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 13 }"
             @click="irASiExiste(13)"
           >
@@ -317,6 +334,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="14"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 14 }"
             @click="irASiExiste(14)"
           >
@@ -327,6 +345,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="15"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 15 }"
             @click="irASiExiste(15)"
           >
@@ -353,6 +372,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         <tbody>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="16"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 16 }"
             @click="irASiExiste(16)"
           >
@@ -363,6 +383,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="17"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 17 }"
             @click="irASiExiste(17)"
           >
@@ -390,6 +411,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         <tbody>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="18"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 18 }"
             @click="irASiExiste(18)"
           >
@@ -400,6 +422,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="19"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 19 }"
             @click="irASiExiste(19)"
           >
@@ -410,6 +433,7 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
           </tr>
           <tr
             class="odd:bg-white even:bg-gray-50 cursor-pointer hover:bg-gray-100"
+            data-paso="20"
             :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 20 }"
             @click="irASiExiste(20)"
           >
@@ -435,7 +459,8 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
         </thead>
         <tbody
           class="cursor-pointer"
-          :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 21 }"
+          data-paso="21"
+            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 21 }"
           @click="irASiExiste(21)"
         >
           <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
@@ -470,7 +495,8 @@ const tieneTexto = (v) => v !== undefined && v !== null && String(v).trim() !== 
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody
           class="cursor-pointer"
-          :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 22 }"
+          data-paso="22"
+            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 22 }"
           @click="irASiExiste(22)"
         >
           <tr class="bg-gray-200">

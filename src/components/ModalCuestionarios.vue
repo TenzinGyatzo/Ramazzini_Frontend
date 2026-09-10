@@ -344,10 +344,22 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
         <div class="space-y-6">
           <div class="space-y-3">
             <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-file text-emerald-500 mr-3"></i>
-              Miscelaneos
+              <i class="fas fa-file-medical text-emerald-500 mr-3"></i>
+              Documentos médicos
             </div>
             <div class="space-y-2">
+              <button type="button" @click="handleQuestionnaireSelect('receta')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
+                <i class="fas fa-prescription-bottle-medical text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Receta médica
+              </button>
+              <button type="button" @click="handleQuestionnaireSelect('constancia-aptitud')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
+                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Constancia de aptitud
+              </button>
+              <button type="button" @click="handleQuestionnaireSelect('certificado-expedito')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
+                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Certificado expedito
+              </button>
               <button
                 v-if="isMX && notaAclaratoriaEnabled"
                 type="button"
@@ -355,33 +367,21 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
               >
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Nota Aclaratoria
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('receta')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-prescription-bottle-medical text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Receta Médica
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('constancia-aptitud')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Constancia de Aptitud
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('certificado-expedito')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Certificado Expedito
+                Nota aclaratoria
               </button>
             </div>
           </div>
 
           <div class="space-y-3">
             <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-user-circle text-emerald-500 mr-3"></i>
-              Condición Personal
+              <i class="fas fa-notes-medical text-emerald-500 mr-3"></i>
+              Seguimiento clínico
             </div>
             <div class="space-y-2">
               <div class="flex flex-col sm:flex-row gap-2">
                 <button type="button" @click="handleQuestionnaireSelect('evento-seguimiento-cardiometabolico')" class="questionnaire-option flex-1 min-w-0 text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center gap-2 group border border-gray-200 hover:border-emerald-300">
                   <i class="fas fa-heartbeat text-emerald-500 text-sm group-hover:text-emerald-600 shrink-0" />
-                  <span class="min-w-0">Evento Seguimiento Cardiometabólico</span>
+                  <span class="min-w-0">Evento de seguimiento cardiometabólico</span>
                 </button>
                 <button
                   type="button"
@@ -394,7 +394,7 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               </div>
               <button type="button" @click="handleQuestionnaireSelect('informe-longitudinal-cardiometabolico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                <span class="min-w-0">Informe Longitudinal Cardiometabólico</span>
+                Informe longitudinal cardiometabólico
               </button>
               <button
                 v-if="controlPrenatalEnabled"
@@ -402,27 +402,20 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
                 @click="handleQuestionnaireSelect('control-prenatal')"
                 class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-baby text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Control Prenatal (Embarazo y Lactancia)
-              </button>
-              <button
-                type="button"
-                disabled
-                class="questionnaire-option questionnaire-option--disabled w-full text-left px-4 py-3 rounded-lg text-sm flex items-center group border border-gray-200">
-                <i class="fas fa-bone mr-3 text-sm"></i>
-                Condiciones muscoesqueléticas
+                Control prenatal (embarazo y lactancia)
               </button>
             </div>
           </div>
 
           <div class="space-y-3">
             <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-clipboard-question text-emerald-500 mr-3"></i>
-              Cuestionarios previos a estudios de gabinete
+              <i class="fas fa-stethoscope text-emerald-500 mr-3"></i>
+              Salud auditiva y respiratoria
             </div>
             <div class="space-y-2">
               <button type="button" @click="handleQuestionnaireSelect('historia-otologica')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-ear-deaf text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Historia Otológica (Previo a Audiometría)
+                Historia otológica — previa a audiometría
               </button>
               <button type="button" @click="handleQuestionnaireSelect('informe-longitudinal-audiometrico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-chart-line text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
@@ -430,27 +423,27 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               </button>
               <button type="button" @click="handleQuestionnaireSelect('previo-espirometria')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fas fa-lungs text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Cuestionario Previo a Espirometría
+                Cuestionario previo a espirometría
               </button>
             </div>
           </div>
 
           <div class="space-y-3">
             <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-exclamation-triangle text-emerald-500 mr-3"></i>
-              Cuestionarios Psicologicos
+              <i class="fas fa-brain text-emerald-500 mr-3"></i>
+              Evaluación psicológica
             </div>
             <div class="space-y-2">
               <button type="button" @click="handleQuestionnaireSelect('entrevista-psicologica')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fa-regular fa-comments text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Entrevista Psicologica
+                Entrevista psicológica
               </button>
               <button type="button" @click="handleQuestionnaireSelect('trastornos-estado-animo')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fa-solid fa-wave-square text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Trastornos del Estado de Ánimo (MDQ)
+                Trastornos del estado de ánimo (MDQ)
               </button>
               <button type="button" @click="handleQuestionnaireSelect('cuestionario-prodromal-breve')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fa-solid fa-brain text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                <i class="fa-solid fa-clipboard-list text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Cuestionario Prodromal Breve (PQ-B)
               </button>
               <button type="button" @click="handleQuestionnaireSelect('trastorno-limite-personalidad')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
@@ -496,21 +489,6 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
 </template>
 
 <style scoped>
-.questionnaire-option--disabled,
-.questionnaire-option:disabled {
-  background-color: #f9fafb;
-  border-color: #e5e7eb;
-  color: #9ca3af;
-  cursor: not-allowed;
-  opacity: 0.65;
-  pointer-events: none;
-}
-
-.questionnaire-option--disabled i,
-.questionnaire-option:disabled i {
-  color: #9ca3af;
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;

@@ -1,10 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, watch } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import {
   FRECUENCIAS_MATRIZ_ILA,
+  MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA,
   PIE_COLOR_MAGNITUD_ILA,
   claseColorMagnitudDeltaIla,
+  esBorradorInterpretacionIlaAplicable,
   filasMatrizPorOidoIla,
   formatearDeltaConSigno,
 } from '@/helpers/informeLongitudinalAudiometrico';
@@ -20,113 +22,144 @@ const props = defineProps({
 
 const store = useFormDataStore();
 const fm = computed(() => store.formDataInformeLongitudinalAudiometrico);
-const mensajeCopiado = ref(false);
 
 const esDerecho = computed(() => props.oido === 'Derecho');
 const tituloOido = computed(() => (esDerecho.value ? 'oído derecho' : 'oído izquierdo'));
 const campoInterpretacion = computed(() =>
   esDerecho.value ? 'interpretacionOidoDerecho' : 'interpretacionOidoIzquierdo',
 );
-const filas = computed(() => filasMatrizPorOidoIla(fm.value.matrizDeltas, props.oido));
-const borrador = computed(() =>
-  esDerecho.value
-    ? fm.value.borradorInterpretacionOidoDerecho
-    : fm.value.borradorInterpretacionOidoIzquierdo,
+const campoBorrador = computed(() =>
+  esDerecho.value ? 'borradorInterpretacionOidoDerecho' : 'borradorInterpretacionOidoIzquierdo',
 );
+const filas = computed(() => filasMatrizPorOidoIla(fm.value.matrizDeltas, props.oido));
+const mostrarUsarAutomatica = computed(() => {
+  const actual = String(fm.value[campoInterpretacion.value] || '').trim();
+  return !actual && esBorradorInterpretacionIlaAplicable(fm.value[campoBorrador.value]);
+});
+const caracteresInterpretacion = computed(
+  () => String(fm.value[campoInterpretacion.value] || '').length,
+);
+const topeInterpretacionAlcanzado = computed(
+  () => caracteresInterpretacion.value >= MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA,
+);
+
+watch(caracteresInterpretacion, () => {
+  const key = campoInterpretacion.value;
+  const actual = String(fm.value[key] || '');
+  if (actual.length > MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA) {
+    fm.value[key] = actual.slice(0, MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA);
+  }
+});
 
 function deltaDe(fila, freq) {
   return (fila.deltas || []).find((d) => d.frecuenciaHz === freq)?.deltaDb;
 }
 
-function usarBorrador() {
-  const texto = borrador.value;
-  if (!texto || !String(texto).trim()) return;
-  store.formDataInformeLongitudinalAudiometrico[campoInterpretacion.value] = texto;
+function usarInterpretacionAutomatica() {
+  const texto = String(fm.value[campoBorrador.value] || '');
+  if (!esBorradorInterpretacionIlaAplicable(texto)) return;
+  fm.value[campoInterpretacion.value] = texto.slice(
+    0,
+    MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA,
+  );
 }
-
-const copiarBorrador = async () => {
-  const texto = borrador.value || '';
-  if (!texto) return;
-  try {
-    await navigator.clipboard.writeText(texto);
-    mensajeCopiado.value = true;
-    setTimeout(() => {
-      mensajeCopiado.value = false;
-    }, 2000);
-  } catch (err) {
-    console.error('No se pudo copiar el borrador', err);
-  }
-};
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">{{ esDerecho ? 'Oído derecho' : 'Oído izquierdo' }}</h1>
-    <p class="text-sm text-gray-600 mb-4">
-      Δ = umbral subsecuente − umbral basal. Positivo: empeoramiento. Negativo: mejoría aparente.
+  <div class="ila-section-step flex flex-col min-h-0 w-full">
+    <h1 class="text-2xl font-bold mb-2 text-gray-900 shrink-0">{{ esDerecho ? 'Oído derecho' : 'Oído izquierdo' }}</h1>
+    <p class="text-sm text-gray-600 mb-3 shrink-0">
+      Los números indican el cambio de umbral en dB respecto a la basal. Positivo: el umbral subió (empeoramiento). Negativo: el umbral bajó (mejoría aparente).
     </p>
 
-    <h2 class="text-base font-semibold text-gray-800 mb-2">
-      Matriz longitudinal de cambios — {{ tituloOido }}
-    </h2>
-    <div class="border border-gray-200 rounded-lg mb-2">
-      <table class="w-full table-fixed text-[11px]">
-        <thead class="bg-gray-800 text-white">
-          <tr>
-            <th class="px-1 py-1.5 text-left font-medium w-[4.25rem]">Fecha</th>
-            <th v-for="freq in FRECUENCIAS_MATRIZ_ILA" :key="freq" class="px-0.5 py-1.5 text-center font-medium">{{ freq }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(fila, idx) in filas" :key="idx" class="odd:bg-white even:bg-gray-50">
-            <td class="px-1 py-1 whitespace-nowrap">{{ formatDateDDMMYYYY(fila.fechaAudiometria) }}</td>
-            <td
-              v-for="freq in FRECUENCIAS_MATRIZ_ILA"
-              :key="freq"
-              class="px-0.5 py-1 text-center font-medium"
-              :class="claseColorMagnitudDeltaIla(deltaDe(fila, freq))"
-            >
-              {{ formatearDeltaConSigno(deltaDe(fila, freq)) }}
-            </td>
-          </tr>
-          <tr v-if="!filas.length">
-            <td colspan="8" class="px-2 py-3 text-center text-gray-500">Seleccione basal y al menos una subsecuente.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="text-xs text-gray-500 mb-6">{{ PIE_COLOR_MAGNITUD_ILA }}</p>
-
-    <FormKit
-      type="textarea"
-      :name="campoInterpretacion"
-      :label="`Interpretación — ${tituloOido}`"
-      rows="9"
-      input-class="min-h-[12rem]"
-      v-model="fm[campoInterpretacion]"
-    />
-
-    <div class="border border-gray-200 rounded-lg p-2 bg-slate-50 mt-3">
-      <div class="flex items-center justify-between gap-2 mb-1">
-        <h2 class="text-xs font-semibold text-gray-800">Interpretación sugerida</h2>
-        <div class="flex gap-2">
-          <button
-            type="button"
-            class="text-xs px-2 py-1 rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-            @click="usarBorrador"
-          >
-            Usar en interpretación
-          </button>
-          <button
-            type="button"
-            class="text-xs px-2 py-1 rounded bg-white border border-gray-200 hover:bg-gray-50"
-            @click="copiarBorrador"
-          >
-            {{ mensajeCopiado ? 'Copiado' : 'Copiar' }}
-          </button>
-        </div>
+    <div
+      class="ila-section-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden max-h-[min(58vh,520px)] sm:max-h-[min(60vh,560px)] xl:max-h-[min(68vh,640px)] pr-0.5 space-y-3 border border-gray-100 rounded-lg bg-gray-50/40 p-2 sm:p-3"
+    >
+      <h2 class="text-base font-semibold text-gray-800">
+        Matriz longitudinal de cambios — {{ tituloOido }}
+      </h2>
+      <div class="border border-gray-200 rounded-lg">
+        <table class="ila-matriz w-full table-fixed text-[11px]">
+          <thead class="bg-gray-800 text-white">
+            <tr>
+              <th class="px-1 py-1.5 text-left font-medium w-[4.25rem]">Fecha</th>
+              <th v-for="freq in FRECUENCIAS_MATRIZ_ILA" :key="freq" class="px-0.5 py-1.5 text-center font-medium">{{ freq }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(fila, idx) in filas" :key="idx" class="odd:bg-white even:bg-gray-50">
+              <td class="px-1 py-1 whitespace-nowrap">{{ formatDateDDMMYYYY(fila.fechaAudiometria) }}</td>
+              <td
+                v-for="freq in FRECUENCIAS_MATRIZ_ILA"
+                :key="freq"
+                class="px-0.5 py-1 text-center font-medium"
+                :class="claseColorMagnitudDeltaIla(deltaDe(fila, freq))"
+              >
+                {{ formatearDeltaConSigno(deltaDe(fila, freq)) }}
+              </td>
+            </tr>
+            <tr v-if="!filas.length">
+              <td colspan="8" class="px-2 py-3 text-center text-gray-500">Seleccione basal y al menos una subsecuente.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <p class="text-[11px] leading-snug text-gray-600 whitespace-pre-wrap">{{ borrador || 'Seleccione basal y subsecuentes en el paso 1.' }}</p>
+      <p class="text-xs text-gray-500">{{ PIE_COLOR_MAGNITUD_ILA }}</p>
+
+      <FormKit
+        type="textarea"
+        :name="campoInterpretacion"
+        :label="`Interpretación — ${tituloOido}`"
+        rows="9"
+        input-class="min-h-[12rem]"
+        :maxlength="MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA"
+        v-model="fm[campoInterpretacion]"
+      />
+      <div class="flex items-center justify-between gap-2">
+        <button
+          v-if="mostrarUsarAutomatica"
+          type="button"
+          class="text-xs text-gray-500 underline decoration-gray-300 hover:text-gray-700 hover:decoration-gray-500"
+          @click="usarInterpretacionAutomatica"
+        >
+          Usar interpretación automática
+        </button>
+        <span v-else />
+        <span
+          class="ml-auto text-xs tabular-nums"
+          :class="topeInterpretacionAlcanzado ? 'text-red-600' : 'text-gray-500'"
+        >
+          {{ caracteresInterpretacion }} / {{ MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.ila-section-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 0.65) transparent;
+}
+.ila-section-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.ila-section-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ila-section-scroll::-webkit-scrollbar-thumb {
+  background-color: rgb(148 163 184 / 0.65);
+  border-radius: 9999px;
+}
+
+.ila-matriz {
+  border-collapse: collapse;
+}
+.ila-matriz th,
+.ila-matriz td {
+  border: 1px solid rgb(148 163 184 / 0.28);
+}
+.ila-matriz thead.bg-gray-800 th {
+  border-color: rgb(255 255 255 / 0.14);
+}
+</style>

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -15,6 +16,8 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataControlPrenatal.fechaInicioControlPrenatal);
 const steps = useStepsStore();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 
@@ -26,6 +29,7 @@ const goToStep = (stepNumber) => {
 
 <template>
   <div
+    ref="scrollRoot"
     class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
@@ -50,7 +54,7 @@ const goToStep = (stepNumber) => {
       <!-- Fecha -->
       <div
         class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
+        data-paso="1" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
         @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Inicio de Control Prenatal: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataControlPrenatal.fechaInicioControlPrenatal) }}</span></p>
@@ -140,7 +144,7 @@ const goToStep = (stepNumber) => {
       <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Gineco Obstétricos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 2 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(2)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="2" :class="steps.currentStep === 2 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(2)">
             <td class="w-1/2 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               MENARCA
             </td>
@@ -148,7 +152,7 @@ const goToStep = (stepNumber) => {
               {{ formData.formDataControlPrenatal.menarca ? formData.formDataControlPrenatal.menarca + ' años' : '-' }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 3 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(3)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="3" :class="steps.currentStep === 3 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(3)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               GESTAS
             </td>
@@ -156,7 +160,7 @@ const goToStep = (stepNumber) => {
               {{ formData.formDataControlPrenatal.gestas === 0 ? 0 : (formData.formDataControlPrenatal.gestas || '-') }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 4 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(4)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="4" :class="steps.currentStep === 4 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(4)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               PARTOS
             </td>
@@ -164,7 +168,7 @@ const goToStep = (stepNumber) => {
               {{ formData.formDataControlPrenatal.partos === 0 ? 0 : (formData.formDataControlPrenatal.partos || '-') }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 5 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(5)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="5" :class="steps.currentStep === 5 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(5)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               CESÁREAS
             </td>
@@ -172,7 +176,7 @@ const goToStep = (stepNumber) => {
               {{ formData.formDataControlPrenatal.cesareas === 0 ? 0 : (formData.formDataControlPrenatal.cesareas || '-') }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 6 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(6)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="6" :class="steps.currentStep === 6 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(6)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               ABORTOS
             </td>
@@ -189,7 +193,7 @@ const goToStep = (stepNumber) => {
       <h2 class="text-lg font-medium mb-1 text-center">Antecedentes Gineco Obstétricos</h2>
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 7 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(7)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="7" :class="steps.currentStep === 7 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(7)">
             <td class="w-3/5 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               CICLOS
             </td>
@@ -197,7 +201,7 @@ const goToStep = (stepNumber) => {
               {{ formData.formDataControlPrenatal.ciclos || '-' }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 8 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(8)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="8" :class="steps.currentStep === 8 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(8)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               F. U. M.
             </td>
@@ -205,7 +209,7 @@ const goToStep = (stepNumber) => {
               {{ (formData.formDataControlPrenatal.fum && convertirFechaISOaDDMMYYYY(formData.formDataControlPrenatal.fum)) || '-' }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 9 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(9)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="9" :class="steps.currentStep === 9 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(9)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               I. V. S. A.
             </td>
@@ -213,7 +217,7 @@ const goToStep = (stepNumber) => {
               {{ formData.formDataControlPrenatal.ivsa ? formData.formDataControlPrenatal.ivsa + ' años' : '-' }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 10 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(10)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="10" :class="steps.currentStep === 10 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(10)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               PLANIFICACIÓN FAMILIAR
             </td>
@@ -221,7 +225,7 @@ const goToStep = (stepNumber) => {
               {{ formData.formDataControlPrenatal.metodoPlanificacionFamiliar || '-' }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :class="steps.currentStep === 11 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(11)">
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="11" :class="steps.currentStep === 11 ? 'outline outline-2 outline-yellow-500 rounded-md' : ''" @click="goToStep(11)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               F. P. P.
             </td>
@@ -259,7 +263,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio']" :key="`fecha-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (12 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="12 + (index * 6)" :class="steps.currentStep === (12 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(12 + (index * 6))">
                 {{ (formData.formDataControlPrenatal[`${mes}Fecha`] && convertirFechaISOaDDMMYYYY(formData.formDataControlPrenatal[`${mes}Fecha`])) || '-' }}
               </td>
@@ -272,7 +276,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio']" :key="`peso-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (13 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="13 + (index * 6)" :class="steps.currentStep === (13 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(13 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Peso`] || '-' }}
               </td>
@@ -285,7 +289,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio']" :key="`imc-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (13 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="13 + (index * 6)" :class="steps.currentStep === (13 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(13 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Imc`] || '-' }}
               </td>
@@ -298,7 +302,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio']" :key="`tension-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (14 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="14 + (index * 6)" :class="steps.currentStep === (14 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(14 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Tia`] || '-' }}
               </td>
@@ -311,7 +315,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio']" :key="`fcf-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (15 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="15 + (index * 6)" :class="steps.currentStep === (15 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(15 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Fcf`] || '-' }}
               </td>
@@ -324,7 +328,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio']" :key="`semanas-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (16 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="16 + (index * 6)" :class="steps.currentStep === (16 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(16 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Sdg`] || '-' }}
               </td>
@@ -337,7 +341,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio']" :key="`fondo-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (17 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="17 + (index * 6)" :class="steps.currentStep === (17 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(17 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}FondoUterino`] || '-' }}
               </td>
@@ -373,7 +377,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']" :key="`fecha-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (48 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="48 + (index * 6)" :class="steps.currentStep === (48 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(48 + (index * 6))">
                 {{ (formData.formDataControlPrenatal[`${mes}Fecha`] && convertirFechaISOaDDMMYYYY(formData.formDataControlPrenatal[`${mes}Fecha`])) || '-' }}
               </td>
@@ -386,7 +390,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']" :key="`peso-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (49 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="49 + (index * 6)" :class="steps.currentStep === (49 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(49 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Peso`] || '-' }}
               </td>
@@ -399,7 +403,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']" :key="`imc-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (49 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="49 + (index * 6)" :class="steps.currentStep === (49 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(49 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Imc`] || '-' }}
               </td>
@@ -412,7 +416,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']" :key="`tension-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (50 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="50 + (index * 6)" :class="steps.currentStep === (50 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(50 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Tia`] || '-' }}
               </td>
@@ -425,7 +429,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']" :key="`fcf-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (51 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="51 + (index * 6)" :class="steps.currentStep === (51 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(51 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Fcf`] || '-' }}
               </td>
@@ -438,7 +442,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']" :key="`semanas-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (52 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="52 + (index * 6)" :class="steps.currentStep === (52 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(52 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}Sdg`] || '-' }}
               </td>
@@ -451,7 +455,7 @@ const goToStep = (stepNumber) => {
               </td>
               <td v-for="(mes, index) in ['julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']" :key="`fondo-${mes}`" 
                   class="px-2 py-1 border border-gray-300 text-center cursor-pointer hover:bg-yellow-100"
-                  :class="steps.currentStep === (53 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
+                  :data-paso="53 + (index * 6)" :class="steps.currentStep === (53 + (index * 6)) ? 'outline outline-2 outline-yellow-500 rounded' : ''"
                   @click="goToStep(53 + (index * 6))">
                 {{ formData.formDataControlPrenatal[`${mes}FondoUterino`] || '-' }}
               </td>
@@ -474,79 +478,79 @@ const goToStep = (stepNumber) => {
             <!-- Observaciones sobre el peso -->
             <div v-if="formData.formDataControlPrenatal.observacionesPeso" 
               class="w-9/10 my-2 mx-2 cursor-pointer" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 84 }" @click="goToStep(84)">
+              data-paso="84" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 84 }" @click="goToStep(84)">
               <p class="text-justify font-medium">
                 PESO: <span class="font-light whitespace-pre">{{ formData.formDataControlPrenatal.observacionesPeso }}</span> 
               </p>
             </div>
             <div v-else 
               class="w-9/10 my-2 mx-2 cursor-pointer text-gray-500 italic" 
-              :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 84 }" @click="goToStep(84)">
+              data-paso="84" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 84 }" @click="goToStep(84)">
               +  Agregar observaciones sobre la evolución del peso
             </div>
             <!-- Observaciones sobre el IMC -->
             <div v-if="formData.formDataControlPrenatal.observacionesImc" 
               class="w-9/10 my-2 mx-2 cursor-pointer" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 85 }" @click="goToStep(85)">
+              data-paso="85" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 85 }" @click="goToStep(85)">
               <p class="text-justify font-medium">
                 IMC: <span class="font-light whitespace-pre">{{ formData.formDataControlPrenatal.observacionesImc }}</span> 
               </p>
             </div>
             <div v-else 
               class="w-9/10 my-2 mx-2 cursor-pointer text-gray-500 italic" 
-              :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 85 }" @click="goToStep(85)">
+              data-paso="85" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 85 }" @click="goToStep(85)">
               +  Agregar observaciones sobre la evolución del IMC
             </div>
             <!-- Observaciones sobre la tensión arterial -->
             <div v-if="formData.formDataControlPrenatal.observacionesTia" 
               class="w-9/10 my-2 mx-2 cursor-pointer" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 86 }" @click="goToStep(86)">
+              data-paso="86" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 86 }" @click="goToStep(86)">
               <p class="text-justify font-medium">
                 T/A: <span class="font-light whitespace-pre">{{ formData.formDataControlPrenatal.observacionesTia }}</span> 
               </p>
             </div>
             <div v-else 
               class="w-9/10 my-2 mx-2 cursor-pointer text-gray-500 italic" 
-              :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 86 }" @click="goToStep(86)">
+              data-paso="86" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 86 }" @click="goToStep(86)">
               +  Agregar observaciones sobre la evolución de la T.A.
             </div>
             <!-- Observaciones sobre el F. C. Fetal -->
             <div v-if="formData.formDataControlPrenatal.observacionesFcf" 
               class="w-9/10 my-2 mx-2 cursor-pointer" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 87 }" @click="goToStep(87)">
+              data-paso="87" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 87 }" @click="goToStep(87)">
               <p class="text-justify font-medium">
                 FCF: <span class="font-light whitespace-pre">{{ formData.formDataControlPrenatal.observacionesFcf }}</span> 
               </p>
             </div>
             <div v-else 
               class="w-9/10 my-2 mx-2 cursor-pointer text-gray-500 italic" 
-              :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 87 }" @click="goToStep(87)">
+              data-paso="87" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 87 }" @click="goToStep(87)">
               +  Agregar observaciones sobre la evolución del F.C.F.
             </div>
             <!-- Observaciones sobre la S.D.G. -->
             <div v-if="formData.formDataControlPrenatal.observacionesSdg" 
               class="w-9/10 my-2 mx-2 cursor-pointer" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 88 }" @click="goToStep(88)">
+              data-paso="88" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 88 }" @click="goToStep(88)">
               <p class="text-justify font-medium">
                 SDG: <span class="font-light whitespace-pre">{{ formData.formDataControlPrenatal.observacionesSdg }}</span> 
               </p>
             </div>
             <div v-else 
               class="w-9/10 my-2 mx-2 cursor-pointer text-gray-500 italic" 
-              :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 88 }" @click="goToStep(88)">
+              data-paso="88" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 88 }" @click="goToStep(88)">
               +  Agregar observaciones sobre las semanas de gestación
             </div>
             <!-- Observaciones sobre el fondo uterino -->
             <div v-if="formData.formDataControlPrenatal.observacionesFondoUterino" 
               class="w-9/10 my-2 mx-2 cursor-pointer" 
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 89 }" @click="goToStep(89)">
+              data-paso="89" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md' : steps.currentStep === 89 }" @click="goToStep(89)">
               <p class="text-justify font-medium">
                 FONDO UTERINO: <span class="font-light whitespace-pre">{{ formData.formDataControlPrenatal.observacionesFondoUterino }}</span> 
               </p>
             </div>
             <div v-else 
               class="w-9/10 my-2 mx-2 cursor-pointer text-gray-500 italic" 
-              :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 89 }" @click="goToStep(89)">
+              data-paso="89" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 89 }" @click="goToStep(89)">
               +  Agregar observaciones sobre el fondo uterino
             </div>
           </tbody>

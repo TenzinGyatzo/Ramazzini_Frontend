@@ -36,6 +36,7 @@ import {
   esPositivoRiesgoPsicoticoPQB,
 } from '@/helpers/cuestionarioProdromalBreveSteps';
 import { ESTADO_CONTROL_CONDICION_OPTS, GRADO_OBESIDAD_OPTS } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
+import { CAMBIO_UMBRAL_ILA, clasificarCambioUmbralOidoIla } from '@/helpers/informeLongitudinalAudiometrico';
 import ModalPdfEliminado from './ModalPdfEliminado.vue';
 import EstadoDocumentoBadge from './badges/EstadoDocumentoBadge.vue';
 import BadgeNotaAclaratoria from './badges/BadgeNotaAclaratoria.vue';
@@ -2494,6 +2495,15 @@ function tonoConsistenciaSeguimientoInformeLista(c) {
   return 'neutral';
 }
 
+function tonoCambioUmbralOidoIlaLista(c) {
+  const s = c == null ? '' : String(c).trim();
+  if (!s) return 'neutral';
+  if (s === CAMBIO_UMBRAL_ILA.MEJORIA_APARENTE) return 'ok';
+  if (s === CAMBIO_UMBRAL_ILA.ESTABLE) return 'neutral';
+  if (s === CAMBIO_UMBRAL_ILA.EMPEORAMIENTO) return 'bad';
+  return 'neutral';
+}
+
 function claseTextoTonoInformeLongitudinalLista(tono) {
   if (tono === 'ok') return 'text-emerald-700';
   if (tono === 'warn') return 'text-amber-700';
@@ -2539,6 +2549,54 @@ const chipsInformeLongitudinalLista = computed(() => {
     consistencia: {
       label: cons != null && String(cons).trim() !== '' ? String(cons) : dash,
       clase: claseTextoTonoInformeLongitudinalLista(tonoConsistenciaSeguimientoInformeLista(cons)),
+    },
+  };
+});
+
+const chipsInformeLongitudinalAudiometricoLista = computed(() => {
+  const d = props.informeLongitudinalAudiometrico;
+  const dash = '—';
+  const vacio = {
+    periodo: { label: dash, clase: 'text-gray-600' },
+    audiometrias: { label: dash, clase: 'text-gray-600' },
+    od: { label: dash, clase: 'text-gray-600' },
+    oi: { label: dash, clase: 'text-gray-600' },
+  };
+  if (!d || typeof d !== 'object') return vacio;
+
+  const inicio = convertirFechaISOaDDMMYYYY(d.periodoInicio);
+  const fin = convertirFechaISOaDDMMYYYY(d.periodoFin);
+  let periodoLabel = dash;
+  if (inicio && fin) periodoLabel = `${inicio} – ${fin}`;
+  else if (inicio || fin) periodoLabel = inicio || fin;
+
+  const n = Number(d.numeroAudiometriasIncluidas);
+  let audiometriasLabel = dash;
+  if (Number.isFinite(n) && n > 0) {
+    audiometriasLabel = n === 1 ? '1 audiometría' : `${n} audiometrías`;
+  }
+
+  const odPersistido = String(d.cambioUmbralOidoDerecho || '').trim();
+  const oiPersistido = String(d.cambioUmbralOidoIzquierdo || '').trim();
+  const od = odPersistido || clasificarCambioUmbralOidoIla(d.matrizDeltas, 'Derecho') || dash;
+  const oi = oiPersistido || clasificarCambioUmbralOidoIla(d.matrizDeltas, 'Izquierdo') || dash;
+  const tituloCambio = 'Cambio de umbral respecto a la basal. No es un criterio NIOSH, OSHA ni NOM-011.';
+
+  return {
+    periodo: { label: periodoLabel, clase: periodoLabel === dash ? 'text-gray-600' : 'text-gray-900' },
+    audiometrias: {
+      label: audiometriasLabel,
+      clase: audiometriasLabel === dash ? 'text-gray-600' : 'text-gray-900',
+    },
+    od: {
+      label: od,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoCambioUmbralOidoIlaLista(od === dash ? '' : od)),
+      title: tituloCambio,
+    },
+    oi: {
+      label: oi,
+      clase: claseTextoTonoInformeLongitudinalLista(tonoCambioUmbralOidoIlaLista(oi === dash ? '' : oi)),
+      title: tituloCambio,
     },
   };
 });
@@ -4991,13 +5049,40 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Estudios</p>
-                                    <p class="font-medium text-xs sm:text-sm">{{ informeLongitudinalAudiometrico.numeroAudiometriasIncluidas ?? '—' }}</p>
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[8.5rem] max-w-[12.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Periodo</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalAudiometricoLista.periodo.clase"
+                                        :title="chipsInformeLongitudinalAudiometricoLista.periodo.label">
+                                        {{ chipsInformeLongitudinalAudiometricoLista.periodo.label }}
+                                    </p>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Criterio</p>
-                                    <p class="font-medium text-xs sm:text-sm">{{ informeLongitudinalAudiometrico.versionCriterio || 'v1.0-deltas' }}</p>
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Audiometrías</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalAudiometricoLista.audiometrias.clase">
+                                        {{ chipsInformeLongitudinalAudiometricoLista.audiometrias.label }}
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">OD</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalAudiometricoLista.od.clase"
+                                        :title="chipsInformeLongitudinalAudiometricoLista.od.title">
+                                        {{ chipsInformeLongitudinalAudiometricoLista.od.label }}
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">OI</p>
+                                    <p
+                                        class="font-medium text-xs sm:text-sm leading-snug"
+                                        :class="chipsInformeLongitudinalAudiometricoLista.oi.clase"
+                                        :title="chipsInformeLongitudinalAudiometricoLista.oi.title">
+                                        {{ chipsInformeLongitudinalAudiometricoLista.oi.label }}
+                                    </p>
                                 </div>
                             </div>
                         </div>

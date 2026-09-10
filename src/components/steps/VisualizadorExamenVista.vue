@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -15,6 +16,8 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataExamenVista.fechaExamenVista);
 const steps = useStepsStore();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 
@@ -61,6 +64,7 @@ const stepDiagnostico = computed(() => 12);
 
 <template>
   <div
+    ref="scrollRoot"
     class="visualizador-examen-vista flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
@@ -84,7 +88,7 @@ const stepDiagnostico = computed(() => 12);
 
       <!-- Fecha -->
       <div class="w-full md:w-[calc(25%-0.5rem)] flex flex-wrap gap-2 justify-end text-sm sm:text-base cursor-pointer"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepFecha }"
+        :data-paso="stepFecha" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepFecha }"
         @click="goToStep(stepFecha)">
         <p class="w-full md:w-auto">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formData.formDataExamenVista.fechaExamenVista) }}</span></p>
@@ -149,7 +153,7 @@ const stepDiagnostico = computed(() => 12);
           <h2 class="text-lg font-medium mb-1 text-center">Antecedentes</h2>
           <div class="border border-gray-200 rounded-md p-3 cursor-pointer min-h-[3rem]"
             @click="goToStep(stepAntecedentes)"
-            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAntecedentes }">
+            :data-paso="stepAntecedentes" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAntecedentes }">
             <p class="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap">
               {{ formData.formDataExamenVista.antecedentes || ' ' }}
             </p>
@@ -159,7 +163,7 @@ const stepDiagnostico = computed(() => 12);
           <h2 class="text-lg font-medium mb-1 text-center">Anamnesis</h2>
           <div class="border border-gray-200 rounded-md p-3 cursor-pointer min-h-[3rem]"
             @click="goToStep(stepAnamnesis)"
-            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAnamnesis }">
+            :data-paso="stepAnamnesis" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAnamnesis }">
             <p class="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap">
               {{ formData.formDataExamenVista.anamnesis || ' ' }}
             </p>
@@ -169,7 +173,7 @@ const stepDiagnostico = computed(() => 12);
       <!-- Utiliza anteojos: siempre visible para GT -->
       <div class="w-full flex flex-wrap gap-0 md:gap-8 justify-start xl:justify-evenly text-sm sm:text-base">
         <p class="w-full md:w-auto cursor-pointer" @click="goToStep(stepUtilizaAnteojos)"
-          :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepUtilizaAnteojos }">
+          :data-paso="stepUtilizaAnteojos" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepUtilizaAnteojos }">
           Utiliza Lentes: (
           <span class="font-medium">{{ formData.formDataExamenVista.utilizaAnteojos || 'No' }}</span> )
         </p>
@@ -190,7 +194,7 @@ const stepDiagnostico = computed(() => 12);
         </thead>
         <tbody>
           <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(stepAVLejana)"
-            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVLejana }">
+            :data-paso="stepAVLejana" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVLejana }">
             <td class="w-1/6 text-xs sm:text-sm px-2 py-0 text-center border border-gray-300 font-medium">LEJANA</td>
             <td class="w-1/6 text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ avLejanaOI }}
@@ -203,7 +207,7 @@ const stepDiagnostico = computed(() => 12);
             </td>
           </tr>
           <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(stepAVCercana)"
-          :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVCercana }">
+          :data-paso="stepAVCercana" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVCercana }">
             <td class="w-1/6 text-xs sm:text-sm px-2 py-0 text-center border border-gray-300 font-medium">CERCANA</td>
             <td class="w-1/6 text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ avCercanaOI }}
@@ -222,12 +226,12 @@ const stepDiagnostico = computed(() => 12);
     <!-- Requiere Lentes -->
     <div class="w-full flex flex-wrap gap-0 md:gap-8 justify-start xl:justify-evenly text-sm sm:text-base">
       <p class="w-full md:w-auto cursor-pointer" @click="goToStep(stepAVLejana)"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVLejana }">
+        :data-paso="stepAVLejana" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVLejana }">
         Requiere Lentes para Uso General: (
         <span class="font-medium">{{ formData.formDataExamenVista.requiereLentesUsoGeneral }}</span> )
       </p>
       <p class="w-full md:w-auto cursor-pointer" @click="goToStep(stepAVCercana)"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVCercana }">
+        :data-paso="stepAVCercana" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVCercana }">
         Requiere Lentes para Lectura: (
         <span class="font-medium">{{ formData.formDataExamenVista.requiereLentesParaLectura }}</span> )
       </p>
@@ -247,7 +251,7 @@ const stepDiagnostico = computed(() => 12);
         </thead>
         <tbody>
           <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(stepAVConLejana)"
-            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVConLejana }">
+            :data-paso="stepAVConLejana" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVConLejana }">
             <td class="w-1/6 text-xs sm:text-sm px-2 py-0 text-center border border-gray-300 font-medium">LEJANA</td>
             <td class="w-1/6 text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ avLejanaConOI }}
@@ -261,7 +265,7 @@ const stepDiagnostico = computed(() => 12);
             </td>
           </tr>
           <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(stepAVConCercana)"
-            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVConCercana }">
+            :data-paso="stepAVConCercana" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepAVConCercana }">
             <td class="w-1/6 text-xs sm:text-sm px-2 py-0 text-center border border-gray-300 font-medium">CERCANA</td>
             <td class="w-1/6 text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ avCercanaConOI }}
@@ -291,7 +295,7 @@ const stepDiagnostico = computed(() => 12);
         </thead>
         <tbody>
           <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(stepIshihara)"
-            :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepIshihara }">
+            :data-paso="stepIshihara" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepIshihara }">
             <td class="w-1/3 text-xs sm:text-sm px-2 py-0 text-center border border-gray-300 font-medium">
               {{ formData.formDataExamenVista.placasCorrectas ?
                 formData.formDataExamenVista.placasCorrectas + ' de 14': '&nbsp;' }}
@@ -323,7 +327,7 @@ const stepDiagnostico = computed(() => 12);
           </thead>
           <tbody>
             <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="goToStep(stepFuncionOcular)"
-              :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepFuncionOcular }">
+              :data-paso="stepFuncionOcular" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepFuncionOcular }">
               <td class="w-1/3 text-xs sm:text-sm px-2 py-0 text-center border border-gray-300">
                 {{ formData.formDataExamenVista.testEstereopsis || '\u00A0' }}
               </td>
@@ -343,7 +347,7 @@ const stepDiagnostico = computed(() => 12);
         <h2 class="text-lg font-medium mb-1 text-center">Receta Final</h2>
         <table class="table-auto w-full border-collapse border border-gray-200"
         @click="goToStep(stepReceta)"
-        :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepReceta }">
+        :data-paso="stepReceta" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepReceta }">
           <thead>
             <tr class="bg-gray-200">
               <th class="text-xs sm:text-sm px-2 py-0 border border-gray-300 text-center">-</th>
@@ -387,7 +391,7 @@ const stepDiagnostico = computed(() => 12);
       <div class="w-full">
         <h2 class="text-lg font-medium mb-1 text-center">Diagnóstico y Recomendaciones</h2>
         <div class="border border-gray-200 rounded-md p-3 cursor-pointer" @click="goToStep(stepDiagnostico)"
-          :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepDiagnostico }">
+          :data-paso="stepDiagnostico" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === stepDiagnostico }">
           <p class="text-xs sm:text-sm text-center text-gray-700 whitespace-pre-wrap">
             {{ formData.formDataExamenVista.diagnosticoRecomendaciones || ' ' }}
           </p>

@@ -1,7 +1,25 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
+
+const props = defineProps({
+  titulo: { type: String, default: 'Reemplazar redacción final' },
+  etiqueta: { type: String, default: 'Redacción final' },
+  mensaje: {
+    type: String,
+    default: '',
+  },
+  nota: {
+    type: String,
+    default: 'Puedes seguir editando el texto después de insertarlo.',
+  },
+});
 
 const emit = defineEmits(['close', 'confirm']);
+
+const mensajeMostrado = computed(() => {
+  if (props.mensaje) return props.mensaje;
+  return `¿Deseas sustituir el texto actual del cuadro ${props.etiqueta} por el párrafo generado?`;
+});
 
 function handleKeyDown(event) {
   if (event.key === 'Escape') emit('close');
@@ -40,22 +58,25 @@ function onConfirmar() {
             <i class="fa-solid fa-file-lines text-xl sm:text-2xl text-emerald-600" aria-hidden="true"></i>
           </div>
           <h2 id="titulo-modal-reemplazo-redaccion" class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-            Reemplazar redacción final
+            {{ titulo }}
           </h2>
           <div class="w-16 h-1 bg-gradient-to-r from-slate-300 via-emerald-400 to-emerald-500 rounded-full mx-auto"></div>
         </div>
 
         <div class="text-center mb-6 sm:mb-8">
           <p class="text-gray-600 text-base sm:text-lg leading-relaxed mb-4">
-            ¿Deseas sustituir el texto actual del cuadro
-            <span class="font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
-              Redacción final
-            </span>
-            por el párrafo generado?
+            <template v-if="mensaje">{{ mensajeMostrado }}</template>
+            <template v-else>
+              ¿Deseas sustituir el texto actual del cuadro
+              <span class="font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
+                {{ etiqueta }}
+              </span>
+              por el párrafo generado?
+            </template>
           </p>
           <div class="flex items-start justify-center gap-2 text-sm text-gray-500 text-left max-w-sm mx-auto">
             <i class="fa-solid fa-circle-info text-emerald-600 mt-0.5 shrink-0" aria-hidden="true"></i>
-            <span>Puedes seguir editando el texto después de insertarlo.</span>
+            <span>{{ nota }}</span>
           </div>
         </div>
 

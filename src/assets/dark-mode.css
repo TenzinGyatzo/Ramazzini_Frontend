@@ -743,6 +743,10 @@ html.dark-mode .bg-amber-50 {
   background-color: rgba(120, 53, 15, 0.52) !important;
 }
 
+html.dark-mode .bg-amber-50\/80 {
+  background-color: rgba(120, 53, 15, 0.45) !important;
+}
+
 html.dark-mode .bg-amber-50\/30 {
   background-color: rgba(120, 53, 15, 0.28) !important;
 }
@@ -769,6 +773,16 @@ html.dark-mode .text-amber-600 {
 
 html.dark-mode .text-amber-800 {
   color: #fde68a !important;
+}
+
+html.dark-mode .text-amber-900,
+html.dark-mode .text-amber-900\/80,
+html.dark-mode .text-amber-900\/90 {
+  color: #fde68a !important;
+}
+
+html.dark-mode .text-amber-950 {
+  color: #fef3c7 !important;
 }
 
 html.dark-mode .hover\:text-amber-900:hover {
@@ -3954,4 +3968,13 @@ html.dark-mode body [class*='visualizador'] thead tr.pinpoint-row > th {
 
 html.dark-mode body .outline-yellow-500 {
   outline-color: #eab308 !important;
+}
+
+/* ILA: líneas interiores sutiles en matrices (se distinguen celdas del mismo color) */
+html.dark-mode .ila-matriz th,
+html.dark-mode .ila-matriz td {
+  border-color: rgb(255 255 255 / 0.16) !important;
+}
+html.dark-mode .ila-matriz thead.bg-gray-800 th {
+  border-color: rgb(255 255 255 / 0.12) !important;
 }

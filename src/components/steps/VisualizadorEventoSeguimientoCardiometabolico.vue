@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -29,6 +30,8 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataEventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico);
 const steps = useStepsStore();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
 const proveedorSaludStore = useProveedorSaludStore();
 const isMX = computed(() => proveedorSaludStore.isMX);
 
@@ -204,6 +207,7 @@ const goToStep = (stepNumber) => {
 
 <template>
   <div
+    ref="scrollRoot"
     class="flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
@@ -227,6 +231,7 @@ const goToStep = (stepNumber) => {
 
       <!-- Fecha -->
       <div
+      data-paso="1"
       class="w-full md:w-[calc(50%-1rem)] flex flex-wrap gap-2 justify-start md:justify-end ml-auto text-sm sm:text-base cursor-pointer"
       :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
       @click="goToStep(1)">
@@ -327,6 +332,7 @@ const goToStep = (stepNumber) => {
     <div class="w-full border-t pt-4 mt-2 space-y-4 text-sm sm:text-base">
       <div
         class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
+        data-paso="2"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 2 }"
         @click="goToStep(2)"
       >
@@ -391,6 +397,7 @@ const goToStep = (stepNumber) => {
         <!-- Somatometría (compacta, estilo exploración física) -->
         <div
           class="w-full md:w-[calc(50%-0.5rem)] min-w-0 cursor-pointer"
+          data-paso="3"
           :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 3 }"
           @click="goToStep(3)"
         >
@@ -466,6 +473,7 @@ const goToStep = (stepNumber) => {
         <!-- Signos vitales (misma rejilla; FR y SpO₂ no aplican en este evento) -->
         <div
           class="w-full md:w-[calc(50%)] min-w-0 cursor-pointer"
+          data-paso="4"
           :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 4 }"
           @click="goToStep(4)"
         >
@@ -539,6 +547,7 @@ const goToStep = (stepNumber) => {
 
       <div
         class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
+        data-paso="5"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 5 }"
         @click="goToStep(5)"
       >
@@ -618,6 +627,7 @@ const goToStep = (stepNumber) => {
 
       <div
         class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
+        data-paso="6"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 6 }"
         @click="goToStep(6)"
       >
@@ -674,6 +684,7 @@ const goToStep = (stepNumber) => {
 
       <div
         class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
+        data-paso="7"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 7 }"
         @click="goToStep(7)"
       >
@@ -718,6 +729,7 @@ const goToStep = (stepNumber) => {
 
       <div
         class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
+        data-paso="8"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 8 }"
         @click="goToStep(8)"
       >
@@ -772,6 +784,7 @@ const goToStep = (stepNumber) => {
 
       <div
         class="cursor-pointer rounded-lg p-2 -m2 border border-gray-100"
+        data-paso="9"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 9 }"
         @click="goToStep(9)"
       >

@@ -26,6 +26,12 @@ import {
   validateSomatometriaSignosField,
   type SomatometriaSignosField,
 } from '@/helpers/somatometriaSignosRanges';
+import {
+  esPosteriorABasal,
+  MAX_AUDIOMETRIAS_SUBSECUENTES_ILA,
+  MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA,
+} from '@/helpers/informeLongitudinalAudiometrico';
+import { recomendacionesIlaSonValidas } from '@/helpers/ilaRecomendaciones';
 
 // Helper para validar campos requeridos según el tipo de documento
 export interface CampoFaltante {
@@ -198,8 +204,32 @@ function validarListaEventosIncluidosNoVacia(valor: any): boolean {
   });
 }
 
+function validarListaAudiometriasSubsecuentesIlaMaximo(valor: any): boolean {
+  if (!Array.isArray(valor)) return false;
+  return valor.length <= MAX_AUDIOMETRIAS_SUBSECUENTES_ILA;
+}
+
+function validarInterpretacionOidoIla(texto: any): boolean {
+  if (!validarTexto(texto)) return false;
+  return String(texto).length <= MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA;
+}
+
+function validarAudiometriasSubsecuentesPosterioresABasal(valor: any, datos?: any): boolean {
+  const concentradas = Array.isArray(valor)
+    ? valor
+    : (Array.isArray(datos?.audiometriasSubsecuentesConcentradas)
+      ? datos.audiometriasSubsecuentesConcentradas
+      : []);
+  const fechaBasal = datos?.audiometriaBasalConcentrada?.fechaAudiometria;
+  return concentradas.every((estudio) => esPosteriorABasal(estudio?.fechaAudiometria, fechaBasal));
+}
+
 function validarIdAudiometriaBasal(valor: any): boolean {
   return validarMongoIdFlexible(valor);
+}
+
+function validarRecomendacionesIla(valor: any): boolean {
+  return recomendacionesIlaSonValidas(valor);
 }
 
 function validarNumeroEnteroNoNegativo(valor: any): boolean {
@@ -956,18 +986,32 @@ const camposRequeridosPorTipo: Record<string, Array<{
       validacion: validarListaEventosIncluidosNoVacia,
     },
     {
+      campo: 'audiometriasSubsecuentesIncluidas',
+      nombre: `Máximo ${MAX_AUDIOMETRIAS_SUBSECUENTES_ILA} audiometrías subsecuentes además de la basal`,
+      tipo: 'lista',
+      paso: 1,
+      validacion: validarListaAudiometriasSubsecuentesIlaMaximo,
+    },
+    {
+      campo: 'audiometriasSubsecuentesConcentradas',
+      nombre: 'Las audiometrías subsecuentes deben ser posteriores a la basal',
+      tipo: 'lista',
+      paso: 1,
+      validacion: validarAudiometriasSubsecuentesPosterioresABasal,
+    },
+    {
       campo: 'interpretacionOidoDerecho',
       nombre: 'Interpretación del oído derecho',
       tipo: 'texto',
       paso: 2,
-      validacion: validarTexto,
+      validacion: validarInterpretacionOidoIla,
     },
     {
       campo: 'interpretacionOidoIzquierdo',
       nombre: 'Interpretación del oído izquierdo',
       tipo: 'texto',
       paso: 3,
-      validacion: validarTexto,
+      validacion: validarInterpretacionOidoIla,
     },
     {
       campo: 'idTrabajador',
@@ -975,6 +1019,13 @@ const camposRequeridosPorTipo: Record<string, Array<{
       tipo: 'texto',
       paso: 1,
       validacion: validarMongoIdFlexible,
+    },
+    {
+      campo: 'recomendacionesSeguimientoAudiometrico',
+      nombre: 'Máximo cinco recomendaciones, sin vacíos ni duplicados al guardar',
+      tipo: 'lista',
+      paso: 5,
+      validacion: validarRecomendacionesIla,
     },
   ],
 };

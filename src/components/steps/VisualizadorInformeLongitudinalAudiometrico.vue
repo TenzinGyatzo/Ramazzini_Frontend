@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -24,6 +25,10 @@ import {
   textoInterpretacionLegadoIla,
   textoInterpretacionOidoIla,
 } from '@/helpers/informeLongitudinalAudiometrico';
+import {
+  etiquetaLetraRecomendacionIla,
+  normalizarRecomendacionesIla,
+} from '@/helpers/ilaRecomendaciones';
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -37,6 +42,11 @@ const fm = computed(() => formData.formDataInformeLongitudinalAudiometrico);
 const { edad } = useEdadAntiguedadDocumento(() => fm.value.fechaInformeLongitudinalAudiometrico);
 
 const goToStep = (n) => steps.goToStep(n);
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
+const recomendacionesPreview = computed(() =>
+  normalizarRecomendacionesIla(fm.value.recomendacionesSeguimientoAudiometrico),
+);
 
 const basal = computed(() => fm.value.audiometriaBasalConcentrada);
 const subsecuentes = computed(() => fm.value.audiometriasSubsecuentesConcentradas || []);
@@ -83,7 +93,11 @@ function deltaDe(fila, freq) {
 </script>
 
 <template>
-  <div class="space-y-4 max-h-[81vh] overflow-y-auto pr-1">
+  <div
+    ref="scrollRoot"
+    class="visualizador-informe-longitudinal-audiometrico space-y-4 border-shadow w-full text-left rounded-lg p-4 sm:p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
+  >
+    <div data-paso="1" class="space-y-4">
     <div class="flex flex-wrap md:flex-nowrap w-full gap-4 items-center">
       <EstadoDocumentoBadgeAlt
         v-if="isMX"
@@ -140,7 +154,7 @@ function deltaDe(fila, freq) {
     <div>
       <h2 class="text-sm font-semibold text-gray-800 mb-2">Resumen de cada audiometría</h2>
       <div class="overflow-x-auto border border-gray-200 rounded-lg">
-        <table class="min-w-full text-xs">
+        <table class="ila-matriz min-w-full text-xs">
           <thead class="bg-gray-100">
             <tr>
               <th class="px-2 py-2 text-left">Fecha</th>
@@ -167,6 +181,7 @@ function deltaDe(fila, freq) {
         </table>
       </div>
     </div>
+    </div>
 
     <p v-if="interpretacionLegado" class="text-sm text-gray-700 whitespace-pre-wrap">
       <span class="block text-sm font-semibold text-gray-800 mb-1">Interpretación longitudinal</span>
@@ -178,6 +193,7 @@ function deltaDe(fila, freq) {
     <section
       v-for="bloque in bloquesOido"
       :key="bloque.clave"
+      :data-paso="bloque.paso"
       class="space-y-3 cursor-pointer rounded-md"
       :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === bloque.paso }"
       @click="goToStep(bloque.paso)"
@@ -191,7 +207,7 @@ function deltaDe(fila, freq) {
 
       <h3 class="text-sm font-semibold text-gray-800">Matriz longitudinal de cambios — {{ bloque.titulo }}</h3>
       <div class="overflow-x-auto border border-gray-200 rounded-lg">
-        <table class="min-w-full text-xs">
+        <table class="ila-matriz min-w-full text-xs">
           <thead class="bg-gray-800 text-white">
             <tr>
               <th class="px-2 py-2 text-left">Fecha</th>
@@ -223,12 +239,55 @@ function deltaDe(fila, freq) {
     </section>
 
     <div
+      data-paso="4"
       class="space-y-3 cursor-pointer rounded-md"
       :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 4 }"
       @click="goToStep(4)"
     >
+      <h2 class="text-sm font-semibold text-gray-800 mb-1">Conclusiones</h2>
+      <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ fm.conclusionesSeguimientoAudiometrico?.trim() || 'Sin conclusiones registradas.' }}</p>
+    </div>
+
+    <div
+      v-if="recomendacionesPreview.length"
+      data-paso="5"
+      class="space-y-3 cursor-pointer rounded-md"
+      :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500': steps.currentStep === 5 }"
+      @click="goToStep(5)"
+    >
       <h2 class="text-sm font-semibold text-gray-800 mb-1">Recomendaciones</h2>
-      <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ fm.recomendacionesSeguimientoAudiometrico?.trim() || 'Sin recomendaciones registradas.' }}</p>
+      <div class="text-sm text-gray-700">
+        <div
+          v-for="(item, index) in recomendacionesPreview"
+          :key="index"
+          class="ml-4 relative"
+        >
+          <span class="absolute left-0">{{ etiquetaLetraRecomendacionIla(index) }}.</span>
+          <span class="block pl-4">{{ item }}</span>
+        </div>
+      </div>
+    </div>
+    <div
+      v-else
+      data-paso="5"
+      class="w-full text-center cursor-pointer text-gray-500 italic"
+      :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 5 }"
+      @click="goToStep(5)"
+    >
+      + Agregar Recomendaciones
     </div>
   </div>
 </template>
+
+<style scoped>
+.ila-matriz {
+  border-collapse: collapse;
+}
+.ila-matriz th,
+.ila-matriz td {
+  border: 1px solid rgb(148 163 184 / 0.28);
+}
+.ila-matriz thead.bg-gray-800 th {
+  border-color: rgb(255 255 255 / 0.14);
+}
+</style>

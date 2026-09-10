@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -22,6 +23,8 @@ const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataTrastornosEstadoAnimo.fechaTrastornosEstadoAnimo);
 const stepsStore = useStepsStore();
+const scrollRoot = ref(null);
+useVisualizadorScrollPaso(scrollRoot, () => stepsStore.currentStep);
 
 const fd = computed(() => formData.formDataTrastornosEstadoAnimo);
 
@@ -156,6 +159,7 @@ const REGLA_TRIAJE_MDQ =
 
 <template>
   <div
+    ref="scrollRoot"
     class="visualizador-trastornos-estado-animo flex flex-col gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
   >
     <!-- Empresa y Fecha (paso 1) -->
@@ -168,6 +172,7 @@ const REGLA_TRIAJE_MDQ =
 
       <div
         class="w-full md:w-[calc(25%-0.5rem)] flex flex-wrap gap-2 justify-end text-sm sm:text-base cursor-pointer"
+        data-paso="1"
         :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': stepsStore.currentStep === 1 }"
         @click="irASiExiste(1)"
       >
@@ -244,6 +249,7 @@ const REGLA_TRIAJE_MDQ =
                 v-for="(item, idx) in itemsP1Mdq"
                 :key="item.key"
                 class="odd:bg-white even:bg-gray-50 cursor-pointer border-b border-gray-200"
+                :data-paso="item.step"
                 :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === item.step }"
                 @click="irASiExiste(item.step)"
               >
@@ -284,6 +290,7 @@ const REGLA_TRIAJE_MDQ =
       <!-- P2 -->
       <div
         class="rounded border border-gray-200 overflow-hidden"
+        data-paso="15"
         :class="[
           aplicaP2 ? 'cursor-pointer' : 'bg-gray-50',
           { 'ring-1 ring-inset ring-yellow-400': aplicaP2 && stepsStore.currentStep === stepP2 },
@@ -324,6 +331,7 @@ const REGLA_TRIAJE_MDQ =
       <!-- P3: opciones horizontales -->
       <div
         class="rounded border border-gray-200 overflow-hidden cursor-pointer"
+        :data-paso="stepP3"
         :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === stepP3 }"
         @click="irASiExiste(stepP3)"
       >
@@ -355,6 +363,7 @@ const REGLA_TRIAJE_MDQ =
       <!-- P4 -->
       <div
         class="rounded border border-gray-200 overflow-hidden cursor-pointer"
+        :data-paso="stepP4"
         :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === stepP4 }"
         @click="irASiExiste(stepP4)"
       >
@@ -393,6 +402,7 @@ const REGLA_TRIAJE_MDQ =
       <!-- P5 -->
       <div
         class="rounded border border-gray-200 overflow-hidden cursor-pointer"
+        :data-paso="stepP5"
         :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === stepP5 }"
         @click="irASiExiste(stepP5)"
       >
