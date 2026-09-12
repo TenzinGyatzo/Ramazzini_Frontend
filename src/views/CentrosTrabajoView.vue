@@ -399,88 +399,88 @@ watch(
                     </div>
 
                     <!-- Estado vacío con explicación -->
-                    <div v-else class="text-center">
-                  <div class="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full">
+                    <div v-else class="empty-guide text-center">
+                  <div class="empty-guide__hero inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full">
                     <i class="fa-solid fa-building text-6xl text-gray-400"></i>
                   </div>
-                  <h2 class="text-2xl font-bold text-gray-900 mb-4">
+                  <h2 class="empty-guide__title text-2xl font-bold text-gray-900 mb-4">
                     Organiza la empresa
                   </h2>
-                  <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+                  <p class="empty-guide__lead text-gray-600 mb-8 max-w-2xl mx-auto">
                     Segmenta a los trabajadores creando diferentes tipos de entidades organizacionales para una gestión más eficiente.
                   </p>
                   
                   <!-- Explicación de tipos de entidades -->
-                  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 max-w-4xl mx-auto">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-6">
+                  <div class="empty-guide__suggestions bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 max-w-4xl mx-auto">
+                    <h3 class="empty-guide__suggestions-title text-lg font-semibold text-gray-800 mb-6">
                       ¿Qué puedes crear?
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="empty-guide__grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       
                       <!-- Centros de Trabajo -->
-                      <div class="text-center p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200">
-                        <div class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <div class="empty-guide__card text-center p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200">
+                        <div class="empty-guide__icon w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                           <i class="fas fa-industry text-white text-lg"></i>
                         </div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Centros de Trabajo</h4>
-                        <p class="text-sm text-gray-600">
+                        <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2">Centros de Trabajo</h4>
+                        <p class="empty-guide__card-text text-sm text-gray-600">
                           Ubicaciones físicas o sedes de operación
                         </p>
                       </div>
                       
                       <!-- Áreas -->
-                      <div class="text-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
-                        <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <div class="empty-guide__card text-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
+                        <div class="empty-guide__icon w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                           <i class="fas fa-sitemap text-white text-lg"></i>
                         </div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Áreas</h4>
-                        <p class="text-sm text-gray-600">
+                        <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2">Áreas</h4>
+                        <p class="empty-guide__card-text text-sm text-gray-600">
                           Divisiones funcionales como Operaciones, Logística, Administración
                         </p>
                       </div>
                       
                       <!-- Departamentos -->
-                      <div class="text-center p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
-                        <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <div class="empty-guide__card text-center p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
+                        <div class="empty-guide__icon w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                           <i class="fas fa-layer-group text-white text-lg"></i>
                         </div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Departamentos</h4>
-                        <p class="text-sm text-gray-600">
+                        <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2">Departamentos</h4>
+                        <p class="empty-guide__card-text text-sm text-gray-600">
                           Unidades especializadas como Producción, Mantenimiento, Almacén
                         </p>
                       </div>
                       
                       <!-- Proyectos -->
-                      <div class="text-center p-4 rounded-xl bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200">
-                        <div class="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <div class="empty-guide__card text-center p-4 rounded-xl bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200">
+                        <div class="empty-guide__icon w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                           <i class="fas fa-project-diagram text-white text-lg"></i>
                         </div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Proyectos</h4>
-                        <p class="text-sm text-gray-600">
+                        <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2">Proyectos</h4>
+                        <p class="empty-guide__card-text text-sm text-gray-600">
                           Iniciativas temporales con objetivos específicos
                         </p>
                       </div>
                     </div>
                     
                     <!-- Beneficios -->
-                    <div class="mt-8 pt-6 border-t border-gray-200">
-                      <h4 class="font-semibold text-gray-800 mb-4 text-center">
+                    <div class="empty-guide__benefits mt-8 pt-6 border-t border-gray-200">
+                      <h4 class="empty-guide__benefits-title font-semibold text-gray-800 mb-4 text-center">
                         Beneficios de la segmentación
                       </h4>
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="flex items-center gap-3">
+                      <div class="empty-guide__benefits-grid grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="empty-guide__benefit flex items-center gap-3">
                           <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
                             <i class="fas fa-chart-line text-emerald-600 text-sm"></i>
                           </div>
                           <span class="text-sm text-gray-700">Mejor análisis de datos</span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="empty-guide__benefit flex items-center gap-3">
                           <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                             <i class="fas fa-users text-blue-600 text-sm"></i>
                           </div>
                           <span class="text-sm text-gray-700">Gestión organizada</span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="empty-guide__benefit flex items-center gap-3">
                           <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                             <i class="fas fa-shield-alt text-purple-600 text-sm"></i>
                           </div>

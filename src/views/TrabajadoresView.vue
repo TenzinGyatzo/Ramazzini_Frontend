@@ -1370,38 +1370,38 @@ const toggleVigencias = () => {
           />
 
           <!-- Mensaje de estado vacío (siempre visible cuando no hay trabajadores) -->
-          <div v-if="!trabajadores.loading && (!Array.isArray(trabajadores.trabajadores) || trabajadores.trabajadores.length === 0 || (typeof trabajadores.trabajadores === 'object' && trabajadores.trabajadores && 'message' in trabajadores.trabajadores))" class="text-center">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+          <div v-if="!trabajadores.loading && (!Array.isArray(trabajadores.trabajadores) || trabajadores.trabajadores.length === 0 || (typeof trabajadores.trabajadores === 'object' && trabajadores.trabajadores && 'message' in trabajadores.trabajadores))" class="empty-guide text-center">
+            <div class="empty-guide__hero inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
               <i class="fas fa-users text-4xl text-gray-400"></i>
             </div>
-            <h2 class="text-xl font-bold text-gray-900 mb-3">
+            <h2 class="empty-guide__title text-xl font-bold text-gray-900 mb-3">
               No hay trabajadores registrados
             </h2>
-            <p class="text-gray-600 mb-6 max-w-2xl mx-auto text-sm">
+            <p class="empty-guide__lead text-gray-600 mb-6 max-w-2xl mx-auto text-sm">
               Este centro de trabajo aún no tiene trabajadores registrados. 
               Comienza agregando el primer trabajador para gestionar su expediente médico.
             </p>
             
             <!-- Sugerencias de acciones -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6 max-w-4xl mx-auto">
-              <h3 class="text-base font-semibold text-gray-800 mb-4 text-center">
+            <div class="empty-guide__suggestions bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6 max-w-4xl mx-auto">
+              <h3 class="empty-guide__suggestions-title text-base font-semibold text-gray-800 mb-4 text-center">
                 ¿Por dónde empezar?
               </h3>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="empty-guide__grid grid grid-cols-1 md:grid-cols-3 gap-4">
                 
-                <div class="text-center p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
-                  <div class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <div class="empty-guide__card text-center p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
+                  <div class="empty-guide__icon w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i class="fas fa-user-plus text-white text-lg"></i>
                   </div>
-                  <h4 class="font-semibold text-gray-900 mb-2 text-sm">Agregar Trabajador</h4>
-                  <p class="text-xs text-gray-600 mb-3">
+                  <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2 text-sm">Agregar Trabajador</h4>
+                  <p class="empty-guide__card-text text-xs text-gray-600 mb-3">
                     Registra a un trabajador individualmente
                   </p>
                   <button 
                     @click="openModal(null)" 
                     :disabled="!canManageTrabajadores"
                     :class="[
-                      'w-full text-xs font-medium py-2 px-3 rounded-lg transition-colors',
+                      'empty-guide__cta w-full text-xs font-medium py-2 px-3 rounded-lg transition-colors',
                       canManageTrabajadores 
                         ? 'bg-emerald-500 hover:bg-emerald-600 text-white' 
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -1412,19 +1412,19 @@ const toggleVigencias = () => {
                   </button>
                 </div>
                 
-                <div class="text-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                  <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <div class="empty-guide__card text-center p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                  <div class="empty-guide__icon w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i class="fas fa-upload text-white text-lg"></i>
                   </div>
-                  <h4 class="font-semibold text-gray-900 mb-2 text-sm">Carga Masiva</h4>
-                  <p class="text-xs text-gray-600 mb-3">
+                  <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2 text-sm">Carga Masiva</h4>
+                  <p class="empty-guide__card-text text-xs text-gray-600 mb-3">
                     Importa múltiples trabajadores desde Excel
                   </p>
                   <button 
                     @click="toggleImportModal" 
                     :disabled="!canManageTrabajadores"
                     :class="[
-                      'w-full text-xs font-medium py-2 px-3 rounded-lg transition-colors',
+                      'empty-guide__cta w-full text-xs font-medium py-2 px-3 rounded-lg transition-colors',
                       canManageTrabajadores 
                         ? 'bg-blue-500 hover:bg-blue-600 text-white' 
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -1435,18 +1435,18 @@ const toggleVigencias = () => {
                   </button>
                 </div>
                 
-                <div class="text-center p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                  <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <div class="empty-guide__card text-center p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+                  <div class="empty-guide__icon w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i class="fas fa-file-excel text-white text-lg"></i>
                   </div>
-                  <h4 class="font-semibold text-gray-900 mb-2 text-sm">Plantilla Excel</h4>
-                  <p class="text-xs text-gray-600 mb-3">
+                  <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2 text-sm">Plantilla Excel</h4>
+                  <p class="empty-guide__card-text text-xs text-gray-600 mb-3">
                     Descarga la plantilla para carga masiva
                     <span v-if="isSIRES" class="block mt-1 text-indigo-700 dark:text-indigo-300">
                       Los catálogos de códigos están disponibles al abrir Carga Masiva.
                     </span>
                   </p>
-                  <a :href="plantillaImportacion.href" :download="plantillaImportacion.downloadName" class="w-full bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors inline-block">
+                  <a :href="plantillaImportacion.href" :download="plantillaImportacion.downloadName" class="empty-guide__cta w-full bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors inline-block">
                     Descargar Plantilla
                   </a>
                 </div>
@@ -1558,10 +1558,10 @@ img, div, span, h1, h2, p {
   }
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
+/* De más ancho a más estrecho: si no, ≤640px termina en 3 columnas */
+@media (max-width: 1024px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -1571,9 +1571,9 @@ img, div, span, h1, h2, p {
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 640px) {
   .grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 

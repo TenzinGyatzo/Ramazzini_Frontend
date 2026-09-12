@@ -240,74 +240,74 @@ watchEffect(() => {
             <!-- Si el array está vacío, mostramos el estado vacío con explicación -->
             <div v-if="empresasFiltradas.length === 0" class="text-center py-8">
               <!-- Mensaje cuando no hay empresas registradas -->
-              <div v-if="empresas.empresas.length === 0">
-                <div class="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
+              <div v-if="empresas.empresas.length === 0" class="empty-guide">
+                <div class="empty-guide__hero inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
                   <i class="fas fa-building text-6xl text-gray-400"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">
+                <h2 class="empty-guide__title text-2xl font-bold text-gray-900 mb-4">
                   Aún no hay clientes registrados
                 </h2>
-                <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+                <p class="empty-guide__lead text-gray-600 mb-8 max-w-2xl mx-auto">
                   Comienza registrando a tus primeros clientes para gestionar sus expedientes médicos y organizaciones laborales.
                 </p>
                 
                 <!-- Explicación de beneficios -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 max-w-4xl mx-auto">
-                  <h3 class="text-lg font-semibold text-gray-800 mb-6 text-center">
+                <div class="empty-guide__suggestions bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 max-w-4xl mx-auto">
+                  <h3 class="empty-guide__suggestions-title text-lg font-semibold text-gray-800 mb-6 text-center">
                     ¿Por qué registrar clientes?
                   </h3>
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div class="empty-guide__grid grid grid-cols-1 md:grid-cols-3 gap-6">
                     
-                    <div class="text-center p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
-                      <div class="w-16 h-16 bg-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div class="empty-guide__card text-center p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
+                      <div class="empty-guide__icon w-16 h-16 bg-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-users text-white text-xl"></i>
                       </div>
-                      <h4 class="font-semibold text-gray-900 mb-2">Gestión de Trabajadores</h4>
-                      <p class="text-sm text-gray-600">
+                      <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2">Gestión de Trabajadores</h4>
+                      <p class="empty-guide__card-text text-sm text-gray-600">
                         Organiza y administra el personal de cada cliente
                       </p>
                     </div>
                     
-                    <div class="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                      <div class="w-16 h-16 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div class="empty-guide__card text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                      <div class="empty-guide__icon w-16 h-16 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-notes-medical text-white text-xl"></i>
                       </div>
-                      <h4 class="font-semibold text-gray-900 mb-2">Expedientes Médicos</h4>
-                      <p class="text-sm text-gray-600">
+                      <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2">Expedientes Médicos</h4>
+                      <p class="empty-guide__card-text text-sm text-gray-600">
                         Mantén historiales médicos completos y organizados
                       </p>
                     </div>
                     
-                    <div class="text-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                      <div class="w-16 h-16 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div class="empty-guide__card text-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+                      <div class="empty-guide__icon w-16 h-16 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-chart-line text-white text-xl"></i>
                       </div>
-                      <h4 class="font-semibold text-gray-900 mb-2">Reportes y Análisis</h4>
-                      <p class="text-sm text-gray-600">
+                      <h4 class="empty-guide__card-title font-semibold text-gray-900 mb-2">Reportes y Análisis</h4>
+                      <p class="empty-guide__card-text text-sm text-gray-600">
                         Genera informes detallados por cliente
                       </p>
                     </div>
                   </div>
                   
                   <!-- Beneficios adicionales -->
-                  <div class="mt-8 pt-6 border-t border-gray-200">
-                    <h4 class="font-semibold text-gray-800 mb-4 text-center">
+                  <div class="empty-guide__benefits mt-8 pt-6 border-t border-gray-200">
+                    <h4 class="empty-guide__benefits-title font-semibold text-gray-800 mb-4 text-center">
                       Beneficios del registro
                     </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div class="flex items-center gap-3">
+                    <div class="empty-guide__benefits-grid grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div class="empty-guide__benefit flex items-center gap-3">
                         <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
                           <i class="fas fa-shield-alt text-emerald-600 text-sm"></i>
                         </div>
                         <span class="text-sm text-gray-700">Cumplimiento normativo</span>
                       </div>
-                      <div class="flex items-center gap-3">
+                      <div class="empty-guide__benefit flex items-center gap-3">
                         <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                           <i class="fas fa-clock text-blue-600 text-sm"></i>
                         </div>
                         <span class="text-sm text-gray-700">Ahorro de tiempo</span>
                       </div>
-                      <div class="flex items-center gap-3">
+                      <div class="empty-guide__benefit flex items-center gap-3">
                         <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                           <i class="fas fa-database text-purple-600 text-sm"></i>
                         </div>

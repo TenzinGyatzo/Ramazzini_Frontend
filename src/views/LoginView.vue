@@ -124,10 +124,10 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-slate-900">
+  <div class="login-page flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-slate-900">
     <form
       @submit.prevent="handleLogin"
-      class="bg-white p-8 rounded-2xl shadow-md w-10/12 md:w-1/2 lg:w-1/3 lg:max-w-lg dark:bg-slate-800 dark:border dark:border-slate-700"
+      class="login-card bg-white p-8 rounded-2xl shadow-md w-10/12 md:w-1/2 lg:w-1/3 lg:max-w-lg dark:bg-slate-800 dark:border dark:border-slate-700"
     >
       <h1 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-slate-100">Iniciar Sesión</h1>
       <div class="mb-4">
@@ -200,7 +200,7 @@ const handleLogin = async () => {
       </div>
     </form> 
 
-    <div class="grid grid-cols-2 gap-6">
+    <div class="login-links grid grid-cols-2 gap-6">
       <RouterLink :to="{ name: 'onboarding' }"
           class="mt-4 font-light text-sky-500 hover:underline text-sm dark:text-sky-400">
           Crear una cuenta
@@ -216,3 +216,31 @@ const handleLogin = async () => {
   </div>
 
 </template>
+
+<style scoped>
+@media (max-width: 479px) {
+  .login-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .login-links {
+    width: 83.333%;
+    margin-top: 1.25rem;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+    text-align: center;
+  }
+
+  .login-links a {
+    margin-top: 0;
+  }
+
+  .login-links a:first-child {
+    order: 2;
+  }
+
+  .login-links a:last-child {
+    order: 1;
+  }
+}
+</style>

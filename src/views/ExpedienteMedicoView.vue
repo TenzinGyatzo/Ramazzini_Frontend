@@ -1284,7 +1284,7 @@ const añoMasReciente = computed(() => {
 
           <!-- Botones de documentos -->
           <div class="expediente-docs-panel p-6">
-            <div class="expediente-docs-grid grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
+            <div class="expediente-docs-grid grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
               
               <!-- Historia Clínica -->
               <button @click="navigateTo('crear-documento', {
