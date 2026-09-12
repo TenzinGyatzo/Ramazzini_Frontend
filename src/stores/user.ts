@@ -3,7 +3,6 @@ import { defineStore } from "pinia";
 import AuthAPI from "@/api/AuthAPI";
 import AssignmentsAPI from "@/api/AssignmentsAPI";
 import { useRouter } from "vue-router";
-import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { invalidateInicioResumenCache } from "@/composables/inicioResumenCache";
 import { resetPostHogIdentity } from "@/utils/posthogIdentity";
 
@@ -122,11 +121,11 @@ export const useUserStore = defineStore("user", () => {
     });
     
     
-    function logout() {
+    async function logout() {
         resetPostHogIdentity();
+        const { resetSessionScopedState } = await import("@/stores/resetSessionState");
+        resetSessionScopedState();
         clearUser();
-        const proveedorSaludStore = useProveedorSaludStore();
-        proveedorSaludStore.clear();
         try {
             localStorage.removeItem('user');
             localStorage.removeItem('proveedorSalud');
@@ -135,7 +134,7 @@ export const useUserStore = defineStore("user", () => {
             // ignore
         }
         AuthAPI.logout().catch(() => {});
-        router.push("/login");
+        await router.push("/login");
     }
 
     async function registerUser(userData: User) {

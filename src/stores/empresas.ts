@@ -47,6 +47,15 @@ export const useEmpresasStore = defineStore("empresas", () => {
     currentEmpresaId.value = "";
   }
 
+  function clear() {
+    empresas.value = [];
+    currentEmpresa.value = null;
+    currentEmpresaId.value = null;
+    loading.value = false;
+    loadingModal.value = false;
+    detailSeq += 1;
+  }
+
   async function fetchEmpresas(idProveedorSalud: string) {
     try {
       loading.value = true;
@@ -131,6 +140,7 @@ export const useEmpresasStore = defineStore("empresas", () => {
     currentEmpresaId,
     currentEmpresa,
     resetCurrentEmpresa,
+    clear,
     fetchEmpresas,
     fetchEmpresaById,
     createEmpresa,

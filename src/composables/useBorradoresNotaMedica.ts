@@ -89,6 +89,12 @@ function invalidateBorradoresNotaMedicaCache() {
   fetchPromise = null;
 }
 
+export function resetBorradoresNotaMedicaState() {
+  resetState();
+  lastUserId.value = null;
+  loading.value = false;
+}
+
 async function fetchBorradoresPendientes(options?: {
   userId?: string | null;
   force?: boolean;
@@ -272,6 +278,7 @@ export function useBorradoresNotaMedica() {
     nivelMaximo,
     fetchBorradoresPendientes,
     invalidateBorradoresNotaMedicaCache,
+    resetBorradoresNotaMedicaState,
     mostrarBanner,
     mensajeBanner,
     getBannerBorderClass,

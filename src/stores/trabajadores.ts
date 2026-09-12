@@ -109,6 +109,18 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     trabajadores.value = [];
   }
 
+  function clear() {
+    trabajadores.value = [];
+    currentTrabajador.value = undefined;
+    currentTrabajadorId.value = undefined;
+    loading.value = false;
+    loadingOnSidebar.value = false;
+    loadingModal.value = false;
+    listadoSeq += 1;
+    detailSeq += 1;
+    invalidateListadoHistoriaCache();
+  }
+
   function resetCurrentTrabajador() {
     currentTrabajador.value = {
       _id: "",
@@ -488,6 +500,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     resetCurrentTrabajador,
     hydrateCurrentTrabajadorFromListado,
     resetTrabajadores,
+    clear,
     invalidateListadoHistoriaCache,
     fetchTrabajadores,
     countTrabajadoresPorCentro,

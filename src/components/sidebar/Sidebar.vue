@@ -107,12 +107,12 @@ const documentTypeLabels = {
 };
 
 // Computed properties para mejorar la legibilidad
-const showEmpresaSection = computed(() => empresas.currentEmpresaId);
-const showCentroTrabajoSection = computed(() => centrosTrabajo.currentCentroTrabajoId && empresas.currentEmpresaId);
-const showTrabajadorSection = computed(() => trabajadores.currentTrabajadorId && centrosTrabajo.currentCentroTrabajoId && empresas.currentEmpresaId);
-const showDocumentoSection = computed(() => documentos.currentTypeOfDocument && trabajadores.currentTrabajadorId && centrosTrabajo.currentCentroTrabajoId && empresas.currentEmpresaId);
-const showAnalyticsSection = computed(() => empresas.currentEmpresaId && hasVisitedDashboard.value);
-const showRiesgosSection = computed(() => empresas.currentEmpresaId && hasVisitedRiesgosTrabajo.value);
+const showEmpresaSection = computed(() => !!user.user && empresas.currentEmpresaId);
+const showCentroTrabajoSection = computed(() => !!user.user && centrosTrabajo.currentCentroTrabajoId && empresas.currentEmpresaId);
+const showTrabajadorSection = computed(() => !!user.user && trabajadores.currentTrabajadorId && centrosTrabajo.currentCentroTrabajoId && empresas.currentEmpresaId);
+const showDocumentoSection = computed(() => !!user.user && documentos.currentTypeOfDocument && trabajadores.currentTrabajadorId && centrosTrabajo.currentCentroTrabajoId && empresas.currentEmpresaId);
+const showAnalyticsSection = computed(() => !!user.user && empresas.currentEmpresaId && hasVisitedDashboard.value);
+const showRiesgosSection = computed(() => !!user.user && empresas.currentEmpresaId && hasVisitedRiesgosTrabajo.value);
 
 const { editionLabel } = useEditionLabel();
 

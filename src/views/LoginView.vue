@@ -3,8 +3,11 @@ import { ref, computed, watch, onUnmounted } from "vue";
 import { useRouter, RouterLink } from "vue-router";
 import AuthAPI from "@/api/AuthAPI";
 import axios from "axios";
+import { useUserStore } from "@/stores/user";
+import { resetSessionScopedState } from "@/stores/resetSessionState";
 
 const router = useRouter();
+const userStore = useUserStore();
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
@@ -68,6 +71,8 @@ const handleLogin = async () => {
       loginContext: "PRIMARY_LOGIN",
     });
     if (response.status === 200 || response.status === 201) {
+      resetSessionScopedState();
+      userStore.clearUser();
       const sid = response.data?.sid;
       if (typeof sid === "string" && sid) {
         try {
@@ -76,6 +81,7 @@ const handleLogin = async () => {
           // ignore
         }
       }
+      await userStore.fetchUser(true);
       router.push("/");
     }
   } catch (error) {

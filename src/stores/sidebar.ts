@@ -183,10 +183,15 @@ export const useSidebarStore = defineStore("sidebar", () => {
     window.removeEventListener("resize", handleResize); // Limpieza al desmontar
   });
 
+  function invalidatePendingInitialization() {
+    initSeq += 1;
+  }
+
   return {
     isSmallScreen,
     collapsed,
     initializeState,
+    invalidatePendingInitialization,
     toggleSidebar,
     sidebarWidth,
     sidebarWidthCollapsed,

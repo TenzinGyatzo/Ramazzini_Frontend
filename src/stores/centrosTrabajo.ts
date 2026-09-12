@@ -51,6 +51,17 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
     currentCentroTrabajoId.value = "";
   }
 
+  function clear() {
+    centrosTrabajo.value = [];
+    currentCentroTrabajo.value = undefined;
+    currentCentroTrabajoId.value = undefined;
+    loading.value = false;
+    loadingModal.value = false;
+    loadingDetail.value = false;
+    listadoSeq += 1;
+    detailSeq += 1;
+  }
+
   async function fetchCentrosTrabajo(empresaId: string) {
     const seq = ++listadoSeq;
     const aplicar = (valor: CentroTrabajo[]) => {
@@ -188,6 +199,7 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
     currentCentroTrabajo,
     resetCurrentCentroTrabajo,
     resetCentrosTrabajo,
+    clear,
     fetchCentrosTrabajo,
     fetchCentroTrabajoById,
     createCentroTrabajo,

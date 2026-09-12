@@ -107,6 +107,12 @@ export const useEnfermeraFirmanteStore = defineStore("enfermeraFirmante", () => 
         }
     }
 
+    function clear() {
+        enfermeraFirmante.value = null;
+        loading.value = false;
+        saving.value = false;
+    }
+
     return {
         enfermeraFirmante,
         loading,
@@ -115,5 +121,6 @@ export const useEnfermeraFirmanteStore = defineStore("enfermeraFirmante", () => 
         loadEnfermeraFirmante,
         createEnfermeraFirmante,
         updateEnfermeraFirmanteById,
+        clear,
     };
 });

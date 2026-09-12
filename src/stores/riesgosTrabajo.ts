@@ -40,6 +40,13 @@ export const useRiesgoTrabajoStore = defineStore("riesgos-trabajo", () => {
     currentRiesgoTrabajoId.value = "";
   }
 
+  function clear() {
+    riesgosTrabajo.value = [];
+    currentRiesgoTrabajo.value = undefined;
+    currentRiesgoTrabajoId.value = undefined;
+    loading.value = false;
+  }
+
   async function fetchRiesgosTrabajo(trabajadorId: string) {
     try {
       loading.value = true;
@@ -139,6 +146,7 @@ export const useRiesgoTrabajoStore = defineStore("riesgos-trabajo", () => {
     currentRiesgoTrabajoId,
     currentRiesgoTrabajo,
     resetCurrentRiesgoTrabajo,
+    clear,
     fetchRiesgosTrabajo,
     fetchRiesgoTrabajoById,
     createRiesgoTrabajo,

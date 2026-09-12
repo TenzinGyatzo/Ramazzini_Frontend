@@ -230,6 +230,14 @@ export const useDocumentosStore = defineStore("documentos", () => {
     currentDocumentId.value = "";
   }
 
+  function clear() {
+    documentsByYear.value = {};
+    currentTypeOfDocument.value = null;
+    currentDocumentId.value = null;
+    currentDocument.value = null;
+    loading.value = false;
+  }
+
   /** El controller devuelve `{ message, data: documento }`; devolvemos siempre el documento persistido. */
   function unwrapPersistedDocument(apiBody: unknown): any {
     if (!apiBody || typeof apiBody !== 'object') return apiBody;
@@ -320,6 +328,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     setCurrentDocument,
     setCurrentTypeOfDocument,
     resetCurrentTypeOfDocument,
+    clear,
     createDocument,
     updateDocument,
     uploadExternalDocument,

@@ -118,6 +118,12 @@ export const useMedicoFirmanteStore = defineStore("medicoFirmante", () => {
         }
     }
 
+    function clear() {
+        medicoFirmante.value = null;
+        loading.value = false;
+        saving.value = false;
+    }
+
     return {
         medicoFirmante,
         loading,
@@ -126,5 +132,6 @@ export const useMedicoFirmanteStore = defineStore("medicoFirmante", () => {
         loadMedicoFirmante,
         createMedicoFirmante,
         updateMedicoFirmanteById,
+        clear,
     };
 });

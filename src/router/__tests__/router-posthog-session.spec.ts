@@ -13,6 +13,7 @@ describe('terminación de sesión en el router', () => {
     expect(routerSource).toContain(
       'import { resetPostHogIdentity } from "@/utils/posthogIdentity"',
     );
+    expect(routerSource).toContain('resetSessionScopedState()');
     expect(routerSource).toMatch(/resetPostHogIdentity\(\);\s*next\("\/login"\)/);
   });
 

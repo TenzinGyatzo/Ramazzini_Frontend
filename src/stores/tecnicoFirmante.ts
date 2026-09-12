@@ -108,6 +108,12 @@ export const useTecnicoFirmanteStore = defineStore("tecnicoFirmante", () => {
     }
   }
 
+  function clear() {
+    tecnicoFirmante.value = null;
+    loading.value = false;
+    saving.value = false;
+  }
+
   return {
     tecnicoFirmante,
     loading,
@@ -116,5 +122,6 @@ export const useTecnicoFirmanteStore = defineStore("tecnicoFirmante", () => {
     loadTecnicoFirmante,
     createTecnicoFirmante,
     updateTecnicoFirmanteById,
+    clear,
   };
 });

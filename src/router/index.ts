@@ -9,6 +9,7 @@ import { registerAnalyticsRouter } from "@/utils/sanitizePosthogEvent";
 import { useUserPermissions } from "@/composables/useUserPermissions";
 import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
+import { resetSessionScopedState } from "@/stores/resetSessionState";
 import {
   startNavigationProgress,
   finishNavigationProgress,
@@ -336,6 +337,8 @@ router.beforeEach((to, from) => {
       } else {
         console.error("Error inesperado:", error);
       }
+      resetSessionScopedState();
+      userStore.clearUser();
       resetPostHogIdentity();
       next("/login");
     }
