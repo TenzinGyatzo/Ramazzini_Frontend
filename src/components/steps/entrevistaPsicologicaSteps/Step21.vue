@@ -259,7 +259,7 @@ onBeforeUnmount(() => {
           <p class="text-sm font-medium text-gray-800 leading-5">Ejemplos:</p>
         </div>
 
-        <div class="space-y-2 max-h-[28vh] overflow-y-auto pr-1">
+        <div class="clinical-step-scroll space-y-2 max-h-[28vh] overflow-y-auto pr-1">
           <template v-for="grupo in frasesPorCategoria" :key="grupo.id">
             <button
               type="button"

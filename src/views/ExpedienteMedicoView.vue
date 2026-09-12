@@ -1133,82 +1133,88 @@ const añoMasReciente = computed(() => {
       />
 
         <!-- Header principal con información del trabajador -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden mb-4">
-          <div class="p-6 min-h-[7.5rem]">
+        <div class="expediente-trabajador-header mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+          <div class="expediente-trabajador-header__body min-h-[7.5rem] p-6">
             <ExpedienteHeaderSkeleton v-if="expedienteHeaderLoading" />
             <div
               v-else-if="trabajadores.currentTrabajador"
-              class="flex flex-col lg:flex-row lg:items-center lg:justify-between"
+              class="flex min-w-0 flex-col lg:flex-row lg:items-center lg:justify-between"
             >
                 
                 <!-- Información del trabajador -->
-                <div class="flex items-center gap-4 sm:mb-4 lg:mb-0">
+                <div class="expediente-trabajador-identity flex min-w-0 items-center gap-4 sm:mb-4 lg:mb-0">
                   <!-- Logo de la empresa o placeholder -->
                   <div class="flex-shrink-0">
                     <img
                       v-if="empresas.currentEmpresa?.logotipoEmpresa?.data"
                       :src="'/uploads/logos/' + empresas.currentEmpresa.logotipoEmpresa.data + '?t=' + empresas.currentEmpresa.updatedAt"
                       :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
-                      class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg shadow-lg"
+                      class="expediente-trabajador-logo h-16 w-16 rounded-lg object-contain shadow-lg sm:h-20 sm:w-20"
                     />
-                    <div v-else class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center shadow-lg">
-                      <i class="fas fa-building text-white text-xl sm:text-2xl"></i>
+                    <div v-else class="expediente-trabajador-logo flex h-16 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg sm:h-20 sm:w-20">
+                      <i class="fas fa-building text-xl text-white sm:text-2xl"></i>
                     </div>
                   </div>
                   
                     <!-- Datos del trabajador -->
-                    <div class="flex-1 min-w-0">
-                      <h1 class="text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <i class="fas fa-user text-emerald-600 text-md sm:text-lg lg:text-xl xl:text-2xl"></i>
-                        {{ formatNombreCompleto(trabajadores.currentTrabajador) }}
+                    <div class="min-w-0 flex-1">
+                      <h1 class="expediente-trabajador-name flex min-w-0 items-center gap-3 text-xl font-bold text-gray-900 sm:text-xl lg:text-2xl xl:text-3xl">
+                        <i class="expediente-trabajador-name-icon fas fa-user shrink-0 text-emerald-600 text-md sm:text-lg lg:text-xl xl:text-2xl"></i>
+                        <span class="expediente-trabajador-name-text min-w-0">{{ formatNombreCompleto(trabajadores.currentTrabajador) }}</span>
                       </h1>
-                      <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
-                        <div v-if="trabajadores.currentTrabajador?.sexo" class="flex items-center gap-2 group relative">
-                          <i v-if="trabajadores.currentTrabajador?.sexo === 'Masculino'" class="fas fa-mars text-sky-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
-                          <i v-else-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="fas fa-venus text-rose-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
-                          <span v-else class="text-violet-600 text-sm sm:text-md lg:text-lg xl:text-xl leading-none" aria-hidden="true">⚥</span>
-                           <span class="text-item text-sm sm:text-base text-gray-600">
+                      <div class="expediente-trabajador-meta mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                        <div v-if="trabajadores.currentTrabajador?.sexo" class="expediente-trabajador-meta-item flex min-w-0 items-center gap-2 group relative">
+                          <i v-if="trabajadores.currentTrabajador?.sexo === 'Masculino'" class="fas fa-mars shrink-0 text-sky-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
+                          <i v-else-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="fas fa-venus shrink-0 text-rose-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
+                          <span v-else class="shrink-0 text-sm leading-none text-violet-600 sm:text-md lg:text-lg xl:text-xl" aria-hidden="true">⚥</span>
+                           <span class="text-item min-w-0 text-sm text-gray-600 sm:text-base">
                              <span class="block lg:hidden">{{ trabajadores.currentTrabajador.sexo }}</span>
                              <span class="hidden lg:block 2xl:hidden">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'M' : trabajadores.currentTrabajador.sexo === 'Femenino' ? 'F' : 'I' }}</span>
                              <span class="hidden 2xl:block">{{ trabajadores.currentTrabajador.sexo }}</span>
                            </span>
                         </div>
-                        <div class="flex sm:hidden md:flex items-center gap-2 group relative">
-                          <i class="fas fa-birthday-cake text-emerald-500 text-sm"></i>
-                          <span class="text-item text-sm sm:text-base text-gray-600">
+                        <div class="expediente-trabajador-meta-item flex min-w-0 items-center gap-2 group relative sm:hidden md:flex">
+                          <i class="fas fa-birthday-cake shrink-0 text-sm text-emerald-500"></i>
+                          <span class="text-item min-w-0 text-sm text-gray-600 sm:text-base">
                             {{ calcularEdad(trabajadores.currentTrabajador?.fechaNacimiento) }} años
                           </span>
-                          <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          <div class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100">
                             Edad
-                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+                            <div class="absolute bottom-full left-1/2 h-0 w-0 -translate-x-1/2 transform border-b-4 border-l-4 border-r-4 border-transparent border-b-gray-800"></div>
                           </div>
                         </div>
-                        <div class="flex items-center gap-2 group relative">
-                          <i class="fas fa-briefcase text-blue-500 text-sm"></i>
-                          <span class="text-item text-sm sm:text-base text-gray-600">
+                        <div class="expediente-trabajador-meta-item expediente-trabajador-puesto flex min-w-0 items-center gap-2 group relative">
+                          <i class="fas fa-briefcase shrink-0 text-sm text-blue-500"></i>
+                          <span
+                            class="text-item expediente-trabajador-puesto-text min-w-0 text-sm text-gray-600 sm:text-base"
+                            :title="trabajadores.currentTrabajador?.puesto"
+                          >
                             {{ trabajadores.currentTrabajador?.puesto }}
                           </span>
-                          <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          <div class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100">
                             Puesto
-                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+                            <div class="absolute bottom-full left-1/2 h-0 w-0 -translate-x-1/2 transform border-b-4 border-l-4 border-r-4 border-transparent border-b-gray-800"></div>
                           </div>
                         </div>
-                        <div class="flex sm:hidden md:flex lg:hidden xl:flex items-center gap-2 group relative">
-                          <i class="fas fa-clock text-cyan-500 text-sm"></i>
-                          <span class="text-sm sm:text-base text-gray-600">
+                        <div
+                          class="expediente-trabajador-meta-item expediente-trabajador-antiguedad flex min-w-0 items-center gap-2 group relative sm:hidden md:flex lg:hidden xl:flex"
+                          :class="{ 'expediente-trabajador-antiguedad--empty': calcularAntiguedad(trabajadores.currentTrabajador?.fechaIngreso) === '-' }"
+                        >
+                          <i class="fas fa-clock shrink-0 text-sm text-cyan-500"></i>
+                          <span class="min-w-0 text-sm text-gray-600 sm:text-base">
                             {{ calcularAntiguedad(trabajadores.currentTrabajador?.fechaIngreso) }}
                           </span>
-                          <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          <div class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100">
                             Antigüedad
-                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+                            <div class="absolute bottom-full left-1/2 h-0 w-0 -translate-x-1/2 transform border-b-4 border-l-4 border-r-4 border-transparent border-b-gray-800"></div>
                           </div>
                         </div>
-                        <div v-if="trabajadores.currentTrabajador?.numeroEmpleado" class="flex items-center gap-2 group relative">
-                          <i class="fas fa-id-badge text-purple-500 text-sm"></i>
-                          <span class="text-sm sm:text-base text-gray-600">
+                        <div v-if="trabajadores.currentTrabajador?.numeroEmpleado" class="expediente-trabajador-meta-item flex min-w-0 items-center gap-2 group relative">
+                          <i class="fas fa-id-badge shrink-0 text-sm text-purple-500"></i>
+                          <span class="min-w-0 text-sm text-gray-600 sm:text-base">
                             No. {{ trabajadores.currentTrabajador.numeroEmpleado }}
                           </span>
-                          <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          <div class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100">
                             Número de empleado
                           </div>
                         </div>
@@ -1260,38 +1266,38 @@ const añoMasReciente = computed(() => {
         </Transition>
 
         <!-- Panel de creación de documentos -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-4">
+        <div class="mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white">
           <!-- Header del panel -->
-          <div class="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 px-6 py-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-plus text-white text-sm"></i>
+          <div class="expediente-crear-header bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 px-6 py-4">
+            <div class="flex min-w-0 items-center justify-between">
+              <div class="flex min-w-0 items-center gap-3">
+                <div class="expediente-crear-header__icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white bg-opacity-20">
+                  <i class="fas fa-plus text-sm text-white"></i>
                 </div>
-                <div>
-                  <h2 class="text-lg font-medium text-white">Crear Nuevo Documento</h2>
-                  <p class="text-emerald-100 text-sm">Selecciona el tipo de documento a crear</p>
+                <div class="min-w-0 flex-1">
+                  <h2 class="expediente-crear-header__title text-lg font-medium text-white">Crear Nuevo Documento</h2>
+                  <p class="expediente-crear-header__subtitle text-sm text-emerald-100">Selecciona el tipo de documento a crear</p>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Botones de documentos -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8 gap-3">
+          <div class="expediente-docs-panel p-6">
+            <div class="expediente-docs-grid grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
               
               <!-- Historia Clínica -->
               <button @click="navigateTo('crear-documento', {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'historiaClinica'
-              })" class="group relative bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border-teal-200 hover:border-teal-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="expediente-doc-tile group relative bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border-teal-200 hover:border-teal-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
-                  <div class="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-600 transition-colors">
+                  <div class="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-teal-600 transition-colors">
                     <i class="fas fa-notes-medical text-white text-lg"></i>
                   </div>
-                  <h3 class="font-semibold text-gray-900 text-sm mb-1">Historia Clínica</h3>
-                  <p class="text-item text-xs text-gray-600">Entrevista médica</p>
+                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Historia Clínica</h3>
+                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Entrevista médica</p>
                 </div>
               </button>
 
@@ -1300,13 +1306,13 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'exploracionFisica'
-              })" class="group relative bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 border-indigo-200 hover:border-indigo-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="expediente-doc-tile group relative bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 border-indigo-200 hover:border-indigo-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
-                  <div class="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-600 transition-colors">
+                  <div class="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-indigo-600 transition-colors">
                     <i class="fa-solid fa-person text-white text-xl"></i>
                   </div>
-                  <h3 class="font-semibold text-gray-900 text-sm mb-1">Exploración Física</h3>
-                  <p class="text-item text-xs text-gray-600">Aparatos y sistemas</p>
+                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Exploración Física</h3>
+                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Aparatos y sistemas</p>
                 </div>
               </button>
 
@@ -1315,13 +1321,13 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'examenVista'
-              })" class="group relative bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 border-yellow-200 hover:border-yellow-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="expediente-doc-tile group relative bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 border-yellow-200 hover:border-yellow-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
-                  <div class="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-yellow-600 transition-colors">
+                  <div class="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-yellow-600 transition-colors">
                     <i class="fas fa-eye text-white text-lg"></i>
                   </div>
-                  <h3 class="font-semibold text-gray-900 text-sm mb-1">Examen Vista</h3>
-                  <p class="text-item text-xs text-gray-600">Agudeza visual y colores</p>
+                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Examen Vista</h3>
+                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Agudeza visual y colores</p>
                 </div>
               </button>
 
@@ -1330,13 +1336,13 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'audiometria'
-              })" class="group relative bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-purple-200 hover:border-purple-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="expediente-doc-tile group relative bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-purple-200 hover:border-purple-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
-                  <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-600 transition-colors">
+                  <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-purple-600 transition-colors">
                     <i class="fas fa-volume-up text-white text-lg"></i>
                   </div>
-                  <h3 class="font-semibold text-gray-900 text-sm mb-1">Audiometría</h3>
-                  <p class="text-item text-xs text-gray-600">Audición</p>
+                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Audiometría</h3>
+                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Audición</p>
                 </div>
               </button>
 
@@ -1345,13 +1351,13 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'aptitud'
-              })" class="group relative bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-green-200 hover:border-green-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="expediente-doc-tile group relative bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-green-200 hover:border-green-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
-                  <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-green-600 transition-colors">
+                  <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-green-600 transition-colors">
                     <i class="fas fa-user-check text-white text-lg"></i>
                   </div>
-                  <h3 class="font-semibold text-gray-900 text-sm mb-1">Aptitud</h3>
-                  <p class="text-item text-xs text-gray-600">Evaluación laboral</p>
+                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Aptitud</h3>
+                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Evaluación laboral</p>
                 </div>
               </button>
 
@@ -1360,13 +1366,13 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'certificado'
-              })" class="group relative bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200 hover:border-blue-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="expediente-doc-tile group relative bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200 hover:border-blue-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
-                  <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-600 transition-colors">
+                  <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-blue-600 transition-colors">
                     <i class="fas fa-certificate text-white text-lg"></i>
                   </div>
-                  <h3 class="font-semibold text-gray-900 text-sm mb-1">Certificado</h3>
-                  <p class="text-item text-xs text-gray-600">Certificación médica</p>
+                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Certificado</h3>
+                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Certificación médica</p>
                 </div>
               </button>
 
@@ -1375,13 +1381,13 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'antidoping'
-              })" class="group relative bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 hover:border-red-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="expediente-doc-tile group relative bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 hover:border-red-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
-                  <div class="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-red-600 transition-colors">
+                  <div class="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-red-600 transition-colors">
                     <i class="fas fa-flask text-white text-lg"></i>
                   </div>
-                  <h3 class="font-semibold text-gray-900 text-sm mb-1">Antidoping</h3>
-                  <p class="text-item text-xs text-gray-600">Prueba de sustancias</p>
+                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Antidoping</h3>
+                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Prueba de sustancias</p>
                 </div>
               </button>
 
@@ -1390,21 +1396,21 @@ const añoMasReciente = computed(() => {
                 idEmpresa: empresas.currentEmpresaId,
                 idTrabajador: trabajadores.currentTrabajadorId,
                 tipoDocumento: 'notaMedica'
-              })" class="group relative bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 border-orange-200 hover:border-orange-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+              })" class="expediente-doc-tile group relative bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 border-orange-200 hover:border-orange-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
                 <div class="text-center">
-                  <div class="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-600 transition-colors">
+                  <div class="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-orange-600 transition-colors">
                     <i class="fas fa-stethoscope text-white text-lg"></i>
                   </div>
-                  <h3 class="font-semibold text-gray-900 text-sm mb-1">Nota Médica</h3>
-                  <p class="text-item text-xs text-gray-600">Consultas</p>
+                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Nota Médica</h3>
+                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Consultas</p>
                 </div>
               </button>
 
             </div>
 
-            <div class="flex flex-wrap justify-center items-center gap-4 mt-6">
+            <div class="expediente-secondary-actions flex flex-wrap justify-center items-center gap-4 mt-6">
               <!-- Documento Externo -->
-              <div class="flex justify-center">
+              <div class="expediente-secondary-actions__item flex justify-center">
                 <SliderButton 
                   class="w-full max-w-md" 
                   @click="toggleDocumentoExternoModal"
@@ -1416,11 +1422,11 @@ const añoMasReciente = computed(() => {
               </div>
 
               <!-- Declaración Veracidad -->
-              <div class="flex justify-center">
+              <div class="expediente-secondary-actions__item flex justify-center">
                 <button
                   type="button"
                   @click="toggleDeclaracionVeracidadModal"
-                  class="relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-emerald-600 bg-white overflow-hidden transition-all duration-200 hover:bg-emerald-50 hover:shadow-lg"
+                  class="expediente-secondary-btn relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-emerald-600 bg-white overflow-hidden transition-all duration-200 hover:bg-emerald-50 hover:shadow-lg"
                 >
                   <i class="fas fa-file-signature text-emerald-600 text-lg ml-4"></i>
                   <span class="flex-1 text-center text-emerald-600 text-lg ml-3">
@@ -1430,10 +1436,10 @@ const añoMasReciente = computed(() => {
               </div>
   
               <!-- Botón para Cuestionarios de Vigilancia Médica -->
-              <div class="flex justify-center">
+              <div class="expediente-secondary-actions__item flex justify-center">
                 <button
                   @click="toggleCuestionariosModal"
-                  class="relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-emerald-600 bg-white overflow-hidden transition-all duration-200 hover:bg-emerald-50 hover:shadow-lg"
+                  class="expediente-secondary-btn relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-emerald-600 bg-white overflow-hidden transition-all duration-200 hover:bg-emerald-50 hover:shadow-lg"
                 >
                   <i class="fas fa-file-alt text-emerald-600 text-lg ml-4"></i>
                   <span class="flex-1 text-center text-emerald-600 text-lg ml-3">Otros<span class="hidden sm:inline"> Documentos</span></span>
@@ -1442,10 +1448,10 @@ const añoMasReciente = computed(() => {
               </div>
   
               <!-- Botón para Registrar Resultados Clínicos -->
-              <div class="flex justify-center">
+              <div class="expediente-secondary-actions__item flex justify-center">
                 <button
                   @click="showResultadosClinicosPanel = true"
-                  class="relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-blue-600 bg-white overflow-hidden transition-all duration-200 hover:bg-blue-50 hover:shadow-lg"
+                  class="expediente-secondary-btn relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-blue-600 bg-white overflow-hidden transition-all duration-200 hover:bg-blue-50 hover:shadow-lg"
                 >
                   <i class="fas fa-clipboard-check text-blue-600 text-lg ml-4"></i>
                   <span class="flex-1 text-center text-blue-600 text-lg ml-3">Resultados</span>
@@ -1508,72 +1514,72 @@ const añoMasReciente = computed(() => {
                 </div>
               </div>
 
-              <div v-else class="text-center py-8">
-                <div class="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
+              <div v-else class="expediente-empty text-center py-8">
+                <div class="expediente-empty__hero inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
                   <i class="fas fa-folder-open text-6xl text-gray-400"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">
+                <h2 class="expediente-empty__title text-2xl font-bold text-gray-900 mb-4">
                   Expediente médico vacío
                 </h2>
-                <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+                <p class="expediente-empty__lead text-gray-600 mb-8 max-w-2xl mx-auto">
                   Este trabajador aún no tiene documentos médicos registrados. 
                   Comienza creando una historia clínica para establecer el expediente médico.
                 </p>
                 
                 <!-- Sugerencias de documentos -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 max-w-4xl mx-auto">
-                  <h3 class="text-lg font-semibold text-gray-800 mb-6 text-center">
+                <div class="expediente-empty__suggestions bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8 max-w-4xl mx-auto">
+                  <h3 class="expediente-empty__suggestions-title text-lg font-semibold text-gray-800 mb-6 text-center">
                     ¿Por dónde empezar?
                   </h3>
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div class="expediente-empty__grid grid grid-cols-1 md:grid-cols-3 gap-6">
                     
-                    <div class="text-center p-6 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200">
-                      <div class="w-16 h-16 bg-teal-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200">
+                      <div class="expediente-empty__icon w-16 h-16 bg-teal-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-notes-medical text-white text-xl"></i>
                       </div>
                       <h4 class="font-semibold text-gray-900 mb-2">Historia Clínica</h4>
-                      <p class="text-sm text-gray-600 mb-4">
+                      <p class="expediente-empty__card-text text-sm text-gray-600 mb-4">
                         Base fundamental del expediente médico
                       </p>
                       <button @click="navigateTo('crear-documento', {
                         idEmpresa: empresas.currentEmpresaId,
                         idTrabajador: trabajadores.currentTrabajadorId,
                         tipoDocumento: 'historiaClinica'
-                      })" class="w-full bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                      })" class="expediente-empty__cta w-full bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
                         Crear Historia Clínica
                       </button>
                     </div>
                     
-                    <div class="text-center p-6 rounded-xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200">
-                      <div class="w-16 h-16 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200">
+                      <div class="expediente-empty__icon w-16 h-16 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-flask text-white text-xl"></i>
                       </div>
                       <h4 class="font-semibold text-gray-900 mb-2">Antidoping</h4>
-                      <p class="text-sm text-gray-600 mb-4">
+                      <p class="expediente-empty__card-text text-sm text-gray-600 mb-4">
                         Examen para detección de consumo de sustancias
                       </p>
                       <button @click="navigateTo('crear-documento', {
                         idEmpresa: empresas.currentEmpresaId,
                         idTrabajador: trabajadores.currentTrabajadorId,
                         tipoDocumento: 'antidoping'
-                      })" class="w-full bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                      })" class="expediente-empty__cta w-full bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
                         Crear Antidoping
                       </button>
                     </div>
                     
-                    <div class="text-center p-6 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200">
-                      <div class="w-16 h-16 bg-pink-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200">
+                      <div class="expediente-empty__icon w-16 h-16 bg-pink-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-stethoscope text-white text-xl"></i>
                       </div>
                       <h4 class="font-semibold text-gray-900 mb-2">Nota Médica</h4>
-                      <p class="text-sm text-gray-600 mb-4">
+                      <p class="expediente-empty__card-text text-sm text-gray-600 mb-4">
                         Consultas y evaluaciones médicas
                       </p>
                       <button @click="navigateTo('crear-documento', {
                         idEmpresa: empresas.currentEmpresaId,
                         idTrabajador: trabajadores.currentTrabajadorId,
                         tipoDocumento: 'notaMedica'
-                      })" class="w-full bg-pink-500 hover:bg-pink-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                      })" class="expediente-empty__cta w-full bg-pink-500 hover:bg-pink-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
                         Crear Nota Médica
                       </button>
                     </div>
@@ -1690,11 +1696,232 @@ const añoMasReciente = computed(() => {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-/* Responsive design mejorado */
-@media (max-width: 640px) {
-  .max-w-7xl {
-    padding-left: 1rem;
-    padding-right: 1rem;
+@media (max-width: 479px) {
+  .expediente-trabajador-header__body {
+    min-height: 0;
+    padding: 0.75rem;
+  }
+
+  .expediente-trabajador-identity {
+    gap: 0.75rem;
+  }
+
+  .expediente-trabajador-logo {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .expediente-trabajador-name {
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .expediente-trabajador-name-icon {
+    font-size: 0.95rem;
+    margin-top: 0.15rem;
+  }
+
+  .expediente-trabajador-name-text {
+    font-size: 1.05rem;
+    line-height: 1.25;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow-wrap: anywhere;
+  }
+
+  .expediente-trabajador-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.75rem;
+    row-gap: 0.2rem;
+    margin-top: 0.4rem;
+  }
+
+  .expediente-trabajador-meta-item {
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .expediente-trabajador-meta-item .text-item,
+  .expediente-trabajador-meta-item span {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+
+  .expediente-trabajador-puesto {
+    grid-column: 1 / -1;
+  }
+
+  .expediente-trabajador-puesto-text {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow-wrap: anywhere;
+  }
+
+  .expediente-trabajador-antiguedad--empty {
+    display: none;
+  }
+
+  .expediente-crear-header {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .expediente-crear-header__icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .expediente-crear-header__title {
+    font-size: 0.95rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .expediente-crear-header__subtitle {
+    font-size: 0.7rem;
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow-wrap: anywhere;
+  }
+
+  .expediente-docs-panel {
+    padding: 0.75rem;
+  }
+
+  .expediente-docs-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .expediente-doc-tile {
+    padding: 0.65rem 0.4rem 0.55rem;
+    min-width: 0;
+  }
+
+  .expediente-doc-tile:hover {
+    transform: none;
+  }
+
+  .expediente-doc-tile__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.4rem;
+    border-radius: 0.75rem;
+  }
+
+  .expediente-doc-tile__title {
+    margin-bottom: 0;
+    font-size: 0.7rem;
+    line-height: 1.25;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow-wrap: anywhere;
+  }
+
+  .expediente-doc-tile__subtitle {
+    display: none;
+  }
+
+  .expediente-secondary-actions {
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .expediente-secondary-actions__item {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .expediente-secondary-btn {
+    width: 100%;
+    max-width: 100%;
+    height: 50px;
+  }
+
+  .expediente-secondary-actions :deep(.button) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .expediente-empty {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .expediente-empty__hero {
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .expediente-empty__hero i {
+    font-size: 1.75rem;
+  }
+
+  .expediente-empty__title {
+    margin-bottom: 0.5rem;
+    font-size: 1.15rem;
+    line-height: 1.3;
+  }
+
+  .expediente-empty__lead {
+    margin-bottom: 1rem;
+    padding-inline: 0.25rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .expediente-empty__suggestions {
+    padding: 0.75rem 0.65rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .expediente-empty__suggestions-title {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+
+  .expediente-empty__grid {
+    gap: 0.65rem;
+  }
+
+  .expediente-empty__card {
+    padding: 0.75rem 0.7rem;
+  }
+
+  .expediente-empty__icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .expediente-empty__icon i {
+    font-size: 1rem;
+  }
+
+  .expediente-empty__card-text {
+    margin-bottom: 0.65rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .expediente-empty__cta {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    line-height: 1.3;
   }
 }
 

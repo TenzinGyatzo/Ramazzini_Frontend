@@ -422,7 +422,7 @@ onMounted(async () => {
             </button>
           </div>
         </div>
-        <ul v-if="eventosEnRango.length" class="space-y-2 max-h-56 overflow-y-auto">
+        <ul v-if="eventosEnRango.length" class="clinical-step-scroll space-y-2 max-h-56 overflow-y-auto">
           <li
             v-for="ev in eventosEnRango"
             :key="mongoIdStr(ev._id)"
@@ -468,7 +468,7 @@ onMounted(async () => {
           </div>
         </div>
         <p v-if="loadingSeg" class="text-sm text-gray-500">Cargando citas programadas…</p>
-        <ul v-else-if="seguimientosEnRango.length" class="space-y-2 max-h-56 overflow-y-auto">
+        <ul v-else-if="seguimientosEnRango.length" class="clinical-step-scroll space-y-2 max-h-56 overflow-y-auto">
           <li
             v-for="s in seguimientosEnRango"
             :key="mongoIdStr(s._id)"

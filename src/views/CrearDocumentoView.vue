@@ -289,6 +289,7 @@ const inicializarDesdeRuta = () => {
 };
 
 onMounted(() => {
+  document.documentElement.classList.add('clinical-step-scroll');
   inicializarDesdeRuta();
 });
 
@@ -381,6 +382,7 @@ watchEffect(async () => {
 });
 
 onUnmounted(() => {
+  document.documentElement.classList.remove('clinical-step-scroll');
   formData.resetFormData();
 });
 

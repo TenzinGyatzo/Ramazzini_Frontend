@@ -53,28 +53,31 @@ const formatDireccion = (centro: CentroTrabajo) => {
 </script>
 
 <template>
-    <div v-if="centro && empresa" class="group">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <div v-if="centro && empresa" class="centro-item group min-w-0">
+        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
             <!-- Contenido principal -->
             <RouterLink
                 :to="{ name: 'trabajadores', params: { idEmpresa: empresa._id, idCentroTrabajo: centro._id } }"
-                class="centro-card-link block w-full text-left p-6 hover:bg-gray-50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                class="centro-card-link centro-item__link block w-full min-w-0 p-6 text-left transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                 
                 <!-- Header con icono y título -->
-                <div class="flex items-start justify-between mb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl flex items-center justify-center shadow-sm">
-                            <i class="fas fa-building text-white text-lg"></i>
+                <div class="centro-item__header mb-4 flex min-w-0 items-start justify-between gap-2">
+                    <div class="centro-item__identity flex min-w-0 flex-1 items-center gap-3">
+                        <div class="centro-item__icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 shadow-sm">
+                            <i class="fas fa-building text-lg text-white"></i>
                         </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-900 mb-1">{{ centro.nombreCentro }}</h3>
-                            <div class="flex items-center gap-2">
-                                <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                        <div class="min-w-0 flex-1">
+                            <h3
+                                class="centro-item__title mb-1 text-xl font-bold text-gray-900"
+                                :title="centro.nombreCentro"
+                            >{{ centro.nombreCentro }}</h3>
+                            <div class="flex min-w-0 items-center gap-2">
+                                <div class="h-2 w-2 shrink-0 rounded-full bg-emerald-500"></div>
                                 <span v-if="contandoTrabajadores" class="text-sm text-gray-400">
                                     <i class="fas fa-spinner fa-spin mr-1"></i>
                                     Contando...
                                 </span>
-                                <span v-else class="empresa-item-subtitle text-sm text-gray-600">
+                                <span v-else class="empresa-item-subtitle centro-item__count text-sm text-gray-600">
                                     {{ numeroTrabajadores || 0 }} {{ (numeroTrabajadores || 0) === 1 ? 'trabajador' : 'trabajadores' }}
                                 </span>
                             </div>
@@ -82,22 +85,26 @@ const formatDireccion = (centro: CentroTrabajo) => {
                     </div>
                     
                     <!-- Indicador de acción -->
-                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <i class="fas fa-arrow-right text-emerald-500 text-lg"></i>
+                    <div class="centro-item__arrow shrink-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <i class="fas fa-arrow-right text-lg text-emerald-500"></i>
                     </div>
                 </div>
 
                 <!-- Información de ubicación -->
                 <div class="space-y-3">
-                    <div class="flex items-start gap-3">
-                        <div class="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center mt-0.5">
-                            <i class="fas fa-map-marker-alt text-gray-400 text-xs"></i>
+                    <div class="flex min-w-0 items-start gap-3">
+                        <div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100">
+                            <i class="fas fa-map-marker-alt text-xs text-gray-400"></i>
                         </div>
-                        <div class="flex-1">
-                            <p v-if="formatDireccion(centro)" class="text-gray-700 leading-relaxed text-sm">
+                        <div class="min-w-0 flex-1">
+                            <p
+                                v-if="formatDireccion(centro)"
+                                class="centro-item__address text-sm leading-relaxed text-gray-700"
+                                :title="formatDireccion(centro)"
+                            >
                                 {{ formatDireccion(centro) }}
                             </p>
-                            <p v-else class="text-gray-400 italic text-sm">
+                            <p v-else class="centro-item__address text-sm italic text-gray-400">
                                 Dirección no registrada
                             </p>
                         </div>
@@ -108,10 +115,10 @@ const formatDireccion = (centro: CentroTrabajo) => {
             </RouterLink>
 
             <!-- Barra de acciones -->
-            <div class="border-t border-gray-100 bg-gray-50 px-6 py-3">
+            <div class="centro-item__actions border-t border-gray-100 bg-gray-50 px-6 py-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-500 font-medium">Acciones</span>
+                        <span class="centro-item__actions-label text-xs font-medium text-gray-500">Acciones</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <button 
@@ -119,7 +126,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
                             @click="handleEditarCentro(empresa, centro)"
                             :disabled="!canManageCentrosTrabajo"
                             :class="[
-                                'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 transform focus:outline-none focus:ring-2',
+                                'centro-item__action-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 transform focus:outline-none focus:ring-2',
                                 canManageCentrosTrabajo 
                                     ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 hover:scale-105 focus:ring-gray-200' 
                                     : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
@@ -134,7 +141,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
                             @click="handleEliminarCentro(centro._id, centro.nombreCentro)"
                             :disabled="!canManageCentrosTrabajo"
                             :class="[
-                                'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 transform focus:outline-none focus:ring-2',
+                                'centro-item__action-btn inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 transform focus:outline-none focus:ring-2',
                                 canManageCentrosTrabajo 
                                     ? 'bg-red-50 hover:bg-red-100 text-red-600 hover:scale-105 focus:ring-red-200' 
                                     : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
@@ -201,10 +208,76 @@ button:focus {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-/* Responsive design mejorado */
-@media (max-width: 640px) {
-    .hidden.sm\:inline {
+@media (max-width: 479px) {
+    .group:hover {
+        transform: none;
+    }
+
+    .centro-item__link {
+        padding: 0.75rem;
+    }
+
+    .centro-item__header {
+        margin-bottom: 0.5rem;
+        gap: 0;
+    }
+
+    .centro-item__identity {
+        gap: 0.625rem;
+    }
+
+    .centro-item__icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.75rem;
+    }
+
+    .centro-item__icon i {
+        font-size: 0.875rem;
+    }
+
+    .centro-item__arrow {
         display: none;
+    }
+
+    .centro-item__title {
+        margin-bottom: 0.15rem;
+        font-size: 1rem;
+        line-height: 1.25;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow-wrap: anywhere;
+    }
+
+    .centro-item__count {
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+
+    .centro-item__address {
+        font-size: 0.75rem;
+        line-height: 1.35;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow-wrap: anywhere;
+    }
+
+    .centro-item__actions {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .centro-item__action-btn {
+        padding: 0.375rem 0.5rem;
+    }
+
+    .centro-item__action-btn:hover {
+        transform: none;
     }
 }
 

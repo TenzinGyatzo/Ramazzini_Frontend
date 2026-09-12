@@ -1,6 +1,10 @@
 import { computed } from 'vue';
 import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
 
+function compactVersion(raw: string): string {
+  return raw.replace(/^v/i, '');
+}
+
 /**
  * Folio de edición exhibido en runtime según el régimen del tenant.
  * Los números vienen de compile-time (__APP_VERSION_SIRES__ / __APP_VERSION_COMMERCIAL__);
@@ -19,5 +23,21 @@ export function useEditionLabel() {
     return 'Ramazzini';
   });
 
-  return { editionLabel };
+  const editionVersionPrefixed = computed(() => {
+    if (isSIRES.value) {
+      return __APP_VERSION_SIRES__;
+    }
+    if (isSinRegimen.value) {
+      return __APP_VERSION_COMMERCIAL__;
+    }
+    return '';
+  });
+
+  const editionVersion = computed(() =>
+    editionVersionPrefixed.value
+      ? compactVersion(editionVersionPrefixed.value)
+      : '',
+  );
+
+  return { editionLabel, editionVersion, editionVersionPrefixed };
 }

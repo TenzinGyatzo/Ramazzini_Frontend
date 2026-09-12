@@ -356,7 +356,7 @@ watchEffect(() => {
               </div>
             </div>
             <!-- Si hay empresas, mostramos los items -->
-            <div v-else class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+            <div v-else class="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               <EmpresaItem v-for="empresa in empresasFiltradas" :key="empresa._id" :empresa="empresa"
                 @editarEmpresa="openModal" @eliminarEmpresa="solicitarEliminacionEmpresa" />
             </div>

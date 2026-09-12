@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter } from 'vue-router';
@@ -69,13 +69,28 @@ async function mountSidebar(pinia = createPinia()) {
   });
 }
 
+async function expandSidebar(wrapper: Awaited<ReturnType<typeof mountSidebar>>) {
+  const sidebar = useSidebarStore();
+  sidebar.collapsed = false;
+  await wrapper.vm.$nextTick();
+}
+
 describe('Sidebar — folio de edición', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
 
+  afterEach(() => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    });
+  });
+
   it('sin régimen muestra Ramazzini sin número', async () => {
     const wrapper = await mountSidebar();
+    await expandSidebar(wrapper);
     const el = wrapper.get('[data-testid="edition-label"]');
     expect(el.text()).toBe('Ramazzini');
     expect(el.attributes('title')).toBe('Ramazzini');
@@ -91,6 +106,7 @@ describe('Sidebar — folio de edición', () => {
     } as any;
 
     const wrapper = await mountSidebar(pinia);
+    await expandSidebar(wrapper);
     const el = wrapper.get('[data-testid="edition-label"]');
     const expected = `SIRES ${__APP_VERSION_SIRES__}`;
     expect(el.text()).toBe(expected);
@@ -108,6 +124,7 @@ describe('Sidebar — folio de edición', () => {
     } as any;
 
     const wrapper = await mountSidebar(pinia);
+    await expandSidebar(wrapper);
     const el = wrapper.get('[data-testid="edition-label"]');
     expect(el.text()).toBe('Ramazzini v2.0.0');
     expect(el.attributes('title')).toBe('Ramazzini v2.0.0');
@@ -126,6 +143,7 @@ describe('Sidebar — folio de edición', () => {
     } as any;
 
     const wrapper = await mountSidebar(pinia);
+    await expandSidebar(wrapper);
     expect(wrapper.get('[data-testid="edition-label"]').text()).toBe(
       'Ramazzini v2.0.0',
     );
@@ -141,6 +159,147 @@ describe('Sidebar — folio de edición', () => {
     expect(el.text()).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
     expect(el.attributes('title')).toBe(el.text());
     expect(el.text()).not.toContain('v2.0.0');
+  });
+
+  it('colapsado desde md muestra la versión con v', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useProveedorSaludStore();
+    store.proveedorSalud = {
+      _id: 'test-id',
+      regulatoryPolicy: createSinRegimenPolicy(),
+    } as any;
+
+    const wrapper = await mountSidebar(pinia);
+    useSidebarStore().collapsed = true;
+    await wrapper.vm.$nextTick();
+
+    const el = wrapper.get('[data-testid="edition-label"]');
+    expect(el.text()).toBe('v2.0.0');
+    expect(el.attributes('title')).toBe('Ramazzini v2.0.0');
+  });
+
+  it('colapsado desde md en SIRES muestra la versión con v', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useProveedorSaludStore();
+    store.proveedorSalud = {
+      _id: 'test-id',
+      regulatoryPolicy: createSiresPolicy(),
+    } as any;
+
+    const wrapper = await mountSidebar(pinia);
+    useSidebarStore().collapsed = true;
+    await wrapper.vm.$nextTick();
+
+    const el = wrapper.get('[data-testid="edition-label"]');
+    expect(el.text()).toBe(__APP_VERSION_SIRES__);
+    expect(el.text().startsWith('v')).toBe(true);
+    expect(el.attributes('title')).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
+  });
+
+  it('colapsado en smartphone muestra solo el número de versión comercial', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useProveedorSaludStore();
+    store.proveedorSalud = {
+      _id: 'test-id',
+      regulatoryPolicy: createSinRegimenPolicy(),
+    } as any;
+
+    const wrapper = await mountSidebar(pinia);
+    useSidebarStore().collapsed = true;
+    await wrapper.vm.$nextTick();
+
+    const el = wrapper.get('[data-testid="edition-label"]');
+    expect(el.text()).toBe('2.0.0');
+    expect(el.attributes('title')).toBe('Ramazzini v2.0.0');
+  });
+
+  it('colapsado en smartphone SIRES muestra solo el número de versión', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useProveedorSaludStore();
+    store.proveedorSalud = {
+      _id: 'test-id',
+      regulatoryPolicy: createSiresPolicy(),
+    } as any;
+
+    const wrapper = await mountSidebar(pinia);
+    useSidebarStore().collapsed = true;
+    await wrapper.vm.$nextTick();
+
+    const el = wrapper.get('[data-testid="edition-label"]');
+    expect(el.text()).toBe(__APP_VERSION_SIRES__.replace(/^v/i, ''));
+    expect(el.attributes('title')).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
+    expect(el.text()).not.toContain('SIRES');
+  });
+});
+
+describe('Sidebar — anchos móviles', () => {
+  function stubViewport(width: number) {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: width,
+    });
+  }
+
+  afterEach(() => {
+    stubViewport(1024);
+  });
+
+  it('en smartphone inicia colapsado a 56px y el overlay no supera 220px', async () => {
+    stubViewport(390);
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useSidebarStore();
+
+    expect(store.isSmallScreen).toBe(true);
+    expect(store.collapsed).toBe(true);
+    expect(store.sidebarWidth).toBe('56px');
+    expect(store.isMobileOverlayOpen).toBe(false);
+
+    store.toggleSidebar();
+    expect(store.isMobileOverlayOpen).toBe(true);
+    const expanded = Number.parseInt(store.sidebarWidth, 10);
+    expect(expanded).toBeLessThanOrEqual(220);
+    expect(expanded).toBe(Math.min(220, Math.round(390 * 0.72)));
+    expect(store.sidebarWidthCollapsed).toBe('56px');
+  });
+
+  it('en escritorio conserva 230 / 80', async () => {
+    stubViewport(1280);
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useSidebarStore();
+
+    expect(store.isSmallScreen).toBe(false);
+    store.collapsed = true;
+    expect(store.sidebarWidth).toBe('80px');
+    store.collapsed = false;
+    expect(store.sidebarWidth).toBe('230px');
+    expect(store.isMobileOverlayOpen).toBe(false);
   });
 });
 

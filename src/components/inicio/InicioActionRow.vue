@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSlots } from 'vue';
+
 withDefaults(
   defineProps<{
     icon: string;
@@ -8,6 +10,8 @@ withDefaults(
   }>(),
   { interactive: true },
 );
+
+const slots = useSlots();
 </script>
 
 <template>
@@ -16,14 +20,14 @@ withDefaults(
     :type="interactive ? 'button' : undefined"
     :data-testid="testId"
     :class="[
-      'inicio-action-row group flex min-h-11 w-full items-start gap-3 rounded-xl p-2.5 text-left',
+      'inicio-action-row group flex min-h-11 w-full min-w-0 max-w-full items-start gap-3 rounded-xl p-2.5 text-left max-[479px]:gap-2 max-[479px]:p-1.5',
       interactive
         ? 'cursor-pointer transition-[background-color,box-shadow,color] duration-150 ease-out hover:bg-emerald-50/70 hover:ring-1 hover:ring-emerald-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 active:bg-emerald-100/70 dark:hover:bg-emerald-950/30 dark:hover:ring-emerald-800/60 dark:focus-visible:ring-offset-slate-900'
         : 'cursor-default',
     ]"
   >
     <span
-      class="inicio-action-row__icon mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors duration-150"
+      class="inicio-action-row__icon mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm transition-colors duration-150 max-[479px]:h-8 max-[479px]:w-8"
       :class="{
         'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 group-hover:text-emerald-700 dark:bg-emerald-950/40':
           iconTone !== 'slate' && iconTone !== 'amber',
@@ -38,17 +42,25 @@ withDefaults(
     <span class="min-w-0 flex-1">
       <slot />
     </span>
-    <span class="shrink-0 self-start pt-1 text-xs text-gray-400">
+    <span
+      v-if="slots.meta"
+      class="inicio-action-row__meta hidden shrink-0 self-start pt-0.5 text-xs tabular-nums text-gray-400 max-[479px]:inline-block"
+    >
       <slot name="meta" />
     </span>
     <i
       v-if="interactive"
-      class="inicio-action-row__chevron fas fa-chevron-right mt-2.5 shrink-0 text-gray-300 transition-all duration-150 ease-out group-hover:translate-x-0.5 group-hover:text-emerald-600 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+      class="inicio-action-row__chevron fas fa-chevron-right mt-2.5 shrink-0 text-gray-300 transition-all duration-150 ease-out group-hover:translate-x-0.5 group-hover:text-emerald-600 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 max-[479px]:hidden"
     ></i>
   </component>
 </template>
 
 <style scoped>
+.inicio-action-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .inicio-action-row__chevron {
     transition: none;

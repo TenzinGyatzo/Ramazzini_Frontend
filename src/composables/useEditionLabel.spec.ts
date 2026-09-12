@@ -57,11 +57,14 @@ describe('useEditionLabel', () => {
       regulatoryPolicy: createSiresPolicy(),
     } as any;
 
-    const { editionLabel } = useEditionLabel();
+    const { editionLabel, editionVersion, editionVersionPrefixed } = useEditionLabel();
     expect(editionLabel.value).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
     expect(editionLabel.value).toContain('v1.0.');
     expect(editionLabel.value).not.toContain('Ramazzini');
     expect(editionLabel.value).not.toContain('v2.0.0');
+    expect(editionVersionPrefixed.value).toBe(__APP_VERSION_SIRES__);
+    expect(editionVersion.value).toBe(__APP_VERSION_SIRES__.replace(/^v/i, ''));
+    expect(editionVersion.value).not.toContain('v');
   });
 
   it('muestra el folio comercial cuando el régimen es SIN_REGIMEN', () => {
@@ -71,18 +74,21 @@ describe('useEditionLabel', () => {
       regulatoryPolicy: createSinRegimenPolicy(),
     } as any;
 
-    const { editionLabel } = useEditionLabel();
+    const { editionLabel, editionVersion, editionVersionPrefixed } = useEditionLabel();
     expect(editionLabel.value).toBe(`Ramazzini ${__APP_VERSION_COMMERCIAL__}`);
     expect(editionLabel.value).toBe('Ramazzini v2.0.0');
     expect(editionLabel.value).not.toContain('v1.0.3');
     expect(editionLabel.value).not.toContain('SIRES');
+    expect(editionVersionPrefixed.value).toBe('v2.0.0');
+    expect(editionVersion.value).toBe('2.0.0');
   });
 
   it('sin proveedor ni policy muestra Ramazzini sin número', () => {
-    const { editionLabel } = useEditionLabel();
+    const { editionLabel, editionVersion } = useEditionLabel();
     expect(editionLabel.value).toBe('Ramazzini');
     expect(editionLabel.value).not.toContain('v1.0.3');
     expect(editionLabel.value).not.toContain('v2.0.0');
+    expect(editionVersion.value).toBe('');
   });
 
   it('tras upgrade SIN_REGIMEN → SIRES_NOM024 pasa al folio 1.0.x', () => {
@@ -93,8 +99,9 @@ describe('useEditionLabel', () => {
       regulatoryPolicy: createSinRegimenPolicy(),
     } as any;
 
-    const { editionLabel } = useEditionLabel();
+    const { editionLabel, editionVersion } = useEditionLabel();
     expect(editionLabel.value).toBe('Ramazzini v2.0.0');
+    expect(editionVersion.value).toBe('2.0.0');
 
     store.proveedorSalud = {
       ...store.proveedorSalud,
@@ -105,5 +112,7 @@ describe('useEditionLabel', () => {
     expect(editionLabel.value).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
     expect(editionLabel.value).toContain('v1.0.');
     expect(editionLabel.value).not.toContain('v2.0.0');
+    expect(editionVersion.value).toBe(__APP_VERSION_SIRES__.replace(/^v/i, ''));
+    expect(editionVersion.value).not.toContain('v');
   });
 });

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import Sidebar from '../components/sidebar/Sidebar.vue';
 import { useSidebarStore } from '@/stores/sidebar';
 import { RouterView } from 'vue-router';
@@ -8,6 +9,9 @@ import {
 } from '@/composables/useNavigationProgress';
 
 const sidebar = useSidebarStore();
+const contentOffset = computed(() =>
+  sidebar.isSmallScreen ? sidebar.sidebarWidthCollapsed : sidebar.sidebarWidth,
+);
 </script>
 
 <template>
@@ -18,7 +22,13 @@ const sidebar = useSidebarStore();
     aria-hidden="true"
   />
   <Sidebar />
-  <div :style="{ 'margin-left': sidebar.isSmallScreen ? sidebar.sidebarWidthCollapsed : sidebar.sidebarWidth }">
+  <div
+    class="min-w-0"
+    :style="{
+      marginLeft: contentOffset,
+      width: `calc(100% - ${contentOffset})`,
+    }"
+  >
     <RouterView />
   </div>
 </template>

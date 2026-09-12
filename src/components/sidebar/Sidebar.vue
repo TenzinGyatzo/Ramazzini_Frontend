@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watch, onMounted, computed, inject } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, inject } from 'vue';
 import SidebarLink from './SidebarLink.vue';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -81,6 +81,23 @@ watch(() => empresas.currentEmpresaId, (newEmpresaId, oldEmpresaId) => {
   }
 });
 
+watch(() => route.fullPath, () => {
+  if (sidebar.isMobileOverlayOpen) {
+    sidebar.collapseSidebar();
+  }
+});
+
+watch(() => sidebar.isMobileOverlayOpen, (open) => {
+  if (typeof document === 'undefined') return;
+  document.body.style.overflow = open ? 'hidden' : '';
+}, { immediate: true });
+
+onUnmounted(() => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = '';
+  }
+});
+
 const documentTypeLabels = {
   constanciaAptitud: "Constancia de Aptitud",
   aptitud: "Aptitud al Puesto",
@@ -114,12 +131,39 @@ const showDocumentoSection = computed(() => !!user.user && documentos.currentTyp
 const showAnalyticsSection = computed(() => !!user.user && empresas.currentEmpresaId && hasVisitedDashboard.value);
 const showRiesgosSection = computed(() => !!user.user && empresas.currentEmpresaId && hasVisitedRiesgosTrabajo.value);
 
-const { editionLabel } = useEditionLabel();
+const { editionLabel, editionVersion, editionVersionPrefixed } = useEditionLabel();
+
+const footerEditionText = computed(() => {
+  if (sidebar.collapsed && sidebar.isSmallScreen) {
+    return editionVersion.value;
+  }
+  if (sidebar.collapsed && editionVersionPrefixed.value) {
+    return editionVersionPrefixed.value;
+  }
+  return editionLabel.value;
+});
 
 </script>
 
 <template>
-  <div class="sidebar" :class="{ 'collapsed': sidebar.collapsed }" :style="{ width: sidebar.sidebarWidth }" @click="sidebar.toggleSidebar()">
+  <Teleport to="body">
+    <div
+      v-if="sidebar.isMobileOverlayOpen"
+      class="sidebar-backdrop"
+      data-testid="sidebar-backdrop"
+      aria-hidden="true"
+      @click="sidebar.collapseSidebar()"
+    />
+  </Teleport>
+  <div
+    class="sidebar"
+    :class="{
+      'collapsed': sidebar.collapsed,
+      'is-overlay': sidebar.isMobileOverlayOpen,
+    }"
+    :style="{ width: sidebar.sidebarWidth }"
+    @click="sidebar.toggleSidebar()"
+  >
     
     <!-- Header del Sidebar -->
     <div class="sidebar-header">
@@ -375,11 +419,12 @@ const { editionLabel } = useEditionLabel();
         <span v-if="!sidebar.collapsed">Cerrar sesión</span>
       </button>
       <p
+        v-if="footerEditionText"
         class="sidebar-version"
         data-testid="edition-label"
         :title="editionLabel"
       >
-        {{ editionLabel }}
+        {{ footerEditionText }}
       </p>
     </div>
   </div>
@@ -452,6 +497,14 @@ const { editionLabel } = useEditionLabel();
 
 .sidebar.collapsed {
   width: 5rem !important;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-sidebar) + 1);
+  background: rgba(15, 23, 42, 0.45);
+  cursor: pointer;
 }
 
 /* Header */
@@ -646,30 +699,75 @@ const { editionLabel } = useEditionLabel();
   white-space: nowrap;
 }
 
-/* Responsive - Mantener funcionalidad original en pantallas pequeñas */
+/* Responsive: rail más estrecho + overlay sin empujar el contenido */
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
     z-index: var(--z-sidebar);
-    width: 100% !important;
-    max-width: 300px;
+    width: min(220px, 72vw) !important;
+    max-width: min(220px, 72vw);
   }
-  
+
   .sidebar.collapsed {
-    width: 5rem !important;
-    max-width: 5rem;
+    width: 3.5rem !important;
+    max-width: 3.5rem;
   }
-  
+
+  .sidebar.is-overlay {
+    z-index: calc(var(--z-sidebar) + 2);
+    box-shadow: 8px 0 28px var(--sidebar-shadow);
+  }
+
+  .sidebar-header {
+    padding: 1rem 0.5rem;
+  }
+
+  .sidebar-content {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .sidebar.collapsed .sidebar-content {
+    padding: 0.75rem 0.375rem;
+  }
+
+  .logo-letter {
+    font-size: 1rem;
+  }
+
   .logo-expanded {
     gap: 0.5rem;
   }
-  
+
   .logo-text h1 {
     font-size: 1rem;
   }
-  
+
   .logo-text p {
     font-size: 0.7rem;
+  }
+
+  .sidebar.collapsed .sidebar-footer {
+    padding: 0.5rem 0.375rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .sidebar.collapsed .collapse-button,
+  .sidebar.collapsed .sidebar-logout {
+    width: 2rem;
+    height: 2rem;
+    margin-top: 0;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .sidebar.collapsed .sidebar-version {
+    margin: 0;
+    font-size: 0.625rem;
+    letter-spacing: 0;
+    line-height: 1.2;
   }
 }
 

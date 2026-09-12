@@ -241,59 +241,75 @@ watch(
       </Transition>
 
       <div class="min-h-screen">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="centros-page mx-auto min-w-0 max-w-7xl px-4 sm:px-6 lg:px-8">
           <!-- Header moderno con información de la empresa -->
-          <div class="centros-empresa-header bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden mb-8">
-            <div class="p-6">
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div class="centros-empresa-header mb-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+            <div class="centros-empresa-header__body p-6">
+              <div class="flex min-w-0 flex-col sm:flex-row sm:items-center sm:justify-between">
                 <!-- Información de la empresa -->
-                <div class="flex items-center gap-4 mb-4 sm:mb-0">
+                <div class="centros-empresa-identity mb-4 flex min-w-0 items-center gap-4 sm:mb-0">
                   <!-- Logo o placeholder -->
                   <div class="flex-shrink-0">
                     <img
                       v-if="empresas.currentEmpresa?.logotipoEmpresa?.data"
                       :src="'/uploads/logos/' + empresas.currentEmpresa.logotipoEmpresa.data + '?t=' + empresas.currentEmpresa.updatedAt"
                       :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
-                      class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg shadow-lg"
+                      class="centros-empresa-logo h-16 w-16 rounded-lg object-contain shadow-lg sm:h-20 sm:w-20"
                     />
-                    <div v-else class="centros-empresa-logo-placeholder w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                      <i class="centros-empresa-logo-placeholder-icon fas fa-building text-gray-400 text-xl"></i>
+                    <div v-else class="centros-empresa-logo-placeholder centros-empresa-logo flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-100 to-gray-200 sm:h-20 sm:w-20">
+                      <i class="centros-empresa-logo-placeholder-icon fas fa-building text-xl text-gray-400"></i>
                     </div>
                   </div>
                   
                   <!-- Información de la empresa -->
-                  <div class="flex-1 min-w-0">
-                    <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+                  <div class="min-w-0 flex-1">
+                    <h1
+                      class="centros-empresa-title text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl"
+                      :title="empresas.currentEmpresa?.nombreComercial || 'Cargando empresa...'"
+                    >
                       {{ empresas.currentEmpresa?.nombreComercial || 'Cargando empresa...' }}
                     </h1>
-                    <p v-if="empresas.currentEmpresa?.razonSocial" class="empresa-item-subtitle text-sm sm:text-base text-gray-600 mt-1 truncate">
+                    <p
+                      v-if="empresas.currentEmpresa?.razonSocial"
+                      class="empresa-item-subtitle centros-empresa-subtitle mt-1 text-sm text-gray-600 sm:text-base"
+                      :title="empresas.currentEmpresa?.razonSocial"
+                    >
                       {{ empresas.currentEmpresa?.razonSocial }}
                     </p>
-                    <p v-else class="text-sm sm:text-base text-gray-400 italic mt-1 truncate">
+                    <p v-else class="centros-empresa-subtitle mt-1 truncate text-sm italic text-gray-400 sm:text-base">
                       Razón social no registrada
                     </p>
-                    <div class="flex items-center gap-2 mt-2">
-                      <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <div class="mt-2 flex items-center gap-2">
+                      <div class="h-2 w-2 shrink-0 rounded-full bg-emerald-500"></div>
                       <span v-if="loadingTrabajadores" class="text-xs text-gray-400">
                         <i class="fas fa-spinner fa-spin mr-1"></i>
                         Contando trabajadores...
                       </span>
-                      <span v-else class="empresa-item-subtitle text-xs text-gray-500">
-                        {{ totalTrabajadores || 0 }} {{ (totalTrabajadores || 0) === 1 ? 'trabajador' : 'trabajadores' }} {{ (totalTrabajadores || 0) === 1 ? 'registrado' : 'registrados' }}
+                      <span
+                        v-else
+                        class="empresa-item-subtitle centros-empresa-count text-xs text-gray-500"
+                        :title="`${totalTrabajadores || 0} ${(totalTrabajadores || 0) === 1 ? 'trabajador registrado' : 'trabajadores registrados'}`"
+                      >
+                        <span class="centros-empresa-count-full">
+                          {{ totalTrabajadores || 0 }} {{ (totalTrabajadores || 0) === 1 ? 'trabajador' : 'trabajadores' }} {{ (totalTrabajadores || 0) === 1 ? 'registrado' : 'registrados' }}
+                        </span>
+                        <span class="centros-empresa-count-short">
+                          {{ totalTrabajadores || 0 }} {{ (totalTrabajadores || 0) === 1 ? 'trabajador' : 'trabajadores' }}
+                        </span>
                       </span>
                     </div>
                   </div>
                 </div>
                 
                 <!-- Botón de acción principal -->
-                <div v-if="centrosTrabajo.centrosTrabajo.length > 0" class="flex-shrink-0">
+                <div v-if="centrosTrabajo.centrosTrabajo.length > 0" class="min-w-0 flex-shrink-0">
                   <div class="w-full sm:w-auto">
                     <button 
                       type="button"
                       @click="openModal(null)"
                       :disabled="!canManageCentrosTrabajo"
                       :class="[
-                        'w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-normal rounded-xl transition-all duration-300 transform focus:outline-none focus:ring-4 focus:ring-emerald-200 active:scale-95 shadow-lg',
+                        'centros-empresa-btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-normal rounded-xl transition-all duration-300 transform focus:outline-none focus:ring-4 focus:ring-emerald-200 active:scale-95 shadow-lg',
                         canManageCentrosTrabajo 
                           ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-600 hover:to-emerald-700 text-white hover:scale-105 hover:shadow-xl' 
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
@@ -308,14 +324,14 @@ watch(
               </div>
               
               <!-- Otras vistas integradas en el header -->
-              <div v-if="centrosTrabajo.centrosTrabajo.length > 0" class="mt-6 pt-6 border-t border-gray-100">
+              <div v-if="centrosTrabajo.centrosTrabajo.length > 0" class="centros-empresa-more mt-6 border-t border-gray-100 pt-6">
                 
                 <!-- Botones de otras vistas -->
-                <div class="flex flex-col sm:flex-row justify-center gap-3">
+                <div class="centros-empresa-actions flex flex-col justify-center gap-3 sm:flex-row">
                   <RouterLink
                     v-if="canAccessDashboardSalud && empresas.currentEmpresa && totalTrabajadores > 0"
                     :to="{ name: 'dashboard-empresa', params: { idEmpresa: empresas.currentEmpresa._id } }"
-                    class="nav-action-link flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    class="centros-empresa-btn-secondary nav-action-link flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-300 hover:from-emerald-600 hover:to-green-600 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     title="Ver dashboard de salud">
                     <i class="fas fa-chart-line text-sm"></i>
                     <span>Estadísticas de Salud</span>
@@ -324,7 +340,7 @@ watch(
                     v-else-if="canAccessDashboardSalud"
                     type="button"
                     disabled
-                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white text-sm font-medium rounded-lg opacity-50 cursor-not-allowed"
+                    class="centros-empresa-btn-secondary flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-sm font-medium text-white opacity-50 cursor-not-allowed"
                     title="No hay trabajadores registrados">
                     <i class="fas fa-chart-line text-sm"></i>
                     <span>Estadísticas de Salud</span>
@@ -332,7 +348,7 @@ watch(
                   <RouterLink
                     v-if="esProveedorMexicano && canAccessRiesgosTrabajo && empresas.currentEmpresa && tieneRiesgosTrabajo"
                     :to="{ name: 'riesgos-trabajo', params: { idEmpresa: empresas.currentEmpresa._id } }"
-                    class="nav-action-link flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    class="centros-empresa-btn-secondary nav-action-link flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-300 hover:from-purple-600 hover:to-indigo-600 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-200"
                     title="Ver riesgos de trabajo">
                     <i class="fas fa-hard-hat text-sm"></i>
                     <span>Riesgos de Trabajo</span>
@@ -341,7 +357,7 @@ watch(
                     v-else-if="esProveedorMexicano && canAccessRiesgosTrabajo"
                     type="button"
                     disabled
-                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-medium rounded-lg opacity-50 cursor-not-allowed"
+                    class="centros-empresa-btn-secondary flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white opacity-50 cursor-not-allowed"
                     :title="!tieneRiesgosTrabajo ? 'No hay riesgos de trabajo registrados' : 'Ver riesgos de trabajo'">
                     <i class="fas fa-hard-hat text-sm"></i>
                     <span>Riesgos de Trabajo</span>
@@ -367,9 +383,9 @@ watch(
                   <div>
                     <div
                       v-if="empresas.currentEmpresa && centrosTrabajo.centrosTrabajo.length > 0"
-                      class="grid grid-cols-1 lg:grid-cols-2 gap-4"
+                      class="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2"
                     >
-                      <div v-for="centro in centrosTrabajo.centrosTrabajo" :key="centro._id">
+                      <div v-for="centro in centrosTrabajo.centrosTrabajo" :key="centro._id" class="min-w-0">
                         <CentroTrabajoItem
                           :centro="centro"
                           :empresa="empresas.currentEmpresa"
@@ -570,11 +586,108 @@ button:active {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-/* Responsive design mejorado */
-@media (max-width: 640px) {
-  .max-w-7xl {
-    padding-left: 1rem;
-    padding-right: 1rem;
+.centros-empresa-title,
+.centros-empresa-subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.centros-empresa-count-short {
+  display: none;
+}
+
+@media (max-width: 479px) {
+  .centros-page {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .centros-empresa-header {
+    margin-bottom: 1rem;
+  }
+
+  .centros-empresa-header__body {
+    padding: 0.75rem;
+  }
+
+  .centros-empresa-identity {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .centros-empresa-logo {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .centros-empresa-logo-placeholder-icon {
+    font-size: 1rem;
+  }
+
+  .centros-empresa-title,
+  .centros-empresa-subtitle {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow-wrap: anywhere;
+  }
+
+  .centros-empresa-title {
+    font-size: 1.05rem;
+    line-height: 1.25;
+  }
+
+  .centros-empresa-subtitle {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    margin-top: 0.25rem;
+  }
+
+  .centros-empresa-count-full {
+    display: none;
+  }
+
+  .centros-empresa-count-short {
+    display: inline;
+  }
+
+  .centros-empresa-btn-primary {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.75rem;
+  }
+
+  .centros-empresa-more {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+  }
+
+  .centros-empresa-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .centros-empresa-btn-secondary {
+    min-width: 0;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    text-align: center;
+    gap: 0.35rem;
+  }
+
+  .centros-empresa-btn-secondary span {
+    white-space: normal;
+  }
+
+  .centros-empresa-btn-primary:hover,
+  .centros-empresa-btn-secondary:hover {
+    transform: none;
   }
 }
 </style>

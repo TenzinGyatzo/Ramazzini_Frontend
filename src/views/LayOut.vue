@@ -858,7 +858,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
 <template>
   <main
     :class="[
-      'flex flex-col items-center p-4 md:p-10 md:w-full overflow-x-auto',
+      'flex w-full max-w-full min-w-0 flex-col items-center overflow-x-auto p-4 md:p-10',
       showWelcomeHome ? 'home-layout min-h-dvh max-h-dvh overflow-y-auto' : 'min-h-screen',
     ]"
   >

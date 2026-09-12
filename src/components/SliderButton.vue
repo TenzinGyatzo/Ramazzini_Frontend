@@ -77,4 +77,26 @@ defineProps({
 .button:active {
   border: 1px solid #146c54;
 }
+
+@media (max-width: 479px) {
+  .button {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .button .button__text {
+    width: auto;
+    flex: 1;
+  }
+
+  .button .button__icon {
+    right: 0;
+    transform: none;
+  }
+
+  .button:hover .button__icon {
+    width: 45px;
+    transform: none;
+  }
+}
 </style>

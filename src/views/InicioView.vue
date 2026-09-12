@@ -261,12 +261,12 @@ function irAConsejo() {
 <template>
   <Transition appear mode="out-in" name="slide-up">
   <div
-    class="inicio-view mx-auto flex w-full flex-col items-center"
+    class="inicio-view mx-auto flex w-full min-w-0 max-w-full flex-col items-center"
     :class="isLoading || showHub ? 'grow justify-center' : ''"
   >
     <section
       v-if="isLoading || (showHub && resumen)"
-      class="w-full max-w-[70rem] px-4 sm:px-6"
+      class="w-full min-w-0 max-w-[70rem] px-4 sm:px-6 max-[479px]:px-3"
       :data-testid="isLoading ? 'inicio-loading' : 'inicio-hub'"
       :aria-busy="isLoading ? 'true' : undefined"
     >
@@ -389,18 +389,19 @@ function irAConsejo() {
           />
         </div>
 
-        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+        <div class="mt-6 grid min-w-0 gap-4 lg:grid-cols-2">
           <section
             data-testid="inicio-expedientes"
-            class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+            class="min-w-0 max-w-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm max-[479px]:p-3 dark:border-slate-700 dark:bg-slate-800"
           >
-            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 max-[479px]:mb-3 max-[479px]:text-base dark:text-slate-100">
               Expedientes recientes
             </h2>
-            <ul v-if="resumen.expedientesRecientes.length" class="space-y-2">
+            <ul v-if="resumen.expedientesRecientes.length" class="min-w-0 space-y-2">
               <li
                 v-for="exp in resumen.expedientesRecientes"
                 :key="exp.idTrabajador"
+                class="min-w-0"
               >
                 <InicioActionRow
                   icon="fas fa-user"
@@ -409,12 +410,12 @@ function irAConsejo() {
                   @click="irAExpediente(exp.idEmpresa, exp.idCentroTrabajo, exp.idTrabajador)"
                 >
                   <span
-                    class="block truncate font-medium text-gray-900 dark:text-slate-100"
+                    class="inicio-hub-title block font-medium text-gray-900 dark:text-slate-100"
                     :title="exp.nombreTrabajador"
                   >{{ exp.nombreTrabajador }}</span>
                   <span
                     v-if="exp.nombreComercial || exp.nombreCentro"
-                    class="block truncate text-sm text-gray-500 dark:text-slate-400"
+                    class="inicio-hub-subtitle block text-sm text-gray-500 dark:text-slate-400"
                     :title="metaEmpresaCentro(exp.nombreComercial, exp.nombreCentro)"
                   >{{ metaEmpresaCentro(exp.nombreComercial, exp.nombreCentro) }}</span>
                   <span class="block truncate text-sm text-gray-500 dark:text-slate-400">
@@ -422,10 +423,15 @@ function irAConsejo() {
                   </span>
                   <span
                     v-if="metaActualizado(exp.actorUsername, exp.ultimaActividad)"
-                    class="mt-0.5 block truncate text-xs text-gray-400"
+                    class="inicio-hub-meta-full mt-0.5 block truncate text-xs text-gray-400"
                   >
                     {{ metaActualizado(exp.actorUsername, exp.ultimaActividad) }}
                   </span>
+                  <template #meta>
+                    <span :title="metaActualizado(exp.actorUsername, exp.ultimaActividad)">
+                      {{ formatInicioRelativeTime(exp.ultimaActividad) }}
+                    </span>
+                  </template>
                 </InicioActionRow>
               </li>
             </ul>
@@ -436,24 +442,25 @@ function irAConsejo() {
 
           <section
             data-testid="inicio-clientes"
-            class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+            class="min-w-0 max-w-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm max-[479px]:p-3 dark:border-slate-700 dark:bg-slate-800"
           >
-            <div class="mb-4 flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100">
+            <div class="mb-4 flex min-w-0 items-center justify-between gap-2 max-[479px]:mb-3">
+              <h2 class="min-w-0 text-lg font-semibold text-gray-900 max-[479px]:text-base dark:text-slate-100">
                 Clientes recientes
               </h2>
               <RouterLink
                 v-if="resumen.clientesRecientes.length"
                 :to="{ name: 'empresas' }"
-                class="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                class="shrink-0 text-sm font-medium text-emerald-600 hover:text-emerald-700"
               >
                 Ver todos
               </RouterLink>
             </div>
-            <ul v-if="resumen.clientesRecientes.length" class="space-y-2">
+            <ul v-if="resumen.clientesRecientes.length" class="min-w-0 space-y-2">
               <li
                 v-for="cliente in resumen.clientesRecientes"
                 :key="cliente.idCentroTrabajo || cliente.idEmpresa || cliente.nombreComercial"
+                class="min-w-0"
               >
                 <InicioActionRow
                   icon="fas fa-industry"
@@ -462,20 +469,25 @@ function irAConsejo() {
                   @click="irAClientes(cliente)"
                 >
                   <span
-                    class="block truncate font-medium text-gray-900 dark:text-slate-100"
+                    class="inicio-hub-title block font-medium text-gray-900 dark:text-slate-100"
                     :title="cliente.nombreComercial"
                   >{{ cliente.nombreComercial }}</span>
                   <span
                     v-if="cliente.nombreCentro"
-                    class="block truncate text-sm text-gray-500 dark:text-slate-400"
+                    class="inicio-hub-subtitle block text-sm text-gray-500 dark:text-slate-400"
                     :title="cliente.nombreCentro"
                   >{{ cliente.nombreCentro }}</span>
                   <span
                     v-if="metaActualizado(cliente.actorUsername, cliente.ultimaActividad)"
-                    class="mt-0.5 block truncate text-xs text-gray-400"
+                    class="inicio-hub-meta-full mt-0.5 block truncate text-xs text-gray-400"
                   >
                     {{ metaActualizado(cliente.actorUsername, cliente.ultimaActividad) }}
                   </span>
+                  <template #meta>
+                    <span :title="metaActualizado(cliente.actorUsername, cliente.ultimaActividad)">
+                      {{ formatInicioRelativeTime(cliente.ultimaActividad) }}
+                    </span>
+                  </template>
                 </InicioActionRow>
               </li>
             </ul>
@@ -493,9 +505,9 @@ function irAConsejo() {
 
         <section
           v-if="resumen.atencion.length"
-          class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+          class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm max-[479px]:p-3 dark:border-slate-700 dark:bg-slate-800"
         >
-          <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-slate-100">
+          <h2 class="mb-4 text-lg font-semibold text-gray-900 max-[479px]:mb-3 max-[479px]:text-base dark:text-slate-100">
             Requieren atención
           </h2>
           <ul class="space-y-2">
@@ -518,19 +530,22 @@ function irAConsejo() {
 
         <aside
           v-if="resumen.consejo"
-          class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/80"
+          data-testid="inicio-consejo"
+          class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 max-[479px]:flex-col max-[479px]:items-stretch max-[479px]:gap-2 dark:border-slate-700 dark:bg-slate-800/80"
         >
-          <i class="fas fa-lightbulb shrink-0 text-emerald-600" aria-hidden="true"></i>
-          <span class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-            Consejo
-          </span>
-          <p class="min-w-0 flex-1 text-sm text-slate-700 dark:text-slate-200">
+          <div class="flex shrink-0 items-center gap-2">
+            <i class="fas fa-lightbulb text-emerald-600" aria-hidden="true"></i>
+            <span class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+              Consejo
+            </span>
+          </div>
+          <p class="min-w-0 flex-1 text-sm text-slate-700 max-[479px]:w-full max-[479px]:flex-none max-[479px]:text-pretty max-[479px]:leading-snug dark:text-slate-200">
             {{ resumen.consejo.texto }}
           </p>
           <button
             v-if="resumen.consejo.enlace"
             type="button"
-            class="shrink-0 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+            class="shrink-0 text-sm font-medium text-emerald-600 hover:text-emerald-700 max-[479px]:self-start"
             @click="irAConsejo"
           >
             Abrir
@@ -647,6 +662,31 @@ function irAConsejo() {
 </template>
 
 <style scoped>
+.inicio-hub-title,
+.inicio-hub-subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 479px) {
+  .inicio-hub-title,
+  .inicio-hub-subtitle {
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
+  }
+
+  .inicio-hub-meta-full {
+    display: none;
+  }
+}
+
 .slide-up-enter-active {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }

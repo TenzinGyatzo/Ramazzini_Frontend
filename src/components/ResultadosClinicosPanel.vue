@@ -4,7 +4,7 @@
     <Transition appear name="panel-overlay">
       <div
         v-if="isOpen"
-        class="fixed inset-0 bg-black bg-opacity-50 z-20"
+        class="fixed inset-0 bg-black bg-opacity-50 z-[60]"
         :class="{ 'modal-backdrop-pulse': dismissPulse }"
         @click="handleDismiss"
       ></div>
@@ -15,7 +15,7 @@
       <div
         v-if="isOpen"
         ref="drawerRef"
-        class="resultados-clinicos-panel fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-30 flex flex-col"
+        class="resultados-clinicos-panel fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-[61] flex flex-col"
         :class="{ 'modal-dismiss-pulse': dismissPulse }"
       >
         <!-- Header -->
@@ -749,7 +749,7 @@
       <Teleport to="body">
         <Transition name="modal-fade" appear>
           <div v-if="showPdfViewer"
-            class="resultados-clinicos-panel-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-[60]"
+            class="resultados-clinicos-panel-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-[70]"
             @click.self="cerrarPdf">
             
             <!-- Header del visor -->
@@ -808,7 +808,7 @@
       <Teleport to="body">
         <Transition name="modal-fade" appear>
           <div v-if="showImageViewer"
-            class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-[60]"
+            class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-[70]"
             @click.self="cerrarImagen">
             
             <div class="absolute top-0 left-0 right-0 bg-white bg-opacity-95 backdrop-blur-sm border-b border-gray-200 z-10">

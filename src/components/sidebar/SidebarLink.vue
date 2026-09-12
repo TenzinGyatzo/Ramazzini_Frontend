@@ -26,6 +26,12 @@ const showTooltip = computed(() => {
     return sidebar.collapsed && props.tooltip && isHovered.value;
 });
 
+function onNavigate() {
+    if (sidebar.isMobileOverlayOpen) {
+        sidebar.collapseSidebar();
+    }
+}
+
 const tooltipStyle = computed(() => {
     if (!linkContainerRef.value || !showTooltip.value) {
         return {};
@@ -33,7 +39,7 @@ const tooltipStyle = computed(() => {
     
     try {
         const rect = linkContainerRef.value.getBoundingClientRect();
-        const sidebarWidth = sidebar.collapsed ? 80 : 280;
+        const sidebarWidth = Number.parseInt(sidebar.sidebarWidth, 10) || 80;
         
         return {
             position: 'fixed' as const,
@@ -49,12 +55,13 @@ const tooltipStyle = computed(() => {
 </script>
 
 <template>
-    <div class="link-container" 
+    <div class="link-container"
+         :class="{ 'is-icon-only': sidebar.collapsed }"
          @mouseenter="isHovered = true" 
          @mouseleave="isHovered = false"
          ref="linkContainerRef">
         
-        <RouterLink :to="to" class="link" :class="{ 'active': isActive }" @click.stop>
+        <RouterLink :to="to" class="link" :class="{ 'active': isActive }" @click.stop="onNavigate">
             <div class="icon-container">
                 <i class="icon" :class="icon"></i>
                 <div v-if="badge" class="badge">{{ badge }}</div>
@@ -283,7 +290,7 @@ const tooltipStyle = computed(() => {
 /* Responsive */
 @media (max-width: 768px) {
     .link {
-        padding: 0.5rem 0.75rem;
+        padding: 0.5rem 0.45rem;
         min-height: 3rem;
     }
     
@@ -301,6 +308,29 @@ const tooltipStyle = computed(() => {
         font-size: 0.8rem;
         padding: 0.625rem 0.875rem;
         min-width: 120px;
+    }
+
+    .is-icon-only .link {
+        justify-content: center;
+        padding: 0.375rem 0;
+        min-height: 0;
+        margin: 0.2rem 0;
+    }
+
+    .is-icon-only .link:hover,
+    .is-icon-only .link.active {
+        transform: none;
+    }
+
+    .is-icon-only .icon-container {
+        width: 2rem;
+        height: 2rem;
+        margin-right: 0;
+    }
+
+    .is-icon-only .link:hover .icon-container,
+    .is-icon-only .link.active .icon-container {
+        transform: none;
     }
 }
 </style>

@@ -547,18 +547,4 @@ onMounted(() => {
   margin-left: 0.125rem;
   cursor: pointer;
 }
-.ila-section-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(148 163 184 / 0.65) transparent;
-}
-.ila-section-scroll::-webkit-scrollbar {
-  width: 3px;
-}
-.ila-section-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.ila-section-scroll::-webkit-scrollbar-thumb {
-  background-color: rgb(148 163 184 / 0.65);
-  border-radius: 9999px;
-}
 </style>

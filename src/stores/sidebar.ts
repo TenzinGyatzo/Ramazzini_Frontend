@@ -1,9 +1,40 @@
 import { defineStore } from "pinia";
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch } from "vue";
 import { useEmpresasStore } from "./empresas";
 import { useCentrosTrabajoStore } from "./centrosTrabajo";
 import { useTrabajadoresStore } from "./trabajadores";
 import { useDocumentosStore } from "./documentos";
+
+export const SMALL_SCREEN_BREAKPOINT = 768;
+const SIDEBAR_WIDTH = 230;
+const SIDEBAR_WIDTH_COLLAPSED = 80;
+const SIDEBAR_WIDTH_MOBILE = 220;
+const SIDEBAR_WIDTH_COLLAPSED_MOBILE = 56;
+
+function readViewportWidth(): number {
+  return typeof window !== "undefined" ? window.innerWidth : 1024;
+}
+
+function readIsSmallScreen(width = readViewportWidth()): boolean {
+  return width < SMALL_SCREEN_BREAKPOINT;
+}
+
+function readDesktopCollapsedPreference(): boolean {
+  try {
+    const stored = localStorage.getItem("sidebarCollapsed");
+    return stored === "true" || !stored;
+  } catch {
+    return true;
+  }
+}
+
+function persistDesktopCollapsed(value: boolean) {
+  try {
+    localStorage.setItem("sidebarCollapsed", value.toString());
+  } catch {
+    // ignore
+  }
+}
 
 export type InitializeStateResult = {
   redirectedTrabajadorId?: string;
@@ -135,53 +166,94 @@ export const useSidebarStore = defineStore("sidebar", () => {
     return {};
   }
 
+  const viewportWidth = ref(readViewportWidth());
+  const isSmallScreen = ref(readIsSmallScreen(viewportWidth.value));
   const collapsed = ref(
-    localStorage.getItem("sidebarCollapsed") === "true" || !localStorage.getItem("sidebarCollapsed")
+    isSmallScreen.value ? true : readDesktopCollapsedPreference(),
   );
 
-  const isSmallScreen = ref(window.innerWidth < 640);
-
-  function handleResize() {
-    isSmallScreen.value = window.innerWidth < 640;
+  function collapsedWidthPx(): number {
+    return isSmallScreen.value
+      ? SIDEBAR_WIDTH_COLLAPSED_MOBILE
+      : SIDEBAR_WIDTH_COLLAPSED;
   }
 
-  // Función para actualizar las variables CSS del sidebar
-  function updateCSSVariables() {
-    const root = document.documentElement;
-    const sidebarWidth = collapsed.value ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH;
-    const sidebarDifference = collapsed.value ? 0 : SIDEBAR_WIDTH - SIDEBAR_WIDTH_COLLAPSED; // 175px cuando expandido
+  function expandedWidthPx(): number {
+    if (isSmallScreen.value) {
+      return Math.min(
+        SIDEBAR_WIDTH_MOBILE,
+        Math.round(viewportWidth.value * 0.72),
+      );
+    }
+    return SIDEBAR_WIDTH;
+  }
 
-    root.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
-    root.style.setProperty('--content-margin', `${sidebarWidth}px`);
-    root.style.setProperty('--sidebar-difference', `${sidebarDifference}px`);
+  function visualWidthPx(): number {
+    return collapsed.value ? collapsedWidthPx() : expandedWidthPx();
+  }
+
+  function updateCSSVariables() {
+    if (typeof document === "undefined") return;
+
+    const visualWidth = visualWidthPx();
+    const contentMargin = isSmallScreen.value
+      ? collapsedWidthPx()
+      : visualWidth;
+    const sidebarDifference =
+      isSmallScreen.value || collapsed.value
+        ? 0
+        : SIDEBAR_WIDTH - SIDEBAR_WIDTH_COLLAPSED;
+
+    const root = document.documentElement;
+    root.style.setProperty("--sidebar-width", `${visualWidth}px`);
+    root.style.setProperty("--content-margin", `${contentMargin}px`);
+    root.style.setProperty("--sidebar-difference", `${sidebarDifference}px`);
+  }
+
+  function applySmallScreenState(nextSmall: boolean) {
+    const wasSmall = isSmallScreen.value;
+    isSmallScreen.value = nextSmall;
+
+    if (nextSmall && !wasSmall) {
+      collapsed.value = true;
+    } else if (!nextSmall && wasSmall) {
+      collapsed.value = readDesktopCollapsedPreference();
+    }
+  }
+
+  function handleResize() {
+    viewportWidth.value = readViewportWidth();
+    applySmallScreenState(readIsSmallScreen(viewportWidth.value));
+    updateCSSVariables();
   }
 
   function toggleSidebar() {
     collapsed.value = !collapsed.value;
-    localStorage.setItem("sidebarCollapsed", collapsed.value.toString());
-    updateCSSVariables(); // Actualizar variables CSS cuando cambie el estado
   }
 
-  const SIDEBAR_WIDTH = 230;
-  const SIDEBAR_WIDTH_COLLAPSED = 80;
-  const sidebarWidth = computed(
-    () => `${collapsed.value ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH}px`
+  function collapseSidebar() {
+    if (!collapsed.value) {
+      collapsed.value = true;
+    }
+  }
+
+  const sidebarWidth = computed(() => `${visualWidthPx()}px`);
+  const sidebarWidthCollapsed = computed(() => `${collapsedWidthPx()}px`);
+  const isMobileOverlayOpen = computed(
+    () => isSmallScreen.value && !collapsed.value,
   );
-  const sidebarWidthCollapsed = computed(() => `${SIDEBAR_WIDTH_COLLAPSED}px`);
 
   watch(collapsed, (newValue) => {
-    localStorage.setItem("sidebarCollapsed", newValue.toString());
-    updateCSSVariables(); // Actualizar variables CSS cuando cambie el estado
+    if (!isSmallScreen.value) {
+      persistDesktopCollapsed(newValue);
+    }
+    updateCSSVariables();
   });
 
-  onMounted(() => {
-    window.addEventListener("resize", handleResize); // Escucha cambios en el tamaño de la pantalla
-    updateCSSVariables(); // Inicializar variables CSS al montar
-  });
-
-  onBeforeUnmount(() => {
-    window.removeEventListener("resize", handleResize); // Limpieza al desmontar
-  });
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", handleResize);
+    updateCSSVariables();
+  }
 
   function invalidatePendingInitialization() {
     initSeq += 1;
@@ -189,10 +261,12 @@ export const useSidebarStore = defineStore("sidebar", () => {
 
   return {
     isSmallScreen,
+    isMobileOverlayOpen,
     collapsed,
     initializeState,
     invalidatePendingInitialization,
     toggleSidebar,
+    collapseSidebar,
     sidebarWidth,
     sidebarWidthCollapsed,
     updateCSSVariables,

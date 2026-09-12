@@ -11,6 +11,14 @@
   --z-modal: 50;
 }
 
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 56px;
+    --content-margin: 56px;
+    --sidebar-difference: 0px;
+  }
+}
+
 /* Modales full-screen por encima del sidebar */
 .modal.fixed {
   z-index: var(--z-modal);
@@ -138,4 +146,56 @@ a.layout-nav-link:not([class*='text-white']):not([class*='text-emerald']):not([c
   align-items: center;
   justify-content: center;
   line-height: 1.75rem;
+}
+
+/* Scrollbars sutiles en documentos clínicos (steps V2, visualizadores y página baja) */
+[class*='-section-scroll'],
+[class*='visualizador-'],
+.clinical-step-scroll,
+html.clinical-step-scroll,
+html.clinical-step-scroll * {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 0.65) transparent;
+}
+
+[class*='-section-scroll']::-webkit-scrollbar,
+[class*='visualizador-']::-webkit-scrollbar,
+.clinical-step-scroll::-webkit-scrollbar,
+html.clinical-step-scroll::-webkit-scrollbar,
+html.clinical-step-scroll *::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+[class*='-section-scroll']::-webkit-scrollbar-track,
+[class*='visualizador-']::-webkit-scrollbar-track,
+.clinical-step-scroll::-webkit-scrollbar-track,
+html.clinical-step-scroll::-webkit-scrollbar-track,
+html.clinical-step-scroll *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[class*='-section-scroll']::-webkit-scrollbar-thumb,
+[class*='visualizador-']::-webkit-scrollbar-thumb,
+.clinical-step-scroll::-webkit-scrollbar-thumb,
+html.clinical-step-scroll::-webkit-scrollbar-thumb,
+html.clinical-step-scroll *::-webkit-scrollbar-thumb {
+  background-color: rgb(148 163 184 / 0.65);
+  border-radius: 9999px;
+}
+
+html.dark.clinical-step-scroll,
+html.dark.clinical-step-scroll *,
+html.dark [class*='-section-scroll'],
+html.dark [class*='visualizador-'],
+html.dark .clinical-step-scroll {
+  scrollbar-color: rgb(71 85 105 / 0.8) transparent;
+}
+
+html.dark.clinical-step-scroll::-webkit-scrollbar-thumb,
+html.dark.clinical-step-scroll *::-webkit-scrollbar-thumb,
+html.dark [class*='-section-scroll']::-webkit-scrollbar-thumb,
+html.dark [class*='visualizador-']::-webkit-scrollbar-thumb,
+html.dark .clinical-step-scroll::-webkit-scrollbar-thumb {
+  background-color: rgb(71 85 105 / 0.8);
 }
