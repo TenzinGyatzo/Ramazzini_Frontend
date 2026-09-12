@@ -257,7 +257,6 @@ async function verifyAudit() {
             <tr>
               <th>Fecha / Hora</th>
               <th>Actor</th>
-              <th>Régimen</th>
               <th>Acción</th>
               <th>Recurso (tipo)</th>
               <th>Recurso (ID)</th>
@@ -269,9 +268,6 @@ async function verifyAudit() {
               <td class="cell-actor" :title="ev.actorSnapshot?.email ?? ev.actorId">
                 {{ ev.actorSnapshot?.email ?? ev.actorId }}
               </td>
-              <td class="cell-long" :title="ev.regime ?? undefined">
-                {{ ev.regime ?? "—" }}
-              </td>
               <td class="cell-long" :title="ev.actionType">{{ ev.actionType }}</td>
               <td class="cell-long" :title="ev.resourceType ?? undefined">
                 {{ ev.resourceType ?? "—" }}
@@ -281,7 +277,7 @@ async function verifyAudit() {
               </td>
             </tr>
             <tr v-if="items.length === 0 && !loading">
-              <td colspan="6">Sin resultados. Ajuste filtros y pulse Buscar.</td>
+              <td colspan="5">Sin resultados. Ajuste filtros y pulse Buscar.</td>
             </tr>
           </tbody>
         </table>
@@ -391,27 +387,23 @@ async function verifyAudit() {
 }
 .audit-table th:nth-child(1),
 .audit-table td:nth-child(1) {
-  width: 12%;
+  width: 14%;
 }
 .audit-table th:nth-child(2),
 .audit-table td:nth-child(2) {
-  width: 20%;
+  width: 22%;
 }
 .audit-table th:nth-child(3),
 .audit-table td:nth-child(3) {
-  width: 14%;
+  width: 22%;
 }
 .audit-table th:nth-child(4),
 .audit-table td:nth-child(4) {
-  width: 18%;
+  width: 20%;
 }
 .audit-table th:nth-child(5),
 .audit-table td:nth-child(5) {
-  width: 18%;
-}
-.audit-table th:nth-child(6),
-.audit-table td:nth-child(6) {
-  width: 18%;
+  width: 22%;
 }
 .audit-table th {
   background: #f5f5f5;

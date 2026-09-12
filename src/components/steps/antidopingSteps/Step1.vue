@@ -24,7 +24,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const formDataStore = useFormDataStore();
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 const today = format(new Date(), 'yyyy-MM-dd');
 const fechaAntidoping = ref(today);
@@ -96,6 +96,7 @@ watch(fechaAntidoping, (newValue) => {
         v-if="variant === 'compact'"
         type="date"
         v-model="fechaAntidoping"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         class="antidoping-date-compact w-full max-w-xs border border-gray-300 rounded-md px-2.5 py-1 text-sm text-gray-700 bg-white h-9 leading-none focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
       />
@@ -104,6 +105,7 @@ watch(fechaAntidoping, (newValue) => {
         type="date"
         name="fechaAntidoping"
         placeholder="Seleccione una fecha"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         v-model="fechaAntidoping"
       />

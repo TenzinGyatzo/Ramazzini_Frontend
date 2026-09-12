@@ -7,6 +7,7 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { validarFechaDocumentoNoFutura } from '@/helpers/validacionCampos';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
@@ -17,6 +18,7 @@ const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const resultadosClinicosStore = useResultadosClinicosStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 // Emit para cerrar modal y actualizar datos
 const emit = defineEmits(['closeModalUpdate', 'updateData', 'abrirResultados']);
@@ -509,6 +511,8 @@ const abrirResultadoParaEdicion = () => {
             label="Fecha de emisión del documento" 
             name="fechaDocumento" 
             v-model="fechaDocumento" 
+            :min="fechaDocumentoMin"
+            :max="fechaDocumentoMax"
             :disabled="isBloqueado"
             :validation="isBloqueado ? '' : 'required'"
             :validation-messages="{ required: 'Este campo es obligatorio' }" />

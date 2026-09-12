@@ -24,7 +24,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const { formDataHistoriaClinica } = useFormDataStore();
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 // Valor local para la pregunta principal
 const motivoExamen = ref('Ingreso');
@@ -230,6 +230,7 @@ watch(fechaHistoriaClinica, (newValue) => {
         type="date" 
         name="fechaHistoriaClinica" 
         placeholder="Seleccione una fecha"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         v-model="fechaHistoriaClinica" 
       />

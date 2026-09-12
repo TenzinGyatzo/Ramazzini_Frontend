@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
 import { normalizarCamposAuditoriaPayload } from '@/helpers/mongoId';
+import { hidratarPesoTallaDesconocidoNotaMedica } from '@/helpers/notaMedicaCexRanges';
 
 export const useFormDataStore = defineStore('formData', () => {
   const formDataAntidoping = ref({}); // Estado compartido
@@ -65,7 +66,7 @@ export const useFormDataStore = defineStore('formData', () => {
         formDataHistoriaClinica.value = doc;
         break;
       case 'notaMedica':
-        formDataNotaMedica.value = doc;
+        formDataNotaMedica.value = hidratarPesoTallaDesconocidoNotaMedica(doc);
         break;
       case 'notaAclaratoria':
         formDataNotaAclaratoria.value = { ...documento };

@@ -4,8 +4,15 @@ import {
   validarNotaMedicaPreSubmit,
 } from './validacionCampos';
 
+function ymd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 const baseNotaMedica = {
-  fechaNotaMedica: '2026-03-15',
+  fechaNotaMedica: ymd(new Date()),
   motivoConsulta: 'Consulta de seguimiento',
   codigoCIE10Principal: 'E11',
   relacionTemporal: 0,

@@ -15,7 +15,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const { formDataEntrevistaPsicologica } = useFormDataStore();
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 // Obtener la fecha actual en formato YYYY-MM-DD
 const today = format(new Date(), 'yyyy-MM-dd');
@@ -62,6 +62,7 @@ watch(fechaEntrevistaPsicologica, (newValue) => {
         type="date" 
         name="fechaEntrevistaPsicologica" 
         placeholder="Seleccione una fecha"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         v-model="fechaEntrevistaPsicologica" 
       />

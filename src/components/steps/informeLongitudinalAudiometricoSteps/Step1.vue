@@ -31,7 +31,7 @@ const trabajadores = useTrabajadoresStore();
 const formDataStore = useFormDataStore();
 const { formDataInformeLongitudinalAudiometrico } = storeToRefs(formDataStore);
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 const route = useRoute();
 const { documentsByYear } = storeToRefs(documentos);
 
@@ -387,6 +387,7 @@ onMounted(() => {
         <FormKit
           type="date"
           name="fechaInformeLongitudinalAudiometrico"
+          :min="fechaDocumentoMin"
           :max="fechaDocumentoMax"
           v-model="fechaInforme"
           outer-class="mb-0 w-[11rem] min-w-0"

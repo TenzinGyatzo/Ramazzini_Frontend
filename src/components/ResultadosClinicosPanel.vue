@@ -211,6 +211,8 @@
                     <input
                       v-model="formData.fechaEstudio"
                       type="date"
+                      :min="fechaDocumentoMin"
+                      :max="fechaDocumentoMax"
                       required
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
@@ -912,6 +914,7 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { convertirFechaISOaDDMMYYYY, formatDateYYYYMMDD } from '@/helpers/dates';
 import { validarFechaDocumentoNoFutura } from '@/helpers/validacionCampos';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import SelectorDocumentoExterno from '@/components/SelectorDocumentoExterno.vue';
 import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
@@ -933,6 +936,7 @@ const requestEliminacion = inject<(request: EliminacionRequest) => void>('reques
 const store = useResultadosClinicosStore();
 const documentos = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 const isHtmlDark = useHtmlDarkMode();
 
 const currentStep = ref<'select' | 'form'>('select');

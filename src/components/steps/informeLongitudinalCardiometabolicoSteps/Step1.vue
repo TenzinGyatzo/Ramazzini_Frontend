@@ -21,7 +21,7 @@ const trabajadores = useTrabajadoresStore();
 const formDataStore = useFormDataStore();
 const { formDataInformeLongitudinalCardiometabolico } = storeToRefs(formDataStore);
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 const route = useRoute();
 /** Ref reactivo del store: asegura que los eventos CM aparezcan al terminar `fetchAllDocuments`. */
 const { documentsByYear } = storeToRefs(documentos);
@@ -377,6 +377,7 @@ onMounted(async () => {
       <FormKit
         type="date"
         name="fechaInformeLongitudinalCardiometabolico"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         v-model="fechaInformeLongitudinalCardiometabolico"
       />

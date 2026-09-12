@@ -185,7 +185,65 @@ export function shouldValidateCexValue(
   value: unknown,
 ): boolean {
   if (value === undefined || value === null || value === '') return false;
+  const n = Number(value);
+  // 999 en peso/talla es valor tecleado, no “se desconoce”. El checkbox persiste null.
+  if ((field === 'peso' || field === 'talla') && n === 999) return true;
   return !isCexUnknown(field, value);
+}
+
+/** Peso/talla ausentes o sentinela GIIS (999). */
+export function esPesoOTallaDesconocido(value: unknown): boolean {
+  if (value === undefined || value === null || value === '') return true;
+  const n = Number(value);
+  return !Number.isNaN(n) && n === NOTA_MEDICA_CEX_SENTINEL.peso;
+}
+
+/** IMC solo con peso y talla clínicos (no sentinela, dentro de rango). */
+export function puedeMostrarImcNotaMedica(
+  peso: unknown,
+  talla: unknown,
+): boolean {
+  if (esPesoOTallaDesconocido(peso) || esPesoOTallaDesconocido(talla)) {
+    return false;
+  }
+  const p = Number(peso);
+  const t = Number(talla);
+  if (!Number.isFinite(p) || !Number.isFinite(t)) return false;
+  return (
+    p >= NOTA_MEDICA_CEX_RANGES.peso.min &&
+    p <= NOTA_MEDICA_CEX_RANGES.peso.max &&
+    t >= NOTA_MEDICA_CEX_RANGES.talla.min &&
+    t <= NOTA_MEDICA_CEX_RANGES.talla.max
+  );
+}
+
+/**
+ * Docs viejos: 999 era “se desconoce”. Al cargar, null + sin IMC
+ * para que el pre-submit no trate 999 como valor clínico.
+ */
+export function hidratarPesoTallaDesconocidoNotaMedica<
+  T extends {
+    peso?: number | null;
+    talla?: number | null;
+    indiceMasaCorporal?: number | null;
+    categoriaIMC?: string | null;
+  },
+>(doc: T): T {
+  const pesoUnknown =
+    'peso' in doc &&
+    (doc.peso == null || Number(doc.peso) === NOTA_MEDICA_CEX_SENTINEL.peso);
+  const tallaUnknown =
+    'talla' in doc &&
+    (doc.talla == null || Number(doc.talla) === NOTA_MEDICA_CEX_SENTINEL.talla);
+
+  if (Number(doc.peso) === NOTA_MEDICA_CEX_SENTINEL.peso) doc.peso = null;
+  if (Number(doc.talla) === NOTA_MEDICA_CEX_SENTINEL.talla) doc.talla = null;
+
+  if (pesoUnknown || tallaUnknown || !puedeMostrarImcNotaMedica(doc.peso, doc.talla)) {
+    doc.indiceMasaCorporal = null;
+    doc.categoriaIMC = null;
+  }
+  return doc;
 }
 
 function digitParts(value: number): {

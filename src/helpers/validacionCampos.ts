@@ -1155,23 +1155,46 @@ export const DOCUMENT_TYPE_DATE_FIELDS: Record<string, string> = {
   informeLongitudinalAudiometrico: 'fechaInformeLongitudinalAudiometrico',
 };
 
-/** Valida que la fecha no sea futura (solo aplica en régimen SIRES). */
+/** Antigüedad máxima (días naturales, inclusive) de la fecha de atención en SIRES_NOM024. */
+export const DOCUMENT_DATE_MAX_LOOKBACK_DAYS = 30;
+
+function toLocalDateOnly(fecha: string | Date): Date | null {
+  if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}/.test(fecha.trim())) {
+    const [y, m, d] = fecha.trim().slice(0, 10).split('-').map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+  }
+  const parsed = new Date(fecha);
+  if (isNaN(parsed.getTime())) return null;
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+}
+
+/** Valida que la fecha no sea futura ni anterior a 30 días (solo aplica en régimen SIRES). */
 export function validarFechaDocumentoNoFutura(
   fecha: string | Date | null | undefined,
   isSIRES: boolean,
 ): { valido: boolean; mensaje?: string } {
   if (!isSIRES || !fecha) return { valido: true };
 
-  const fechaDoc = new Date(fecha);
-  if (isNaN(fechaDoc.getTime())) return { valido: true };
+  const fechaDoc = toLocalDateOnly(fecha);
+  if (!fechaDoc) return { valido: true };
 
-  const hoy = new Date();
-  hoy.setHours(23, 59, 59, 999);
+  const hoy = toLocalDateOnly(new Date());
+  if (!hoy) return { valido: true };
 
   if (fechaDoc > hoy) {
     return {
       valido: false,
       mensaje: 'La fecha no puede ser posterior al día de hoy',
+    };
+  }
+
+  const min = new Date(hoy);
+  min.setDate(min.getDate() - DOCUMENT_DATE_MAX_LOOKBACK_DAYS);
+  if (fechaDoc < min) {
+    return {
+      valido: false,
+      mensaje: 'La fecha del documento no puede tener más de 30 días de antigüedad',
     };
   }
 
@@ -1212,8 +1235,6 @@ export function validarNotaMedicaPreSubmit(
 
   const stepMap = getNotaMedicaStepMap(isSIRES, esMujer);
   const df = datosFormulario;
-  const hoy = new Date();
-  hoy.setHours(23, 59, 59, 999);
 
   if (isSIRES && df.primeraVezUnemeAplica === true && !esCeroOUno(df.primeraVezUneme)) {
     return {
@@ -1248,13 +1269,19 @@ export function validarNotaMedicaPreSubmit(
     }
   }
 
-  // 3. fechaNotaMedica no puede ser futura (solo SIRES)
-  if (isSIRES && fechaNotaMedica && fechaNotaMedica > hoy) {
-    return {
-      valido: false,
-      mensaje: 'La fecha de consulta no puede ser posterior al día de hoy',
-      paso: 1,
-    };
+  // 3. fechaNotaMedica no puede ser futura ni anterior a 30 días (solo SIRES)
+  if (isSIRES && fechaNotaMedica) {
+    const ventana = validarFechaDocumentoNoFutura(df.fechaNotaMedica, true);
+    if (!ventana.valido) {
+      return {
+        valido: false,
+        mensaje:
+          ventana.mensaje === 'La fecha no puede ser posterior al día de hoy'
+            ? 'La fecha de consulta no puede ser posterior al día de hoy'
+            : 'La fecha de consulta no puede tener más de 30 días de antigüedad',
+        paso: 1,
+      };
+    }
   }
 
   // 4. Cantidades CEX GIIS-B015 (rangos, formato, TA, glucemia condicional)

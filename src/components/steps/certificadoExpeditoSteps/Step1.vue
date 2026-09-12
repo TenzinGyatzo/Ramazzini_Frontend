@@ -15,7 +15,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const { formDataCertificadoExpedito } = useFormDataStore();
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 // Obtener la fecha actual en formato YYYY-MM-DD
 const today = format(new Date(), 'yyyy-MM-dd');
@@ -63,6 +63,7 @@ watch(fechaCertificadoExpedito, (newValue) => {
         type="date" 
         name="fechaCertificadoExpedito" 
         placeholder="Seleccione una fecha"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         v-model="fechaCertificadoExpedito" 
       />

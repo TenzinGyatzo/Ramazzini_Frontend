@@ -15,7 +15,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const { formDataReceta } = useFormDataStore();
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 // Valor local para la pregunta principal
 const today = format(new Date(), 'yyyy-MM-dd');
@@ -69,6 +69,7 @@ watch(fechaReceta, (newValue) => {
         type="date" 
         name="fechaReceta" 
         placeholder="Seleccione una fecha"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         v-model="fechaReceta" 
       />

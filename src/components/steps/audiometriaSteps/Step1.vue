@@ -15,7 +15,7 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const { formDataAudiometria } = useFormDataStore();
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 // Valor local para el método de audiometría
 const metodoAudiometria = ref('LFT');
@@ -168,6 +168,7 @@ watch(fechaAudiometria, (newValue) => {
         type="date" 
         name="fechaAudiometria" 
         placeholder="Seleccione una fecha"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         v-model="fechaAudiometria" 
       />

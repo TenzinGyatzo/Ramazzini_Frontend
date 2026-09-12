@@ -17,7 +17,7 @@ const trabajadores = useTrabajadoresStore();
 const formDataStore = useFormDataStore();
 const { formDataEventoSeguimientoCardiometabolico: fdRef } = storeToRefs(formDataStore);
 const documentos = useDocumentosStore();
-const { fechaDocumentoMax } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 const MOTIVO_OTRO = 'OTRO';
 
@@ -131,6 +131,7 @@ onMounted(() => {
         type="date"
         name="fechaEventoSeguimientoCardiometabolico"
         placeholder="Seleccione una fecha"
+        :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
         v-model="fechaEventoSeguimientoCardiometabolico"
       />

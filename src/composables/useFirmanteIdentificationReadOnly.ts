@@ -85,7 +85,7 @@ export function useFirmanteIdentificationReadOnly(
   const identificationSectionNotice = computed(() => {
     if (!isSiresIdentificationContext.value) return '';
     if (hasFinalizedClinicalDocument.value) {
-      return 'Los datos de identificación no pueden modificarse porque ya se finalizó un documento clínico.';
+      return 'Los datos de identificación no pueden modificarse porque ya hay un documento clínico finalizado o anulado asociado a este usuario.';
     }
     if (hasGenericCurpStored.value) {
       return 'Complete la CURP real y los datos de nacimiento; después quedarán bloqueados.';

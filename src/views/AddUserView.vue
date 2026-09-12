@@ -78,10 +78,10 @@ const volver = () => {
   <Transition appear mode="out-in" name="slide-up">
     <div
       v-if="registroExitoso == false"
-      class="form-green-submit relative bg-white text-gray-800 w-full max-w-lg p-8 sm:p-10 mt-2 rounded-lg max-h-[82vh] shadow-lg overflow-y-auto mx-auto"
+      class="add-user-form form-green-submit relative bg-white text-gray-800 w-full max-w-lg p-8 sm:p-10 mt-2 rounded-lg max-h-[82vh] shadow-lg overflow-y-auto mx-auto"
     >
       <h1 class="text-2xl sm:text-3xl text-gray-800">Agregar usuario adicional</h1>
-      <hr class="mt-2 mb-3" />
+      <hr class="mt-2 mb-5" />
 
       <FormKit
         type="form"
@@ -89,84 +89,85 @@ const volver = () => {
         incomplete-message="Por favor, valide que los datos sean correctos*"
         @submit="handleSubmit"
       >
-        <FormKit
-          type="text"
-          label="Nombre"
-          name="username"
-          placeholder="Ej. Jorge González"
-          validation="required"
-          :validation-messages="{
-            required: 'Este campo es obligatorio',
-          }"
-          v-model="formDataUser.username"
-        />
-
-        <FormKit
-          type="email"
-          label="Correo de usuario"
-          name="email"
-          placeholder="usuario@empresa.com"
-          validation="required|emailValidation"
-          :validation-messages="{
-            required: 'Este campo es obligatorio',
-            emailValidation: 'Por favor ingresa un correo válido',
-          }"
-          v-model="formDataUser.email"
-        />
-
-        <CountrySelect
-          label="¿En qué país se encuentra el usuario?"
-          placeholder="Selecciona el país"
-          v-model="formDataUser.country"
-          validation="required"
-        />
-
-        <CountryPhoneInput
-          class="my-3"
-          label="¿Cuál es el teléfono del usuario?"
-          placeholder="Número local"
-          v-model="formDataUser.phone"
-          :initial-country="formDataUser.country"
-          @update:country="formDataUser.country = $event"
-          validation="required"
-        />
-
-        <FormKit
-          type="select"
-          label="¿Cuál es el rol del usuario?"
-          name="role"
-          placeholder="Selecciona el rol"
-          :options="roles"
-          validation="required"
-          :validation-messages="{
-            required: 'Este campo es obligatorio',
-          }"
-          v-model="formDataUser.role"
-        />
-
-        <div class="relative">
+        <div class="add-user-form-fields">
           <FormKit
-            :type="showPassword ? 'text' : 'password'"
-            label="Establece una contraseña"
-            name="password"
-            placeholder="Contraseña de usuario"
-            validation="required|passwordValidation"
+            type="text"
+            label="Nombre"
+            name="username"
+            placeholder="Ej. Jorge González"
+            validation="required"
             :validation-messages="{
               required: 'Este campo es obligatorio',
-              passwordValidation: 'Mín. 8 dígitos, 1 mayúscula y 1 número.',
             }"
-            v-model="formDataUser.password"
+            v-model="formDataUser.username"
           />
-          <button
-            type="button"
-            class="absolute right-3 top-[2.35rem] text-sm text-emerald-700 hover:text-emerald-800"
-            @click="showPassword = !showPassword"
-          >
-            {{ showPassword ? "Ocultar" : "Ver" }}
-          </button>
+
+          <FormKit
+            type="email"
+            label="Correo de usuario"
+            name="email"
+            placeholder="usuario@empresa.com"
+            validation="required|emailValidation"
+            :validation-messages="{
+              required: 'Este campo es obligatorio',
+              emailValidation: 'Por favor ingresa un correo válido',
+            }"
+            v-model="formDataUser.email"
+          />
+
+          <CountrySelect
+            label="¿En qué país se encuentra el usuario?"
+            placeholder="Selecciona el país"
+            v-model="formDataUser.country"
+            validation="required"
+          />
+
+          <CountryPhoneInput
+            label="¿Cuál es el teléfono del usuario?"
+            placeholder="Número local"
+            v-model="formDataUser.phone"
+            :initial-country="formDataUser.country"
+            @update:country="formDataUser.country = $event"
+            validation="required"
+          />
+
+          <FormKit
+            type="select"
+            label="¿Cuál es el rol del usuario?"
+            name="role"
+            placeholder="Selecciona el rol"
+            :options="roles"
+            validation="required"
+            :validation-messages="{
+              required: 'Este campo es obligatorio',
+            }"
+            v-model="formDataUser.role"
+          />
+
+          <div class="relative">
+            <FormKit
+              :type="showPassword ? 'text' : 'password'"
+              label="Establece una contraseña"
+              name="password"
+              placeholder="Contraseña de usuario"
+              validation="required|passwordValidation"
+              :validation-messages="{
+                required: 'Este campo es obligatorio',
+                passwordValidation: 'Mín. 8 dígitos, 1 mayúscula y 1 número.',
+              }"
+              v-model="formDataUser.password"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-[2.35rem] text-sm text-emerald-700 hover:text-emerald-800"
+              @click="showPassword = !showPassword"
+            >
+              {{ showPassword ? "Ocultar" : "Ver" }}
+            </button>
+          </div>
         </div>
 
-        <hr class="my-3" />
+        <hr class="mt-5 mb-4" />
         <div class="form-action-buttons flex flex-col sm:flex-row justify-between gap-2">
           <!-- Botón de Volver -->
           <button
@@ -216,3 +217,21 @@ const volver = () => {
     </div>
   </Transition>
 </template>
+
+<style scoped>
+/*
+  Espaciado exclusivo de este formulario.
+  No toca formkit.config.js ni CountrySelect/CountryPhoneInput,
+  para no alterar otros formularios que reutilizan FormKit o esos componentes.
+*/
+.add-user-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.add-user-form-fields :deep(.formkit-outer:not([data-type='submit'])),
+.add-user-form-fields :deep(.formkit-wrapper) {
+  margin-bottom: 0;
+}
+</style>

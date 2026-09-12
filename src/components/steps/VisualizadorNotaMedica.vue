@@ -24,6 +24,7 @@ import { useUserStore } from '@/stores/user';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import { formatDerechohabienciaLabels } from '@/helpers/afiliacionCex';
+import { puedeMostrarImcNotaMedica } from '@/helpers/notaMedicaCexRanges';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -357,7 +358,7 @@ const muestraDiagnostico3 = computed(() =>
         <template v-if="formData.formDataNotaMedica.talla && formData.formDataNotaMedica.talla !== 999">
           &nbsp;Talla: <span class="font-light">{{ formData.formDataNotaMedica.talla }} cm</span> &nbsp;|
         </template>
-        <template v-if="formData.formDataNotaMedica.indiceMasaCorporal">
+        <template v-if="puedeMostrarImcNotaMedica(formData.formDataNotaMedica.peso, formData.formDataNotaMedica.talla) && formData.formDataNotaMedica.indiceMasaCorporal">
           &nbsp;IMC: <span class="font-light">{{ formData.formDataNotaMedica.indiceMasaCorporal }} ({{ formData.formDataNotaMedica.categoriaIMC }})</span> &nbsp;|
         </template>
         <template v-if="formData.formDataNotaMedica.circunferenciaCintura && formData.formDataNotaMedica.circunferenciaCintura !== 0">

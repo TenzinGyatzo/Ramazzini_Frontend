@@ -5,7 +5,6 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import {
   NOTA_MEDICA_CEX_RANGES,
-  NOTA_MEDICA_CEX_SENTINEL,
   isBlankOrZero,
   isExplicitCexUnknown,
   parseOptionalNumber,
@@ -58,7 +57,7 @@ function resolveInitial(field, saved) {
 }
 
 function toPersistedValue(field, seDesconoce, display) {
-  if (seDesconoce) return NOTA_MEDICA_CEX_SENTINEL[field];
+  if (seDesconoce) return null;
   if (isBlankOrZero(display)) return null;
   return Number(display);
 }
@@ -71,7 +70,14 @@ function calcularIMC() {
   }
   const p = Number(peso.value);
   const t = Number(talla.value);
-  if (Number.isFinite(p) && Number.isFinite(t) && p > 0 && t > 0) {
+  if (
+    Number.isFinite(p) &&
+    Number.isFinite(t) &&
+    p >= ranges.peso.min &&
+    p <= ranges.peso.max &&
+    t >= ranges.talla.min &&
+    t <= ranges.talla.max
+  ) {
     const tallaMt = t / 100;
     const imc = p / (tallaMt ** 2);
     indiceMasaCorporal.value = Math.round(imc * 100) / 100;
