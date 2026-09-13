@@ -86,6 +86,7 @@ const showDocumentoExternoUpdateModal = ref(false);
 const showDeclaracionVeracidadModal = ref(false);
 const showSubscriptionModal = ref(false);
 const showFinalizeModal = ref(false);
+const isFinalizing = ref(false);
 const showAnularModal = ref(false);
 const showCuestionariosModal = ref(false);
 const showProfessionalDataModal = ref(false);
@@ -261,6 +262,7 @@ const toggleFinalizeModal = (
 ) => {
   // Cerrar modal
   if (showFinalizeModal.value) {
+    if (isFinalizing.value) return;
     showFinalizeModal.value = false;
     selectedDocumentId.value = null;
     selectedDocumentName.value = '';
@@ -335,8 +337,10 @@ const handleAnularDocument = async (razonAnulacion: string) => {
 };
 
 const handleFinalizeDocument = async () => {
+  if (isFinalizing.value) return;
   if (!selectedDocumentId.value || !selectedDocumentType.value) return;
 
+  isFinalizing.value = true;
   try {
     await documentos.finalizarDocumento(
       selectedDocumentType.value,
@@ -363,6 +367,8 @@ const handleFinalizeDocument = async () => {
     console.error("Error al finalizar el documento:", error);
     const message = error.response?.data?.message || "Error al finalizar el documento, por favor intente nuevamente.";
     toast.open({ message, type: "error" });
+  } finally {
+    isFinalizing.value = false;
   }
 };
 
@@ -1044,6 +1050,7 @@ const añoMasReciente = computed(() => {
           :documentType="selectedDocumentType"
           :trabajadorId="trabajadores.currentTrabajadorId!"
           :documentLabel="selectedDocumentName"
+          :confirming="isFinalizing"
           @closeModal="toggleFinalizeModal" 
           @confirmFinalize="handleFinalizeDocument" 
         />

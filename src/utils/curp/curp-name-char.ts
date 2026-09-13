@@ -198,6 +198,8 @@ export function getCurpInitial(rawWord: string): string {
 /**
  * Primera vocal interna A|E|I|O|U después del carácter inicial (reglas 1.4, 1.9).
  * Pos. 2 de iniciales: Ä/Ë/Ï/Ö → X; Ü → U.
+ * Especial inicial ('-/.) cuenta como inicial y se sigue escaneando;
+ * especial interno sigue resolviendo a X (D'Amico, L-Castillo).
  */
 export function getCurpFirstInternalVowel(rawWord: string): string {
   if (!rawWord?.trim()) {
@@ -209,7 +211,8 @@ export function getCurpFirstInternalVowel(rawWord: string): string {
   for (const char of rawWord.trim()) {
     if (!passedInitial) {
       if (SPECIAL_CURP_CHARS.has(char)) {
-        return 'X';
+        passedInitial = true;
+        continue;
       }
 
       if (DIERESIS_INICIALES_TO_X.has(char) || DIERESIS_UMLAUT_U.has(char)) {
@@ -219,7 +222,8 @@ export function getCurpFirstInternalVowel(rawWord: string): string {
 
       const normalized = normalizeCurpCharBase(char);
       if (normalized.isSpecial) {
-        return 'X';
+        passedInitial = true;
+        continue;
       }
       if (normalized.value) {
         passedInitial = true;
@@ -251,6 +255,8 @@ export function getCurpFirstInternalVowel(rawWord: string): string {
 /**
  * Primera consonante interna después del carácter inicial (reglas 1.12, 1.13, 1.18).
  * Diéresis en vocal no cuenta como consonante.
+ * Especial inicial ('-/.) cuenta como inicial (X) y se sigue escaneando;
+ * especial interno sigue resolviendo a X (1.18 O'Hara, D/Amico).
  */
 export function getCurpFirstInternalConsonant(rawWord: string): string {
   if (!rawWord?.trim()) {
@@ -263,10 +269,7 @@ export function getCurpFirstInternalConsonant(rawWord: string): string {
     const normalized = normalizeCurpCharForConsonantScan(char);
 
     if (!passedInitial) {
-      if (normalized.isSpecial) {
-        return 'X';
-      }
-      if (normalized.value) {
+      if (normalized.isSpecial || normalized.value) {
         passedInitial = true;
       }
       continue;

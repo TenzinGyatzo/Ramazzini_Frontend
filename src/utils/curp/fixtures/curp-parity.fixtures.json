@@ -82,5 +82,33 @@
     },
     "expectCrossValid": true,
     "expectCodes": []
+  },
+  {
+    "id": "ok-essio-leading-apostrophe",
+    "curp": "TOBX080912HCHRRSF2",
+    "demographics": {
+      "fechaNacimiento": "2008-09-12",
+      "sexo": "Masculino",
+      "entidadNacimiento": "08",
+      "nombre": "'ESSIO",
+      "primerApellido": "TORRES",
+      "segundoApellido": "BRAVO"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "fail-essio-consonante-x",
+    "curp": "TOBX080912HCHRRXF2",
+    "demographics": {
+      "fechaNacimiento": "2008-09-12",
+      "sexo": "Masculino",
+      "entidadNacimiento": "08",
+      "nombre": "'ESSIO",
+      "primerApellido": "TORRES",
+      "segundoApellido": "BRAVO"
+    },
+    "expectCrossValid": false,
+    "expectCodes": ["CURP_CROSS_CONSONANTES"]
   }
 ]

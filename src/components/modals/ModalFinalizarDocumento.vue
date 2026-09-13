@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { formatDateDDMMYYYY, formatDateDDMMYYYYHHMMSS } from '@/helpers/dates';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
@@ -18,9 +18,12 @@ interface Props {
   documentId: string;
   trabajadorId: string;
   documentLabel?: string;
+  confirming?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  confirming: false,
+});
 const emit = defineEmits(['closeModal', 'confirmFinalize']);
 
 // Stores
@@ -220,17 +223,31 @@ const loadFirmanteData = async () => {
   }
 };
 
-const handleConfirm = async () => {
+const isBusy = computed(() => loading.value || props.confirming);
+
+const handleConfirm = () => {
+  if (isBusy.value || loadingFirmantes.value || !finalizadorData.value) return;
+
   loading.value = true;
-  try {
-    if (props.documentType === 'notaMedica') {
-      invalidateBorradoresNotaMedicaCache();
-    }
-    emit('confirmFinalize');
-  } finally {
-    loading.value = false;
+  if (props.documentType === 'notaMedica') {
+    invalidateBorradoresNotaMedicaCache();
   }
+  emit('confirmFinalize');
 };
+
+const handleClose = () => {
+  if (isBusy.value) return;
+  emit('closeModal');
+};
+
+watch(
+  () => props.confirming,
+  (confirming, wasConfirming) => {
+    if (wasConfirming && !confirming) {
+      loading.value = false;
+    }
+  },
+);
 
 // Cargar datos al montar el componente
 onMounted(() => {
@@ -241,7 +258,7 @@ onMounted(() => {
 <template>
   <div 
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm" 
-    @click.self="$emit('closeModal')"
+    @click.self="handleClose"
     role="dialog"
     aria-modal="true"
     aria-labelledby="modal-title"
@@ -421,8 +438,8 @@ onMounted(() => {
           <button 
             type="button" 
             class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200"
-            @click="$emit('closeModal')"
-            :disabled="loading"
+            @click="handleClose"
+            :disabled="isBusy"
           >
             Cancelar
           </button>
@@ -430,11 +447,11 @@ onMounted(() => {
             type="button" 
             class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-md shadow-emerald-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="handleConfirm"
-            :disabled="loading || loadingFirmantes || !finalizadorData"
+            :disabled="isBusy || loadingFirmantes || !finalizadorData"
             :title="!finalizadorData && !loadingFirmantes ? 'Configure sus datos profesionales antes de finalizar' : ''"
           >
-            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
-            <span>{{ loading ? 'Finalizando...' : 'Confirmar Finalización' }}</span>
+            <i v-if="isBusy" class="fas fa-spinner fa-spin"></i>
+            <span>{{ isBusy ? 'Finalizando...' : 'Confirmar Finalización' }}</span>
           </button>
         </div>
       </div>

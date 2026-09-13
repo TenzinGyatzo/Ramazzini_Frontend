@@ -135,17 +135,21 @@ export const useDocumentosStore = defineStore("documentos", () => {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  let fetchAllDocumentsGeneration = 0;
+
   async function fetchAllDocuments(trabajadorId: string) {
+    const generation = ++fetchAllDocumentsGeneration;
     try {
       loading.value = true;
-      documentsByYear.value = {};
 
       let lastError: unknown;
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const response = await DocumentosAPI.getAllDocuments(trabajadorId);
-          const payload = response.data as Record<string, unknown>;
+          if (generation !== fetchAllDocumentsGeneration) return;
 
+          const payload = response.data as Record<string, unknown>;
+          documentsByYear.value = {};
           DOCUMENT_STORE_KEYS.forEach((tipo) => {
             const raw = payload[tipo];
             const data = Array.isArray(raw) ? raw : [];
@@ -173,7 +177,9 @@ export const useDocumentosStore = defineStore("documentos", () => {
       }
       console.error("Error general al obtener documentos", error);
     } finally {
-      loading.value = false;
+      if (generation === fetchAllDocumentsGeneration) {
+        loading.value = false;
+      }
     }
   }
 
@@ -298,16 +304,28 @@ export const useDocumentosStore = defineStore("documentos", () => {
     }
   }
 
+  const finalizarEnCurso = new Map<string, Promise<void>>();
+
   async function finalizarDocumento(documentType: string, trabajadorId: string, documentId: string) {
-    try {
-      loading.value = true;
-      await DocumentosAPI.finalizarDocumento(documentType, trabajadorId, documentId);
-    } catch (error) {
-      console.error('Error al finalizar el documento en el store:', error);
-      throw error;
-    } finally {
-      loading.value = false;
-    }
+    const key = `${documentType}:${documentId}`;
+    const enCurso = finalizarEnCurso.get(key);
+    if (enCurso) return enCurso;
+
+    const request = (async () => {
+      try {
+        loading.value = true;
+        await DocumentosAPI.finalizarDocumento(documentType, trabajadorId, documentId);
+      } catch (error) {
+        console.error('Error al finalizar el documento en el store:', error);
+        throw error;
+      } finally {
+        loading.value = false;
+        finalizarEnCurso.delete(key);
+      }
+    })();
+
+    finalizarEnCurso.set(key, request);
+    return request;
   }
 
   const isFinalized = computed(() => {
