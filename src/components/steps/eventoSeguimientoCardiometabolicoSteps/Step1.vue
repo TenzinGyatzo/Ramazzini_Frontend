@@ -98,17 +98,33 @@ function hidratarMotivoDesdeString(valor) {
   motivoOtroTexto.value = otro;
 }
 
-/** Cuando `setFormDataFromDocument` llega después del primer render, alinear refs con el borrador. */
+/** ISO/Date del API. El input escribe `yyyy-MM-dd` y no debe rehidratarse en cada tecla. */
+function esFechaDesdeBackend(valor) {
+  return valor instanceof Date || (typeof valor === 'string' && valor.includes('T'));
+}
+
+/**
+ * `setFormDataFromDocument` puede llegar después del primer render (ESC monta al terminar
+ * `fetchAllDocuments`, no al hidratar el documento). Solo alinear si el valor viene del backend.
+ */
 watch(
-  fdRef,
-  (fd) => {
-    if (!fd || typeof fd !== 'object') return;
-    const f = formatDateYYYYMMDD(fd.fechaEventoSeguimientoCardiometabolico);
-    if (f) fechaEventoSeguimientoCardiometabolico.value = f;
-    const ms = fd.motivoSeguimiento != null ? String(fd.motivoSeguimiento).trim() : '';
-    if (ms) hidratarMotivoDesdeString(ms);
+  () => fdRef.value?.fechaEventoSeguimientoCardiometabolico,
+  (valor) => {
+    if (!esFechaDesdeBackend(valor)) return;
+    const f = formatDateYYYYMMDD(valor);
+    if (f && f !== fechaEventoSeguimientoCardiometabolico.value) {
+      fechaEventoSeguimientoCardiometabolico.value = f;
+    }
   },
-  { deep: true },
+);
+
+watch(
+  () => fdRef.value?.motivoSeguimiento,
+  (valor) => {
+    const ms = valor != null ? String(valor).trim() : '';
+    if (!ms || ms === motivoValorParaPayload()) return;
+    hidratarMotivoDesdeString(ms);
+  },
 );
 
 onMounted(() => {
