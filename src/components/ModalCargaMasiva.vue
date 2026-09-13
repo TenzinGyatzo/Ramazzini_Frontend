@@ -348,7 +348,7 @@ const testResumenMixto = async () => {
               <li>• Campos geo: use códigos INEGI (entidad, municipio, localidad) y CATALOG_KEY cat_pais para países (ej. 142 = México).</li>
               <li>• Use el buscador de códigos o descargue los catálogos de referencia en la sección de apoyo geo.</li>
               <li>• NSS: si se captura, debe tener exactamente 11 dígitos numéricos.</li>
-              <li>• Nombres y apellidos en MAYÚSCULAS, sin abreviaturas (DR., ING., etc.).</li>
+              <li>• Nombres y apellidos en MAYÚSCULAS.</li>
               <li>• Las columnas "Número de empleado" y "Teléfono" son opcionales.</li>
             </template>
             <template v-else>
