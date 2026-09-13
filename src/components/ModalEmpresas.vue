@@ -247,21 +247,18 @@ const handleSubmit = async (data) => {
           <FormKit type="form" :actions="false" incomplete-message="Por favor complete todos los campos"
             @submit="handleSubmit" @input="formData = $event">
             <div class="grid gap-3">
-            <FormKit type="text" name="nombreComercial"
-              placeholder="Nombre comercial de la empresa" validation="required"
-              :validation-messages="{ required: 'Este campo es obligatorio' }"
-              :value="empresas.currentEmpresa?.nombreComercial || ''">
-              <template #label>
-                <span class="font-medium text-lg text-gray-700">Nombre Comercial<span class="text-red-500">*</span></span>
-              </template>
-            </FormKit>
-            <div class="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-3">
-              <FormKit type="text" label="Razón Social" name="razonSocial" placeholder="Razón social de la empresa"
-                :value="empresas.currentEmpresa?.razonSocial || ''" />
+            <div class="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-3 items-end">
+              <FormKit type="text" label="Nombre Comercial" name="nombreComercial"
+                outer-class="campo-obligatorio"
+                placeholder="Nombre comercial de la empresa" validation="required"
+                :validation-messages="{ required: 'Este campo es obligatorio' }"
+                :value="empresas.currentEmpresa?.nombreComercial || ''" />
               <FormKit type="text" label="RFC/Registro Patronal" name="RFC" placeholder="RFC o Registro Patronal" validation="rfcValidation" :validation-messages="{
                     rfcValidation: 'Debe tener entre 6 y 28 caracteres alfanuméricos con separadores (RFC, Registro Patronal, etc.)',
                   }" :value="empresas.currentEmpresa?.RFC || ''" />
             </div>
+            <FormKit type="text" label="Razón Social" name="razonSocial" placeholder="Razón social de la empresa"
+              :value="empresas.currentEmpresa?.razonSocial || ''" />
             <FormKit type="text" label="Giro de la empresa" name="giroDeEmpresa" placeholder="Giro de la Empresa"
               :value="empresas.currentEmpresa?.giroDeEmpresa || ''" />
 
@@ -389,5 +386,11 @@ const handleSubmit = async (data) => {
 :deep(.formkit-label) {
   color: #374151; /* Color base del texto del label */
   margin-bottom: 0.25rem;
+  line-height: 1.75rem;
+}
+
+:deep(.campo-obligatorio .formkit-label)::after {
+  content: '*';
+  color: #ef4444;
 }
 </style>
