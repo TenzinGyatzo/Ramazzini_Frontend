@@ -713,12 +713,12 @@ const handleSubmit = async (data) => {
 
   clearSegundoApellidoIfNoPrimer();
   const primerApellidoNorm = normalizeWorkerPersonName(
-    data.primerApellido ?? primerApellidoField.value,
+    data.primerApellido || primerApellidoField.value,
     personNameRegime.value,
   );
   const segundoApellidoNorm = primerApellidoNorm
     ? normalizeWorkerPersonName(
-        data.segundoApellido ?? segundoApellidoField.value,
+        data.segundoApellido || segundoApellidoField.value,
         personNameRegime.value,
       )
     : '';
@@ -726,9 +726,14 @@ const handleSubmit = async (data) => {
   const trabajadorData = {
     primerApellido: primerApellidoNorm,
     segundoApellido: segundoApellidoNorm,
-    nombre: normalizeWorkerPersonName(data.nombre, personNameRegime.value),
-    fechaNacimiento: data.fechaNacimiento,
-    sexo: data.sexo,
+    nombre: normalizeWorkerPersonName(
+      data.nombre || nombreField.value,
+      personNameRegime.value,
+    ),
+    fechaNacimiento:
+      data.fechaNacimiento
+      || convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaNacimiento),
+    sexo: data.sexo || trabajadores.currentTrabajador?.sexo,
     ...(isSIRES.value && data.sexoCURP != null && data.sexoCURP !== ''
       ? { sexoCURP: parseSexoCurpValue(data.sexoCURP) }
       : {}),

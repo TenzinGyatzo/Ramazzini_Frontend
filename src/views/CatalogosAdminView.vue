@@ -57,7 +57,7 @@ onUnmounted(() => {
   window.removeEventListener("keydown", onFormEscapeKey);
 });
 const editingCode = ref("");
-const form = ref({
+const emptyForm = () => ({
   code: "",
   description: "",
   lsex: "",
@@ -68,7 +68,10 @@ const form = ref({
   estadoCode: "",
   municipioCode: "",
   localidadCode: "",
+  abreviatura: "",
 });
+
+const form = ref(emptyForm());
 
 const importFile = ref<File | null>(null);
 const importLoading = ref(false);
@@ -143,18 +146,7 @@ async function loadEntries() {
 function openCreate() {
   formMode.value = "create";
   editingCode.value = "";
-  form.value = {
-    code: "",
-    description: "",
-    lsex: "",
-    linfRaw: "",
-    lsupRaw: "",
-    letra: "",
-    estatus: "",
-    estadoCode: "",
-    municipioCode: "",
-    localidadCode: "",
-  };
+  form.value = emptyForm();
   showForm.value = true;
 }
 
@@ -172,6 +164,7 @@ function openEdit(row: CatalogEntryRow) {
     estadoCode: String(row.estadoCode ?? ""),
     municipioCode: String(row.municipioCode ?? ""),
     localidadCode: String(row.localidadCode ?? ""),
+    abreviatura: String(row.abreviatura ?? ""),
   };
   showForm.value = true;
 }
@@ -192,9 +185,17 @@ function buildPayload(): Record<string, unknown> {
   if (selectedType.value === "establecimientos_salud" && form.value.estatus) {
     p.estatus = form.value.estatus;
   }
-  if (form.value.estadoCode) p.estadoCode = form.value.estadoCode;
-  if (form.value.municipioCode) p.municipioCode = form.value.municipioCode;
-  if (form.value.localidadCode) p.localidadCode = form.value.localidadCode;
+  if (selectedType.value === "enitades_federativas" && form.value.abreviatura) {
+    p.abreviatura = form.value.abreviatura;
+  }
+  if (
+    selectedType.value === "municipios" ||
+    selectedType.value === "localidades"
+  ) {
+    if (form.value.estadoCode) p.estadoCode = form.value.estadoCode;
+    if (form.value.municipioCode) p.municipioCode = form.value.municipioCode;
+    if (form.value.localidadCode) p.localidadCode = form.value.localidadCode;
+  }
   if (
     selectedType.value === "municipios" &&
     form.value.estadoCode &&
@@ -630,18 +631,23 @@ onMounted(async () => {
               </select>
             </div>
           </template>
+          <template v-if="selectedType === 'enitades_federativas'">
+            <div>
+              <label class="text-sm text-gray-700">Abreviatura</label>
+              <input v-model="form.abreviatura" class="w-full border rounded-lg px-3 py-2 mt-1" />
+            </div>
+          </template>
           <template
             v-if="
               selectedType === 'municipios' ||
-              selectedType === 'localidades' ||
-              selectedType === 'enitades_federativas'
+              selectedType === 'localidades'
             "
           >
             <div>
               <label class="text-sm text-gray-700">Código estado</label>
               <input v-model="form.estadoCode" class="w-full border rounded-lg px-3 py-2 mt-1" />
             </div>
-            <div v-if="selectedType !== 'enitades_federativas'">
+            <div>
               <label class="text-sm text-gray-700">Código municipio</label>
               <input
                 v-model="form.municipioCode"
