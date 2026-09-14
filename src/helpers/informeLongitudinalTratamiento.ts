@@ -295,6 +295,7 @@ export type EventoEscFuenteIlc = {
   _id?: unknown;
   idTrabajador?: unknown;
   fechaEventoSeguimientoCardiometabolico?: string | Date;
+  motivoSeguimiento?: string;
   diagnosticosActivos?: string[];
   signosVitales?: EventoConcentradoCardiometabolicoEsc['signosVitales'];
   somatometria?: EventoConcentradoCardiometabolicoEsc['somatometria'];
@@ -302,6 +303,35 @@ export type EventoEscFuenteIlc = {
   estadoCondiciones?: EventoConcentradoCardiometabolicoEsc['estadoCondiciones'];
   tratamientoActual?: TratamientoActualFilaEsc[];
 };
+
+function objetoConClaves(v: unknown): boolean {
+  return !!v && typeof v === 'object' && Object.keys(v as object).length > 0;
+}
+
+/**
+ * True si la fuente trae cuerpo clínico (no la ficha flaca de `/documentos/todos`).
+ * `estadoCondiciones` no cuenta: sí viaja en la proyección de listado.
+ */
+export function eventoEscFuenteTieneInsumosClinicosIlc(
+  ev: EventoEscFuenteIlc | null | undefined,
+): boolean {
+  if (!ev || typeof ev !== 'object') return false;
+  if (objetoConClaves(ev.signosVitales)) return true;
+  if (objetoConClaves(ev.somatometria)) return true;
+  if (objetoConClaves(ev.laboratorio)) return true;
+  if (Array.isArray(ev.diagnosticosActivos) && ev.diagnosticosActivos.some((c) => String(c || '').trim())) {
+    return true;
+  }
+  if (Array.isArray(ev.tratamientoActual) && ev.tratamientoActual.length > 0) return true;
+  if (typeof ev.motivoSeguimiento === 'string' && ev.motivoSeguimiento.trim()) return true;
+  return false;
+}
+
+/** `GET .../eventoSeguimientoCardiometabolico` a veces responde `{ message }` si no hay filas. */
+export function listaEventosEscDesdeRespuestaApi(data: unknown): EventoEscFuenteIlc[] {
+  if (!Array.isArray(data)) return [];
+  return data.filter((e): e is EventoEscFuenteIlc => !!e && typeof e === 'object');
+}
 
 export function idsArrayFromMongoRefs(arr: unknown): string[] {
   if (!Array.isArray(arr)) return [];
@@ -349,6 +379,10 @@ export function eventosCmDesdeDocumentsByYear(
 /**
  * Reemplaza `eventosConcentrados` con datos vivos del expediente (tratamiento actual).
  * Evita mostrar snapshots obsoletos guardados en el ILC.
+ *
+ * Por defecto no pisa el concentrado si la fuente es el listado flaco del expediente
+ * (solo fecha / `estadoCondiciones`). Pasar `exigirInsumosClinicos: false` cuando la
+ * fuente ya es `findDocuments` (ESC completo).
  */
 export function refrescarEventosConcentradosEnInforme(
   form: {
@@ -356,11 +390,15 @@ export function refrescarEventosConcentradosEnInforme(
     eventosConcentrados?: EventoConcentradoCardiometabolicoEsc[];
   },
   eventosExpediente: EventoEscFuenteIlc[],
+  opts?: { exigirInsumosClinicos?: boolean },
 ): boolean {
   const ids = new Set(idsArrayFromMongoRefs(form.eventosIncluidos));
   if (!ids.size) return false;
   const sel = eventosExpediente.filter((e) => ids.has(mongoIdStr(e._id)));
   if (!sel.length) return false;
+  if (opts?.exigirInsumosClinicos !== false && !sel.some(eventoEscFuenteTieneInsumosClinicosIlc)) {
+    return false;
+  }
   form.eventosConcentrados = sel.map(snapshotEventoConcentradoIlc);
   return true;
 }

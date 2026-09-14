@@ -1,11 +1,9 @@
 <script setup>
 import { computed, ref, onMounted, nextTick, watch } from 'vue';
 import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
-import { storeToRefs } from 'pinia';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
-import { useDocumentosStore } from '@/stores/documentos';
 import { useStepsStore } from '@/stores/steps';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
@@ -50,12 +48,12 @@ import { useHtmlDarkMode } from '@/composables/useHtmlDarkMode';
 import {
   agruparCeldasTratamientoEnFilas,
   buildCeldasTratamientoPeriodo,
-  eventosCmDesdeDocumentsByYear,
   hayEvidenciaClinicaSoporteVisible,
   hayEvidenciaTratamientoPeriodo,
   refrescarEventosConcentradosEnInforme,
   TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC,
 } from '@/helpers/informeLongitudinalTratamiento';
+import { fetchEventosEscCompletosIlc } from '@/helpers/cargarEventosEscCompletosIlc';
 import { aplicarIteracionDosAlFormulario } from '@/helpers/informeLongitudinalOperativo';
 import { coherenciaCtxDesdeSexo } from '@/helpers/informeLongitudinalCoherenciaEsc';
 
@@ -63,9 +61,8 @@ const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
 const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataInformeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico);
-const documentos = useDocumentosStore();
-const { documentsByYear } = storeToRefs(documentos);
 const steps = useStepsStore();
+const eventosCmCompletos = ref([]);
 const scrollRoot = ref(null);
 useVisualizadorScrollPaso(scrollRoot, () => steps.currentStep);
 const proveedorSaludStore = useProveedorSaludStore();
@@ -90,19 +87,23 @@ const fm = computed(() => formData.formDataInformeLongitudinalCardiometabolico);
 function aplicarRefrescoEventosConcentradosDesdeExpediente() {
   const fd = formData.formDataInformeLongitudinalCardiometabolico;
   if (!fd?.eventosIncluidos?.length) return;
-  const eventos = eventosCmDesdeDocumentsByYear(
-    documentsByYear.value,
-    trabajadores.currentTrabajadorId,
-  );
-  refrescarEventosConcentradosEnInforme(fd, eventos);
+  const aplicado = refrescarEventosConcentradosEnInforme(fd, eventosCmCompletos.value, {
+    exigirInsumosClinicos: false,
+  });
+  if (!aplicado) return;
   aplicarIteracionDosAlFormulario(fd, {
     preservarJuicioClinicoRiesgo: true,
     coherenciaCtx: coherenciaCtxDesdeSexo(trabajadores.currentTrabajador?.sexo),
   });
 }
 
+async function hidratarEventosEscCompletos() {
+  eventosCmCompletos.value = await fetchEventosEscCompletosIlc(trabajadores.currentTrabajadorId);
+  aplicarRefrescoEventosConcentradosDesdeExpediente();
+}
+
 watch(
-  [documentsByYear, () => fm.value?.eventosIncluidos],
+  () => fm.value?.eventosIncluidos,
   () => aplicarRefrescoEventosConcentradosDesdeExpediente(),
   { deep: true },
 );
@@ -1200,8 +1201,9 @@ async function programarRegeneracionGraficasIlc() {
 }
 
 onMounted(() => {
-  aplicarRefrescoEventosConcentradosDesdeExpediente();
-  programarRegeneracionGraficasIlc();
+  hidratarEventosEscCompletos().finally(() => {
+    programarRegeneracionGraficasIlc();
+  });
 });
 
 watch([graficasEventosKey, isHtmlDark], () => {

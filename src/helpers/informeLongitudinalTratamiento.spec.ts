@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { EventoConcentradoCardiometabolicoEsc } from '@/interfaces/documentos.inteface';
 import {
   buildCeldasTratamientoPeriodo,
+  eventoEscFuenteTieneInsumosClinicosIlc,
   fingerprintRegimenTratamiento,
   hayRegimenTerapeuticoEstableEnPeriodo,
   hayVariosRegimenesTratamientoEnPeriodo,
+  listaEventosEscDesdeRespuestaApi,
   refrescarEventosConcentradosEnInforme,
   resumenRegimenTratamientoEnPeriodo,
   TEXTO_SEGMENTO_SIN_TRATAMIENTO_ILC,
@@ -110,6 +112,38 @@ describe('buildCeldasTratamientoPeriodo — agrupación por fingerprint', () => 
     const celdas = buildCeldasTratamientoPeriodo(form.eventosConcentrados);
     expect(celdas).toHaveLength(1);
     expect(celdas[0].fechaLabel).toBe('01-01-2025 – 01-03-2025');
+  });
+
+  it('no pisa el concentrado con el listado flaco (solo fecha / estadoCondiciones)', () => {
+    const persistido = [
+      {
+        idEventoOriginal: 'ev1',
+        fechaControl: '2025-01-01',
+        laboratorio: { glucosaMgDl: 180 },
+      },
+    ];
+    const form = {
+      eventosIncluidos: ['ev1'],
+      eventosConcentrados: persistido,
+    };
+    const listadoFlaco = [
+      {
+        _id: 'ev1',
+        fechaEventoSeguimientoCardiometabolico: '2025-01-01',
+        estadoCondiciones: { diabetesMellitusTipo2: { control: 'CONTROLADA' } },
+      },
+    ];
+    expect(eventoEscFuenteTieneInsumosClinicosIlc(listadoFlaco[0])).toBe(false);
+    expect(refrescarEventosConcentradosEnInforme(form, listadoFlaco)).toBe(false);
+    expect(form.eventosConcentrados).toBe(persistido);
+    expect(form.eventosConcentrados[0].laboratorio?.glucosaMgDl).toBe(180);
+  });
+});
+
+describe('listaEventosEscDesdeRespuestaApi', () => {
+  it('acepta array y descarta el { message } del listado vacío', () => {
+    expect(listaEventosEscDesdeRespuestaApi([{ _id: 'a' }])).toHaveLength(1);
+    expect(listaEventosEscDesdeRespuestaApi({ message: 'No se encontraron documentos' })).toEqual([]);
   });
 });
 

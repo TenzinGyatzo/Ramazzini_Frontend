@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import {
   aplicarIteracionDosAlFormulario,
@@ -113,6 +113,22 @@ function prellenarSiVacio() {
   }
 }
 
+function aplicarSugerenciaTrasHidratarInsumos() {
+  recalcularSugerencia();
+  const f = store.formDataInformeLongitudinalCardiometabolico;
+  const eraNoValorable =
+    textoVacio(f.nivelRiesgoLongitudinal) || f.nivelRiesgoLongitudinal === 'No valorable';
+  const sugerido = sugerencia.value.nivelRiesgoLongitudinal;
+  if (eraNoValorable && sugerido && sugerido !== 'No valorable') {
+    f.nivelRiesgoLongitudinal = sugerido;
+    if (sugerencia.value.interpretacionRiesgoLongitudinal) {
+      f.interpretacionRiesgoLongitudinal = sugerencia.value.interpretacionRiesgoLongitudinal;
+    }
+    return;
+  }
+  prellenarSiVacio();
+}
+
 onMounted(() => {
   const f = store.formDataInformeLongitudinalCardiometabolico;
   if (f.consistenciaSeguimiento === '') f.consistenciaSeguimiento = undefined;
@@ -121,6 +137,12 @@ onMounted(() => {
   recalcularSugerencia();
   prellenarSiVacio();
 });
+
+watch(
+  () => store.formDataInformeLongitudinalCardiometabolico.eventosConcentrados,
+  () => aplicarSugerenciaTrasHidratarInsumos(),
+  { deep: true },
+);
 </script>
 
 <template>

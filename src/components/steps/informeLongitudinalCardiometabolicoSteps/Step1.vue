@@ -13,7 +13,11 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import SeguimientoProgramadoCardiometabolicoAPI from '@/api/SeguimientoProgramadoCardiometabolicoAPI';
 import { derivarMetricasSeguimientoYEventos } from '@/helpers/informeLongitudinalOperativo';
-import { snapshotEventoConcentradoIlc } from '@/helpers/informeLongitudinalTratamiento';
+import { fetchEventosEscCompletosIlc } from '@/helpers/cargarEventosEscCompletosIlc';
+import {
+  eventoEscFuenteTieneInsumosClinicosIlc,
+  snapshotEventoConcentradoIlc,
+} from '@/helpers/informeLongitudinalTratamiento';
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -72,9 +76,9 @@ function periodoSugeridoDesdeEventos(eventos) {
 }
 
 /**
- * Todos los eventos CM del trabajador (aplanado desde `documentsByYear` por año).
+ * Fichas del listado de expediente (`/todos`): fechas e IDs, sin cuerpo clínico.
  */
-const eventosDesdeStore = computed(() => {
+const eventosDesdeListadoExpediente = computed(() => {
   const out = [];
   const byYear = documentsByYear.value || {};
   for (const yearData of Object.values(byYear)) {
@@ -88,6 +92,17 @@ const eventosDesdeStore = computed(() => {
     return mongoIdStr(e.idTrabajador) === mongoIdStr(tid);
   });
 });
+
+/** ESC completos (`findDocuments` por tipo). No se vuelcan a `documentsByYear`. */
+const eventosCmCompletos = ref([]);
+const loadingEventosCm = ref(false);
+
+/**
+ * Listado y snapshot: prioriza ESC completos; el listado flaco solo sirve de fallback visual.
+ */
+const eventosDesdeStore = computed(() =>
+  eventosCmCompletos.value.length ? eventosCmCompletos.value : eventosDesdeListadoExpediente.value,
+);
 
 const periodoInicio = ref(toYyyyMmDd(formDataInformeLongitudinalCardiometabolico.value.periodoInicio) || today);
 const periodoFin = ref(toYyyyMmDd(formDataInformeLongitudinalCardiometabolico.value.periodoFin) || today);
@@ -163,9 +178,10 @@ function sincronizarPayloadInforme() {
     fd.eventosConcentrados.length > 0 &&
     idsArrayFromForm(fd.eventosIncluidos).length > 0;
 
-  if (eventosSel.length > 0) {
+  const fuenteConInsumos = eventosSel.some(eventoEscFuenteTieneInsumosClinicosIlc);
+  if (eventosSel.length > 0 && fuenteConInsumos) {
     fd.eventosConcentrados = eventosSel.map(snapshotEvento);
-  } else if (!concentradoPersistido) {
+  } else if (eventosSel.length === 0 && !concentradoPersistido) {
     fd.eventosConcentrados = [];
   }
 
@@ -348,19 +364,26 @@ onMounted(async () => {
   formDataInformeLongitudinalCardiometabolico.value.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 
   loadingSeg.value = true;
+  loadingEventosCm.value = true;
+  const tid = trabajadores.currentTrabajadorId;
   try {
-    const tid = trabajadores.currentTrabajadorId;
-    if (tid) {
-      const { data } = await SeguimientoProgramadoCardiometabolicoAPI.list(tid);
-      seguimientosProgramados.value = Array.isArray(data) ? data : [];
-    } else {
-      seguimientosProgramados.value = [];
-    }
+    const [segRes, eventosCompletos] = await Promise.all([
+      tid
+        ? SeguimientoProgramadoCardiometabolicoAPI.list(tid).catch((e) => {
+            console.error('No se pudieron cargar seguimientos programados CM', e);
+            return { data: [] };
+          })
+        : Promise.resolve({ data: [] }),
+      fetchEventosEscCompletosIlc(tid),
+    ]);
+    seguimientosProgramados.value = Array.isArray(segRes.data) ? segRes.data : [];
+    eventosCmCompletos.value = eventosCompletos;
   } catch (e) {
-    console.error('No se pudieron cargar seguimientos programados CM', e);
+    console.error('No se pudieron cargar insumos CM para el ILC', e);
     seguimientosProgramados.value = [];
   } finally {
     loadingSeg.value = false;
+    loadingEventosCm.value = false;
   }
 
   sincronizarPayloadInforme();
@@ -422,7 +445,10 @@ onMounted(async () => {
             </button>
           </div>
         </div>
-        <ul v-if="eventosEnRango.length" class="clinical-step-scroll space-y-2 max-h-56 overflow-y-auto">
+        <p v-if="loadingEventosCm && !eventosEnRango.length" class="text-sm text-gray-500">
+          Cargando seguimientos realizados…
+        </p>
+        <ul v-else-if="eventosEnRango.length" class="clinical-step-scroll space-y-2 max-h-56 overflow-y-auto">
           <li
             v-for="ev in eventosEnRango"
             :key="mongoIdStr(ev._id)"
