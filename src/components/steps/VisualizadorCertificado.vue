@@ -18,6 +18,7 @@ import {
   legacyStepToSectionIndex,
 } from '@/helpers/certificadoSections';
 import { shouldShowPinpointVisual } from '@/helpers/sectionPinpointVisual';
+import { toTitleCase } from '@/helpers/toTitleCase';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -454,7 +455,7 @@ function formatearCampo(campo) {
      
      <div class="w-full mb-4">
         <p class="text-justify">
-            Expido el presente certificado médico a petición de <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong> para los usos legales a que haya lugar, en el municipio de {{ proveedorSalud.municipio }}, {{ proveedorSalud.estado }}, <span v-if="proveedorSalud.pais === 'GT'">el {{ formatDateDDMMYYYY(formData.formDataCertificado.fechaCertificado) }}.</span><span v-else>en la fecha mencionada al inicio de este certificado.</span>
+            Expido el presente certificado médico a petición de <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong> para los usos legales a que haya lugar, en el municipio de {{ toTitleCase(proveedorSalud.municipio) }}, {{ toTitleCase(proveedorSalud.estado) }}, <span v-if="proveedorSalud.pais === 'GT'">el {{ formatDateDDMMYYYY(formData.formDataCertificado.fechaCertificado) }}.</span><span v-else>en la fecha mencionada al inicio de este certificado.</span>
         </p>
      </div>
 

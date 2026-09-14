@@ -2,6 +2,7 @@
 import { ref, watch, onMounted } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
+import { toTitleCase } from '@/helpers/toTitleCase';
 
 const { catalogSearchInputAttrs } = useCatalogSearchInput();
 
@@ -103,25 +104,24 @@ const onInput = (e) => {
 };
 
 const selectResult = (result) => {
-  selectedEntry.value = result;
-  // Al seleccionar, mostramos la descripción formateada
-  query.value = `${result.cp} - ${toTitleCase(result.asentamiento)}, ${toTitleCase(result.municipio)}, ${toTitleCase(result.estado)}`;
+  const formatted = {
+    ...result,
+    asentamiento: toTitleCase(result.asentamiento),
+    municipio: toTitleCase(result.municipio),
+    estado: toTitleCase(result.estado),
+  };
+  selectedEntry.value = formatted;
+  query.value = `${formatted.cp} - ${formatted.asentamiento}, ${formatted.municipio}, ${formatted.estado}`;
   showResults.value = false;
   results.value = [];
-  emit('update:modelValue', result.cp);
-  emit('select', result);
+  emit('update:modelValue', formatted.cp);
+  emit('select', formatted);
 };
 
 const hideResults = () => {
   setTimeout(() => {
     showResults.value = false;
   }, 200);
-};
-
-// Helper para Title Case
-const toTitleCase = (str) => {
-  if (!str) return '';
-  return str.toLowerCase().replace(/(?:^|\s|-)\S/g, (l) => l.toUpperCase());
 };
 </script>
 

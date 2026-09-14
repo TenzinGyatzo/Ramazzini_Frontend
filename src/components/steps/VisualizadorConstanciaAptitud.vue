@@ -10,6 +10,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
+import { toTitleCase } from '@/helpers/toTitleCase';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -186,8 +187,8 @@ const logoSrc = computed(() => {
 const footerInfo = computed(() => {
   const info = [];
   if (proveedorSalud.value?.direccion) info.push(proveedorSalud.value.direccion);
-  if (proveedorSalud.value?.municipio) info.push(proveedorSalud.value.municipio);
-  if (proveedorSalud.value?.estado) info.push(proveedorSalud.value.estado);
+  if (proveedorSalud.value?.municipio) info.push(toTitleCase(proveedorSalud.value.municipio));
+  if (proveedorSalud.value?.estado) info.push(toTitleCase(proveedorSalud.value.estado));
   
   let texto = info.filter(item => item).join(', ') + '.';
   if (proveedorSalud.value?.telefono) {

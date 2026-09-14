@@ -9,6 +9,7 @@ import CPAutocomplete from '@/components/selectors/CPAutocomplete.vue';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
+import { toTitleCase } from '@/helpers/toTitleCase';
 
 const toast = inject('toast');
 
@@ -19,12 +20,6 @@ const { getCurrentUserId, ensureUserLoaded } = useCurrentUser();
 const emit = defineEmits(['closeModal']);
 
 const isMX = computed(() => proveedorSalud.isMX);
-
-// Helper para Title Case (Nombre Propio)
-const toTitleCase = (str) => {
-  if (!str) return '';
-  return str.toLowerCase().replace(/(?:^|\s|-)\S/g, (l) => l.toUpperCase());
-};
 
 // Objeto reactivo para campos geográficos (usado principalmente para México con catálogos)
 const formulario = ref({

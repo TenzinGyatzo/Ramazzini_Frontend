@@ -11,6 +11,7 @@ import CPAutocomplete from "@/components/selectors/CPAutocomplete.vue";
 import { useNom024Fields } from "@/composables/useNom024Fields";
 import ChangeRegimenModal from "@/components/onboarding/ChangeRegimenModal.vue";
 import { processProviderLogo } from "@/helpers/processProviderLogo";
+import { toTitleCase } from "@/helpers/toTitleCase";
 
 const proveedorSalud = useProveedorSaludStore();
 const userStore = useUserStore();
@@ -73,8 +74,8 @@ watch(
     Object.assign(formulario.value, {
       nombre: proveedor.nombre ?? "",
       direccion: proveedor.direccion ?? "",
-      municipio: typeof municipioValue === 'string' ? (municipioValue || "") : (municipioValue ? String(municipioValue) : ""),
-      estado: typeof estadoValue === 'string' ? (estadoValue || "") : (estadoValue ? String(estadoValue) : ""),
+      municipio: toTitleCase(typeof municipioValue === 'string' ? (municipioValue || "") : (municipioValue ? String(municipioValue) : "")),
+      estado: toTitleCase(typeof estadoValue === 'string' ? (estadoValue || "") : (estadoValue ? String(estadoValue) : "")),
       telefono: proveedor.telefono ?? "",
       sitioWeb: proveedor.sitioWeb ?? "",
       pais: proveedor.pais ?? "",
@@ -106,12 +107,12 @@ watch(() => formulario.value.pais, (newPais, oldPais) => {
 
 const handleCPSelect = (data) => {
   if (data) {
-    formulario.value.estado = data.estado;
-    formulario.value.municipio = data.municipio;
+    formulario.value.estado = toTitleCase(data.estado);
+    formulario.value.municipio = toTitleCase(data.municipio);
     
     // Opcional: Si no hay dirección, sugerir la colonia
     if (data.asentamiento && !formulario.value.direccion) {
-      formulario.value.direccion = `Colonia ${data.asentamiento}`;
+      formulario.value.direccion = `Colonia ${toTitleCase(data.asentamiento)}`;
     }
   }
 };
@@ -135,8 +136,8 @@ const validateFile = (file) => {
 const piePaginaInforme = computed(() => ({
   nombre: formulario.value.nombre || "",
   direccion: formulario.value.direccion || "",
-  municipio: formulario.value.municipio || "",
-  estado: formulario.value.estado || "",
+  municipio: toTitleCase(formulario.value.municipio || ""),
+  estado: toTitleCase(formulario.value.estado || ""),
   telefono: formatearTelefono(formulario.value.telefono),
   sitioWeb: formulario.value.sitioWeb || "",
   RFC: formulario.value.RFC || "",
@@ -355,13 +356,13 @@ const handleSubmit = async (data) => {
     formData.append("codigoPostal", cpValue);
   }
   
-  const estadoValue = normalizeGeoValue(formulario.value.estado);
+  const estadoValue = toTitleCase(normalizeGeoValue(formulario.value.estado));
   formData.delete("estado");
   if (estadoValue) {
     formData.append("estado", estadoValue);
   }
   
-  const municipioValue = normalizeGeoValue(formulario.value.municipio);
+  const municipioValue = toTitleCase(normalizeGeoValue(formulario.value.municipio));
   formData.delete("municipio");
   if (municipioValue) {
     formData.append("municipio", municipioValue);

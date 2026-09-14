@@ -1,6 +1,7 @@
 declare const pdfMake: typeof import('pdfmake/build/pdfmake');
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { setupPdfMakeKanitFonts } from '@/helpers/setupPdfMakeKanitFonts';
+import { toTitleCase } from '@/helpers/toTitleCase';
 
 export interface DeclaracionVeracidadTrabajador {
   nombre?: string;
@@ -157,8 +158,8 @@ function buildNombreArchivo(trabajador: DeclaracionVeracidadTrabajador, fecha: s
 function buildFooter(proveedorSalud: DeclaracionVeracidadProveedorSalud | null): TDocumentDefinitions['footer'] {
   const direccionCompleta = [
     proveedorSalud?.direccion,
-    proveedorSalud?.municipio,
-    proveedorSalud?.estado,
+    toTitleCase(proveedorSalud?.municipio),
+    toTitleCase(proveedorSalud?.estado),
   ]
     .filter(Boolean)
     .join(', ');

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, onMounted, nextTick } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
+import { toTitleCase } from '@/helpers/toTitleCase';
 
 const props = defineProps({
   estado: {
@@ -93,18 +94,12 @@ const loadLocalidades = async (estadoCode, municipioCode) => {
   }
 };
 
-// Helper para convertir a Title Case (Primera Mayúscula)
-const toTitleCase = (str) => {
-  if (!str) return '';
-  return str.toLowerCase().replace(/(?:^|\s|-)\S/g, (l) => l.toUpperCase());
-};
-
 // Manejadores de cambios
 const onEstadoChange = async (e) => {
   const code = e.target.value;
   const description = estados.value.find(est => est.code === code)?.description || '';
   
-  emit('update:estado', description);
+  emit('update:estado', toTitleCase(description));
   emit('update:municipio', '');
   emit('update:localidad', '');
   
@@ -120,7 +115,7 @@ const onMunicipioChange = async (e) => {
   const code = e.target.value;
   const description = municipios.value.find(mun => mun.code === code)?.description || '';
   
-  emit('update:municipio', description);
+  emit('update:municipio', toTitleCase(description));
   emit('update:localidad', '');
   
   localidades.value = [];

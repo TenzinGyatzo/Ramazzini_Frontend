@@ -13,6 +13,7 @@ import DocumentosAPI from '@/api/DocumentosAPI';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useUserStore } from '@/stores/user';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
+import { toTitleCase } from '@/helpers/toTitleCase';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -248,7 +249,7 @@ function getGradoSaludFormateado(gradoSalud) {
      <!-- Salida -->
      <div class="w-full mb-4">
         <p class="text-justify">
-            Expido el presente certificado médico a petición de <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong> para los usos legales a que haya lugar, en el municipio de {{ proveedorSalud.municipio }}, {{ proveedorSalud.estado }}, <span v-if="proveedorSalud.pais === 'GT'">el {{ formatDateDDMMYYYY(formData.formDataCertificadoExpedito.fechaCertificadoExpedito) }}.</span><span v-else>en la fecha mencionada al inicio de este certificado.</span>
+            Expido el presente certificado médico a petición de <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong> para los usos legales a que haya lugar, en el municipio de {{ toTitleCase(proveedorSalud.municipio) }}, {{ toTitleCase(proveedorSalud.estado) }}, <span v-if="proveedorSalud.pais === 'GT'">el {{ formatDateDDMMYYYY(formData.formDataCertificadoExpedito.fechaCertificadoExpedito) }}.</span><span v-else>en la fecha mencionada al inicio de este certificado.</span>
         </p>
      </div>
 
