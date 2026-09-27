@@ -622,42 +622,6 @@ const logoSrc = computed(() => {
                 :required="false"
               />
 
-              <!-- Banner de setup incompleto SIRES -->
-              <!-- <div
-                v-if="proveedorSalud.isSIRES && !proveedorSalud.proveedorSalud?.clues"
-                class="sm:col-span-2 mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <div class="flex items-start gap-2">
-                  <i class="fa-solid fa-exclamation-triangle text-amber-600 mt-0.5"></i>
-                  <div>
-                    <p class="font-medium text-amber-800 mb-1">
-                      Configuración SIRES incompleta
-                    </p>
-                    <p class="text-sm text-amber-700">
-                      Completa tu CLUES para habilitar todas las funcionalidades SIRES.
-                    </p>
-                  </div>
-                </div>
-              </div> -->
-
-              <!-- Sección Régimen Regulatorio: solo México -->
-              <div v-if="isMX" class="sm:col-span-2 mb-4 p-4 border rounded-lg bg-gray-50">
-                <h3 class="font-medium text-lg text-gray-700 mb-3">
-                  Régimen Regulatorio
-                </h3>
-                
-                <p class="text-sm text-gray-600 mb-2">
-                  Estado actual:
-                  <span class="font-semibold">
-                    {{ proveedorSalud.proveedorSalud?.regimenRegulatorio === 'SIRES_NOM024'
-                      ? 'SIRES (NOM-024-SSA3-2012)'
-                      : 'Sin régimen regulatorio' }}
-                  </span>
-                </p>
-                <p class="text-sm text-amber-800">
-                  Esta elección queda fija en esta cuenta. Para usar el otro régimen tendrás que crear otra cuenta.
-                </p>
-              </div>
-
             </div>
 
             <!-- Área de arrastrar y soltar para el logotipo -->
