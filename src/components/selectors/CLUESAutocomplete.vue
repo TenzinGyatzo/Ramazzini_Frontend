@@ -21,6 +21,10 @@ const props = defineProps({
   required: {
     type: Boolean,
     default: false
+  },
+  showPrivateCluesNote: {
+    type: Boolean,
+    default: true
   }
 });
 
@@ -200,9 +204,11 @@ const hideResults = () => {
 
     <p class="text-xs text-gray-500 mt-1">
       <i class="fas fa-info-circle mr-1"></i>
-      Código de 11 caracteres (ej. DFSSA012345). Aplica únicamente para establecimientos de salud registrados en México (CLUES – NOM-024).
-      <br>
-      <span class="italic">De no contar con un CLUES válido, se debe utilizar el valor 9998 - SERVICIOS MEDICOS PRIVADOS.</span>
+      Código de 11 caracteres (ej. DFSSA012345). Aplica únicamente para establecimientos de salud registrados en México.
+      <template v-if="showPrivateCluesNote">
+        <br>
+        <span class="italic">De no contar con un CLUES válido, se debe utilizar el valor 9998 - SERVICIOS MEDICOS PRIVADOS.</span>
+      </template>
     </p>
   </div>
 </template>

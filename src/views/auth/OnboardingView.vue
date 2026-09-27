@@ -20,7 +20,10 @@ const showPassword = ref(false);
 const passwordContainer = ref(null);
 const toggleButton = ref(null);
 const isLoading = ref(false);
-const showCountryMessage = ref(false);
+const emailRegistrationError = ref("");
+const registrationError = ref("");
+const establecimientoPrivado = ref(false);
+const CLUES_SERVICIOS_MEDICOS_PRIVADOS = "9998";
 const formDataUser = reactive({
   username: "",
   email: "",
@@ -72,32 +75,34 @@ const handleSubmitStep2 = async (data) => {
       formDataProveedorSalud.regimenRegulatorio = 'SIN_REGIMEN';
     }
     
-    // Si no se seleccionó régimen explícitamente, asignar SIN_REGIMEN implícitamente
-    if (formDataProveedorSalud.regimenRegulatorio === null) {
-      formDataProveedorSalud.regimenRegulatorio = 'SIN_REGIMEN';
+    const regimen = formDataProveedorSalud.regimenRegulatorio;
+    if (regimen !== 'SIRES_NOM024' && regimen !== 'SIN_REGIMEN') {
+      toast.open({
+        type: "error",
+        message: "Elige cómo operará tu cuenta",
+        position: "bottom-left",
+      });
+      return;
     }
-    
-    // Si seleccionó SIN_REGIMEN, validar declaración
-    if (formDataProveedorSalud.regimenRegulatorio === 'SIN_REGIMEN') {
+
+    if (regimen === 'SIN_REGIMEN') {
       if (!formDataProveedorSalud.declaracionAceptada) {
         toast.open({
           type: "error",
-          message: "Debes aceptar la declaración de contexto operativo para continuar",
+          message: "Acepta la declaración para continuar",
           position: "bottom-left",
         });
         return;
       }
-      // Asignar timestamp y versión de la declaración
       formDataProveedorSalud.declaracionAceptadaAt = new Date().toISOString();
       formDataProveedorSalud.declaracionVersion = "1.0";
     }
-    
-    // Si seleccionó SIRES_NOM024, validar CLUES
-    if (formDataProveedorSalud.regimenRegulatorio === 'SIRES_NOM024') {
+
+    if (regimen === 'SIRES_NOM024') {
       if (!formDataProveedorSalud.clues || formDataProveedorSalud.clues.trim() === '') {
         toast.open({
           type: "error",
-          message: "El código CLUES es obligatorio para el régimen SIRES (NOM-024)",
+          message: "Indica el CLUES para continuar",
           position: "bottom-left",
         });
         return;
@@ -109,9 +114,29 @@ const handleSubmitStep2 = async (data) => {
   submitProveedorSalud();
 };
 
+function apiErrorMessage(error) {
+  const message = error?.response?.data?.message;
+  if (Array.isArray(message)) {
+    const text = message.map(String).join(". ").trim();
+    if (text) return text;
+  }
+  if (typeof message === "string" && message.trim()) {
+    return message.trim();
+  }
+  return "No se pudo completar el registro. Revisa los datos e inténtalo de nuevo.";
+}
+
+function isEmailAlreadyRegistered(error, message) {
+  const status = error?.response?.status;
+  return status === 409 && /ya está registrado/i.test(message);
+}
+
 const submitProveedorSalud = async () => {
   isLoading.value = true;
-  let idProveedorSalud = null; // Variable para almacenar el ID del proveedor de salud
+  emailRegistrationError.value = "";
+  registrationError.value = "";
+  let idProveedorSalud = null;
+  let onboardingDiscardToken = null;
 
   try {
     // 1. Crear Proveedor Salud y obtener idProveedorSalud
@@ -120,9 +145,13 @@ const submitProveedorSalud = async () => {
     );
     const proveedorSalud = respuesta.data;
     idProveedorSalud = proveedorSalud._id;
+    onboardingDiscardToken =
+      typeof respuesta.onboardingDiscardToken === "string"
+        ? respuesta.onboardingDiscardToken
+        : null;
 
     if (!idProveedorSalud) {
-      throw respuesta.error; // Lanzar el error para manejarlo en el catch
+      throw respuesta.error ?? new Error("No se pudo crear el proveedor de salud");
     }
 
     // 2. Crear usuario
@@ -132,7 +161,6 @@ const submitProveedorSalud = async () => {
       idProveedorSalud,
     };
 
-    console.log('User payload:', userPayload); // Debug
     const resultado = await userStore.registerUser(userPayload);
 
     // Verificar si el registro fue exitoso
@@ -148,21 +176,42 @@ const submitProveedorSalud = async () => {
 
     currentStep.value = 3;
   } catch (error) {
-    console.error('Error al registrar:', error);
-    // Mostrar mensaje de error en el toast
+    console.error("Error al registrar:", error);
+    const message = apiErrorMessage(error);
     toast.open({
       type: "error",
-      message: `Error: ${error.response?.data?.message || error.message || 'Error al registrar'}`,
+      message,
       position: "bottom-left",
     });
 
-    // Si hay un error y el proveedor de salud ya fue creado, eliminarlo
-    if (idProveedorSalud) {
+    if (isEmailAlreadyRegistered(error, message)) {
+      emailRegistrationError.value = `${message} Corrige el correo e inténtalo de nuevo, o inicia sesión si esta cuenta ya es tuya.`;
+      goBackToStep1();
+      window.setTimeout(() => {
+        document
+          .getElementById("onboarding-email-error")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 350);
+    } else {
+      registrationError.value = `${message} Puedes corregir los datos e intentarlo de nuevo.`;
+      nextTick(() => {
+        document
+          .getElementById("onboarding-registration-error")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+
+    if (idProveedorSalud && onboardingDiscardToken) {
       try {
-        await proveedorSaludStore.removeProveedorById(idProveedorSalud);
-        console.log("Proveedor de salud eliminado debido a error en el registro del usuario o de la suscripcion");
-      } catch (deleteError) {
-        console.error("Error al eliminar el proveedor de salud:", deleteError);
+        await proveedorSaludStore.discardEmptyOnboardingProveedor(
+          idProveedorSalud,
+          onboardingDiscardToken,
+        );
+      } catch (discardError) {
+        console.error(
+          "No se descartó el proveedor de onboarding vacío",
+          discardError,
+        );
       }
     }
   } finally {
@@ -227,6 +276,10 @@ watch(() => formDataUser.password, () => {
   });
 });
 
+watch(() => formDataUser.email, () => {
+  emailRegistrationError.value = "";
+});
+
 // Watcher para sincronizar el país del paso 1 con el paso 2
 watch(() => formDataUser.country, (newCountry) => {
   if (newCountry) {
@@ -234,50 +287,90 @@ watch(() => formDataUser.country, (newCountry) => {
   }
 }, { immediate: true });
 
-// Watcher para mostrar mensaje cuando se selecciona México
-watch(() => formDataProveedorSalud.pais, (newPais) => {
-  if (newPais === 'MX' && currentStep.value === 2) {
-    showCountryMessage.value = true;
-    setTimeout(() => {
-      showCountryMessage.value = false;
-    }, 5000);
-  } else {
-    showCountryMessage.value = false;
+watch(establecimientoPrivado, (checked) => {
+  if (formDataProveedorSalud.regimenRegulatorio !== "SIRES_NOM024") return;
+  if (checked) {
+    formDataProveedorSalud.clues = CLUES_SERVICIOS_MEDICOS_PRIVADOS;
+  } else if (formDataProveedorSalud.clues === CLUES_SERVICIOS_MEDICOS_PRIVADOS) {
+    formDataProveedorSalud.clues = "";
   }
 });
 
-// Computed para validar si se puede enviar el formulario del paso 2
+watch(() => formDataProveedorSalud.regimenRegulatorio, (regimen) => {
+  if (regimen === "SIRES_NOM024") return;
+  establecimientoPrivado.value = false;
+  if (formDataProveedorSalud.clues === CLUES_SERVICIOS_MEDICOS_PRIVADOS) {
+    formDataProveedorSalud.clues = "";
+  }
+});
+
+function campoLleno(value) {
+  return typeof value === "string" && value.trim() !== "";
+}
+
+function regimenPaso2() {
+  if (formDataProveedorSalud.regimenRegulatorio === "NO_SUJETO_SIRES") {
+    return "SIN_REGIMEN";
+  }
+  return formDataProveedorSalud.regimenRegulatorio;
+}
+
+const step2Checks = computed(() => {
+  const checks = [
+    campoLleno(formDataProveedorSalud.nombre),
+    campoLleno(formDataProveedorSalud.pais),
+    campoLleno(formDataProveedorSalud.perfilProveedorSalud),
+  ];
+
+  if (isMX.value) {
+    const regimen = regimenPaso2();
+    const elegido = regimen === "SIRES_NOM024" || regimen === "SIN_REGIMEN";
+    checks.push(elegido);
+    if (regimen === "SIRES_NOM024") {
+      checks.push(campoLleno(formDataProveedorSalud.clues));
+    }
+    if (regimen === "SIN_REGIMEN") {
+      checks.push(Boolean(formDataProveedorSalud.declaracionAceptada));
+    }
+  }
+
+  checks.push(Boolean(formDataProveedorSalud.termsAccepted));
+  return checks;
+});
+
 const canSubmitStep2 = computed(() => {
   if (isLoading.value) return false;
-  
-  // Términos deben estar aceptados
-  if (!formDataProveedorSalud.termsAccepted) {
-    return false;
+  return step2Checks.value.every(Boolean);
+});
+
+const step2Blocker = computed(() => {
+  if (isLoading.value || canSubmitStep2.value) return "";
+  if (
+    !campoLleno(formDataProveedorSalud.nombre) ||
+    !campoLleno(formDataProveedorSalud.pais) ||
+    !campoLleno(formDataProveedorSalud.perfilProveedorSalud)
+  ) {
+    return "";
   }
-  
-  // Si es México
+
   if (isMX.value) {
-    // Normalizar valores antiguos
-    if (formDataProveedorSalud.regimenRegulatorio === 'NO_SUJETO_SIRES') {
-      formDataProveedorSalud.regimenRegulatorio = 'SIN_REGIMEN';
+    const regimen = regimenPaso2();
+    if (regimen !== "SIRES_NOM024" && regimen !== "SIN_REGIMEN") {
+      return "Elige cómo operará tu cuenta";
     }
-    
-    // Si seleccionó SIN_REGIMEN, debe aceptar la declaración
-    if (formDataProveedorSalud.regimenRegulatorio === 'SIN_REGIMEN') {
-      if (!formDataProveedorSalud.declaracionAceptada) {
-        return false;
-      }
+    if (regimen === "SIRES_NOM024" && !campoLleno(formDataProveedorSalud.clues)) {
+      return "Indica el CLUES";
     }
-    
-    // Si seleccionó SIRES_NOM024, debe tener CLUES
-    if (formDataProveedorSalud.regimenRegulatorio === 'SIRES_NOM024') {
-      if (!formDataProveedorSalud.clues || formDataProveedorSalud.clues.trim() === '') {
-        return false;
-      }
+    if (regimen === "SIN_REGIMEN" && !formDataProveedorSalud.declaracionAceptada) {
+      return "Acepta la declaración";
     }
   }
-  
-  return true;
+
+  if (!formDataProveedorSalud.termsAccepted) {
+    return "Acepta los términos";
+  }
+
+  return "";
 });
 
 // Computed para porcentaje de progreso
@@ -291,14 +384,9 @@ const progresoOnboarding = computed(() => {
     ].filter(v => v && v.trim() !== '').length;
     return Math.round((camposCompletos / 4) * 50);
   } else if (currentStep.value === 2) {
-    const camposCompletos = [
-      formDataProveedorSalud.nombre,
-      formDataProveedorSalud.pais,
-      formDataProveedorSalud.perfilProveedorSalud
-    ].filter(v => v && v.trim() !== '').length;
-    const base = 50;
-    const adicional = Math.round((camposCompletos / 3) * 50);
-    return base + adicional;
+    const checks = step2Checks.value;
+    const completos = checks.filter(Boolean).length;
+    return 50 + Math.round((completos / checks.length) * 50);
   }
   return 100;
 });
@@ -332,10 +420,15 @@ onMounted(() => {
 </script>
 
 <template>
+  <div
+    class="mx-auto w-full"
+    :class="currentStep === 2 ? 'max-w-lg mt-6' : 'max-w-sm mt-20'"
+  >
   <img
     :src="isHtmlDark ? '/img/logosRamazzini/RamazziniLogoClaroNoBg.png' : '/img/logosRamazzini/RamazziniLogoNoBg.png'"
     alt="Ramazzini Logo"
-    class="max-w-[250px] max-h-[250px] object-contain p-2 mx-auto"
+    class="object-contain p-2 mx-auto"
+    :class="currentStep === 2 ? 'max-w-[140px] max-h-[72px]' : 'max-w-[250px] max-h-[250px]'"
   />
 
   <div
@@ -451,6 +544,14 @@ onMounted(() => {
         @submit="handleSubmitStep1"
       >
         <div class="grid gap-3">
+        <div
+          v-if="emailRegistrationError"
+          id="onboarding-email-error"
+          role="alert"
+          class="p-3 bg-red-50 border-l-4 border-red-500 rounded"
+        >
+          <p class="text-sm text-red-800">{{ emailRegistrationError }}</p>
+        </div>
         <FormKit
           type="text"
           label="¿Cuál es tu nombre?"
@@ -536,40 +637,35 @@ onMounted(() => {
         @submit="handleSubmitStep2"
       >
         <div class="grid gap-3">
+        <div
+          v-if="registrationError"
+          id="onboarding-registration-error"
+          role="alert"
+          class="p-3 bg-red-50 border-l-4 border-red-500 rounded"
+        >
+          <p class="text-sm text-red-800">{{ registrationError }}</p>
+        </div>
         <FormKit
           type="text"
-          label="¿Cuál es tu nombre o razón social?"
+          label="Razón social"
           name="nombre"
           placeholder="Ej. Ramazzini S.A."
           validation="required"
           :validation-messages="{ required: 'Este campo es obligatorio' }"
           v-model="formDataProveedorSalud.nombre"
-          aria-label="Nombre o razón social de la empresa"
+          aria-label="Razón social de la empresa"
           autocomplete="organization"
         />
         <CountrySelect
-          label="¿En qué país te encuentras?"
+          label="País"
           placeholder="Selecciona tu país"
           v-model="formDataProveedorSalud.pais"
           validation="required"
         />
-        
-        <!-- Mensaje informativo cuando se selecciona México -->
-        <Transition name="fade">
-          <div 
-            v-if="showCountryMessage && isMX" 
-            class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded flex items-start gap-2"
-          >
-            <i class="fas fa-info-circle text-blue-600 mt-0.5"></i>
-            <p class="text-sm text-blue-800">
-              <strong>México seleccionado:</strong> Por favor, selecciona el régimen regulatorio aplicable a tu operación.
-            </p>
-          </div>
-        </Transition>
-        
+
         <FormKit
           type="select"
-          label="¿Cuál describe mejor al proveedor de salud ocupacional que registras?"
+          label="Tipo de proveedor"
           name="perfilProveedorSalud"
           placeholder="Selecciona:"
           :options="perfiles"
@@ -578,14 +674,33 @@ onMounted(() => {
           v-model="formDataProveedorSalud.perfilProveedorSalud"
         />
 
-        <!-- Selector de Régimen Regulatorio (solo para México) -->
-        <Transition name="fade">
-          <RegimenRegulatorioSelector
-            v-if="isMX"
-            v-model="formDataProveedorSalud.regimenRegulatorio"
-            @update:declaracion="formDataProveedorSalud.declaracionAceptada = $event"
-          />
-        </Transition>
+        <RegimenRegulatorioSelector
+          v-if="isMX"
+          v-model="formDataProveedorSalud.regimenRegulatorio"
+          @update:declaracion="formDataProveedorSalud.declaracionAceptada = $event"
+        >
+          <template #sires-extra>
+            <label class="flex items-start gap-3 cursor-pointer rounded-lg border border-gray-200 bg-white p-3">
+              <input
+                type="checkbox"
+                class="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                v-model="establecimientoPrivado"
+              />
+              <span class="text-sm text-gray-700">
+                Es un establecimiento privado.
+                <span class="block text-xs text-gray-500 mt-1">
+                  Se registrará el CLUES 9998 - SERVICIOS MEDICOS PRIVADOS.
+                </span>
+              </span>
+            </label>
+            <CLUESAutocomplete
+              v-if="!establecimientoPrivado"
+              v-model="formDataProveedorSalud.clues"
+              :required="true"
+              :show-private-clues-note="false"
+            />
+          </template>
+        </RegimenRegulatorioSelector>
         </div>
         
         <FormKit
@@ -602,32 +717,52 @@ onMounted(() => {
         <FormKit type="hidden" name="termsVersion" v-model="formDataProveedorSalud.termsVersion" />
 
         <div class="flex items-center justify-center gap-4 mt-4">
-          <span class="text-sm" :class="formDataProveedorSalud.termsAccepted ? 'text-emerald-600' : 'text-gray-500'">
-            He leído y acepto los <a href="https://get.ramazzini.app/terminos-y-condiciones.html" target="_blank" class="text-sm text-blue-500 hover:underline">Términos y Condiciones</a>
-          </span>
-
-          <button 
+          <button
             type="button"
-            @click="formDataProveedorSalud.termsAccepted = !formDataProveedorSalud.termsAccepted" 
+            @click="formDataProveedorSalud.termsAccepted = !formDataProveedorSalud.termsAccepted"
             :class="formDataProveedorSalud.termsAccepted ? 'bg-emerald-500' : 'bg-gray-300'"
-            class="relative w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 min-w-[48px] min-h-[24px]"
+            class="relative w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shrink-0"
             :aria-label="formDataProveedorSalud.termsAccepted ? 'Términos aceptados' : 'Aceptar términos y condiciones'"
             :aria-pressed="formDataProveedorSalud.termsAccepted"
           >
-            <span 
+            <span
               class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform"
-              :class="formDataProveedorSalud.termsAccepted ? 'translate-x-6' : ''">
-            </span>
+              :class="formDataProveedorSalud.termsAccepted ? 'translate-x-6' : ''"
+            ></span>
           </button>
+          <span
+            class="text-sm cursor-pointer"
+            :class="formDataProveedorSalud.termsAccepted ? 'text-emerald-600' : 'text-gray-500'"
+            @click="formDataProveedorSalud.termsAccepted = !formDataProveedorSalud.termsAccepted"
+          >
+            He leído y acepto los
+            <a
+              href="https://get.ramazzini.app/terminos-y-condiciones.html"
+              target="_blank"
+              class="text-blue-500 hover:underline"
+              @click.stop
+            >Términos y Condiciones</a>
+          </span>
         </div>
 
-        <div class="w-full mt-3">
+        <div class="sticky bottom-0 z-20 mt-4 bg-white/95 pt-2 pb-2">
           <FormKit type="submit" :disabled="!canSubmitStep2">
             <span v-if="!isLoading" class="mr-2">Finalizar</span>
             <span v-else class="mr-2">Procesando registro...</span>
             <i v-if="!isLoading" class="fa-solid fa-check"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
           </FormKit>
+          <p v-if="step2Blocker" class="mt-2 text-center text-xs text-gray-500">
+            {{ step2Blocker }}
+          </p>
+          <button
+            type="button"
+            class="text-sm block mx-auto text-center font-light mt-3 text-sky-500 cursor-pointer hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 rounded px-2 py-1"
+            aria-label="Regresar al paso anterior"
+            @click="goBackToStep1"
+          >
+            Regresar
+          </button>
         </div>
       </FormKit>
     </Transition>
@@ -640,14 +775,7 @@ onMounted(() => {
         ><strong class="hover:underline">Inicia sesión</strong></RouterLink
       >
     </nav>
-    <button
-      v-else
-      @click="goBackToStep1"
-      class="text-sm block mx-auto text-center font-light mt-5 text-sky-500 cursor-pointer hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 rounded px-2 py-1"
-      aria-label="Regresar al paso anterior"
-    >
-      Regresar
-    </button>
+  </div>
   </div>
 </template>
 

@@ -17,6 +17,13 @@ export default {
         return proveedor.delete(`eliminar-proveedor-salud/${proveedorId}`)
     },
 
+    discardEmptyOnboardingProveedor(proveedorId: string, discardToken: string) {
+        return proveedor.post('descartar-onboarding-vacio', {
+            id: proveedorId,
+            discardToken,
+        });
+    },
+
     verificarPeriodoDePrueba(proveedorId: string) {
         return proveedor.get(`verificar-periodo-prueba/${proveedorId}`);
     },
@@ -53,11 +60,4 @@ export default {
         const params = ids?.length ? { ids: ids.join(',') } : undefined;
         return proveedor.get('/panel-admin', { params });
     },
-
-    changeRegimenRegulatorio(proveedorId: string, regimen: string, reason: string) {
-        return proveedor.patch(`/${proveedorId}/regimen-regulatorio`, {
-            regimenRegulatorio: regimen,
-            reason: reason
-        });
-    }
 }

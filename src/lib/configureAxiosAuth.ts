@@ -25,6 +25,18 @@ function isAuthFlowRequest(url: string | undefined): boolean {
   );
 }
 
+/** Pantallas sin sesión. Un 401 aquí no es una sesión vencida. */
+function isPublicAuthPage(): boolean {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname;
+  return (
+    path === '/login' ||
+    path.startsWith('/login/') ||
+    path === '/auth' ||
+    path.startsWith('/auth/')
+  );
+}
+
 function isSessionIdleResponse(error: unknown): boolean {
   if (!axios.isAxiosError(error) || error.response?.status !== 401) {
     return false;
@@ -74,7 +86,8 @@ export function configureAxiosAuth(instance: AxiosInstance): AxiosInstance {
         !original ||
         error.response?.status !== 401 ||
         original._authRetry ||
-        isAuthFlowRequest(original.url)
+        isAuthFlowRequest(original.url) ||
+        isPublicAuthPage()
       ) {
         return Promise.reject(error);
       }

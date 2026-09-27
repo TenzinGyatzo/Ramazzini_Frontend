@@ -1,7 +1,6 @@
 <script setup>
 import { ref, inject, computed, watch, onUnmounted } from "vue";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
-import { useUserStore } from "@/stores/user";
 import { useRouter, RouterLink } from "vue-router";
 import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
 import CountrySelect from "@/components/CountrySelect.vue";
@@ -9,12 +8,10 @@ import CLUESAutocomplete from "@/components/selectors/CLUESAutocomplete.vue";
 import MexicoGeoSelect from "@/components/selectors/MexicoGeoSelect.vue";
 import CPAutocomplete from "@/components/selectors/CPAutocomplete.vue";
 import { useNom024Fields } from "@/composables/useNom024Fields";
-import ChangeRegimenModal from "@/components/onboarding/ChangeRegimenModal.vue";
 import { processProviderLogo } from "@/helpers/processProviderLogo";
 import { toTitleCase } from "@/helpers/toTitleCase";
 
 const proveedorSalud = useProveedorSaludStore();
-const userStore = useUserStore();
 const router = useRouter();
 
 const logotipoPreview = ref(null);
@@ -40,11 +37,6 @@ const semaforizacionActivada = ref(false);
 
 const isMX = computed(() => formulario.value.pais === 'MX');
 const { cluesFieldVisible } = useNom024Fields();
-
-const showChangeRegimenModal = ref(false);
-const canChangeRegimenRegulatorio = computed(
-  () => userStore.user?.role === 'Principal',
-);
 
 // Objeto reactivo para el formulario
 const formulario = ref({
@@ -421,24 +413,6 @@ const volver = () => {
   router.push({ name: "inicio" });
 };
 
-const handleRegimenChange = async (reason) => {
-  if (proveedorSalud.saving) return;
-  try {
-    await proveedorSalud.changeRegimenRegulatorio('SIRES_NOM024', reason);
-    toast.open({
-      message: 'Régimen regulatorio actualizado exitosamente',
-      type: 'success'
-    });
-    showChangeRegimenModal.value = false;
-  } catch (error) {
-    console.error('Error al cambiar régimen regulatorio:', error);
-    toast.open({
-      message: error.response?.data?.message || 'Error al cambiar régimen regulatorio',
-      type: 'error'
-    });
-  }
-};
-
 const perfiles = [
   "Médico único de empresa",
   "Médico independiente que brinda servicios a empresas",
@@ -671,47 +645,17 @@ const logoSrc = computed(() => {
                   Régimen Regulatorio
                 </h3>
                 
-                <!-- Estado actual -->
-                <div class="mb-3">
-                  <p class="text-sm text-gray-600">
-                    Estado actual: 
-                    <span class="font-semibold">
-                      {{ proveedorSalud.proveedorSalud?.regimenRegulatorio === 'SIRES_NOM024' 
-                        ? 'SIRES (NOM-024-SSA3-2012)' 
-                        : 'Sin régimen regulatorio' }}
-                    </span>
-                  </p>
-                </div>
-
-                <!-- Si es SIN_REGIMEN: mostrar CTA para upgrade (solo Principal) -->
-                <div v-if="proveedorSalud.isSinRegimen && canChangeRegimenRegulatorio">
-                  <button 
-                    @click="showChangeRegimenModal = true"
-                    type="button"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    <i class="fa-solid fa-arrow-up mr-2"></i>
-                    Activar SIRES (NOM-024-SSA3-2012)
-                  </button>
-                </div>
-                <p
-                  v-else-if="proveedorSalud.isSinRegimen"
-                  class="text-sm text-gray-500"
-                >
-                  Solo el usuario principal puede activar SIRES.
+                <p class="text-sm text-gray-600 mb-2">
+                  Estado actual:
+                  <span class="font-semibold">
+                    {{ proveedorSalud.proveedorSalud?.regimenRegulatorio === 'SIRES_NOM024'
+                      ? 'SIRES (NOM-024-SSA3-2012)'
+                      : 'Sin régimen regulatorio' }}
+                  </span>
                 </p>
-
-                <!-- Si es SIRES: mostrar estado y bloqueo de downgrade -->
-                <div v-else-if="proveedorSalud.isSIRES">
-                  <div class="bg-green-50 border border-green-200 rounded p-3 mb-2">
-                    <p class="text-sm text-green-800">
-                      <i class="fa-solid fa-check-circle mr-2"></i>
-                      SIRES activo. Las funcionalidades regulatorias están habilitadas.
-                    </p>
-                  </div>
-                  <p class="text-xs text-gray-500">
-                    Para desactivar SIRES, contacta a soporte.
-                  </p>
-                </div>
+                <p class="text-sm text-amber-800">
+                  Esta elección queda fija en esta cuenta. Para usar el otro régimen tendrás que crear otra cuenta.
+                </p>
               </div>
 
             </div>
@@ -855,13 +799,6 @@ const logoSrc = computed(() => {
       </Transition>
       </div>
 
-      <!-- Modal de cambio de régimen -->
-      <ChangeRegimenModal
-        v-if="showChangeRegimenModal"
-        :is-submitting="proveedorSalud.saving"
-        @close="showChangeRegimenModal = false"
-        @confirm="handleRegimenChange"
-      />
     </div>
   </Transition>
 </template>

@@ -140,6 +140,20 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         }
     }
 
+    async function discardEmptyOnboardingProveedor(
+        idProveedorSalud: string,
+        discardToken: string,
+    ) {
+        const { data } = await ProveedorSaludAPI.discardEmptyOnboardingProveedor(
+            idProveedorSalud,
+            discardToken,
+        );
+        if (proveedorSalud.value?._id === idProveedorSalud) {
+            proveedorSalud.value = null;
+        }
+        return data;
+    }
+
     async function removeProveedorById(idProveedorSalud: string) {
         try {
             loading.value = true;
@@ -269,29 +283,6 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         }
     }
 
-    async function changeRegimenRegulatorio(regimen: string, reason: string) {
-        if (!proveedorSalud.value?._id) {
-            throw new Error('Proveedor no cargado');
-        }
-        try {
-            saving.value = true;
-            const { data } = await ProveedorSaludAPI.changeRegimenRegulatorio(
-                proveedorSalud.value._id,
-                regimen,
-                reason
-            );
-            // Actualizar proveedorSalud con los datos devueltos (incluye regulatoryPolicy)
-            proveedorSalud.value = data.data;
-            localStorage.setItem('proveedorSalud', JSON.stringify(proveedorSalud.value));
-            return data;
-        } catch (error) {
-            console.error('Error al cambiar régimen regulatorio:', error);
-            throw error;
-        } finally {
-            saving.value = false;
-        }
-    }
-
     function clear() {
         proveedorSalud.value = null;
         try {
@@ -386,6 +377,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         getProveedorById,
         createProveedor,
         updateProveedorById,
+        discardEmptyOnboardingProveedor,
         removeProveedorById,
         verificarPeriodoDePrueba,
         verificarFinSuscripcion,
@@ -396,7 +388,6 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         getCantidadHistoriasClinicasById,
         getCantidadNotasMedicasById,
         getAllProveedores,
-        changeRegimenRegulatorio,
         clear,
     };
 });

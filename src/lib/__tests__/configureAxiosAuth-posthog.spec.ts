@@ -54,6 +54,26 @@ describe('configureAxiosAuth y PostHog', () => {
 
     await expect(instance.get('/api/recurso')).rejects.toBeTruthy();
     expect(resetPostHogIdentity).toHaveBeenCalledTimes(1);
+    expect(window.location.href).toBe('/login');
+  });
+
+  it('no redirige al login cuando el 401 ocurre en el onboarding', async () => {
+    instance.defaults.adapter = async (config) => {
+      throw createUnauthorizedError(config);
+    };
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        href: 'http://localhost/auth/onboarding',
+        pathname: '/auth/onboarding',
+      },
+    });
+
+    await expect(instance.get('/proveedores-salud/algo')).rejects.toBeTruthy();
+    expect(window.location.href).toBe('http://localhost/auth/onboarding');
+    expect(resetPostHogIdentity).not.toHaveBeenCalled();
+    expect(axios.post).not.toHaveBeenCalled();
   });
 
   it('no resetea identidad cuando el 401 es SESSION_IDLE (bloqueo, no logout)', async () => {
