@@ -12,7 +12,7 @@ const { catalogSearchInputAttrs: entidadInputAttrs } = useCatalogSearchInput();
 const { catalogSearchInputAttrs: municipioInputAttrs } = useCatalogSearchInput();
 const { catalogSearchInputAttrs: localidadInputAttrs } = useCatalogSearchInput();
 
-const showConsultor = ref(true);
+const showConsultor = ref(false);
 const showDownloads = ref(false);
 
 const paisQuery = ref('');

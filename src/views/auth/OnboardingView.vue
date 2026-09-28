@@ -20,7 +20,8 @@ const showPassword = ref(false);
 const passwordContainer = ref(null);
 const toggleButton = ref(null);
 const isLoading = ref(false);
-const emailRegistrationError = ref("");
+const phoneInput = ref(null);
+const step1Error = ref("");
 const registrationError = ref("");
 const establecimientoPrivado = ref(false);
 const CLUES_SERVICIOS_MEDICOS_PRIVADOS = "9998";
@@ -60,6 +61,8 @@ const router = useRouter();
 const isHtmlDark = useHtmlDarkMode();
 
 const handleSubmitStep1 = async (data) => {
+  // CountryPhoneInput no es un input de FormKit: validarlo manualmente
+  if (phoneInput.value && !phoneInput.value.validate()) return;
   Object.assign(formDataUser, data); // Guardar datos del usuario temporalmente
   transitioning.value = true;
   currentStep.value = 2; // Avanzar al paso 2
@@ -123,17 +126,61 @@ function apiErrorMessage(error) {
   if (typeof message === "string" && message.trim()) {
     return message.trim();
   }
+  const msg = error?.response?.data?.msg;
+  if (typeof msg === "string" && msg.trim()) {
+    return msg.trim();
+  }
   return "No se pudo completar el registro. Revisa los datos e inténtalo de nuevo.";
 }
 
-function isEmailAlreadyRegistered(error, message) {
+// Campos del paso 1 tal como los nombra el DTO del backend (class-validator
+// antepone el nombre de la propiedad a cada mensaje, p. ej. "phone should not be empty")
+const STEP1_FIELD_LABELS = {
+  username: "nombre",
+  email: "correo",
+  phone: "teléfono",
+  country: "país del teléfono",
+  password: "contraseña",
+};
+
+// Devuelve un mensaje en español si el error corresponde a datos del paso 1; si no, null
+function step1ErrorMessage(error, message) {
   const status = error?.response?.status;
-  return status === 409 && /ya está registrado/i.test(message);
+
+  if (status === 409 && /ya está registrado/i.test(message)) {
+    return `${message} Corrige el correo e inténtalo de nuevo, o inicia sesión si esta cuenta ya es tuya.`;
+  }
+
+  if (status !== 400) return null;
+
+  const rawMessages = error?.response?.data?.message;
+  if (Array.isArray(rawMessages)) {
+    const labels = [
+      ...new Set(
+        rawMessages
+          .map((m) => STEP1_FIELD_LABELS[String(m).split(" ")[0]])
+          .filter(Boolean),
+      ),
+    ];
+    if (labels.length) {
+      return `Revisa estos datos: ${labels.join(", ")}. Corrígelos e inténtalo de nuevo.`;
+    }
+  }
+
+  if (/^El username/i.test(message)) {
+    return `${message.replace(/^El username/i, "El nombre")}. Corrígelo e inténtalo de nuevo.`;
+  }
+
+  if (error?.response?.data?.msg && /mayúscula/i.test(message)) {
+    return `La contraseña no cumple los requisitos: ${message} Corrígela e inténtalo de nuevo.`;
+  }
+
+  return null;
 }
 
 const submitProveedorSalud = async () => {
   isLoading.value = true;
-  emailRegistrationError.value = "";
+  step1Error.value = "";
   registrationError.value = "";
   let idProveedorSalud = null;
   let onboardingDiscardToken = null;
@@ -178,18 +225,19 @@ const submitProveedorSalud = async () => {
   } catch (error) {
     console.error("Error al registrar:", error);
     const message = apiErrorMessage(error);
+    const step1Message = step1ErrorMessage(error, message);
     toast.open({
       type: "error",
-      message,
+      message: step1Message ?? message,
       position: "bottom-left",
     });
 
-    if (isEmailAlreadyRegistered(error, message)) {
-      emailRegistrationError.value = `${message} Corrige el correo e inténtalo de nuevo, o inicia sesión si esta cuenta ya es tuya.`;
+    if (step1Message) {
+      step1Error.value = step1Message;
       goBackToStep1();
       window.setTimeout(() => {
         document
-          .getElementById("onboarding-email-error")
+          .getElementById("onboarding-step1-error")
           ?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 350);
     } else {
@@ -276,9 +324,12 @@ watch(() => formDataUser.password, () => {
   });
 });
 
-watch(() => formDataUser.email, () => {
-  emailRegistrationError.value = "";
-});
+watch(
+  () => [formDataUser.username, formDataUser.email, formDataUser.phone, formDataUser.password],
+  () => {
+    step1Error.value = "";
+  },
+);
 
 // Watcher para sincronizar el país del paso 1 con el paso 2
 watch(() => formDataUser.country, (newCountry) => {
@@ -545,21 +596,22 @@ onMounted(() => {
       >
         <div class="grid gap-3">
         <div
-          v-if="emailRegistrationError"
-          id="onboarding-email-error"
+          v-if="step1Error"
+          id="onboarding-step1-error"
           role="alert"
           class="p-3 bg-red-50 border-l-4 border-red-500 rounded"
         >
-          <p class="text-sm text-red-800">{{ emailRegistrationError }}</p>
+          <p class="text-sm text-red-800">{{ step1Error }}</p>
         </div>
         <FormKit
           type="text"
           label="¿Cuál es tu nombre?"
           name="username"
           placeholder="Ej. Jorge González"
-          validation="required"
+          validation="required|length:5"
           :validation-messages="{
             required: 'Este campo es obligatorio',
+            length: 'El nombre debe tener al menos 5 caracteres',
           }"
           v-model="formDataUser.username"
           aria-label="Nombre completo"
@@ -582,6 +634,7 @@ onMounted(() => {
         />
 
         <CountryPhoneInput
+          ref="phoneInput"
           label="¿Cuál es tu teléfono?"
           placeholder="Número local"
           v-model="formDataUser.phone"

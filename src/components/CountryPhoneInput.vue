@@ -163,18 +163,22 @@ const validateInput = () => {
     hasError.value = true;
     errorMessage.value = 'Este campo es obligatorio';
     emit('validation', false);
-    return;
+    return false;
   }
-  
+
   if (fullPhoneNumber.value && !isValidPhone(fullPhoneNumber.value)) {
     hasError.value = true;
     errorMessage.value = 'El número de teléfono no es válido';
     emit('validation', false);
-    return;
+    return false;
   }
-  
+
   emit('validation', true);
+  return true;
 };
+
+// Permite al formulario padre forzar la validación al enviar
+defineExpose({ validate: validateInput });
 
 const isValidPhone = (phone) => {
   // Validación flexible para números internacionales (4-15 dígitos)
