@@ -13,7 +13,6 @@ import {
   applyAppTheme,
   readInitialDarkPreference,
 } from "@/theme/appTheme";
-import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
 import ModalEliminacion from "@/components/ModalEliminacion.vue";
 import { useEliminacion } from "@/composables/useEliminacion";
 import {
@@ -1263,11 +1262,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
             </a>
 
             <RouterLink
-              v-if="
-                catalogAdminEnabled &&
-                proveedorSaludStore.isSIRES &&
-                (user.user?.role === 'Principal' || user.user?.role === 'Administrador')
-              "
+              v-if="user.user?.role === 'Administrador'"
               :to="{ name: 'admin-catalogos' }"
               @click="isMenuOpen = false"
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-teal-50 hover:to-teal-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-teal-300 group">

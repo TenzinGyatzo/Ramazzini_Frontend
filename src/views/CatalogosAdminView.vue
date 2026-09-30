@@ -6,12 +6,9 @@ import catalogsAdminAPI, {
   type CatalogTypeInfo,
   type CatalogEntryRow,
 } from "@/api/catalogsAdminAPI";
-import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
-import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 
 const toast = inject<{ open: (o: { message: string; type: string }) => void }>("toast");
 const userStore = useUserStore();
-const proveedorSaludStore = useProveedorSaludStore();
 const router = useRouter();
 
 const LARGE_CATALOG_THRESHOLD = 50000;
@@ -336,16 +333,8 @@ watch(selectedType, () => {
 watch(page, () => loadEntries());
 
 onMounted(async () => {
-  if (!catalogAdminEnabled) {
-    router.push({ name: "inicio" });
-    return;
-  }
-  const role = userStore.user?.role;
-  if (role !== "Principal" && role !== "Administrador") {
-    router.push({ name: "inicio" });
-    return;
-  }
-  if (!proveedorSaludStore.isSIRES) {
+  // Catálogos globales: solo el Administrador de plataforma (sin flag ni régimen)
+  if (userStore.user?.role !== "Administrador") {
     router.push({ name: "inicio" });
     return;
   }

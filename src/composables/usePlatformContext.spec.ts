@@ -58,6 +58,21 @@ describe("destinos de navegación", () => {
         expect(routerSource).toMatch(/path: "\/panel-administrador",\s*name: "panel-administrador"/);
         expect(PLATFORM_CONSOLE_PATH).toBe("/panel-administrador");
     });
+
+    it("catálogos: solo Administrador, sin flag de entorno ni régimen SIRES (Etapa 4)", async () => {
+        const { readFileSync } = await import("node:fs");
+        const { dirname, join } = await import("node:path");
+        const { fileURLToPath } = await import("node:url");
+        const routerSource = readFileSync(
+            join(dirname(fileURLToPath(import.meta.url)), "../router/index.ts"),
+            "utf8",
+        );
+        expect(routerSource).toMatch(
+            /name: "admin-catalogos",[\s\S]*?meta: \{ requiresAuth: true, requiresAdmin: true \}/,
+        );
+        expect(routerSource).not.toContain("catalogAdminEnabled");
+        expect(routerSource).not.toContain("requiresCatalogAdmin");
+    });
 });
 
 describe("shouldRedirectToPlatformConsole (router)", () => {
@@ -73,6 +88,8 @@ describe("shouldRedirectToPlatformConsole (router)", () => {
         expect(shouldRedirectToPlatformConsole(admin, "expediente-medico")).toBe(true);
         expect(shouldRedirectToPlatformConsole({ role: "Administrador" }, "empresas")).toBe(true);
         expect(shouldRedirectToPlatformConsole(admin, "panel-administrador")).toBe(false);
+        // Catálogos globales: disponibles desde la consola (Etapa 4)
+        expect(shouldRedirectToPlatformConsole(admin, "admin-catalogos")).toBe(false);
     });
 
     it("Administrador dentro de un tenant: navega libremente", () => {

@@ -7,7 +7,6 @@ import { buildAnalyticsPageProperties } from "@/utils/sanitizeAnalyticsPath";
 import { resetPostHogIdentity } from "@/utils/posthogIdentity";
 import { registerAnalyticsRouter } from "@/utils/sanitizePosthogEvent";
 import { useUserPermissions } from "@/composables/useUserPermissions";
-import { catalogAdminEnabled } from "@/composables/useCatalogAdminFeature";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { resetSessionScopedState } from "@/stores/resetSessionState";
 import {
@@ -92,11 +91,8 @@ const router = createRouter({
           path: "/admin/catalogos",
           name: "admin-catalogos",
           component: () => import("../views/CatalogosAdminView.vue"),
-          meta: {
-            requiresAuth: true,
-            requiresPrincipal: true,
-            requiresCatalogAdmin: true,
-          },
+          // Catálogos globales: solo el Administrador de plataforma (sin flag ni régimen)
+          meta: { requiresAuth: true, requiresAdmin: true },
         },
         {
           path: "/productividad-usuarios",
@@ -238,7 +234,6 @@ router.beforeEach((to, from) => {
     const requiresPrincipal = to.meta.requiresPrincipal; // Verifica solo
     const requiresPrincipalOnly = to.meta.requiresPrincipalOnly;
     const requiresSiresAudit = to.meta.requiresSiresAudit;
-    const requiresCatalogAdmin = to.meta.requiresCatalogAdmin;
     const userStore = useUserStore();
     const proveedorSaludStore = useProveedorSaludStore();
 
@@ -277,15 +272,7 @@ router.beforeEach((to, from) => {
         return next({ name: "inicio" });
       }
 
-      if (requiresCatalogAdmin && !catalogAdminEnabled) {
-        console.warn("Acceso denegado: administración de catálogos no habilitada");
-        return next({ name: "inicio" });
-      }
-
-      const needsSiresPolicy =
-        requiresSiresAudit ||
-        (requiresCatalogAdmin && catalogAdminEnabled);
-      if (needsSiresPolicy && user?.idProveedorSalud) {
+      if (requiresSiresAudit && user?.idProveedorSalud) {
         if (!proveedorSaludStore.isProveedorLoaded) {
           await proveedorSaludStore.loadProveedorSalud(user.idProveedorSalud);
         }
@@ -293,11 +280,6 @@ router.beforeEach((to, from) => {
 
       if (requiresSiresAudit && !proveedorSaludStore.auditTrailEnabled) {
         console.warn("Acceso denegado: auditoría no habilitada para este proveedor");
-        return next({ name: "inicio" });
-      }
-
-      if (requiresCatalogAdmin && catalogAdminEnabled && !proveedorSaludStore.isSIRES) {
-        console.warn("Acceso denegado: catálogos admin solo disponible para proveedores SIRES");
         return next({ name: "inicio" });
       }
 

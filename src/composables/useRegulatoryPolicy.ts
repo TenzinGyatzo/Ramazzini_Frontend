@@ -1,6 +1,5 @@
 import { computed } from 'vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { catalogAdminEnabled } from '@/composables/useCatalogAdminFeature';
 
 /**
  * Composable para manejar la política regulatoria
@@ -111,12 +110,6 @@ export function useRegulatoryPolicy() {
     proveedorSaludStore.controlPrenatalEnabled
   );
 
-  /**
-   * Administración de catálogos: env flag AND régimen SIRES
-   */
-  const canAccessCatalogAdmin = computed<boolean>(() =>
-    catalogAdminEnabled && isSIRES.value
-  );
 
   // ========== VALIDATIONS ==========
 
@@ -164,7 +157,6 @@ export function useRegulatoryPolicy() {
     confidentialityAgreementEnabled,
     auditTrailEnabled,
     controlPrenatalEnabled,
-    canAccessCatalogAdmin,
     // Validations
     curpFirmantesRequired,
     workerCurpRequired,
