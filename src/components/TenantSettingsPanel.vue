@@ -13,8 +13,10 @@ import { aFechaYmd, finDeDiaIso, resolverFechaFinTrial } from "@/utils/periodoPr
  */
 const props = defineProps<{
   proveedorId: string;
-  maxHistoriasPermitidasAlMes?: number | null;
-  limiteHistoriasManual?: number | null;
+  /** HC contratadas (Mercado Pago o contrato vigente), para mostrar el total. */
+  historiasContratadas?: number | null;
+  /** HC de cortesía actuales (incluye la conversión del límite heredado). */
+  historiasCortesia?: number | null;
   fechaInicioTrial?: string | null;
   fechaFinTrial?: string | null;
   fechaFinTrialEfectiva?: string | null;
@@ -29,7 +31,7 @@ const abierto = ref(false);
 const guardando = ref(false);
 
 const limiteInicial = computed(() =>
-  typeof props.limiteHistoriasManual === "number" ? String(props.limiteHistoriasManual) : "",
+  typeof props.historiasCortesia === "number" && props.historiasCortesia > 0 ? String(props.historiasCortesia) : "",
 );
 const finInicial = computed(() =>
   props.fechaFinTrial ? aFechaYmd(new Date(props.fechaFinTrial)) : "",
@@ -54,7 +56,7 @@ function reiniciarFormulario() {
   pagoEnLinea.value = props.pagoEnLineaHabilitado === true;
 }
 watch(
-  () => [props.limiteHistoriasManual, props.fechaFinTrial, props.restriccionManual, props.pagoEnLineaHabilitado],
+  () => [props.historiasCortesia, props.fechaFinTrial, props.restriccionManual, props.pagoEnLineaHabilitado],
   reiniciarFormulario,
   { immediate: true },
 );
@@ -65,16 +67,17 @@ const limiteInvalido = computed(() => {
   return !Number.isInteger(n) || n < 0 || n > 100000;
 });
 
-/** El límite asignado solo aumenta: si no supera lo contratado, no cambia nada. */
-const limiteSinEfecto = computed(() => {
-  if (limite.value.trim() === "" || limiteInvalido.value) return false;
-  return Number(limite.value) <= (props.maxHistoriasPermitidasAlMes ?? 0);
+/** Total que tendrá el proveedor: contratadas + cortesía. */
+const totalConCortesia = computed(() => {
+  if (limiteInvalido.value) return null;
+  const cortesia = limite.value.trim() === "" ? 0 : Number(limite.value);
+  return (props.historiasContratadas ?? 0) + cortesia;
 });
 
 const cambios = computed<TenantSettingsChanges>(() => {
   const c: TenantSettingsChanges = {};
   if (limite.value.trim() !== limiteInicial.value) {
-    c.limiteHistoriasManual = limite.value.trim() === "" ? null : Number(limite.value);
+    c.historiasCortesia = limite.value.trim() === "" ? null : Number(limite.value);
   }
   if (fechaFin.value !== finInicial.value) {
     c.fechaFinTrial = fechaFin.value ? finDeDiaIso(fechaFin.value) : null;
@@ -150,7 +153,7 @@ function cancelar() {
     <form v-if="abierto" class="mt-2 space-y-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4" @submit.prevent="guardar">
       <div>
         <label class="block text-sm font-semibold text-gray-700" :for="`limite-${proveedorId}`">
-          Límite de historias clínicas al mes
+          HC de cortesía al mes
         </label>
         <div class="mt-1 flex flex-wrap items-center gap-2">
           <input
@@ -161,7 +164,7 @@ function cancelar() {
             inputmode="numeric"
             autocomplete="off"
             class="w-32 rounded-lg border px-2 py-1"
-            :placeholder="`Plan: ${maxHistoriasPermitidasAlMes ?? '—'}`"
+            placeholder="0"
           />
           <button
             v-if="limite !== ''"
@@ -169,15 +172,13 @@ function cancelar() {
             class="rounded-lg px-2 py-1 text-xs text-gray-600 hover:bg-white"
             @click="limite = ''"
           >
-            Usar el del plan ({{ maxHistoriasPermitidasAlMes ?? "—" }})
+            Sin cortesía
           </button>
         </div>
         <p v-if="limiteInvalido" class="mt-1 text-xs text-red-600">Escribe un número entero entre 0 y 100000.</p>
-        <p v-else-if="limiteSinEfecto" class="mt-1 text-xs text-amber-700">
-          Es menor o igual a lo contratado ({{ maxHistoriasPermitidasAlMes }}): no tendrá efecto. El límite asignado solo aumenta.
-        </p>
-        <p v-else class="mt-1 text-xs text-gray-500">
-          Vacío = lo contratado. Se aplica el mayor entre lo contratado y este límite (solo aumenta; para limitar usa la restricción).
+        <p v-else class="mt-1 text-xs text-gray-500" data-testid="tenant-settings-total">
+          Se suman a lo contratado ({{ historiasContratadas ?? 0 }}): total
+          <strong>{{ totalConCortesia }}</strong> HC al mes. Si cambia de plan, la cortesía se conserva.
         </p>
       </div>
 

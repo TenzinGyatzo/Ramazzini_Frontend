@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import {
   clasificarEstado,
+  etiquetaContratacion,
   motivosAtencion,
   usoHistorias,
   type ConsolaProveedor,
@@ -81,12 +82,20 @@ const colorBarra = computed(() =>
       </div>
     </div>
 
-    <!-- Estado -->
+    <!-- Estado y contratación -->
     <div role="cell" class="flex flex-wrap items-center gap-1">
       <span class="rounded-md px-2 py-0.5 text-xs font-medium" :class="tonoEstado[estado.tono]" data-testid="row-estado">{{ estado.etiqueta }}</span>
       <span v-if="proveedor.restriccionManual" class="rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950/50 dark:text-red-300">
         <i class="fa-solid fa-lock text-[10px]" aria-hidden="true"></i> Restringido
       </span>
+      <span
+        v-if="(proveedor.facturasPendientes ?? 0) > 0"
+        data-testid="row-facturas"
+        class="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+      >
+        <i class="fa-solid fa-file-invoice text-[10px]" aria-hidden="true"></i> {{ proveedor.facturasPendientes }}
+      </span>
+      <span class="w-full truncate text-[11px] text-gray-500 dark:text-slate-400" data-testid="row-contratacion">{{ etiquetaContratacion(proveedor) }}</span>
     </div>
 
     <!-- HC del mes -->
@@ -95,7 +104,7 @@ const colorBarra = computed(() =>
         <p class="flex items-center gap-1.5 text-xs text-gray-700 dark:text-slate-300">
           <span class="tabular-nums">{{ uso.usadas }} / {{ uso.limite }}</span>
           <span class="tabular-nums text-gray-400 dark:text-slate-500">{{ uso.porcentaje }}%</span>
-          <span v-if="uso.extraAsignado > 0" class="rounded bg-sky-50 px-1.5 text-[11px] text-sky-800 dark:bg-sky-950/50 dark:text-sky-300">+{{ uso.extraAsignado }} asignadas</span>
+          <span v-if="uso.cortesia > 0" class="rounded bg-sky-50 px-1.5 text-[11px] text-sky-800 dark:bg-sky-950/50 dark:text-sky-300">+{{ uso.cortesia }} cortesía</span>
         </p>
         <div class="mt-1 h-1.5 w-full rounded-full bg-gray-100 dark:bg-slate-800">
           <div class="h-1.5 rounded-full" :class="colorBarra" :style="{ width: `${Math.min(uso.porcentaje, 100)}%` }"></div>

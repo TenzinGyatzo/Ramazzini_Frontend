@@ -6,10 +6,12 @@ import AuthAPI from "@/api/AuthAPI";
 import { usePagosStore } from "@/stores/pagosStore";
 import { usePlatformContext } from "@/composables/usePlatformContext";
 import TenantSettingsPanel from "@/components/TenantSettingsPanel.vue";
-import type { TenantSettingsResponse } from "@/api/PlataformaAPI";
+import PlatformContratacionPanel from "@/components/platform/PlatformContratacionPanel.vue";
+import type { Contratacion, TenantSettingsResponse } from "@/api/PlataformaAPI";
 import { resolverFechaFinTrial } from "@/utils/periodoPrueba";
 import {
   clasificarEstado,
+  etiquetaContratacion,
   etiquetaMes,
   fechaRegistroDesdeId,
   motivosAtencion,
@@ -32,6 +34,7 @@ const props = defineProps<{ proveedor: DetalleProveedor }>();
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "ajustesActualizados", value: TenantSettingsResponse): void;
+  (e: "contratacionActualizada", value: Contratacion): void;
 }>();
 
 const cerrarRef = ref<HTMLButtonElement | null>(null);
@@ -270,8 +273,8 @@ const tonos: Record<string, string> = {
             <dt class="text-gray-500 dark:text-slate-400">Límite de HC al mes</dt>
             <dd class="text-right font-medium text-gray-900 dark:text-slate-100" data-testid="drawer-limite">
               {{ uso.limite }}
-              <span v-if="uso.extraAsignado > 0" class="block text-xs font-normal text-gray-500 dark:text-slate-400">
-                {{ uso.contratado }} contratadas + {{ uso.extraAsignado }} asignadas
+              <span v-if="uso.cortesia > 0" class="block text-xs font-normal text-gray-500 dark:text-slate-400">
+                {{ uso.contratado }} contratadas + {{ uso.cortesia }} de cortesía
               </span>
             </dd>
             <dt class="text-gray-500 dark:text-slate-400">Periodo gratuito</dt>
@@ -286,8 +289,10 @@ const tonos: Record<string, string> = {
               <dd class="text-right">{{ formatoFecha(proveedor.finDeSuscripcion) }}</dd>
             </template>
             <dt class="text-gray-500 dark:text-slate-400">Contratación</dt>
+            <dd class="text-right" data-testid="drawer-contratacion">{{ etiquetaContratacion(proveedor) }}</dd>
+            <dt class="text-gray-500 dark:text-slate-400">«Ver planes» en la app</dt>
             <dd class="text-right" data-testid="drawer-pago-en-linea">
-              {{ proveedor.pagoEnLineaHabilitado ? "En línea (Mercado Pago)" : "Directa con Ramazzini" }}
+              {{ proveedor.pagoEnLineaHabilitado ? "Habilitado (Mercado Pago)" : "No" }}
             </dd>
             <dt class="text-gray-500 dark:text-slate-400">Empresas</dt>
             <dd class="text-right">{{ proveedor.empresasCount ?? 0 }}</dd>
@@ -394,12 +399,17 @@ const tonos: Record<string, string> = {
           </dl>
         </section>
 
+        <PlatformContratacionPanel
+          :proveedor-id="String(proveedor._id)"
+          @actualizado="(datos) => emit('contratacionActualizada', datos)"
+        />
+
         <!-- Ajustes de plataforma -->
         <section id="drawer-ajustes">
           <TenantSettingsPanel
             :proveedor-id="String(proveedor._id)"
-            :max-historias-permitidas-al-mes="proveedor.maxHistoriasPermitidasAlMes"
-            :limite-historias-manual="proveedor.limiteHistoriasManual"
+            :historias-contratadas="uso.contratado"
+            :historias-cortesia="uso.cortesia"
             :fecha-inicio-trial="proveedor.fechaInicioTrial"
             :fecha-fin-trial="proveedor.fechaFinTrial"
             :fecha-fin-trial-efectiva="proveedor.fechaFinTrialEfectiva"

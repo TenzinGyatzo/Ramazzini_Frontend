@@ -123,7 +123,7 @@ describe('TenantSettingsPanel', () => {
   });
 
   it('envía solo los campos que cambiaron y notifica al panel', async () => {
-    const respuesta = { id: 'prov-1', limiteHistoriasManual: 120, restriccionManual: true };
+    const respuesta = { id: 'prov-1', historiasCortesia: 120, restriccionManual: true };
     updateTenantSettings.mockResolvedValue({ data: respuesta });
     const wrapper = mountPanel();
     await abrir(wrapper);
@@ -133,7 +133,7 @@ describe('TenantSettingsPanel', () => {
     await flushPromises();
 
     expect(updateTenantSettings).toHaveBeenCalledWith('prov-1', {
-      limiteHistoriasManual: 120,
+      historiasCortesia: 120,
       restriccionManual: true,
     });
     expect(wrapper.emitted('actualizado')?.[0]).toEqual([respuesta]);
@@ -158,14 +158,15 @@ describe('TenantSettingsPanel', () => {
     expect(wrapper.find('[data-testid="tenant-settings-aviso-mp"]').text()).toContain('seguirá cobrándose');
   });
 
-  it('vaciar el límite manual lo devuelve al plan (null)', async () => {
+  it('cortesía: muestra el total y vaciarla la quita (null)', async () => {
     updateTenantSettings.mockResolvedValue({ data: { id: 'prov-1' } });
-    const wrapper = mountPanel({ limiteHistoriasManual: 300 });
+    const wrapper = mountPanel({ historiasContratadas: 50, historiasCortesia: 30 });
     await abrir(wrapper);
+    expect(wrapper.find('[data-testid="tenant-settings-total"]').text()).toContain('total 80 HC al mes');
     await wrapper.find('[data-testid="tenant-settings-limite"]').setValue('');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
-    expect(updateTenantSettings).toHaveBeenCalledWith('prov-1', { limiteHistoriasManual: null });
+    expect(updateTenantSettings).toHaveBeenCalledWith('prov-1', { historiasCortesia: null });
   });
 
   it('límite inválido bloquea el guardado', async () => {

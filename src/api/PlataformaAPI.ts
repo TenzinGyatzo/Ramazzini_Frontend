@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import type { ContratoTenant } from "@/utils/accesoComercial";
 
 export interface PlatformActiveTenant {
     id: string;
@@ -7,7 +8,8 @@ export interface PlatformActiveTenant {
 }
 
 export interface TenantSettingsChanges {
-    limiteHistoriasManual?: number | null;
+    /** HC de cortesía (se suman a lo contratado); null o 0 = quitar. */
+    historiasCortesia?: number | null;
     fechaFinTrial?: string | null;
     restriccionManual?: boolean;
     pagoEnLineaHabilitado?: boolean;
@@ -15,13 +17,88 @@ export interface TenantSettingsChanges {
 
 export interface TenantSettingsResponse {
     id: string;
-    limiteHistoriasManual: number | null;
+    historiasCortesia: number;
     fechaFinTrial: string | null;
     restriccionManual: boolean;
     pagoEnLineaHabilitado: boolean;
     periodoDePruebaFinalizado: boolean;
     limiteHistoriasEfectivo: number | null;
     fechaFinTrialEfectiva: string | null;
+}
+
+export type FormaPagoContrato = "transferencia" | "mercadopago_enlace";
+export type EstadoFactura = "no_requiere" | "pendiente" | "emitida";
+
+export interface ContratoPrivado {
+    formaPago: FormaPagoContrato;
+    requiereFactura: boolean;
+    montoPeriodo: number | null;
+    moneda?: string;
+    notas?: string | null;
+}
+
+export interface PagoRegistrado {
+    _id: string;
+    fechaPago: string;
+    monto: number;
+    moneda?: string;
+    periodoDesde: string;
+    periodoHasta: string;
+    formaPago: FormaPagoContrato;
+    factura: { estado: EstadoFactura; folio?: string | null; fechaEmision?: string | null };
+    notas?: string | null;
+    anulado?: { motivo: string; fecha: string } | null;
+}
+
+export interface PagoMercadoPago {
+    _id: string;
+    payment_id?: string;
+    date_created?: string;
+    transaction_amount?: number;
+    currency_id?: string;
+    reason?: string;
+    status?: string;
+    payment?: { status?: string } | null;
+}
+
+export interface Contratacion {
+    id: string;
+    contrato: ContratoTenant | null;
+    contratoVigente: boolean;
+    privado: ContratoPrivado | null;
+    historias: { base: number | null; cortesia: number; efectivo: number | null };
+    manualHeredado: boolean;
+    mercadoPago: {
+        estadoSuscripcion: string | null;
+        suscripcionActiva: string | null;
+        finDeSuscripcion: string | null;
+        suscripcion: { reason?: string; status?: string; auto_recurring?: { transaction_amount?: number } } | null;
+        pagos: PagoMercadoPago[];
+    };
+    pagos: PagoRegistrado[];
+}
+
+export interface ContratoPayload {
+    plan: ContratoTenant["plan"];
+    nombrePlan?: string | null;
+    historiasMes: number;
+    periodicidad: ContratoTenant["periodicidad"];
+    formaPago: FormaPagoContrato;
+    requiereFactura: boolean;
+    renovacionAutomatica?: boolean;
+    fechaInicio: string;
+    pagadoHasta?: string | null;
+    montoPeriodo?: number | null;
+    notas?: string | null;
+    reactivar?: boolean;
+}
+
+export interface RegistrarPagoPayload {
+    fechaPago: string;
+    monto: number;
+    periodoDesde?: string;
+    periodoHasta?: string;
+    notas?: string | null;
 }
 
 /** Consola de plataforma (solo Administrador): entrar / salir del espacio de un tenant. */
@@ -43,5 +120,36 @@ export default {
     /** Ajustes comerciales de un tenant. Campo ausente = sin cambio; null = volver a lo automático. */
     updateTenantSettings(proveedorSaludId: string, cambios: TenantSettingsChanges) {
         return api.patch<TenantSettingsResponse>(`/plataforma/tenants/${proveedorSaludId}`, cambios);
+    },
+
+    /** Contrato manual, pagos registrados y pagos de Mercado Pago de un tenant. */
+    getContratacion(proveedorSaludId: string) {
+        return api.get<Contratacion>(`/plataforma/tenants/${proveedorSaludId}/contratacion`);
+    },
+
+    guardarContrato(proveedorSaludId: string, datos: ContratoPayload) {
+        return api.put<Contratacion>(`/plataforma/tenants/${proveedorSaludId}/contrato`, datos);
+    },
+
+    terminarContrato(proveedorSaludId: string, accesoHasta?: string | null) {
+        return api.post<Contratacion>(`/plataforma/tenants/${proveedorSaludId}/contrato/terminar`, {
+            ...(accesoHasta ? { accesoHasta } : {}),
+        });
+    },
+
+    registrarPago(proveedorSaludId: string, datos: RegistrarPagoPayload) {
+        return api.post<Contratacion>(`/plataforma/tenants/${proveedorSaludId}/pagos`, datos);
+    },
+
+    emitirFactura(proveedorSaludId: string, pagoId: string, folio: string, fechaEmision?: string) {
+        return api.patch<Contratacion>(`/plataforma/tenants/${proveedorSaludId}/pagos/${pagoId}`, {
+            factura: { folio, ...(fechaEmision ? { fechaEmision } : {}) },
+        });
+    },
+
+    anularPago(proveedorSaludId: string, pagoId: string, motivo: string) {
+        return api.patch<Contratacion>(`/plataforma/tenants/${proveedorSaludId}/pagos/${pagoId}`, {
+            anular: { motivo },
+        });
     },
 };

@@ -15,6 +15,7 @@ const proveedor = {
     estadoSuscripcion: "authorized",
     maxHistoriasPermitidasAlMes: 50,
     limiteHistoriasEfectivo: 80,
+    historiasCortesia: 30,
     historiasClinicasMes: 12,
     historiasPorMes: [
         { mes: "2026-09", count: 12 },
@@ -42,7 +43,7 @@ describe("PlatformTenantDrawer", () => {
     const montar = async () => {
         const wrapper = mount(PlatformTenantDrawer, {
             props: { proveedor },
-            global: { stubs: { TenantSettingsPanel: true } },
+            global: { stubs: { TenantSettingsPanel: true, PlatformContratacionPanel: true } },
             attachTo: document.body,
         });
         await flushPromises();
@@ -58,7 +59,7 @@ describe("PlatformTenantDrawer", () => {
         expect(filas[0]).toContain("12");
         expect(filas[1]).toMatch(/ago 2026\s*30\s*9/);
         expect(filas[3]).toMatch(/Total histórico\s*300\s*90/);
-        expect(wrapper.find('[data-testid="drawer-limite"]').text()).toContain("50 contratadas + 30 asignadas");
+        expect(wrapper.find('[data-testid="drawer-limite"]').text()).toContain("50 contratadas + 30 de cortesía");
         wrapper.unmount();
     });
 

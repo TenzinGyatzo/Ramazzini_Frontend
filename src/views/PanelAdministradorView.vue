@@ -14,7 +14,9 @@ import {
 } from '@/composables/usePanelAdminCache';
 import {
   DIAS_AVISO_PERIODO,
+  FILTROS_CONTRATACION,
   calcularMetricas,
+  etiquetaFiltroContratacion,
   filtrarYOrdenar,
   guardarPreferencias,
   leerPreferencias,
@@ -44,12 +46,16 @@ watch(prefs, (valor) => guardarPreferencias(valor), { deep: true });
 
 const FILTROS = [
   { clave: 'todos', etiqueta: 'Todos' },
-  { clave: 'activos', etiqueta: 'Suscripción activa' },
+  { clave: 'activos', etiqueta: 'Plan vigente' },
   { clave: 'gratuito', etiqueta: 'Periodo gratuito' },
   { clave: 'cancelados', etiqueta: 'Canceladas' },
   { clave: 'gratuito_vencido', etiqueta: 'Gratuito vencido' },
   { clave: 'sin_acceso', etiqueta: 'Sin acceso' },
   { clave: 'restringidos', etiqueta: 'Restringidos' },
+  { clave: 'contratos', etiqueta: 'Con contrato' },
+  { clave: 'por_renovar', etiqueta: 'Por renovar' },
+  { clave: 'facturas_pendientes', etiqueta: 'Facturas pendientes' },
+  { clave: 'manual_heredado', etiqueta: 'Manual (heredado)' },
   { clave: 'pago_en_linea', etiqueta: 'Pago en línea' },
   { clave: 'con_ajustes', etiqueta: 'Con ajustes' },
   { clave: 'atencion', etiqueta: 'Requieren atención' },
@@ -65,7 +71,11 @@ const ORDENES = [
 const metricas = computed(() => calcularMetricas(proveedores.value));
 const visibles = computed(() => filtrarYOrdenar(proveedores.value, prefs.value));
 const hayFiltros = computed(
-  () => !!prefs.value.busqueda.trim() || prefs.value.filtro !== 'todos' || prefs.value.regimen !== 'todos',
+  () =>
+    !!prefs.value.busqueda.trim() ||
+    prefs.value.filtro !== 'todos' ||
+    prefs.value.regimen !== 'todos' ||
+    prefs.value.contratacion !== 'todas',
 );
 const detallesCargados = computed(() => proveedores.value.every((p) => p._detalleCargado));
 
@@ -73,7 +83,7 @@ function seleccionarFiltro(filtro) {
   prefs.value.filtro = prefs.value.filtro === filtro ? 'todos' : filtro;
 }
 function limpiarFiltros() {
-  prefs.value = { ...prefs.value, busqueda: '', filtro: 'todos', regimen: 'todos' };
+  prefs.value = { ...prefs.value, busqueda: '', filtro: 'todos', regimen: 'todos', contratacion: 'todas' };
 }
 
 const horaActualizacion = computed(() =>
@@ -97,6 +107,10 @@ function mapDetalleEnProveedor(base, detalle) {
     notasPorMes: detalle.notasPorMes ?? [],
     usuariosPorRol: detalle.usuariosPorRol ?? {},
     usuariosTotal: detalle.usuariosTotal ?? 0,
+    historiasContratadas: detalle.historiasContratadas ?? null,
+    historiasCortesia: detalle.historiasCortesia ?? 0,
+    contratoPrivado: detalle.contratoPrivado ?? null,
+    facturasPendientes: detalle.facturasPendientes ?? 0,
     suscripcion: detalle.suscripcion ?? null,
     suscripcionActivaId: base.suscripcionActiva ?? null,
     limiteHistoriasEfectivo: detalle.limiteHistoriasEfectivo ?? null,
@@ -193,13 +207,45 @@ function aplicarAjustes(ajustes) {
     String(p._id) === String(ajustes.id)
       ? {
           ...p,
-          limiteHistoriasManual: ajustes.limiteHistoriasManual,
+          // El servidor convierte el límite heredado a cortesía al guardar
+          limiteHistoriasManual: null,
+          historiasCortesia: ajustes.historiasCortesia,
+          historiasContratadas: null,
           fechaFinTrial: ajustes.fechaFinTrial,
           restriccionManual: ajustes.restriccionManual,
           pagoEnLineaHabilitado: ajustes.pagoEnLineaHabilitado,
           periodoDePruebaFinalizado: ajustes.periodoDePruebaFinalizado,
           limiteHistoriasEfectivo: ajustes.limiteHistoriasEfectivo,
           fechaFinTrialEfectiva: ajustes.fechaFinTrialEfectiva,
+        }
+      : p,
+  );
+}
+
+/** Tras guardar contrato, pagos o facturas: refleja contratación, límite y facturas en la fila. */
+function aplicarContratacion(datos) {
+  if (!datos?.id) return;
+  invalidatePanelAdminCache();
+  const facturasPendientes = (datos.pagos ?? []).filter(
+    (p) => !p.anulado && p.factura?.estado === 'pendiente',
+  ).length;
+  proveedores.value = proveedores.value.map((p) =>
+    String(p._id) === String(datos.id)
+      ? {
+          ...p,
+          contrato: datos.contrato,
+          contratoPrivado: datos.privado
+            ? {
+                formaPago: datos.privado.formaPago,
+                requiereFactura: datos.privado.requiereFactura,
+                montoPeriodo: datos.privado.montoPeriodo,
+              }
+            : null,
+          facturasPendientes,
+          estadoSuscripcion: datos.mercadoPago?.estadoSuscripcion ?? null,
+          limiteHistoriasEfectivo: datos.historias?.efectivo ?? null,
+          historiasContratadas: datos.historias?.base ?? null,
+          historiasCortesia: datos.historias?.cortesia ?? 0,
         }
       : p,
   );
@@ -264,9 +310,9 @@ onMounted(() => {
 
     <template v-else>
       <!-- Indicadores (cada uno filtra la lista) -->
-      <div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5" data-testid="consola-metricas">
+      <div class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7" data-testid="consola-metricas">
         <button type="button" class="kpi" :class="{ 'kpi-activo': prefs.filtro === 'activos' }" @click="seleccionarFiltro('activos')">
-          <span class="kpi-titulo">Suscripción activa</span>
+          <span class="kpi-titulo">Plan vigente</span>
           <span class="kpi-valor">{{ metricas.activos }}</span>
         </button>
         <button type="button" class="kpi" :class="{ 'kpi-activo': prefs.filtro === 'gratuito' }" @click="seleccionarFiltro('gratuito')">
@@ -285,7 +331,19 @@ onMounted(() => {
           <span class="kpi-titulo">Requieren atención</span>
           <span class="kpi-valor" :class="metricas.atencion ? 'text-amber-600 dark:text-amber-400' : ''">{{ metricas.atencion }}</span>
         </button>
-        <div class="kpi col-span-2 cursor-default lg:col-span-1">
+        <button type="button" class="kpi" :class="{ 'kpi-activo': prefs.filtro === 'por_renovar' }" @click="seleccionarFiltro('por_renovar')">
+          <span class="kpi-titulo">Por renovar</span>
+          <span class="kpi-valor" :class="metricas.porRenovar ? 'text-amber-600 dark:text-amber-400' : ''">{{ metricas.porRenovar }}</span>
+          <span class="text-xs text-gray-400 dark:text-slate-500">contratos que vencen pronto</span>
+        </button>
+        <button type="button" class="kpi" :class="{ 'kpi-activo': prefs.filtro === 'facturas_pendientes' }" @click="seleccionarFiltro('facturas_pendientes')">
+          <span class="kpi-titulo">Facturas pendientes</span>
+          <span class="kpi-valor" :class="metricas.facturasPendientes ? 'text-amber-600 dark:text-amber-400' : ''" data-testid="kpi-facturas">
+            <template v-if="detallesCargados">{{ metricas.facturasPendientes }}</template>
+            <span v-else class="inline-block h-7 w-12 animate-pulse rounded bg-gray-100 dark:bg-slate-800"></span>
+          </span>
+        </button>
+        <div class="kpi cursor-default">
           <span class="kpi-titulo">HC este mes</span>
           <span class="kpi-valor">
             <template v-if="detallesCargados">{{ metricas.historiasMes }}</template>
@@ -307,11 +365,14 @@ onMounted(() => {
             class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-900 dark:focus:ring-sky-900"
           />
         </label>
-        <div class="flex gap-2">
+        <div class="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
           <select v-model="prefs.regimen" aria-label="Régimen" class="consola-select">
             <option value="todos">Todos los regímenes</option>
             <option value="SIRES_NOM024">SIRES (NOM-024)</option>
             <option value="SIN_REGIMEN">Sin régimen</option>
+          </select>
+          <select v-model="prefs.contratacion" aria-label="Forma de contratación" data-testid="consola-contratacion" class="consola-select">
+            <option v-for="c in FILTROS_CONTRATACION" :key="c" :value="c">{{ etiquetaFiltroContratacion(c) }}</option>
           </select>
           <select v-model="prefs.orden" aria-label="Ordenar por" class="consola-select">
             <option v-for="o in ORDENES" :key="o.clave" :value="o.clave">Orden: {{ o.etiqueta }}</option>
@@ -394,6 +455,7 @@ onMounted(() => {
       :proveedor="seleccionado"
       @close="cerrarDetalle"
       @ajustes-actualizados="aplicarAjustes"
+      @contratacion-actualizada="aplicarContratacion"
     />
   </div>
 </template>

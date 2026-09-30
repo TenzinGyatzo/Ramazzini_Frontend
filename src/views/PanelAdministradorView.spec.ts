@@ -87,4 +87,39 @@ describe("PanelAdministradorView (consola de plataforma)", () => {
         await wrapper.findAll('[data-testid="platform-tenant-row"]')[0].trigger("click");
         expect(wrapper.findComponent({ name: "PlatformTenantDrawer" }).exists()).toBe(true);
     });
+
+    it("facturas pendientes en el indicador; al guardar contratación se refleja en la fila", async () => {
+        getPanelAdmin.mockResolvedValue({
+            data: [
+                { _id: lista[0]._id, facturasPendientes: 2, contratoPrivado: null },
+                { _id: lista[1]._id, facturasPendientes: 0 },
+            ],
+        });
+        const wrapper = await montar();
+        expect(wrapper.find('[data-testid="kpi-facturas"]').text()).toBe("2");
+
+        await wrapper.findAll('[data-testid="platform-tenant-row"]')[1].trigger("click");
+        const drawer = wrapper.findComponent({ name: "PlatformTenantDrawer" });
+        drawer.vm.$emit("contratacionActualizada", {
+            id: lista[1]._id,
+            contrato: {
+                plan: "basico",
+                historiasMes: 50,
+                periodicidad: "anual",
+                fechaInicio: new Date().toISOString(),
+                pagadoHasta: new Date(Date.now() + 200 * 86400000).toISOString(),
+                estado: "activo",
+            },
+            privado: { formaPago: "transferencia", requiereFactura: true, montoPeriodo: 9000 },
+            historias: { base: 50, cortesia: 0, efectivo: 50 },
+            mercadoPago: { estadoSuscripcion: null },
+            pagos: [{ _id: "p1", factura: { estado: "pendiente" } }],
+        });
+        await flushPromises();
+        const fila = wrapper.findAll('[data-testid="platform-tenant-row"]').find((f) => f.text().includes("Salud Sur"))!;
+        expect(fila.find('[data-testid="row-contratacion"]').text()).toBe("Transferencia · Anual · Factura");
+        expect(fila.find('[data-testid="row-estado"]').text()).toContain("Contrato");
+        expect(wrapper.find('[data-testid="kpi-facturas"]').text()).toBe("3");
+    });
 });
+
