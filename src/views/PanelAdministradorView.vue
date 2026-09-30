@@ -36,8 +36,7 @@ const seccionesExpanded = ref({
 });
 
 const redirigirSiNoEsAdmin = () => {
-  const adminEmail = 'edgarcoronel66@gmail.com';
-  if (userStore.user?.email !== adminEmail) {
+  if (userStore.user?.role !== 'Administrador') {
     router.push({ name: 'inicio' });
   }
 };

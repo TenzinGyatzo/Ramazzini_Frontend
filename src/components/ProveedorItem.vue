@@ -1,8 +1,9 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, useAttrs } from 'vue';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { usePagosStore } from '@/stores/pagosStore';
+import { usePlatformContext } from '@/composables/usePlatformContext';
 
 const props = defineProps({
   id: String,
@@ -27,6 +28,25 @@ const props = defineProps({
   principalUser: Object,
   users: Object,
 });
+
+// El panel pasa el proveedor con v-bind (llega como `_id`, no como prop `id`)
+const attrs = useAttrs();
+const proveedorId = computed(() => props.id || attrs._id);
+
+const { activeTenant, enterTenant } = usePlatformContext();
+const esTenantActivo = computed(() => !!proveedorId.value && activeTenant.value?.id === String(proveedorId.value));
+const entrando = ref(false);
+
+async function entrarAlTenant() {
+  if (!proveedorId.value || entrando.value) return;
+  entrando.value = true;
+  try {
+    await enterTenant(String(proveedorId.value));
+  } catch (error) {
+    console.error('No se pudo entrar al espacio del proveedor:', error);
+    entrando.value = false;
+  }
+}
 
 const pagosStore = usePagosStore();
 const detallesAbiertos = ref(false);
@@ -136,6 +156,27 @@ const formatCurrency = (amount) => {
 <template>
     <div class="text-sm grid grid-cols-1 md:grid-cols-4 w-full max-w-3xl xl:max-w-none mx-auto bg-white border p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out h-102">
         <div class="col-span-3">
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+                <button
+                    v-if="proveedorId && !esTenantActivo"
+                    type="button"
+                    data-testid="proveedor-item-entrar"
+                    class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-amber-950 shadow-sm hover:bg-amber-400 disabled:opacity-60"
+                    :disabled="entrando"
+                    @click="entrarAlTenant"
+                >
+                    <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
+                    {{ entrando ? 'Entrando…' : 'Entrar' }}
+                </button>
+                <span
+                    v-else-if="esTenantActivo"
+                    data-testid="proveedor-item-activo"
+                    class="inline-flex items-center gap-2 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900"
+                >
+                    <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                    Tenant activo
+                </span>
+            </div>
             <p class="text-gray-600"><strong>🏢 Negocio:</strong> {{ nombre || 'No disponible' }}</p>
             <template v-if="usuarioPrincipal">
               <p class="text-gray-600"><strong>👤 Usuario Principal:</strong> {{ usuarioPrincipal.username }}</p>

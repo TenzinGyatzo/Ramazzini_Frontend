@@ -12,7 +12,14 @@ interface User {
     username: string;
     email: string;
     role: string;
-    idProveedorSalud?: string;
+    /** Administrador de plataforma: tenant activo (null en la consola). Resto: su tenant. */
+    idProveedorSalud?: string | null;
+    /** Solo Administrador de plataforma: tenant de origen de su cuenta. */
+    homeProveedorSaludId?: string | null;
+    /** Solo Administrador de plataforma. */
+    platformContext?: {
+        activeTenant: { id: string; nombre: string; regimenRegulatorio: string | null } | null;
+    };
   permisos?: {
     gestionarEmpresas: boolean;
     gestionarCentrosTrabajo: boolean;
@@ -50,7 +57,7 @@ function getTenantUsersCacheKey(
     return `${idProveedorSalud}:${scope}:${roles ?? ''}`;
 }
 
-function invalidateTenantUsersCache(idProveedorSalud?: string) {
+function invalidateTenantUsersCache(idProveedorSalud?: string | null) {
     if (!idProveedorSalud) {
         tenantUsersCache.clear();
         return;

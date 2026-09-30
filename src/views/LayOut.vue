@@ -29,6 +29,8 @@ import { useBorradoresNotaMedica } from "@/composables/useBorradoresNotaMedica";
 import ModalBorradoresPendientes from "@/components/modals/ModalBorradoresPendientes.vue";
 import { inicioResumenState } from "@/composables/inicioResumenCache";
 import { resolveInicioLayoutPresentation } from "@/composables/inicioLayoutPresentation";
+import PlatformTenantBanner from "@/components/PlatformTenantBanner.vue";
+import { listenPlatformContextChanges } from "@/composables/usePlatformContext";
 
 const {
   isOpen: eliminacionOpen,
@@ -316,7 +318,11 @@ onMounted(() => {
   }
 });
 
+// Otras pestañas: si cambia el tenant activo del Administrador, recargar aquí también
+const stopPlatformContextSync = listenPlatformContextChanges();
+
 onUnmounted(() => {
+  stopPlatformContextSync();
   document.removeEventListener("click", handleClickOutside);
   teardownMenuScrollObserver();
   if (debugViewportEnabled) {
@@ -424,6 +430,8 @@ const mostrarNotificacionLogotipo = computed(
 
 const mostrarNotificacionCampos = computed(() => {
   if (!datosCargados.value) return false;
+  // Administrador de plataforma: no completa datos del tenant en el que da soporte
+  if (user.user?.role === 'Administrador') return false;
 
   const userRole = user.user?.role;
 
@@ -573,6 +581,8 @@ onBeforeUnmount(() => {
 // Verificar si se debe mostrar el mensaje de configuración pendiente
 const mostrarMensajePendiente = computed(() => {
   const userRole = user.user?.role;
+  // Administrador de plataforma: no completa datos del tenant en el que da soporte
+  if (userRole === 'Administrador') return false;
   
   // Para roles de médicos (Administrador, Principal, Secundario, Médico)
   if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
@@ -856,6 +866,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
 </script>
 
 <template>
+  <PlatformTenantBanner />
   <main
     :class="[
       'flex w-full max-w-full min-w-0 flex-col items-center overflow-x-auto p-4 md:p-10',
@@ -1130,7 +1141,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
             </RouterLink>
 
             <!-- Médico Firmante -->
-            <RouterLink v-if="user.user?.role === 'Principal' || user.user?.role === 'Médico' || user.user?.role === 'Administrador'" :to="{ name: 'medico-firmante' }" @click="isMenuOpen = false" 
+            <RouterLink v-if="user.user?.role === 'Principal' || user.user?.role === 'Médico'" :to="{ name: 'medico-firmante' }" @click="isMenuOpen = false" 
                :class="[
                  'block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group',
                  mostrarTooltipMedico 

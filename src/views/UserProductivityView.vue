@@ -48,7 +48,7 @@ const user = computed(() => userStore.user);
 
 // Verificar si el usuario actual es el administrador
 const esAdministrador = computed(() => {
-  return user.value?.email === 'edgarcoronel66@gmail.com';
+  return user.value?.role === 'Administrador';
 });
 
 // Opciones de periodos predefinidos

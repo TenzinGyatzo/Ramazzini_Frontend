@@ -2055,6 +2055,16 @@ const isAnulado = computed(() => {
     return currentDocumentData.value.estado?.toLowerCase() === 'anulado';
 });
 
+// Administrador de plataforma: no finaliza, no firma ni anula; solo elimina borradores (lo impone el backend)
+const isPlatformAdmin = computed(() => userStore.user?.role === 'Administrador');
+const adminNoPuedeEliminar = computed(() => {
+    if (!isPlatformAdmin.value) return false;
+    const estado = currentDocumentData.value && typeof currentDocumentData.value === 'object'
+        ? currentDocumentData.value.estado
+        : undefined;
+    return estado?.toLowerCase() !== 'borrador';
+});
+
 // Un documento es de solo lectura si está finalizado O anulado Y la inmutabilidad está habilitada
 const documentImmutabilityEnabled = computed(() =>
     proveedorSaludStore.documentImmutabilityEnabled
@@ -2082,6 +2092,7 @@ const isAnulacion = computed(() => {
 // En modo eliminación masiva: documentos FINALIZADO/ANULADO no son seleccionables
 const isDeletableInBulkMode = computed(() => {
     if (!props.isDeletionMode) return true;
+    if (adminNoPuedeEliminar.value) return false;
     if (!documentImmutabilityEnabled.value) return true;
     return !isFinalized.value && !isAnulado.value;
 });
@@ -2101,6 +2112,9 @@ const editActionTooltip = computed(() => {
 
 const deleteAnularActionTooltip = computed(() => {
   if (isAnulado.value) return 'Documento anulado';
+  if (adminNoPuedeEliminar.value) {
+    return 'El Administrador de plataforma solo puede eliminar borradores';
+  }
   if (!canManageThisDocument.value) {
     return getRestrictionMessage(props.documentoTipo);
   }
@@ -5164,7 +5178,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <i :class="isReadOnly ? 'fa-regular fa-eye fa-lg' : 'fa-regular fa-pen-to-square fa-lg'"></i>
                 </button>
 
-                <button v-if="puedeFinalizar && documentImmutabilityEnabled && canManageThisDocument" type="button"
+                <button v-if="puedeFinalizar && documentImmutabilityEnabled && canManageThisDocument && !isPlatformAdmin" type="button"
                     class="documento-item-action documento-item-action--finalize inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 transition-transform duration-200 ease-in-out transform hover:scale-110 shadow-sm z-5"
                     @click="$emit('abrirModalFinalizar', documentoId, documentoNombre, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, 'Finalizar documento')"
@@ -5175,11 +5189,11 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <button type="button"
                     :class="[
                         'documento-item-action inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canManageThisDocument && !isAnulado
+                        canManageThisDocument && !isAnulado && !adminNoPuedeEliminar
                             ? 'documento-item-action--delete bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110'
                             : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
-                    :disabled="!canManageThisDocument || isAnulado"
+                    :disabled="!canManageThisDocument || isAnulado || adminNoPuedeEliminar"
                     @click="isAnulacion ? handleAnularDocument(documentoId, documentoNombre, documentoTipo) : handleDeleteDocument(documentoId, documentoNombre, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, deleteAnularActionTooltip)"
                     @mouseleave="hideTooltip">

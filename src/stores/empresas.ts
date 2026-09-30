@@ -61,8 +61,8 @@ export const useEmpresasStore = defineStore("empresas", () => {
       loading.value = true;
       const userStore = useUserStore();
       
-      // Si el usuario es Principal o tiene acceso completo, no pasar userId
-      const userId = (userStore.isPrincipal() || userStore.user?.permisos?.accesoCompletoEmpresasCentros) 
+      // Si el usuario es Principal (o Administrador de plataforma) o tiene acceso completo, no pasar userId
+      const userId = (userStore.isPrincipal() || userStore.user?.role === 'Administrador' || userStore.user?.permisos?.accesoCompletoEmpresasCentros) 
         ? undefined 
         : userStore.user?._id;
       const { data } = await EmpresasAPI.getEmpresas(idProveedorSalud, userId);

@@ -15,6 +15,7 @@ import {
   finishNavigationProgress,
 } from "@/composables/useNavigationProgress";
 import { refreshConfidentialityAgreementStatus } from "@/composables/useConfidentialityAgreement";
+import { shouldRedirectToPlatformConsole } from "@/composables/usePlatformContext";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -249,6 +250,11 @@ router.beforeEach((to, from) => {
       }
       
       const user = userStore.user;
+
+      // Administrador de plataforma sin tenant activo: solo la consola de plataforma
+      if (requiresAuth && shouldRedirectToPlatformConsole(user, to.name)) {
+        return next({ name: "panel-administrador" });
+      }
 
       // Validar si requiere ser admin y no lo es
       if (requiresAdmin && (!user || user.role !== "Administrador")) {

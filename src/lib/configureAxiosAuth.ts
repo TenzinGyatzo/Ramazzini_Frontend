@@ -51,6 +51,17 @@ function isSessionIdleResponse(error: unknown): boolean {
   return false;
 }
 
+/** Administrador de plataforma en la consola intentando usar datos de un tenant (409). */
+export function isPlatformTenantRequiredResponse(error: unknown): boolean {
+  if (!axios.isAxiosError(error) || error.response?.status !== 409) {
+    return false;
+  }
+  const data = error.response.data as { code?: string } | undefined;
+  return data?.code === 'PLATFORM_TENANT_REQUIRED';
+}
+
+const PLATFORM_CONSOLE_PATH = '/panel-administrador';
+
 async function refreshSession(): Promise<void> {
   if (!refreshPromise) {
     refreshPromise = axios
@@ -69,6 +80,16 @@ export function configureAxiosAuth(instance: AxiosInstance): AxiosInstance {
   instance.interceptors.response.use(
     (response) => response,
     async (error) => {
+      if (isPlatformTenantRequiredResponse(error)) {
+        if (
+          typeof window !== 'undefined' &&
+          window.location.pathname !== PLATFORM_CONSOLE_PATH
+        ) {
+          window.location.assign(PLATFORM_CONSOLE_PATH);
+        }
+        return Promise.reject(error);
+      }
+
       if (isSessionIdleResponse(error)) {
         try {
           useSessionLockStore().requestLock();
