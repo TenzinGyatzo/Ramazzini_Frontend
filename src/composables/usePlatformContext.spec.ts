@@ -42,6 +42,24 @@ class FakeChannel {
 
 const activeTenant = { id: "prov-b", nombre: "Clínica B", regimenRegulatorio: null };
 
+describe("destinos de navegación", () => {
+    it("al entrar a un tenant se abre el resumen de trabajo (ruta \"inicio\" = \"/\")", async () => {
+        const { readFileSync } = await import("node:fs");
+        const { dirname, join } = await import("node:path");
+        const { fileURLToPath } = await import("node:url");
+        const routerSource = readFileSync(
+            join(dirname(fileURLToPath(import.meta.url)), "../router/index.ts"),
+            "utf8",
+        );
+        expect(TENANT_HOME_PATH).toBe("/");
+        // La ruta con nombre "inicio" es el hijo vacío del layout en "/"
+        expect(routerSource).toMatch(/path: "\/",\s*component: LayOut,[\s\S]*?path: "",\s*name: "inicio"/);
+        // La consola existe con esa ruta
+        expect(routerSource).toMatch(/path: "\/panel-administrador",\s*name: "panel-administrador"/);
+        expect(PLATFORM_CONSOLE_PATH).toBe("/panel-administrador");
+    });
+});
+
 describe("shouldRedirectToPlatformConsole (router)", () => {
     it("usuarios normales: nunca", () => {
         expect(shouldRedirectToPlatformConsole({ role: "Principal" }, "inicio")).toBe(false);

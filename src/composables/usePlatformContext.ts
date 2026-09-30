@@ -8,7 +8,8 @@ export const PLATFORM_CONTEXT_CHANNEL = "ramazzini-platform-context";
 export const PLATFORM_ROUTE_NAMES: ReadonlySet<string> = new Set(["panel-administrador"]);
 
 export const PLATFORM_CONSOLE_PATH = "/panel-administrador";
-export const TENANT_HOME_PATH = "/inicio";
+/** Ruta "inicio" (resumen de trabajo): path "" dentro del layout, es decir "/". */
+export const TENANT_HOME_PATH = "/";
 
 type PlatformContextMessage = { type: "tenant-changed"; target: string };
 
