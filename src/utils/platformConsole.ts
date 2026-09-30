@@ -30,6 +30,7 @@ export interface ConsolaProveedor {
     limiteHistoriasManual?: number | null;
     limiteHistoriasEfectivo?: number | null;
     restriccionManual?: boolean;
+    pagoEnLineaHabilitado?: boolean;
     principalUser?: { username?: string; email?: string; phone?: string } | null;
     empresasCount?: number;
     historiasClinicasMes?: number;
@@ -122,7 +123,12 @@ export function usoHistorias(p: ConsolaProveedor): UsoHistorias {
 }
 
 export function tieneAjustes(p: ConsolaProveedor): boolean {
-    return typeof p.limiteHistoriasManual === "number" || !!p.fechaFinTrial || !!p.restriccionManual;
+    return (
+        typeof p.limiteHistoriasManual === "number" ||
+        !!p.fechaFinTrial ||
+        !!p.restriccionManual ||
+        p.pagoEnLineaHabilitado === true
+    );
 }
 
 /** Motivos para "Requieren atención" (vacío = no requiere). */
@@ -199,6 +205,7 @@ export type FiltroEstado =
     | "gratuito_vencido"
     | "sin_acceso"
     | "restringidos"
+    | "pago_en_linea"
     | "con_ajustes"
     | "atencion";
 
@@ -258,6 +265,8 @@ export function coincideFiltro(p: ConsolaProveedor, filtro: FiltroEstado, ahora 
             return sinAcceso(p, ahora);
         case "restringidos":
             return !!p.restriccionManual;
+        case "pago_en_linea":
+            return p.pagoEnLineaHabilitado === true;
         case "con_ajustes":
             return tieneAjustes(p);
         case "atencion":
@@ -331,6 +340,7 @@ export function calcularMetricas(proveedores: ConsolaProveedor[], ahora = new Da
         "gratuito_vencido",
         "sin_acceso",
         "restringidos",
+        "pago_en_linea",
         "con_ajustes",
         "atencion",
     ];
@@ -362,6 +372,7 @@ const FILTROS_VALIDOS: FiltroEstado[] = [
     "gratuito_vencido",
     "sin_acceso",
     "restringidos",
+    "pago_en_linea",
     "con_ajustes",
     "atencion",
 ];

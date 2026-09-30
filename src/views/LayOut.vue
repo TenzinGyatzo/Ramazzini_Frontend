@@ -1335,7 +1335,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Mi Suscripción</span>
               </div>
             </RouterLink>
-            <RouterLink :to="{ name: 'subscription' }" @click="isMenuOpen = false"
+            <RouterLink v-if="proveedorSaludStore.pagoEnLineaHabilitado" :to="{ name: 'subscription' }" @click="isMenuOpen = false"
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-list text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>

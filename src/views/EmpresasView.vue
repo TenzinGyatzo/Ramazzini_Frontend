@@ -13,6 +13,7 @@ import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import CentrosTrabajoAPI from '@/api/CentrosTrabajoAPI';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
+import { abrirWhatsApp } from '@/utils/contactoRamazzini';
 
 const toast: any = inject('toast');
 const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
@@ -153,15 +154,21 @@ watchEffect(() => {
   const finDeSuscripcion = p.finDeSuscripcion ? new Date(p.finDeSuscripcion) : null;
 
   if (periodoDePruebaFinalizado && estadoSuscripcion === 'cancelled' && finDeSuscripcion && finDeSuscripcion > new Date()) {
+    // Sin pago en línea, la renovación se gestiona con Ramazzini (WhatsApp)
+    const renovar = proveedorSalud.pagoEnLineaHabilitado
+      ? () => router.push({ name: 'subscription' })
+      : () => abrirWhatsApp(p.nombre);
     toast.open({
       message: `Aún tienes acceso hasta el ${finDeSuscripcion.toLocaleDateString()}.`,
       type: 'success',
-      onClick: () => router.push({ name: 'subscription' }),
+      onClick: renovar,
     });
     toast.open({
-      message: `Haz clic aquí para renovar tu suscripción.`,
+      message: proveedorSalud.pagoEnLineaHabilitado
+        ? `Haz clic aquí para renovar tu suscripción.`
+        : `Haz clic aquí para contactar a Ramazzini y renovar tu plan.`,
       type: 'info',
-      onClick: () => router.push({ name: 'subscription' }),
+      onClick: renovar,
     });
   }
 });

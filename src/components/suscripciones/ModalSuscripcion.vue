@@ -4,6 +4,11 @@ import { storeToRefs } from 'pinia';
 import { useRouter, useRoute } from 'vue-router';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
+import {
+  CORREO_RAMAZZINI,
+  abrirWhatsApp,
+  enlaceCorreo,
+} from '@/utils/contactoRamazzini';
 
 const proveedorSaludStore = useProveedorSaludStore();
 const { proveedorSalud } = storeToRefs(proveedorSaludStore);
@@ -88,7 +93,7 @@ const finDeSuscripcion = computed(() =>
 
 const goToSubscription = () => router.push({ name: 'subscription' });
 
-const modalContent = computed(() => {
+const modalBase = computed(() => {
   // Restricción comercial fijada por el Administrador de plataforma
   if (proveedorSaludStore.accesoRestringido) {
     return {
@@ -202,6 +207,45 @@ const modalContent = computed(() => {
   }
 
   return { show: false };
+});
+
+/** Sin pago en línea: el plan se gestiona con Ramazzini (WhatsApp / correo) en vez de «Ver planes». */
+const TEXTOS_SIN_PAGO_EN_LINEA = {
+  restricted: {
+    highlightDetail: 'Si crees que se trata de un error, contacta a Ramazzini.',
+    buttonText: 'Contactar a Ramazzini por WhatsApp',
+  },
+  trial: {
+    message: 'Tu periodo de prueba terminó. Para seguir usando Ramazzini, contáctanos y te ayudamos a elegir tu plan.',
+    highlight: null,
+    buttonText: 'Contactar a Ramazzini por WhatsApp',
+  },
+  expired: {
+    highlightDetail: 'Contacta a Ramazzini para reactivar tu acceso y volver a usar todas las herramientas.',
+    buttonText: 'Contactar a Ramazzini por WhatsApp',
+  },
+  inactive: {
+    highlightDetail: 'Contacta a Ramazzini para regularizar tu pago y seguir usando las herramientas sin interrupciones.',
+    buttonText: 'Contactar a Ramazzini por WhatsApp',
+  },
+  limit: {
+    highlightDetail: 'Contacta a Ramazzini para ampliar tu plan y continuar registrando exámenes médicos laborales este mes.',
+    buttonText: 'Contactar a Ramazzini por WhatsApp',
+  },
+};
+
+const pagoEnLineaHabilitado = computed(() => proveedorSaludStore.pagoEnLineaHabilitado);
+
+const modalContent = computed(() => {
+  const base = modalBase.value;
+  if (base.show === false || pagoEnLineaHabilitado.value) return base;
+  return {
+    ...base,
+    ...(TEXTOS_SIN_PAGO_EN_LINEA[base.variant] ?? {}),
+    action: () => abrirWhatsApp(proveedorSalud.value?.nombre),
+    showDisclaimer: false,
+    contactoCorreo: enlaceCorreo(proveedorSalud.value?.nombre),
+  };
 });
 
 watch(
@@ -324,6 +368,15 @@ watch(
             >
               {{ modalContent.secondaryText }}
             </button>
+
+            <a
+              v-if="modalContent.contactoCorreo"
+              :href="modalContent.contactoCorreo"
+              data-testid="modal-suscripcion-correo"
+              class="text-center text-sm text-emerald-700 underline"
+            >
+              o escríbenos a {{ CORREO_RAMAZZINI }}
+            </a>
 
             <p
               v-if="modalContent.showDisclaimer"

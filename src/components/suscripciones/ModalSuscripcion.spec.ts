@@ -81,4 +81,33 @@ describe('ModalSuscripcion: ajustes del Administrador de plataforma', () => {
     expect(wrapper.find('.modal').exists()).toBe(false);
     wrapper.unmount();
   });
+
+  describe('pago en línea', () => {
+    const trialVencido = { nombre: 'Clínica Norte', periodoDePruebaFinalizado: true, estadoSuscripcion: null };
+
+    it('deshabilitado (por defecto): contacto con Ramazzini, sin precio ni «Suscríbete»', async () => {
+      const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+      const wrapper = await mountWith(trialVencido);
+      expect(wrapper.text()).toContain('Contactar a Ramazzini por WhatsApp');
+      expect(wrapper.text()).not.toContain('Suscríbete ahora');
+      expect(wrapper.text()).not.toContain('$999');
+      expect(wrapper.text()).not.toContain('Cancela en cualquier momento');
+      expect(wrapper.find('[data-testid="modal-suscripcion-correo"]').attributes('href')).toContain(
+        'mailto:soporte@ramazzini.app',
+      );
+      const boton = wrapper.findAll('button').find((b) => b.text().includes('WhatsApp'))!;
+      await boton.trigger('click');
+      expect(open).toHaveBeenCalledWith(expect.stringContaining('https://wa.me/526681702850'), '_blank', 'noopener');
+      open.mockRestore();
+      wrapper.unmount();
+    });
+
+    it('habilitado: igual que siempre («Suscríbete ahora»)', async () => {
+      const wrapper = await mountWith({ ...trialVencido, pagoEnLineaHabilitado: true });
+      expect(wrapper.text()).toContain('Suscríbete ahora');
+      expect(wrapper.text()).toContain('$999');
+      expect(wrapper.find('[data-testid="modal-suscripcion-correo"]').exists()).toBe(false);
+      wrapper.unmount();
+    });
+  });
 });

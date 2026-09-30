@@ -177,6 +177,7 @@ const router = createRouter({
           path: "/suscripcion",
           name: "subscription",
           component: () => import("../views/SubscriptionView.vue"),
+          meta: { requiresPagoEnLinea: true },
         },
         {
           path: "/suscripcion-activa",
@@ -285,6 +286,16 @@ router.beforeEach((to, from) => {
       if (requiresSiresAudit && !proveedorSaludStore.auditTrailEnabled) {
         console.warn("Acceso denegado: auditoría no habilitada para este proveedor");
         return next({ name: "inicio" });
+      }
+
+      // «Ver planes» (Mercado Pago) solo si Ramazzini habilitó el pago en línea al tenant
+      if (to.meta.requiresPagoEnLinea) {
+        if (user?.idProveedorSalud && !proveedorSaludStore.isProveedorLoaded) {
+          await proveedorSaludStore.loadProveedorSalud(user.idProveedorSalud);
+        }
+        if (!proveedorSaludStore.pagoEnLineaHabilitado) {
+          return next({ name: "suscripcion-activa" });
+        }
       }
 
       // Validar si requiere acceso al dashboard de salud

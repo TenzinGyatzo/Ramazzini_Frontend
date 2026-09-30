@@ -66,4 +66,19 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
       'originalmente hasta el',
     );
   });
+
+  it('sin pago en línea: contacto con Ramazzini en lugar de «Comenzar con un Plan»', async () => {
+    const wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25 });
+    expect(wrapper.text()).not.toContain('Comenzar con un Plan');
+    const contacto = wrapper.find('[data-testid="suscripcion-contacto-ramazzini"]');
+    expect(contacto.text()).toContain('se gestiona directamente con Ramazzini');
+    expect(contacto.find('a[href^="https://wa.me/526681702850"]').exists()).toBe(true);
+    expect(contacto.find('a[href^="mailto:soporte@ramazzini.app"]').exists()).toBe(true);
+  });
+
+  it('con pago en línea: botón de planes como siempre', async () => {
+    const wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25, pagoEnLineaHabilitado: true });
+    expect(wrapper.text()).toContain('Comenzar con un Plan');
+    expect(wrapper.find('[data-testid="suscripcion-contacto-ramazzini"]').exists()).toBe(false);
+  });
 });

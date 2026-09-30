@@ -10,6 +10,7 @@ export interface TenantSettingsChanges {
     limiteHistoriasManual?: number | null;
     fechaFinTrial?: string | null;
     restriccionManual?: boolean;
+    pagoEnLineaHabilitado?: boolean;
 }
 
 export interface TenantSettingsResponse {
@@ -17,6 +18,7 @@ export interface TenantSettingsResponse {
     limiteHistoriasManual: number | null;
     fechaFinTrial: string | null;
     restriccionManual: boolean;
+    pagoEnLineaHabilitado: boolean;
     periodoDePruebaFinalizado: boolean;
     limiteHistoriasEfectivo: number | null;
     fechaFinTrialEfectiva: string | null;

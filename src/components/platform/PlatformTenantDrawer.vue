@@ -285,6 +285,10 @@ const tonos: Record<string, string> = {
               <dt class="text-gray-500 dark:text-slate-400">Fin de suscripción</dt>
               <dd class="text-right">{{ formatoFecha(proveedor.finDeSuscripcion) }}</dd>
             </template>
+            <dt class="text-gray-500 dark:text-slate-400">Contratación</dt>
+            <dd class="text-right" data-testid="drawer-pago-en-linea">
+              {{ proveedor.pagoEnLineaHabilitado ? "En línea (Mercado Pago)" : "Directa con Ramazzini" }}
+            </dd>
             <dt class="text-gray-500 dark:text-slate-400">Empresas</dt>
             <dd class="text-right">{{ proveedor.empresasCount ?? 0 }}</dd>
           </dl>
@@ -400,6 +404,8 @@ const tonos: Record<string, string> = {
             :fecha-fin-trial="proveedor.fechaFinTrial"
             :fecha-fin-trial-efectiva="proveedor.fechaFinTrialEfectiva"
             :restriccion-manual="proveedor.restriccionManual"
+            :pago-en-linea-habilitado="proveedor.pagoEnLineaHabilitado"
+            :estado-suscripcion="proveedor.estadoSuscripcion"
             @actualizado="(ajustes) => emit('ajustesActualizados', ajustes)"
           />
         </section>

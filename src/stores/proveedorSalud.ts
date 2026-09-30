@@ -62,6 +62,8 @@ interface ProveedorSalud {
     limiteHistoriasManual?: number | null;
     fechaFinTrial?: Date | string | null;
     restriccionManual?: boolean;
+    /** Contratación en línea (Mercado Pago); ausente = el plan se gestiona con Ramazzini. */
+    pagoEnLineaHabilitado?: boolean;
     /** Calculados por el backend: límite manual o del plan; fin fijado o inicio + 15 días. */
     limiteHistoriasEfectivo?: number | null;
     fechaFinTrialEfectiva?: Date | string | null;
@@ -381,6 +383,8 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     /** true si Ramazzini ajustó la fecha de fin del periodo gratuito. */
     const periodoGratuitoAjustado = computed(() => !!proveedorSalud.value?.fechaFinTrial);
     const accesoRestringido = computed(() => proveedorSalud.value?.restriccionManual === true);
+    /** Acceso a «Ver planes» (contratación con Mercado Pago), a discreción del Administrador de plataforma. */
+    const pagoEnLineaHabilitado = computed(() => proveedorSalud.value?.pagoEnLineaHabilitado === true);
 
     return {
         proveedorSalud,
@@ -419,6 +423,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         fechaFinTrialOriginal,
         periodoGratuitoAjustado,
         accesoRestringido,
+        pagoEnLineaHabilitado,
         // Methods
         loadProveedorSalud,
         getProveedorById,

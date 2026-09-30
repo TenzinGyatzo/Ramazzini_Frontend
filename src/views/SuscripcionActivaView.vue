@@ -9,6 +9,12 @@ import { useRouter } from 'vue-router';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { es, hi } from 'date-fns/locale';
 import ModalCancelarSuscripcion from '@/components/suscripciones/ModalCancelarSuscripcion.vue';
+import {
+  CORREO_RAMAZZINI,
+  WHATSAPP_RAMAZZINI_VISIBLE,
+  enlaceCorreo,
+  enlaceWhatsApp,
+} from '@/utils/contactoRamazzini';
 
 const pagosStore = usePagosStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -21,6 +27,7 @@ const {
   fechaFinTrialEfectiva,
   fechaFinTrialOriginal,
   periodoGratuitoAjustado,
+  pagoEnLineaHabilitado,
 } = storeToRefs(proveedorSaludStore);
 const limiteHistorias = computed(() => limiteHistoriasEfectivo.value ?? 0);
 const router = useRouter();
@@ -288,10 +295,25 @@ const formatearPais = (codigoPais) => {
             </span>
           </p>
           <button 
+            v-if="pagoEnLineaHabilitado"
             @click="router.push('/suscripcion')"
             class="mt-2 w-full bg-gradient-to-r from-sky-600 to-sky-500 text-white px-4 py-2 rounded-lg hover:scale-105 transition-all duration-300 ease-in-out active:scale-95 text-sm sm:text-base">
             {{ suscripcionActual ? 'Mejorar mi Plan ✨' : 'Comenzar con un Plan 🚀' }}
           </button>
+          <!-- Plan gestionado directamente con Ramazzini (sin pago en línea) -->
+          <div v-else data-testid="suscripcion-contacto-ramazzini" class="mt-2 rounded-lg border border-sky-100 bg-sky-50 p-3 text-sm text-gray-700">
+            <p>Tu plan se gestiona directamente con Ramazzini. Para contratar, cambiar o renovar tu plan, contáctanos:</p>
+            <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+              <a :href="enlaceWhatsApp(proveedorSalud?.nombre)" target="_blank" rel="noopener"
+                 class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white hover:bg-emerald-700">
+                <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp {{ WHATSAPP_RAMAZZINI_VISIBLE }}
+              </a>
+              <a :href="enlaceCorreo(proveedorSalud?.nombre)"
+                 class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-sky-200 bg-white px-3 py-2 font-semibold text-sky-700 hover:bg-sky-100">
+                <i class="fa-solid fa-envelope" aria-hidden="true"></i> {{ CORREO_RAMAZZINI }}
+              </a>
+            </div>
+          </div>
         </div>
   
         <!-- Sección de Uso -->
@@ -322,7 +344,8 @@ const formatearPais = (codigoPais) => {
               ⚠️ Estás cerca del límite de historias clínicas. Considera actualizar tu plan.
             </p>
             <p v-if="historiasDelMes >= limiteHistorias" class="text-red-600 text-xs sm:text-sm mt-2">⚠️ Has alcanzado el límite de historias clínicas.
-              <a @click="router.push('/suscripcion')" class="text-sky-600 underline cursor-pointer">Mejora tu plan</a>.
+              <a v-if="pagoEnLineaHabilitado" @click="router.push('/suscripcion')" class="text-sky-600 underline cursor-pointer">Mejora tu plan</a>
+              <a v-else :href="enlaceWhatsApp(proveedorSalud?.nombre)" target="_blank" rel="noopener" class="text-sky-600 underline cursor-pointer">Contacta a Ramazzini para ampliarlo</a>.
             </p>
           </div>
 

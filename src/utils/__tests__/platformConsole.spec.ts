@@ -190,6 +190,14 @@ describe("búsqueda, filtros y orden", () => {
         expect(m).toMatchObject({ total: 4, activos: 2, gratuito: 1, gratuitoPorVencer: 1, sinAcceso: 2, atencion: 3, historiasMes: 45 });
         expect(m.conteoPorFiltro.todos).toBe(4);
     });
+
+    it("pago en línea: filtro propio y cuenta como ajuste", () => {
+        const conPago = [...lista, prov({ _id: "690000000000000000000005", nombre: "Delta", pagoEnLineaHabilitado: true })];
+        const f = (filtro: any) =>
+            nombres(filtrarYOrdenar(conPago, { ...PREFERENCIAS_POR_DEFECTO, filtro }, AHORA));
+        expect(f("pago_en_linea")).toEqual(["Delta"]);
+        expect(f("con_ajustes")).toContain("Delta");
+    });
 });
 
 describe("preferencias", () => {

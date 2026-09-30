@@ -50,6 +50,7 @@ const FILTROS = [
   { clave: 'gratuito_vencido', etiqueta: 'Gratuito vencido' },
   { clave: 'sin_acceso', etiqueta: 'Sin acceso' },
   { clave: 'restringidos', etiqueta: 'Restringidos' },
+  { clave: 'pago_en_linea', etiqueta: 'Pago en línea' },
   { clave: 'con_ajustes', etiqueta: 'Con ajustes' },
   { clave: 'atencion', etiqueta: 'Requieren atención' },
 ];
@@ -195,6 +196,7 @@ function aplicarAjustes(ajustes) {
           limiteHistoriasManual: ajustes.limiteHistoriasManual,
           fechaFinTrial: ajustes.fechaFinTrial,
           restriccionManual: ajustes.restriccionManual,
+          pagoEnLineaHabilitado: ajustes.pagoEnLineaHabilitado,
           periodoDePruebaFinalizado: ajustes.periodoDePruebaFinalizado,
           limiteHistoriasEfectivo: ajustes.limiteHistoriasEfectivo,
           fechaFinTrialEfectiva: ajustes.fechaFinTrialEfectiva,

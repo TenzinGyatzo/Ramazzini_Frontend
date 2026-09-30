@@ -8,8 +8,8 @@ import { getToast } from "@/utils/toast";
 import { aFechaYmd, finDeDiaIso, resolverFechaFinTrial } from "@/utils/periodoPrueba";
 
 /**
- * Consola de plataforma: límite de HC al mes, fin del periodo gratuito y restricción
- * comercial de un tenant. Solo se envían los campos que cambiaron.
+ * Consola de plataforma: límite de HC al mes, fin del periodo gratuito, restricción
+ * comercial y pago en línea de un tenant. Solo se envían los campos que cambiaron.
  */
 const props = defineProps<{
   proveedorId: string;
@@ -19,6 +19,8 @@ const props = defineProps<{
   fechaFinTrial?: string | null;
   fechaFinTrialEfectiva?: string | null;
   restriccionManual?: boolean;
+  pagoEnLineaHabilitado?: boolean;
+  estadoSuscripcion?: string | null;
 }>();
 
 const emit = defineEmits<{ (e: "actualizado", value: TenantSettingsResponse): void }>();
@@ -43,15 +45,19 @@ const finEfectivo = computed(() =>
 const limite = ref("");
 const fechaFin = ref("");
 const restringido = ref(false);
+const pagoEnLinea = ref(false);
 
 function reiniciarFormulario() {
   limite.value = limiteInicial.value;
   fechaFin.value = finInicial.value;
   restringido.value = props.restriccionManual === true;
+  pagoEnLinea.value = props.pagoEnLineaHabilitado === true;
 }
-watch(() => [props.limiteHistoriasManual, props.fechaFinTrial, props.restriccionManual], reiniciarFormulario, {
-  immediate: true,
-});
+watch(
+  () => [props.limiteHistoriasManual, props.fechaFinTrial, props.restriccionManual, props.pagoEnLineaHabilitado],
+  reiniciarFormulario,
+  { immediate: true },
+);
 
 const limiteInvalido = computed(() => {
   if (limite.value.trim() === "") return false;
@@ -76,9 +82,20 @@ const cambios = computed<TenantSettingsChanges>(() => {
   if (restringido.value !== (props.restriccionManual === true)) {
     c.restriccionManual = restringido.value;
   }
+  if (pagoEnLinea.value !== (props.pagoEnLineaHabilitado === true)) {
+    c.pagoEnLineaHabilitado = pagoEnLinea.value;
+  }
   return c;
 });
 const hayCambios = computed(() => Object.keys(cambios.value).length > 0);
+
+/** Quitar el pago en línea no cancela una suscripción de Mercado Pago que siga cobrando. */
+const avisoSuscripcionActiva = computed(
+  () =>
+    props.pagoEnLineaHabilitado === true &&
+    !pagoEnLinea.value &&
+    (props.estadoSuscripcion === "authorized" || props.estadoSuscripcion === "pending"),
+);
 
 /** Atajos: suman días al fin actual (o a hoy, si ya pasó). */
 function extenderDias(dias: number) {
@@ -127,6 +144,7 @@ function cancelar() {
       <i class="fa-solid fa-sliders" aria-hidden="true"></i>
       Ajustes de plataforma
       <span v-if="restriccionManual" class="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700">Restringido</span>
+      <span v-if="pagoEnLineaHabilitado" class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">Pago en línea</span>
     </button>
 
     <form v-if="abierto" class="mt-2 space-y-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4" @submit.prevent="guardar">
@@ -207,6 +225,20 @@ function cancelar() {
         <p class="mt-1 text-xs text-gray-500">
           El proveedor sigue entrando a su espacio, pero no puede registrar trabajadores ni crear documentos.
           No detiene cobros en Mercado Pago.
+        </p>
+      </div>
+
+      <div>
+        <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+          <input v-model="pagoEnLinea" data-testid="tenant-settings-pago-en-linea" type="checkbox" class="h-4 w-4" />
+          Permitir contratar en línea (Mercado Pago)
+        </label>
+        <p class="mt-1 text-xs text-gray-500">
+          Muestra «Ver planes» para que el proveedor se suscriba o cambie su plan con tarjeta. Desactivado: su plan se
+          gestiona directamente con Ramazzini y verá los datos de contacto.
+        </p>
+        <p v-if="avisoSuscripcionActiva" data-testid="tenant-settings-aviso-mp" class="mt-1 text-xs text-amber-700">
+          Tiene una suscripción de Mercado Pago vigente: seguirá cobrándose. Puede cancelarla desde «Mi Suscripción».
         </p>
       </div>
 

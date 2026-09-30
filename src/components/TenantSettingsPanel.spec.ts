@@ -140,6 +140,24 @@ describe('TenantSettingsPanel', () => {
     expect(toastOpen).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
   });
 
+  it('pago en línea: se envía solo al cambiar', async () => {
+    updateTenantSettings.mockResolvedValue({ data: { id: 'prov-1', pagoEnLineaHabilitado: true } });
+    const wrapper = mountPanel();
+    await abrir(wrapper);
+    await wrapper.find('[data-testid="tenant-settings-pago-en-linea"]').setValue(true);
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(updateTenantSettings).toHaveBeenCalledWith('prov-1', { pagoEnLineaHabilitado: true });
+  });
+
+  it('quitar el pago en línea con suscripción vigente muestra el aviso de cobros', async () => {
+    const wrapper = mountPanel({ pagoEnLineaHabilitado: true, estadoSuscripcion: 'authorized' });
+    await abrir(wrapper);
+    expect(wrapper.find('[data-testid="tenant-settings-aviso-mp"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="tenant-settings-pago-en-linea"]').setValue(false);
+    expect(wrapper.find('[data-testid="tenant-settings-aviso-mp"]').text()).toContain('seguirá cobrándose');
+  });
+
   it('vaciar el límite manual lo devuelve al plan (null)', async () => {
     updateTenantSettings.mockResolvedValue({ data: { id: 'prov-1' } });
     const wrapper = mountPanel({ limiteHistoriasManual: 300 });
