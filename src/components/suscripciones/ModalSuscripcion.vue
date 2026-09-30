@@ -72,8 +72,9 @@ onUnmounted(() => {
   }
 });
 
+// Límite efectivo: el manual del Administrador de plataforma prevalece sobre el del plan
 const maxHistoriasPermitidasAlMes = computed(
-  () => proveedorSalud.value?.maxHistoriasPermitidasAlMes
+  () => proveedorSaludStore.limiteHistoriasEfectivo
 );
 const periodoDePruebaFinalizado = computed(
   () => proveedorSalud.value?.periodoDePruebaFinalizado
@@ -88,6 +89,26 @@ const finDeSuscripcion = computed(() =>
 const goToSubscription = () => router.push({ name: 'subscription' });
 
 const modalContent = computed(() => {
+  // Restricción comercial fijada por el Administrador de plataforma
+  if (proveedorSaludStore.accesoRestringido) {
+    return {
+      variant: 'restricted',
+      title: 'Tu cuenta tiene el acceso restringido',
+      message:
+        'Puedes consultar tu espacio de trabajo, pero por ahora no es posible registrar trabajadores ni crear documentos.',
+      highlight: null,
+      highlightDetail:
+        'Si crees que se trata de un error, contacta a Ramazzini. También puedes revisar los planes disponibles.',
+      benefits: null,
+      buttonText: 'Ver planes',
+      action: goToSubscription,
+      secondaryText: 'Seguir explorando',
+      showDisclaimer: false,
+      icon: 'fa-lock',
+      show: true,
+    };
+  }
+
   if (periodoDePruebaFinalizado.value && !estadoSuscripcion.value) {
     return {
       variant: 'trial',

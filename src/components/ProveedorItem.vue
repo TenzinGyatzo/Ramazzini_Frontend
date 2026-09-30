@@ -1,9 +1,11 @@
 <script setup>
 import { computed, ref, watch, useAttrs } from 'vue';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { usePagosStore } from '@/stores/pagosStore';
 import { usePlatformContext } from '@/composables/usePlatformContext';
+import TenantSettingsPanel from '@/components/TenantSettingsPanel.vue';
+import { resolverFechaFinTrial } from '@/utils/periodoPrueba';
 
 const props = defineProps({
   id: String,
@@ -27,7 +29,22 @@ const props = defineProps({
   empresas: Array,
   principalUser: Object,
   users: Object,
+  // Ajustes del Administrador de plataforma
+  limiteHistoriasManual: Number,
+  fechaFinTrial: String,
+  restriccionManual: Boolean,
+  limiteHistoriasEfectivo: Number,
+  fechaFinTrialEfectiva: String,
 });
+
+const emit = defineEmits(['ajustesActualizados']);
+
+const limiteEfectivo = computed(() => {
+  if (typeof props.limiteHistoriasEfectivo === 'number') return props.limiteHistoriasEfectivo;
+  if (typeof props.limiteHistoriasManual === 'number') return props.limiteHistoriasManual;
+  return props.maxHistoriasPermitidasAlMes;
+});
+const limiteEsManual = computed(() => typeof props.limiteHistoriasManual === 'number');
 
 // El panel pasa el proveedor con v-bind (llega como `_id`, no como prop `id`)
 const attrs = useAttrs();
@@ -125,12 +142,9 @@ const formatDate = (dateString) =>
     : 'No disponible';
 
 const periodoGratuito = computed(() => {
-  if (!props.fechaInicioTrial) return 'No disponible';
-
-  const fechaInicio = parseISO(props.fechaInicioTrial);
-  const fechaFin = new Date(fechaInicio);
-  fechaFin.setDate(fechaFin.getDate() + 15);
-  fechaFin.setHours(23, 59, 59);
+  // Fin efectivo: fijado por el Administrador, o inicio + 15 días
+  const fechaFin = resolverFechaFinTrial(props);
+  if (!fechaFin) return 'No disponible';
 
   const hoy = new Date();
   const diasRestantes = differenceInDays(fechaFin, hoy);
@@ -189,7 +203,8 @@ const formatCurrency = (amount) => {
             <p class="text-gray-600"><strong>📊 Clientes registrados:</strong> {{ cantidadEmpresas }}</p>
             <p class="text-gray-600">
                 <strong>👥 H. C. Usadas en {{ mesActual }}:</strong>
-                {{ `${historiasClinicasMes ?? 0} de ${maxHistoriasPermitidasAlMes} permitidas` }}
+                {{ `${historiasClinicasMes ?? 0} de ${limiteEfectivo} permitidas` }}
+                <span v-if="limiteEsManual" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">límite manual</span>
             </p>
             <p class="text-gray-600"><strong>📝 Notas Médicas Usadas en {{ mesActual }}:</strong> {{ `${notasMedicasMes ?? 0} ${notasMedicasMes === 1 ? 'nota' : 'notas'}` }}</p>
             <p class="text-gray-600"><strong>👥 Total de H. Clínicas:</strong> {{ `${todasLasHistoriasClinicas ?? 0}` }} historias</p>
@@ -201,6 +216,17 @@ const formatCurrency = (amount) => {
                     {{ estadoSuscripcion || 'Sin suscripción actual' }}
                 </span>
             </p>
+            <TenantSettingsPanel
+                v-if="proveedorId"
+                :proveedor-id="String(proveedorId)"
+                :max-historias-permitidas-al-mes="maxHistoriasPermitidasAlMes"
+                :limite-historias-manual="limiteHistoriasManual"
+                :fecha-inicio-trial="fechaInicioTrial"
+                :fecha-fin-trial="fechaFinTrial"
+                :fecha-fin-trial-efectiva="fechaFinTrialEfectiva"
+                :restriccion-manual="restriccionManual"
+                @actualizado="(ajustes) => emit('ajustesActualizados', ajustes)"
+            />
             <div v-if="tieneSuscripcionActiva" class="mt-4">
                 <button
                     type="button"

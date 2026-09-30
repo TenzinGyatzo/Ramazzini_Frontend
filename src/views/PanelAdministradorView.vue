@@ -5,7 +5,8 @@ import { useRouter } from 'vue-router';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import ProveedorItem from '@/components/ProveedorItem.vue';
 import ProveedorSaludAPI from '@/api/ProveedorSaludAPI';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays } from 'date-fns';
+import { resolverFechaFinTrial } from '@/utils/periodoPrueba';
 import {
   getCachedPanelDetails,
   setCachedPanelDetails,
@@ -42,12 +43,9 @@ const redirigirSiNoEsAdmin = () => {
 };
 
 const esPeriodoGratuitoActivo = (proveedor) => {
-  if (!proveedor.fechaInicioTrial) return false;
-
-  const fechaInicio = parseISO(proveedor.fechaInicioTrial);
-  const fechaFin = new Date(fechaInicio);
-  fechaFin.setDate(fechaFin.getDate() + 15);
-  fechaFin.setHours(23, 59, 59);
+  // Fin efectivo: fijado por el Administrador, o inicio + 15 días
+  const fechaFin = resolverFechaFinTrial(proveedor);
+  if (!fechaFin) return false;
 
   const hoy = new Date();
   return differenceInDays(fechaFin, hoy) > 0;
@@ -133,7 +131,28 @@ function mapDetalleEnProveedor(base, detalle) {
     todasLasNotasMedicas: detalle.totalNotasMedicas ?? 0,
     suscripcion: detalle.suscripcion ?? null,
     suscripcionActivaId: base.suscripcionActiva ?? null,
+    limiteHistoriasEfectivo: detalle.limiteHistoriasEfectivo ?? null,
+    fechaFinTrialEfectiva: detalle.fechaFinTrialEfectiva ?? null,
   };
+}
+
+/** Tras guardar ajustes de plataforma: refleja los valores nuevos en la tarjeta sin recargar el panel. */
+function aplicarAjustes(ajustes) {
+  if (!ajustes?.id) return;
+  invalidatePanelAdminCache();
+  proveedores.value = proveedores.value.map((p) =>
+    String(p._id) === String(ajustes.id)
+      ? {
+          ...p,
+          limiteHistoriasManual: ajustes.limiteHistoriasManual,
+          fechaFinTrial: ajustes.fechaFinTrial,
+          restriccionManual: ajustes.restriccionManual,
+          periodoDePruebaFinalizado: ajustes.periodoDePruebaFinalizado,
+          limiteHistoriasEfectivo: ajustes.limiteHistoriasEfectivo,
+          fechaFinTrialEfectiva: ajustes.fechaFinTrialEfectiva,
+        }
+      : p,
+  );
 }
 
 function mergeDetalleEnProveedores(rows) {
@@ -368,6 +387,7 @@ onMounted(() => {
                   v-for="proveedor in proveedoresAgrupados.activos"
                   :key="proveedor._id"
                   v-bind="proveedor"
+                  @ajustes-actualizados="aplicarAjustes"
                 />
               </div>
             </Transition>
@@ -390,6 +410,7 @@ onMounted(() => {
                   v-for="proveedor in proveedoresAgrupados.cancelados"
                   :key="proveedor._id"
                   v-bind="proveedor"
+                  @ajustes-actualizados="aplicarAjustes"
                 />
               </div>
             </Transition>
@@ -428,6 +449,7 @@ onMounted(() => {
                         v-for="proveedor in proveedoresAgrupados.sinSuscripcion.periodoGratuitoActivo"
                         :key="proveedor._id"
                         v-bind="proveedor"
+                  @ajustes-actualizados="aplicarAjustes"
                       />
                     </div>
                   </Transition>
@@ -450,6 +472,7 @@ onMounted(() => {
                         v-for="proveedor in proveedoresAgrupados.sinSuscripcion.periodoGratuitoFinalizado"
                         :key="proveedor._id"
                         v-bind="proveedor"
+                  @ajustes-actualizados="aplicarAjustes"
                       />
                     </div>
                   </Transition>

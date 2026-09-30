@@ -160,6 +160,12 @@ const toggleDocumentoExternoModal = () => {
   executeIfCanManageDocumentosExternos(() => {
     if (!proveedorSaludStore.proveedorSalud) return;
 
+    // Restricción comercial del Administrador de plataforma: como suscripción vencida
+    if (proveedorSaludStore.accesoRestringido) {
+      showSubscriptionModal.value = true;
+      return;
+    }
+
     if (periodoDePruebaFinalizado.value) {
       if (!estadoSuscripcion.value || estadoSuscripcion.value === 'inactive') {
         showSubscriptionModal.value = true;
@@ -184,6 +190,12 @@ const toggleDocumentoExternoUpdateModal = () => {
   executeIfCanManageDocumentosExternos(() => {
     if (!proveedorSaludStore.proveedorSalud) return;
 
+    // Restricción comercial del Administrador de plataforma: como suscripción vencida
+    if (proveedorSaludStore.accesoRestringido) {
+      showSubscriptionModal.value = true;
+      return;
+    }
+
     if (periodoDePruebaFinalizado.value) {
       if (!estadoSuscripcion.value || estadoSuscripcion.value === 'inactive') {
         showSubscriptionModal.value = true;
@@ -202,6 +214,12 @@ const toggleDocumentoExternoUpdateModal = () => {
 
 const toggleCuestionariosModal = () => {
   if (!proveedorSaludStore.proveedorSalud) return;
+
+  // Restricción comercial del Administrador de plataforma: como suscripción vencida
+  if (proveedorSaludStore.accesoRestringido) {
+    showSubscriptionModal.value = true;
+    return;
+  }
 
   if (periodoDePruebaFinalizado.value) {
     if (!estadoSuscripcion.value || estadoSuscripcion.value === 'inactive') {
@@ -450,6 +468,12 @@ const tieneResultadosParaAnio = (year: string) => {
 const navigateTo = async (routeName: string, params: Record<string, unknown>) => {
   if (!proveedorSaludStore.proveedorSalud) return;
 
+  // Restricción comercial del Administrador de plataforma: como suscripción vencida
+  if (proveedorSaludStore.accesoRestringido) {
+    showSubscriptionModal.value = true;
+    return;
+  }
+
   if (periodoDePruebaFinalizado.value) {
     if (!estadoSuscripcion.value || estadoSuscripcion.value === 'inactive') {
       showSubscriptionModal.value = true;
@@ -469,7 +493,8 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
     routeName === 'crear-documento' &&
     params.tipoDocumento === 'historiaClinica' &&
     historiasDelMes.value != null &&
-    historiasDelMes.value >= proveedorSaludStore.proveedorSalud?.maxHistoriasPermitidasAlMes
+    proveedorSaludStore.limiteHistoriasEfectivo != null &&
+    historiasDelMes.value >= proveedorSaludStore.limiteHistoriasEfectivo
   ) {
     showSubscriptionModal.value = true;
     return;

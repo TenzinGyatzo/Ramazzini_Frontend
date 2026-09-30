@@ -676,6 +676,12 @@ const handleSubmit = async (data) => {
     return;
   }
 
+  // Restricción comercial del Administrador de plataforma: como suscripción vencida
+  if (proveedorSaludStore.accesoRestringido) {
+    emit('openSubscriptionModal');
+    return;
+  }
+
   if (periodoDePruebaFinalizado) {
     // Bloquear si el periodo de prueba ha finalizado y no tiene suscripción activa (Inactive aparece cuando el pago falla repetidamente)
     if (!estadoSuscripcion || estadoSuscripcion === 'inactive') {

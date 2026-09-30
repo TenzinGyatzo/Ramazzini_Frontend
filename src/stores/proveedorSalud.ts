@@ -57,6 +57,13 @@ interface ProveedorSalud {
     sitioWeb: string;
     referenciaPlan: string;
     maxHistoriasPermitidasAlMes: number;
+    /** Ajustes del Administrador de plataforma (opcionales). */
+    limiteHistoriasManual?: number | null;
+    fechaFinTrial?: Date | string | null;
+    restriccionManual?: boolean;
+    /** Calculados por el backend: límite manual o del plan; fin fijado o inicio + 15 días. */
+    limiteHistoriasEfectivo?: number | null;
+    fechaFinTrialEfectiva?: Date | string | null;
     estadoSuscripcion: string;
     fechaInicioTrial: Date;
     periodoDePruebaFinalizado: boolean;
@@ -342,6 +349,18 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     const cie10PrincipalRequired = computed(() => regulatoryPolicy.value?.validation.cie10Principal === 'required');
     const geoFieldsRequired = computed(() => regulatoryPolicy.value?.validation.geoFields === 'required');
 
+    // Ajustes comerciales del Administrador de plataforma
+    /** Límite de HC al mes que aplica: el manual prevalece sobre el del plan. */
+    const limiteHistoriasEfectivo = computed<number | null>(() => {
+        const p = proveedorSalud.value;
+        if (!p) return null;
+        if (typeof p.limiteHistoriasEfectivo === 'number') return p.limiteHistoriasEfectivo;
+        if (typeof p.limiteHistoriasManual === 'number') return p.limiteHistoriasManual;
+        return p.maxHistoriasPermitidasAlMes ?? null;
+    });
+    /** Restricción comercial manual: se comporta como suscripción vencida. */
+    const accesoRestringido = computed(() => proveedorSalud.value?.restriccionManual === true);
+
     return {
         proveedorSalud,
         loading,
@@ -372,6 +391,8 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         workerCurpRequired,
         cie10PrincipalRequired,
         geoFieldsRequired,
+        limiteHistoriasEfectivo,
+        accesoRestringido,
         // Methods
         loadProveedorSalud,
         getProveedorById,

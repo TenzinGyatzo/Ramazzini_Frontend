@@ -275,6 +275,12 @@ const handleAnularDocument = (documentoId, documentoNombre, documentoTipo) => {
 const editarDocumento = (documentoId, documentoTipo) => {
     if (!proveedorSaludStore.proveedorSalud) return;
 
+    // Restricción comercial del Administrador de plataforma: como suscripción vencida
+    if (proveedorSaludStore.accesoRestringido) {
+        emit('openSubscriptionModal');
+        return;
+    }
+
     if (periodoDePruebaFinalizado) {
         if (!estadoSuscripcion || estadoSuscripcion === 'inactive') {
             emit('openSubscriptionModal');
