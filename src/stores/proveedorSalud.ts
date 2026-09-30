@@ -3,6 +3,13 @@ import { defineStore } from "pinia";
 import ProveedorSaludAPI from "@/api/ProveedorSaludAPI";
 import { isMexicoProvider } from "@/helpers/proveedorPais";
 import { resolverFechaFinTrial } from '@/utils/periodoPrueba';
+import {
+    contratoVigente,
+    desgloseHistorias,
+    diasParaVencerContrato,
+    resolverBloqueoComercial,
+    type ContratoTenant,
+} from "@/utils/accesoComercial";
 
 interface AddOn {
     tipo: string; // 'usuario_adicional', 'empresas_extra', u otros
@@ -59,7 +66,12 @@ interface ProveedorSalud {
     referenciaPlan: string;
     maxHistoriasPermitidasAlMes: number;
     /** Ajustes del Administrador de plataforma (opcionales). */
+    /** Heredado (regla del mayor): se interpreta como cortesía equivalente. */
     limiteHistoriasManual?: number | null;
+    /** HC de cortesía: se suman a lo contratado. */
+    historiasCortesia?: number | null;
+    /** Contrato manual con Ramazzini (transferencia o enlace de Mercado Pago). */
+    contrato?: ContratoTenant | null;
     fechaFinTrial?: Date | string | null;
     restriccionManual?: boolean;
     /** Contratación en línea (Mercado Pago); ausente = el plan se gestiona con Ramazzini. */
@@ -353,25 +365,20 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     const geoFieldsRequired = computed(() => regulatoryPolicy.value?.validation.geoFields === 'required');
 
     // Ajustes comerciales del Administrador de plataforma
-    /** HC al mes contratadas: plan + historias extra compradas (lo escribe el webhook de pagos). */
-    const limiteHistoriasContratado = computed<number | null>(() => {
-        const valor = proveedorSalud.value?.maxHistoriasPermitidasAlMes;
-        return typeof valor === 'number' ? valor : null;
-    });
-    /** HC al mes que aplican: el mayor entre lo contratado y lo asignado por Ramazzini. */
-    const limiteHistoriasEfectivo = computed<number | null>(() => {
-        const p = proveedorSalud.value;
-        if (!p) return null;
-        if (typeof p.limiteHistoriasEfectivo === 'number') return p.limiteHistoriasEfectivo;
-        const contratado = limiteHistoriasContratado.value;
-        const asignado = typeof p.limiteHistoriasManual === 'number' ? p.limiteHistoriasManual : null;
-        if (asignado === null) return contratado;
-        return contratado === null ? asignado : Math.max(contratado, asignado);
-    });
-    /** HC extra asignadas por Ramazzini por encima de lo contratado (0 si no hay). */
-    const historiasExtraAsignadas = computed<number>(() =>
-        Math.max(0, (limiteHistoriasEfectivo.value ?? 0) - (limiteHistoriasContratado.value ?? 0)),
-    );
+    const desglose = computed(() => desgloseHistorias(proveedorSalud.value));
+    /** HC al mes contratadas: el mayor entre Mercado Pago (plan + extra compradas) y el contrato vigente. */
+    const limiteHistoriasContratado = computed<number | null>(() => desglose.value.contratadas);
+    /** HC al mes que aplican: contratadas + cortesía. */
+    const limiteHistoriasEfectivo = computed<number | null>(() => desglose.value.efectivo);
+    /** HC de cortesía de Ramazzini sobre lo contratado (0 si no hay). */
+    const historiasExtraAsignadas = computed<number>(() => desglose.value.cortesia);
+    /** Contrato manual con Ramazzini y su vigencia. */
+    const contrato = computed(() => proveedorSalud.value?.contrato ?? null);
+    const contratoEstaVigente = computed(() => contratoVigente(contrato.value));
+    /** Días para que venza el contrato, dentro de la ventana de aviso (7 mensual / 30 anual). */
+    const diasParaVencerElContrato = computed(() => diasParaVencerContrato(contrato.value));
+    /** null = puede registrar trabajadores y crear documentos; si no, el motivo del bloqueo. */
+    const bloqueoComercial = computed(() => resolverBloqueoComercial(proveedorSalud.value));
     /** Fin del periodo gratuito que aplica (fijado por Ramazzini, o inicio + 15 días). */
     const fechaFinTrialEfectiva = computed<Date | null>(() => resolverFechaFinTrial(proveedorSalud.value));
     /** Fin original del periodo gratuito (inicio + 15 días), para mostrar la extensión. */
@@ -419,6 +426,10 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         limiteHistoriasContratado,
         limiteHistoriasEfectivo,
         historiasExtraAsignadas,
+        contrato,
+        contratoEstaVigente,
+        diasParaVencerElContrato,
+        bloqueoComercial,
         fechaFinTrialEfectiva,
         fechaFinTrialOriginal,
         periodoGratuitoAjustado,

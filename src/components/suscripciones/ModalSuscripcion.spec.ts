@@ -110,4 +110,37 @@ describe('ModalSuscripcion: ajustes del Administrador de plataforma', () => {
       wrapper.unmount();
     });
   });
+
+  describe('contrato con Ramazzini', () => {
+    const contrato = (pagadoHasta: string) => ({
+      plan: 'basico',
+      historiasMes: 50,
+      periodicidad: 'mensual',
+      fechaInicio: '2026-01-01T00:00:00.000Z',
+      estado: 'activo',
+      pagadoHasta,
+    });
+    const enDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString();
+
+    it('vigente: no aparece el aviso de prueba terminada', async () => {
+      const wrapper = await mountWith({ periodoDePruebaFinalizado: true, estadoSuscripcion: null, contrato: contrato(enDias(10)) });
+      expect(wrapper.find('.modal').exists()).toBe(false);
+      wrapper.unmount();
+    });
+
+    it('vencido: aviso propio con contacto, aunque tenga pago en línea', async () => {
+      const wrapper = await mountWith({
+        nombre: 'Clínica Norte',
+        periodoDePruebaFinalizado: true,
+        estadoSuscripcion: null,
+        pagoEnLineaHabilitado: true,
+        contrato: contrato(enDias(-3)),
+      });
+      expect(wrapper.text()).toContain('Tu plan con Ramazzini no está vigente');
+      expect(wrapper.text()).toContain('Plan Básico');
+      expect(wrapper.text()).toContain('Contactar a Ramazzini por WhatsApp');
+      expect(wrapper.text()).not.toContain('Suscríbete ahora');
+      wrapper.unmount();
+    });
+  });
 });

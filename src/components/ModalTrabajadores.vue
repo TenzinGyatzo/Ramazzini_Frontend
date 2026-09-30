@@ -176,9 +176,6 @@ function omitImmutableIdentificationFields(payload) {
 
 const emit = defineEmits(['closeModal', 'openSubscriptionModal'])
 
-const periodoDePruebaFinalizado = proveedorSaludStore.proveedorSalud?.periodoDePruebaFinalizado;
-const estadoSuscripcion = proveedorSaludStore.proveedorSalud?.estadoSuscripcion;
-const finDeSuscripcion = proveedorSaludStore.proveedorSalud?.finDeSuscripcion ? new Date(proveedorSaludStore.proveedorSalud.finDeSuscripcion) : null;
 
 const nivelesEscolaridadBase = [
   "Primaria", "Secundaria", "Preparatoria",
@@ -676,24 +673,10 @@ const handleSubmit = async (data) => {
     return;
   }
 
-  // Restricción comercial del Administrador de plataforma: como suscripción vencida
-  if (proveedorSaludStore.accesoRestringido) {
+  // Acceso comercial (prueba, suscripción, contrato con Ramazzini o restricción): una sola regla
+  if (proveedorSaludStore.bloqueoComercial) {
     emit('openSubscriptionModal');
     return;
-  }
-
-  if (periodoDePruebaFinalizado) {
-    // Bloquear si el periodo de prueba ha finalizado y no tiene suscripción activa (Inactive aparece cuando el pago falla repetidamente)
-    if (!estadoSuscripcion || estadoSuscripcion === 'inactive') {
-      emit('openSubscriptionModal');
-      return;
-    }
-
-    // Bloquear si canceló y no hay fecha de fin, o si la fecha de fin ya pasó
-    if (estadoSuscripcion === 'cancelled' && (!finDeSuscripcion || new Date() >= finDeSuscripcion)) {
-      emit('openSubscriptionModal');
-      return;
-    }
   }
 
   // Validar rango de edad permitido para registro: 18-100 años (duración exacta)

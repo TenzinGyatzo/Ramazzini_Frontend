@@ -180,11 +180,6 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
-const periodoDePruebaFinalizado = proveedorSaludStore.proveedorSalud?.periodoDePruebaFinalizado;
-const estadoSuscripcion = proveedorSaludStore.proveedorSalud?.estadoSuscripcion;
-const finDeSuscripcion = proveedorSaludStore.proveedorSalud?.finDeSuscripcion
-  ? new Date(proveedorSaludStore.proveedorSalud.finDeSuscripcion)
-  : null;
 
 const userStore = useUserStore();
 const user = computed(() => userStore.user ?? {});
@@ -275,22 +270,10 @@ const handleAnularDocument = (documentoId, documentoNombre, documentoTipo) => {
 const editarDocumento = (documentoId, documentoTipo) => {
     if (!proveedorSaludStore.proveedorSalud) return;
 
-    // Restricción comercial del Administrador de plataforma: como suscripción vencida
-    if (proveedorSaludStore.accesoRestringido) {
+    // Acceso comercial (prueba, suscripción, contrato con Ramazzini o restricción): una sola regla
+    if (proveedorSaludStore.bloqueoComercial) {
         emit('openSubscriptionModal');
         return;
-    }
-
-    if (periodoDePruebaFinalizado) {
-        if (!estadoSuscripcion || estadoSuscripcion === 'inactive') {
-            emit('openSubscriptionModal');
-            return;
-        }
-
-        if (estadoSuscripcion === 'cancelled' && (!finDeSuscripcion || new Date() >= finDeSuscripcion)) {
-            emit('openSubscriptionModal');
-            return;
-        }
     }
 
     documentos.setCurrentTypeOfDocument(documentoTipo);

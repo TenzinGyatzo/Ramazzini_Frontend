@@ -9,6 +9,7 @@ import {
   abrirWhatsApp,
   enlaceCorreo,
 } from '@/utils/contactoRamazzini';
+import { nombrePlanContrato } from '@/utils/accesoComercial';
 
 const proveedorSaludStore = useProveedorSaludStore();
 const { proveedorSalud } = storeToRefs(proveedorSaludStore);
@@ -81,10 +82,6 @@ onUnmounted(() => {
 const maxHistoriasPermitidasAlMes = computed(
   () => proveedorSaludStore.limiteHistoriasEfectivo
 );
-const periodoDePruebaFinalizado = computed(
-  () => proveedorSalud.value?.periodoDePruebaFinalizado
-);
-const estadoSuscripcion = computed(() => proveedorSalud.value?.estadoSuscripcion);
 const finDeSuscripcion = computed(() =>
   proveedorSalud.value?.finDeSuscripcion
     ? new Date(proveedorSalud.value.finDeSuscripcion)
@@ -94,8 +91,11 @@ const finDeSuscripcion = computed(() =>
 const goToSubscription = () => router.push({ name: 'subscription' });
 
 const modalBase = computed(() => {
+  // Misma regla que los bloqueos de expediente, documentos y trabajadores
+  const bloqueo = proveedorSaludStore.bloqueoComercial;
+
   // Restricción comercial fijada por el Administrador de plataforma
-  if (proveedorSaludStore.accesoRestringido) {
+  if (bloqueo === 'restringido') {
     return {
       variant: 'restricted',
       title: 'Tu cuenta tiene el acceso restringido',
@@ -114,7 +114,31 @@ const modalBase = computed(() => {
     };
   }
 
-  if (periodoDePruebaFinalizado.value && !estadoSuscripcion.value) {
+  // Contrato con Ramazzini (transferencia o enlace de Mercado Pago) vencido o terminado
+  if (bloqueo === 'contrato_vencido') {
+    const contrato = proveedorSaludStore.contrato;
+    const hasta = contrato?.pagadoHasta ? new Date(contrato.pagadoHasta) : null;
+    return {
+      variant: 'contract',
+      title: 'Tu plan con Ramazzini no está vigente',
+      message: hasta
+        ? `Tu ${nombrePlanContrato(contrato)} estuvo vigente hasta el ${hasta.toLocaleDateString()}.`
+        : `Tu ${nombrePlanContrato(contrato)} no tiene una vigencia registrada.`,
+      highlight: null,
+      highlightDetail:
+        'Contacta a Ramazzini para renovarlo y volver a registrar trabajadores y crear documentos.',
+      benefits: null,
+      buttonText: 'Contactar a Ramazzini por WhatsApp',
+      action: () => abrirWhatsApp(proveedorSalud.value?.nombre),
+      secondaryText: 'Seguir explorando',
+      showDisclaimer: false,
+      contactoCorreo: enlaceCorreo(proveedorSalud.value?.nombre),
+      icon: 'fa-file-contract',
+      show: true,
+    };
+  }
+
+  if (bloqueo === 'prueba_vencida') {
     return {
       variant: 'trial',
       title: 'Tu prueba gratuita ha finalizado',
@@ -137,11 +161,7 @@ const modalBase = computed(() => {
     };
   }
 
-  if (
-    periodoDePruebaFinalizado.value &&
-    estadoSuscripcion.value === 'cancelled' &&
-    (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())
-  ) {
+  if (bloqueo === 'suscripcion_vencida') {
     return {
       variant: 'expired',
       title: 'Tu suscripción ha finalizado',
@@ -161,7 +181,7 @@ const modalBase = computed(() => {
     };
   }
 
-  if (periodoDePruebaFinalizado.value && estadoSuscripcion.value === 'inactive') {
+  if (bloqueo === 'pago_inactivo') {
     return {
       variant: 'inactive',
       title: 'Tu pago no fue procesado',

@@ -15,6 +15,7 @@ import {
   enlaceCorreo,
   enlaceWhatsApp,
 } from '@/utils/contactoRamazzini';
+import { nombrePlanContrato } from '@/utils/accesoComercial';
 
 const pagosStore = usePagosStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -28,6 +29,9 @@ const {
   fechaFinTrialOriginal,
   periodoGratuitoAjustado,
   pagoEnLineaHabilitado,
+  contrato,
+  contratoEstaVigente,
+  diasParaVencerElContrato,
 } = storeToRefs(proveedorSaludStore);
 const limiteHistorias = computed(() => limiteHistoriasEfectivo.value ?? 0);
 const router = useRouter();
@@ -202,6 +206,22 @@ const cancelSubscription = async () => {
   }
 };
 
+// Contrato con Ramazzini (transferencia o enlace de Mercado Pago): sin monto, solo plan y vigencia
+const nombreContrato = computed(() => nombrePlanContrato(contrato.value));
+/** La tarjeta de Mercado Pago se muestra si no hay contrato o si también hay historial de Mercado Pago. */
+const mostrarMercadoPago = computed(
+  () => !contrato.value || !!suscripcionActual.value || !!proveedorSalud.value?.estadoSuscripcion,
+);
+const vigenciaContrato = computed(() => {
+  const c = contrato.value;
+  if (!c) return '';
+  if (c.estado === 'activo' && c.renovacionAutomatica) return 'Renovación automática';
+  if (!c.pagadoHasta) return 'Sin vigencia registrada';
+  return contratoEstaVigente.value
+    ? `Vigente hasta el ${formatDate(c.pagadoHasta)}`
+    : `Venció el ${formatDate(c.pagadoHasta)}`;
+});
+
 const suscripcionCanceladaYActiva = computed(() => {
   if (proveedorSalud.value?.estadoSuscripcion === 'cancelled' && proveedorSalud.value?.finDeSuscripcion) {
     const fechaFinSuscripcion = parseISO(proveedorSalud.value.finDeSuscripcion);
@@ -259,8 +279,54 @@ const formatearPais = (codigoPais) => {
       <h2 class="text-gray-800 text-2xl sm:text-3xl md:text-4xl mb-4 font-semibold text-center sm:text-left">Detalles de Mi Suscripción</h2>
   
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <!-- Plan contratado con Ramazzini -->
+        <div
+          v-if="contrato"
+          data-testid="suscripcion-contrato"
+          class="bg-white border p-4 sm:p-6 rounded-xl shadow-lg space-y-3"
+          :class="{ 'md:col-span-2': mostrarMercadoPago }"
+        >
+          <h3 class="text-xl sm:text-2xl font-semibold text-gray-800">{{ nombreContrato }}</h3>
+          <p class="text-sm text-gray-500">Contratado directamente con Ramazzini</p>
+          <p class="text-gray-600 text-sm sm:text-base">
+            <strong>👥 Historias clínicas al mes:</strong> {{ contrato.historiasMes }}
+            <span v-if="historiasExtraAsignadas > 0">(+{{ historiasExtraAsignadas }} de cortesía)</span>
+          </p>
+          <p class="text-gray-600 text-sm sm:text-base">
+            <strong>🗓️ Periodo:</strong> {{ contrato.periodicidad === 'anual' ? 'Anual' : 'Mensual' }}
+          </p>
+          <p class="text-gray-600 text-sm sm:text-base" data-testid="suscripcion-contrato-vigencia">
+            <strong>📍 Vigencia:</strong> {{ vigenciaContrato }}
+          </p>
+          <p
+            v-if="diasParaVencerElContrato !== null"
+            data-testid="suscripcion-contrato-aviso"
+            class="rounded border-l-4 border-yellow-500 bg-yellow-100 p-3 text-sm text-yellow-800"
+          >
+            Tu plan vence {{ diasParaVencerElContrato === 0 ? 'hoy' : `en ${diasParaVencerElContrato} ${diasParaVencerElContrato === 1 ? 'día' : 'días'}` }}.
+            Contacta a Ramazzini para renovarlo.
+          </p>
+          <p
+            v-else-if="!contratoEstaVigente"
+            data-testid="suscripcion-contrato-vencido"
+            class="rounded border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-700"
+          >
+            Tu plan no está vigente. Contacta a Ramazzini para renovarlo.
+          </p>
+          <div class="flex flex-col gap-2 text-sm sm:flex-row">
+            <a :href="enlaceWhatsApp(proveedorSalud?.nombre)" target="_blank" rel="noopener"
+               class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white hover:bg-emerald-700">
+              <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp {{ WHATSAPP_RAMAZZINI_VISIBLE }}
+            </a>
+            <a :href="enlaceCorreo(proveedorSalud?.nombre)"
+               class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-sky-200 bg-white px-3 py-2 font-semibold text-sky-700 hover:bg-sky-100">
+              <i class="fa-solid fa-envelope" aria-hidden="true"></i> {{ CORREO_RAMAZZINI }}
+            </a>
+          </div>
+        </div>
+
         <!-- Sección de Suscripción -->
-        <div class="bg-white border p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out space-y-4">
+        <div v-if="mostrarMercadoPago" class="bg-white border p-4 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out space-y-4">
           <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">{{ suscripcionActual?.reason || 'Sin plan activo' }}</h3>
           <!-- Mensaje de suscripción cancelada pero activa -->
           <div v-if="suscripcionCanceladaYActiva" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
@@ -325,7 +391,7 @@ const formatearPais = (codigoPais) => {
             <p class="text-gray-600 text-sm sm:text-base"><strong>👥 Historias Clínicas creadas en {{ mesActual }}:</strong> <br> {{ historiasDelMes }} de {{ limiteHistorias }} permitidas</p>
             <ul v-if="historiasExtraAsignadas > 0" data-testid="suscripcion-desglose-historias" class="mt-1 text-xs sm:text-sm text-gray-500">
               <li>📦 Contratadas en tu plan: <strong>{{ limiteHistoriasContratado ?? 0 }}</strong></li>
-              <li>🎁 Extra asignadas por Ramazzini: <strong>+{{ historiasExtraAsignadas }}</strong></li>
+              <li>🎁 De cortesía de Ramazzini: <strong>+{{ historiasExtraAsignadas }}</strong></li>
             </ul>
             <div class="w-full bg-gray-200 rounded-full h-3 sm:h-4 mt-2 relative">
               <div 

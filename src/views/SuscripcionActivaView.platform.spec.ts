@@ -49,7 +49,7 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
     expect(wrapper.text()).toContain('190 disponibles');
     const desglose = wrapper.find('[data-testid="suscripcion-desglose-historias"]').text();
     expect(desglose).toContain('Contratadas en tu plan: 50');
-    expect(desglose).toContain('Extra asignadas por Ramazzini: +150');
+    expect(desglose).toContain('De cortesía de Ramazzini: +150');
   });
 
   it('periodo gratuito extendido: muestra la fecha nueva y la original', async () => {
@@ -80,5 +80,50 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
     const wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25, pagoEnLineaHabilitado: true });
     expect(wrapper.text()).toContain('Comenzar con un Plan');
     expect(wrapper.find('[data-testid="suscripcion-contacto-ramazzini"]').exists()).toBe(false);
+  });
+
+  describe('plan contratado con Ramazzini', () => {
+    const contrato = (extra: Record<string, unknown> = {}) => ({
+      plan: 'profesional',
+      historiasMes: 150,
+      periodicidad: 'mensual',
+      fechaInicio: '2026-01-01T00:00:00.000Z',
+      estado: 'activo',
+      ...extra,
+    });
+    const enDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString();
+
+    it('muestra plan, HC con cortesía y vigencia, sin monto ni tarjeta de Mercado Pago', async () => {
+      const wrapper = await mountWith({
+        maxHistoriasPermitidasAlMes: 25,
+        historiasCortesia: 20,
+        limiteHistoriasEfectivo: 170,
+        contrato: contrato({ pagadoHasta: enDias(20) }),
+      });
+      const tarjeta = wrapper.find('[data-testid="suscripcion-contrato"]');
+      expect(tarjeta.text()).toContain('Plan Profesional');
+      expect(tarjeta.text()).toContain('150');
+      expect(tarjeta.text()).toContain('(+20 de cortesía)');
+      expect(tarjeta.find('[data-testid="suscripcion-contrato-vigencia"]').text()).toContain('Vigente hasta el');
+      expect(tarjeta.text()).not.toMatch(/\$|MXN|Pago mensual/);
+      expect(wrapper.text()).not.toContain('Sin plan activo');
+      expect(wrapper.find('[data-testid="suscripcion-contrato-aviso"]').exists()).toBe(false);
+    });
+
+    it('aviso en los últimos días (mensual: 7)', async () => {
+      const wrapper = await mountWith({
+        maxHistoriasPermitidasAlMes: 25,
+        contrato: contrato({ pagadoHasta: enDias(4.5) }),
+      });
+      expect(wrapper.find('[data-testid="suscripcion-contrato-aviso"]').text()).toContain('Tu plan vence en 5 días');
+    });
+
+    it('vencido y renovación automática', async () => {
+      let wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25, contrato: contrato({ pagadoHasta: enDias(-2) }) });
+      expect(wrapper.find('[data-testid="suscripcion-contrato-vencido"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="suscripcion-contrato-vigencia"]').text()).toContain('Venció el');
+      wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25, contrato: contrato({ renovacionAutomatica: true }) });
+      expect(wrapper.find('[data-testid="suscripcion-contrato-vigencia"]').text()).toContain('Renovación automática');
+    });
   });
 });

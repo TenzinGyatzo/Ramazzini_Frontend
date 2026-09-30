@@ -378,8 +378,8 @@ const porcentajeHistorias = computed(() => {
         </table>
         </div>
         <p v-if="historiasExtraAsignadas > 0" data-testid="subscription-nota-extra" class="mt-3 text-xs sm:text-sm text-gray-600">
-          🎁 Además de lo contratado, Ramazzini te asignó <strong>+{{ historiasExtraAsignadas }}</strong> historias clínicas al mes
-          (límite actual: <strong>{{ limiteHistoriasActual }}</strong>). Si contratas un plan con más historias, se aplicará el mayor.
+          🎁 Además de lo contratado, tienes <strong>+{{ historiasExtraAsignadas }}</strong> historias clínicas al mes de cortesía de Ramazzini
+          (límite actual: <strong>{{ limiteHistoriasActual }}</strong>). Si cambias de plan, la cortesía se suma a tu nuevo plan.
         </p>
       </div>
       <!-- Visualización de uso actual -->
@@ -394,7 +394,7 @@ const porcentajeHistorias = computed(() => {
           </p>
           <ul v-if="historiasExtraAsignadas > 0" data-testid="subscription-desglose-historias" class="mb-2 text-xs sm:text-sm text-gray-500">
             <li>📦 Contratadas en tu plan: <strong>{{ limiteHistoriasContratado ?? 0 }}</strong></li>
-            <li>🎁 Extra asignadas por Ramazzini: <strong>+{{ historiasExtraAsignadas }}</strong></li>
+            <li>🎁 De cortesía de Ramazzini: <strong>+{{ historiasExtraAsignadas }}</strong></li>
           </ul>
           <div class="w-full bg-gray-200 rounded-full h-3 sm:h-4 mt-2 relative">
             <div 

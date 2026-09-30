@@ -129,9 +129,6 @@ const toggleDocumentSelection = (
 };
 
 const isDeletionMode = ref(false);
-const periodoDePruebaFinalizado = ref<boolean | null>(null);
-const estadoSuscripcion = ref<string | null>(null);
-const finDeSuscripcion = ref<Date | null>(null);
 const historiasDelMes = ref<number | null>(null);
 const lastFetchedTrabajadorId = ref('');
 
@@ -140,9 +137,6 @@ onMounted(async () => {
   if (idProveedorSalud) {
     await proveedorSaludStore.loadProveedorSalud(idProveedorSalud);
 
-    periodoDePruebaFinalizado.value = proveedorSaludStore.proveedorSalud?.periodoDePruebaFinalizado ?? null;
-    estadoSuscripcion.value = proveedorSaludStore.proveedorSalud?.estadoSuscripcion ?? null;
-    finDeSuscripcion.value = proveedorSaludStore.proveedorSalud?.finDeSuscripcion ? new Date(proveedorSaludStore.proveedorSalud.finDeSuscripcion) : null;
     historiasDelMes.value = await proveedorSaludStore.getHistoriasClinicasDelMes();
   } else {
     console.error("No se encontró idProveedorSalud en el usuario.");
@@ -160,22 +154,10 @@ const toggleDocumentoExternoModal = () => {
   executeIfCanManageDocumentosExternos(() => {
     if (!proveedorSaludStore.proveedorSalud) return;
 
-    // Restricción comercial del Administrador de plataforma: como suscripción vencida
-    if (proveedorSaludStore.accesoRestringido) {
+    // Acceso comercial (prueba, suscripción, contrato con Ramazzini o restricción): una sola regla
+    if (proveedorSaludStore.bloqueoComercial) {
       showSubscriptionModal.value = true;
       return;
-    }
-
-    if (periodoDePruebaFinalizado.value) {
-      if (!estadoSuscripcion.value || estadoSuscripcion.value === 'inactive') {
-        showSubscriptionModal.value = true;
-        return;
-      }
-
-      if (estadoSuscripcion.value === 'cancelled' && (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())) {
-        showSubscriptionModal.value = true;
-        return;
-      }
     }
 
     showDocumentoExternoModal.value = !showDocumentoExternoModal.value;
@@ -190,22 +172,10 @@ const toggleDocumentoExternoUpdateModal = () => {
   executeIfCanManageDocumentosExternos(() => {
     if (!proveedorSaludStore.proveedorSalud) return;
 
-    // Restricción comercial del Administrador de plataforma: como suscripción vencida
-    if (proveedorSaludStore.accesoRestringido) {
+    // Acceso comercial (prueba, suscripción, contrato con Ramazzini o restricción): una sola regla
+    if (proveedorSaludStore.bloqueoComercial) {
       showSubscriptionModal.value = true;
       return;
-    }
-
-    if (periodoDePruebaFinalizado.value) {
-      if (!estadoSuscripcion.value || estadoSuscripcion.value === 'inactive') {
-        showSubscriptionModal.value = true;
-        return;
-      }
-
-      if (estadoSuscripcion.value === 'cancelled' && (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())) {
-        showSubscriptionModal.value = true;
-        return;
-      }
     }
 
     showDocumentoExternoUpdateModal.value = !showDocumentoExternoUpdateModal.value;
@@ -215,22 +185,10 @@ const toggleDocumentoExternoUpdateModal = () => {
 const toggleCuestionariosModal = () => {
   if (!proveedorSaludStore.proveedorSalud) return;
 
-  // Restricción comercial del Administrador de plataforma: como suscripción vencida
-  if (proveedorSaludStore.accesoRestringido) {
+  // Acceso comercial (prueba, suscripción, contrato con Ramazzini o restricción): una sola regla
+  if (proveedorSaludStore.bloqueoComercial) {
     showSubscriptionModal.value = true;
     return;
-  }
-
-  if (periodoDePruebaFinalizado.value) {
-    if (!estadoSuscripcion.value || estadoSuscripcion.value === 'inactive') {
-      showSubscriptionModal.value = true;
-      return;
-    }
-
-    if (estadoSuscripcion.value === 'cancelled' && (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())) {
-      showSubscriptionModal.value = true;
-      return;
-    }
   }
 
   showCuestionariosModal.value = !showCuestionariosModal.value;
@@ -468,25 +426,10 @@ const tieneResultadosParaAnio = (year: string) => {
 const navigateTo = async (routeName: string, params: Record<string, unknown>) => {
   if (!proveedorSaludStore.proveedorSalud) return;
 
-  // Restricción comercial del Administrador de plataforma: como suscripción vencida
-  if (proveedorSaludStore.accesoRestringido) {
+  // Acceso comercial (prueba, suscripción, contrato con Ramazzini o restricción): una sola regla
+  if (proveedorSaludStore.bloqueoComercial) {
     showSubscriptionModal.value = true;
     return;
-  }
-
-  if (periodoDePruebaFinalizado.value) {
-    if (!estadoSuscripcion.value || estadoSuscripcion.value === 'inactive') {
-      showSubscriptionModal.value = true;
-      return;
-    }
-
-    if (
-      estadoSuscripcion.value === 'cancelled' &&
-      (!finDeSuscripcion.value || finDeSuscripcion.value <= new Date())
-    ) {
-      showSubscriptionModal.value = true;
-      return;
-    }
   }
 
   if (
