@@ -13,6 +13,16 @@ import ModalCancelarSuscripcion from '@/components/suscripciones/ModalCancelarSu
 const pagosStore = usePagosStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { proveedorSalud } = storeToRefs(proveedorSaludStore);
+// Solo visualización: contratado vs. asignado por Ramazzini (ajustes de la consola de plataforma)
+const {
+  limiteHistoriasContratado,
+  limiteHistoriasEfectivo,
+  historiasExtraAsignadas,
+  fechaFinTrialEfectiva,
+  fechaFinTrialOriginal,
+  periodoGratuitoAjustado,
+} = storeToRefs(proveedorSaludStore);
+const limiteHistorias = computed(() => limiteHistoriasEfectivo.value ?? 0);
 const router = useRouter();
 
 const toast = inject('toast');
@@ -115,11 +125,9 @@ const totalHistoriasAdicionales = computed(() => {
 const periodoGratuito = computed(() => {
   if (proveedorSalud.value?.periodoDePruebaFinalizado) {
     return 'Finalizado';
-  } else if (proveedorSalud.value?.fechaInicioTrial) {
-    const fechaInicioTrial = parseISO(proveedorSalud.value.fechaInicioTrial);
-    const fechaFinTrial = new Date(fechaInicioTrial);
-    fechaFinTrial.setDate(fechaFinTrial.getDate() + 15); // 15 días de trial
-    fechaFinTrial.setHours(23, 59, 59); // Asegura que el día final termine a las 23:59:59
+  } else if (fechaFinTrialEfectiva.value) {
+    // Fin efectivo: el fijado por Ramazzini, o inicio + 15 días
+    const fechaFinTrial = fechaFinTrialEfectiva.value;
 
     const hoy = new Date();
     const diasRestantes = differenceInDays(fechaFinTrial, hoy);
@@ -156,7 +164,7 @@ const calcularPorcentaje = (valorActual, valorTotal) => {
 };
 
 const porcentajeHistorias = computed(() => {
-  return calcularPorcentaje(historiasDelMes.value, proveedorSalud.value.maxHistoriasPermitidasAlMes);
+  return calcularPorcentaje(historiasDelMes.value, limiteHistorias.value);
 });
 
 const cancelSubscription = async () => {
@@ -292,14 +300,18 @@ const formatearPais = (codigoPais) => {
           
           <!-- Uso de Historias Clínicas -->
           <div>
-            <p class="text-gray-600 text-sm sm:text-base"><strong>👥 Historias Clínicas creadas en {{ mesActual }}:</strong> <br> {{ historiasDelMes }} de {{ proveedorSalud.maxHistoriasPermitidasAlMes }} permitidas</p>
+            <p class="text-gray-600 text-sm sm:text-base"><strong>👥 Historias Clínicas creadas en {{ mesActual }}:</strong> <br> {{ historiasDelMes }} de {{ limiteHistorias }} permitidas</p>
+            <ul v-if="historiasExtraAsignadas > 0" data-testid="suscripcion-desglose-historias" class="mt-1 text-xs sm:text-sm text-gray-500">
+              <li>📦 Contratadas en tu plan: <strong>{{ limiteHistoriasContratado ?? 0 }}</strong></li>
+              <li>🎁 Extra asignadas por Ramazzini: <strong>+{{ historiasExtraAsignadas }}</strong></li>
+            </ul>
             <div class="w-full bg-gray-200 rounded-full h-3 sm:h-4 mt-2 relative">
               <div 
                 :style="{ width: porcentajeHistorias + '%' }" 
                 class="h-3 sm:h-4 rounded-full absolute top-0 left-0 transition-all duration-500" 
                 :class="{
-                  'bg-gradient-to-r from-cyan-500 to-cyan-400': historiasDelMes < proveedorSalud.maxHistoriasPermitidasAlMes,
-                  'bg-gradient-to-r from-red-500 to-red-400': historiasDelMes >= proveedorSalud.maxHistoriasPermitidasAlMes
+                  'bg-gradient-to-r from-cyan-500 to-cyan-400': historiasDelMes < limiteHistorias,
+                  'bg-gradient-to-r from-red-500 to-red-400': historiasDelMes >= limiteHistorias
                 }">
               </div>
                 <span class="absolute top-0 left-1/2 transform -translate-x-1/2 text-[10px] sm:text-xs font-semibold" :class="porcentajeHistorias <= 55 ? 'text-gray-600' : 'text-white'">
@@ -309,7 +321,7 @@ const formatearPais = (codigoPais) => {
             <p v-if="porcentajeHistorias >= 80 && porcentajeHistorias < 100" class="text-yellow-600 text-xs sm:text-sm mt-2">
               ⚠️ Estás cerca del límite de historias clínicas. Considera actualizar tu plan.
             </p>
-            <p v-if="historiasDelMes >= proveedorSalud.maxHistoriasPermitidasAlMes" class="text-red-600 text-xs sm:text-sm mt-2">⚠️ Has alcanzado el límite de historias clínicas.
+            <p v-if="historiasDelMes >= limiteHistorias" class="text-red-600 text-xs sm:text-sm mt-2">⚠️ Has alcanzado el límite de historias clínicas.
               <a @click="router.push('/suscripcion')" class="text-sky-600 underline cursor-pointer">Mejora tu plan</a>.
             </p>
           </div>
@@ -322,8 +334,11 @@ const formatearPais = (codigoPais) => {
         <p class="text-gray-600 text-sm sm:text-base"><strong>👤 Nombre:</strong> {{ proveedorSalud.nombre || 'No disponible' }}</p>
         <p class="text-gray-600 text-sm sm:text-base"><strong>🌍 País:</strong> {{ formatearPais(proveedorSalud.pais) }}</p>
         <p class="text-gray-600 text-sm sm:text-base"><strong>📧 Correo:</strong> {{ proveedorSalud.correoElectronico || 'No disponible' }}</p>
-        <p class="text-gray-600 text-sm sm:text-base"><strong>👥 Historias Clínicas {{ mesActual }}:</strong> {{ `${proveedorSalud.maxHistoriasPermitidasAlMes - historiasDelMes} disponibles` || 'No disponible' }}</p>
+        <p class="text-gray-600 text-sm sm:text-base"><strong>👥 Historias Clínicas {{ mesActual }}:</strong> {{ `${Math.max(0, limiteHistorias - historiasDelMes)} disponibles` }}</p>
         <p class="text-gray-600 text-sm sm:text-base"><strong>⏳ Periodo Gratuito:</strong> {{ periodoGratuito }}</p>
+        <p v-if="periodoGratuitoAjustado && fechaFinTrialOriginal" data-testid="suscripcion-periodo-ajustado" class="text-xs sm:text-sm text-gray-500">
+          🎁 Periodo ajustado por Ramazzini (originalmente hasta el {{ formatDate(fechaFinTrialOriginal) }}).
+        </p>
       </div>
 
       <button 

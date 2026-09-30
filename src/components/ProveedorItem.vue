@@ -39,12 +39,15 @@ const props = defineProps({
 
 const emit = defineEmits(['ajustesActualizados']);
 
+// Límite que aplica: el mayor entre lo contratado y lo asignado (el asignado solo aumenta)
 const limiteEfectivo = computed(() => {
   if (typeof props.limiteHistoriasEfectivo === 'number') return props.limiteHistoriasEfectivo;
-  if (typeof props.limiteHistoriasManual === 'number') return props.limiteHistoriasManual;
-  return props.maxHistoriasPermitidasAlMes;
+  const contratado = props.maxHistoriasPermitidasAlMes ?? 0;
+  return typeof props.limiteHistoriasManual === 'number'
+    ? Math.max(contratado, props.limiteHistoriasManual)
+    : contratado;
 });
-const limiteEsManual = computed(() => typeof props.limiteHistoriasManual === 'number');
+const extraAsignado = computed(() => Math.max(0, (limiteEfectivo.value ?? 0) - (props.maxHistoriasPermitidasAlMes ?? 0)));
 
 // El panel pasa el proveedor con v-bind (llega como `_id`, no como prop `id`)
 const attrs = useAttrs();
@@ -204,7 +207,7 @@ const formatCurrency = (amount) => {
             <p class="text-gray-600">
                 <strong>👥 H. C. Usadas en {{ mesActual }}:</strong>
                 {{ `${historiasClinicasMes ?? 0} de ${limiteEfectivo} permitidas` }}
-                <span v-if="limiteEsManual" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">límite manual</span>
+                <span v-if="extraAsignado > 0" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{{ maxHistoriasPermitidasAlMes ?? 0 }} contratadas +{{ extraAsignado }} asignadas</span>
             </p>
             <p class="text-gray-600"><strong>📝 Notas Médicas Usadas en {{ mesActual }}:</strong> {{ `${notasMedicasMes ?? 0} ${notasMedicasMes === 1 ? 'nota' : 'notas'}` }}</p>
             <p class="text-gray-600"><strong>👥 Total de H. Clínicas:</strong> {{ `${todasLasHistoriasClinicas ?? 0}` }} historias</p>

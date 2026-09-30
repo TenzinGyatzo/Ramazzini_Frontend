@@ -13,6 +13,12 @@ const pagosStore = usePagosStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const userStore = useUserStore();
 const { proveedorSalud } = storeToRefs(proveedorSaludStore);
+// Solo visualización: contratado vs. asignado por Ramazzini (ajustes de la consola de plataforma)
+const {
+  limiteHistoriasContratado,
+  limiteHistoriasEfectivo,
+  historiasExtraAsignadas,
+} = storeToRefs(proveedorSaludStore);
 const user = computed(() => userStore.user);
 const suscripcionActual = ref({});
 const loading = ref(false);
@@ -258,7 +264,8 @@ const calcularPorcentaje = (valorActual, valorTotal) => {
   return Math.min((valorActual / valorTotal) * 100, 100).toFixed(0);
 };
 
-const limiteHistoriasActual = computed(() => proveedorSalud.value?.maxHistoriasPermitidasAlMes ?? 0);
+// Límite que aplica hoy: el mayor entre lo contratado y lo asignado por Ramazzini
+const limiteHistoriasActual = computed(() => limiteHistoriasEfectivo.value ?? 0);
 
 const porcentajeHistorias = computed(() => {
   return calcularPorcentaje(historiasDelMes.value, limiteHistoriasActual.value);
@@ -370,6 +377,10 @@ const porcentajeHistorias = computed(() => {
           </tbody>
         </table>
         </div>
+        <p v-if="historiasExtraAsignadas > 0" data-testid="subscription-nota-extra" class="mt-3 text-xs sm:text-sm text-gray-600">
+          🎁 Además de lo contratado, Ramazzini te asignó <strong>+{{ historiasExtraAsignadas }}</strong> historias clínicas al mes
+          (límite actual: <strong>{{ limiteHistoriasActual }}</strong>). Si contratas un plan con más historias, se aplicará el mayor.
+        </p>
       </div>
       <!-- Visualización de uso actual -->
       <div class="subscription-usage-card bg-white p-5 sm:p-6 rounded-xl shadow-md">
@@ -381,6 +392,10 @@ const porcentajeHistorias = computed(() => {
             <strong>Historias clínicas registradas:</strong> {{ historiasDelMes }} 
             <span class="text-gray-600">(límite: <strong>{{ limiteHistoriasActual }}</strong>)</span>
           </p>
+          <ul v-if="historiasExtraAsignadas > 0" data-testid="subscription-desglose-historias" class="mb-2 text-xs sm:text-sm text-gray-500">
+            <li>📦 Contratadas en tu plan: <strong>{{ limiteHistoriasContratado ?? 0 }}</strong></li>
+            <li>🎁 Extra asignadas por Ramazzini: <strong>+{{ historiasExtraAsignadas }}</strong></li>
+          </ul>
           <div class="w-full bg-gray-200 rounded-full h-3 sm:h-4 mt-2 relative">
             <div 
               class="h-3 sm:h-4 rounded-full absolute top-0 left-0 transition-all duration-500" 

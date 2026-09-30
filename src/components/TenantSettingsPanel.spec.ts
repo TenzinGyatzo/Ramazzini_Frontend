@@ -47,23 +47,52 @@ describe('periodoPrueba (utils)', () => {
 describe('proveedorSalud store: valores comerciales efectivos', () => {
   beforeEach(() => setActivePinia(createPinia()));
 
-  it('límite: backend efectivo > manual > plan; restricción', () => {
+  it('límite: el mayor entre contratado y asignado; el asignado solo aumenta', () => {
     const store = useProveedorSaludStore();
     store.proveedorSalud = { maxHistoriasPermitidasAlMes: 50 } as any;
+    expect(store.limiteHistoriasContratado).toBe(50);
     expect(store.limiteHistoriasEfectivo).toBe(50);
+    expect(store.historiasExtraAsignadas).toBe(0);
     expect(store.accesoRestringido).toBe(false);
 
+    // Un asignado menor no deja al cliente por debajo de lo que paga
     store.proveedorSalud = { maxHistoriasPermitidasAlMes: 50, limiteHistoriasManual: 0 } as any;
-    expect(store.limiteHistoriasEfectivo).toBe(0);
+    expect(store.limiteHistoriasEfectivo).toBe(50);
+    expect(store.historiasExtraAsignadas).toBe(0);
 
+    store.proveedorSalud = {
+      maxHistoriasPermitidasAlMes: 50,
+      limiteHistoriasManual: 200,
+      restriccionManual: true,
+    } as any;
+    expect(store.limiteHistoriasEfectivo).toBe(200);
+    expect(store.historiasExtraAsignadas).toBe(150);
+    expect(store.accesoRestringido).toBe(true);
+
+    // Si el backend ya calculó el efectivo, se usa ese
     store.proveedorSalud = {
       maxHistoriasPermitidasAlMes: 50,
       limiteHistoriasManual: 80,
       limiteHistoriasEfectivo: 80,
-      restriccionManual: true,
     } as any;
     expect(store.limiteHistoriasEfectivo).toBe(80);
-    expect(store.accesoRestringido).toBe(true);
+    expect(store.historiasExtraAsignadas).toBe(30);
+  });
+
+  it('periodo gratuito: original (inicio + 15) frente al ajustado por Ramazzini', () => {
+    const store = useProveedorSaludStore();
+    const inicio = '2026-09-01T12:00:00.000Z';
+    store.proveedorSalud = { fechaInicioTrial: inicio } as any;
+    expect(store.periodoGratuitoAjustado).toBe(false);
+    expect(store.fechaFinTrialEfectiva?.getTime()).toBe(store.fechaFinTrialOriginal?.getTime());
+
+    store.proveedorSalud = { fechaInicioTrial: inicio, fechaFinTrial: '2026-12-31T23:59:59.000Z' } as any;
+    expect(store.periodoGratuitoAjustado).toBe(true);
+    expect(store.fechaFinTrialEfectiva?.toISOString()).toBe('2026-12-31T23:59:59.000Z');
+    const original = new Date(inicio);
+    original.setDate(original.getDate() + 15);
+    original.setHours(23, 59, 59);
+    expect(store.fechaFinTrialOriginal?.getTime()).toBe(original.getTime());
   });
 });
 

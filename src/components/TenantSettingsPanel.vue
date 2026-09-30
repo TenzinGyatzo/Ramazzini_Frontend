@@ -59,6 +59,12 @@ const limiteInvalido = computed(() => {
   return !Number.isInteger(n) || n < 0 || n > 100000;
 });
 
+/** El límite asignado solo aumenta: si no supera lo contratado, no cambia nada. */
+const limiteSinEfecto = computed(() => {
+  if (limite.value.trim() === "" || limiteInvalido.value) return false;
+  return Number(limite.value) <= (props.maxHistoriasPermitidasAlMes ?? 0);
+});
+
 const cambios = computed<TenantSettingsChanges>(() => {
   const c: TenantSettingsChanges = {};
   if (limite.value.trim() !== limiteInicial.value) {
@@ -149,7 +155,12 @@ function cancelar() {
           </button>
         </div>
         <p v-if="limiteInvalido" class="mt-1 text-xs text-red-600">Escribe un número entero entre 0 y 100000.</p>
-        <p v-else class="mt-1 text-xs text-gray-500">Vacío = el del plan contratado. Si tiene valor, prevalece sobre el plan.</p>
+        <p v-else-if="limiteSinEfecto" class="mt-1 text-xs text-amber-700">
+          Es menor o igual a lo contratado ({{ maxHistoriasPermitidasAlMes }}): no tendrá efecto. El límite asignado solo aumenta.
+        </p>
+        <p v-else class="mt-1 text-xs text-gray-500">
+          Vacío = lo contratado. Se aplica el mayor entre lo contratado y este límite (solo aumenta; para limitar usa la restricción).
+        </p>
       </div>
 
       <div>
