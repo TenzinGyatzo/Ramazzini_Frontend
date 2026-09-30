@@ -7,8 +7,9 @@ import type { AuditEventItem } from "@/api/auditAPI";
 
 const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
+// Principal, o el Administrador de plataforma dentro del tenant activo
 const isPrincipal = computed(
-  () => userStore.user?.role === "Principal"
+  () => userStore.user?.role === "Principal" || userStore.user?.role === "Administrador"
 );
 const auditTrailEnabled = computed(
   () => proveedorSaludStore.auditTrailEnabled

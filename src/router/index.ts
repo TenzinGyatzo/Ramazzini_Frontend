@@ -258,7 +258,11 @@ router.beforeEach((to, from) => {
       }
 
       // Validar si requiere rol Principal exclusivamente (p. ej. auditoría)
-      if (requiresPrincipalOnly && (!user || user.role !== "Principal")) {
+      // (El Administrador de plataforma también, dentro del tenant activo: auditoría del tenant)
+      if (
+        requiresPrincipalOnly &&
+        (!user || (user.role !== "Principal" && user.role !== "Administrador"))
+      ) {
         console.warn("Acceso denegado: solo usuarios Principal pueden acceder");
         return next({ name: "inicio" });
       }

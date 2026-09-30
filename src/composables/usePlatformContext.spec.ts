@@ -73,6 +73,22 @@ describe("destinos de navegación", () => {
         expect(routerSource).not.toContain("catalogAdminEnabled");
         expect(routerSource).not.toContain("requiresCatalogAdmin");
     });
+
+    it("auditoría del tenant: Principal o Administrador (dentro del tenant activo) (Etapa 5)", async () => {
+        const { readFileSync } = await import("node:fs");
+        const { dirname, join } = await import("node:path");
+        const { fileURLToPath } = await import("node:url");
+        const routerSource = readFileSync(
+            join(dirname(fileURLToPath(import.meta.url)), "../router/index.ts"),
+            "utf8",
+        );
+        expect(routerSource).toMatch(
+            /requiresPrincipalOnly &&\s*\(!user \|\| \(user\.role !== "Principal" && user\.role !== "Administrador"\)\)/,
+        );
+        // Fuera de un tenant, la ruta de auditoría no es de plataforma: lleva a la consola
+        const admin = { role: "Administrador", platformContext: { activeTenant: null } };
+        expect(shouldRedirectToPlatformConsole(admin, "auditoria")).toBe(true);
+    });
 });
 
 describe("shouldRedirectToPlatformConsole (router)", () => {
