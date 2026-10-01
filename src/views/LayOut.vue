@@ -15,6 +15,7 @@ import {
 } from "@/theme/appTheme";
 import ModalEliminacion from "@/components/ModalEliminacion.vue";
 import ModalEliminacionBloqueada from "@/components/ModalEliminacionBloqueada.vue";
+import ModalEliminacionRevisando from "@/components/ModalEliminacionRevisando.vue";
 import { useEliminacion } from "@/composables/useEliminacion";
 import {
   isConfidentialityAgreementPending,
@@ -45,6 +46,7 @@ const {
   auditResourceId: eliminacionAuditResourceId,
   resumen: eliminacionResumen,
   bloqueo: eliminacionBloqueo,
+  consultaVisible: eliminacionRevisando,
   cerrarBloqueo: cerrarBloqueoEliminacion,
   requestEliminacion,
   confirmarEliminacion,
@@ -1469,6 +1471,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       @confirm="confirmarEliminacion"
       @cancel="cancelarEliminacion"
     />
+    <ModalEliminacionRevisando :visible="eliminacionRevisando" />
     <ModalEliminacionBloqueada
       :resumen="eliminacionBloqueo"
       @close="cerrarBloqueoEliminacion"

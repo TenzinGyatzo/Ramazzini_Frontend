@@ -10,7 +10,8 @@ import {
   ubicacionesRestantes,
   type ResumenEliminacion,
 } from '@/utils/resumenEliminacion';
-import { useEliminacion } from '@/composables/useEliminacion';
+import { ESPERA_AVISO_CONSULTA_MS, useEliminacion } from '@/composables/useEliminacion';
+import ModalEliminacionRevisando from '@/components/ModalEliminacionRevisando.vue';
 import ModalEliminacionBloqueada from '@/components/ModalEliminacionBloqueada.vue';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
 
@@ -189,6 +190,57 @@ describe('solicitarEliminacionConResumen', () => {
     await primera;
     expect(construir).toHaveBeenCalledTimes(1);
     expect(eliminacion.consultandoResumen.value).toBe(false);
+  });
+});
+
+describe('aviso «Revisando…» mientras se consulta', () => {
+  const eliminacion = useEliminacion();
+  const request = () => ({
+    entidad: 'empresa' as const,
+    identificacion: 'ACME',
+    onConfirm: vi.fn(async () => undefined),
+  });
+
+  beforeEach(() => {
+    eliminacion.cancelarEliminacion();
+    eliminacion.cerrarBloqueo();
+  });
+
+  it('una consulta lenta muestra el aviso y lo quita al abrir la confirmación', async () => {
+    vi.useFakeTimers();
+    try {
+      let resolver: (valor: { data: ResumenEliminacion }) => void = () => undefined;
+      const pendiente = new Promise<{ data: ResumenEliminacion }>((r) => (resolver = r));
+      const solicitud = eliminacion.solicitarEliminacionConResumen(() => pendiente, request);
+      expect(eliminacion.consultaVisible.value).toBe(false);
+      vi.advanceTimersByTime(ESPERA_AVISO_CONSULTA_MS);
+      expect(eliminacion.consultaVisible.value).toBe(true);
+      resolver({ data: resumen() });
+      await solicitud;
+      expect(eliminacion.consultaVisible.value).toBe(false);
+      expect(eliminacion.isOpen.value).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('una consulta rápida no lo muestra (sin parpadeo), ni después', async () => {
+    vi.useFakeTimers();
+    try {
+      await eliminacion.solicitarEliminacionConResumen(async () => ({ data: bloqueada() }), request);
+      vi.advanceTimersByTime(ESPERA_AVISO_CONSULTA_MS * 4);
+      expect(eliminacion.consultaVisible.value).toBe(false);
+      expect(eliminacion.bloqueo.value).not.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('la ventana de aviso no tiene botones ni campos', () => {
+    const wrapper = mount(ModalEliminacionRevisando, { props: { visible: true } });
+    expect(wrapper.text()).toContain('Revisando qué se va a eliminar');
+    expect(wrapper.findAll('button, input')).toHaveLength(0);
+    expect(mount(ModalEliminacionRevisando, { props: { visible: false } }).text()).toBe('');
   });
 });
 

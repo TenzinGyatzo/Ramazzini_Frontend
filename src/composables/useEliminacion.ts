@@ -41,6 +41,12 @@ const onConfirmHandler = shallowRef<((password?: string) => Promise<void>) | nul
 /** Eliminación que el servidor no permite: se informa sin pedir contraseña ni confirmación. */
 const bloqueo = ref<ResumenEliminacion | null>(null);
 const consultandoResumen = ref(false);
+/**
+ * La consulta ya tardó lo suficiente para avisar («Revisando…»). Una respuesta rápida no
+ * muestra nada: así la ventana de aviso no parpadea.
+ */
+const consultaVisible = ref(false);
+export const ESPERA_AVISO_CONSULTA_MS = 150;
 
 function resetState() {
   isOpen.value = false;
@@ -89,6 +95,9 @@ async function solicitarEliminacionConResumen(
 ): Promise<void> {
   if (consultandoResumen.value) return;
   consultandoResumen.value = true;
+  const aviso = setTimeout(() => {
+    consultaVisible.value = true;
+  }, ESPERA_AVISO_CONSULTA_MS);
   try {
     let consultado: ResumenEliminacion | null = null;
     try {
@@ -103,6 +112,8 @@ async function solicitarEliminacionConResumen(
     const request = await construir(consultado);
     requestEliminacion({ ...request, resumen: consultado });
   } finally {
+    clearTimeout(aviso);
+    consultaVisible.value = false;
     consultandoResumen.value = false;
   }
 }
@@ -141,6 +152,7 @@ export function useEliminacion() {
     resumen,
     bloqueo,
     consultandoResumen,
+    consultaVisible,
     requestEliminacion,
     solicitarEliminacionConResumen,
     cerrarBloqueo,
