@@ -637,7 +637,7 @@ const firmaSrc = computed(() => {
                   {{ tecnicoFirmante.tecnicoFirmante.folio }}
                 </div>
                 <p class="text-xs text-gray-500 mt-1">
-                  Identificador único de 18 caracteres. Generado automáticamente al registrar.
+                  Es el folio de tu usuario dentro de la organización. Se asigna automáticamente y no cambia.
                 </p>
               </div>
             </div>

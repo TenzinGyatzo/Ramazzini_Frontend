@@ -80,7 +80,7 @@ const identificadorPersonalLabel = computed(() =>
 const criterioCoincidenciaLabel = computed(() => {
   const criterio = preview.value?.criterioMatch;
   if (!criterio) return 'confirmación manual';
-  if (criterio === 'FOLIO') return 'mismo folio UM';
+  if (criterio === 'FOLIO') return 'mismos datos de identidad';
   return `misma ${identificadorPersonalLabel.value}`;
 });
 

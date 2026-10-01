@@ -1172,7 +1172,7 @@ const {
                     {{ trabajadores.currentTrabajador.folio }}
                   </div>
                   <p class="text-xs text-gray-500 mt-1">
-                    Identificador único de 18 caracteres. Generado automáticamente al registrar.
+                    Identificador único dentro de tu organización. Se asigna automáticamente al registrar y no cambia.
                   </p>
                 </template>
               </div>
