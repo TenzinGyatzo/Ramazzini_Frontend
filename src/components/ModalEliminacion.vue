@@ -4,6 +4,11 @@ import type { NivelEliminacion } from '@/config/eliminacion';
 import type { DetalleContextoEliminacion } from '@/config/eliminacion';
 import { useVerificacionEliminacion } from '@/composables/useVerificacionEliminacion';
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
+import type { ResumenEliminacion } from '@/utils/resumenEliminacion';
+import {
+  avisoDocumentosFinalizados,
+  fraseDeLoQueSeElimina,
+} from '@/utils/resumenEliminacion';
 
 const props = defineProps<{
   isVisible: boolean;
@@ -18,6 +23,8 @@ const props = defineProps<{
   disableTransition?: boolean;
   auditResourceType?: string;
   auditResourceId?: string;
+  /** Lo que se eliminará en cascada (empresa, centro o trabajador). */
+  resumen?: ResumenEliminacion | null;
 }>();
 
 const emit = defineEmits<{
@@ -63,6 +70,13 @@ const mensajePrincipal = computed(() => {
   if (props.mensajePersonalizado) return props.mensajePersonalizado;
   return `Parece que quieres eliminar el/la ${props.tipoRegistro} identificado(a) como`;
 });
+
+const loQueSeElimina = computed(() =>
+  props.resumen ? fraseDeLoQueSeElimina(props.resumen) : null,
+);
+const avisoFinalizados = computed(() =>
+  props.resumen ? avisoDocumentosFinalizados(props.resumen) : null,
+);
 
 const requierePassword = computed(
   () => props.nivel === 'moderado' || props.nivel === 'robusto',
@@ -168,8 +182,30 @@ const handleConfirm = async () => {
                       </div>
                     </div>
 
+                    <div
+                      v-if="loQueSeElimina"
+                      class="rounded-lg bg-gray-50 p-3 text-sm text-gray-700"
+                      data-testid="eliminacion-resumen"
+                    >
+                      {{ loQueSeElimina }}
+                    </div>
+
+                    <div
+                      v-if="avisoFinalizados"
+                      class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+                      data-testid="eliminacion-aviso-finalizados"
+                    >
+                      <i class="fas fa-exclamation-triangle mr-1" />
+                      {{ avisoFinalizados }}
+                    </div>
+
                     <div v-if="nivel === 'robusto'" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                      Esta eliminación es irreversible y afectará todos los registros dependientes. (Trabajadores y expedientes asociados).
+                      <template v-if="loQueSeElimina">
+                        Esta eliminación es irreversible: se elimina todo o no se elimina nada.
+                      </template>
+                      <template v-else>
+                        Esta eliminación es irreversible y afectará todos los registros dependientes. (Trabajadores y expedientes asociados).
+                      </template>
                       Escribe <strong>{{ textoConfirmacionEsperado }}</strong> para confirmar.
                     </div>
 

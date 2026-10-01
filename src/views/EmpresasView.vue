@@ -5,7 +5,8 @@ import { useEmpresasStore } from '@/stores/empresas';
 import GreenButton from '@/components/GreenButton.vue';
 import ModalEmpresas from '@/components/ModalEmpresas.vue';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
-import type { EliminacionRequest } from '@/composables/useEliminacion';
+import { useEliminacion, type EliminacionRequest } from '@/composables/useEliminacion';
+import EliminacionAPI from '@/api/EliminacionAPI';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useRouter } from 'vue-router';
@@ -16,7 +17,7 @@ import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { abrirWhatsApp } from '@/utils/contactoRamazzini';
 
 const toast: any = inject('toast');
-const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
+const { solicitarEliminacionConResumen } = useEliminacion();
 
 const empresas = useEmpresasStore();
 const proveedorSalud = useProveedorSaludStore();
@@ -79,50 +80,62 @@ const closeModal = () => {
   showModal.value = false;
 };
 
-const solicitarEliminacionEmpresa = async (idEmpresa: string, nombreComercial: string) => {
-  let cantidadCentros = 0;
-  try {
-    const { data } = await CentrosTrabajoAPI.getCentrosTrabajo(idEmpresa);
-    cantidadCentros = Array.isArray(data) ? data.length : 0;
-  } catch (error) {
-    console.error('Error al obtener centros de la empresa:', error);
-    cantidadCentros = 1;
-  }
-
-  requestEliminacion?.({
-    entidad: 'empresa',
-    resourceId: idEmpresa,
-    identificacion: nombreComercial,
-    textoConfirmacion: cantidadCentros > 0 ? nombreComercial : undefined,
-    contextoNivel: { cantidadCentros },
-    onConfirm: async (password) => {
-      try {
-        toast.open({
-          message: `Eliminando empresa ${nombreComercial}...`,
-          type: 'info',
-        });
-        await empresas.deleteEmpresaById(idEmpresa, password);
-        toast.open({ message: 'Empresa eliminada con éxito' });
-        await empresas.fetchEmpresas(proveedorSalud.proveedorSalud!._id);
-        empresas.resetCurrentEmpresa();
-      } catch (error) {
-        console.log('Error al eliminar la empresa:', error);
-        const errorCode = (error as { response?: { data?: { errorCode?: string } } })
-          ?.response?.data?.errorCode;
-        if (errorCode !== 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
-          toast.open({
-            message: extractApiErrorMessage(
-              error,
-              'No se pudo eliminar la empresa. Revise centros, trabajadores y documentos asociados e intente de nuevo.',
-            ),
-            type: 'error',
-          });
+const solicitarEliminacionEmpresa = (idEmpresa: string, nombreComercial: string) =>
+  solicitarEliminacionConResumen(
+    () => EliminacionAPI.resumenEmpresa(idEmpresa),
+    async (resumen) => {
+      // Sin resumen (la consulta falló) se cuenta como antes, para saber si pide contraseña
+      let cantidadCentros = resumen?.centros ?? 0;
+      if (!resumen) {
+        try {
+          const { data } = await CentrosTrabajoAPI.getCentrosTrabajo(idEmpresa);
+          cantidadCentros = Array.isArray(data) ? data.length : 0;
+        } catch (error) {
+          console.error('Error al obtener centros de la empresa:', error);
+          cantidadCentros = 1;
         }
-        throw error;
       }
+      return construirEliminacionEmpresa(idEmpresa, nombreComercial, cantidadCentros);
     },
-  });
-};
+  );
+
+const construirEliminacionEmpresa = (
+  idEmpresa: string,
+  nombreComercial: string,
+  cantidadCentros: number,
+): EliminacionRequest => ({
+  entidad: 'empresa',
+  resourceId: idEmpresa,
+  identificacion: nombreComercial,
+  textoConfirmacion: cantidadCentros > 0 ? nombreComercial : undefined,
+  contextoNivel: { cantidadCentros },
+  onConfirm: async (password) => {
+    try {
+      toast.open({
+        message: `Eliminando empresa ${nombreComercial}...`,
+        type: 'info',
+      });
+      await empresas.deleteEmpresaById(idEmpresa, password);
+      toast.open({ message: 'Empresa eliminada con éxito' });
+      await empresas.fetchEmpresas(proveedorSalud.proveedorSalud!._id);
+      empresas.resetCurrentEmpresa();
+    } catch (error) {
+      console.log('Error al eliminar la empresa:', error);
+      const errorCode = (error as { response?: { data?: { errorCode?: string } } })
+        ?.response?.data?.errorCode;
+      if (errorCode !== 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
+        toast.open({
+          message: extractApiErrorMessage(
+            error,
+            'No se pudo eliminar la empresa. No se borró nada; intenta de nuevo.',
+          ),
+          type: 'error',
+        });
+      }
+      throw error;
+    }
+  },
+});
 
 watch(
     () => proveedorSalud.proveedorSalud,

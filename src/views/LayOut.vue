@@ -14,6 +14,7 @@ import {
   readInitialDarkPreference,
 } from "@/theme/appTheme";
 import ModalEliminacion from "@/components/ModalEliminacion.vue";
+import ModalEliminacionBloqueada from "@/components/ModalEliminacionBloqueada.vue";
 import { useEliminacion } from "@/composables/useEliminacion";
 import {
   isConfidentialityAgreementPending,
@@ -42,6 +43,9 @@ const {
   mensajePersonalizado: eliminacionMensajePersonalizado,
   auditResourceType: eliminacionAuditResourceType,
   auditResourceId: eliminacionAuditResourceId,
+  resumen: eliminacionResumen,
+  bloqueo: eliminacionBloqueo,
+  cerrarBloqueo: cerrarBloqueoEliminacion,
   requestEliminacion,
   confirmarEliminacion,
   cancelarEliminacion,
@@ -1460,9 +1464,14 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       :mensaje-personalizado="eliminacionMensajePersonalizado"
       :audit-resource-type="eliminacionAuditResourceType"
       :audit-resource-id="eliminacionAuditResourceId"
+      :resumen="eliminacionResumen"
       :is-confirming="eliminacionConfirming"
       @confirm="confirmarEliminacion"
       @cancel="cancelarEliminacion"
+    />
+    <ModalEliminacionBloqueada
+      :resumen="eliminacionBloqueo"
+      @close="cerrarBloqueoEliminacion"
     />
   </Teleport>
 

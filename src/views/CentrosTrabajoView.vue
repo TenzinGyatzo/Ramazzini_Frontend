@@ -8,7 +8,8 @@ import { ref, inject, computed, watch } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import GreenButton from '@/components/GreenButton.vue';
 import ModalCentros from '@/components/ModalCentros.vue';
-import type { EliminacionRequest } from '@/composables/useEliminacion';
+import { useEliminacion, type EliminacionRequest } from '@/composables/useEliminacion';
+import EliminacionAPI from '@/api/EliminacionAPI';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
@@ -18,7 +19,7 @@ import { usePermissionRestrictions } from '@/composables/usePermissionRestrictio
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 
 const toast: any = inject('toast');
-const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
+const { solicitarEliminacionConResumen } = useEliminacion();
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -89,42 +90,58 @@ const solicitarEliminacionCentro = (
   cantidadTrabajadores = 0,
 ) => {
   const empresaId = empresas.currentEmpresaId ?? String(route.params.idEmpresa);
-  requestEliminacion?.({
-    entidad: 'centroTrabajo',
-    resourceId: idCentroTrabajo,
-    identificacion: nombreCentro,
-    textoConfirmacion: cantidadTrabajadores > 0 ? nombreCentro : undefined,
-    contextoNivel: { cantidadTrabajadores },
-    onConfirm: async (password) => {
-      try {
-        toast.open({
-          message: `Eliminando centro de trabajo ${nombreCentro}...`,
-          type: 'info',
-        });
-        await centrosTrabajo.deleteCentroTrabajoById(empresaId, idCentroTrabajo, password);
-        toast.open({ message: 'Centro de trabajo eliminado con éxito' });
-        await centrosTrabajo.fetchCentrosTrabajo(String(route.params.idEmpresa));
-        centrosTrabajo.resetCurrentCentroTrabajo();
-        await obtenerDatosEmpresa();
-      } catch (error) {
-        console.error('Error al eliminar el centro de trabajo', error);
-        const errorCode = (error as { response?: { data?: { errorCode?: string } } })
-          ?.response?.data?.errorCode;
-        // El interceptor de axios ya muestra toast para errores regulatorios
-        if (errorCode !== 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
-          toast.open({
-            message: extractApiErrorMessage(
-              error,
-              'No se pudo eliminar el centro de trabajo. Revise trabajadores y documentos asociados e intente de nuevo.',
-            ),
-            type: 'error',
-          });
-        }
-        throw error;
-      }
-    },
-  });
+  return solicitarEliminacionConResumen(
+    () => EliminacionAPI.resumenCentro(empresaId, idCentroTrabajo),
+    (resumen) =>
+      construirEliminacionCentro(
+        empresaId,
+        idCentroTrabajo,
+        nombreCentro,
+        resumen?.trabajadores ?? cantidadTrabajadores,
+      ),
+  );
 };
+
+const construirEliminacionCentro = (
+  empresaId: string,
+  idCentroTrabajo: string,
+  nombreCentro: string,
+  cantidadTrabajadores: number,
+): EliminacionRequest => ({
+  entidad: 'centroTrabajo',
+  resourceId: idCentroTrabajo,
+  identificacion: nombreCentro,
+  textoConfirmacion: cantidadTrabajadores > 0 ? nombreCentro : undefined,
+  contextoNivel: { cantidadTrabajadores },
+  onConfirm: async (password) => {
+    try {
+      toast.open({
+        message: `Eliminando centro de trabajo ${nombreCentro}...`,
+        type: 'info',
+      });
+      await centrosTrabajo.deleteCentroTrabajoById(empresaId, idCentroTrabajo, password);
+      toast.open({ message: 'Centro de trabajo eliminado con éxito' });
+      await centrosTrabajo.fetchCentrosTrabajo(String(route.params.idEmpresa));
+      centrosTrabajo.resetCurrentCentroTrabajo();
+      await obtenerDatosEmpresa();
+    } catch (error) {
+      console.error('Error al eliminar el centro de trabajo', error);
+      const errorCode = (error as { response?: { data?: { errorCode?: string } } })
+        ?.response?.data?.errorCode;
+      // El interceptor de axios ya muestra toast para errores regulatorios
+      if (errorCode !== 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
+        toast.open({
+          message: extractApiErrorMessage(
+            error,
+            'No se pudo eliminar el centro de trabajo. No se borró nada; intenta de nuevo.',
+          ),
+          type: 'error',
+        });
+      }
+      throw error;
+    }
+  },
+});
 
 // Función para obtener trabajadores y riesgos de trabajo en paralelo
 const obtenerDatosEmpresa = async () => {

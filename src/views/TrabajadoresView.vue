@@ -36,7 +36,8 @@ import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import type { Trabajador } from '../interfaces/trabajador.interface';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
-import { useEliminacion } from '@/composables/useEliminacion';
+import { useEliminacion, type EliminacionRequest } from '@/composables/useEliminacion';
+import EliminacionAPI from '@/api/EliminacionAPI';
 import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
 import { getPlantillaImportacionTrabajadores } from '@/helpers/plantillaImportacionTrabajadores';
 import type { EntidadEliminable } from '@/config/eliminacion';
@@ -54,7 +55,9 @@ const {
   mensajePersonalizado: eliminacionMensajePersonalizado,
   auditResourceType: eliminacionAuditResourceType,
   auditResourceId: eliminacionAuditResourceId,
+  resumen: eliminacionResumen,
   requestEliminacion: requestEliminacionLocal,
+  solicitarEliminacionConResumen,
   confirmarEliminacion,
   cancelarEliminacion,
 } = useEliminacion();
@@ -586,7 +589,7 @@ const solicitarEliminacion = (
   onConfirm: (id: string, password?: string) => Promise<void>,
 ) => {
   const entidad = TIPO_A_ENTIDAD[tipo] ?? 'trabajador';
-  requestEliminacionLocal({
+  const request: EliminacionRequest = {
     entidad,
     identificacion: descripcion,
     onConfirm: async (password) => {
@@ -597,7 +600,20 @@ const solicitarEliminacion = (
         throw err;
       }
     },
-  });
+  };
+
+  // Un trabajador se lleva su expediente: antes de confirmar se consulta qué se eliminaría
+  // y, si no se puede (documentos finalizados en SIRES), se informa sin pedir contraseña.
+  const empresaId = empresas.currentEmpresaId;
+  const centroTrabajoId = centrosTrabajo.currentCentroTrabajoId;
+  if (entidad === 'trabajador' && empresaId && centroTrabajoId) {
+    void solicitarEliminacionConResumen(
+      () => EliminacionAPI.resumenTrabajador(empresaId, centroTrabajoId, id),
+      () => ({ ...request, resourceId: id }),
+    );
+    return;
+  }
+  requestEliminacionLocal(request);
 };
 provide('solicitarEliminacion', solicitarEliminacion);
 
@@ -998,6 +1014,7 @@ const toggleVigencias = () => {
             :mensaje-personalizado="eliminacionMensajePersonalizado"
             :audit-resource-type="eliminacionAuditResourceType"
             :audit-resource-id="eliminacionAuditResourceId"
+            :resumen="eliminacionResumen"
             :is-confirming="eliminacionConfirming"
             @confirm="confirmarEliminacion"
             @cancel="cancelarEliminacion"
