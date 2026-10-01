@@ -48,6 +48,7 @@ export interface RegulatoryErrorDetails {
   resguardedDocCount?: number;
   empresaId?: string;
   centroId?: string;
+  trabajadorId?: string;
 }
 
 /**

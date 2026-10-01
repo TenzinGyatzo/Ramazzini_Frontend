@@ -263,7 +263,10 @@ export function mapRegulatoryErrorMessage(
   }
 
   if (errorCode === 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
-    if (details?.centroId) {
+    if (details?.trabajadorId) {
+      message =
+        'No se puede eliminar este trabajador porque tiene documentos finalizados o anulados.';
+    } else if (details?.centroId) {
       message =
         'No se puede eliminar este centro de trabajo porque contiene documentos finalizados o anulados.';
     } else if (details?.empresaId) {

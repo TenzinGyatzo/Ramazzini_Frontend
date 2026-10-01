@@ -198,6 +198,12 @@ async function verifyAudit() {
               <option value="ADMIN_USER_ASSIGNMENTS">Asignaciones usuario</option>
               <!-- <option value="ADMIN_CONFIG_SIRES">Config SIRES</option> -->
             </optgroup>
+            <optgroup label="Trabajadores">
+              <option value="WORKER_DELETED">Trabajador eliminado</option>
+              <option value="WORKER_DELETE_DENIED">Eliminación de trabajador rechazada</option>
+              <option value="WORKER_TRANSFER">Transferencia de trabajador</option>
+              <option value="WORKER_FUSION_MANUAL">Fusión de trabajadores</option>
+            </optgroup>
             <optgroup label="Exportaciones">
               <option value="WORKERS_EXPORT_EXCEL">Export Excel trabajadores</option>
               <option value="DASHBOARD_REPORT_EXPORTED">Informe dashboard exportado</option>

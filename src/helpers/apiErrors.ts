@@ -68,8 +68,11 @@ function extractRegulatoryErrorMessage(data: Record<string, unknown>): string | 
       return data.message.trim();
     }
     const details = data.details as
-      | { centroId?: string; empresaId?: string }
+      | { centroId?: string; empresaId?: string; trabajadorId?: string }
       | undefined;
+    if (details?.trabajadorId) {
+      return 'No se puede eliminar este trabajador porque tiene documentos finalizados o anulados.';
+    }
     if (details?.centroId) {
       return 'No se puede eliminar este centro de trabajo porque contiene documentos finalizados o anulados.';
     }

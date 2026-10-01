@@ -126,3 +126,33 @@ describe('extractApiErrorMessage', () => {
     expect(issues[0].message).toContain('Pos. 11');
   });
 });
+
+describe('eliminar un trabajador: el usuario ve la causa real', () => {
+  it('bloqueo por documentos finalizados o anulados (SIRES)', () => {
+    const error = {
+      response: {
+        status: 403,
+        data: {
+          errorCode: 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS',
+          details: { trabajadorId: 'w1', resguardedDocCount: 2 },
+        },
+      },
+    };
+    expect(extractApiErrorMessage(error, 'genérico')).toBe(
+      'No se puede eliminar este trabajador porque tiene documentos finalizados o anulados.',
+    );
+  });
+
+  it('mensaje del servidor (no existe, fallo interno) en lugar del genérico', () => {
+    expect(
+      extractApiErrorMessage(
+        { response: { status: 404, data: { message: 'El trabajador con ID w1 no existe o ya ha sido eliminado.' } } },
+        'genérico',
+      ),
+    ).toBe('El trabajador con ID w1 no existe o ya ha sido eliminado.');
+    // Sin mensaje del servidor: el texto de respaldo
+    expect(extractApiErrorMessage({ response: { status: 500, data: {} } }, 'No se pudo eliminar el trabajador. Intenta de nuevo.')).toBe(
+      'No se pudo eliminar el trabajador. Intenta de nuevo.',
+    );
+  });
+});

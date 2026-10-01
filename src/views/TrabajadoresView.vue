@@ -7,6 +7,7 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useModalResumenImportacionStore } from '@/stores/modalResumenImportacion';
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
+import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { exportarTrabajadoresDesdeFrontend } from '@/helpers/exportarExcel';
 import {
   collectKeysWithData,
@@ -660,7 +661,15 @@ const deleteTrabajadorById = async (
     trabajadores.resetCurrentTrabajador();
   } catch (error) {
     console.log('Error al eliminar al trabajador', error);
-    toast.open({ message:  'No se pudo eliminar el trabajador. Por favor, elimine primero sus documentos y vuelva a intentarlo', type: 'error' });
+    const errorCode = (error as { response?: { data?: { errorCode?: string } } })
+      ?.response?.data?.errorCode;
+    // El interceptor de axios ya muestra el aviso de los errores regulatorios (documentos finalizados)
+    if (errorCode !== 'ORG_DELETE_BLOCKED_RESGUARDED_DOCS') {
+      toast.open({
+        message: extractApiErrorMessage(error, 'No se pudo eliminar el trabajador. Intenta de nuevo.'),
+        type: 'error',
+      });
+    }
   }
 };
 
