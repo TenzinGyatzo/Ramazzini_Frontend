@@ -245,7 +245,7 @@ const handleConfirm = async () => {
               <button
                 type="button"
                 :disabled="isBusy"
-                class="inline-flex w-full justify-center rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:ml-3 sm:w-auto transition-transform duration-300 transform hover:scale-105"
+                class="inline-flex w-full items-center justify-center rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 sm:ml-3 sm:w-auto transition-transform duration-300 transform hover:scale-105"
                 @click="handleConfirm"
               >
                 <i v-if="isBusy" class="fas fa-spinner fa-spin mr-2" />
