@@ -1,5 +1,12 @@
 import ProveedorSaludAPI from '@/api/ProveedorSaludAPI';
 
+/** Código con el que el servidor rechaza crear una HC cuando el cupo del mes está lleno. */
+export const LIMITE_HISTORIAS_ALCANZADO = 'LIMITE_HISTORIAS_ALCANZADO';
+
+export function esLimiteHistoriasAlcanzado(error: unknown): boolean {
+  return (error as any)?.response?.data?.code === LIMITE_HISTORIAS_ALCANZADO;
+}
+
 /**
  * Antes de abrir una historia clínica nueva: vuelve a contar las HC del mes (otro usuario del
  * mismo proveedor pudo crear alguna desde que se abrió el expediente) y compara con el límite.

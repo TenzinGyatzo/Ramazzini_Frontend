@@ -20,11 +20,12 @@ describe('ModalSuscripcion: ajustes del Administrador de plataforma', () => {
     routeName = 'trabajadores';
   });
 
-  const mountWith = async (proveedor: Record<string, unknown>, historiasDelMes = 0) => {
+  const mountWith = async (proveedor: Record<string, unknown>, historiasDelMes = 0, props: Record<string, unknown> = {}) => {
     const store = useProveedorSaludStore();
     store.proveedorSalud = proveedor as any;
     vi.spyOn(store, 'getHistoriasClinicasDelMes').mockResolvedValue(historiasDelMes as any);
     const wrapper = mount(ModalSuscripcion, {
+      props,
       global: { plugins: [pinia], stubs: { Teleport: true } },
       attachTo: document.body,
     });
@@ -142,5 +143,24 @@ describe('ModalSuscripcion: ajustes del Administrador de plataforma', () => {
       expect(wrapper.text()).not.toContain('Suscríbete ahora');
       wrapper.unmount();
     });
+  });
+
+  it('cupo lleno al guardar (lo rechaza el servidor): aviso de límite fuera del expediente', async () => {
+    routeName = 'crear-documento';
+    const proveedor = {
+      nombre: 'Clínica Norte',
+      periodoDePruebaFinalizado: true,
+      estadoSuscripcion: 'authorized',
+      maxHistoriasPermitidasAlMes: 125,
+    };
+    // Sin la marca, en el formulario no aparece nada
+    let wrapper = await mountWith(proveedor, 125);
+    expect(wrapper.find('.modal').exists()).toBe(false);
+    wrapper.unmount();
+
+    wrapper = await mountWith(proveedor, 125, { limiteAlcanzado: true });
+    expect(wrapper.text()).toContain('Has alcanzado el límite de historias clínicas este mes');
+    expect(wrapper.text()).toContain('hasta 125 historias clínicas');
+    wrapper.unmount();
   });
 });

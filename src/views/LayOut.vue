@@ -1272,6 +1272,17 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
               </div>
             </RouterLink>
 
+            <RouterLink
+              v-if="user.user?.role === 'Administrador'"
+              :to="{ name: 'registros-administrador' }"
+              @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-amber-50 hover:to-amber-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-amber-300 group">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-clock-rotate-left text-amber-500 group-hover:text-amber-600 transition-colors duration-200"></i>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Registros de Administrador</span>
+              </div>
+            </RouterLink>
+
             <!-- Administrativo -->
             <p v-if="user.user?.role === 'Administrativo'" class="text-sm font-medium text-gray-700 text-justify">Tienes el rol de Administrativo. No hay nada que configurar para este rol.</p>
           </div>

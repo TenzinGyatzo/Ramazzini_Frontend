@@ -17,6 +17,8 @@ const router = useRouter();
 const route = useRoute();
 
 const emit = defineEmits(['closeModal']);
+// El servidor rechazó una HC nueva por cupo lleno: se muestra el aviso de límite en cualquier vista
+const props = defineProps({ limiteAlcanzado: { type: Boolean, default: false } });
 
 const panelRef = ref(null);
 const closeButtonRef = ref(null);
@@ -201,9 +203,10 @@ const modalBase = computed(() => {
   }
 
   if (
-    vistaActual.value === 'expediente-medico' &&
     maxHistoriasPermitidasAlMes.value != null &&
-    historiasDelMes.value >= maxHistoriasPermitidasAlMes.value
+    (props.limiteAlcanzado ||
+      (vistaActual.value === 'expediente-medico' &&
+        historiasDelMes.value >= maxHistoriasPermitidasAlMes.value))
   ) {
     return {
       variant: 'limit',

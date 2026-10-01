@@ -404,6 +404,15 @@ const tonos: Record<string, string> = {
           @actualizado="(datos) => emit('contratacionActualizada', datos)"
         />
 
+        <RouterLink
+          :to="{ name: 'registros-administrador', query: { tenantId: String(proveedor._id) } }"
+          data-testid="drawer-registros"
+          class="inline-flex items-center gap-2 text-sm text-sky-700 underline dark:text-sky-400"
+        >
+          <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+          Ver registros de este proveedor
+        </RouterLink>
+
         <!-- Ajustes de plataforma -->
         <section id="drawer-ajustes">
           <TenantSettingsPanel

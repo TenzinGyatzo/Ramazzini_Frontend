@@ -5,7 +5,7 @@ vi.mock('@/api/ProveedorSaludAPI', () => ({
   default: { getHistoriasClinicasDelMes: (...a: unknown[]) => getHistoriasClinicasDelMes(...a) },
 }));
 
-const { verificarLimiteHistoriasDelMes } = await import('./limiteHistoriasDelMes');
+const { verificarLimiteHistoriasDelMes, esLimiteHistoriasAlcanzado } = await import('./limiteHistoriasDelMes');
 
 describe('verificarLimiteHistoriasDelMes', () => {
   beforeEach(() => getHistoriasClinicasDelMes.mockReset());
@@ -42,5 +42,14 @@ describe('verificarLimiteHistoriasDelMes', () => {
       verificarLimiteHistoriasDelMes({ idProveedor: 'p1', limite: null, conteoAnterior: 999 }),
     ).resolves.toEqual({ conteo: 999, alcanzado: false });
     expect(getHistoriasClinicasDelMes).not.toHaveBeenCalled();
+  });
+});
+
+describe('esLimiteHistoriasAlcanzado', () => {
+  it('reconoce el rechazo del servidor por cupo lleno, y nada más', () => {
+    expect(esLimiteHistoriasAlcanzado({ response: { status: 403, data: { code: 'LIMITE_HISTORIAS_ALCANZADO' } } })).toBe(true);
+    expect(esLimiteHistoriasAlcanzado({ response: { status: 403, data: { message: 'Sin permisos' } } })).toBe(false);
+    expect(esLimiteHistoriasAlcanzado(new Error('red'))).toBe(false);
+    expect(esLimiteHistoriasAlcanzado(null)).toBe(false);
   });
 });

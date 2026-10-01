@@ -196,6 +196,12 @@ const router = createRouter({
           meta: { requiresAdmin: true },
         },
         {
+          path: "/registros-administrador",
+          name: "registros-administrador",
+          component: () => import("@/views/RegistrosAdministradorView.vue"),
+          meta: { requiresAdmin: true },
+        },
+        {
           path: "/exportacion-giis",
           name: "exportacion-giis",
           component: () => import("@/views/ExportacionGiisView.vue"),

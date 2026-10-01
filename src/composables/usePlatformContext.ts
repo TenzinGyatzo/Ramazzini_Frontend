@@ -5,7 +5,11 @@ import { useUserStore } from "@/stores/user";
 export const PLATFORM_CONTEXT_CHANNEL = "ramazzini-platform-context";
 
 /** Rutas disponibles para el Administrador sin tenant activo (consola de plataforma). */
-export const PLATFORM_ROUTE_NAMES: ReadonlySet<string> = new Set(["panel-administrador", "admin-catalogos"]);
+export const PLATFORM_ROUTE_NAMES: ReadonlySet<string> = new Set([
+    "panel-administrador",
+    "admin-catalogos",
+    "registros-administrador",
+]);
 
 export const PLATFORM_CONSOLE_PATH = "/panel-administrador";
 /** Ruta "inicio" (resumen de trabajo): path "" dentro del layout, es decir "/". */

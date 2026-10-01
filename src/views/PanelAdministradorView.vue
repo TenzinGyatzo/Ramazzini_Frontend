@@ -283,16 +283,26 @@ onMounted(() => {
           <template v-if="horaActualizacion"> · actualizado a las {{ horaActualizacion }}</template>
         </p>
       </div>
+      <div class="flex flex-wrap gap-2 self-start sm:self-auto">
+      <RouterLink
+        :to="{ name: 'registros-administrador' }"
+        data-testid="consola-registros"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+      >
+        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+        Registros
+      </RouterLink>
       <button
         type="button"
         data-testid="consola-actualizar"
-        class="inline-flex items-center gap-2 self-start rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 sm:self-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
         :disabled="isLoading || isRefreshing"
         @click="actualizarPanel"
       >
         <i class="fa-solid fa-rotate" :class="{ 'animate-spin': isRefreshing }" aria-hidden="true"></i>
         {{ isRefreshing ? 'Actualizando…' : 'Actualizar' }}
       </button>
+      </div>
     </div>
 
     <div v-if="isLoading && !proveedores.length" class="flex flex-col items-center justify-center py-16">

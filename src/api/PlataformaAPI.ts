@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import type { ContratoTenant } from "@/utils/accesoComercial";
+import type { RegistroPlataforma } from "@/utils/platformRegistros";
 
 export interface PlatformActiveTenant {
     id: string;
@@ -93,6 +94,31 @@ export interface ContratoPayload {
     reactivar?: boolean;
 }
 
+export interface RegistrosQuery {
+    from?: string;
+    to?: string;
+    tenantId?: string;
+    categoria?: string;
+    soloCambios?: boolean;
+    q?: string;
+    page?: number;
+    limit?: number;
+}
+
+export interface RegistrosRespuesta {
+    items: RegistroPlataforma[];
+    total: number;
+    page: number;
+    limit: number;
+}
+
+export interface VerificacionRegistros {
+    valid: boolean;
+    errors?: { index: number; expectedHash: string; actualHash: string }[];
+    total?: number;
+    encadenadoDesde?: string | null;
+}
+
 export interface RegistrarPagoPayload {
     fechaPago: string;
     monto: number;
@@ -151,5 +177,19 @@ export default {
         return api.patch<Contratacion>(`/plataforma/tenants/${proveedorSaludId}/pagos/${pagoId}`, {
             anular: { motivo },
         });
+    },
+
+    /** Registros de Administrador: bitácora de plataforma. */
+    getRegistros(params: RegistrosQuery) {
+        return api.get<RegistrosRespuesta>("/plataforma/registros", { params });
+    },
+
+    async exportarRegistros(params: { from: string; to: string; format: "csv" | "json" }): Promise<Blob> {
+        const { data } = await api.get<Blob>("/plataforma/registros/export", { params, responseType: "blob" });
+        return data;
+    },
+
+    verificarRegistros(params: { from: string; to: string }) {
+        return api.get<VerificacionRegistros>("/plataforma/registros/verify", { params });
     },
 };
