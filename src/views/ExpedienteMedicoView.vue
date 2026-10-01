@@ -29,6 +29,7 @@ import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import { useEliminacion } from '@/composables/useEliminacion';
 import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { verificarLimiteHistoriasDelMes } from '@/helpers/limiteHistoriasDelMes';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
 import { useNavigateWithTreatmentConsent } from '@/composables/useNavigateWithTreatmentConsent';
@@ -432,15 +433,18 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
     return;
   }
 
-  if (
-    routeName === 'crear-documento' &&
-    params.tipoDocumento === 'historiaClinica' &&
-    historiasDelMes.value != null &&
-    proveedorSaludStore.limiteHistoriasEfectivo != null &&
-    historiasDelMes.value >= proveedorSaludStore.limiteHistoriasEfectivo
-  ) {
-    showSubscriptionModal.value = true;
-    return;
+  if (routeName === 'crear-documento' && params.tipoDocumento === 'historiaClinica') {
+    // Conteo al momento, no el de cuando se abrió el expediente
+    const { conteo, alcanzado } = await verificarLimiteHistoriasDelMes({
+      idProveedor: proveedorSaludStore.proveedorSalud?._id,
+      limite: proveedorSaludStore.limiteHistoriasEfectivo,
+      conteoAnterior: historiasDelMes.value,
+    });
+    historiasDelMes.value = conteo;
+    if (alcanzado) {
+      showSubscriptionModal.value = true;
+      return;
+    }
   }
 
   if (routeName === 'crear-documento' && !canCreateDocument(params.tipoDocumento as string)) {
