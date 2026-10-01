@@ -42,7 +42,7 @@ const ETIQUETAS_EVENTO: Record<string, string> = {
     ADMIN_CATALOG_UPDATE: "Catálogo: registro modificado",
     ADMIN_CATALOG_DELETE: "Catálogo: registro eliminado",
     ADMIN_CATALOG_IMPORT: "Catálogo importado",
-    ADMIN_CATALOG_RELOAD: "Catálogos recargados",
+    ADMIN_CATALOG_RELOAD: "Catálogo recargado",
     LOGIN_SUCCESS: "Inicio de sesión",
     LOGIN_FAIL: "Inicio de sesión fallido",
     LOGIN_BLOCKED: "Inicio de sesión bloqueado",
@@ -144,6 +144,64 @@ function resumenContrato(payload: Record<string, any>): string {
     return partes.join(" · ");
 }
 
+/** Catálogos globales (clave del servidor → nombre). */
+const NOMBRES_CATALOGO: Record<string, string> = {
+    diagnosticos: "CIE-10 (diagnósticos)",
+    establecimientos_salud: "CLUES (establecimientos)",
+    enitades_federativas: "Entidades federativas",
+    municipios: "Municipios",
+    localidades: "Localidades",
+    codigos_postales: "Códigos postales",
+    cat_tipo_personal: "Tipo de personal",
+    cat_afiliacion: "Afiliación",
+    cat_pais: "Países",
+    servicios_atencion_por_tipo_personal_sis_ce: "Servicios de atención",
+};
+
+export function nombreCatalogo(clave: unknown): string {
+    return NOMBRES_CATALOGO[String(clave)] ?? String(clave ?? "Catálogo");
+}
+
+const NOMBRES_CAMPO_CATALOGO: Record<string, string> = { description: "descripción", code: "código", vigente: "vigente" };
+const entreComillas = (valor: unknown): string => (valor == null || valor === "" ? "vacío" : `«${valor}»`);
+
+function resumenCatalogo(actionType: string, payload: Record<string, any>): string {
+    const partes = [nombreCatalogo(payload.catalogType)];
+    if (payload.code) partes.push(String(payload.code));
+    switch (actionType) {
+        case "ADMIN_CATALOG_CREATE":
+            if (payload.despues?.description) partes.push(String(payload.despues.description));
+            break;
+        case "ADMIN_CATALOG_DELETE":
+            if (payload.antes?.description) partes.push(`eliminado: ${payload.antes.description}`);
+            break;
+        case "ADMIN_CATALOG_UPDATE": {
+            const cambios = Object.entries((payload.cambios ?? {}) as Record<string, { antes: unknown; despues: unknown }>);
+            if (cambios.length) {
+                partes.push(
+                    cambios
+                        .slice(0, 3)
+                        .map(([campo, c]) => `${NOMBRES_CAMPO_CATALOGO[campo] ?? campo}: ${entreComillas(c.antes)} → ${entreComillas(c.despues)}`)
+                        .join("; ") + (cambios.length > 3 ? ` (+${cambios.length - 3} más)` : ""),
+                );
+            } else if (Array.isArray(payload.patch) && payload.patch.length) {
+                // Eventos anteriores: solo guardaban qué campos cambiaron
+                partes.push(`campos: ${payload.patch.join(", ")}`);
+            }
+            break;
+        }
+        case "ADMIN_CATALOG_IMPORT": {
+            const filas = typeof payload.rowCount === "number" ? `${payload.rowCount.toLocaleString("es-MX")} filas` : "";
+            const antes =
+                typeof payload.rowCountAntes === "number" ? ` (antes ${payload.rowCountAntes.toLocaleString("es-MX")})` : "";
+            if (filas) partes.push(filas + antes);
+            if (payload.archivo) partes.push(String(payload.archivo));
+            break;
+        }
+    }
+    return partes.join(" · ");
+}
+
 const CLAVES_INTERNAS = new Set(["tenantId", "tenantNombre", "operadorPlataforma", "tenantSinBitacora"]);
 
 /** Para eventos sin resumen propio: hasta cuatro datos simples del detalle. */
@@ -178,6 +236,12 @@ export function resumenEvento(registro: Pick<RegistroPlataforma, "actionType" | 
         case "PLATFORM_TENANT_ENTER":
         case "PLATFORM_TENANT_EXIT":
             return "";
+        case "ADMIN_CATALOG_CREATE":
+        case "ADMIN_CATALOG_UPDATE":
+        case "ADMIN_CATALOG_DELETE":
+        case "ADMIN_CATALOG_IMPORT":
+        case "ADMIN_CATALOG_RELOAD":
+            return resumenCatalogo(registro.actionType, payload);
         case "AUDIT_EXPORT_DOWNLOAD":
             return `${fechaCorta(payload.from)} – ${fechaCorta(payload.to)} · ${String(payload.format ?? "").toUpperCase()}${
                 payload.ambito === "plataforma" ? " · registros de Administrador" : ""

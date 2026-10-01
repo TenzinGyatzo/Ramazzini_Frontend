@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     etiquetaCategoria,
     etiquetaEvento,
+    nombreCatalogo,
     rangoDeFechas,
     rangoDePeriodo,
     resumenEvento,
@@ -119,6 +120,53 @@ describe("resumenEvento", () => {
         ).toBe("empresa: ACME · tenant sin bitácora propia");
         expect(resumenEvento({ actionType: "PLATFORM_TENANT_ENTER", payload: { tenantId: "t1" } })).toBe("");
         expect(resumenEvento({ actionType: "LOGIN_SUCCESS", payload: null })).toBe("");
+    });
+});
+
+describe("resumenEvento: catálogos", () => {
+    const base = { catalogType: "diagnosticos", filename: "diagnosticos.csv" };
+
+    it("modificar: catálogo, código y cada campo con su valor anterior y nuevo", () => {
+        expect(
+            resumenEvento({
+                actionType: "ADMIN_CATALOG_UPDATE",
+                payload: {
+                    ...base,
+                    code: "A000",
+                    patch: ["description", "lsex"],
+                    cambios: { description: { antes: "Cólera", despues: "Cólera clásico" }, lsex: { antes: null, despues: "NO" } },
+                },
+            }),
+        ).toBe("CIE-10 (diagnósticos) · A000 · descripción: «Cólera» → «Cólera clásico»; lsex: vacío → «NO»");
+    });
+
+    it("modificar (evento anterior, sin valores): al menos los campos", () => {
+        expect(
+            resumenEvento({ actionType: "ADMIN_CATALOG_UPDATE", payload: { ...base, patch: ["description"] } }),
+        ).toBe("CIE-10 (diagnósticos) · campos: description");
+    });
+
+    it("crear, eliminar, importar y recargar", () => {
+        expect(
+            resumenEvento({
+                actionType: "ADMIN_CATALOG_CREATE",
+                payload: { ...base, code: "Z999", despues: { code: "Z999", description: "Nuevo" } },
+            }),
+        ).toBe("CIE-10 (diagnósticos) · Z999 · Nuevo");
+        expect(
+            resumenEvento({
+                actionType: "ADMIN_CATALOG_DELETE",
+                payload: { catalogType: "establecimientos_salud", code: "DFSSA000011", antes: { description: "Centro de salud" } },
+            }),
+        ).toBe("CLUES (establecimientos) · DFSSA000011 · eliminado: Centro de salud");
+        expect(
+            resumenEvento({
+                actionType: "ADMIN_CATALOG_IMPORT",
+                payload: { ...base, rowCount: 14250, rowCountAntes: 14000, archivo: "diagnosticos_2026.csv" },
+            }),
+        ).toBe("CIE-10 (diagnósticos) · 14,250 filas (antes 14,000) · diagnosticos_2026.csv");
+        expect(resumenEvento({ actionType: "ADMIN_CATALOG_RELOAD", payload: { catalogType: "cat_pais" } })).toBe("Países");
+        expect(nombreCatalogo("catalogo_nuevo")).toBe("catalogo_nuevo");
     });
 });
 

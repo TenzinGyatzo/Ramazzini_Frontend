@@ -233,7 +233,7 @@ const campo =
         v-model="texto"
         type="search"
         data-testid="registros-texto"
-        placeholder="Buscar por proveedor o evento"
+        placeholder="Buscar por proveedor, catálogo, código o evento"
         class="min-w-[12rem] flex-1"
         :class="campo"
       />
