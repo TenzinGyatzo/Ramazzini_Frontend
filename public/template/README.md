@@ -21,14 +21,21 @@ Las 12 columnas básicas más:
 | Columna | Descripción |
 |---------|-------------|
 | `curp` | CURP RENAPO (18 caracteres). Obligatorio. |
-| `entidadNacimiento` | Código INEGI 2 dígitos (01-32, NE, 00) |
-| `paisNacimiento` | CATALOG_KEY cat_pais (ej. 142 = México) |
-| `entidadResidencia` | Código INEGI 2 dígitos |
+| `entidadNacimiento` | Lista desplegable, ej. `SINALOA (25)`. También acepta solo el código (01-32, 00, 88, 99) |
+| `paisNacimiento` | Lista desplegable, ej. `MÉXICO (142)`. También acepta solo el CATALOG_KEY de cat_pais |
+| `entidadResidencia` | Lista desplegable, igual que `entidadNacimiento` |
 | `municipioResidencia` | Código INEGI 3 dígitos |
 | `localidadResidencia` | Código INEGI 4 dígitos |
-| `paisResidencia` | CATALOG_KEY cat_pais |
+| `paisResidencia` | Lista desplegable, igual que `paisNacimiento` |
 
 Todos los campos NOM-024 son **obligatorios** para proveedores en régimen SIRES_NOM024.
+
+### Listas desplegables (país y entidad)
+
+- Las opciones tienen el formato `DESCRIPCIÓN (código)` y están en la segunda hoja del archivo, **Catálogos**. La importación lee solo la primera hoja (**Datos**): no las reordene.
+- Las listas cubren las filas 2 a 2000 y no bloquean la captura: se puede escribir o pegar solo el código.
+- El backend toma el código entre paréntesis al final del valor (`extractCatalogCodeFromLabel`).
+- Las opciones salen de `backend/catalogs/normalized/cat_pais.csv` y `entidades_federativas.csv`. Si esos catálogos cambian, regenere la plantilla.
 
 ## Comentarios en encabezados
 

@@ -334,8 +334,8 @@ const testResumenMixto = async () => {
             <template v-if="isSIRES">
               <li>• <strong>SIRES NOM-024:</strong> La plantilla incluye CURP y campos geográficos obligatorios.</li>
               <li>• CURP obligatoria en formato RENAPO (18 caracteres). Se permite la genérica XXXX999999XXXXXX99.</li>
-              <li>• Campos geo: use códigos INEGI (entidad, municipio, localidad) y CATALOG_KEY cat_pais para países (ej. 142 = México).</li>
-              <li>• Use el buscador de códigos o descargue los catálogos de referencia en la sección de apoyo geo.</li>
+              <li>• País y entidad: elija la opción de la lista desplegable de la celda (ej. MÉXICO (142), SINALOA (25)). También se acepta solo el código.</li>
+              <li>• Municipio y localidad: use los códigos INEGI (ej. 015 y 0001). Búsquelos en el buscador de códigos o descargue los catálogos de referencia en la sección de apoyo geo.</li>
               <li>• NSS: si se captura, debe tener exactamente 11 dígitos numéricos.</li>
               <li>• Nombres y apellidos en MAYÚSCULAS.</li>
               <li>• Las columnas "Número de empleado" y "Teléfono" son opcionales.</li>
