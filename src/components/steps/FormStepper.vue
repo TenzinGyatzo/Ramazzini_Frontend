@@ -1478,6 +1478,11 @@ export default {
         datosLimpios = limpiarValoresUndefined(formData.formDataAntidoping);
       } else if (documentos.currentTypeOfDocument === 'aptitud') {
         datosLimpios = limpiarValoresUndefined(formData.formDataAptitud);
+        // Un input date vaciado deja '' y el backend lo rechaza como fecha inválida; null sí es aceptado.
+        for (let n = 1; n <= 6; n++) {
+          const key = `fechaEvaluacionAdicional${n}`;
+          if (datosLimpios[key] === '') datosLimpios[key] = null;
+        }
       } else if (documentos.currentTypeOfDocument === 'audiometria') {
         datosLimpios = limpiarValoresUndefined(formData.formDataAudiometria);
       } else if (documentos.currentTypeOfDocument === 'certificado') {

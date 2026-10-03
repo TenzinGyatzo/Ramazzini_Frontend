@@ -41,7 +41,8 @@ const textoAgregar = computed(() =>
 
 function limpiarSlot(n) {
   formDataAptitud[`evaluacionAdicional${n}`] = '';
-  formDataAptitud[`fechaEvaluacionAdicional${n}`] = '';
+  // null y no '': el backend valida '' como fecha inválida (400); null pasa @IsOptional y borra el valor al editar.
+  formDataAptitud[`fechaEvaluacionAdicional${n}`] = null;
   formDataAptitud[`resultadosEvaluacionAdicional${n}`] = '';
 }
 
