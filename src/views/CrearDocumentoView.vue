@@ -65,6 +65,11 @@ if (tipoDesdeRuta) {
   documentos.setCurrentTypeOfDocument(String(tipoDesdeRuta));
 }
 
+// El store de pasos sobrevive entre documentos. Si quedan pasos de un formulario abandonado,
+// FormStepper monta ese paso en el primer render, antes del `resetFormData` de `onMounted`,
+// y lo que el paso escribe al montarse (idTrabajador, rutaPDF) se pierde con el reset.
+steps.setSteps([]);
+
 /**
  * Gate de los hijos: empresa, centro y trabajador deben estar resueltos antes de montar
  * `FormStepper` y los `Visualizador*`. Sus pasos (Step1) acceden a `currentEmpresa.nombreComercial`,

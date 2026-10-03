@@ -122,30 +122,40 @@ export const useFormDataStore = defineStore('formData', () => {
   };
 
   const resetFormData = () => {
-    // Reiniciar el estado directamente asignando un objeto vacío.
-    formDataAntidoping.value = {};
-    formDataAptitud.value = {};
-    formDataAudiometria.value = {};
-    formDataCertificado.value = {};
-    formDataCertificadoExpedito.value = {};
-    formDataDocumentoExterno.value = {};
-    formDataExamenVista.value = {};
-    formDataExploracionFisica.value = {};
-    formDataHistoriaClinica.value = {};
-    formDataNotaMedica.value = {};
-    formDataNotaAclaratoria.value = {};
-    formDataControlPrenatal.value = {};
-    formDataHistoriaOtologica.value = {};
-    formDataPrevioEspirometria.value = {};
-    formDataReceta.value = {};
-    formDataConstanciaAptitud.value = {};
-    formDataEntrevistaPsicologica.value = {};
-    formDataTrastornosEstadoAnimo.value = {};
-    formDataCuestionarioProdromalBreve.value = {};
-    formDataTrastornoLimitePersonalidad.value = {};
-    formDataEventoSeguimientoCardiometabolico.value = {};
-    formDataInformeLongitudinalCardiometabolico.value = {};
-    formDataInformeLongitudinalAudiometrico.value = {};
+    // Vaciar en sitio, sin reemplazar el objeto: los pasos desestructuran el store
+    // (`const { formDataX } = useFormDataStore()`) y, si se reemplaza, siguen escribiendo
+    // en el objeto anterior y el visualizador no ve esos datos (p. ej. la fecha del paso 1).
+    const formularios = [
+      formDataAntidoping,
+      formDataAptitud,
+      formDataAudiometria,
+      formDataCertificado,
+      formDataCertificadoExpedito,
+      formDataDocumentoExterno,
+      formDataExamenVista,
+      formDataExploracionFisica,
+      formDataHistoriaClinica,
+      formDataNotaMedica,
+      formDataNotaAclaratoria,
+      formDataControlPrenatal,
+      formDataHistoriaOtologica,
+      formDataPrevioEspirometria,
+      formDataReceta,
+      formDataConstanciaAptitud,
+      formDataEntrevistaPsicologica,
+      formDataTrastornosEstadoAnimo,
+      formDataCuestionarioProdromalBreve,
+      formDataTrastornoLimitePersonalidad,
+      formDataEventoSeguimientoCardiometabolico,
+      formDataInformeLongitudinalCardiometabolico,
+      formDataInformeLongitudinalAudiometrico,
+    ];
+    for (const formulario of formularios) {
+      const datos = formulario.value as Record<string, unknown>;
+      for (const campo of Object.keys(datos)) {
+        delete datos[campo];
+      }
+    }
   };
 
   const consultarAlturaDisponible = async (trabajadorId: string) => {

@@ -366,6 +366,8 @@ const documentTypeLabels = {
   informeLongitudinalAudiometrico: "Informe longitudinal de seguimiento audiométrico",
 };
 
+let vistaDesmontada = false;
+
 const fetchData = async (force = false) => {
   const trabajadorId = String(route.params.idTrabajador ?? '');
   if (!trabajadorId) return;
@@ -378,7 +380,8 @@ const fetchData = async (force = false) => {
     });
 
     lastFetchedTrabajadorId.value = trabajadorId;
-    formData.resetFormData();
+    // Si el usuario ya abrió un documento mientras cargaba la lista, no vaciar su formulario.
+    if (!vistaDesmontada) formData.resetFormData();
   } catch (error) {
     console.error("Error al cargar datos:", error);
   }
@@ -394,6 +397,7 @@ function invalidateExpedienteConteosForCurrentTrabajador() {
 onMounted(fetchData);
 
 onBeforeUnmount(() => {
+  vistaDesmontada = true;
   invalidateExpedienteConteosForCurrentTrabajador();
 });
 
