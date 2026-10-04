@@ -23,6 +23,7 @@ import type {
   TrastornosEstadoAnimo,
   CuestionarioProdromalBreve,
   TrastornoLimitePersonalidad,
+  CuestionarioNordico,
   EventoSeguimientoCardiometabolico,
   InformeLongitudinalCardiometabolico,
   InformeLongitudinalAudiometrico,
@@ -50,6 +51,7 @@ export type DocumentsByYear = {
     trastornosEstadoAnimo?: TrastornosEstadoAnimo[];
     cuestionarioProdromalBreve?: CuestionarioProdromalBreve[];
     trastornoLimitePersonalidad?: TrastornoLimitePersonalidad[];
+    cuestionarioNordico?: CuestionarioNordico[];
     eventoSeguimientoCardiometabolico?: EventoSeguimientoCardiometabolico[];
     informeLongitudinalCardiometabolico?: InformeLongitudinalCardiometabolico[];
     informeLongitudinalAudiometrico?: InformeLongitudinalAudiometrico[];
@@ -121,6 +123,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     'trastornosEstadoAnimo',
     'cuestionarioProdromalBreve',
     'trastornoLimitePersonalidad',
+    'cuestionarioNordico',
     'eventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico',
     'informeLongitudinalAudiometrico',
@@ -206,6 +209,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
       trastornosEstadoAnimo: "fechaTrastornosEstadoAnimo",
       cuestionarioProdromalBreve: "fechaCuestionarioProdromalBreve",
       trastornoLimitePersonalidad: "fechaTrastornoLimitePersonalidad",
+      cuestionarioNordico: "fechaCuestionarioNordico",
       eventoSeguimientoCardiometabolico: "fechaEventoSeguimientoCardiometabolico",
       informeLongitudinalCardiometabolico: "fechaInformeLongitudinalCardiometabolico",
       informeLongitudinalAudiometrico: "fechaInformeLongitudinalAudiometrico",

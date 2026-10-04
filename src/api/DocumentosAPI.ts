@@ -89,6 +89,10 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/trastornoLimitePersonalidad`);
     },
 
+    getCuestionarioNordico(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/cuestionarioNordico`);
+    },
+
     getEventoSeguimientoCardiometabolico(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/eventoSeguimientoCardiometabolico`);
     },

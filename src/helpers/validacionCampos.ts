@@ -32,6 +32,7 @@ import {
   MAX_CHARS_TEXTAREA_INTERPRETACION_OIDO_ILA,
 } from '@/helpers/informeLongitudinalAudiometrico';
 import { recomendacionesIlaSonValidas } from '@/helpers/ilaRecomendaciones';
+import { REGIONES_NORDICO, detalleRegionNordicoCompleto } from '@/helpers/cuestionarioNordico';
 
 // Helper para validar campos requeridos según el tipo de documento
 export interface CampoFaltante {
@@ -820,6 +821,27 @@ const camposRequeridosPorTipo: Record<string, Array<{
     },
   ],
 
+  // Cada región exige su respuesta de 12 meses y, si fue «Sí», el detalle completo
+  cuestionarioNordico: [
+    { campo: 'fechaCuestionarioNordico', nombre: 'Fecha del cuestionario nórdico', tipo: 'fecha', paso: 1, validacion: validarFecha },
+    ...REGIONES_NORDICO.flatMap((region) => [
+      {
+        campo: 'regiones',
+        nombre: `${region.etiqueta}: molestia en los últimos 12 meses`,
+        tipo: 'seleccion',
+        paso: region.paso,
+        validacion: (regiones: any) => validarSiNo(regiones?.[region.clave]?.molestia12Meses),
+      },
+      {
+        campo: 'regiones',
+        nombre: `${region.etiqueta}: detalle de la molestia`,
+        tipo: 'seleccion',
+        paso: region.paso,
+        validacion: (regiones: any) => detalleRegionNordicoCompleto(regiones?.[region.clave]),
+      },
+    ]),
+  ],
+
   trastornoLimitePersonalidad: [
     { campo: 'fechaTrastornoLimitePersonalidad', nombre: 'Fecha del trastorno límite de personalidad', tipo: 'fecha', paso: 1, validacion: validarFecha },
     {
@@ -1150,6 +1172,7 @@ export const DOCUMENT_TYPE_DATE_FIELDS: Record<string, string> = {
   trastornosEstadoAnimo: 'fechaTrastornosEstadoAnimo',
   cuestionarioProdromalBreve: 'fechaCuestionarioProdromalBreve',
   trastornoLimitePersonalidad: 'fechaTrastornoLimitePersonalidad',
+  cuestionarioNordico: 'fechaCuestionarioNordico',
   eventoSeguimientoCardiometabolico: 'fechaEventoSeguimientoCardiometabolico',
   informeLongitudinalCardiometabolico: 'fechaInformeLongitudinalCardiometabolico',
   informeLongitudinalAudiometrico: 'fechaInformeLongitudinalAudiometrico',

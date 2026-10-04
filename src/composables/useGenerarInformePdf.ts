@@ -33,6 +33,7 @@ const TIPO_INFORME_API: Record<string, string> = {
   trastornosestadoanimo: 'trastornosEstadoAnimo',
   cuestionarioprodromalbreve: 'cuestionarioProdromalBreve',
   trastornolimitepersonalidad: 'trastornoLimitePersonalidad',
+  cuestionarionordico: 'cuestionarioNordico',
   eventoseguimientocardiometabolico: 'eventoSeguimientoCardiometabolico',
 };
 

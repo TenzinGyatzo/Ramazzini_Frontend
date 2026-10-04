@@ -32,6 +32,8 @@ import VisualizadorEntrevistaPsicologica from '@/components/steps/VisualizadorEn
 import VisualizadorTrastornosEstadoAnimo from '@/components/steps/VisualizadorTrastornosEstadoAnimo.vue';
 import VisualizadorCuestionarioProdromalBreve from '@/components/steps/VisualizadorCuestionarioProdromalBreve.vue';
 import VisualizadorTrastornoLimitePersonalidad from '@/components/steps/VisualizadorTrastornoLimitePersonalidad.vue';
+import VisualizadorCuestionarioNordico from '@/components/steps/VisualizadorCuestionarioNordico.vue';
+import { NO as NORDICO_NO, asegurarRegionesNordico, limpiarDetalleRegionNordico } from '@/helpers/cuestionarioNordico';
 import VisualizadorEventoSeguimientoCardiometabolico from '@/components/steps/VisualizadorEventoSeguimientoCardiometabolico.vue';
 import VisualizadorInformeLongitudinalCardiometabolico from '@/components/steps/VisualizadorInformeLongitudinalCardiometabolico.vue';
 import VisualizadorInformeLongitudinalAudiometrico from '@/components/steps/VisualizadorInformeLongitudinalAudiometrico.vue';
@@ -352,6 +354,7 @@ watchEffect(async () => {
       trastornosEstadoAnimo: formData.formDataTrastornosEstadoAnimo,
       cuestionarioProdromalBreve: formData.formDataCuestionarioProdromalBreve,
       trastornoLimitePersonalidad: formData.formDataTrastornoLimitePersonalidad,
+      cuestionarioNordico: formData.formDataCuestionarioNordico,
       eventoSeguimientoCardiometabolico: formData.formDataEventoSeguimientoCardiometabolico,
       informeLongitudinalCardiometabolico: formData.formDataInformeLongitudinalCardiometabolico,
       informeLongitudinalAudiometrico: formData.formDataInformeLongitudinalAudiometrico,
@@ -519,6 +522,19 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
   formData.formDataTrastornoLimitePersonalidad.vacioCronico = 'No';
   formData.formDataTrastornoLimitePersonalidad.faltaIdentidadQuienEs = 'No';
   formData.formDataTrastornoLimitePersonalidad.esfuerzosEvitarAbandono = 'No';
+
+  goToStep(steps.steps.length);
+  await nextTick();
+  steps.nextStep();
+};
+
+// Cuestionario Nórdico: las 16 regiones sin molestia en 12 meses
+const todoNegadoCuestionarioNordicoYCompletado = async () => {
+  const regiones = asegurarRegionesNordico(formData.formDataCuestionarioNordico);
+  for (const region of Object.values(regiones)) {
+    region.molestia12Meses = NORDICO_NO;
+    limpiarDetalleRegionNordico(region);
+  }
 
   goToStep(steps.steps.length);
   await nextTick();
@@ -935,6 +951,35 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
         </div>
       </Transition>
 
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'cuestionarioNordico'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-2/5">
+            <FormStepper />
+            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+              <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span>Acción Rápida</span>
+              </p>
+              <button
+                type="button"
+                @click="todoNegadoCuestionarioNordicoYCompletado"
+                class="w-full mt-4 px-4 py-2 md:px-6 md:py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform active:scale-95 flex items-center justify-center space-x-2"
+              >
+                <span>Todo negado</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="w-full xl:w-3/5">
+            <VisualizadorCuestionarioNordico />
+          </div>
+        </div>
+      </Transition>
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'eventoSeguimientoCardiometabolico'"
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">

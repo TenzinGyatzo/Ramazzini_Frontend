@@ -1,3 +1,4 @@
+import type { RegionesNordicoRespuestas, ResultadoCuestionarioNordico } from '@/helpers/cuestionarioNordico';
 export type PdfStatus = 'generating' | 'ready' | 'failed';
 
 import { DocumentoEstado } from './nom024.interface';
@@ -1019,6 +1020,27 @@ export interface TrastornoLimitePersonalidad {
     vacioCronico?: string;
     faltaIdentidadQuienEs?: string;
     esfuerzosEvitarAbandono?: string;
+}
+
+/** Cuestionario Nórdico de Kuorinka. Las claves de región están en `helpers/cuestionarioNordico.ts`. */
+export interface CuestionarioNordico {
+    _id: string;
+    fechaCuestionarioNordico: string;
+    estado?: DocumentoEstado;
+    fechaFinalizacion?: string;
+    finalizadoPor?: string;
+    fechaAnulacion?: string;
+    anuladoPor?: string;
+    razonAnulacion?: string;
+    /** Antigüedad en la actividad (tipo de trabajo), no en la empresa. */
+    antiguedadActividadAnios?: number;
+    antiguedadActividadMeses?: number;
+    horasTrabajoSemana?: number;
+    manoDominante?: string;
+    regiones?: RegionesNordicoRespuestas;
+    observaciones?: string;
+    /** Calculado por el servidor al guardar; congelado al finalizar. */
+    resultado?: ResultadoCuestionarioNordico;
 }
 
 export interface CondicionControlResumenInformeLongitudinal {
