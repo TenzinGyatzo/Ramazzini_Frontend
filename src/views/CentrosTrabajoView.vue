@@ -318,8 +318,8 @@ watch(
                   </div>
                 </div>
                 
-                <!-- Botón de acción principal -->
-                <div v-if="centrosTrabajo.centrosTrabajo.length > 0" class="min-w-0 flex-shrink-0">
+                <!-- Botón de acción principal: visible también con la empresa vacía, sin tener que bajar hasta el final de la guía -->
+                <div v-if="!cargandoVista" class="min-w-0 flex-shrink-0">
                   <div class="w-full sm:w-auto">
                     <button 
                       type="button"
