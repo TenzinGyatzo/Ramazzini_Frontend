@@ -14,6 +14,7 @@ import DocumentosAPI from '@/api/DocumentosAPI';
 import ResultadosClinicosAPI from '@/api/ResultadosClinicosAPI';
 import { findNearestDocument } from '@/helpers/findNearestDocuments';
 import { textoResumenCuestionarioNordico } from '@/helpers/cuestionarioNordico';
+import { textoResumenEvaluacionSuenoVigilia } from '@/helpers/evaluacionSuenoVigilia';
 import { resumenSucintoEntrevistaPsicologica } from '@/helpers/conclusionEntrevistaPsicologica';
 import {
   textoResumenTrastornosEstadoAnimo,
@@ -73,6 +74,8 @@ const trastornosLimitePersonalidad = ref([]);
 const nearestTrastornoLimitePersonalidad = ref(null);
 const cuestionariosNordicos = ref([]);
 const nearestCuestionarioNordico = ref(null);
+const evaluacionesSuenoVigilia = ref([]);
+const nearestEvaluacionSuenoVigilia = ref(null);
 
 onMounted(async () => {
   try {
@@ -148,6 +151,13 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error al obtener cuestionario nórdico:', error);
     cuestionariosNordicos.value = [];
+  }
+  try {
+    const r = await DocumentosAPI.getEvaluacionSuenoVigilia(trabajadores.currentTrabajadorId);
+    evaluacionesSuenoVigilia.value = r.data || [];
+  } catch (error) {
+    console.error('Error al obtener evaluación de sueño y vigilia:', error);
+    evaluacionesSuenoVigilia.value = [];
   }
 
     // Llamar la función de cálculo inicial si ya existe fechaAptitudPuesto
@@ -273,6 +283,12 @@ const calculateNearestDocuments = (fechaAptitudPuesto) => {
     cuestionariosNordicos.value,
     fechaAptitudPuesto,
     'fechaCuestionarioNordico',
+    nearestOpts,
+  );
+  nearestEvaluacionSuenoVigilia.value = findNearestDocument(
+    evaluacionesSuenoVigilia.value,
+    fechaAptitudPuesto,
+    'fechaEvaluacionSuenoVigilia',
     nearestOpts,
   );
 };
@@ -620,6 +636,10 @@ const cuestionarioNordicoResumen = computed(() =>
   textoResumenCuestionarioNordico(nearestCuestionarioNordico.value),
 );
 
+const evaluacionSuenoVigiliaResumen = computed(() =>
+  textoResumenEvaluacionSuenoVigilia(nearestEvaluacionSuenoVigilia.value),
+);
+
 </script>
 
 <template>
@@ -852,6 +872,12 @@ const cuestionarioNordicoResumen = computed(() =>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{
               convertirFechaISOaDDMMYYYY(nearestCuestionarioNordico.fechaCuestionarioNordico) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ cuestionarioNordicoResumen }}</td>
+          </tr>
+          <tr v-if="nearestEvaluacionSuenoVigilia && evaluacionSuenoVigiliaResumen" class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">EVALUACIÓN DE SUEÑO Y VIGILIA</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{
+              convertirFechaISOaDDMMYYYY(nearestEvaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia) }}</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ evaluacionSuenoVigiliaResumen }}</td>
           </tr>
           <tr v-if="formData.formDataAptitud.evaluacionAdicional1" class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(2)" @click="goToStep(2)"
             :class="[rowOutlineClass(2), rowPinpointClass(2)]">

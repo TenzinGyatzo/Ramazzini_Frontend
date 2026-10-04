@@ -11,6 +11,7 @@ import {
   textoResumenTrastornoLimitePersonalidad,
 } from '@/helpers/resumenesCuestionariosPsicologicosAptitud';
 import { textoResumenCuestionarioNordico } from '@/helpers/cuestionarioNordico';
+import { textoResumenEvaluacionSuenoVigilia } from '@/helpers/evaluacionSuenoVigilia';
 
 const props = defineProps({
   variant: {
@@ -53,6 +54,9 @@ const nearestTrastornoLimitePersonalidad = ref(null);
 
 const cuestionariosNordicos = ref([]);
 const nearestCuestionarioNordico = ref(null);
+
+const evaluacionesSuenoVigilia = ref([]);
+const nearestEvaluacionSuenoVigilia = ref(null);
 
 const recalcularDocumentosCercanos = () => {
   const f = formDataAptitud.fechaAptitudPuesto;
@@ -97,6 +101,12 @@ const recalcularDocumentosCercanos = () => {
     cuestionariosNordicos.value,
     f,
     'fechaCuestionarioNordico',
+    nearestOpts,
+  );
+  nearestEvaluacionSuenoVigilia.value = findNearestDocument(
+    evaluacionesSuenoVigilia.value,
+    f,
+    'fechaEvaluacionSuenoVigilia',
     nearestOpts,
   );
 };
@@ -182,6 +192,11 @@ const textoBase = computed(() => {
     texto += ` Cuestionario Nórdico: ${resumenNordico}.`;
   }
 
+  const resumenSuenoVigilia = textoResumenEvaluacionSuenoVigilia(nearestEvaluacionSuenoVigilia.value);
+  if (resumenSuenoVigilia) {
+    texto += ` Evaluación de sueño y vigilia: ${resumenSuenoVigilia}.`;
+  }
+
   return texto;
 });
 
@@ -205,6 +220,7 @@ onMounted(async () => {
     cuestionariosProdromalBreve.value = vecinos?.cuestionarioProdromalBreve ?? [];
     trastornosLimitePersonalidad.value = vecinos?.trastornoLimitePersonalidad ?? [];
     cuestionariosNordicos.value = vecinos?.cuestionarioNordico ?? [];
+    evaluacionesSuenoVigilia.value = vecinos?.evaluacionSuenoVigilia ?? [];
 
     recalcularDocumentosCercanos();
     actualizarAlteracionesSalud();
@@ -225,6 +241,7 @@ watch(
     nearestCuestionarioProdromalBreve,
     nearestTrastornoLimitePersonalidad,
     nearestCuestionarioNordico,
+    nearestEvaluacionSuenoVigilia,
   ],
   actualizarAlteracionesSalud,
 );
