@@ -62,10 +62,17 @@ const relacionDe = (clave) => {
   return textoRelacionTrabajoNordico(region);
 };
 
-const claseFila = (clave) => {
-  if (niveles.value[clave] === 'prioritaria') return 'bg-red-50';
-  if (niveles.value[clave] === 'molestia') return 'bg-amber-50';
-  return 'odd:bg-white even:bg-gray-50';
+/** Las regiones de cada paso forman un grupo de filas, para rodearlo completo cuando el paso está activo. */
+const regionesPorPaso = [2, 3, 4, 5].map((paso) => ({
+  paso,
+  regiones: REGIONES_NORDICO.filter((region) => region.paso === paso),
+}));
+
+const claseFila = (region) => {
+  if (niveles.value[region.clave] === 'prioritaria') return 'bg-red-50';
+  if (niveles.value[region.clave] === 'molestia') return 'bg-amber-50';
+  // Rayado por número de región: las filas ya no comparten un solo <tbody>
+  return region.numero % 2 ? 'bg-white' : 'bg-gray-50';
 };
 
 const irASiExiste = (stepNumber) => {
@@ -130,6 +137,9 @@ const resaltePaso = (paso) =>
               {{ trabajadores.currentTrabajador.sexo }}
             </td>
           </tr>
+        </tbody>
+        <!-- Datos de la actividad: se capturan en el paso 1, junto con la fecha -->
+        <tbody :class="{ 'contorno-paso': stepsStore.currentStep === 1 }" data-grupo="actividad">
           <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="irASiExiste(1)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               ANTIGÜEDAD EN LA ACTIVIDAD
@@ -257,16 +267,17 @@ const resaltePaso = (paso) =>
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody
+          v-for="grupo in regionesPorPaso"
+          :key="grupo.paso"
+          :class="{ 'contorno-paso': stepsStore.currentStep === grupo.paso }"
+          :data-paso="grupo.paso"
+        >
           <tr
-            v-for="region in REGIONES_NORDICO"
+            v-for="region in grupo.regiones"
             :key="region.clave"
             class="cursor-pointer hover:bg-emerald-50/60 transition-colors"
-            :class="[
-              claseFila(region.clave),
-              { 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === region.paso },
-            ]"
-            :data-paso="region.paso"
+            :class="claseFila(region)"
             :data-region="region.clave"
             @click="irASiExiste(region.paso)"
           >
@@ -313,3 +324,30 @@ const resaltePaso = (paso) =>
     </p>
   </div>
 </template>
+
+<style scoped>
+/*
+ * Contorno del paso activo alrededor de un grupo de filas (un <tbody>).
+ * Se dibuja con sombras interiores en las celdas porque el contorno y el anillo sobre
+ * <tr> o <tbody> no se pintan de forma confiable en tablas con bordes colapsados.
+ */
+.contorno-paso > tr > td {
+  --contorno-arriba: inset 0 0 0 0 transparent;
+  --contorno-abajo: inset 0 0 0 0 transparent;
+  --contorno-izquierda: inset 0 0 0 0 transparent;
+  --contorno-derecha: inset 0 0 0 0 transparent;
+  box-shadow: var(--contorno-arriba), var(--contorno-abajo), var(--contorno-izquierda), var(--contorno-derecha);
+}
+.contorno-paso > tr:first-child > td {
+  --contorno-arriba: inset 0 2px 0 0 #eab308;
+}
+.contorno-paso > tr:last-child > td {
+  --contorno-abajo: inset 0 -2px 0 0 #eab308;
+}
+.contorno-paso > tr > td:first-child {
+  --contorno-izquierda: inset 2px 0 0 0 #eab308;
+}
+.contorno-paso > tr > td:last-child {
+  --contorno-derecha: inset -2px 0 0 0 #eab308;
+}
+</style>

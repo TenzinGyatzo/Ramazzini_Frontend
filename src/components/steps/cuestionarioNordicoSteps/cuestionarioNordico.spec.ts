@@ -117,6 +117,38 @@ describe('captura del Cuestionario Nórdico', () => {
     expect(wrapper.emitted('seleccionar')).toEqual([['rodillaDerecha']]);
   });
 
+  it('el visualizador rodea todas las filas del paso activo', async () => {
+    // jsdom no implementa scrollTo, y al cambiar de paso el visualizador se desplaza a su sección
+    Element.prototype.scrollTo = () => {};
+    (useEmpresasStore() as any).currentEmpresa = { nombreComercial: 'Empresa de prueba' };
+    (useTrabajadoresStore() as any).currentTrabajador = { nombre: 'Ana', fechaNacimiento: '1992-05-10' };
+    const { default: Visualizador } = await import('../VisualizadorCuestionarioNordico.vue');
+    const { useStepsStore } = await import('@/stores/steps');
+    const wrapper = mount(Visualizador);
+    const pasos = useStepsStore();
+    const contornos = () => wrapper.findAll('tbody.contorno-paso');
+
+    // Paso 1: la fecha y, además, los datos de la actividad
+    expect(contornos()).toHaveLength(1);
+    expect(contornos()[0].attributes('data-grupo')).toBe('actividad');
+    expect(contornos()[0].text()).toContain('ANTIGÜEDAD EN LA ACTIVIDAD');
+
+    // Pasos de regiones: el contorno abarca todas las regiones del paso, y solo esas
+    for (const [paso, regiones] of [
+      [2, 3],
+      [3, 4],
+      [4, 3],
+      [5, 6],
+    ]) {
+      pasos.currentStep = paso;
+      await wrapper.vm.$nextTick();
+      expect(contornos()).toHaveLength(1);
+      expect(contornos()[0].attributes('data-paso')).toBe(String(paso));
+      expect(contornos()[0].findAll('tr[data-region]')).toHaveLength(regiones);
+    }
+    expect(wrapper.findAll('tr[data-region]')).toHaveLength(16);
+  });
+
   it('el visualizador refleja el resultado en vivo', async () => {
     const empresas = useEmpresasStore();
     const trabajadores = useTrabajadoresStore();

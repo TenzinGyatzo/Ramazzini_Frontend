@@ -127,6 +127,12 @@ const clasePuntoAlerta = (alerta) =>
               {{ trabajadores.currentTrabajador.sexo }}
             </td>
           </tr>
+        </tbody>
+        <!-- Contexto del sueño: se captura en el paso 1, junto con la fecha -->
+        <tbody
+          :class="{ 'contorno-paso': stepsStore.currentStep === PASO_CONTEXTO_SUENO_VIGILIA }"
+          data-grupo="contexto"
+        >
           <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" @click="irASiExiste(PASO_CONTEXTO_SUENO_VIGILIA)">
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-light">
               HORAS DE SUEÑO POR CADA 24
@@ -198,21 +204,29 @@ const clasePuntoAlerta = (alerta) =>
             </th>
           </tr>
         </thead>
-        <tbody v-for="grupo in modulos" :key="grupo.modulo">
-          <tr class="bg-gray-200">
-            <td
-              class="px-2 py-1 border border-gray-300 font-semibold uppercase text-gray-900"
-              :colspan="1 + FRECUENCIAS_SUENO_VIGILIA.length"
-            >
-              {{ TITULO_MODULO_SUENO_VIGILIA[grupo.modulo] }}
-            </td>
-          </tr>
-          <template v-for="area in grupo.areas" :key="area.clave">
+        <template v-for="grupo in modulos" :key="grupo.modulo">
+          <tbody>
+            <tr class="bg-gray-200">
+              <td
+                class="px-2 py-1 border border-gray-300 font-semibold uppercase text-gray-900"
+                :colspan="1 + FRECUENCIAS_SUENO_VIGILIA.length"
+              >
+                {{ TITULO_MODULO_SUENO_VIGILIA[grupo.modulo] }}
+              </td>
+            </tr>
+          </tbody>
+          <!-- Cada área (su encabezado y sus preguntas) es un paso: un grupo de filas con contorno -->
+          <tbody
+            v-for="area in grupo.areas"
+            :key="area.clave"
+            :class="{ 'contorno-paso': stepsStore.currentStep === area.paso }"
+            :data-paso="area.paso"
+            :data-grupo-area="area.clave"
+          >
             <tr
               class="cursor-pointer"
               :class="CLASE_NIVEL_SUENO_VIGILIA[resultado.areas[area.clave].nivel].fila"
               :data-area="area.clave"
-              :data-paso="area.paso"
               @click="irASiExiste(area.paso)"
             >
               <td class="px-2 py-1 border border-gray-300" :colspan="1 + FRECUENCIAS_SUENO_VIGILIA.length">
@@ -229,7 +243,6 @@ const clasePuntoAlerta = (alerta) =>
               v-for="pregunta in area.preguntas"
               :key="pregunta.clave"
               class="cursor-pointer bg-white hover:bg-emerald-50/60 transition-colors"
-              :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === area.paso }"
               :data-pregunta="pregunta.clave"
               @click="irASiExiste(area.paso)"
             >
@@ -242,8 +255,8 @@ const clasePuntoAlerta = (alerta) =>
                 {{ respuesta(pregunta) === valor ? 'X' : '' }}
               </td>
             </tr>
-          </template>
-        </tbody>
+          </tbody>
+        </template>
       </table>
     </div>
 
@@ -337,3 +350,30 @@ const clasePuntoAlerta = (alerta) =>
     </p>
   </div>
 </template>
+
+<style scoped>
+/*
+ * Contorno del paso activo alrededor de un grupo de filas (un <tbody>).
+ * Se dibuja con sombras interiores en las celdas porque el contorno y el anillo sobre
+ * <tr> o <tbody> no se pintan de forma confiable en tablas con bordes colapsados.
+ */
+.contorno-paso > tr > td {
+  --contorno-arriba: inset 0 0 0 0 transparent;
+  --contorno-abajo: inset 0 0 0 0 transparent;
+  --contorno-izquierda: inset 0 0 0 0 transparent;
+  --contorno-derecha: inset 0 0 0 0 transparent;
+  box-shadow: var(--contorno-arriba), var(--contorno-abajo), var(--contorno-izquierda), var(--contorno-derecha);
+}
+.contorno-paso > tr:first-child > td {
+  --contorno-arriba: inset 0 2px 0 0 #eab308;
+}
+.contorno-paso > tr:last-child > td {
+  --contorno-abajo: inset 0 -2px 0 0 #eab308;
+}
+.contorno-paso > tr > td:first-child {
+  --contorno-izquierda: inset 2px 0 0 0 #eab308;
+}
+.contorno-paso > tr > td:last-child {
+  --contorno-derecha: inset -2px 0 0 0 #eab308;
+}
+</style>

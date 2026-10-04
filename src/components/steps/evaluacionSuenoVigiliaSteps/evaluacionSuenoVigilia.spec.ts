@@ -125,6 +125,40 @@ describe('captura de la Evaluación de sueño y vigilia', () => {
     expect(datos().seguimiento.detalleProductos).toBeUndefined();
   });
 
+  it('el visualizador rodea todas las filas del paso activo', async () => {
+    // jsdom no implementa scrollTo, y al cambiar de paso el visualizador se desplaza a su sección
+    Element.prototype.scrollTo = () => {};
+    (useEmpresasStore() as any).currentEmpresa = { nombreComercial: 'Empresa de prueba' };
+    (useTrabajadoresStore() as any).currentTrabajador = { nombre: 'Ana', fechaNacimiento: '1992-05-10' };
+    const { default: Visualizador } = await import('../VisualizadorEvaluacionSuenoVigilia.vue');
+    const { useStepsStore } = await import('@/stores/steps');
+    const wrapper = mount(Visualizador);
+    const pasos = useStepsStore();
+    const contornos = () => wrapper.findAll('tbody.contorno-paso');
+
+    // Paso 1: la fecha y, además, las filas de contexto del sueño
+    expect(contornos()).toHaveLength(1);
+    expect(contornos()[0].attributes('data-grupo')).toBe('contexto');
+    expect(contornos()[0].text()).toContain('HORAS DE SUEÑO POR CADA 24');
+    expect(contornos()[0].text()).toContain('CALIDAD GENERAL DEL SUEÑO');
+
+    // Pasos de área: el contorno abarca el encabezado del área y todas sus preguntas
+    for (const [paso, area, preguntas] of [
+      [2, 'calidadDescanso', 3],
+      [3, 'conciliacionContinuidad', 3],
+      [4, 'somnolencia', 2],
+      [5, 'fatiga', 2],
+      [6, 'concentracion', 2],
+    ] as const) {
+      pasos.currentStep = paso;
+      await wrapper.vm.$nextTick();
+      expect(contornos()).toHaveLength(1);
+      expect(contornos()[0].attributes('data-grupo-area')).toBe(area);
+      expect(contornos()[0].find(`tr[data-area="${area}"]`).exists()).toBe(true);
+      expect(contornos()[0].findAll('tr[data-pregunta]')).toHaveLength(preguntas);
+    }
+  });
+
   it('el visualizador refleja la prioridad, las alertas y lo que falta', async () => {
     (useEmpresasStore() as any).currentEmpresa = { nombreComercial: 'Empresa de prueba' };
     (useTrabajadoresStore() as any).currentTrabajador = {
