@@ -536,7 +536,7 @@ const todoNegadoTrastornoLimitePersonalidadYCompletado = async () => {
 };
 
 // Evaluación de sueño y vigilia: las 12 preguntas en «Nunca». No termina el documento:
-// lleva al paso de seguridad, que no tiene respuesta por defecto y debe contestarse.
+// lleva al paso de seguridad para que esas preguntas se revisen con el trabajador.
 const todoNegadoEvaluacionSuenoVigilia = () => {
   const datos = asegurarGruposSuenoVigilia(formData.formDataEvaluacionSuenoVigilia);
   for (const pregunta of PREGUNTAS_SUENO_VIGILIA) {

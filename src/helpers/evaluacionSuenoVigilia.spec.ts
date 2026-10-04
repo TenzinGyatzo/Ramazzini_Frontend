@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   ALERTAS_SUENO_VIGILIA,
   AREAS_SUENO_VIGILIA,
+  PASOS_SUENO_VIGILIA,
+  PASO_AREA_SUENO_VIGILIA,
   PREGUNTAS_SUENO_VIGILIA,
   calcularResultadoEvaluacionSuenoVigilia,
   haySintomasSuenoVigilia,
@@ -60,6 +62,23 @@ describe('catálogo', () => {
       'concentracion',
     ]);
     expect(ALERTAS_SUENO_VIGILIA).toHaveLength(8);
+  });
+
+  it('son 8 pasos: contexto, un paso por área, seguridad y seguimiento', () => {
+    expect(PASOS_SUENO_VIGILIA.map((paso) => paso.nombre)).toEqual([
+      'Fecha y contexto',
+      'Calidad y descanso',
+      'Conciliación y continuidad',
+      'Somnolencia',
+      'Fatiga',
+      'Concentración',
+      'Seguridad',
+      'Seguimiento y observaciones',
+    ]);
+    // El nombre de cada paso de área es el de su área
+    for (const area of AREAS_SUENO_VIGILIA) {
+      expect(PASOS_SUENO_VIGILIA[PASO_AREA_SUENO_VIGILIA[area.clave] - 1].nombre).toBe(area.etiqueta);
+    }
   });
 });
 
@@ -260,8 +279,8 @@ describe('validación antes de guardar', () => {
       seguridad: { ...seguridadNegada, ronquidoFuerte: undefined, accidenteOCasiAccidente: 'Sí' },
     }).camposFaltantes;
     expect(faltantes).toEqual([
-      expect.objectContaining({ nombre: 'Seguridad: Ronquido fuerte', paso: 4 }),
-      expect.objectContaining({ nombre: 'Seguridad: descripción de «Accidente o casi accidente»', paso: 4 }),
+      expect.objectContaining({ nombre: 'Seguridad: Ronquido fuerte', paso: 7 }),
+      expect.objectContaining({ nombre: 'Seguridad: descripción de «Accidente o casi accidente»', paso: 7 }),
     ]);
   });
 
@@ -282,6 +301,6 @@ describe('validación antes de guardar', () => {
     }).camposFaltantes;
     expect(faltantes).toHaveLength(1);
     expect(faltantes[0].nombre).toContain('Concentración: …cometió errores');
-    expect(faltantes[0].paso).toBe(3);
+    expect(faltantes[0].paso).toBe(6);
   });
 });

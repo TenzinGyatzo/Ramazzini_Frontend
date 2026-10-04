@@ -16,7 +16,7 @@ import {
   FRECUENCIAS_SUENO_VIGILIA,
   LEYENDA_SUENO_VIGILIA,
   PASO_CONTEXTO_SUENO_VIGILIA,
-  PASO_MODULO_SUENO_VIGILIA,
+  PASO_AREA_SUENO_VIGILIA,
   PASO_SEGUIMIENTO_SUENO_VIGILIA,
   PASO_SEGURIDAD_SUENO_VIGILIA,
   PREGUNTAS_SEGURIDAD_SUENO_VIGILIA,
@@ -53,9 +53,9 @@ const alertas = computed(() =>
 /** Módulos → áreas → preguntas, en el orden del cuestionario. */
 const modulos = ['sueno', 'vigilia'].map((modulo) => ({
   modulo,
-  paso: PASO_MODULO_SUENO_VIGILIA[modulo],
   areas: AREAS_SUENO_VIGILIA.filter((area) => area.modulo === modulo).map((area) => ({
     ...area,
+    paso: PASO_AREA_SUENO_VIGILIA[area.clave],
     preguntas: PREGUNTAS_SUENO_VIGILIA.filter((pregunta) => pregunta.area === area.clave),
   })),
 }));
@@ -198,7 +198,7 @@ const clasePuntoAlerta = (alerta) =>
             </th>
           </tr>
         </thead>
-        <tbody v-for="grupo in modulos" :key="grupo.modulo" :data-paso="grupo.paso">
+        <tbody v-for="grupo in modulos" :key="grupo.modulo">
           <tr class="bg-gray-200">
             <td
               class="px-2 py-1 border border-gray-300 font-semibold uppercase text-gray-900"
@@ -208,7 +208,13 @@ const clasePuntoAlerta = (alerta) =>
             </td>
           </tr>
           <template v-for="area in grupo.areas" :key="area.clave">
-            <tr :class="CLASE_NIVEL_SUENO_VIGILIA[resultado.areas[area.clave].nivel].fila" :data-area="area.clave">
+            <tr
+              class="cursor-pointer"
+              :class="CLASE_NIVEL_SUENO_VIGILIA[resultado.areas[area.clave].nivel].fila"
+              :data-area="area.clave"
+              :data-paso="area.paso"
+              @click="irASiExiste(area.paso)"
+            >
               <td class="px-2 py-1 border border-gray-300" :colspan="1 + FRECUENCIAS_SUENO_VIGILIA.length">
                 <span class="font-semibold text-gray-900">{{ area.etiqueta }}:&nbsp;</span>
                 <span class="font-semibold" :class="CLASE_NIVEL_SUENO_VIGILIA[resultado.areas[area.clave].nivel].texto">
@@ -223,9 +229,9 @@ const clasePuntoAlerta = (alerta) =>
               v-for="pregunta in area.preguntas"
               :key="pregunta.clave"
               class="cursor-pointer bg-white hover:bg-emerald-50/60 transition-colors"
-              :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === grupo.paso }"
+              :class="{ 'ring-1 ring-inset ring-yellow-400': stepsStore.currentStep === area.paso }"
               :data-pregunta="pregunta.clave"
-              @click="irASiExiste(grupo.paso)"
+              @click="irASiExiste(area.paso)"
             >
               <td class="pl-4 pr-2 py-1 border border-gray-300 text-gray-800 leading-snug">{{ pregunta.texto }}</td>
               <td

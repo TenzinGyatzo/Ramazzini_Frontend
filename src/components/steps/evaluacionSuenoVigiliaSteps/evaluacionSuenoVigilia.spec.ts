@@ -5,8 +5,8 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import PasoFrecuenciaSuenoVigilia from './PasoFrecuenciaSuenoVigilia.vue';
-import Step4 from './Step4.vue';
-import Step5 from './Step5.vue';
+import Step7 from './Step7.vue';
+import Step8 from './Step8.vue';
 
 /** Botón dentro de la pregunta indicada (`data-pregunta`). */
 function boton(wrapper: ReturnType<typeof mount>, pregunta: string, texto: string) {
@@ -23,74 +23,75 @@ describe('captura de la Evaluación de sueño y vigilia', () => {
     setActivePinia(createPinia());
   });
 
-  it('el módulo de sueño inicia sus 6 preguntas en «Nunca» y respeta lo ya contestado', () => {
+  it('un paso de área inicia sus preguntas en «Nunca» y respeta lo ya contestado', () => {
     Object.assign(datos(), { sueno: { conciliacionTardia: 3 } });
 
-    const wrapper = mount(PasoFrecuenciaSuenoVigilia, { props: { modulo: 'sueno' } });
+    const wrapper = mount(PasoFrecuenciaSuenoVigilia, { props: { area: 'conciliacionContinuidad' } });
 
-    expect(wrapper.findAll('[data-pregunta]')).toHaveLength(6);
-    expect(datos().sueno).toEqual({
-      suenoSuperficial: 0,
-      despertarSinDescanso: 0,
-      suenoInsuficiente: 0,
-      conciliacionTardia: 3,
-      despertarNocturno: 0,
-      despertarTemprano: 0,
-    });
-    // Solo se toca el módulo montado
+    expect(wrapper.text()).toContain('Módulo A — Sueño');
+    expect(wrapper.text()).toContain('Conciliación y continuidad');
+    expect(wrapper.findAll('[data-pregunta]')).toHaveLength(3);
+    // Solo se tocan las preguntas del área montada
+    expect(datos().sueno).toEqual({ conciliacionTardia: 3, despertarNocturno: 0, despertarTemprano: 0 });
     expect(datos().vigilia).toEqual({});
+    expect(wrapper.text()).not.toContain('Cada pregunta inicia');
   });
 
   it('al contestar una pregunta se guarda su valor y cambia el nivel del área', async () => {
-    const wrapper = mount(PasoFrecuenciaSuenoVigilia, { props: { modulo: 'vigilia' } });
-    expect(wrapper.find('[data-area="fatiga"]').text()).toContain('Sin síntomas');
+    const wrapper = mount(PasoFrecuenciaSuenoVigilia, { props: { area: 'fatiga' } });
+    expect(wrapper.findAll('[data-pregunta]')).toHaveLength(2);
+    expect(wrapper.find('[data-nivel]').text()).toBe('Sin síntomas');
 
     await boton(wrapper, 'faltaEnergia', '1 o 2 veces por semana').trigger('click');
 
-    expect(datos().vigilia.faltaEnergia).toBe(2);
-    expect(wrapper.find('[data-area="fatiga"]').text()).toContain('Semanal');
-    expect(wrapper.find('[data-area="somnolencia"]').text()).toContain('Sin síntomas');
+    expect(datos().vigilia).toEqual({ faltaEnergia: 2, interrupcionPorAgotamiento: 0 });
+    expect(wrapper.find('[data-nivel]').text()).toBe('Semanal');
   });
 
-  it('la seguridad no tiene respuesta por defecto', async () => {
-    const wrapper = mount(Step4);
+  it('la seguridad inicia en «No» y respeta lo ya contestado', async () => {
+    Object.assign(datos(), { seguridad: { ronquidoFuerte: 'No sabe' } });
 
-    expect(datos().seguridad ?? {}).toEqual({});
-    expect(wrapper.findAll('button[aria-pressed="true"]')).toHaveLength(0);
-    expect(wrapper.text()).toContain('Faltan 5 preguntas por contestar.');
+    const wrapper = mount(Step7);
 
-    await boton(wrapper, 'ronquidoFuerte', 'No sabe').trigger('click');
-    expect(datos().seguridad).toEqual({ ronquidoFuerte: 'No sabe' });
-    expect(wrapper.text()).toContain('Faltan 4 preguntas por contestar.');
+    expect(datos().seguridad).toEqual({
+      ronquidoFuerte: 'No sabe',
+      pausasRespiratorias: 'No',
+      despertarConAhogo: 'No',
+      suenoActividadPeligrosa: 'No',
+      accidenteOCasiAccidente: 'No',
+    });
+    expect(wrapper.findAll('button[aria-pressed="true"]')).toHaveLength(5);
+    expect(wrapper.text()).not.toContain('por contestar');
   });
 
   it('la descripción aparece con «Sí» y se borra al cambiar la respuesta', async () => {
-    const wrapper = mount(Step4);
+    const wrapper = mount(Step7);
     const pregunta = '[data-pregunta="suenoActividadPeligrosa"]';
     expect(wrapper.find(`${pregunta} textarea`).exists()).toBe(false);
 
     await boton(wrapper, 'suenoActividadPeligrosa', 'Sí').trigger('click');
     await wrapper.find(`${pregunta} textarea`).setValue('Cabeceo al conducir');
-    expect(datos().seguridad).toEqual({
+    expect(datos().seguridad).toMatchObject({
       suenoActividadPeligrosa: 'Sí',
       descripcionSuenoActividadPeligrosa: 'Cabeceo al conducir',
     });
 
     await boton(wrapper, 'suenoActividadPeligrosa', 'No realiza esas actividades').trigger('click');
-    expect(datos().seguridad).toEqual({ suenoActividadPeligrosa: 'No realiza esas actividades' });
+    expect(datos().seguridad.suenoActividadPeligrosa).toBe('No realiza esas actividades');
+    expect(datos().seguridad.descripcionSuenoActividadPeligrosa).toBeUndefined();
     expect(wrapper.find(`${pregunta} textarea`).exists()).toBe(false);
   });
 
   it('sin síntomas el paso final solo pide observaciones', () => {
     Object.assign(datos(), { sueno: { suenoSuperficial: 0 }, vigilia: { faltaEnergia: 0 } });
-    const wrapper = mount(Step5);
+    const wrapper = mount(Step8);
     expect(wrapper.find('[data-pregunta="duracion"]').exists()).toBe(false);
     expect(wrapper.find('[data-pregunta="observaciones"]').exists()).toBe(true);
   });
 
   it('con síntomas de sueño pide el seguimiento; la pregunta del día solo con síntomas de vigilia', async () => {
     Object.assign(datos(), { sueno: { suenoSuperficial: 2 } });
-    const wrapper = mount(Step5);
+    const wrapper = mount(Step8);
 
     expect(wrapper.find('[data-pregunta="duracion"]').exists()).toBe(true);
     expect(wrapper.find('[data-pregunta="empeoraAlDormirMal"]').exists()).toBe(false);
@@ -104,7 +105,7 @@ describe('captura de la Evaluación de sueño y vigilia', () => {
 
   it('las opciones exclusivas desmarcan a las demás y el orden es el del catálogo', async () => {
     Object.assign(datos(), { sueno: { suenoSuperficial: 2 } });
-    const wrapper = mount(Step5);
+    const wrapper = mount(Step8);
 
     await boton(wrapper, 'factores', 'Medicamentos').trigger('click');
     await boton(wrapper, 'factores', 'Dolor o enfermedad').trigger('click');

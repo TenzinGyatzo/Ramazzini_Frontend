@@ -3,5 +3,5 @@ import PasoFrecuenciaSuenoVigilia from './PasoFrecuenciaSuenoVigilia.vue';
 </script>
 
 <template>
-  <PasoFrecuenciaSuenoVigilia modulo="vigilia" />
+  <PasoFrecuenciaSuenoVigilia area="conciliacionContinuidad" />
 </template>

@@ -35,7 +35,7 @@ import { recomendacionesIlaSonValidas } from '@/helpers/ilaRecomendaciones';
 import { REGIONES_NORDICO, detalleRegionNordicoCompleto } from '@/helpers/cuestionarioNordico';
 import {
   AREAS_SUENO_VIGILIA,
-  PASO_MODULO_SUENO_VIGILIA,
+  PASO_AREA_SUENO_VIGILIA,
   PASO_SEGUIMIENTO_SUENO_VIGILIA,
   PASO_SEGURIDAD_SUENO_VIGILIA,
   PREGUNTAS_SEGURIDAD_SUENO_VIGILIA,
@@ -831,7 +831,8 @@ const camposRequeridosPorTipo: Record<string, Array<{
     },
   ],
 
-  // Contexto, las 12 preguntas y la seguridad son obligatorios; el seguimiento, solo si hay síntomas
+  // Contexto, las 12 preguntas y la seguridad son obligatorios; el seguimiento, solo si hay síntomas.
+  // Las 12 preguntas y la seguridad inician con respuesta al abrir su paso; el contexto no.
   evaluacionSuenoVigilia: [
     { campo: 'fechaEvaluacionSuenoVigilia', nombre: 'Fecha de la evaluación de sueño y vigilia', tipo: 'fecha', paso: 1, validacion: validarFecha },
     {
@@ -847,7 +848,7 @@ const camposRequeridosPorTipo: Record<string, Array<{
       campo: pregunta.modulo,
       nombre: `${AREAS_SUENO_VIGILIA.find((area) => area.clave === pregunta.area)?.etiqueta}: ${pregunta.texto}`,
       tipo: 'seleccion',
-      paso: PASO_MODULO_SUENO_VIGILIA[pregunta.modulo],
+      paso: PASO_AREA_SUENO_VIGILIA[pregunta.area],
       validacion: (grupo: any) => valorFrecuenciaSuenoVigilia(grupo?.[pregunta.clave]) !== null,
     })),
     ...PREGUNTAS_SEGURIDAD_SUENO_VIGILIA.flatMap((pregunta) => [

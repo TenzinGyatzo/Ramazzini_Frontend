@@ -6,43 +6,45 @@ import {
   CLASE_NIVEL_SUENO_VIGILIA,
   ETIQUETA_NIVEL_SUENO_VIGILIA,
   FRECUENCIAS_SUENO_VIGILIA,
+  PREGUNTAS_SUENO_VIGILIA,
   TITULO_MODULO_SUENO_VIGILIA,
   asegurarGruposSuenoVigilia,
   calcularResultadoEvaluacionSuenoVigilia,
-  preguntasSuenoVigiliaDelModulo,
   valorFrecuenciaSuenoVigilia,
 } from '@/helpers/evaluacionSuenoVigilia';
 
-/** Un módulo de la evaluación (sueño o vigilia): sus preguntas de frecuencia agrupadas por área. */
+/** Un paso de captura: las preguntas de frecuencia de un área (dos o tres). */
 const props = defineProps({
-  modulo: { type: String, required: true, validator: (v) => ['sueno', 'vigilia'].includes(v) },
+  area: {
+    type: String,
+    required: true,
+    validator: (v) => AREAS_SUENO_VIGILIA.some((area) => area.clave === v),
+  },
 });
 
 const formData = useFormDataStore();
 
-const areas = computed(() =>
-  AREAS_SUENO_VIGILIA.filter((area) => area.modulo === props.modulo).map((area) => ({
-    ...area,
-    preguntas: preguntasSuenoVigiliaDelModulo(props.modulo).filter((pregunta) => pregunta.area === area.clave),
-  })),
+const area = computed(() => AREAS_SUENO_VIGILIA.find((a) => a.clave === props.area));
+const preguntas = computed(() => PREGUNTAS_SUENO_VIGILIA.filter((pregunta) => pregunta.area === props.area));
+
+const nivel = computed(
+  () => calcularResultadoEvaluacionSuenoVigilia(formData.formDataEvaluacionSuenoVigilia).areas[props.area].nivel,
 );
 
-const resultado = computed(() => calcularResultadoEvaluacionSuenoVigilia(formData.formDataEvaluacionSuenoVigilia));
-
 const respuesta = (clave) =>
-  valorFrecuenciaSuenoVigilia(formData.formDataEvaluacionSuenoVigilia[props.modulo]?.[clave]);
+  valorFrecuenciaSuenoVigilia(formData.formDataEvaluacionSuenoVigilia[area.value.modulo]?.[clave]);
 
 const responder = (clave, valor) => {
-  asegurarGruposSuenoVigilia(formData.formDataEvaluacionSuenoVigilia)[props.modulo][clave] = valor;
+  asegurarGruposSuenoVigilia(formData.formDataEvaluacionSuenoVigilia)[area.value.modulo][clave] = valor;
 };
 
 /**
- * Al montar el paso, las preguntas que aún no tienen respuesta quedan en «Nunca»
+ * Al montar el paso, las preguntas del área que aún no tienen respuesta quedan en «Nunca»
  * (mismo criterio que los demás cuestionarios). Una respuesta ya capturada no se toca.
  */
 function asegurarNuncaPorDefecto() {
-  const respuestas = asegurarGruposSuenoVigilia(formData.formDataEvaluacionSuenoVigilia)[props.modulo];
-  for (const pregunta of preguntasSuenoVigiliaDelModulo(props.modulo)) {
+  const respuestas = asegurarGruposSuenoVigilia(formData.formDataEvaluacionSuenoVigilia)[area.value.modulo];
+  for (const pregunta of preguntas.value) {
     if (valorFrecuenciaSuenoVigilia(respuestas[pregunta.clave]) === null) respuestas[pregunta.clave] = 0;
   }
 }
@@ -60,41 +62,33 @@ const claseOpcion = (seleccionada, valor) => {
 </script>
 
 <template>
-  <div>
+  <div :data-area="area.clave">
     <h1 class="text-2xl font-bold mb-1 text-gray-900">Evaluación de sueño y vigilia</h1>
-    <h2 class="text-lg font-semibold text-gray-700">{{ TITULO_MODULO_SUENO_VIGILIA[modulo] }}</h2>
-    <p class="mt-2 text-sm text-gray-600 leading-snug">
-      «En el último mes, ¿con qué frecuencia…». Cada pregunta inicia en «Nunca».
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+      {{ TITULO_MODULO_SUENO_VIGILIA[area.modulo] }}
     </p>
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="text-lg font-semibold text-gray-700">{{ area.etiqueta }}</h2>
+      <span class="text-sm font-medium" :class="CLASE_NIVEL_SUENO_VIGILIA[nivel].texto" data-nivel>
+        {{ ETIQUETA_NIVEL_SUENO_VIGILIA[nivel] }}
+      </span>
+    </div>
+    <p class="mt-2 text-sm text-gray-600 leading-snug">«En el último mes, ¿con qué frecuencia…»</p>
 
-    <div v-for="area in areas" :key="area.clave" class="mt-4" :data-area="area.clave">
-      <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 pb-1">
-        <h3 class="text-base font-semibold text-gray-900">{{ area.etiqueta }}</h3>
-        <span class="text-sm font-medium" :class="CLASE_NIVEL_SUENO_VIGILIA[resultado.areas[area.clave].nivel].texto">
-          {{ ETIQUETA_NIVEL_SUENO_VIGILIA[resultado.areas[area.clave].nivel] }}
-        </span>
-      </div>
-
-      <div
-        v-for="pregunta in area.preguntas"
-        :key="pregunta.clave"
-        class="mt-3"
-        :data-pregunta="pregunta.clave"
-      >
-        <p class="mb-1.5 text-sm font-medium text-gray-800 leading-snug">{{ pregunta.texto }}</p>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="(opcion, valor) in FRECUENCIAS_SUENO_VIGILIA"
-            :key="opcion"
-            type="button"
-            class="px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-all duration-150 ease-in-out"
-            :class="claseOpcion(respuesta(pregunta.clave) === valor, valor)"
-            :aria-pressed="respuesta(pregunta.clave) === valor"
-            @click="responder(pregunta.clave, valor)"
-          >
-            {{ opcion }}
-          </button>
-        </div>
+    <div v-for="pregunta in preguntas" :key="pregunta.clave" class="mt-4" :data-pregunta="pregunta.clave">
+      <p class="mb-1.5 text-sm font-medium text-gray-800 leading-snug">{{ pregunta.texto }}</p>
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="(opcion, valor) in FRECUENCIAS_SUENO_VIGILIA"
+          :key="opcion"
+          type="button"
+          class="px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-all duration-150 ease-in-out"
+          :class="claseOpcion(respuesta(pregunta.clave) === valor, valor)"
+          :aria-pressed="respuesta(pregunta.clave) === valor"
+          @click="responder(pregunta.clave, valor)"
+        >
+          {{ opcion }}
+        </button>
       </div>
     </div>
   </div>

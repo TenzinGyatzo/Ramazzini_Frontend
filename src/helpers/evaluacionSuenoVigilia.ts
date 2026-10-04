@@ -30,22 +30,28 @@ export type ClavePreguntaSuenoVigilia =
 
 export type NivelSuenoVigilia = 'verde' | 'amarillo' | 'naranja' | 'rojo';
 
-/** Pasos del formulario. */
+/** Pasos del formulario: un área por paso, para que ninguno ocupe demasiado alto. */
 export const PASOS_SUENO_VIGILIA = [
   { paso: 1, nombre: 'Fecha y contexto' },
-  { paso: 2, nombre: 'Sueño' },
-  { paso: 3, nombre: 'Vigilia' },
-  { paso: 4, nombre: 'Seguridad' },
-  { paso: 5, nombre: 'Seguimiento y observaciones' },
+  { paso: 2, nombre: 'Calidad y descanso' },
+  { paso: 3, nombre: 'Conciliación y continuidad' },
+  { paso: 4, nombre: 'Somnolencia' },
+  { paso: 5, nombre: 'Fatiga' },
+  { paso: 6, nombre: 'Concentración' },
+  { paso: 7, nombre: 'Seguridad' },
+  { paso: 8, nombre: 'Seguimiento y observaciones' },
 ] as const;
 
 export const PASO_CONTEXTO_SUENO_VIGILIA = 1;
-export const PASO_SEGURIDAD_SUENO_VIGILIA = 4;
-export const PASO_SEGUIMIENTO_SUENO_VIGILIA = 5;
+export const PASO_SEGURIDAD_SUENO_VIGILIA = 7;
+export const PASO_SEGUIMIENTO_SUENO_VIGILIA = 8;
 
-export const PASO_MODULO_SUENO_VIGILIA: Record<ModuloSuenoVigilia, number> = {
-  sueno: 2,
-  vigilia: 3,
+export const PASO_AREA_SUENO_VIGILIA: Record<ClaveAreaSuenoVigilia, number> = {
+  calidadDescanso: 2,
+  conciliacionContinuidad: 3,
+  somnolencia: 4,
+  fatiga: 5,
+  concentracion: 6,
 };
 
 export const TITULO_MODULO_SUENO_VIGILIA: Record<ModuloSuenoVigilia, string> = {
@@ -169,7 +175,7 @@ export type ClaveSeguridadSuenoVigilia =
   | 'suenoActividadPeligrosa'
   | 'accidenteOCasiAccidente';
 
-/** Preguntas de seguridad: siempre visibles, sin puntaje y sin respuesta por defecto. */
+/** Preguntas de seguridad: siempre visibles y sin puntaje; inician en «No» al abrir su paso. */
 export const PREGUNTAS_SEGURIDAD_SUENO_VIGILIA: {
   clave: ClaveSeguridadSuenoVigilia;
   /** Nombre corto para avisos de validación. */
