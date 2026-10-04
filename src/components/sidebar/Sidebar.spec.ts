@@ -111,10 +111,10 @@ describe('Sidebar — folio de edición', () => {
     const expected = `SIRES ${__APP_VERSION_SIRES__}`;
     expect(el.text()).toBe(expected);
     expect(el.attributes('title')).toBe(expected);
-    expect(el.text()).not.toContain('v2.0.0');
+    expect(el.text()).not.toContain('v2.0.1');
   });
 
-  it('SIN_REGIMEN muestra Ramazzini v2.0.0 sin SIRES', async () => {
+  it('SIN_REGIMEN muestra Ramazzini v2.0.1 sin SIRES', async () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const store = useProveedorSaludStore();
@@ -126,8 +126,8 @@ describe('Sidebar — folio de edición', () => {
     const wrapper = await mountSidebar(pinia);
     await expandSidebar(wrapper);
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('Ramazzini v2.0.0');
-    expect(el.attributes('title')).toBe('Ramazzini v2.0.0');
+    expect(el.text()).toBe('Ramazzini v2.0.1');
+    expect(el.attributes('title')).toBe('Ramazzini v2.0.1');
     expect(el.text()).not.toContain('v1.0.3');
     expect(el.text()).not.toContain('SIRES');
   });
@@ -145,7 +145,7 @@ describe('Sidebar — folio de edición', () => {
     const wrapper = await mountSidebar(pinia);
     await expandSidebar(wrapper);
     expect(wrapper.get('[data-testid="edition-label"]').text()).toBe(
-      'Ramazzini v2.0.0',
+      'Ramazzini v2.0.1',
     );
 
     store.proveedorSalud = {
@@ -158,7 +158,7 @@ describe('Sidebar — folio de edición', () => {
     const el = wrapper.get('[data-testid="edition-label"]');
     expect(el.text()).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
     expect(el.attributes('title')).toBe(el.text());
-    expect(el.text()).not.toContain('v2.0.0');
+    expect(el.text()).not.toContain('v2.0.1');
   });
 
   it('colapsado desde md muestra la versión con v', async () => {
@@ -180,8 +180,8 @@ describe('Sidebar — folio de edición', () => {
     await wrapper.vm.$nextTick();
 
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('v2.0.0');
-    expect(el.attributes('title')).toBe('Ramazzini v2.0.0');
+    expect(el.text()).toBe('v2.0.1');
+    expect(el.attributes('title')).toBe('Ramazzini v2.0.1');
   });
 
   it('colapsado desde md en SIRES muestra la versión con v', async () => {
@@ -227,8 +227,8 @@ describe('Sidebar — folio de edición', () => {
     await wrapper.vm.$nextTick();
 
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('2.0.0');
-    expect(el.attributes('title')).toBe('Ramazzini v2.0.0');
+    expect(el.text()).toBe('2.0.1');
+    expect(el.attributes('title')).toBe('Ramazzini v2.0.1');
   });
 
   it('colapsado en smartphone SIRES muestra solo el número de versión', async () => {

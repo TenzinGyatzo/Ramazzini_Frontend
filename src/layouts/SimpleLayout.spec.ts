@@ -92,10 +92,10 @@ describe('SimpleLayout — folio de edición', () => {
     const expected = `SIRES ${__APP_VERSION_SIRES__}`;
     expect(el.text()).toBe(expected);
     expect(el.attributes('title')).toBe(expected);
-    expect(el.text()).not.toContain('v2.0.0');
+    expect(el.text()).not.toContain('v2.0.1');
   });
 
-  it('SIN_REGIMEN muestra Ramazzini v2.0.0 sin SIRES', () => {
+  it('SIN_REGIMEN muestra Ramazzini v2.0.1 sin SIRES', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const store = useProveedorSaludStore();
@@ -112,8 +112,8 @@ describe('SimpleLayout — folio de edición', () => {
     });
 
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('Ramazzini v2.0.0');
-    expect(el.attributes('title')).toBe('Ramazzini v2.0.0');
+    expect(el.text()).toBe('Ramazzini v2.0.1');
+    expect(el.attributes('title')).toBe('Ramazzini v2.0.1');
     expect(el.text()).not.toContain('v1.0.3');
     expect(el.text()).not.toContain('SIRES');
   });

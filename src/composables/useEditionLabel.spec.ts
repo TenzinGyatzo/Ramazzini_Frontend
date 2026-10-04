@@ -61,7 +61,7 @@ describe('useEditionLabel', () => {
     expect(editionLabel.value).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
     expect(editionLabel.value).toContain('v1.0.');
     expect(editionLabel.value).not.toContain('Ramazzini');
-    expect(editionLabel.value).not.toContain('v2.0.0');
+    expect(editionLabel.value).not.toContain('v2.0.1');
     expect(editionVersionPrefixed.value).toBe(__APP_VERSION_SIRES__);
     expect(editionVersion.value).toBe(__APP_VERSION_SIRES__.replace(/^v/i, ''));
     expect(editionVersion.value).not.toContain('v');
@@ -76,18 +76,18 @@ describe('useEditionLabel', () => {
 
     const { editionLabel, editionVersion, editionVersionPrefixed } = useEditionLabel();
     expect(editionLabel.value).toBe(`Ramazzini ${__APP_VERSION_COMMERCIAL__}`);
-    expect(editionLabel.value).toBe('Ramazzini v2.0.0');
+    expect(editionLabel.value).toBe('Ramazzini v2.0.1');
     expect(editionLabel.value).not.toContain('v1.0.3');
     expect(editionLabel.value).not.toContain('SIRES');
-    expect(editionVersionPrefixed.value).toBe('v2.0.0');
-    expect(editionVersion.value).toBe('2.0.0');
+    expect(editionVersionPrefixed.value).toBe('v2.0.1');
+    expect(editionVersion.value).toBe('2.0.1');
   });
 
   it('sin proveedor ni policy muestra Ramazzini sin número', () => {
     const { editionLabel, editionVersion } = useEditionLabel();
     expect(editionLabel.value).toBe('Ramazzini');
     expect(editionLabel.value).not.toContain('v1.0.3');
-    expect(editionLabel.value).not.toContain('v2.0.0');
+    expect(editionLabel.value).not.toContain('v2.0.1');
     expect(editionVersion.value).toBe('');
   });
 
@@ -100,8 +100,8 @@ describe('useEditionLabel', () => {
     } as any;
 
     const { editionLabel, editionVersion } = useEditionLabel();
-    expect(editionLabel.value).toBe('Ramazzini v2.0.0');
-    expect(editionVersion.value).toBe('2.0.0');
+    expect(editionLabel.value).toBe('Ramazzini v2.0.1');
+    expect(editionVersion.value).toBe('2.0.1');
 
     store.proveedorSalud = {
       ...store.proveedorSalud,
@@ -111,7 +111,7 @@ describe('useEditionLabel', () => {
 
     expect(editionLabel.value).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
     expect(editionLabel.value).toContain('v1.0.');
-    expect(editionLabel.value).not.toContain('v2.0.0');
+    expect(editionLabel.value).not.toContain('v2.0.1');
     expect(editionVersion.value).toBe(__APP_VERSION_SIRES__.replace(/^v/i, ''));
     expect(editionVersion.value).not.toContain('v');
   });
