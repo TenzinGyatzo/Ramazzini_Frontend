@@ -112,6 +112,7 @@ const totalDocumentos = computed(() => {
            (props.documents.trastornosEstadoAnimo?.length || 0) +
            (props.documents.cuestionarioProdromalBreve?.length || 0) +
            (props.documents.trastornoLimitePersonalidad?.length || 0) +
+           (props.documents.cuestionarioNordico?.length || 0) +
            (props.documents.eventoSeguimientoCardiometabolico?.length || 0) +
            (props.documents.informeLongitudinalCardiometabolico?.length || 0) +
            (props.documents.informeLongitudinalAudiometrico?.length || 0)
@@ -173,6 +174,7 @@ const documentoRutasInfo = computed(() => {
     props.documents.trastornosEstadoAnimo?.forEach((doc) => pushDoc(doc, 'trastornosEstadoAnimo', 'Trastornos Estado Animo'));
     props.documents.cuestionarioProdromalBreve?.forEach((doc) => pushDoc(doc, 'cuestionarioProdromalBreve', 'Cuestionario Prodromal Breve'));
     props.documents.trastornoLimitePersonalidad?.forEach((doc) => pushDoc(doc, 'trastornoLimitePersonalidad', 'Trastorno Limite Personalidad'));
+    props.documents.cuestionarioNordico?.forEach((doc) => pushDoc(doc, 'cuestionarioNordico', 'Cuestionario Nordico'));
     props.documents.eventoSeguimientoCardiometabolico?.forEach((doc) => pushDoc(doc, 'eventoSeguimientoCardiometabolico', 'Evento Seguimiento Cardiometabolico'));
     props.documents.informeLongitudinalCardiometabolico?.forEach((doc) => pushDoc(doc, 'informeLongitudinalCardiometabolico', 'Informe Longitudinal Cardiometabólico'));
 
@@ -755,6 +757,26 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                     :isDeletionMode="isDeletionMode"
                     :isSelected="isDocumentoSelected(trastornoLimitePersonalidad._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', trastornoLimitePersonalidad._id, convertirFechaISOaDDMMYYYY(trastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad), 'trastornoLimitePersonalidad')"
+                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
+                    @openSubscriptionModal="emit('openSubscriptionModal')"
+                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
+                />
+            </div>
+        </div>
+
+        <!-- Cuestionario Nórdico -->
+        <div v-if="documents.cuestionarioNordico && documents.cuestionarioNordico.length > 0">
+            <div v-for="(cuestionarioNordico, index) in documents.cuestionarioNordico" :key="cuestionarioNordico._id"
+                 class="transition-all duration-200 hover:bg-gray-50"
+>
+                <DocumentoItem
+                    :cuestionarioNordico="cuestionarioNordico"
+                    :documentoId="cuestionarioNordico._id"
+                    :documentoTipo="'cuestionarioNordico'"
+                    :toggleRouteSelection="toggleRouteSelection"
+                    :isDeletionMode="isDeletionMode"
+                    :isSelected="isDocumentoSelected(cuestionarioNordico._id)"
+                    @eliminarDocumento="$emit('eliminarDocumento', cuestionarioNordico._id, convertirFechaISOaDDMMYYYY(cuestionarioNordico.fechaCuestionarioNordico), 'cuestionarioNordico')"
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
                     @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"

@@ -118,6 +118,7 @@ const documentTypeLabels = {
   trastornosEstadoAnimo: "Trastornos Estado Animo",
   cuestionarioProdromalBreve: "Cuestionario Prodromal Breve",
   trastornoLimitePersonalidad: "Trastorno Limite Personalidad",
+  cuestionarioNordico: "Cuestionario Nórdico",
   eventoSeguimientoCardiometabolico: "Evento Seguimiento Cardiometabolico",
   informeLongitudinalCardiometabolico: "Informe Longitudinal Cardiometabolico",
   informeLongitudinalAudiometrico: "Informe Longitudinal Audiometrico",

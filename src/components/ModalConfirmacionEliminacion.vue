@@ -126,6 +126,9 @@ const documentTypes = computed<Record<string, number>>(() => {
     else if (route.includes('Trastorno Limite Personalidad')) {
       types.trastornoLimitePersonalidad = (types.trastornoLimitePersonalidad || 0) + 1;
     }
+    else if (route.includes('Cuestionario Nordico')) {
+      types.cuestionarioNordico = (types.cuestionarioNordico || 0) + 1;
+    }
     else if (route.includes('Control Prenatal')) {
       types.controlPrenatal = (types.controlPrenatal || 0) + 1;
     }
@@ -142,7 +145,7 @@ const documentTypes = computed<Record<string, number>>(() => {
     else if (!route.includes('Nota Aclaratoria') && !route.includes('Constancia de Aptitud') && !route.includes('Aptitud') && !route.includes('Historia Clinica')
             && !route.includes('Exploracion Fisica') && !route.includes('Examen Vista') && !route.includes('Historia Otologica') && !route.includes('Audiometria') && !route.includes('Antidoping')
             && !route.includes('Certificado') && !route.includes('Certificado Expedito') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Receta')
-            && !route.includes('Entrevista Psicologica') && !route.includes('Trastornos Estado Animo') && !route.includes('Cuestionario Prodromal Breve') && !route.includes('Trastorno Limite Personalidad')
+            && !route.includes('Entrevista Psicologica') && !route.includes('Trastornos Estado Animo') && !route.includes('Cuestionario Prodromal Breve') && !route.includes('Trastorno Limite Personalidad') && !route.includes('Cuestionario Nordico')
             && !route.includes('Control Prenatal') && !route.includes('Evento Seguimiento Cardiometabolico') && !route.includes('Informe Longitudinal Cardiometabolico')
             && (route.includes('.pdf') || route.includes('.png') || route.includes('.jpg') || route.includes('.jpeg') || route.includes('.doc') || route.includes('.docx'))) {
       types.documentosExternos = (types.documentosExternos || 0) + 1;
@@ -281,6 +284,10 @@ const documentTypes = computed<Record<string, number>>(() => {
                       <div v-if="documentTypes.trastornoLimitePersonalidad" class="flex items-center space-x-2">
                         <i class="fas fa-heart-crack text-purple-600"></i>
                         <span>{{ documentTypes.trastornoLimitePersonalidad }} Trastorno{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }} Limite{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }} Personalidad{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }}</span>
+                      </div>
+                      <div v-if="documentTypes.cuestionarioNordico" class="flex items-center space-x-2">
+                        <i class="fas fa-person text-purple-600"></i>
+                        <span>{{ documentTypes.cuestionarioNordico }} Cuestionario{{ documentTypes.cuestionarioNordico !== 1 ? 's' : '' }} Nórdico{{ documentTypes.cuestionarioNordico !== 1 ? 's' : '' }}</span>
                       </div>
                       <div v-if="documentTypes.eventoSeguimientoCardiometabolico" class="flex items-center space-x-2">
                         <i class="fas fa-heartbeat text-purple-600"></i>

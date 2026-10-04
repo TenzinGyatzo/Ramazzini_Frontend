@@ -60,6 +60,7 @@ const QUESTIONNAIRE_TIPO_MAP = {
   'trastornos-estado-animo': 'trastornosEstadoAnimo',
   'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
   'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
+  'cuestionario-nordico': 'cuestionarioNordico',
   'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
   'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
   'informe-longitudinal-audiometrico': 'informeLongitudinalAudiometrico',
@@ -91,6 +92,7 @@ const questionnaireToDocumentType = {
   'trastornos-estado-animo': 'trastornosEstadoAnimo',
   'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
   'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
+  'cuestionario-nordico': 'cuestionarioNordico',
   'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
   'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
   'informe-longitudinal-audiometrico': 'informeLongitudinalAudiometrico',
@@ -277,6 +279,21 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
       },
     });
     closeModal();
+  } else if (questionnaireType === 'cuestionario-nordico') {
+    await navigateWithTreatmentConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'cuestionarioNordico'
+        }
+      },
+    });
+    closeModal();
   } else if (questionnaireType === 'evento-seguimiento-cardiometabolico') {
     await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
@@ -449,6 +466,19 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               <button type="button" @click="handleQuestionnaireSelect('trastorno-limite-personalidad')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fa-solid fa-heart-crack text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Prueba del trastorno límite de personalidad (MSI-BPD)
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
+              <i class="fas fa-person text-emerald-500 mr-3"></i>
+              Evaluación ergonómica
+            </div>
+            <div class="space-y-2">
+              <button type="button" @click="handleQuestionnaireSelect('cuestionario-nordico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
+                <i class="fa-solid fa-person text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Cuestionario Nórdico de Kuorinka (síntomas musculoesqueléticos)
               </button>
             </div>
           </div>

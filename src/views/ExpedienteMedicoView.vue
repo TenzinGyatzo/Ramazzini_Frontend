@@ -812,6 +812,17 @@ const handleDeleteSelected = async () => {
                 }
             });
 
+            // Cuestionario Nórdico
+            yearData.cuestionarioNordico?.forEach(cuestionarioNordico => {
+                const rutaBase = obtenerRutaDocumento(cuestionarioNordico, 'Cuestionario Nordico');
+                const fecha = obtenerFechaDocumento(cuestionarioNordico) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(cuestionarioNordico, 'Cuestionario Nordico', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(cuestionarioNordico)) {
+                    documentosAEliminar.push({ id: cuestionarioNordico._id, tipo: 'cuestionarioNordico' });
+                }
+            });
+
             // Evento Seguimiento Cardiometabolico
             yearData.eventoSeguimientoCardiometabolico?.forEach(eventoSeguimientoCardiometabolico => {
                 const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
@@ -951,6 +962,7 @@ const totalDocumentosCreados = computed(() => {
       (yearData.trastornosEstadoAnimo?.length || 0) +
       (yearData.cuestionarioProdromalBreve?.length || 0) +
       (yearData.trastornoLimitePersonalidad?.length || 0) +
+      (yearData.cuestionarioNordico?.length || 0) +
       (yearData.eventoSeguimientoCardiometabolico?.length || 0) + 
       (yearData.informeLongitudinalCardiometabolico?.length || 0) +
       (yearData.informeLongitudinalAudiometrico?.length || 0)

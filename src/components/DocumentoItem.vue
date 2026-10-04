@@ -35,6 +35,7 @@ import {
   textoInterpretacionPQB,
   esPositivoRiesgoPsicoticoPQB,
 } from '@/helpers/cuestionarioProdromalBreveSteps';
+import { SEMAFORO_NORDICO } from '@/helpers/cuestionarioNordico';
 import { ESTADO_CONTROL_CONDICION_OPTS, GRADO_OBESIDAD_OPTS } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
 import { CAMBIO_UMBRAL_ILA, clasificarCambioUmbralOidoIla } from '@/helpers/informeLongitudinalAudiometrico';
 import ModalPdfEliminado from './ModalPdfEliminado.vue';
@@ -1566,6 +1567,10 @@ const descargarPdfActual = async () => {
                     documento = props.trastornoLimitePersonalidad;
                     tipoDocumento = 'Trastorno Limite Personalidad';
                     break;
+                case 'cuestionarionordico':
+                    documento = props.cuestionarioNordico;
+                    tipoDocumento = 'Cuestionario Nordico';
+                    break;
                 case 'eventoseguimientocardiometabolico':
                     documento = props.eventoSeguimientoCardiometabolico;
                     tipoDocumento = 'Evento Seguimiento Cardiometabolico';
@@ -1740,6 +1745,7 @@ const props = defineProps({
     trastornosEstadoAnimo: [Object, String],
     cuestionarioProdromalBreve: [Object, String],
     trastornoLimitePersonalidad: [Object, String],
+    cuestionarioNordico: [Object, String],
     eventoSeguimientoCardiometabolico: [Object, String],
     informeLongitudinalCardiometabolico: [Object, String],
     informeLongitudinalAudiometrico: [Object, String],
@@ -1771,7 +1777,7 @@ const currentDocumentData = computed(() => {
            props.certificado || props.certificadoExpedito || props.receta || props.documentoExterno ||
            props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica ||
            props.notaAclaratoria || props.controlPrenatal || props.historiaOtologica || props.previoEspirometria ||
-           props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad ||
+           props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad || props.cuestionarioNordico ||
            props.eventoSeguimientoCardiometabolico || props.informeLongitudinalCardiometabolico ||
            props.informeLongitudinalAudiometrico;
 });
@@ -1871,6 +1877,7 @@ const fechaCamposOrigen = {
     'trastornosEstadoAnimo': 'fechaTrastornosEstadoAnimo',
     'cuestionarioProdromalBreve': 'fechaCuestionarioProdromalBreve',
     'trastornoLimitePersonalidad': 'fechaTrastornoLimitePersonalidad',
+    'cuestionarioNordico': 'fechaCuestionarioNordico',
     'eventoSeguimientoCardiometabolico': 'fechaEventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'fechaInformeLongitudinalCardiometabolico',
     'informeLongitudinalAudiometrico': 'fechaInformeLongitudinalAudiometrico',
@@ -1897,6 +1904,7 @@ const tipoSingularAPlural = {
     'trastornosEstadoAnimo': 'trastornosEstadoAnimo',
     'cuestionarioProdromalBreve': 'cuestionarioProdromalBreve',
     'trastornoLimitePersonalidad': 'trastornoLimitePersonalidad',
+    'cuestionarioNordico': 'cuestionarioNordico',
     'eventoSeguimientoCardiometabolico': 'eventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'informeLongitudinalCardiometabolico',
     'informeLongitudinalAudiometrico': 'informeLongitudinalAudiometrico',
@@ -2127,6 +2135,7 @@ const documentoNombre = computed(() => {
     if (props.trastornosEstadoAnimo) return 'Trastornos Estado Ánimo';
     if (props.cuestionarioProdromalBreve) return 'Cuestionario Prodromal Breve';
     if (props.trastornoLimitePersonalidad) return 'Trastorno Límite Personalidad';
+    if (props.cuestionarioNordico) return 'Cuestionario Nórdico';
     if (props.eventoSeguimientoCardiometabolico) return 'Evento de Seguimiento Cardiometabólico';
     if (props.informeLongitudinalCardiometabolico) return 'Informe Longitudinal Cardiometabólico';
     if (props.informeLongitudinalAudiometrico) return 'Informe longitudinal de seguimiento audiométrico';
@@ -2420,6 +2429,25 @@ const claseColorInterpretacionTlpLista = computed(() => {
   return 'text-orange-600';
 });
 
+/** Cuestionario Nórdico: el resultado viene calculado del servidor (`resultado`). */
+const resultadoNordicoDoc = computed(() => {
+  const d = props.cuestionarioNordico;
+  return d && typeof d === 'object' ? d.resultado ?? null : null;
+});
+
+const interpretacionCuestionarioNordico = computed(() => {
+  const r = resultadoNordicoDoc.value;
+  const semaforo = r ? SEMAFORO_NORDICO[r.semaforo] : null;
+  if (!semaforo) return 'Sin resultado';
+  const regiones = r.regionesMolestia12Meses?.length ?? 0;
+  if (!regiones) return semaforo.titulo;
+  return `${semaforo.titulo} · ${regiones} ${regiones === 1 ? 'región' : 'regiones'} · intensidad máx. ${r.intensidadMaxima ?? 0}/10`;
+});
+
+const claseColorInterpretacionNordicoLista = computed(
+  () => SEMAFORO_NORDICO[resultadoNordicoDoc.value?.semaforo]?.claseTexto ?? 'text-gray-600',
+);
+
 /** Chips en lista para Evento Seguimiento Cardiometabólico (misma semántica que `VisualizadorEventoSeguimientoCardiometabolico`). */
 const labelControlCardiometabolicoDoc = (code) => {
   if (!code) return '—';
@@ -2627,6 +2655,7 @@ const construirRutaYNombrePDF = () => {
     'trastornosestadoanimo': props.trastornosEstadoAnimo,
     'cuestionarioprodromalbreve': props.cuestionarioProdromalBreve,
     'trastornolimitepersonalidad': props.trastornoLimitePersonalidad,
+    'cuestionarionordico': props.cuestionarioNordico,
     'eventoseguimientocardiometabolico': props.eventoSeguimientoCardiometabolico,
     'informelongitudinalcardiometabolico': props.informeLongitudinalCardiometabolico,
     'informelongitudinalaudiometrico': props.informeLongitudinalAudiometrico,
@@ -2638,7 +2667,7 @@ const construirRutaYNombrePDF = () => {
     return { ruta: null, nombre: null, updatedAt: null };
   }
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaCuestionarioNordico || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
 
   // Nombres de documentos (DEBEN coincidir con los del backend para construir rutas correctas)
   const tiposDocumentos = {
@@ -2661,6 +2690,7 @@ const construirRutaYNombrePDF = () => {
     'trastornosestadoanimo': 'Trastornos Estado Animo',
     'cuestionarioprodromalbreve': 'Cuestionario Prodromal Breve',
     'trastornolimitepersonalidad': 'Trastorno Limite Personalidad',
+    'cuestionarionordico': 'Cuestionario Nordico',
     'eventoseguimientocardiometabolico': 'Evento Seguimiento Cardiometabolico',
     'informelongitudinalcardiometabolico': 'Informe Longitudinal Cardiometabolico',
     'informelongitudinalaudiometrico': 'Informe Longitudinal Audiometrico',
@@ -2874,7 +2904,7 @@ onUnmounted(() => {
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico, props.informeLongitudinalAudiometrico], () => {
+watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.cuestionarioNordico, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico, props.informeLongitudinalAudiometrico], () => {
   pdfCheckScheduled = false;
   schedulePdfCheck();
 }, { deep: true });
@@ -4795,6 +4825,69 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     </div>
                 </div>
                     
+                <!-- Cuestionario Nórdico -->
+                <div v-if="typeof cuestionarioNordico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, cuestionarioNordico, 'Cuestionario Nordico')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${cuestionarioNordico.rutaPDF}`,
+                            `Cuestionario Nordico ${convertirFechaISOaDDMMYYYY(cuestionarioNordico.fechaCuestionarioNordico)}.pdf`,
+                            cuestionarioNordico.updatedAt ? new Date(cuestionarioNordico.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${cuestionarioNordico.rutaPDF}`,
+                            `Cuestionario Nordico ${convertirFechaISOaDDMMYYYY(cuestionarioNordico.fechaCuestionarioNordico)}.pdf`,
+                            cuestionarioNordico.updatedAt ? new Date(cuestionarioNordico.updatedAt).getTime() : null,
+                            'Cuestionario Nordico')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-sky-100 rounded-lg mr-4 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-person text-sky-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Cuestionario Nórdico
+                                </h3>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(cuestionarioNordico.fechaCuestionarioNordico) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="cuestionarioNordico.estado"
+                                    :fechaFinalizacion="cuestionarioNordico.fechaFinalizacion"
+                                    :finalizadoPor="cuestionarioNordico.finalizadoPor"
+                                    :fechaAnulacion="cuestionarioNordico.fechaAnulacion"
+                                    :anuladoPor="cuestionarioNordico.anuladoPor"
+                                    :razonAnulacion="cuestionarioNordico.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resultado</p>
+                                    <p
+                                        class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
+                                        :class="claseColorInterpretacionNordicoLista"
+                                        :title="interpretacionCuestionarioNordico">
+                                        {{ interpretacionCuestionarioNordico }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    
                 <!-- Evento Seguimiento Cardiometabolico -->
                 <div v-if="typeof eventoSeguimientoCardiometabolico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
@@ -5118,6 +5211,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     'Trastornos Estado Animo': trastornosEstadoAnimo,
                     'Cuestionario Prodromal Breve': cuestionarioProdromalBreve,
                     'Trastorno Limite Personalidad': trastornoLimitePersonalidad,
+                    'Cuestionario Nordico': cuestionarioNordico,
                     'Evento Seguimiento Cardiometabolico': eventoSeguimientoCardiometabolico,
                     'Informe Longitudinal Cardiometabolico': informeLongitudinalCardiometabolico,
                     'Informe Longitudinal Audiometrico': informeLongitudinalAudiometrico,

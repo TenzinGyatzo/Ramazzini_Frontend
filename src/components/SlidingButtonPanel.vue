@@ -107,8 +107,9 @@ const documentOrder = {
   trastornosEstadoAnimo: 18,
   cuestionarioProdromalBreve: 19,
   trastornoLimitePersonalidad: 20,
-  eventoSeguimientoCardiometabolico: 21,
-  informeLongitudinalCardiometabolico: 22,
+  cuestionarioNordico: 21,
+  eventoSeguimientoCardiometabolico: 22,
+  informeLongitudinalCardiometabolico: 23,
 };
 
 const isVisible = ref(true);
