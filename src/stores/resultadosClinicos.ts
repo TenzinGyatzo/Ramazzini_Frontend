@@ -7,6 +7,7 @@ export interface ResultadoClinico {
   _id?: string;
   idTrabajador: string;
   tipoEstudio:
+    | 'AUDIOMETRIA'
     | 'ESPIROMETRIA'
     | 'EKG'
     | 'TIPO_SANGRE'
@@ -16,6 +17,11 @@ export interface ResultadoClinico {
   anioEstudio?: number;
   resultadoGlobal?: 'NORMAL' | 'ANORMAL' | 'NO_CONCLUYENTE';
   hallazgoEspecifico?: string;
+  tipoAlteracionAudiometria?:
+    | 'HIPOACUSIA_CONDUCTIVA'
+    | 'HIPOACUSIA_NEUROSENSORIAL'
+    | 'HIPOACUSIA_MIXTA'
+    | 'TRAUMA_ACUSTICO';
   tipoAlteracionEspirometria?: 'ANORMAL_OBSTRUCTIVO' | 'ANORMAL_RESTRICTIVO_SOSPECHADO' | 'ANORMAL_MIXTO';
   tipoAlteracionEKG?: 'ANORMAL_ARRITMIA' | 'ANORMAL_TRASTORNO_CONDUCCION' | 'ANORMAL_ISQUEMIA_INFARTO' | 'ANORMAL_REPOLARIZACION' | 'ANORMAL_HIPERTROFIA_CRECIMIENTO_CAVIDADES' | 'ANORMAL_QT_ALTERADO';
   tipoSangre?: 'A_POS' | 'A_NEG' | 'B_POS' | 'B_NEG' | 'AB_POS' | 'AB_NEG' | 'O_POS' | 'O_NEG';
@@ -47,6 +53,7 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
 
   // Enums para usar en formularios
   const tipoEstudioOptions = [
+    { value: 'AUDIOMETRIA', label: 'Audiometría' },
     { value: 'ESPIROMETRIA', label: 'Espirometría' },
     { value: 'EKG', label: 'EKG' },
     { value: 'RAYOS_X', label: 'Rayos X' },
@@ -58,6 +65,14 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     { value: 'NORMAL', label: 'Normal' },
     { value: 'ANORMAL', label: 'Anormal' },
     { value: 'NO_CONCLUYENTE', label: 'No Concluyente' },
+  ];
+
+  /** Audiometría hecha por un tercero; la que se captura en Ramazzini es el documento de audiometría. */
+  const tipoAlteracionAudiometriaOptions = [
+    { value: 'HIPOACUSIA_CONDUCTIVA', label: 'Hipoacusia conductiva' },
+    { value: 'HIPOACUSIA_NEUROSENSORIAL', label: 'Hipoacusia neurosensorial' },
+    { value: 'HIPOACUSIA_MIXTA', label: 'Hipoacusia mixta' },
+    { value: 'TRAUMA_ACUSTICO', label: 'Trauma acústico (muesca en 4 kHz)' },
   ];
 
   const tipoAlteracionEspirometriaOptions = [
@@ -359,6 +374,7 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     drawerOpen,
     tipoEstudioOptions,
     resultadoGlobalOptions,
+    tipoAlteracionAudiometriaOptions,
     tipoAlteracionEspirometriaOptions,
     tipoAlteracionEKGOptions,
     tipoAlteracionRayosXOptions,

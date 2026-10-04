@@ -51,6 +51,25 @@
                   </h4>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
+                      @click="selectTipo('AUDIOMETRIA')"
+                      class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                    >
+                      <div
+                        class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
+                        :style="{ backgroundColor: getIconBackground('AUDIOMETRIA') }"
+                      >
+                        <i
+                          :class="getTipoIcon('AUDIOMETRIA')"
+                          class="text-lg"
+                          :style="{ color: getIconColor('AUDIOMETRIA') }"
+                        ></i>
+                      </div>
+                      <div>
+                        <div class="font-medium text-gray-800">Audiometría</div>
+                        <div class="text-sm text-gray-500">Estudio externo de audición</div>
+                      </div>
+                    </button>
+                    <button
                       @click="selectTipo('ESPIROMETRIA')"
                       class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
                     >
@@ -265,7 +284,22 @@
                         <span class="text-red-500">*</span>
                       </label>
                       <select
-                        v-if="formData.tipoEstudio === 'ESPIROMETRIA'"
+                        v-if="formData.tipoEstudio === 'AUDIOMETRIA'"
+                        v-model="formData.tipoAlteracionAudiometria"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      >
+                        <option value="">Seleccione...</option>
+                        <option
+                          v-for="option in store.tipoAlteracionAudiometriaOptions"
+                          :key="option.value"
+                          :value="option.value"
+                        >
+                          {{ option.label }}
+                        </option>
+                      </select>
+                      <select
+                        v-else-if="formData.tipoEstudio === 'ESPIROMETRIA'"
                         v-model="formData.tipoAlteracionEspirometria"
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
@@ -916,6 +950,7 @@ const formData = ref<Partial<ResultadoClinico>>({
   fechaEstudio: '',
   resultadoGlobal: undefined,
   hallazgoEspecifico: '',
+  tipoAlteracionAudiometria: undefined,
   tipoAlteracionEspirometria: undefined,
   tipoAlteracionEKG: undefined,
   tipoAlteracionRayosX: [],
@@ -934,6 +969,7 @@ const pendingVincularDocumento = ref(false);
 const prevResultadoGlobal = ref<string | undefined>(undefined);
 
 const TIPOS_CON_ESPECIFICAR_NORMAL = [
+  'AUDIOMETRIA',
   'ESPIROMETRIA',
   'EKG',
   'RAYOS_X',
@@ -982,6 +1018,22 @@ const HALLAZGO_ESPECIFICO_SUGERENCIAS_POR_TIPO: Record<
       'Hallazgos sugestivos de hernia discal',
       'Lesiones óseas o articulares identificadas en estructuras evaluadas',
       'Hallazgos radiográficos que requieren correlación clínica y/o estudios complementarios',
+    ],
+  },
+  AUDIOMETRIA: {
+    normal: [
+      'Audición dentro de límites normales en ambos oídos',
+      'Umbrales auditivos dentro de rangos de referencia',
+      'Sin evidencia de pérdida auditiva',
+    ],
+    anormal: [
+      'Hipoacusia neurosensorial bilateral leve',
+      'Hipoacusia neurosensorial bilateral moderada',
+      'Hipoacusia neurosensorial unilateral',
+      'Hipoacusia conductiva unilateral',
+      'Hipoacusia mixta',
+      'Caída en frecuencias agudas (3000 a 6000 Hz), sugestiva de daño por ruido',
+      'Muesca en 4000 Hz compatible con trauma acústico',
     ],
   },
   ESPIROMETRIA: {
@@ -1033,6 +1085,8 @@ const hallazgoEspecificoSugerencias = computed(() => {
 
 function getDefaultEspecificarNormal(tipo?: string): string {
   switch (tipo) {
+    case 'AUDIOMETRIA':
+      return 'Audición dentro de límites normales en ambos oídos';
     case 'ESPIROMETRIA':
       return 'Dentro de parámetros normales, sin alteraciones ventilatorias';
     case 'EKG':
@@ -1179,7 +1233,7 @@ const toggleTipoAlteracionAnalisisLaboratorio = (value: string) => {
 };
 
 const selectTipo = (
-  tipo: 'ESPIROMETRIA' | 'EKG' | 'TIPO_SANGRE' | 'RAYOS_X' | 'ANALISIS_LABORATORIO',
+  tipo: 'AUDIOMETRIA' | 'ESPIROMETRIA' | 'EKG' | 'TIPO_SANGRE' | 'RAYOS_X' | 'ANALISIS_LABORATORIO',
 ) => {
   // Entrar en modo "Registrar" (nuevo)
   isEditing.value = false;
@@ -1228,6 +1282,7 @@ const handleResultadoGlobalChange = () => {
   }
 
   if (cur !== 'ANORMAL') {
+    formData.value.tipoAlteracionAudiometria = undefined;
     formData.value.tipoAlteracionEspirometria = undefined;
     formData.value.tipoAlteracionEKG = undefined;
     formData.value.tipoAlteracionRayosX = [];
@@ -1277,6 +1332,7 @@ const handleEdit = (item: ResultadoClinico) => {
     fechaEstudio: fecha,
     resultadoGlobal: item.resultadoGlobal,
     hallazgoEspecifico: hallazgo,
+    tipoAlteracionAudiometria: item.tipoAlteracionAudiometria,
     tipoAlteracionEspirometria: item.tipoAlteracionEspirometria,
     tipoAlteracionEKG: item.tipoAlteracionEKG,
     tipoAlteracionRayosX: item.tipoAlteracionRayosX ? [...item.tipoAlteracionRayosX] : [],
@@ -1391,6 +1447,13 @@ const handleSubmit = async () => {
 
     // Validaciones adicionales
     if (formData.value.tipoEstudio !== 'TIPO_SANGRE' && formData.value.resultadoGlobal === 'ANORMAL') {
+      if (formData.value.tipoEstudio === 'AUDIOMETRIA' && !formData.value.tipoAlteracionAudiometria) {
+        toast.open({
+          message: 'El tipo de alteración es obligatorio para audiometría con resultado anormal',
+          type: 'error',
+        });
+        return;
+      }
       if (formData.value.tipoEstudio === 'ESPIROMETRIA' && !formData.value.tipoAlteracionEspirometria) {
         toast.open({
           message: 'Por favor seleccione el tipo de alteración',
@@ -1465,7 +1528,9 @@ const handleSubmit = async () => {
     if (formData.value.resultadoGlobal === 'ANORMAL') {
       payload.hallazgoEspecifico = formData.value.hallazgoEspecifico;
       
-      if (formData.value.tipoEstudio === 'ESPIROMETRIA') {
+      if (formData.value.tipoEstudio === 'AUDIOMETRIA') {
+        payload.tipoAlteracionAudiometria = formData.value.tipoAlteracionAudiometria;
+      } else if (formData.value.tipoEstudio === 'ESPIROMETRIA') {
         payload.tipoAlteracionEspirometria = formData.value.tipoAlteracionEspirometria;
       } else if (formData.value.tipoEstudio === 'EKG') {
         payload.tipoAlteracionEKG = formData.value.tipoAlteracionEKG;
@@ -1613,6 +1678,7 @@ const resetForm = () => {
     fechaEstudio: '',
     resultadoGlobal: undefined,
     hallazgoEspecifico: '',
+    tipoAlteracionAudiometria: undefined,
     tipoAlteracionEspirometria: undefined,
     tipoAlteracionEKG: undefined,
     tipoAlteracionRayosX: [],
@@ -2136,6 +2202,7 @@ const joinAlteracionesLinea = (item: ResultadoClinico) => {
 };
 
 const getTipoIcon = (tipo?: string) => {
+  if (tipo === 'AUDIOMETRIA') return 'fas fa-ear-listen';
   if (tipo === 'ESPIROMETRIA') return 'fas fa-lungs';
   if (tipo === 'EKG') return 'fas fa-heartbeat';
   if (tipo === 'TIPO_SANGRE') return 'fas fa-tint';
@@ -2146,6 +2213,7 @@ const getTipoIcon = (tipo?: string) => {
 
 const getIconColor = (tipo?: string) => {
   const dark = isHtmlDark.value;
+  if (tipo === 'AUDIOMETRIA') return dark ? '#fcd34d' : '#b45309';
   if (tipo === 'ESPIROMETRIA') return dark ? '#93c5fd' : '#1d4ed8';
   if (tipo === 'EKG') return dark ? '#fca5a5' : '#dc2626';
   if (tipo === 'TIPO_SANGRE') return dark ? '#fecaca' : '#991b1b';
@@ -2156,6 +2224,7 @@ const getIconColor = (tipo?: string) => {
 
 const getIconBackground = (tipo?: string) => {
   const dark = isHtmlDark.value;
+  if (tipo === 'AUDIOMETRIA') return dark ? 'rgba(217,119,6,0.45)' : 'rgba(180,83,9,0.12)';
   if (tipo === 'ESPIROMETRIA') return dark ? 'rgba(37,99,235,0.48)' : 'rgba(30,64,175,0.12)';
   if (tipo === 'EKG') return dark ? 'rgba(220,38,38,0.45)' : 'rgba(220,38,38,0.12)';
   if (tipo === 'TIPO_SANGRE') return dark ? 'rgba(185,28,28,0.5)' : 'rgba(153,27,27,0.12)';

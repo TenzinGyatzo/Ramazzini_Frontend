@@ -91,6 +91,7 @@ const documentoTieneVinculo = computed(() => {
 // Helper para obtener label del tipo de estudio
 const getTipoEstudioLabel = (tipo) => {
   const labels = {
+    'AUDIOMETRIA': 'Audiometría',
     'ESPIROMETRIA': 'Espirometría',
     'EKG': 'EKG',
     'TIPO_SANGRE': 'Tipo de Sangre',
@@ -104,6 +105,7 @@ const formatDate = (fecha) => {
 };
 
 const getTipoIcon = (tipo) => {
+  if (tipo === 'AUDIOMETRIA') return 'fas fa-ear-listen';
   if (tipo === 'ESPIROMETRIA') return 'fas fa-lungs';
   if (tipo === 'EKG') return 'fas fa-heartbeat';
   if (tipo === 'TIPO_SANGRE') return 'fas fa-tint';
@@ -111,6 +113,7 @@ const getTipoIcon = (tipo) => {
 };
 
 const getIconColor = (tipo) => {
+  if (tipo === 'AUDIOMETRIA') return '#b45309';
   if (tipo === 'ESPIROMETRIA') return '#1d4ed8';
   if (tipo === 'EKG') return '#dc2626';
   if (tipo === 'TIPO_SANGRE') return '#991b1b';
@@ -276,7 +279,7 @@ const handleVincular = async () => {
             'AB_POS': 'AB+', 'AB_NEG': 'AB-', 'O_POS': 'O+', 'O_NEG': 'O-'
           };
           notasDocumento.value = mapeoTipoSangre[resultadoEncontrado.tipoSangre] || resultadoEncontrado.tipoSangre;
-        } else if (['EKG', 'ESPIROMETRIA'].includes(resultadoEncontrado.tipoEstudio)) {
+        } else if (['AUDIOMETRIA', 'EKG', 'ESPIROMETRIA'].includes(resultadoEncontrado.tipoEstudio)) {
           notasDocumento.value = resultadoEncontrado.resultadoGlobal;
         }
       }

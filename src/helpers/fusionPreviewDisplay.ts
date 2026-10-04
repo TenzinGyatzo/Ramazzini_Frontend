@@ -42,6 +42,7 @@ export const FUSION_DOCUMENTO_DISPLAY: FusionDocumentoDisplay[] = [
 export const FUSION_VINCULADOS_DEDICADOS = new Set(['ResultadoClinico', 'RiesgoTrabajo']);
 
 export const TIPO_ESTUDIO_LABELS: Record<string, string> = {
+  AUDIOMETRIA: 'Audiometría externa',
   ESPIROMETRIA: 'Espirometría',
   EKG: 'EKG',
   TIPO_SANGRE: 'Tipo de sangre',
@@ -57,6 +58,7 @@ export const RC_TIPO_DISPLAY: Array<{
   icon: string;
   iconClass: string;
 }> = [
+  { tipo: 'AUDIOMETRIA', labelSingular: 'Audiometría externa', labelPlural: 'Audiometrías externas', icon: 'fas fa-ear-listen', iconClass: 'text-amber-700' },
   { tipo: 'ESPIROMETRIA', labelSingular: 'Espirometría', labelPlural: 'Espirometrías', icon: 'fas fa-lungs', iconClass: 'text-blue-600' },
   { tipo: 'EKG', labelSingular: 'EKG', labelPlural: 'EKG', icon: 'fas fa-heartbeat', iconClass: 'text-red-600' },
   { tipo: 'TIPO_SANGRE', labelSingular: 'Tipo de sangre', labelPlural: 'Tipos de sangre', icon: 'fas fa-tint', iconClass: 'text-red-800' },

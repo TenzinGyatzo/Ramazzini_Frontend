@@ -254,6 +254,7 @@ const handleEditDocumentoExterno = async () => {
 // Función para obtener el label del tipo de estudio del resultado vinculado
 const getResultadoTipoLabel = (tipoEstudio) => {
   const labels = {
+    'AUDIOMETRIA': 'Audiometría',
     'ESPIROMETRIA': 'Espirometría',
     'EKG': 'EKG',
     'TIPO_SANGRE': 'Tipo de Sangre',

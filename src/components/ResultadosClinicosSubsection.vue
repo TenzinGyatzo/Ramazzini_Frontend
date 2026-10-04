@@ -201,6 +201,7 @@ const openDeleteModal = (resultado: ResultadoClinico) => {
 };
 
 const getTipoIcon = (tipo?: string) => {
+  if (tipo === 'AUDIOMETRIA') return 'fas fa-ear-listen';
   if (tipo === 'ESPIROMETRIA') return 'fas fa-lungs';
   if (tipo === 'EKG') return 'fas fa-heartbeat';
   if (tipo === 'TIPO_SANGRE') return 'fas fa-tint';
@@ -211,6 +212,7 @@ const getTipoIcon = (tipo?: string) => {
 
 const getIconColor = (tipo?: string) => {
   const dark = isHtmlDark.value;
+  if (tipo === 'AUDIOMETRIA') return dark ? '#fcd34d' : '#b45309';
   if (tipo === 'ESPIROMETRIA') return dark ? '#93c5fd' : '#1d4ed8';
   if (tipo === 'EKG') return dark ? '#fca5a5' : '#dc2626';
   if (tipo === 'TIPO_SANGRE') return dark ? '#fecaca' : '#991b1b';
@@ -221,6 +223,7 @@ const getIconColor = (tipo?: string) => {
 
 const getIconBackground = (tipo?: string) => {
   const dark = isHtmlDark.value;
+  if (tipo === 'AUDIOMETRIA') return dark ? 'rgba(217,119,6,0.45)' : 'rgba(180,83,9,0.12)';
   if (tipo === 'ESPIROMETRIA') return dark ? 'rgba(37,99,235,0.48)' : 'rgba(30,64,175,0.12)';
   if (tipo === 'EKG') return dark ? 'rgba(220,38,38,0.45)' : 'rgba(220,38,38,0.12)';
   if (tipo === 'TIPO_SANGRE') return dark ? 'rgba(185,28,28,0.5)' : 'rgba(153,27,27,0.12)';
@@ -230,6 +233,13 @@ const getIconBackground = (tipo?: string) => {
 };
 
 const getAlteracionLabel = (resultado: ResultadoClinico) => {
+  if (resultado.tipoEstudio === 'AUDIOMETRIA' && resultado.tipoAlteracionAudiometria) {
+    const option = store.tipoAlteracionAudiometriaOptions.find(
+      (opt) => opt.value === resultado.tipoAlteracionAudiometria
+    );
+    return option?.label || resultado.tipoAlteracionAudiometria;
+  }
+
   if (resultado.tipoEstudio === 'ESPIROMETRIA' && resultado.tipoAlteracionEspirometria) {
     const option = store.tipoAlteracionEspirometriaOptions.find(
       (opt) => opt.value === resultado.tipoAlteracionEspirometria
@@ -275,6 +285,7 @@ const getAlteracionLabel = (resultado: ResultadoClinico) => {
 };
 
 const TIPOS_ESPECIFICAR_NORMAL = [
+  'AUDIOMETRIA',
   'ESPIROMETRIA',
   'EKG',
   'RAYOS_X',
