@@ -13,6 +13,7 @@ import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
 import ResultadosClinicosAPI from '@/api/ResultadosClinicosAPI';
 import { findNearestDocument } from '@/helpers/findNearestDocuments';
+import { textoResumenCuestionarioNordico } from '@/helpers/cuestionarioNordico';
 import { resumenSucintoEntrevistaPsicologica } from '@/helpers/conclusionEntrevistaPsicologica';
 import {
   textoResumenTrastornosEstadoAnimo,
@@ -70,6 +71,8 @@ const cuestionariosProdromalBreve = ref([]);
 const nearestCuestionarioProdromalBreve = ref(null);
 const trastornosLimitePersonalidad = ref([]);
 const nearestTrastornoLimitePersonalidad = ref(null);
+const cuestionariosNordicos = ref([]);
+const nearestCuestionarioNordico = ref(null);
 
 onMounted(async () => {
   try {
@@ -138,6 +141,13 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error al obtener cuestionario TLP:', error);
     trastornosLimitePersonalidad.value = [];
+  }
+  try {
+    const r = await DocumentosAPI.getCuestionarioNordico(trabajadores.currentTrabajadorId);
+    cuestionariosNordicos.value = r.data || [];
+  } catch (error) {
+    console.error('Error al obtener cuestionario nórdico:', error);
+    cuestionariosNordicos.value = [];
   }
 
     // Llamar la función de cálculo inicial si ya existe fechaAptitudPuesto
@@ -257,6 +267,12 @@ const calculateNearestDocuments = (fechaAptitudPuesto) => {
     trastornosLimitePersonalidad.value,
     fechaAptitudPuesto,
     'fechaTrastornoLimitePersonalidad',
+    nearestOpts,
+  );
+  nearestCuestionarioNordico.value = findNearestDocument(
+    cuestionariosNordicos.value,
+    fechaAptitudPuesto,
+    'fechaCuestionarioNordico',
     nearestOpts,
   );
 };
@@ -600,6 +616,10 @@ const trastornoLimitePersonalidadResumen = computed(() =>
   textoResumenTrastornoLimitePersonalidad(nearestTrastornoLimitePersonalidad.value),
 );
 
+const cuestionarioNordicoResumen = computed(() =>
+  textoResumenCuestionarioNordico(nearestCuestionarioNordico.value),
+);
+
 </script>
 
 <template>
@@ -826,6 +846,12 @@ const trastornoLimitePersonalidadResumen = computed(() =>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{
               convertirFechaISOaDDMMYYYY(nearestTrastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad) }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ trastornoLimitePersonalidadResumen }}</td>
+          </tr>
+          <tr v-if="nearestCuestionarioNordico && cuestionarioNordicoResumen" class="odd:bg-white even:bg-gray-50">
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">CUESTIONARIO NÓRDICO</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{
+              convertirFechaISOaDDMMYYYY(nearestCuestionarioNordico.fechaCuestionarioNordico) }}</td>
+            <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ cuestionarioNordicoResumen }}</td>
           </tr>
           <tr v-if="formData.formDataAptitud.evaluacionAdicional1" class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="resolveNavStep(2)" @click="goToStep(2)"
             :class="[rowOutlineClass(2), rowPinpointClass(2)]">

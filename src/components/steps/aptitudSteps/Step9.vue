@@ -10,6 +10,7 @@ import {
   textoResumenCuestionarioProdromalBreve,
   textoResumenTrastornoLimitePersonalidad,
 } from '@/helpers/resumenesCuestionariosPsicologicosAptitud';
+import { textoResumenCuestionarioNordico } from '@/helpers/cuestionarioNordico';
 
 const props = defineProps({
   variant: {
@@ -50,6 +51,9 @@ const nearestCuestionarioProdromalBreve = ref(null);
 const trastornosLimitePersonalidad = ref([]);
 const nearestTrastornoLimitePersonalidad = ref(null);
 
+const cuestionariosNordicos = ref([]);
+const nearestCuestionarioNordico = ref(null);
+
 const recalcularDocumentosCercanos = () => {
   const f = formDataAptitud.fechaAptitudPuesto;
   nearestHistoriaClinica.value = findNearestDocument(
@@ -87,6 +91,12 @@ const recalcularDocumentosCercanos = () => {
     trastornosLimitePersonalidad.value,
     f,
     'fechaTrastornoLimitePersonalidad',
+    nearestOpts,
+  );
+  nearestCuestionarioNordico.value = findNearestDocument(
+    cuestionariosNordicos.value,
+    f,
+    'fechaCuestionarioNordico',
     nearestOpts,
   );
 };
@@ -167,6 +177,11 @@ const textoBase = computed(() => {
     texto += ` ${psico.join(' ')}`;
   }
 
+  const resumenNordico = textoResumenCuestionarioNordico(nearestCuestionarioNordico.value);
+  if (resumenNordico) {
+    texto += ` Cuestionario Nórdico: ${resumenNordico}.`;
+  }
+
   return texto;
 });
 
@@ -189,6 +204,7 @@ onMounted(async () => {
     trastornosEstadoAnimoList.value = vecinos?.trastornosEstadoAnimo ?? [];
     cuestionariosProdromalBreve.value = vecinos?.cuestionarioProdromalBreve ?? [];
     trastornosLimitePersonalidad.value = vecinos?.trastornoLimitePersonalidad ?? [];
+    cuestionariosNordicos.value = vecinos?.cuestionarioNordico ?? [];
 
     recalcularDocumentosCercanos();
     actualizarAlteracionesSalud();
@@ -208,6 +224,7 @@ watch(
     nearestTrastornosEstadoAnimo,
     nearestCuestionarioProdromalBreve,
     nearestTrastornoLimitePersonalidad,
+    nearestCuestionarioNordico,
   ],
   actualizarAlteracionesSalud,
 );

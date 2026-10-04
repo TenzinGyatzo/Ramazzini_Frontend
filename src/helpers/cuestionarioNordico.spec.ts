@@ -11,6 +11,7 @@ import {
   regionesNordicoDelPaso,
   textoAntiguedadActividadNordico,
   textoRelacionTrabajoNordico,
+  textoResumenCuestionarioNordico,
 } from './cuestionarioNordico';
 import { validarCamposRequeridos } from './validacionCampos';
 
@@ -213,5 +214,38 @@ describe('validación antes de guardar', () => {
       expect.objectContaining({ nombre: 'Espalda baja (lumbar): detalle de la molestia', paso: 4 }),
       expect.objectContaining({ nombre: 'Rodilla derecha: molestia en los últimos 12 meses', paso: 5 }),
     ]);
+  });
+});
+
+// Mismos textos que `resumenTablaCuestionarioNordico` (backend): la aptitud en pantalla y en PDF deben coincidir.
+describe('resumen para la aptitud al puesto', () => {
+  it('sin resultado guardado no genera texto', () => {
+    expect(textoResumenCuestionarioNordico(null)).toBe('');
+    expect(textoResumenCuestionarioNordico({})).toBe('');
+  });
+
+  it('todo negado', () => {
+    expect(textoResumenCuestionarioNordico({ resultado: calcularResultadoCuestionarioNordico({}) })).toBe(
+      'Sin molestias musculoesqueléticas en los últimos 12 meses',
+    );
+  });
+
+  it('lista regiones, intensidad máxima e impedimento', () => {
+    const resultado = calcularResultadoCuestionarioNordico({
+      cuello: { molestia12Meses: 'Sí', molestia7Dias: 'No', intensidad: 3 },
+      espaldaBaja: { molestia12Meses: 'Sí', molestia7Dias: 'Sí', intensidad: 9, diasImpedimento: '1-7 días' },
+    });
+    expect(textoResumenCuestionarioNordico({ resultado })).toBe(
+      'Molestias en 12 meses: Cuello / nuca, Espalda baja (lumbar); en los últimos 7 días: Espalda baja (lumbar); intensidad máxima 9/10; impedimento para trabajar: Espalda baja (lumbar)',
+    );
+  });
+
+  it('sin molestia en 7 días ni impedimento', () => {
+    const resultado = calcularResultadoCuestionarioNordico({
+      rodillaDerecha: { molestia12Meses: 'Sí', molestia7Dias: 'No', intensidad: 2 },
+    });
+    expect(textoResumenCuestionarioNordico({ resultado })).toBe(
+      'Molestias en 12 meses: Rodilla derecha; en los últimos 7 días: ninguna; intensidad máxima 2/10',
+    );
   });
 });

@@ -346,3 +346,27 @@ export function detalleRegionNordicoCompleto(region: RegionNordicoRespuestas | n
     !!region.relacionTrabajo
   );
 }
+
+/**
+ * Texto del Cuestionario Nórdico para la tabla resumen de la aptitud al puesto.
+ * Usa el resultado guardado; sin resultado devuelve ''.
+ * Mismo texto que `resumenTablaCuestionarioNordico` del backend.
+ */
+export function textoResumenCuestionarioNordico(
+  d: { resultado?: Partial<ResultadoCuestionarioNordico> | null } | null | undefined,
+): string {
+  const resultado = d?.resultado;
+  if (!resultado?.semaforo) return '';
+  const en12Meses = resultado.regionesMolestia12Meses ?? [];
+  if (en12Meses.length === 0) return 'Sin molestias musculoesqueléticas en los últimos 12 meses';
+  const en7Dias = resultado.regionesMolestia7Dias ?? [];
+  const conImpedimento = resultado.regionesImpedimento ?? [];
+  const lista = (claves: ClaveRegionNordico[]) => claves.map(etiquetaRegionNordico).join(', ');
+  const partes = [
+    `Molestias en 12 meses: ${lista(en12Meses)}`,
+    `en los últimos 7 días: ${en7Dias.length ? lista(en7Dias) : 'ninguna'}`,
+    `intensidad máxima ${resultado.intensidadMaxima ?? 0}/10`,
+  ];
+  if (conImpedimento.length) partes.push(`impedimento para trabajar: ${lista(conImpedimento)}`);
+  return partes.join('; ');
+}
