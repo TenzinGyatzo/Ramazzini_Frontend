@@ -4,7 +4,11 @@ export interface UserPopulateRef {
   username?: string;
 }
 
-/** Registro operaivo seguimiento programado cardiometabólico (API lista/detalle). */
+/**
+ * Inasistencia a un seguimiento cardiometabólico (API lista/detalle).
+ * `estado` siempre es «No asistió»; los campos de reprogramación y evento clínico solo
+ * existen en registros de la agenda de citas anterior.
+ */
 export interface SeguimientoProgramadoCardiometabolico {
   _id: string;
   idTrabajador: string;

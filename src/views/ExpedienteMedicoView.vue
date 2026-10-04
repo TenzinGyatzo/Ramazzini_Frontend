@@ -23,7 +23,7 @@ import ModalFinalizarDocumento from '@/components/modals/ModalFinalizarDocumento
 import ModalAnularDocumento from '@/components/modals/ModalAnularDocumento.vue';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
 import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
-import ModalSeguimientoProgramadoCardiometabolico from '@/components/ModalSeguimientoProgramadoCardiometabolico.vue';
+import ModalInasistenciasCardiometabolicas from '@/components/ModalInasistenciasCardiometabolicas.vue';
 import ModalDeclaracionVeracidad from '@/components/ModalDeclaracionVeracidad.vue';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import { useEliminacion } from '@/composables/useEliminacion';
@@ -91,7 +91,7 @@ const isFinalizing = ref(false);
 const showAnularModal = ref(false);
 const showCuestionariosModal = ref(false);
 const showProfessionalDataModal = ref(false);
-const showSeguimientoProgramadoModal = ref(false);
+const showInasistenciasModal = ref(false);
 const showResultadosClinicosPanel = ref(false);
 const selectedDocumentId = ref<string | null>(null);
 const selectedDocumentName = ref<string>('');
@@ -195,8 +195,8 @@ const toggleCuestionariosModal = () => {
   showCuestionariosModal.value = !showCuestionariosModal.value;
 };
 
-const openSeguimientoProgramadoModal = () => {
-  showSeguimientoProgramadoModal.value = true;
+const openInasistenciasModal = () => {
+  showInasistenciasModal.value = true;
 };
 
 const solicitarEliminacionDocumento = (
@@ -1075,14 +1075,14 @@ const añoMasReciente = computed(() => {
         <ModalCuestionarios
           v-if="showCuestionariosModal"
           @closeModal="toggleCuestionariosModal"
-          @openSeguimientoProgramado="openSeguimientoProgramadoModal"
+          @openInasistencias="openInasistenciasModal"
         />
       </Transition>
 
-      <ModalSeguimientoProgramadoCardiometabolico
-        :visible="showSeguimientoProgramadoModal && !!trabajadores.currentTrabajadorId"
+      <ModalInasistenciasCardiometabolicas
+        :visible="showInasistenciasModal && !!trabajadores.currentTrabajadorId"
         :trabajador-id="trabajadores.currentTrabajadorId ?? null"
-        @close="showSeguimientoProgramadoModal = false"
+        @close="showInasistenciasModal = false"
       />
 
       <Transition appear name="fade">

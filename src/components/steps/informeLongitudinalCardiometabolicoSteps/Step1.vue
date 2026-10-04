@@ -34,7 +34,7 @@ const today = format(new Date(), 'yyyy-MM-dd');
 
 /** Fechas de eventos clínicos CM vs fechas programadas operativas (seguimientos). */
 const AYUDA_RANGO =
-  'Seguimientos realizados y programados en el periodo seleccionado.';
+  'Seguimientos realizados e inasistencias en el periodo seleccionado.';
 
 function toYyyyMmDd(v) {
   if (v == null || v === '') return null;
@@ -370,7 +370,7 @@ onMounted(async () => {
     const [segRes, eventosCompletos] = await Promise.all([
       tid
         ? SeguimientoProgramadoCardiometabolicoAPI.list(tid).catch((e) => {
-            console.error('No se pudieron cargar seguimientos programados CM', e);
+            console.error('No se pudieron cargar las inasistencias CM', e);
             return { data: [] };
           })
         : Promise.resolve({ data: [] }),
@@ -475,7 +475,7 @@ onMounted(async () => {
 
       <div class="border border-gray-200 rounded-lg p-4 space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3 class="text-base font-semibold text-gray-800">Seguimientos programados</h3>
+          <h3 class="text-base font-semibold text-gray-800">Inasistencias</h3>
           <div class="flex gap-2">
             <button
               type="button"
@@ -493,7 +493,7 @@ onMounted(async () => {
             </button>
           </div>
         </div>
-        <p v-if="loadingSeg" class="text-sm text-gray-500">Cargando citas programadas…</p>
+        <p v-if="loadingSeg" class="text-sm text-gray-500">Cargando inasistencias…</p>
         <ul v-else-if="seguimientosEnRango.length" class="clinical-step-scroll space-y-2 max-h-56 overflow-y-auto">
           <li
             v-for="s in seguimientosEnRango"
@@ -517,7 +517,7 @@ onMounted(async () => {
             </label>
           </li>
         </ul>
-        <p v-else class="text-sm text-gray-500">No hay seguimientos programados en el periodo.</p>
+        <p v-else class="text-sm text-gray-500">No hay inasistencias registradas en el periodo.</p>
       </div>
     </div>
   </div>

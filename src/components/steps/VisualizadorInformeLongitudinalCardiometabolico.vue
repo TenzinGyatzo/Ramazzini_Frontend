@@ -1564,11 +1564,14 @@ defineExpose({
           </div>
           <dl class="space-y-1.5 text-xs">
             <div class="flex flex-wrap gap-x-2 gap-y-0.5">
-              <dt class="text-slate-500 shrink-0">Eventos / Inasistencias / Cancelaciones</dt>
+              <!-- Las cancelaciones solo existen en informes hechos con la agenda de citas anterior -->
+              <dt class="text-slate-500 shrink-0">
+                Eventos / Inasistencias<template v-if="fm.numeroCancelaciones > 0"> / Cancelaciones</template>
+              </dt>
               <dd class="font-medium tabular-nums text-slate-700">
                 {{ texto(fm.numeroSeguimientosRealizados ?? fm.numeroEventosIncluidos) }} /
-                {{ texto(fm.numeroInasistencias) }} /
-                {{ texto(fm.numeroCancelaciones) }}
+                {{ texto(fm.numeroInasistencias) }}
+                <template v-if="fm.numeroCancelaciones > 0"> / {{ texto(fm.numeroCancelaciones) }}</template>
               </dd>
             </div>
           </dl>

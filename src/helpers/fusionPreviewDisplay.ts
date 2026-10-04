@@ -35,7 +35,7 @@ export const FUSION_DOCUMENTO_DISPLAY: FusionDocumentoDisplay[] = [
   { modelName: 'DocumentoExterno', labelSingular: 'Documento Externo', labelPlural: 'Documentos Externos', icon: 'fas fa-file-alt', iconClass: 'text-purple-600', section: 'expediente' },
   { modelName: 'Consentimiento', labelSingular: 'Consentimiento tratamiento información', labelPlural: 'Consentimientos', icon: 'fas fa-file-signature', iconClass: 'text-gray-600', section: 'vinculado' },
   { modelName: 'Deteccion', labelSingular: 'Detección', labelPlural: 'Detecciones', icon: 'fas fa-search', iconClass: 'text-cyan-600', section: 'vinculado' },
-  { modelName: 'SeguimientoProgramadoCardiometabolico', labelSingular: 'Seguimiento programado cardiometabólico', labelPlural: 'Seguimientos programados cardiometabólicos', icon: 'fas fa-calendar-check', iconClass: 'text-purple-600', section: 'vinculado' },
+  { modelName: 'SeguimientoProgramadoCardiometabolico', labelSingular: 'Inasistencia a seguimiento cardiometabólico', labelPlural: 'Inasistencias a seguimiento cardiometabólico', icon: 'fas fa-calendar-check', iconClass: 'text-purple-600', section: 'vinculado' },
 ];
 
 /** Tipos con sección dedicada en el resumen (no van al bloque genérico de vinculados). */

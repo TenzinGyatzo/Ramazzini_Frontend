@@ -1,6 +1,5 @@
 <script setup>
 import { inject, computed, ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -16,8 +15,7 @@ import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 
 const toast = inject('toast');
 
-const emit = defineEmits(['closeModal', 'openSeguimientoProgramado']);
-const router = useRouter();
+const emit = defineEmits(['closeModal', 'openInasistencias']);
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
@@ -32,40 +30,204 @@ const {
   handleConsentRegistered,
   handleConsentCancel,
 } = useNavigateWithTreatmentConsent();
-
-const showProfessionalDataModal = ref(false);
-
-const isMX = computed(() => {
-  return proveedorSaludStore.isMX;
-});
-
-const notaAclaratoriaEnabled = computed(() => {
-  return proveedorSaludStore.notaAclaratoriaEnabled;
-});
-
 const { controlPrenatalEnabled } = useRegulatoryPolicy();
 
+const showProfessionalDataModal = ref(false);
+const busqueda = ref('');
+const campoBusqueda = ref(null);
+
 onMounted(async () => {
+  campoBusqueda.value?.focus();
   await loadFirmanteData();
 });
 
-const QUESTIONNAIRE_TIPO_MAP = {
-  'receta': 'receta',
-  'constancia-aptitud': 'constanciaAptitud',
-  'certificado-expedito': 'certificadoExpedito',
-  'control-prenatal': 'controlPrenatal',
-  'historia-otologica': 'historiaOtologica',
-  'previo-espirometria': 'previoEspirometria',
-  'entrevista-psicologica': 'entrevistaPsicologica',
-  'trastornos-estado-animo': 'trastornosEstadoAnimo',
-  'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
-  'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
-  'cuestionario-nordico': 'cuestionarioNordico',
-  'evaluacion-sueno-vigilia': 'evaluacionSuenoVigilia',
-  'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
-  'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
-  'informe-longitudinal-audiometrico': 'informeLongitudinalAudiometrico',
-};
+/**
+ * Catálogo del modal. Cada opción crea un documento (`tipoDocumento`) o ejecuta una
+ * acción (`accion`). `conCentroTrabajo` agrega el centro a la ruta, `visible` oculta
+ * la opción según la configuración del proveedor y `claves` son palabras extra para
+ * el buscador.
+ */
+const SECCIONES = [
+  {
+    clave: 'medicos',
+    titulo: 'Documentos médicos',
+    icono: 'fas fa-file-medical',
+    opciones: [
+      {
+        tipoDocumento: 'receta',
+        titulo: 'Receta médica',
+        descripcion: 'Tratamiento e indicaciones',
+        icono: 'fas fa-prescription-bottle-medical',
+      },
+      {
+        tipoDocumento: 'constanciaAptitud',
+        titulo: 'Constancia de aptitud',
+        descripcion: 'Resultado para el puesto',
+        icono: 'fas fa-file-circle-check',
+      },
+      {
+        tipoDocumento: 'certificadoExpedito',
+        titulo: 'Certificado expedito',
+        descripcion: 'Certificado médico breve',
+        icono: 'fas fa-file-signature',
+      },
+      {
+        tipoDocumento: 'notaAclaratoria',
+        titulo: 'Nota aclaratoria',
+        descripcion: 'Aclara un documento finalizado',
+        icono: 'fas fa-file-pen',
+        visible: () => proveedorSaludStore.isMX && proveedorSaludStore.notaAclaratoriaEnabled,
+      },
+    ],
+  },
+  {
+    clave: 'seguimiento',
+    titulo: 'Seguimiento clínico',
+    icono: 'fas fa-notes-medical',
+    opciones: [
+      {
+        tipoDocumento: 'eventoSeguimientoCardiometabolico',
+        titulo: 'Evento cardiometabólico',
+        descripcion: 'Valoración de seguimiento',
+        icono: 'fas fa-heartbeat',
+        conCentroTrabajo: true,
+        claves: 'seguimiento cardiometabolico control',
+      },
+      {
+        accion: 'inasistencias',
+        titulo: 'Inasistencia a seguimiento',
+        descripcion: 'No acudió a su seguimiento cardiometabólico',
+        icono: 'fas fa-calendar-xmark',
+        claves: 'falta no asistio cardiometabolico',
+      },
+      {
+        tipoDocumento: 'informeLongitudinalCardiometabolico',
+        titulo: 'Informe longitudinal cardiometabólico',
+        descripcion: 'Evolución entre valoraciones',
+        icono: 'fas fa-chart-line',
+        conCentroTrabajo: true,
+      },
+      {
+        tipoDocumento: 'controlPrenatal',
+        titulo: 'Control prenatal',
+        descripcion: 'Embarazo y lactancia',
+        icono: 'fas fa-baby',
+        visible: () => controlPrenatalEnabled.value,
+      },
+    ],
+  },
+  {
+    clave: 'auditivaRespiratoria',
+    titulo: 'Salud auditiva y respiratoria',
+    icono: 'fas fa-stethoscope',
+    opciones: [
+      {
+        tipoDocumento: 'historiaOtologica',
+        titulo: 'Historia otológica',
+        descripcion: 'Previa a audiometría',
+        icono: 'fas fa-ear-deaf',
+        claves: 'oido',
+      },
+      {
+        tipoDocumento: 'informeLongitudinalAudiometrico',
+        titulo: 'Informe longitudinal audiométrico',
+        descripcion: 'Evolución de audiometrías',
+        icono: 'fas fa-chart-line',
+        conCentroTrabajo: true,
+        claves: 'audiometria seguimiento',
+      },
+      {
+        tipoDocumento: 'previoEspirometria',
+        titulo: 'Previo a espirometría',
+        descripcion: 'Cuestionario de preparación',
+        icono: 'fas fa-lungs',
+      },
+    ],
+  },
+  {
+    clave: 'psicologica',
+    titulo: 'Evaluación psicológica',
+    icono: 'fas fa-brain',
+    opciones: [
+      {
+        tipoDocumento: 'entrevistaPsicologica',
+        titulo: 'Entrevista psicológica',
+        descripcion: 'Entrevista clínica',
+        icono: 'fa-regular fa-comments',
+      },
+      {
+        tipoDocumento: 'trastornosEstadoAnimo',
+        titulo: 'Trastornos del estado de ánimo',
+        descripcion: 'MDQ',
+        icono: 'fa-solid fa-wave-square',
+      },
+      {
+        tipoDocumento: 'cuestionarioProdromalBreve',
+        titulo: 'Cuestionario prodromal breve',
+        descripcion: 'PQ-B',
+        icono: 'fa-solid fa-clipboard-list',
+      },
+      {
+        tipoDocumento: 'trastornoLimitePersonalidad',
+        titulo: 'Trastorno límite de personalidad',
+        descripcion: 'MSI-BPD',
+        icono: 'fa-solid fa-heart-crack',
+      },
+    ],
+  },
+  {
+    clave: 'ergonomiaSueno',
+    titulo: 'Ergonomía, sueño y fatiga',
+    icono: 'fas fa-person',
+    opciones: [
+      {
+        tipoDocumento: 'cuestionarioNordico',
+        titulo: 'Cuestionario Nórdico',
+        descripcion: 'Síntomas musculoesqueléticos',
+        icono: 'fa-solid fa-person',
+        conCentroTrabajo: true,
+        nuevo: true,
+        claves: 'kuorinka ergonomia',
+      },
+      {
+        tipoDocumento: 'evaluacionSuenoVigilia',
+        titulo: 'Sueño y vigilia',
+        descripcion: 'Calidad de sueño y somnolencia',
+        icono: 'fa-solid fa-moon',
+        conCentroTrabajo: true,
+        nuevo: true,
+        claves: 'fatiga evaluacion',
+      },
+    ],
+  },
+];
+
+/** Minúsculas y sin acentos, para que «audiometria» encuentre «audiometría». */
+const normalizar = (texto) =>
+  String(texto ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+
+const seccionesVisibles = computed(() => {
+  const termino = normalizar(busqueda.value).trim();
+  return SECCIONES.map((seccion) => ({
+    ...seccion,
+    opciones: seccion.opciones.filter((opcion) => {
+      if (opcion.visible && !opcion.visible()) return false;
+      if (!termino) return true;
+      return normalizar(`${opcion.titulo} ${opcion.descripcion} ${opcion.claves ?? ''} ${seccion.titulo}`).includes(
+        termino,
+      );
+    }),
+  })).filter((seccion) => seccion.opciones.length > 0);
+});
+
+const claveOpcion = (opcion) => opcion.tipoDocumento ?? opcion.accion;
+
+const trabajadorNombre = computed(() =>
+  trabajadores.currentTrabajador ? formatNombreCompleto(trabajadores.currentTrabajador) : '',
+);
 
 const closeModal = () => {
   emit('closeModal');
@@ -81,38 +243,15 @@ useEscapeToClose(
   () => !showProfessionalDataModal.value && !showConsentModal.value,
 );
 
-const questionnaireToDocumentType = {
-  'control-prenatal': 'controlPrenatal',
-  'constancia-aptitud': 'constanciaAptitud',
-  'receta': 'receta',
-  'certificado-expedito': 'certificadoExpedito',
-  'historia-otologica': 'historiaOtologica',
-  'previo-espirometria': 'previoEspirometria',
-  'nota-aclaratoria': 'notaAclaratoria',
-  'entrevista-psicologica': 'entrevistaPsicologica',
-  'trastornos-estado-animo': 'trastornosEstadoAnimo',
-  'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
-  'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
-  'cuestionario-nordico': 'cuestionarioNordico',
-  'evaluacion-sueno-vigilia': 'evaluacionSuenoVigilia',
-  'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
-  'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
-  'informe-longitudinal-audiometrico': 'informeLongitudinalAudiometrico',
-};
-
-const openModalSeguimientosProgramados = () => {
+const abrirInasistencias = () => {
   executeIfCanManageOtrosDocumentos(() => {
-    emit('openSeguimientoProgramado');
+    emit('openInasistencias');
     closeModal();
-  }, 'acceder a cuestionarios adicionales');
+  }, 'registrar inasistencias a seguimientos');
 };
 
-// Función para manejar la selección de cuestionarios
-const handleQuestionnaireSelect = async (questionnaireType) => {
-  const documentType = questionnaireToDocumentType[questionnaireType];
-  if (documentType && !validateDocumentCreation(documentType)) {
-    return;
-  }
+const crearDocumento = async (opcion) => {
+  if (!validateDocumentCreation(opcion.tipoDocumento)) return;
 
   const professionalValidation = await ensureProfessionalDataReady();
   if (!professionalValidation.isValid) {
@@ -120,409 +259,138 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
     return;
   }
 
-  if (questionnaireType === 'control-prenatal') {
-    if (trabajadores.currentTrabajador?.sexo === 'Masculino') {
-      toast.open({
-        message: `No puedes hacer control prenatal al sexo masculino.`,
-        type: 'error',
-      });
-      return;
-    }
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'controlPrenatal'
-        }
-      },
+  if (opcion.tipoDocumento === 'controlPrenatal' && trabajadores.currentTrabajador?.sexo === 'Masculino') {
+    toast.open({
+      message: `No puedes hacer control prenatal al sexo masculino.`,
+      type: 'error',
     });
-    closeModal();
-  } else if (questionnaireType === 'constancia-aptitud') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'constanciaAptitud'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'receta') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'receta'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'certificado-expedito') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'certificadoExpedito'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'historia-otologica') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'historiaOtologica'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'previo-espirometria') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'previoEspirometria'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'nota-aclaratoria') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'notaAclaratoria'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'entrevista-psicologica') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'entrevistaPsicologica'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'trastornos-estado-animo') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'trastornosEstadoAnimo'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'cuestionario-prodromal-breve') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'cuestionarioProdromalBreve'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'trastorno-limite-personalidad') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'trastornoLimitePersonalidad'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'cuestionario-nordico') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'cuestionarioNordico'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'evaluacion-sueno-vigilia') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'evaluacionSuenoVigilia'
-        }
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'evento-seguimiento-cardiometabolico') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'eventoSeguimientoCardiometabolico',
-        },
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'informe-longitudinal-cardiometabolico') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'informeLongitudinalCardiometabolico',
-        },
-      },
-    });
-    closeModal();
-  } else if (questionnaireType === 'informe-longitudinal-audiometrico') {
-    await navigateWithTreatmentConsent({
-      trabajadorId: trabajadores.currentTrabajadorId,
-      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
-      to: {
-        name: 'crear-documento',
-        params: {
-          idEmpresa: empresas.currentEmpresaId,
-          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
-          idTrabajador: trabajadores.currentTrabajadorId,
-          tipoDocumento: 'informeLongitudinalAudiometrico',
-        },
-      },
-    });
-    closeModal();
+    return;
   }
+
+  await navigateWithTreatmentConsent({
+    trabajadorId: trabajadores.currentTrabajadorId,
+    trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+    to: {
+      name: 'crear-documento',
+      params: {
+        idEmpresa: empresas.currentEmpresaId,
+        ...(opcion.conCentroTrabajo ? { idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId } : {}),
+        idTrabajador: trabajadores.currentTrabajadorId,
+        tipoDocumento: opcion.tipoDocumento,
+      },
+    },
+  });
+  closeModal();
+};
+
+const seleccionar = (opcion) => {
+  if (opcion.accion === 'inasistencias') {
+    abrirInasistencias();
+    return;
+  }
+  return crearDocumento(opcion);
+};
+
+/** Enter en el buscador abre el primer resultado. */
+const seleccionarPrimerResultado = () => {
+  if (!busqueda.value.trim()) return;
+  const primera = seccionesVisibles.value[0]?.opciones[0];
+  if (primera) seleccionar(primera);
 };
 </script>
 
 <template>
-  <div class="modal modal-cuestionarios fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
+  <div class="modal modal-cuestionarios fixed top-0 left-0 z-10 p-4 sm:p-8 h-screen w-full grid place-items-center">
     <div class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm" @click="handleBackdropClose" />
     <div
-      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto">
-        <div
-          class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
-          @click="closeModal">
-          &times;
-        </div>
-
-        <h1 class="text-3xl mb-2">Otros documentos</h1>
-        <p class="text-gray-600 mb-4">Selecciona el documento a crear</p>
-        <hr class="mt-2 mb-6">
-
-        <div class="space-y-6">
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-file-medical text-emerald-500 mr-3"></i>
-              Documentos médicos
-            </div>
-            <div class="space-y-2">
-              <button type="button" @click="handleQuestionnaireSelect('receta')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-prescription-bottle-medical text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Receta médica
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('constancia-aptitud')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Constancia de aptitud
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('certificado-expedito')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Certificado expedito
-              </button>
-              <button
-                v-if="isMX && notaAclaratoriaEnabled"
-                type="button"
-                @click="handleQuestionnaireSelect('nota-aclaratoria')"
-                class="w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300"
-              >
-                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Nota aclaratoria
-              </button>
-            </div>
+      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full max-w-3xl rounded-lg shadow-md shadow-slate-900 max-h-[90vh] flex flex-col overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-cuestionarios-titulo"
+    >
+      <div class="modal-cuestionarios-encabezado shrink-0 px-5 sm:px-7 pt-5 pb-4 border-b border-gray-200">
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0">
+            <h1 id="modal-cuestionarios-titulo" class="text-2xl font-medium leading-tight">Otros documentos</h1>
+            <p v-if="trabajadorNombre" class="modal-cuestionarios-trabajador mt-1 text-sm text-gray-600 truncate" data-trabajador>
+              <i class="fas fa-user text-emerald-600 text-xs mr-1" aria-hidden="true"></i>
+              Para <span class="font-medium text-gray-800">{{ trabajadorNombre }}</span>
+              <template v-if="trabajadores.currentTrabajador?.puesto"> · {{ trabajadores.currentTrabajador.puesto }}</template>
+            </p>
+            <p v-else class="mt-1 text-sm text-gray-600">Selecciona el documento a crear</p>
           </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-notes-medical text-emerald-500 mr-3"></i>
-              Seguimiento clínico
-            </div>
-            <div class="space-y-2">
-              <div class="flex flex-col sm:flex-row gap-2">
-                <button type="button" @click="handleQuestionnaireSelect('evento-seguimiento-cardiometabolico')" class="questionnaire-option flex-1 min-w-0 text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center gap-2 group border border-gray-200 hover:border-emerald-300">
-                  <i class="fas fa-heartbeat text-emerald-500 text-sm group-hover:text-emerald-600 shrink-0" />
-                  <span class="min-w-0">Evento de seguimiento cardiometabólico</span>
-                </button>
-                <button
-                  type="button"
-                  class="questionnaire-option shrink-0 sm:w-40 px-4 py-3 rounded-lg hover:bg-slate-50 text-sm text-slate-700 transition-colors duration-150 flex flex-col sm:flex-row items-center justify-center gap-2 border border-gray-200 hover:border-slate-400"
-                  title="Citas y estados sin valoración clínica PDF"
-                  @click="openModalSeguimientosProgramados">
-                  <i class="fas fa-calendar-check text-slate-600 text-base" />
-                  <span class="text-center leading-tight">Citas</span>
-                </button>
-              </div>
-              <button type="button" @click="handleQuestionnaireSelect('informe-longitudinal-cardiometabolico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-file-alt text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Informe longitudinal cardiometabólico
-              </button>
-              <button
-                v-if="controlPrenatalEnabled"
-                type="button"
-                @click="handleQuestionnaireSelect('control-prenatal')"
-                class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-baby text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Control prenatal (embarazo y lactancia)
-              </button>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-stethoscope text-emerald-500 mr-3"></i>
-              Salud auditiva y respiratoria
-            </div>
-            <div class="space-y-2">
-              <button type="button" @click="handleQuestionnaireSelect('historia-otologica')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-ear-deaf text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Historia otológica — previa a audiometría
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('informe-longitudinal-audiometrico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-chart-line text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Informe longitudinal de seguimiento audiométrico
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('previo-espirometria')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fas fa-lungs text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Cuestionario previo a espirometría
-              </button>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-brain text-emerald-500 mr-3"></i>
-              Evaluación psicológica
-            </div>
-            <div class="space-y-2">
-              <button type="button" @click="handleQuestionnaireSelect('entrevista-psicologica')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fa-regular fa-comments text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Entrevista psicológica
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('trastornos-estado-animo')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fa-solid fa-wave-square text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Trastornos del estado de ánimo (MDQ)
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('cuestionario-prodromal-breve')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fa-solid fa-clipboard-list text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Cuestionario Prodromal Breve (PQ-B)
-              </button>
-              <button type="button" @click="handleQuestionnaireSelect('trastorno-limite-personalidad')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fa-solid fa-heart-crack text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Prueba del trastorno límite de personalidad (MSI-BPD)
-              </button>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-person text-emerald-500 mr-3"></i>
-              Evaluación ergonómica
-            </div>
-            <div class="space-y-2">
-              <button type="button" @click="handleQuestionnaireSelect('cuestionario-nordico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fa-solid fa-person text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Cuestionario Nórdico de Kuorinka (síntomas musculoesqueléticos)
-              </button>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
-              <i class="fas fa-moon text-emerald-500 mr-3"></i>
-              Sueño y fatiga
-            </div>
-            <div class="space-y-2">
-              <button type="button" @click="handleQuestionnaireSelect('evaluacion-sueno-vigilia')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
-                <i class="fa-solid fa-moon text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
-                Evaluación de sueño y vigilia
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-8">
           <button
             type="button"
-            class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-            @click="closeModal">
-            Cerrar
+            class="modal-close shrink-0 -mt-1 -mr-2 h-10 w-10 flex justify-center items-center rounded-full text-3xl leading-none text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            aria-label="Cerrar"
+            @click="closeModal"
+          >
+            &times;
           </button>
         </div>
+
+        <div class="relative mt-4">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400" aria-hidden="true"></i>
+          <input
+            ref="campoBusqueda"
+            v-model="busqueda"
+            type="search"
+            class="modal-cuestionarios-busqueda w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+            placeholder="Buscar documento, por ejemplo: audiometría"
+            aria-label="Buscar documento"
+            @keydown.enter.prevent="seleccionarPrimerResultado"
+          />
+        </div>
       </div>
+
+      <div class="flex-1 overflow-y-auto px-5 sm:px-7 py-5 space-y-5">
+        <section v-for="seccion in seccionesVisibles" :key="seccion.clave" :data-seccion="seccion.clave">
+          <h2 class="flex items-center text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-2">
+            <i :class="seccion.icono" class="text-emerald-500 mr-2" aria-hidden="true"></i>
+            {{ seccion.titulo }}
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              v-for="opcion in seccion.opciones"
+              :key="claveOpcion(opcion)"
+              type="button"
+              class="questionnaire-option group flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-left transition-colors duration-150 hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              :data-opcion="claveOpcion(opcion)"
+              @click="seleccionar(opcion)"
+            >
+              <span
+                class="questionnaire-option-icono flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base"
+                :class="
+                  opcion.accion
+                    ? 'bg-amber-100 text-amber-700 group-hover:bg-amber-200'
+                    : 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200'
+                "
+              >
+                <i :class="opcion.icono" aria-hidden="true"></i>
+              </span>
+              <span class="min-w-0">
+                <span class="questionnaire-option-titulo flex flex-wrap items-center gap-x-2 text-sm font-medium leading-snug text-gray-900">
+                  {{ opcion.titulo }}
+                  <span
+                    v-if="opcion.nuevo"
+                    class="questionnaire-option-nuevo rounded-full bg-emerald-100 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-emerald-700"
+                  >
+                    Nuevo
+                  </span>
+                </span>
+                <span class="questionnaire-option-descripcion block text-xs leading-snug text-gray-500">
+                  {{ opcion.descripcion }}
+                </span>
+              </span>
+            </button>
+          </div>
+        </section>
+
+        <p v-if="seccionesVisibles.length === 0" class="py-8 text-center text-sm text-gray-500" data-sin-resultados>
+          Ningún documento coincide con «{{ busqueda.trim() }}».
+        </p>
+      </div>
+    </div>
 
     <Transition appear name="fade">
         <ModalDatosProfesionales

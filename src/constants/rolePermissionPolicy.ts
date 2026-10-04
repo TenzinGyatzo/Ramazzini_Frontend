@@ -282,7 +282,7 @@ export const DOCUMENT_DISPLAY_NAMES: Record<string, string> = {
   eventoSeguimientoCardiometabolico: 'Evento de Seguimiento Cardiometabólico',
   informeLongitudinalCardiometabolico: 'Informe Longitudinal Cardiometabólico',
   informeLongitudinalAudiometrico: 'Informe longitudinal de seguimiento audiométrico',
-  seguimientoProgramadoCardiometabolico: 'Seguimiento Programado Cardiometabólico',
+  seguimientoProgramadoCardiometabolico: 'Inasistencia a Seguimiento Cardiometabólico',
 };
 
 export function getDocumentRestrictionMessage(documentType: string): string {

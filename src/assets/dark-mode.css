@@ -3201,6 +3201,43 @@ html.dark-mode .modal-cuestionarios .questionnaire-option:not(.disabled):not(:di
   color: #6ee7b7 !important;
 }
 
+html.dark-mode .modal-cuestionarios .modal-cuestionarios-encabezado {
+  border-color: #334155 !important;
+}
+
+html.dark-mode .modal-cuestionarios .modal-cuestionarios-busqueda {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .modal-cuestionarios .modal-cuestionarios-trabajador,
+html.dark-mode .modal-cuestionarios .modal-cuestionarios-trabajador span {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option .questionnaire-option-titulo {
+  color: #ecfdf5 !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option .questionnaire-option-descripcion {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option .questionnaire-option-icono.bg-emerald-100,
+html.dark-mode .modal-cuestionarios .questionnaire-option .questionnaire-option-nuevo {
+  background-color: rgba(6, 95, 70, 0.45) !important;
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option .questionnaire-option-icono.bg-amber-100 {
+  background-color: rgba(120, 53, 15, 0.45) !important;
+}
+
+html.dark-mode .modal-cuestionarios .questionnaire-option .questionnaire-option-icono.bg-amber-100 i {
+  color: #fcd34d !important;
+}
+
 html.dark-mode .modal-cuestionarios .questionnaire-option.disabled,
 html.dark-mode .modal-cuestionarios .questionnaire-option:disabled {
   background-color: #111827 !important;
@@ -3491,7 +3528,7 @@ html.dark-mode .modal-carga-documento-externo .overflow-y-auto::-webkit-scrollba
 }
 
 /*
- * ModalSeguimientoProgramadoCardiometabolico.vue
+ * ModalInasistenciasCardiometabolicas.vue
  */
 html.dark-mode .modal-seguimiento-programado .modal-seguimiento-programado-panel {
   background-color: #1e293b !important;
@@ -3587,71 +3624,6 @@ html.dark-mode .modal-seguimiento-programado button.bg-emerald-600 {
 
 html.dark-mode .modal-seguimiento-programado button.bg-emerald-600:hover {
   background-color: #065f46 !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-radio--idle {
-  background-color: rgba(15, 23, 42, 0.65) !important;
-  border-color: #475569 !important;
-  color: #94a3b8 !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-radio--idle:hover {
-  background-color: #1e293b !important;
-  border-color: #64748b !important;
-  color: #cbd5e1 !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-radio--selected.seguimiento-estado-radio--programada {
-  background-color: rgba(120, 53, 15, 0.42) !important;
-  border-color: #f59e0b !important;
-  color: #fde68a !important;
-  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.35) !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-radio--selected.seguimiento-estado-radio--realizada {
-  background-color: rgba(6, 95, 70, 0.42) !important;
-  border-color: #10b981 !important;
-  color: #a7f3d0 !important;
-  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.35) !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-radio--selected.seguimiento-estado-radio--no-asistio {
-  background-color: rgba(154, 52, 18, 0.42) !important;
-  border-color: #f97316 !important;
-  color: #fed7aa !important;
-  box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.35) !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-radio--selected.seguimiento-estado-radio--cancelada {
-  background-color: rgba(51, 65, 85, 0.55) !important;
-  border-color: #94a3b8 !important;
-  color: #e2e8f0 !important;
-  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.3) !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-badge--programada {
-  background-color: rgba(120, 53, 15, 0.45) !important;
-  border-color: #d97706 !important;
-  color: #fcd34d !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-badge--realizada {
-  background-color: rgba(6, 95, 70, 0.45) !important;
-  border-color: #10b981 !important;
-  color: #6ee7b7 !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-badge--no-asistio {
-  background-color: rgba(154, 52, 18, 0.45) !important;
-  border-color: #f97316 !important;
-  color: #fdba74 !important;
-}
-
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-badge--cancelada,
-html.dark-mode .modal-seguimiento-programado .seguimiento-estado-badge--default {
-  background-color: rgba(51, 65, 85, 0.55) !important;
-  border-color: #64748b !important;
-  color: #cbd5e1 !important;
 }
 
 html.dark-mode .modal-seguimiento-programado .modal-seguimiento-programado-empty {

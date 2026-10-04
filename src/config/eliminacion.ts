@@ -32,7 +32,7 @@ export const ETIQUETAS_ENTIDAD: Record<EntidadEliminable, string> = {
   documentosMasivos: 'Documentos',
   resultadoClinico: 'Resultado clínico',
   riesgoTrabajo: 'Riesgo de Trabajo',
-  seguimientoProgramado: 'Seguimiento programado',
+  seguimientoProgramado: 'Inasistencia',
 };
 
 export interface ContextoNivelEliminacion {
