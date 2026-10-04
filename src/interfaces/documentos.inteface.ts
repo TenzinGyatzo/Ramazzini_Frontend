@@ -1,4 +1,8 @@
 import type { RegionesNordicoRespuestas, ResultadoCuestionarioNordico } from '@/helpers/cuestionarioNordico';
+import type {
+    EvaluacionSuenoVigiliaRespuestas,
+    ResultadoEvaluacionSuenoVigilia,
+} from '@/helpers/evaluacionSuenoVigilia';
 export type PdfStatus = 'generating' | 'ready' | 'failed';
 
 import { DocumentoEstado } from './nom024.interface';
@@ -1041,6 +1045,20 @@ export interface CuestionarioNordico {
     observaciones?: string;
     /** Calculado por el servidor al guardar; congelado al finalizar. */
     resultado?: ResultadoCuestionarioNordico;
+}
+
+/** Evaluación de sueño y vigilia (instrumento propio). Claves y catálogos en `helpers/evaluacionSuenoVigilia.ts`. */
+export interface EvaluacionSuenoVigilia extends EvaluacionSuenoVigiliaRespuestas {
+    _id: string;
+    fechaEvaluacionSuenoVigilia: string;
+    estado?: DocumentoEstado;
+    fechaFinalizacion?: string;
+    finalizadoPor?: string;
+    fechaAnulacion?: string;
+    anuladoPor?: string;
+    razonAnulacion?: string;
+    /** Calculado por el servidor al guardar; congelado al finalizar. */
+    resultado?: ResultadoEvaluacionSuenoVigilia;
 }
 
 export interface CondicionControlResumenInformeLongitudinal {

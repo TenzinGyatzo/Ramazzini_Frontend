@@ -33,6 +33,16 @@ import {
 } from '@/helpers/informeLongitudinalAudiometrico';
 import { recomendacionesIlaSonValidas } from '@/helpers/ilaRecomendaciones';
 import { REGIONES_NORDICO, detalleRegionNordicoCompleto } from '@/helpers/cuestionarioNordico';
+import {
+  AREAS_SUENO_VIGILIA,
+  PASO_MODULO_SUENO_VIGILIA,
+  PASO_SEGUIMIENTO_SUENO_VIGILIA,
+  PASO_SEGURIDAD_SUENO_VIGILIA,
+  PREGUNTAS_SEGURIDAD_SUENO_VIGILIA,
+  PREGUNTAS_SUENO_VIGILIA,
+  haySintomasSuenoVigilia,
+  valorFrecuenciaSuenoVigilia,
+} from '@/helpers/evaluacionSuenoVigilia';
 
 // Helper para validar campos requeridos según el tipo de documento
 export interface CampoFaltante {
@@ -821,6 +831,63 @@ const camposRequeridosPorTipo: Record<string, Array<{
     },
   ],
 
+  // Contexto, las 12 preguntas y la seguridad son obligatorios; el seguimiento, solo si hay síntomas
+  evaluacionSuenoVigilia: [
+    { campo: 'fechaEvaluacionSuenoVigilia', nombre: 'Fecha de la evaluación de sueño y vigilia', tipo: 'fecha', paso: 1, validacion: validarFecha },
+    {
+      campo: 'minutosSuenoDiarios',
+      nombre: 'Horas de sueño por cada 24 horas',
+      tipo: 'numero',
+      paso: 1,
+      validacion: (valor: any) => typeof valor === 'number' && valor >= 0,
+    },
+    { campo: 'horarioLaboral', nombre: 'Horario laboral', tipo: 'seleccion', paso: 1 },
+    { campo: 'calidadGeneralSueno', nombre: 'Calidad general del sueño', tipo: 'seleccion', paso: 1 },
+    ...PREGUNTAS_SUENO_VIGILIA.map((pregunta) => ({
+      campo: pregunta.modulo,
+      nombre: `${AREAS_SUENO_VIGILIA.find((area) => area.clave === pregunta.area)?.etiqueta}: ${pregunta.texto}`,
+      tipo: 'seleccion',
+      paso: PASO_MODULO_SUENO_VIGILIA[pregunta.modulo],
+      validacion: (grupo: any) => valorFrecuenciaSuenoVigilia(grupo?.[pregunta.clave]) !== null,
+    })),
+    ...PREGUNTAS_SEGURIDAD_SUENO_VIGILIA.flatMap((pregunta) => [
+      {
+        campo: 'seguridad',
+        nombre: `Seguridad: ${pregunta.etiqueta}`,
+        tipo: 'seleccion',
+        paso: PASO_SEGURIDAD_SUENO_VIGILIA,
+        validacion: (seguridad: any) => !!seguridad?.[pregunta.clave],
+      },
+      ...(pregunta.campoDescripcion
+        ? [
+            {
+              campo: 'seguridad',
+              nombre: `Seguridad: descripción de «${pregunta.etiqueta}»`,
+              tipo: 'texto',
+              paso: PASO_SEGURIDAD_SUENO_VIGILIA,
+              validacion: (seguridad: any) =>
+                seguridad?.[pregunta.clave] !== 'Sí' || !!seguridad?.[pregunta.campoDescripcion!]?.trim(),
+            },
+          ]
+        : []),
+    ]),
+    {
+      campo: 'seguimiento',
+      nombre: 'Seguimiento: ¿desde cuándo ocurre?',
+      tipo: 'seleccion',
+      paso: PASO_SEGUIMIENTO_SUENO_VIGILIA,
+      validacion: (seguimiento: any, datos: any) => !haySintomasSuenoVigilia(datos) || !!seguimiento?.duracion,
+    },
+    {
+      campo: 'seguimiento',
+      nombre: 'Seguimiento: ¿los síntomas del día empeoran al dormir poco o mal?',
+      tipo: 'seleccion',
+      paso: PASO_SEGUIMIENTO_SUENO_VIGILIA,
+      validacion: (seguimiento: any, datos: any) =>
+        !haySintomasSuenoVigilia(datos, 'vigilia') || !!seguimiento?.empeoraAlDormirMal,
+    },
+  ],
+
   // Cada región exige su respuesta de 12 meses y, si fue «Sí», el detalle completo
   cuestionarioNordico: [
     { campo: 'fechaCuestionarioNordico', nombre: 'Fecha del cuestionario nórdico', tipo: 'fecha', paso: 1, validacion: validarFecha },
@@ -1173,6 +1240,7 @@ export const DOCUMENT_TYPE_DATE_FIELDS: Record<string, string> = {
   cuestionarioProdromalBreve: 'fechaCuestionarioProdromalBreve',
   trastornoLimitePersonalidad: 'fechaTrastornoLimitePersonalidad',
   cuestionarioNordico: 'fechaCuestionarioNordico',
+  evaluacionSuenoVigilia: 'fechaEvaluacionSuenoVigilia',
   eventoSeguimientoCardiometabolico: 'fechaEventoSeguimientoCardiometabolico',
   informeLongitudinalCardiometabolico: 'fechaInformeLongitudinalCardiometabolico',
   informeLongitudinalAudiometrico: 'fechaInformeLongitudinalAudiometrico',

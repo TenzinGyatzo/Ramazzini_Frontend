@@ -26,6 +26,7 @@ export const useFormDataStore = defineStore('formData', () => {
   const formDataCuestionarioProdromalBreve = ref({}); // Estado compartido
   const formDataTrastornoLimitePersonalidad = ref({}); // Estado compartido
   const formDataCuestionarioNordico = ref({}); // Estado compartido
+  const formDataEvaluacionSuenoVigilia = ref({}); // Estado compartido
   const formDataEventoSeguimientoCardiometabolico = ref({}); // Estado compartido
   const formDataInformeLongitudinalCardiometabolico = ref({}); // Estado compartido
   const formDataInformeLongitudinalAudiometrico = ref({}); // Estado compartido
@@ -102,6 +103,9 @@ export const useFormDataStore = defineStore('formData', () => {
       case 'cuestionarioNordico':
         formDataCuestionarioNordico.value = doc;
         break;
+      case 'evaluacionSuenoVigilia':
+        formDataEvaluacionSuenoVigilia.value = doc;
+        break;
       case 'eventoSeguimientoCardiometabolico':
         formDataEventoSeguimientoCardiometabolico.value = doc;
         break;
@@ -151,6 +155,7 @@ export const useFormDataStore = defineStore('formData', () => {
       formDataCuestionarioProdromalBreve,
       formDataTrastornoLimitePersonalidad,
       formDataCuestionarioNordico,
+      formDataEvaluacionSuenoVigilia,
       formDataEventoSeguimientoCardiometabolico,
       formDataInformeLongitudinalCardiometabolico,
       formDataInformeLongitudinalAudiometrico,
@@ -205,6 +210,7 @@ export const useFormDataStore = defineStore('formData', () => {
     formDataCuestionarioProdromalBreve,
     formDataTrastornoLimitePersonalidad,
     formDataCuestionarioNordico,
+    formDataEvaluacionSuenoVigilia,
     formDataEventoSeguimientoCardiometabolico,
     formDataInformeLongitudinalCardiometabolico,
     formDataInformeLongitudinalAudiometrico,

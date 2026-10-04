@@ -93,6 +93,10 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/cuestionarioNordico`);
     },
 
+    getEvaluacionSuenoVigilia(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/evaluacionSuenoVigilia`);
+    },
+
     getEventoSeguimientoCardiometabolico(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/eventoSeguimientoCardiometabolico`);
     },
