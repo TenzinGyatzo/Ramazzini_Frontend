@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import {
   NO,
@@ -27,19 +27,21 @@ const niveles = computed(() =>
   nivelesRegionNordico(calcularResultadoCuestionarioNordico(formData.formDataCuestionarioNordico.regiones)),
 );
 
-const sinResponder = computed(() =>
-  regiones.value.filter(
-    (region) => !formData.formDataCuestionarioNordico.regiones?.[region.clave]?.molestia12Meses,
-  ),
-);
-
-/** Contesta «No» solo en las regiones del paso que siguen sin respuesta. */
-const negarSinResponder = () => {
+/**
+ * Al montar el paso, las regiones que aún no tienen respuesta quedan en «No»
+ * (mismo criterio que los demás cuestionarios). Una respuesta ya capturada no se toca.
+ */
+function asegurarNoPorDefecto() {
   const respuestas = asegurarRegionesNordico(formData.formDataCuestionarioNordico);
-  for (const region of sinResponder.value) {
-    respuestas[region.clave].molestia12Meses = NO;
+  for (const region of regiones.value) {
+    if (!respuestas[region.clave].molestia12Meses) {
+      respuestas[region.clave].molestia12Meses = NO;
+    }
   }
-};
+}
+
+onMounted(asegurarNoPorDefecto);
+asegurarNoPorDefecto();
 </script>
 
 <template>
@@ -54,17 +56,8 @@ const negarSinResponder = () => {
       <div class="min-w-0 flex-1">
         <p class="text-sm text-gray-600 leading-snug">
           Indique si el trabajador ha tenido dolor, molestias o disconfort en cada región durante los
-          últimos 12 meses. Al contestar «Sí» se despliega el detalle de esa región.
+          últimos 12 meses. Cada región inicia en «No»; al contestar «Sí» se despliega su detalle.
         </p>
-        <button
-          v-if="sinResponder.length"
-          type="button"
-          class="mt-3 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-emerald-400 hover:bg-emerald-50"
-          @click="negarSinResponder"
-        >
-          Marcar «No» en {{ sinResponder.length === 1 ? 'la región' : `las ${sinResponder.length} regiones` }} sin
-          responder
-        </button>
       </div>
     </div>
 

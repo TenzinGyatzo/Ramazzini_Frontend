@@ -78,19 +78,20 @@ describe('captura del Cuestionario Nórdico', () => {
     expect(wrapper.find(cuello).text()).not.toContain('Intensidad habitual');
   });
 
-  it('el atajo contesta «No» solo en las regiones sin responder', async () => {
+  it('al montar el paso, las regiones sin respuesta quedan en «No» y las ya contestadas se respetan', () => {
     const formData = useFormDataStore();
+    Object.assign(formData.formDataCuestionarioNordico, {
+      regiones: { hombroDerecho: { molestia12Meses: 'Sí', intensidad: 5 } },
+    });
+
     const wrapper = mount(PasoRegionesNordico, { props: { paso: 2 } });
 
-    await boton(wrapper, 'hombroDerecho', 'molestia12Meses', 'Sí').trigger('click');
-    const atajo = wrapper.findAll('button').find((b) => b.text().includes('sin'));
-    expect(atajo?.text()).toContain('las 2 regiones');
-    await atajo!.trigger('click');
-
     const regiones = (formData.formDataCuestionarioNordico as any).regiones;
-    expect(regiones.cuello.molestia12Meses).toBe('No');
-    expect(regiones.hombroIzquierdo.molestia12Meses).toBe('No');
-    expect(regiones.hombroDerecho.molestia12Meses).toBe('Sí');
+    expect(regiones.cuello).toEqual({ molestia12Meses: 'No' });
+    expect(regiones.hombroIzquierdo).toEqual({ molestia12Meses: 'No' });
+    expect(regiones.hombroDerecho).toEqual({ molestia12Meses: 'Sí', intensidad: 5 });
+    // Solo se tocan las regiones del paso montado
+    expect(regiones.rodillaDerecha).toEqual({});
     expect(wrapper.findAll('button').some((b) => b.text().includes('sin responder'))).toBe(false);
   });
 
