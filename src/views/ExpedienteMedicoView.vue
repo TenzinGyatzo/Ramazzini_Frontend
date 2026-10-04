@@ -823,6 +823,17 @@ const handleDeleteSelected = async () => {
                 }
             });
 
+            // Evaluación de sueño y vigilia
+            yearData.evaluacionSuenoVigilia?.forEach(evaluacionSuenoVigilia => {
+                const rutaBase = obtenerRutaDocumento(evaluacionSuenoVigilia, 'Evaluacion Sueno Vigilia');
+                const fecha = obtenerFechaDocumento(evaluacionSuenoVigilia) || 'SinFecha';
+                const nombreArchivo = obtenerNombreArchivo(evaluacionSuenoVigilia, 'Evaluacion Sueno Vigilia', fecha);
+                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
+                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(evaluacionSuenoVigilia)) {
+                    documentosAEliminar.push({ id: evaluacionSuenoVigilia._id, tipo: 'evaluacionSuenoVigilia' });
+                }
+            });
+
             // Evento Seguimiento Cardiometabolico
             yearData.eventoSeguimientoCardiometabolico?.forEach(eventoSeguimientoCardiometabolico => {
                 const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
@@ -963,6 +974,7 @@ const totalDocumentosCreados = computed(() => {
       (yearData.cuestionarioProdromalBreve?.length || 0) +
       (yearData.trastornoLimitePersonalidad?.length || 0) +
       (yearData.cuestionarioNordico?.length || 0) +
+      (yearData.evaluacionSuenoVigilia?.length || 0) +
       (yearData.eventoSeguimientoCardiometabolico?.length || 0) + 
       (yearData.informeLongitudinalCardiometabolico?.length || 0) +
       (yearData.informeLongitudinalAudiometrico?.length || 0)

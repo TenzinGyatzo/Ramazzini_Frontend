@@ -36,6 +36,11 @@ import {
   esPositivoRiesgoPsicoticoPQB,
 } from '@/helpers/cuestionarioProdromalBreveSteps';
 import { SEMAFORO_NORDICO } from '@/helpers/cuestionarioNordico';
+import {
+  ALERTAS_SUENO_VIGILIA,
+  CLASE_NIVEL_SUENO_VIGILIA,
+  TITULO_PRIORIDAD_SUENO_VIGILIA,
+} from '@/helpers/evaluacionSuenoVigilia';
 import { ESTADO_CONTROL_CONDICION_OPTS, GRADO_OBESIDAD_OPTS } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
 import { CAMBIO_UMBRAL_ILA, clasificarCambioUmbralOidoIla } from '@/helpers/informeLongitudinalAudiometrico';
 import ModalPdfEliminado from './ModalPdfEliminado.vue';
@@ -1571,6 +1576,10 @@ const descargarPdfActual = async () => {
                     documento = props.cuestionarioNordico;
                     tipoDocumento = 'Cuestionario Nordico';
                     break;
+                case 'evaluacionsuenovigilia':
+                    documento = props.evaluacionSuenoVigilia;
+                    tipoDocumento = 'Evaluacion Sueno Vigilia';
+                    break;
                 case 'eventoseguimientocardiometabolico':
                     documento = props.eventoSeguimientoCardiometabolico;
                     tipoDocumento = 'Evento Seguimiento Cardiometabolico';
@@ -1746,6 +1755,7 @@ const props = defineProps({
     cuestionarioProdromalBreve: [Object, String],
     trastornoLimitePersonalidad: [Object, String],
     cuestionarioNordico: [Object, String],
+    evaluacionSuenoVigilia: [Object, String],
     eventoSeguimientoCardiometabolico: [Object, String],
     informeLongitudinalCardiometabolico: [Object, String],
     informeLongitudinalAudiometrico: [Object, String],
@@ -1777,7 +1787,7 @@ const currentDocumentData = computed(() => {
            props.certificado || props.certificadoExpedito || props.receta || props.documentoExterno ||
            props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica ||
            props.notaAclaratoria || props.controlPrenatal || props.historiaOtologica || props.previoEspirometria ||
-           props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad || props.cuestionarioNordico ||
+           props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad || props.cuestionarioNordico || props.evaluacionSuenoVigilia ||
            props.eventoSeguimientoCardiometabolico || props.informeLongitudinalCardiometabolico ||
            props.informeLongitudinalAudiometrico;
 });
@@ -1878,6 +1888,7 @@ const fechaCamposOrigen = {
     'cuestionarioProdromalBreve': 'fechaCuestionarioProdromalBreve',
     'trastornoLimitePersonalidad': 'fechaTrastornoLimitePersonalidad',
     'cuestionarioNordico': 'fechaCuestionarioNordico',
+    'evaluacionSuenoVigilia': 'fechaEvaluacionSuenoVigilia',
     'eventoSeguimientoCardiometabolico': 'fechaEventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'fechaInformeLongitudinalCardiometabolico',
     'informeLongitudinalAudiometrico': 'fechaInformeLongitudinalAudiometrico',
@@ -1905,6 +1916,7 @@ const tipoSingularAPlural = {
     'cuestionarioProdromalBreve': 'cuestionarioProdromalBreve',
     'trastornoLimitePersonalidad': 'trastornoLimitePersonalidad',
     'cuestionarioNordico': 'cuestionarioNordico',
+    'evaluacionSuenoVigilia': 'evaluacionSuenoVigilia',
     'eventoSeguimientoCardiometabolico': 'eventoSeguimientoCardiometabolico',
     'informeLongitudinalCardiometabolico': 'informeLongitudinalCardiometabolico',
     'informeLongitudinalAudiometrico': 'informeLongitudinalAudiometrico',
@@ -2136,6 +2148,7 @@ const documentoNombre = computed(() => {
     if (props.cuestionarioProdromalBreve) return 'Cuestionario Prodromal Breve';
     if (props.trastornoLimitePersonalidad) return 'Trastorno Límite Personalidad';
     if (props.cuestionarioNordico) return 'Cuestionario Nórdico';
+    if (props.evaluacionSuenoVigilia) return 'Evaluación de sueño y vigilia';
     if (props.eventoSeguimientoCardiometabolico) return 'Evento de Seguimiento Cardiometabólico';
     if (props.informeLongitudinalCardiometabolico) return 'Informe Longitudinal Cardiometabólico';
     if (props.informeLongitudinalAudiometrico) return 'Informe longitudinal de seguimiento audiométrico';
@@ -2448,6 +2461,30 @@ const claseColorInterpretacionNordicoLista = computed(
   () => SEMAFORO_NORDICO[resultadoNordicoDoc.value?.semaforo]?.claseTexto ?? 'text-gray-600',
 );
 
+/** Evaluación de sueño y vigilia: el resultado viene calculado del servidor (`resultado`). */
+const resultadoSuenoVigiliaDoc = computed(() => {
+  const d = props.evaluacionSuenoVigilia;
+  return d && typeof d === 'object' ? d.resultado ?? null : null;
+});
+
+const interpretacionEvaluacionSuenoVigilia = computed(() => {
+  const r = resultadoSuenoVigiliaDoc.value;
+  const titulo = r ? TITULO_PRIORIDAD_SUENO_VIGILIA[r.prioridad] : null;
+  if (!titulo) return 'Sin resultado';
+  // La alerta más grave con color; las informativas no se muestran en la fila
+  const alerta = ALERTAS_SUENO_VIGILIA.find(
+    (a) => a.nivel !== 'informativo' && (r.alertas ?? []).includes(a.clave),
+  );
+  const partes = [titulo];
+  if (alerta) partes.push(alerta.texto);
+  if (r.completo === false) partes.push('incompleta');
+  return partes.join(' · ');
+});
+
+const claseColorInterpretacionSuenoVigiliaLista = computed(
+  () => CLASE_NIVEL_SUENO_VIGILIA[resultadoSuenoVigiliaDoc.value?.prioridad]?.texto ?? 'text-gray-600',
+);
+
 /** Chips en lista para Evento Seguimiento Cardiometabólico (misma semántica que `VisualizadorEventoSeguimientoCardiometabolico`). */
 const labelControlCardiometabolicoDoc = (code) => {
   if (!code) return '—';
@@ -2656,6 +2693,7 @@ const construirRutaYNombrePDF = () => {
     'cuestionarioprodromalbreve': props.cuestionarioProdromalBreve,
     'trastornolimitepersonalidad': props.trastornoLimitePersonalidad,
     'cuestionarionordico': props.cuestionarioNordico,
+    'evaluacionsuenovigilia': props.evaluacionSuenoVigilia,
     'eventoseguimientocardiometabolico': props.eventoSeguimientoCardiometabolico,
     'informelongitudinalcardiometabolico': props.informeLongitudinalCardiometabolico,
     'informelongitudinalaudiometrico': props.informeLongitudinalAudiometrico,
@@ -2667,7 +2705,7 @@ const construirRutaYNombrePDF = () => {
     return { ruta: null, nombre: null, updatedAt: null };
   }
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaCuestionarioNordico || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaCuestionarioNordico || doc?.fechaEvaluacionSuenoVigilia || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
 
   // Nombres de documentos (DEBEN coincidir con los del backend para construir rutas correctas)
   const tiposDocumentos = {
@@ -2691,6 +2729,7 @@ const construirRutaYNombrePDF = () => {
     'cuestionarioprodromalbreve': 'Cuestionario Prodromal Breve',
     'trastornolimitepersonalidad': 'Trastorno Limite Personalidad',
     'cuestionarionordico': 'Cuestionario Nordico',
+    'evaluacionsuenovigilia': 'Evaluacion Sueno Vigilia',
     'eventoseguimientocardiometabolico': 'Evento Seguimiento Cardiometabolico',
     'informelongitudinalcardiometabolico': 'Informe Longitudinal Cardiometabolico',
     'informelongitudinalaudiometrico': 'Informe Longitudinal Audiometrico',
@@ -2904,7 +2943,7 @@ onUnmounted(() => {
 });
 
 // Watcher para verificar disponibilidad cuando cambien las props
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.cuestionarioNordico, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico, props.informeLongitudinalAudiometrico], () => {
+watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.cuestionarioNordico, props.evaluacionSuenoVigilia, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico, props.informeLongitudinalAudiometrico], () => {
   pdfCheckScheduled = false;
   schedulePdfCheck();
 }, { deep: true });
@@ -4888,6 +4927,69 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     </div>
                 </div>
                     
+                <!-- Evaluación de sueño y vigilia -->
+                <div v-if="typeof evaluacionSuenoVigilia === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
+                            type="checkbox" :checked="isSelected"
+                            @change="(event) => handleCheckboxChange(event, evaluacionSuenoVigilia, 'Evaluacion Sueno Vigilia')">
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        @click="abrirPdf(
+                            `${evaluacionSuenoVigilia.rutaPDF}`,
+                            `Evaluacion Sueno Vigilia ${convertirFechaISOaDDMMYYYY(evaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia)}.pdf`,
+                            evaluacionSuenoVigilia.updatedAt ? new Date(evaluacionSuenoVigilia.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${evaluacionSuenoVigilia.rutaPDF}`,
+                            `Evaluacion Sueno Vigilia ${convertirFechaISOaDDMMYYYY(evaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia)}.pdf`,
+                            evaluacionSuenoVigilia.updatedAt ? new Date(evaluacionSuenoVigilia.updatedAt).getTime() : null,
+                            'Evaluacion Sueno Vigilia')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg mr-4 group-hover:bg-indigo-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fa-solid fa-moon text-indigo-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1 flex-wrap gap-1">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Evaluación de sueño y vigilia
+                                </h3>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(evaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="evaluacionSuenoVigilia.estado"
+                                    :fechaFinalizacion="evaluacionSuenoVigilia.fechaFinalizacion"
+                                    :finalizadoPor="evaluacionSuenoVigilia.finalizadoPor"
+                                    :fechaAnulacion="evaluacionSuenoVigilia.fechaAnulacion"
+                                    :anuladoPor="evaluacionSuenoVigilia.anuladoPor"
+                                    :razonAnulacion="evaluacionSuenoVigilia.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+                        <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
+                            <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
+                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Prioridad de seguimiento</p>
+                                    <p
+                                        class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
+                                        :class="claseColorInterpretacionSuenoVigiliaLista"
+                                        :title="interpretacionEvaluacionSuenoVigilia">
+                                        {{ interpretacionEvaluacionSuenoVigilia }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    
                 <!-- Evento Seguimiento Cardiometabolico -->
                 <div v-if="typeof eventoSeguimientoCardiometabolico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
@@ -5212,6 +5314,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     'Cuestionario Prodromal Breve': cuestionarioProdromalBreve,
                     'Trastorno Limite Personalidad': trastornoLimitePersonalidad,
                     'Cuestionario Nordico': cuestionarioNordico,
+                    'Evaluacion Sueno Vigilia': evaluacionSuenoVigilia,
                     'Evento Seguimiento Cardiometabolico': eventoSeguimientoCardiometabolico,
                     'Informe Longitudinal Cardiometabolico': informeLongitudinalCardiometabolico,
                     'Informe Longitudinal Audiometrico': informeLongitudinalAudiometrico,

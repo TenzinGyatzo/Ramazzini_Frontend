@@ -119,6 +119,7 @@ const documentTypeLabels = {
   cuestionarioProdromalBreve: "Cuestionario Prodromal Breve",
   trastornoLimitePersonalidad: "Trastorno Limite Personalidad",
   cuestionarioNordico: "Cuestionario Nórdico",
+  evaluacionSuenoVigilia: "Evaluación de Sueño y Vigilia",
   eventoSeguimientoCardiometabolico: "Evento Seguimiento Cardiometabolico",
   informeLongitudinalCardiometabolico: "Informe Longitudinal Cardiometabolico",
   informeLongitudinalAudiometrico: "Informe Longitudinal Audiometrico",

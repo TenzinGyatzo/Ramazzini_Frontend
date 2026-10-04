@@ -61,6 +61,7 @@ const QUESTIONNAIRE_TIPO_MAP = {
   'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
   'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
   'cuestionario-nordico': 'cuestionarioNordico',
+  'evaluacion-sueno-vigilia': 'evaluacionSuenoVigilia',
   'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
   'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
   'informe-longitudinal-audiometrico': 'informeLongitudinalAudiometrico',
@@ -93,6 +94,7 @@ const questionnaireToDocumentType = {
   'cuestionario-prodromal-breve': 'cuestionarioProdromalBreve',
   'trastorno-limite-personalidad': 'trastornoLimitePersonalidad',
   'cuestionario-nordico': 'cuestionarioNordico',
+  'evaluacion-sueno-vigilia': 'evaluacionSuenoVigilia',
   'evento-seguimiento-cardiometabolico': 'eventoSeguimientoCardiometabolico',
   'informe-longitudinal-cardiometabolico': 'informeLongitudinalCardiometabolico',
   'informe-longitudinal-audiometrico': 'informeLongitudinalAudiometrico',
@@ -294,6 +296,21 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
       },
     });
     closeModal();
+  } else if (questionnaireType === 'evaluacion-sueno-vigilia') {
+    await navigateWithTreatmentConsent({
+      trabajadorId: trabajadores.currentTrabajadorId,
+      trabajadorNombre: formatNombreCompleto(trabajadores.currentTrabajador),
+      to: {
+        name: 'crear-documento',
+        params: {
+          idEmpresa: empresas.currentEmpresaId,
+          idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId,
+          idTrabajador: trabajadores.currentTrabajadorId,
+          tipoDocumento: 'evaluacionSuenoVigilia'
+        }
+      },
+    });
+    closeModal();
   } else if (questionnaireType === 'evento-seguimiento-cardiometabolico') {
     await navigateWithTreatmentConsent({
       trabajadorId: trabajadores.currentTrabajadorId,
@@ -479,6 +496,19 @@ const handleQuestionnaireSelect = async (questionnaireType) => {
               <button type="button" @click="handleQuestionnaireSelect('cuestionario-nordico')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
                 <i class="fa-solid fa-person text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
                 Cuestionario Nórdico de Kuorinka (síntomas musculoesqueléticos)
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center text-sm font-semibold text-emerald-700 uppercase tracking-wide mb-3">
+              <i class="fas fa-moon text-emerald-500 mr-3"></i>
+              Sueño y fatiga
+            </div>
+            <div class="space-y-2">
+              <button type="button" @click="handleQuestionnaireSelect('evaluacion-sueno-vigilia')" class="questionnaire-option w-full text-left px-4 py-3 rounded-lg hover:bg-emerald-50 text-sm text-emerald-700 transition-colors duration-150 flex items-center group border border-gray-200 hover:border-emerald-300">
+                <i class="fa-solid fa-moon text-emerald-500 mr-3 text-sm group-hover:text-emerald-600"></i>
+                Evaluación de sueño y vigilia
               </button>
             </div>
           </div>

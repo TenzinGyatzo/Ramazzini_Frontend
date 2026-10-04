@@ -204,6 +204,7 @@ export const obtenerFechaDocumento = (documento) => {
         'fechaCuestionarioProdromalBreve',
         'fechaTrastornoLimitePersonalidad',
         'fechaCuestionarioNordico',
+        'fechaEvaluacionSuenoVigilia',
         'fechaEventoSeguimientoCardiometabolico',
         'fechaInformeLongitudinalCardiometabolico',
         'fechaInformeLongitudinalAudiometrico',

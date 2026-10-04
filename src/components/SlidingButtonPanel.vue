@@ -108,8 +108,9 @@ const documentOrder = {
   cuestionarioProdromalBreve: 19,
   trastornoLimitePersonalidad: 20,
   cuestionarioNordico: 21,
-  eventoSeguimientoCardiometabolico: 22,
-  informeLongitudinalCardiometabolico: 23,
+  evaluacionSuenoVigilia: 22,
+  eventoSeguimientoCardiometabolico: 23,
+  informeLongitudinalCardiometabolico: 24,
 };
 
 const isVisible = ref(true);

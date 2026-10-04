@@ -113,6 +113,7 @@ const totalDocumentos = computed(() => {
            (props.documents.cuestionarioProdromalBreve?.length || 0) +
            (props.documents.trastornoLimitePersonalidad?.length || 0) +
            (props.documents.cuestionarioNordico?.length || 0) +
+           (props.documents.evaluacionSuenoVigilia?.length || 0) +
            (props.documents.eventoSeguimientoCardiometabolico?.length || 0) +
            (props.documents.informeLongitudinalCardiometabolico?.length || 0) +
            (props.documents.informeLongitudinalAudiometrico?.length || 0)
@@ -175,6 +176,7 @@ const documentoRutasInfo = computed(() => {
     props.documents.cuestionarioProdromalBreve?.forEach((doc) => pushDoc(doc, 'cuestionarioProdromalBreve', 'Cuestionario Prodromal Breve'));
     props.documents.trastornoLimitePersonalidad?.forEach((doc) => pushDoc(doc, 'trastornoLimitePersonalidad', 'Trastorno Limite Personalidad'));
     props.documents.cuestionarioNordico?.forEach((doc) => pushDoc(doc, 'cuestionarioNordico', 'Cuestionario Nordico'));
+    props.documents.evaluacionSuenoVigilia?.forEach((doc) => pushDoc(doc, 'evaluacionSuenoVigilia', 'Evaluacion Sueno Vigilia'));
     props.documents.eventoSeguimientoCardiometabolico?.forEach((doc) => pushDoc(doc, 'eventoSeguimientoCardiometabolico', 'Evento Seguimiento Cardiometabolico'));
     props.documents.informeLongitudinalCardiometabolico?.forEach((doc) => pushDoc(doc, 'informeLongitudinalCardiometabolico', 'Informe Longitudinal Cardiometabólico'));
 
@@ -777,6 +779,26 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                     :isDeletionMode="isDeletionMode"
                     :isSelected="isDocumentoSelected(cuestionarioNordico._id)"
                     @eliminarDocumento="$emit('eliminarDocumento', cuestionarioNordico._id, convertirFechaISOaDDMMYYYY(cuestionarioNordico.fechaCuestionarioNordico), 'cuestionarioNordico')"
+                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
+                    @openSubscriptionModal="emit('openSubscriptionModal')"
+                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
+                />
+            </div>
+        </div>
+
+        <!-- Evaluación de sueño y vigilia -->
+        <div v-if="documents.evaluacionSuenoVigilia && documents.evaluacionSuenoVigilia.length > 0">
+            <div v-for="(evaluacionSuenoVigilia, index) in documents.evaluacionSuenoVigilia" :key="evaluacionSuenoVigilia._id"
+                 class="transition-all duration-200 hover:bg-gray-50"
+>
+                <DocumentoItem
+                    :evaluacionSuenoVigilia="evaluacionSuenoVigilia"
+                    :documentoId="evaluacionSuenoVigilia._id"
+                    :documentoTipo="'evaluacionSuenoVigilia'"
+                    :toggleRouteSelection="toggleRouteSelection"
+                    :isDeletionMode="isDeletionMode"
+                    :isSelected="isDocumentoSelected(evaluacionSuenoVigilia._id)"
+                    @eliminarDocumento="$emit('eliminarDocumento', evaluacionSuenoVigilia._id, convertirFechaISOaDDMMYYYY(evaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia), 'evaluacionSuenoVigilia')"
                     @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                     @openSubscriptionModal="emit('openSubscriptionModal')"
                     @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
