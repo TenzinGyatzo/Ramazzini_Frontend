@@ -1449,7 +1449,7 @@ const añoMasReciente = computed(() => {
                   class="expediente-secondary-btn relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-emerald-600 bg-white overflow-hidden transition-all duration-200 hover:bg-emerald-50 hover:shadow-lg"
                 >
                   <i class="fas fa-file-alt text-emerald-600 text-lg ml-4"></i>
-                  <span class="flex-1 text-center text-emerald-600 text-lg ml-3">Otros<span class="hidden sm:inline"> Documentos</span></span>
+                  <span class="flex-1 text-center text-emerald-600 text-lg ml-3">Más<span class="hidden sm:inline"> documentos</span></span>
                   <i class="fas fa-arrow-right text-emerald-600 text-sm mr-4 transition-transform duration-200 hover:translate-x-1"></i>
                 </button>
               </div>

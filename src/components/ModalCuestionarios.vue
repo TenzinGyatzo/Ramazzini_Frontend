@@ -311,7 +311,7 @@ const seleccionarPrimerResultado = () => {
       <div class="modal-cuestionarios-encabezado shrink-0 px-5 sm:px-7 pt-5 pb-4 border-b border-gray-200">
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0">
-            <h1 id="modal-cuestionarios-titulo" class="text-2xl font-medium leading-tight">Otros documentos</h1>
+            <h1 id="modal-cuestionarios-titulo" class="text-2xl font-medium leading-tight">Más documentos</h1>
             <p v-if="trabajadorNombre" class="modal-cuestionarios-trabajador mt-1 text-sm text-gray-600 truncate" data-trabajador>
               <i class="fas fa-user text-emerald-600 text-xs mr-1" aria-hidden="true"></i>
               Para <span class="font-medium text-gray-800">{{ trabajadorNombre }}</span>
