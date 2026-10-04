@@ -16,8 +16,6 @@ export interface ResultadoClinico {
   anioEstudio?: number;
   resultadoGlobal?: 'NORMAL' | 'ANORMAL' | 'NO_CONCLUYENTE';
   hallazgoEspecifico?: string;
-  relevanciaClinica?: 'LEVE' | 'MODERADA' | 'ALTA';
-  recomendacion?: string;
   tipoAlteracionEspirometria?: 'ANORMAL_OBSTRUCTIVO' | 'ANORMAL_RESTRICTIVO_SOSPECHADO' | 'ANORMAL_MIXTO';
   tipoAlteracionEKG?: 'ANORMAL_ARRITMIA' | 'ANORMAL_TRASTORNO_CONDUCCION' | 'ANORMAL_ISQUEMIA_INFARTO' | 'ANORMAL_REPOLARIZACION' | 'ANORMAL_HIPERTROFIA_CRECIMIENTO_CAVIDADES' | 'ANORMAL_QT_ALTERADO';
   tipoSangre?: 'A_POS' | 'A_NEG' | 'B_POS' | 'B_NEG' | 'AB_POS' | 'AB_NEG' | 'O_POS' | 'O_NEG';
@@ -60,12 +58,6 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     { value: 'NORMAL', label: 'Normal' },
     { value: 'ANORMAL', label: 'Anormal' },
     { value: 'NO_CONCLUYENTE', label: 'No Concluyente' },
-  ];
-
-  const relevanciaClinicaOptions = [
-    { value: 'LEVE', label: 'Leve' },
-    { value: 'MODERADA', label: 'Moderada' },
-    { value: 'ALTA', label: 'Alta' },
   ];
 
   const tipoAlteracionEspirometriaOptions = [
@@ -367,7 +359,6 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     drawerOpen,
     tipoEstudioOptions,
     resultadoGlobalOptions,
-    relevanciaClinicaOptions,
     tipoAlteracionEspirometriaOptions,
     tipoAlteracionEKGOptions,
     tipoAlteracionRayosXOptions,

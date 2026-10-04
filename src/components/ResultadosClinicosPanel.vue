@@ -360,38 +360,6 @@
                   </datalist>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Relevancia Clínica
-                    </label>
-                    <select
-                      v-model="formData.relevanciaClinica"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    >
-                      <option value="">Seleccione...</option>
-                      <option
-                        v-for="option in store.relevanciaClinicaOptions"
-                        :key="option.value"
-                        :value="option.value"
-                      >
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                      Recomendación
-                    </label>
-                    <input
-                      v-model="formData.recomendacion"
-                      type="text"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                      placeholder="Ej: Seguimiento, Repetir estudio, Valoración especializada..."
-                    />
-                  </div>
-                </div>
-
               </template>
 
               <!-- Texto libre para resultado Normal (mismo hallazgoEspecifico que en ANORMAL) -->
@@ -948,8 +916,6 @@ const formData = ref<Partial<ResultadoClinico>>({
   fechaEstudio: '',
   resultadoGlobal: undefined,
   hallazgoEspecifico: '',
-  relevanciaClinica: undefined,
-  recomendacion: '',
   tipoAlteracionEspirometria: undefined,
   tipoAlteracionEKG: undefined,
   tipoAlteracionRayosX: [],
@@ -1262,8 +1228,6 @@ const handleResultadoGlobalChange = () => {
   }
 
   if (cur !== 'ANORMAL') {
-    formData.value.relevanciaClinica = undefined;
-    formData.value.recomendacion = '';
     formData.value.tipoAlteracionEspirometria = undefined;
     formData.value.tipoAlteracionEKG = undefined;
     formData.value.tipoAlteracionRayosX = [];
@@ -1313,8 +1277,6 @@ const handleEdit = (item: ResultadoClinico) => {
     fechaEstudio: fecha,
     resultadoGlobal: item.resultadoGlobal,
     hallazgoEspecifico: hallazgo,
-    relevanciaClinica: item.relevanciaClinica,
-    recomendacion: item.recomendacion || '',
     tipoAlteracionEspirometria: item.tipoAlteracionEspirometria,
     tipoAlteracionEKG: item.tipoAlteracionEKG,
     tipoAlteracionRayosX: item.tipoAlteracionRayosX ? [...item.tipoAlteracionRayosX] : [],
@@ -1488,8 +1450,6 @@ const handleSubmit = async () => {
       payload.resultadoGlobal = formData.value.resultadoGlobal;
 
       if (formData.value.resultadoGlobal !== 'ANORMAL') {
-        payload.relevanciaClinica = null;
-        payload.recomendacion = '';
         if (formData.value.resultadoGlobal === 'NO_CONCLUYENTE') {
           payload.hallazgoEspecifico = '';
         } else if (
@@ -1504,8 +1464,6 @@ const handleSubmit = async () => {
     // Agregar campos condicionales
     if (formData.value.resultadoGlobal === 'ANORMAL') {
       payload.hallazgoEspecifico = formData.value.hallazgoEspecifico;
-      payload.relevanciaClinica = formData.value.relevanciaClinica;
-      payload.recomendacion = formData.value.recomendacion;
       
       if (formData.value.tipoEstudio === 'ESPIROMETRIA') {
         payload.tipoAlteracionEspirometria = formData.value.tipoAlteracionEspirometria;
@@ -1655,8 +1613,6 @@ const resetForm = () => {
     fechaEstudio: '',
     resultadoGlobal: undefined,
     hallazgoEspecifico: '',
-    relevanciaClinica: undefined,
-    recomendacion: '',
     tipoAlteracionEspirometria: undefined,
     tipoAlteracionEKG: undefined,
     tipoAlteracionRayosX: [],

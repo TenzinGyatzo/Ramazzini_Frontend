@@ -103,12 +103,6 @@
                 <span class="font-semibold text-gray-800">{{ etiquetaHallazgoLibre(resultado) }}:</span>
                 {{ resultado.hallazgoEspecifico }}
               </p>
-              <p v-if="resultado.relevanciaClinica">
-                <span class="font-semibold text-gray-800">Relevancia Clínica:</span> {{ getRelevanciaLabel(resultado.relevanciaClinica) }}
-              </p>
-              <p v-if="resultado.recomendacion">
-                <span class="font-semibold text-gray-800">Recomendación:</span> {{ resultado.recomendacion }}
-              </p>
             </div>
           </transition>
         </div>
@@ -302,22 +296,13 @@ const etiquetaHallazgoLibre = (resultado: ResultadoClinico) => {
 const hasDetails = (resultado: ResultadoClinico) => {
   return !!(
     getAlteracionLabel(resultado) ||
-    (resultado.hallazgoEspecifico && resultado.hallazgoEspecifico.trim()) ||
-    resultado.relevanciaClinica ||
-    resultado.recomendacion
+    (resultado.hallazgoEspecifico && resultado.hallazgoEspecifico.trim())
   );
 };
 
 const getTipoSangreLabel = (tipo?: string) => {
   const option = store.tipoSangreOptions.find((opt) => opt.value === tipo);
   return option?.label || tipo || '';
-};
-
-const getRelevanciaLabel = (relevancia?: string) => {
-  const option = store.relevanciaClinicaOptions.find(
-    (opt) => opt.value === relevancia
-  );
-  return option?.label || relevancia || '';
 };
 
 const getResultadoBadgeClasses = (resultado?: string) => {
