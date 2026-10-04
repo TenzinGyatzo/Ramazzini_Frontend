@@ -92,9 +92,9 @@ export const PREGUNTAS_SUENO_VIGILIA: {
 /** Escala de frecuencia (último mes); el valor guardado es el índice 0–3. */
 export const FRECUENCIAS_SUENO_VIGILIA = [
   'Nunca',
-  'Menos de una vez por semana',
-  'Una o dos veces por semana',
-  'Tres o más veces por semana',
+  'De 1 a 3 veces en el mes',
+  '1 o 2 veces por semana',
+  '3 o más veces por semana',
 ] as const;
 
 export const FRECUENCIA_MAXIMA_SUENO_VIGILIA = 3;

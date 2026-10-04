@@ -45,7 +45,7 @@ describe('captura de la Evaluación de sueño y vigilia', () => {
     const wrapper = mount(PasoFrecuenciaSuenoVigilia, { props: { modulo: 'vigilia' } });
     expect(wrapper.find('[data-area="fatiga"]').text()).toContain('Sin síntomas');
 
-    await boton(wrapper, 'faltaEnergia', 'Una o dos veces por semana').trigger('click');
+    await boton(wrapper, 'faltaEnergia', '1 o 2 veces por semana').trigger('click');
 
     expect(datos().vigilia.faltaEnergia).toBe(2);
     expect(wrapper.find('[data-area="fatiga"]').text()).toContain('Semanal');
