@@ -874,7 +874,7 @@ const camposRequeridosPorTipo: Record<string, Array<{
     ]),
     {
       campo: 'seguimiento',
-      nombre: 'Seguimiento: ¿desde cuándo ocurre?',
+      nombre: 'Seguimiento: ¿desde cuándo presenta estos síntomas?',
       tipo: 'seleccion',
       paso: PASO_SEGUIMIENTO_SUENO_VIGILIA,
       validacion: (seguimiento: any, datos: any) => !haySintomasSuenoVigilia(datos) || !!seguimiento?.duracion,

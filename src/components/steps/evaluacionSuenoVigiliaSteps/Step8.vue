@@ -2,11 +2,14 @@
 import { computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import {
+  AREAS_SUENO_VIGILIA,
   DURACIONES_SUENO_VIGILIA,
+  ETIQUETA_NIVEL_SUENO_VIGILIA,
   FACTORES_SUENO_VIGILIA,
   PRODUCTOS_PARA_DORMIR,
   SI_NO_NO_SABE_SUENO_VIGILIA,
   asegurarGruposSuenoVigilia,
+  calcularResultadoEvaluacionSuenoVigilia,
   haySintomasSuenoVigilia,
 } from '@/helpers/evaluacionSuenoVigilia';
 
@@ -19,6 +22,14 @@ const datos = computed(() => formData.formDataEvaluacionSuenoVigilia);
 
 const haySintomas = computed(() => haySintomasSuenoVigilia(datos.value));
 const haySintomasVigilia = computed(() => haySintomasSuenoVigilia(datos.value, 'vigilia'));
+
+/** Áreas con síntomas, para que quede claro a qué se refieren las preguntas del seguimiento. */
+const areasConSintomas = computed(() => {
+  const { areas } = calcularResultadoEvaluacionSuenoVigilia(datos.value);
+  return AREAS_SUENO_VIGILIA.filter((area) => areas[area.clave].nivel !== 'verde').map(
+    (area) => `${area.etiqueta} (${ETIQUETA_NIVEL_SUENO_VIGILIA[areas[area.clave].nivel].toLowerCase()})`,
+  );
+});
 
 const seguimiento = computed(() => datos.value.seguimiento ?? {});
 const seguimientoEditable = () => asegurarGruposSuenoVigilia(formData.formDataEvaluacionSuenoVigilia).seguimiento;
@@ -90,8 +101,14 @@ const claseInput =
     </p>
 
     <div v-else class="mt-3 space-y-4">
+      <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2" data-sintomas>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-600">Síntomas reportados</p>
+        <p class="mt-0.5 text-sm text-gray-800">{{ areasConSintomas.join(' · ') }}</p>
+        <p class="mt-1 text-xs text-gray-600">Las siguientes preguntas se refieren a estos síntomas.</p>
+      </div>
+
       <div data-pregunta="duracion">
-        <p class="mb-1.5 text-sm font-medium text-gray-800">¿Desde cuándo ocurre?</p>
+        <p class="mb-1.5 text-sm font-medium text-gray-800">¿Desde cuándo presenta estos síntomas?</p>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="opcion in DURACIONES_SUENO_VIGILIA"
@@ -126,7 +143,7 @@ const claseInput =
 
       <div data-pregunta="factores">
         <p class="mb-1.5 text-sm font-medium text-gray-800">
-          ¿Qué considera que influye? <span class="font-normal text-gray-500">(opcional, puede marcar varias)</span>
+          ¿Qué considera que influye en estos síntomas? <span class="font-normal text-gray-500">(opcional, puede marcar varias)</span>
         </p>
         <div class="flex flex-wrap gap-2">
           <button

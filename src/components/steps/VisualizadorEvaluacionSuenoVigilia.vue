@@ -304,7 +304,7 @@ const clasePuntoAlerta = (alerta) =>
         </thead>
         <tbody>
           <tr>
-            <td class="w-2/5 px-2 py-1 border border-gray-300 text-gray-700">¿Desde cuándo ocurre?</td>
+            <td class="w-2/5 px-2 py-1 border border-gray-300 text-gray-700">¿Desde cuándo presenta estos síntomas?</td>
             <td class="px-2 py-1 border border-gray-300 font-medium">{{ seguimiento.duracion || 'Sin respuesta' }}</td>
           </tr>
           <tr v-if="haySintomasVigilia">
@@ -316,7 +316,7 @@ const clasePuntoAlerta = (alerta) =>
             </td>
           </tr>
           <tr v-if="textoFactoresSuenoVigilia(seguimiento)">
-            <td class="px-2 py-1 border border-gray-300 text-gray-700">Factores que influyen</td>
+            <td class="px-2 py-1 border border-gray-300 text-gray-700">Factores que influyen en los síntomas</td>
             <td class="px-2 py-1 border border-gray-300 font-medium">{{ textoFactoresSuenoVigilia(seguimiento) }}</td>
           </tr>
           <tr v-if="textoProductosSuenoVigilia(seguimiento)">

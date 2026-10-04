@@ -93,7 +93,9 @@ describe('captura de la Evaluación de sueño y vigilia', () => {
     Object.assign(datos(), { sueno: { suenoSuperficial: 2 } });
     const wrapper = mount(Step8);
 
-    expect(wrapper.find('[data-pregunta="duracion"]').exists()).toBe(true);
+    expect(wrapper.find('[data-pregunta="duracion"]').text()).toContain('¿Desde cuándo presenta estos síntomas?');
+    // El paso dice a qué síntomas se refieren las preguntas
+    expect(wrapper.find('[data-sintomas]').text()).toContain('Calidad y descanso (semanal)');
     expect(wrapper.find('[data-pregunta="empeoraAlDormirMal"]').exists()).toBe(false);
     // Sin respuesta por defecto
     expect(wrapper.findAll('button[aria-pressed="true"]')).toHaveLength(0);

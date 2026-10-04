@@ -286,10 +286,10 @@ describe('validación antes de guardar', () => {
 
   it('exige el seguimiento solo cuando hay síntomas', () => {
     expect(nombres({ ...base, sueno: { ...suenoNunca, suenoSuperficial: 1 } })).toEqual([
-      'Seguimiento: ¿desde cuándo ocurre?',
+      'Seguimiento: ¿desde cuándo presenta estos síntomas?',
     ]);
     expect(nombres({ ...base, vigilia: { ...vigiliaNunca, faltaEnergia: 2 } })).toEqual([
-      'Seguimiento: ¿desde cuándo ocurre?',
+      'Seguimiento: ¿desde cuándo presenta estos síntomas?',
       'Seguimiento: ¿los síntomas del día empeoran al dormir poco o mal?',
     ]);
   });
