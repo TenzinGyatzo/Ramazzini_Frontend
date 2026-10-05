@@ -34,8 +34,11 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
 
   it('sin ajustes: muestra lo contratado, sin desglose', async () => {
     const wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 50 });
-    expect(wrapper.text()).toContain('10 de 50 permitidas');
-    expect(wrapper.text()).toContain('40 disponibles');
+    const uso = wrapper.find('[data-testid="suscripcion-uso"]').text();
+    expect(uso).toMatch(/10\s*de 50/);
+    expect(uso).toContain('20% usado');
+    expect(uso).toContain('40 disponibles');
+    expect(wrapper.find('[data-testid="suscripcion-estado-general"]').text()).toBe('Sin plan');
     expect(wrapper.find('[data-testid="suscripcion-desglose-historias"]').exists()).toBe(false);
   });
 
@@ -45,11 +48,12 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
       limiteHistoriasManual: 200,
       limiteHistoriasEfectivo: 200,
     });
-    expect(wrapper.text()).toContain('10 de 200 permitidas');
-    expect(wrapper.text()).toContain('190 disponibles');
+    const uso = wrapper.find('[data-testid="suscripcion-uso"]').text();
+    expect(uso).toMatch(/10\s*de 200/);
+    expect(uso).toContain('190 disponibles');
     const desglose = wrapper.find('[data-testid="suscripcion-desglose-historias"]').text();
-    expect(desglose).toContain('Contratadas en tu plan: 50');
-    expect(desglose).toContain('De cortesía de Ramazzini: +150');
+    expect(desglose).toMatch(/Incluidas en tu plan\s*50/);
+    expect(desglose).toMatch(/De cortesía de Ramazzini\s*\+150/);
   });
 
   it('periodo gratuito extendido: muestra la fecha nueva y la original', async () => {
@@ -61,7 +65,10 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
       fechaFinTrial: fin.toISOString(),
       periodoDePruebaFinalizado: false,
     });
-    expect(wrapper.text()).toMatch(/Periodo Gratuito:\s*Hasta el .*días restantes/);
+    expect(wrapper.find('[data-testid="suscripcion-periodo-gratuito"]').text()).toMatch(
+      /Periodo gratuito\s*Hasta el .*días restantes/,
+    );
+    expect(wrapper.find('[data-testid="suscripcion-estado-general"]').text()).toBe('Periodo gratuito');
     expect(wrapper.find('[data-testid="suscripcion-periodo-ajustado"]').text()).toContain(
       'originalmente hasta el',
     );
@@ -71,7 +78,7 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
     const wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25 });
     expect(wrapper.text()).not.toContain('Comenzar con un Plan');
     const contacto = wrapper.find('[data-testid="suscripcion-contacto-ramazzini"]');
-    expect(contacto.text()).toContain('se gestiona directamente con Ramazzini');
+    expect(wrapper.text()).toContain('se gestiona directamente con Ramazzini');
     expect(contacto.find('a[href^="https://wa.me/526681702850"]').exists()).toBe(true);
     expect(contacto.find('a[href^="mailto:soporte@ramazzini.app"]').exists()).toBe(true);
   });
@@ -80,6 +87,35 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
     const wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25, pagoEnLineaHabilitado: true });
     expect(wrapper.text()).toContain('Comenzar con un Plan');
     expect(wrapper.find('[data-testid="suscripcion-contacto-ramazzini"]').exists()).toBe(false);
+  });
+
+  it('uso: la barra cambia de color al acercarse y al llegar al límite, con un solo aviso', async () => {
+    let wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 50 }, 10);
+    expect(wrapper.find('[role="progressbar"] div').classes()).toContain('bg-emerald-500');
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
+
+    wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 50 }, 45);
+    expect(wrapper.find('[role="progressbar"] div').classes()).toContain('bg-amber-500');
+    expect(wrapper.find('[data-testid="suscripcion-aviso-cerca-limite"]').exists()).toBe(true);
+
+    wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 50 }, 50);
+    expect(wrapper.find('[role="progressbar"] div').classes()).toContain('bg-red-500');
+    expect(wrapper.find('[data-testid="suscripcion-aviso-limite"]').exists()).toBe(true);
+    expect(wrapper.findAll('[role="status"]')).toHaveLength(1);
+    expect(wrapper.text()).toContain('0 disponibles');
+  });
+
+  it('Mercado Pago: el estado se muestra en español y cancelar es un enlace discreto', async () => {
+    const wrapper = await mountWith({
+      maxHistoriasPermitidasAlMes: 25,
+      pagoEnLineaHabilitado: true,
+      estadoSuscripcion: 'authorized',
+    });
+    const tarjeta = wrapper.find('[data-testid="suscripcion-mercado-pago"]').text();
+    expect(tarjeta).toContain('Activa');
+    expect(tarjeta).not.toContain('authorized');
+    // Sin suscripción cargada desde Mercado Pago no hay nada que cancelar
+    expect(wrapper.find('[data-testid="suscripcion-cancelar"]').exists()).toBe(false);
   });
 
   describe('plan contratado con Ramazzini', () => {
@@ -103,7 +139,8 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
       const tarjeta = wrapper.find('[data-testid="suscripcion-contrato"]');
       expect(tarjeta.text()).toContain('Plan Profesional');
       expect(tarjeta.text()).toContain('150');
-      expect(tarjeta.text()).toContain('(+20 de cortesía)');
+      expect(tarjeta.text()).toContain('+20 de cortesía');
+      expect(wrapper.find('[data-testid="suscripcion-estado-general"]').text()).toBe('Activa');
       expect(tarjeta.find('[data-testid="suscripcion-contrato-vigencia"]').text()).toContain('Vigente hasta el');
       expect(tarjeta.text()).not.toMatch(/\$|MXN|Pago mensual/);
       expect(wrapper.text()).not.toContain('Sin plan activo');
@@ -121,6 +158,7 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
     it('vencido y renovación automática', async () => {
       let wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25, contrato: contrato({ pagadoHasta: enDias(-2) }) });
       expect(wrapper.find('[data-testid="suscripcion-contrato-vencido"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="suscripcion-estado-general"]').text()).toBe('Vencida');
       expect(wrapper.find('[data-testid="suscripcion-contrato-vigencia"]').text()).toContain('Venció el');
       wrapper = await mountWith({ maxHistoriasPermitidasAlMes: 25, contrato: contrato({ renovacionAutomatica: true }) });
       expect(wrapper.find('[data-testid="suscripcion-contrato-vigencia"]').text()).toContain('Renovación automática');
