@@ -1,4 +1,5 @@
 <script setup>
+import { esAudiometriaExternaUtilizable, usarAudiometriaExterna } from '@/helpers/audiometriaFuente';
 import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { onMounted, ref, watch, computed } from 'vue';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -60,7 +61,7 @@ const nearestAudiometria = ref(null);
 const resultadosClinicos = ref([]);
 const nearestEKG = ref(null);
 const nearestEspirometria = ref(null);
-/** Audiometría externa (resultado clínico): solo se usa si ese año no hay una de Ramazzini. */
+/** Audiometría externa (resultado clínico) cuando es más reciente que la de Ramazzini; `null` si no se usa. */
 const nearestAudiometriaExterna = ref(null);
 const nearestTipoSangre = ref(null);
 const nearestRayosX = ref(null);
@@ -243,9 +244,17 @@ const calculateNearestDocuments = (fechaAptitudPuesto) => {
     'ESPIROMETRIA',
     referenceYear,
   );
-  nearestAudiometriaExterna.value = nearestAudiometria.value
-    ? null
-    : findMostRecentByTipo(resultadosClinicos.value, 'AUDIOMETRIA', referenceYear);
+  const audiometriaExternaReciente = findMostRecentByTipo(
+    (resultadosClinicos.value || []).filter((r) => esAudiometriaExternaUtilizable(r)),
+    'AUDIOMETRIA',
+    referenceYear,
+  );
+  nearestAudiometriaExterna.value = usarAudiometriaExterna(
+    nearestAudiometria.value?.fechaAudiometria,
+    audiometriaExternaReciente,
+  )
+    ? audiometriaExternaReciente
+    : null;
   nearestTipoSangre.value = findMostRecentByTipo(
     resultadosClinicos.value,
     'TIPO_SANGRE'
@@ -484,6 +493,14 @@ const tipoAlteracionAudiometriaLabels = {
   TRAUMA_ACUSTICO: 'Trauma acústico',
 };
 
+const gradoHipoacusiaLabels = {
+  LEVE: 'leve',
+  MODERADA: 'moderada',
+  MODERADA_SEVERA: 'moderada-severa',
+  SEVERA: 'severa',
+  PROFUNDA: 'profunda',
+};
+
 const tipoAlteracionEspirometriaLabels = {
   ANORMAL_OBSTRUCTIVO: 'Anormal obstructivo',
   ANORMAL_RESTRICTIVO_SOSPECHADO: 'Anormal restrictivo sospechado',
@@ -558,7 +575,7 @@ const ekgResumen = computed(() => {
   return null;
 });
 
-/** Mismo criterio que el PDF: una externa no concluyente no se muestra. */
+/** Mismo criterio que el PDF: cuenta la más reciente; el mismo día, la de Ramazzini. */
 const audiometriaExternaResumen = computed(() => {
   const externa = nearestAudiometriaExterna.value;
   if (!externa || externa.resultadoGlobal === 'NO_CONCLUYENTE') {
@@ -574,7 +591,9 @@ const audiometriaExternaResumen = computed(() => {
 
   if (externa.resultadoGlobal === 'ANORMAL') {
     const tipoAlteracion = externa.tipoAlteracionAudiometria;
-    return tipoAlteracionAudiometriaLabels[tipoAlteracion] || tipoAlteracion || 'Anormal';
+    const tipo = tipoAlteracionAudiometriaLabels[tipoAlteracion] || tipoAlteracion || 'Anormal';
+    const grado = gradoHipoacusiaLabels[externa.gradoHipoacusia];
+    return grado ? `${tipo} (${grado})` : tipo;
   }
 
   return null;
@@ -833,7 +852,7 @@ const evaluacionSuenoVigiliaResumen = computed(() =>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ nearestExamenVista ?
               examenVistaResumen : '-' }}</td>
           </tr>
-          <tr v-if="nearestAudiometria" class="odd:bg-white even:bg-gray-50">
+          <tr v-if="nearestAudiometria && !nearestAudiometriaExterna" class="odd:bg-white even:bg-gray-50">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">AUDIOMETRÍA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">{{ nearestAudiometria ?
               convertirFechaISOaDDMMYYYY(nearestAudiometria.fechaAudiometria) : '-' }}</td>

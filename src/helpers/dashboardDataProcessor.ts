@@ -502,7 +502,23 @@ export interface AudiometriaResumen {
   hipoacusiaBilateralCombinada: number | null | undefined; // HBC (%)
   perdidaAuditivaBilateralAMA: number | null | undefined;   // PPAB (%)
   caidaMaxDb: number | null | undefined;                    // dB (máximo)
+  /**
+   * Presente cuando la audiometría que cuenta para el trabajador es externa (resultado
+   * clínico): no trae decibeles, así que se clasifica con lo que capturó el usuario.
+   */
+  externa?: {
+    resultadoGlobal: 'NORMAL' | 'ANORMAL' | string | null;
+    gradoHipoacusia: string | null;
+  } | null;
 }
+
+const CATEGORIA_POR_GRADO_EXTERNO: Record<string, Categoria> = {
+  LEVE: 'Hipoacusia leve',
+  MODERADA: 'Hipoacusia moderada',
+  MODERADA_SEVERA: 'H. moderada-severa',
+  SEVERA: 'Hipoacusia severa',
+  PROFUNDA: 'Hipoacusia profunda',
+};
 
 const CATS_ORDEN: Categoria[] = [
   'Normal',
@@ -548,6 +564,11 @@ function categoriaLFT_porCaidaMax(db?: number | null): Categoria {
 
 // ---- Orquestadores ----
 function clasificarBinario(item: AudiometriaResumen): Binario {
+  if (item.externa) {
+    if (item.externa.resultadoGlobal === 'NORMAL') return 'Normal';
+    if (item.externa.resultadoGlobal === 'ANORMAL') return 'Anormal';
+    return 'Indeterminado';
+  }
   const m = item.metodoAudiometria;
   if (m === 'AMA') return binarioAMA(item.perdidaAuditivaBilateralAMA);
   if (m === 'LFT') return binarioLFT(item.hipoacusiaBilateralCombinada);
@@ -555,6 +576,13 @@ function clasificarBinario(item: AudiometriaResumen): Binario {
 }
 
 function clasificarCategoria(item: AudiometriaResumen): Categoria {
+  if (item.externa) {
+    if (item.externa.resultadoGlobal === 'NORMAL') return 'Normal';
+    if (item.externa.resultadoGlobal === 'ANORMAL') {
+      return CATEGORIA_POR_GRADO_EXTERNO[item.externa.gradoHipoacusia ?? ''] ?? 'Indeterminado';
+    }
+    return 'Indeterminado';
+  }
   const m = item.metodoAudiometria;
   if (m === 'AMA') return categoriaAMA(item.perdidaAuditivaBilateralAMA);
   if (m === 'LFT') return categoriaLFT_porCaidaMax(item.caidaMaxDb);

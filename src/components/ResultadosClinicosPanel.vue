@@ -371,6 +371,31 @@
 
               <!-- Campos condicionales si resultadoGlobal = ANORMAL -->
               <template v-if="formData.resultadoGlobal === 'ANORMAL'">
+                <!-- Grado de hipoacusia: alimenta la distribución audiométrica de las estadísticas -->
+                <div v-if="formData.tipoEstudio === 'AUDIOMETRIA'" class="mb-0">
+                  <label class="block text-sm font-medium text-gray-700 mb-1" for="rc-grado-hipoacusia">
+                    Grado de hipoacusia <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="rc-grado-hipoacusia"
+                    v-model="formData.gradoHipoacusia"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    <option value="">Seleccione...</option>
+                    <option
+                      v-for="option in store.gradoHipoacusiaOptions"
+                      :key="option.value"
+                      :value="option.value"
+                    >
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <p class="mt-1 text-xs text-gray-500">
+                    Tómalo del reporte del proveedor. Se usa en las estadísticas de audiometría.
+                  </p>
+                </div>
+
                 <!-- Hallazgo Específico -->
                 <div class="mb-0">
                   <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -951,6 +976,7 @@ const formData = ref<Partial<ResultadoClinico>>({
   resultadoGlobal: undefined,
   hallazgoEspecifico: '',
   tipoAlteracionAudiometria: undefined,
+  gradoHipoacusia: undefined,
   tipoAlteracionEspirometria: undefined,
   tipoAlteracionEKG: undefined,
   tipoAlteracionRayosX: [],
@@ -1283,6 +1309,7 @@ const handleResultadoGlobalChange = () => {
 
   if (cur !== 'ANORMAL') {
     formData.value.tipoAlteracionAudiometria = undefined;
+    formData.value.gradoHipoacusia = undefined;
     formData.value.tipoAlteracionEspirometria = undefined;
     formData.value.tipoAlteracionEKG = undefined;
     formData.value.tipoAlteracionRayosX = [];
@@ -1333,6 +1360,7 @@ const handleEdit = (item: ResultadoClinico) => {
     resultadoGlobal: item.resultadoGlobal,
     hallazgoEspecifico: hallazgo,
     tipoAlteracionAudiometria: item.tipoAlteracionAudiometria,
+    gradoHipoacusia: item.gradoHipoacusia,
     tipoAlteracionEspirometria: item.tipoAlteracionEspirometria,
     tipoAlteracionEKG: item.tipoAlteracionEKG,
     tipoAlteracionRayosX: item.tipoAlteracionRayosX ? [...item.tipoAlteracionRayosX] : [],
@@ -1454,6 +1482,13 @@ const handleSubmit = async () => {
         });
         return;
       }
+      if (formData.value.tipoEstudio === 'AUDIOMETRIA' && !formData.value.gradoHipoacusia) {
+        toast.open({
+          message: 'El grado de hipoacusia es obligatorio para audiometría con resultado anormal',
+          type: 'error',
+        });
+        return;
+      }
       if (formData.value.tipoEstudio === 'ESPIROMETRIA' && !formData.value.tipoAlteracionEspirometria) {
         toast.open({
           message: 'Por favor seleccione el tipo de alteración',
@@ -1530,6 +1565,7 @@ const handleSubmit = async () => {
       
       if (formData.value.tipoEstudio === 'AUDIOMETRIA') {
         payload.tipoAlteracionAudiometria = formData.value.tipoAlteracionAudiometria;
+        payload.gradoHipoacusia = formData.value.gradoHipoacusia;
       } else if (formData.value.tipoEstudio === 'ESPIROMETRIA') {
         payload.tipoAlteracionEspirometria = formData.value.tipoAlteracionEspirometria;
       } else if (formData.value.tipoEstudio === 'EKG') {
@@ -1679,6 +1715,7 @@ const resetForm = () => {
     resultadoGlobal: undefined,
     hallazgoEspecifico: '',
     tipoAlteracionAudiometria: undefined,
+    gradoHipoacusia: undefined,
     tipoAlteracionEspirometria: undefined,
     tipoAlteracionEKG: undefined,
     tipoAlteracionRayosX: [],

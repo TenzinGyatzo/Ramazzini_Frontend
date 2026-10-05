@@ -22,6 +22,7 @@ export interface ResultadoClinico {
     | 'HIPOACUSIA_NEUROSENSORIAL'
     | 'HIPOACUSIA_MIXTA'
     | 'TRAUMA_ACUSTICO';
+  gradoHipoacusia?: 'LEVE' | 'MODERADA' | 'MODERADA_SEVERA' | 'SEVERA' | 'PROFUNDA';
   tipoAlteracionEspirometria?: 'ANORMAL_OBSTRUCTIVO' | 'ANORMAL_RESTRICTIVO_SOSPECHADO' | 'ANORMAL_MIXTO';
   tipoAlteracionEKG?: 'ANORMAL_ARRITMIA' | 'ANORMAL_TRASTORNO_CONDUCCION' | 'ANORMAL_ISQUEMIA_INFARTO' | 'ANORMAL_REPOLARIZACION' | 'ANORMAL_HIPERTROFIA_CRECIMIENTO_CAVIDADES' | 'ANORMAL_QT_ALTERADO';
   tipoSangre?: 'A_POS' | 'A_NEG' | 'B_POS' | 'B_NEG' | 'AB_POS' | 'AB_NEG' | 'O_POS' | 'O_NEG';
@@ -73,6 +74,15 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     { value: 'HIPOACUSIA_NEUROSENSORIAL', label: 'Hipoacusia neurosensorial' },
     { value: 'HIPOACUSIA_MIXTA', label: 'Hipoacusia mixta' },
     { value: 'TRAUMA_ACUSTICO', label: 'Trauma acústico (muesca en 4 kHz)' },
+  ];
+
+  /** Mismas categorías que la gráfica de distribución audiométrica de las estadísticas. */
+  const gradoHipoacusiaOptions = [
+    { value: 'LEVE', label: 'Leve' },
+    { value: 'MODERADA', label: 'Moderada' },
+    { value: 'MODERADA_SEVERA', label: 'Moderada-severa' },
+    { value: 'SEVERA', label: 'Severa' },
+    { value: 'PROFUNDA', label: 'Profunda' },
   ];
 
   const tipoAlteracionEspirometriaOptions = [
@@ -375,6 +385,7 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     tipoEstudioOptions,
     resultadoGlobalOptions,
     tipoAlteracionAudiometriaOptions,
+    gradoHipoacusiaOptions,
     tipoAlteracionEspirometriaOptions,
     tipoAlteracionEKGOptions,
     tipoAlteracionRayosXOptions,

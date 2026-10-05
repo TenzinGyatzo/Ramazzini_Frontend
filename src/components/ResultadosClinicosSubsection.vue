@@ -237,7 +237,11 @@ const getAlteracionLabel = (resultado: ResultadoClinico) => {
     const option = store.tipoAlteracionAudiometriaOptions.find(
       (opt) => opt.value === resultado.tipoAlteracionAudiometria
     );
-    return option?.label || resultado.tipoAlteracionAudiometria;
+    const grado = store.gradoHipoacusiaOptions.find(
+      (opt) => opt.value === resultado.gradoHipoacusia
+    );
+    const tipo = option?.label || resultado.tipoAlteracionAudiometria;
+    return grado ? `${tipo} (${grado.label.toLowerCase()})` : tipo;
   }
 
   if (resultado.tipoEstudio === 'ESPIROMETRIA' && resultado.tipoAlteracionEspirometria) {
