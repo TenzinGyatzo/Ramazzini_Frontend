@@ -82,17 +82,58 @@ const totalHistoriasAdicionales = computed(() => {
   }, 0) || 0;
 });
 
-/** Días que quedan del periodo gratuito; 0 si ya terminó o no aplica. */
+/** El periodo gratuito sigue corriendo (aún no llega su fecha de fin). */
+const periodoGratuitoVigente = computed(
+  () =>
+    !proveedorSalud.value?.periodoDePruebaFinalizado &&
+    !!fechaFinTrialEfectiva.value &&
+    new Date(fechaFinTrialEfectiva.value).getTime() > Date.now(),
+);
+
+/** Días completos que quedan del periodo gratuito; 0 en el último día, si ya terminó o si no aplica. */
 const diasRestantesPeriodoGratuito = computed(() => {
-  if (proveedorSalud.value?.periodoDePruebaFinalizado || !fechaFinTrialEfectiva.value) return 0;
+  if (!periodoGratuitoVigente.value) return 0;
   return Math.max(0, differenceInDays(fechaFinTrialEfectiva.value, new Date()));
+});
+
+/** Sin contrato con Ramazzini ni suscripción de Mercado Pago, presente o pasada. */
+const sinPlan = computed(
+  () => !contrato.value && !suscripcionActual.value && !proveedorSalud.value?.estadoSuscripcion,
+);
+/** Aún no contrata y está usando el periodo gratuito: el momento de decidir. */
+const enPeriodoGratuito = computed(() => sinPlan.value && periodoGratuitoVigente.value);
+/** No contrató y el periodo gratuito ya se acabó (solo si hay constancia de que existió). */
+const periodoGratuitoTerminado = computed(
+  () =>
+    sinPlan.value &&
+    !periodoGratuitoVigente.value &&
+    (proveedorSalud.value?.periodoDePruebaFinalizado === true || !!fechaFinTrialEfectiva.value),
+);
+
+/** Días antes del fin del periodo gratuito en que se avisa arriba. */
+const DIAS_AVISO_PERIODO_GRATUITO = 5;
+
+const textoRestantePeriodoGratuito = computed(() => {
+  const dias = diasRestantesPeriodoGratuito.value;
+  if (dias === 0) return 'Termina hoy';
+  return dias === 1 ? '1 día restante' : `${dias} días restantes`;
+});
+
+/** Avance del periodo gratuito (0 a 100); `null` si no se conoce cuándo empezó. */
+const avancePeriodoGratuito = computed(() => {
+  const inicio = proveedorSalud.value?.fechaInicioTrial;
+  if (!inicio || !fechaFinTrialEfectiva.value) return null;
+  const t0 = new Date(inicio).getTime();
+  const t1 = new Date(fechaFinTrialEfectiva.value).getTime();
+  if (!Number.isFinite(t0) || !Number.isFinite(t1) || t1 <= t0) return null;
+  return Math.round(Math.min(Math.max((Date.now() - t0) / (t1 - t0), 0), 1) * 100);
 });
 
 const periodoGratuito = computed(() => {
   if (proveedorSalud.value?.periodoDePruebaFinalizado) return 'Finalizado';
   if (!fechaFinTrialEfectiva.value) return 'No disponible';
   // Fin efectivo: el fijado por Ramazzini, o inicio + 15 días
-  return diasRestantesPeriodoGratuito.value > 0
+  return periodoGratuitoVigente.value
     ? `Hasta el ${formatDate(fechaFinTrialEfectiva.value)} (${diasRestantesPeriodoGratuito.value} días restantes)`
     : 'Finalizado';
 });
@@ -187,7 +228,7 @@ const estadoGeneral = computed(() => {
       : { texto: 'Vencida', clase: 'bg-red-100 text-red-700' };
   }
   if (proveedorSalud.value?.estadoSuscripcion) return estadoMercadoPago.value;
-  if (diasRestantesPeriodoGratuito.value > 0) {
+  if (periodoGratuitoVigente.value) {
     return { texto: 'Periodo gratuito', clase: 'bg-sky-100 text-sky-800' };
   }
   return { texto: 'Sin plan', clase: ESTADO_SIN_SUSCRIPCION.clase };
@@ -209,6 +250,15 @@ const aviso = computed(() => {
       accion: 'contacto',
     };
   }
+  if (periodoGratuitoTerminado.value) {
+    return {
+      id: 'suscripcion-aviso-prueba-terminada',
+      tono: 'peligro',
+      icono: 'fa-solid fa-circle-exclamation',
+      texto: 'Tu periodo gratuito terminó. Contrata un plan para seguir usando Ramazzini.',
+      accion: pagoEnLineaHabilitado.value ? 'planes' : 'contacto',
+    };
+  }
   if (limiteAlcanzado.value) {
     return {
       id: 'suscripcion-aviso-limite',
@@ -227,6 +277,17 @@ const aviso = computed(() => {
       icono: 'fa-regular fa-clock',
       texto: `Tu plan vence ${cuando}. Contacta a Ramazzini para renovarlo.`,
       accion: 'contacto',
+    };
+  }
+  if (enPeriodoGratuito.value && diasRestantesPeriodoGratuito.value <= DIAS_AVISO_PERIODO_GRATUITO) {
+    const dias = diasRestantesPeriodoGratuito.value;
+    const cuando = dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${dias} días`;
+    return {
+      id: 'suscripcion-aviso-prueba-por-terminar',
+      tono: 'advertencia',
+      icono: 'fa-regular fa-clock',
+      texto: `Tu periodo gratuito termina ${cuando}. Contrata un plan para no interrumpir tu trabajo.`,
+      accion: pagoEnLineaHabilitado.value ? 'planes' : 'contacto',
     };
   }
   if (suscripcionCanceladaYActiva.value) {
@@ -369,8 +430,65 @@ const formatearPais = (codigoPais) => {
           </dl>
         </section>
 
+        <!-- Periodo gratuito en curso: aún no contrata -->
+        <section
+          v-if="enPeriodoGratuito"
+          data-testid="suscripcion-periodo-gratuito-tarjeta"
+          class="suscripcion-tarjeta rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm"
+        >
+          <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Tu plan</p>
+          <h2 class="mt-0.5 text-xl font-semibold text-gray-800">Periodo gratuito</h2>
+          <p class="mt-1 text-gray-800">
+            <span class="text-3xl font-semibold">{{ textoRestantePeriodoGratuito }}</span>
+          </p>
+          <div
+            v-if="avancePeriodoGratuito !== null"
+            class="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-gray-200"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            :aria-valuenow="avancePeriodoGratuito"
+            aria-label="Avance del periodo gratuito"
+          >
+            <div
+              class="h-full rounded-full transition-all duration-500"
+              :class="diasRestantesPeriodoGratuito <= DIAS_AVISO_PERIODO_GRATUITO ? 'bg-amber-500' : 'bg-sky-500'"
+              :style="{ width: avancePeriodoGratuito + '%' }"
+            ></div>
+          </div>
+          <dl class="mt-3">
+            <div class="flex items-baseline justify-between gap-4 border-t border-gray-100 py-2 text-sm">
+              <dt class="text-gray-500">Termina el</dt>
+              <dd class="text-right font-medium text-gray-800">{{ formatDate(fechaFinTrialEfectiva) }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-4 border-t border-gray-100 py-2 text-sm">
+              <dt class="text-gray-500">Historias al mes incluidas</dt>
+              <dd class="text-right font-medium text-gray-800">{{ limiteHistorias }}</dd>
+            </div>
+          </dl>
+          <p class="mt-2 text-xs text-gray-500">
+            Al terminar necesitarás un plan para seguir registrando trabajadores y creando documentos. Lo que ya
+            capturaste se conserva.
+          </p>
+        </section>
+
+        <!-- Periodo gratuito terminado sin contratar -->
+        <section
+          v-else-if="periodoGratuitoTerminado"
+          data-testid="suscripcion-sin-plan"
+          class="suscripcion-tarjeta rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm"
+        >
+          <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Tu plan</p>
+          <h2 class="mt-0.5 text-xl font-semibold text-gray-800">Sin plan activo</h2>
+          <p class="mt-2 text-sm text-gray-600">
+            Tu periodo gratuito terminó<template v-if="fechaFinTrialEfectiva">
+              el {{ formatDate(fechaFinTrialEfectiva) }}</template>. Contrata un plan para volver a registrar trabajadores y crear documentos.
+          </p>
+          <p class="mt-2 text-xs text-gray-500">Tus expedientes y documentos siguen guardados.</p>
+        </section>
+
         <!-- Suscripción por Mercado Pago -->
-        <section v-if="mostrarMercadoPago" data-testid="suscripcion-mercado-pago" class="suscripcion-tarjeta rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
+        <section v-else-if="mostrarMercadoPago" data-testid="suscripcion-mercado-pago" class="suscripcion-tarjeta rounded-xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <p class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ contrato ? 'Suscripción en línea' : 'Tu plan' }}</p>
           <h2 class="mt-0.5 text-xl font-semibold text-gray-800">{{ suscripcionActual?.reason || 'Sin plan activo' }}</h2>
           <dl class="mt-3">

@@ -118,6 +118,77 @@ describe('SuscripcionActivaView: contratado vs. asignado por Ramazzini', () => {
     expect(wrapper.find('[data-testid="suscripcion-cancelar"]').exists()).toBe(false);
   });
 
+  describe('periodo gratuito sin plan contratado', () => {
+    const enDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString();
+    const enPrueba = (diasRestantes: number, extra: Record<string, unknown> = {}) => ({
+      maxHistoriasPermitidasAlMes: 25,
+      periodoDePruebaFinalizado: false,
+      fechaInicioTrial: enDias(diasRestantes - 15),
+      fechaFinTrial: enDias(diasRestantes),
+      ...extra,
+    });
+
+    it('la tarjeta principal muestra los días restantes en lugar de «Sin plan activo»', async () => {
+      const wrapper = await mountWith(enPrueba(10.5));
+      const tarjeta = wrapper.find('[data-testid="suscripcion-periodo-gratuito-tarjeta"]');
+      expect(tarjeta.text()).toContain('Periodo gratuito');
+      expect(tarjeta.text()).toContain('10 días restantes');
+      expect(tarjeta.text()).toMatch(/Historias al mes incluidas\s*25/);
+      expect(tarjeta.find('[role="progressbar"]').attributes('aria-valuenow')).toBe('30');
+      expect(wrapper.text()).not.toContain('Sin plan activo');
+      expect(wrapper.find('[data-testid="suscripcion-mercado-pago"]').exists()).toBe(false);
+      // Todavía falta: sin aviso
+      expect(wrapper.find('[role="status"]').exists()).toBe(false);
+    });
+
+    it('avisa en los últimos días, con la acción que corresponde', async () => {
+      let wrapper = await mountWith(enPrueba(3.5));
+      let aviso = wrapper.find('[data-testid="suscripcion-aviso-prueba-por-terminar"]');
+      expect(aviso.text()).toContain('Tu periodo gratuito termina en 3 días');
+      expect(aviso.find('a[href^="https://wa.me/"]').exists()).toBe(true);
+
+      wrapper = await mountWith(enPrueba(1.5, { pagoEnLineaHabilitado: true }));
+      aviso = wrapper.find('[data-testid="suscripcion-aviso-prueba-por-terminar"]');
+      expect(aviso.text()).toContain('termina mañana');
+      expect(aviso.find('button').text()).toBe('Ver planes');
+
+      wrapper = await mountWith(enPrueba(0.5));
+      expect(wrapper.find('[data-testid="suscripcion-aviso-prueba-por-terminar"]').text()).toContain('termina hoy');
+      expect(wrapper.find('[data-testid="suscripcion-periodo-gratuito-tarjeta"]').text()).toContain('Termina hoy');
+    });
+
+    it('terminado sin contratar: lo dice claro y lleva a contratar', async () => {
+      const wrapper = await mountWith({
+        maxHistoriasPermitidasAlMes: 25,
+        periodoDePruebaFinalizado: true,
+        fechaInicioTrial: enDias(-20),
+        fechaFinTrial: enDias(-5),
+      });
+      expect(wrapper.find('[data-testid="suscripcion-sin-plan"]').text()).toContain('Tu periodo gratuito terminó');
+      expect(wrapper.find('[data-testid="suscripcion-aviso-prueba-terminada"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="suscripcion-estado-general"]').text()).toBe('Sin plan');
+      expect(wrapper.find('[data-testid="suscripcion-periodo-gratuito-tarjeta"]').exists()).toBe(false);
+    });
+
+    it('con plan contratado el periodo gratuito no ocupa la tarjeta ni avisa', async () => {
+      const wrapper = await mountWith(
+        enPrueba(2.5, {
+          contrato: {
+            plan: 'basico',
+            historiasMes: 50,
+            periodicidad: 'anual',
+            fechaInicio: '2026-01-01T00:00:00.000Z',
+            estado: 'activo',
+            pagadoHasta: enDias(200),
+          },
+        }),
+      );
+      expect(wrapper.find('[data-testid="suscripcion-periodo-gratuito-tarjeta"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="suscripcion-aviso-prueba-por-terminar"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="suscripcion-contrato"]').exists()).toBe(true);
+    });
+  });
+
   describe('plan contratado con Ramazzini', () => {
     const contrato = (extra: Record<string, unknown> = {}) => ({
       plan: 'profesional',
