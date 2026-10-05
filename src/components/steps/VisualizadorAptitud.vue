@@ -80,91 +80,47 @@ const nearestCuestionarioNordico = ref(null);
 const evaluacionesSuenoVigilia = ref([]);
 const nearestEvaluacionSuenoVigilia = ref(null);
 
+/** `true` mientras llegan los documentos del trabajador; la tabla resumen lo indica. */
+const cargandoDocumentos = ref(true);
+
 onMounted(async () => {
-  try {
-    const response = await DocumentosAPI.getHistoriasClinicas(trabajadores.currentTrabajadorId);
-    historiasClinicas.value = response.data;
-  } catch (error) {
-    console.error('Error al obtener los exámenes:', error);
-  }
-  try {
-    const response = await DocumentosAPI.getExploracionesFisicas(trabajadores.currentTrabajadorId);
-    exploracionesFisicas.value = response.data;
-  } catch (error) {
-    console.error('Error al obtener los exámenes:', error);
-  }
-  try {
-    const response = await DocumentosAPI.getExamenesVista(trabajadores.currentTrabajadorId);
-    examenesVista.value = response.data;
-  } catch (error) {
-    console.error('Error al obtener los exámenes:', error);
-  }
-  try {
-    const response = await DocumentosAPI.getAntidopings(trabajadores.currentTrabajadorId);
-    antidopings.value = response.data;
-  } catch (error) {
-    console.error('Error al obtener los exámenes:', error);
-  }
-  try {
-    const response = await DocumentosAPI.getAudiometrias(trabajadores.currentTrabajadorId);
-    audiometrias.value = response.data;
-  } catch (error) {
-    console.error('Error al obtener los exámenes:', error);
+  const trabajadorId = trabajadores.currentTrabajadorId;
+
+  // Dos peticiones en paralelo en lugar de una por tipo de documento, una tras otra:
+  // el resumen no se puede calcular hasta tener todo, y en cadena tardaba la suma de todas.
+  const [vecinosRes, resultadosRes] = await Promise.allSettled([
+    DocumentosAPI.getAptitudInformeVecinos(trabajadorId),
+    ResultadosClinicosAPI.getByTrabajador(trabajadorId),
+  ]);
+
+  if (vecinosRes.status === 'fulfilled') {
+    const vecinos = vecinosRes.value.data;
+    historiasClinicas.value = vecinos?.historiaClinica ?? [];
+    exploracionesFisicas.value = vecinos?.exploracionFisica ?? [];
+    examenesVista.value = vecinos?.examenVista ?? [];
+    antidopings.value = vecinos?.antidoping ?? [];
+    audiometrias.value = vecinos?.audiometria ?? [];
+    entrevistasPsicologicas.value = vecinos?.entrevistaPsicologica ?? [];
+    trastornosEstadoAnimoList.value = vecinos?.trastornosEstadoAnimo ?? [];
+    cuestionariosProdromalBreve.value = vecinos?.cuestionarioProdromalBreve ?? [];
+    trastornosLimitePersonalidad.value = vecinos?.trastornoLimitePersonalidad ?? [];
+    cuestionariosNordicos.value = vecinos?.cuestionarioNordico ?? [];
+    evaluacionesSuenoVigilia.value = vecinos?.evaluacionSuenoVigilia ?? [];
+  } else {
+    console.error('Error al obtener los documentos del trabajador:', vecinosRes.reason);
   }
 
-  try {
-    const response = await ResultadosClinicosAPI.getByTrabajador(trabajadores.currentTrabajadorId);
-    resultadosClinicos.value = response.data || [];
-  } catch (error) {
-    console.error('Error al obtener los resultados clínicos:', error);
+  if (resultadosRes.status === 'fulfilled') {
+    resultadosClinicos.value = resultadosRes.value.data || [];
+  } else {
+    console.error('Error al obtener los resultados clínicos:', resultadosRes.reason);
     resultadosClinicos.value = [];
   }
 
-  try {
-    const r = await DocumentosAPI.getEntrevistaPsicologica(trabajadores.currentTrabajadorId);
-    entrevistasPsicologicas.value = r.data || [];
-  } catch (error) {
-    console.error('Error al obtener entrevistas psicológicas:', error);
-    entrevistasPsicologicas.value = [];
-  }
-  try {
-    const r = await DocumentosAPI.getTrastornosEstadoAnimo(trabajadores.currentTrabajadorId);
-    trastornosEstadoAnimoList.value = r.data || [];
-  } catch (error) {
-    console.error('Error al obtener cuestionario estado de ánimo:', error);
-    trastornosEstadoAnimoList.value = [];
-  }
-  try {
-    const r = await DocumentosAPI.getCuestionarioProdromalBreve(trabajadores.currentTrabajadorId);
-    cuestionariosProdromalBreve.value = r.data || [];
-  } catch (error) {
-    console.error('Error al obtener cuestionario prodromal breve:', error);
-    cuestionariosProdromalBreve.value = [];
-  }
-  try {
-    const r = await DocumentosAPI.getTrastornoLimitePersonalidad(trabajadores.currentTrabajadorId);
-    trastornosLimitePersonalidad.value = r.data || [];
-  } catch (error) {
-    console.error('Error al obtener cuestionario TLP:', error);
-    trastornosLimitePersonalidad.value = [];
-  }
-  try {
-    const r = await DocumentosAPI.getCuestionarioNordico(trabajadores.currentTrabajadorId);
-    cuestionariosNordicos.value = r.data || [];
-  } catch (error) {
-    console.error('Error al obtener cuestionario nórdico:', error);
-    cuestionariosNordicos.value = [];
-  }
-  try {
-    const r = await DocumentosAPI.getEvaluacionSuenoVigilia(trabajadores.currentTrabajadorId);
-    evaluacionesSuenoVigilia.value = r.data || [];
-  } catch (error) {
-    console.error('Error al obtener evaluación de sueño y vigilia:', error);
-    evaluacionesSuenoVigilia.value = [];
-  }
+  cargandoDocumentos.value = false;
 
-    // Llamar la función de cálculo inicial si ya existe fechaAptitudPuesto
-    if (formData.formDataAptitud.fechaAptitudPuesto) {
+  // Llamar la función de cálculo inicial si ya existe fechaAptitudPuesto
+  if (formData.formDataAptitud.fechaAptitudPuesto) {
     calculateNearestDocuments(formData.formDataAptitud.fechaAptitudPuesto);
   }
 });
@@ -821,6 +777,11 @@ const evaluacionSuenoVigiliaResumen = computed(() =>
           </tr>
         </thead>
         <tbody>
+          <tr v-if="cargandoDocumentos" data-cargando-documentos>
+            <td colspan="3" class="text-xs sm:text-sm text-center px-2 py-1 border border-gray-300 text-gray-500 italic">
+              Cargando los estudios del trabajador…
+            </td>
+          </tr>
           <tr class="odd:bg-white even:bg-gray-50">
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300 font-medium">HISTORIA CLÍNICA
             </td>
