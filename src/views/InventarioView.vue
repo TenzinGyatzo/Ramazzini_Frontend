@@ -866,7 +866,10 @@ const botonSecundario =
           </div>
           <div v-if="insumoEntrada.controlaLote">
             <label :class="etiqueta" for="entrada-lote">Lote</label>
-            <input id="entrada-lote" v-model="formEntrada.lote" type="text" maxlength="40" :class="campo" required />
+            <input id="entrada-lote" v-model="formEntrada.lote" type="text" maxlength="40" placeholder="Ej. 24B0731" :class="campo" required />
+            <p class="mt-1 text-xs text-gray-500">
+              Cópialo tal como viene impreso en el empaque, junto a «Lote», «Lot» o «L».
+            </p>
           </div>
           <div v-if="insumoEntrada.controlaCaducidad">
             <label :class="etiqueta" for="entrada-caducidad">Caducidad</label>
