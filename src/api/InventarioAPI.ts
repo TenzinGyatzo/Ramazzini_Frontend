@@ -7,6 +7,7 @@ import type {
   InsumoPayload,
   InsumoSugerido,
   PaginaMovimientos,
+  ReporteConsumo,
 } from '@/interfaces/inventario.interface';
 
 const centro = (centroId: string) => `/inventario/centros/${centroId}`;
@@ -64,6 +65,10 @@ export default {
     return api.get<PaginaMovimientos>(`${centro(centroId)}/movimientos`, {
       params,
     });
+  },
+
+  getConsumo(centroId: string, params: { desde: string; hasta: string }) {
+    return api.get<ReporteConsumo>(`${centro(centroId)}/consumo`, { params });
   },
 
   registrarEntrada(

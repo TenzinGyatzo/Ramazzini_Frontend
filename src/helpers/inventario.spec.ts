@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   cantidadConSigno,
   cantidadConUnidad,
+  consumoACsv,
   filtrarExistencias,
   formatearCaducidad,
+  periodoMesEnCurso,
   textoAvisoInventario,
 } from './inventario';
 import type { FilaExistencia } from '@/interfaces/inventario.interface';
@@ -63,6 +65,34 @@ describe('helpers de inventario', () => {
         lotesCaducados: 0,
       }),
     ).toBe('1 insumo agotado o con stock bajo');
+  });
+
+  it('el periodo por defecto va del día 1 del mes a hoy', () => {
+    expect(periodoMesEnCurso(new Date(2026, 9, 5))).toEqual({
+      desde: '2026-10-01',
+      hasta: '2026-10-05',
+    });
+  });
+
+  it('exporta el consumo a CSV con comillas donde hacen falta', () => {
+    const csv = consumoACsv([
+      {
+        insumo: {
+          nombre: 'Gasa estéril 10 × 10, paquete',
+          unidad: 'pieza',
+          categoria: 'MATERIAL_CURACION',
+        },
+        entradas: 100,
+        consumo: 12,
+        bajas: 0,
+        ajustes: -3,
+      },
+    ]);
+    expect(csv.startsWith('\uFEFF')).toBe(true);
+    expect(csv.split('\r\n')).toEqual([
+      '\uFEFFInsumo,Categoría,Unidad,Entradas,Consumo,Bajas,Ajustes',
+      '"Gasa estéril 10 × 10, paquete",Material de curación,pieza,100,12,0,-3',
+    ]);
   });
 
   it('pluraliza la unidad', () => {

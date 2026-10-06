@@ -12,6 +12,7 @@ import {
   MOTIVOS_BAJA,
   cantidadConSigno,
   cantidadConUnidad,
+  consumoACsv,
   estadoInsumoVisual,
   estadoLoteVisual,
   etiquetaCategoria,
@@ -20,6 +21,7 @@ import {
   formatearCaducidad,
   formatearFechaHora,
   loteVisible,
+  periodoMesEnCurso,
   type FiltroExistencias,
 } from '@/helpers/inventario';
 import type {
@@ -28,6 +30,7 @@ import type {
   LoteInventario,
   MovimientoInventario,
   PaginaMovimientos,
+  ReporteConsumo,
 } from '@/interfaces/inventario.interface';
 
 const toast: any = inject('toast');
@@ -44,7 +47,7 @@ const cargando = ref(true);
 const filas = ref<FilaExistencia[]>([]);
 const busqueda = ref('');
 const filtro = ref<FiltroExistencias>('TODOS');
-const pestana = ref<'existencias' | 'movimientos'>('existencias');
+const pestana = ref<'existencias' | 'movimientos' | 'consumo'>('existencias');
 
 const filtros: { value: FiltroExistencias; label: string }[] = [
   { value: 'TODOS', label: 'Todos' },
@@ -313,7 +316,47 @@ function verMovimientosDe(insumoId: string) {
 
 watch(pestana, (valor) => {
   if (valor === 'movimientos') aplicarFiltrosMovimientos();
+  if (valor === 'consumo') cargarConsumo();
 });
+
+// ------------------------------------------------------------------ consumo
+
+const reporte = ref<ReporteConsumo | null>(null);
+const cargandoConsumo = ref(false);
+const periodo = reactive(periodoMesEnCurso());
+
+async function cargarConsumo() {
+  if (!periodo.desde || !periodo.hasta) {
+    return avisar('Indica las dos fechas del periodo', 'error');
+  }
+  if (periodo.desde > periodo.hasta) {
+    return avisar('La fecha inicial no puede ser posterior a la final', 'error');
+  }
+  cargandoConsumo.value = true;
+  try {
+    const { data } = await InventarioAPI.getConsumo(idCentro.value, {
+      desde: periodo.desde,
+      hasta: periodo.hasta,
+    });
+    reporte.value = data;
+  } catch (error) {
+    avisar(extractApiErrorMessage(error, 'No se pudo cargar el consumo'), 'error');
+  } finally {
+    cargandoConsumo.value = false;
+  }
+}
+
+function exportarConsumo() {
+  if (!reporte.value?.filas.length) return;
+  const archivo = new Blob([consumoACsv(reporte.value.filas)], {
+    type: 'text/csv;charset=utf-8',
+  });
+  const enlace = document.createElement('a');
+  enlace.href = URL.createObjectURL(archivo);
+  enlace.download = `Consumo ${nombreCentro.value || 'inventario'} ${reporte.value.desde} a ${reporte.value.hasta}.csv`;
+  enlace.click();
+  URL.revokeObjectURL(enlace.href);
+}
 
 const nombreDe = (valor: MovimientoInventario['idInsumo']) =>
   typeof valor === 'object' && valor ? valor.nombre : '—';
@@ -383,7 +426,7 @@ const botonSecundario =
     <template v-else>
       <nav class="mb-4 flex gap-1 border-b border-gray-200 dark:border-gray-700" role="tablist">
         <button
-          v-for="opcion in (['existencias', 'movimientos'] as const)"
+          v-for="opcion in (['existencias', 'movimientos', 'consumo'] as const)"
           :key="opcion"
           type="button"
           role="tab"
@@ -500,7 +543,7 @@ const botonSecundario =
       </section>
 
       <!-- Movimientos -->
-      <section v-else>
+      <section v-else-if="pestana === 'movimientos'">
         <form
           class="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
           @submit.prevent="aplicarFiltrosMovimientos"
@@ -591,6 +634,80 @@ const botonSecundario =
             Siguiente
           </button>
         </div>
+      </section>
+
+      <!-- Consumo -->
+      <section v-else>
+        <form class="mb-3 flex flex-wrap items-end gap-3" @submit.prevent="cargarConsumo">
+          <div>
+            <label :class="etiqueta" for="consumo-desde">Desde</label>
+            <input id="consumo-desde" v-model="periodo.desde" type="date" :class="campo" required />
+          </div>
+          <div>
+            <label :class="etiqueta" for="consumo-hasta">Hasta</label>
+            <input id="consumo-hasta" v-model="periodo.hasta" type="date" :class="campo" required />
+          </div>
+          <button type="submit" :class="botonSecundario" :disabled="cargandoConsumo">
+            <i class="fas fa-rotate"></i> Consultar
+          </button>
+          <button
+            type="button"
+            :class="botonSecundario"
+            :disabled="!reporte?.filas.length"
+            @click="exportarConsumo"
+          >
+            <i class="fas fa-file-csv"></i> Exportar
+          </button>
+        </form>
+
+        <p v-if="cargandoConsumo" class="py-10 text-center text-gray-500">
+          <i class="fas fa-spinner fa-spin mr-2"></i> Cargando consumo...
+        </p>
+        <div
+          v-else
+          class="overflow-x-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+        >
+          <table class="w-full min-w-[640px] text-sm">
+            <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-900/40 dark:text-gray-400">
+              <tr>
+                <th class="px-4 py-3">Insumo</th>
+                <th class="px-4 py-3 text-right">Consumo</th>
+                <th class="px-4 py-3 text-right">Entradas</th>
+                <th class="px-4 py-3 text-right">Bajas</th>
+                <th class="px-4 py-3 text-right">Ajustes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="fila in reporte?.filas ?? []"
+                :key="fila.insumo._id"
+                class="border-t border-gray-100 dark:border-gray-700"
+              >
+                <td class="px-4 py-3">
+                  <p class="font-medium text-gray-900 dark:text-gray-100">{{ fila.insumo.nombre }}</p>
+                  <p class="text-xs text-gray-500">{{ etiquetaCategoria(fila.insumo.categoria) }}</p>
+                </td>
+                <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-gray-100">
+                  {{ cantidadConUnidad(fila.consumo, fila.insumo.unidad) }}
+                </td>
+                <td class="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">{{ fila.entradas }}</td>
+                <td class="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">{{ fila.bajas }}</td>
+                <td class="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">
+                  {{ fila.ajustes === 0 ? '0' : cantidadConSigno(fila.ajustes) }}
+                </td>
+              </tr>
+              <tr v-if="(reporte?.filas.length ?? 0) === 0">
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                  No hubo movimientos de inventario en ese periodo.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-2 text-xs text-gray-500">
+          Consumo es lo descontado desde notas médicas y antidoping, menos lo devuelto. Los ajustes son
+          las diferencias registradas por conteo.
+        </p>
       </section>
     </template>
 

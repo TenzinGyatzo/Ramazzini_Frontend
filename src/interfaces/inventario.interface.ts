@@ -96,3 +96,19 @@ export interface PaginaMovimientos {
   porPagina: number;
   movimientos: MovimientoInventario[];
 }
+
+export interface FilaConsumo {
+  insumo: Pick<Insumo, '_id' | 'nombre' | 'unidad' | 'categoria'>;
+  entradas: number;
+  /** Consumo clínico neto: lo descontado por documentos menos lo devuelto. */
+  consumo: number;
+  bajas: number;
+  /** Ajustes netos por conteo. */
+  ajustes: number;
+}
+
+export interface ReporteConsumo {
+  desde: string;
+  hasta: string;
+  filas: FilaConsumo[];
+}

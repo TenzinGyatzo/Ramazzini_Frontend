@@ -168,3 +168,48 @@ export function textoAvisoInventario(aviso: {
   }
   return partes.join(' · ');
 }
+
+/** Fecha local como `AAAA-MM-DD` (valor de un `<input type="date">`). */
+export function fechaParaInput(fecha: Date): string {
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
+}
+
+/** Periodo por defecto del reporte de consumo: del día 1 del mes a hoy. */
+export function periodoMesEnCurso(hoy = new Date()): { desde: string; hasta: string } {
+  return {
+    desde: fechaParaInput(new Date(hoy.getFullYear(), hoy.getMonth(), 1)),
+    hasta: fechaParaInput(hoy),
+  };
+}
+
+const celdaCsv = (valor: string | number): string => {
+  const texto = String(valor);
+  return /[",\n;]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
+};
+
+/** Reporte de consumo como CSV; lleva BOM para que Excel respete los acentos. */
+export function consumoACsv(
+  filas: Array<{
+    insumo: { nombre: string; unidad: string; categoria: string };
+    entradas: number;
+    consumo: number;
+    bajas: number;
+    ajustes: number;
+  }>,
+): string {
+  const lineas = [
+    ['Insumo', 'Categoría', 'Unidad', 'Entradas', 'Consumo', 'Bajas', 'Ajustes'],
+    ...filas.map((fila) => [
+      fila.insumo.nombre,
+      etiquetaCategoria(fila.insumo.categoria),
+      fila.insumo.unidad,
+      fila.entradas,
+      fila.consumo,
+      fila.bajas,
+      fila.ajustes,
+    ]),
+  ];
+  return '\uFEFF' + lineas.map((linea) => linea.map(celdaCsv).join(',')).join('\r\n');
+}
