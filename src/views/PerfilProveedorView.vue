@@ -10,6 +10,10 @@ import CPAutocomplete from "@/components/selectors/CPAutocomplete.vue";
 import { useNom024Fields } from "@/composables/useNom024Fields";
 import { processProviderLogo } from "@/helpers/processProviderLogo";
 import { toTitleCase } from "@/helpers/toTitleCase";
+import {
+  PERFILES_PROVEEDOR_SALUD,
+  normalizarPerfilProveedorSalud,
+} from "@/constants/perfilProveedorSalud";
 
 const proveedorSalud = useProveedorSaludStore();
 const router = useRouter();
@@ -72,7 +76,7 @@ watch(
       sitioWeb: proveedor.sitioWeb ?? "",
       pais: proveedor.pais ?? "",
       correoElectronico: proveedor.correoElectronico ?? "",
-      perfilProveedorSalud: proveedor.perfilProveedorSalud ?? "",
+      perfilProveedorSalud: normalizarPerfilProveedorSalud(proveedor.perfilProveedorSalud),
       codigoPostal: typeof codigoPostalValue === 'string' ? (codigoPostalValue || "") : (codigoPostalValue ? String(codigoPostalValue) : ""),
       clues: proveedor.clues ?? ""
     });
@@ -413,13 +417,7 @@ const volver = () => {
   router.push({ name: "inicio" });
 };
 
-const perfiles = [
-  "Médico único de empresa",
-  "Médico independiente que brinda servicios a empresas",
-  "Empresa de salud ocupacional",
-  "Equipo Médico Interno de la Empresa",
-  "Otro",
-];
+const perfiles = PERFILES_PROVEEDOR_SALUD;
 
 const estadosDeMexico = [
   "Aguascalientes",

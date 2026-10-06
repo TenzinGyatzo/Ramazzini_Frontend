@@ -8,6 +8,7 @@ import CountrySelect from "@/components/CountrySelect.vue";
 import RegimenRegulatorioSelector from "@/components/onboarding/RegimenRegulatorioSelector.vue";
 import CLUESAutocomplete from "@/components/selectors/CLUESAutocomplete.vue";
 import { useHtmlDarkMode } from "@/composables/useHtmlDarkMode";
+import { PERFILES_PROVEEDOR_SALUD } from "@/constants/perfilProveedorSalud";
 
 const toast = inject("toast");
 
@@ -286,13 +287,7 @@ const perfilesProfesionales = [
   { label: "Administrativo (no clínico)", value: "Administrativo" },
 ];
 
-const perfiles = [
-  "Médico único de empresa",
-  "Médico independiente que brinda servicios a empresas",
-  "Empresa de salud ocupacional",
-  "Equipo Médico Interno de la Empresa",
-  "Otro",
-];
+const perfiles = PERFILES_PROVEEDOR_SALUD;
 
 // Función para reposicionar el toggle cuando cambie el layout
 const repositionToggle = () => {
