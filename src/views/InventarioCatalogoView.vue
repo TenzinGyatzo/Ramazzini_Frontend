@@ -13,7 +13,7 @@ import {
   etiquetaCategoria,
   insumoVacio,
 } from '@/helpers/inventario';
-import type { Insumo } from '@/interfaces/inventario.interface';
+import type { Insumo, InsumoSugerido } from '@/interfaces/inventario.interface';
 
 const toast: any = inject('toast');
 const router = useRouter();
@@ -162,6 +162,64 @@ async function guardarInsumo() {
   }
 }
 
+// ----------------------------------------------------------- lista sugerida
+
+const listaAbierta = ref(false);
+const cargandoLista = ref(false);
+const listaSugerida = ref<InsumoSugerido[]>([]);
+const elegidos = ref<string[]>([]);
+
+const gruposSugeridos = computed(() =>
+  CATEGORIAS_INSUMO.map((categoria) => ({
+    ...categoria,
+    insumos: listaSugerida.value.filter((i) => i.categoria === categoria.value),
+  })).filter((grupo) => grupo.insumos.length > 0),
+);
+const disponibles = computed(() =>
+  listaSugerida.value.filter((i) => !i.yaExiste).map((i) => i.nombre),
+);
+
+async function abrirListaSugerida() {
+  listaAbierta.value = true;
+  cargandoLista.value = true;
+  try {
+    const { data } = await InventarioAPI.getListaSugerida();
+    listaSugerida.value = data;
+    elegidos.value = data.filter((i) => !i.yaExiste).map((i) => i.nombre);
+  } catch (error) {
+    avisar(extractApiErrorMessage(error, 'No se pudo cargar la lista sugerida'), 'error');
+    listaAbierta.value = false;
+  } finally {
+    cargandoLista.value = false;
+  }
+}
+
+function alternarTodos() {
+  elegidos.value =
+    elegidos.value.length === disponibles.value.length ? [] : [...disponibles.value];
+}
+
+async function agregarSugeridos() {
+  if (elegidos.value.length === 0) {
+    return avisar('Selecciona al menos un insumo', 'error');
+  }
+  guardando.value = true;
+  try {
+    const { data } = await InventarioAPI.cargarListaSugerida(elegidos.value);
+    avisar(
+      data.agregados === 1
+        ? 'Se agregó 1 insumo al catálogo'
+        : `Se agregaron ${data.agregados} insumos al catálogo`,
+    );
+    listaAbierta.value = false;
+    await cargarInsumos();
+  } catch (error) {
+    avisar(extractApiErrorMessage(error, 'No se pudo agregar la lista sugerida'), 'error');
+  } finally {
+    guardando.value = false;
+  }
+}
+
 const campo =
   'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100';
 const etiqueta = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300';
@@ -249,15 +307,23 @@ const tarjeta =
               aria-label="Buscar insumo"
               :class="[campo, 'w-56']"
             />
+            <button v-if="canManageInventario" type="button" :class="botonSecundario" @click="abrirListaSugerida">
+              <i class="fas fa-wand-magic-sparkles"></i> Lista sugerida
+            </button>
             <button v-if="canManageInventario" type="button" :class="botonPrimario" @click="abrirNuevo">
               <i class="fas fa-plus"></i> Agregar insumo
             </button>
           </div>
         </div>
 
-        <p v-if="insumos.length === 0" class="py-8 text-center text-sm text-gray-600 dark:text-gray-400">
-          Aún no hay insumos. Agrega los medicamentos y materiales que manejas.
-        </p>
+        <div v-if="insumos.length === 0" class="py-8 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p>Aún no hay insumos. Agrega los medicamentos y materiales que manejas.</p>
+          <p v-if="canManageInventario" class="mt-1">
+            Para empezar más rápido puedes partir de una
+            <button type="button" class="font-medium text-emerald-700 hover:underline dark:text-emerald-400" @click="abrirListaSugerida">lista sugerida</button>
+            y elegir lo que te sirva.
+          </p>
+        </div>
         <div v-else class="overflow-x-auto">
           <table class="w-full min-w-[640px] text-sm">
             <thead class="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -321,6 +387,71 @@ const tarjeta =
         </div>
       </section>
     </template>
+
+    <InventarioModal
+      v-if="listaAbierta"
+      titulo="Lista sugerida de insumos"
+      ancho="lg"
+      @cerrar="listaAbierta = false"
+    >
+      <p v-if="cargandoLista" class="py-8 text-center text-gray-500">
+        <i class="fas fa-spinner fa-spin mr-2"></i> Cargando...
+      </p>
+      <template v-else>
+        <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
+          Insumos comunes en un servicio médico de empresa. Elige los que manejas; se copian a tu
+          catálogo y después puedes renombrarlos, completar su presentación y su stock mínimo, o
+          desactivarlos.
+        </p>
+        <p v-if="disponibles.length === 0" class="py-4 text-center text-sm text-gray-600 dark:text-gray-400">
+          Ya tienes en tu catálogo todos los insumos de la lista.
+        </p>
+        <template v-else>
+          <button
+            type="button"
+            class="mb-3 text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+            @click="alternarTodos"
+          >
+            {{ elegidos.length === disponibles.length ? 'Quitar selección' : 'Seleccionar todos' }}
+          </button>
+          <fieldset v-for="grupo in gruposSugeridos" :key="grupo.value" class="mb-4">
+            <legend class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ grupo.label }}</legend>
+            <div class="grid gap-1 sm:grid-cols-2">
+              <label
+                v-for="insumo in grupo.insumos"
+                :key="insumo.nombre"
+                class="flex items-start gap-2 text-sm"
+                :class="insumo.yaExiste ? 'text-gray-400' : 'cursor-pointer text-gray-800 dark:text-gray-200'"
+              >
+                <input
+                  v-model="elegidos"
+                  type="checkbox"
+                  :value="insumo.nombre"
+                  :disabled="insumo.yaExiste"
+                  class="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600"
+                />
+                <span>
+                  {{ insumo.nombre }}
+                  <span v-if="insumo.yaExiste" class="text-xs">(ya en tu catálogo)</span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+        </template>
+      </template>
+      <template #acciones>
+        <button type="button" :class="botonSecundario" @click="listaAbierta = false">Cancelar</button>
+        <button
+          v-if="disponibles.length > 0"
+          type="button"
+          :class="botonPrimario"
+          :disabled="guardando || cargandoLista || elegidos.length === 0"
+          @click="agregarSugeridos"
+        >
+          {{ guardando ? 'Agregando...' : `Agregar ${elegidos.length} al catálogo` }}
+        </button>
+      </template>
+    </InventarioModal>
 
     <InventarioModal
       v-if="formAbierto"

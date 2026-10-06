@@ -34,6 +34,17 @@ export type InsumoPayload = Omit<Insumo, '_id' | 'activo'> & {
   activo?: boolean;
 };
 
+/** Insumo de la lista sugerida; `yaExiste` = el proveedor ya lo tiene en su catálogo. */
+export interface InsumoSugerido {
+  nombre: string;
+  categoria: CategoriaInsumo;
+  unidad: string;
+  controlaLote: boolean;
+  controlaCaducidad: boolean;
+  parametrosAntidoping?: number;
+  yaExiste: boolean;
+}
+
 export interface ResumenExistencia {
   existencia: number;
   estado: EstadoInsumo;

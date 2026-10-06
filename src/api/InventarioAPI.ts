@@ -5,6 +5,7 @@ import type {
   FilaExistencia,
   Insumo,
   InsumoPayload,
+  InsumoSugerido,
   PaginaMovimientos,
 } from '@/interfaces/inventario.interface';
 
@@ -25,6 +26,17 @@ export default {
 
   createInsumo(data: InsumoPayload) {
     return api.post<Insumo>('/inventario/insumos', data);
+  },
+
+  getListaSugerida() {
+    return api.get<InsumoSugerido[]>('/inventario/insumos/lista-sugerida');
+  },
+
+  cargarListaSugerida(nombres: string[]) {
+    return api.post<{ agregados: number }>(
+      '/inventario/insumos/lista-sugerida',
+      { nombres },
+    );
   },
 
   updateInsumo(insumoId: string, data: Partial<InsumoPayload>) {
