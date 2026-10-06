@@ -86,6 +86,8 @@ export interface DetalleInsumo extends ResumenExistencia {
 export interface ConfiguracionInventario {
   inventarioHabilitado: boolean;
   inventarioDiasAvisoCaducidad: number;
+  /** Cada antidoping descuenta una prueba del inventario. */
+  inventarioControlaAntidoping?: boolean;
 }
 
 export interface PaginaMovimientos {

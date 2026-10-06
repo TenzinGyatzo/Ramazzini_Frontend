@@ -73,6 +73,24 @@ async function cambiarHabilitado(habilitado: boolean) {
   }
 }
 
+async function cambiarControlAntidoping(activar: boolean) {
+  guardando.value = true;
+  try {
+    await inventario.guardarConfiguracion({ inventarioControlaAntidoping: activar });
+    avisar(
+      activar
+        ? 'El antidoping ahora descuenta del inventario'
+        : 'El antidoping ya no descuenta del inventario',
+    );
+    // Al activarlo se crean en el catálogo las pruebas que falten
+    if (activar) await cargarInsumos();
+  } catch (error) {
+    avisar(extractApiErrorMessage(error, 'No se pudo guardar la configuración'), 'error');
+  } finally {
+    guardando.value = false;
+  }
+}
+
 async function guardarDiasAviso() {
   if (!Number.isInteger(diasAviso.value) || diasAviso.value < 1 || diasAviso.value > 365) {
     return avisar('Los días de aviso deben ser un número entero entre 1 y 365', 'error');
@@ -116,6 +134,14 @@ function abrirEdicion(insumo: Insumo) {
   });
   formAbierto.value = true;
 }
+
+// Las pruebas antidoping deben seguir activas mientras el antidoping descuente del inventario
+const pruebaProtegida = computed(
+  () =>
+    inventario.controlaAntidoping &&
+    !!editandoId.value &&
+    form.categoria === 'PRUEBA_ANTIDOPING',
+);
 
 async function guardarInsumo() {
   if (!form.nombre.trim() || !form.unidad.trim()) {
@@ -293,6 +319,32 @@ const tarjeta =
           </div>
           <button type="submit" :class="botonSecundario" :disabled="guardando">Guardar</button>
         </form>
+
+        <div
+          v-if="inventario.habilitado && puedeConfigurar"
+          class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4 dark:border-gray-700"
+        >
+          <div class="min-w-0 flex-1 basis-64">
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-200">
+              Descontar pruebas antidoping
+              <span class="ml-1 font-normal text-gray-500">
+                ({{ inventario.controlaAntidoping ? 'activado' : 'desactivado' }})
+              </span>
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              Cada antidoping descuenta una prueba según el número de sustancias capturadas: 2, 3, 5,
+              6, 10 o 12 parámetros. Al activarlo se agregan esas pruebas a tu catálogo.
+            </p>
+          </div>
+          <button
+            type="button"
+            :class="botonSecundario"
+            :disabled="guardando"
+            @click="cambiarControlAntidoping(!inventario.controlaAntidoping)"
+          >
+            {{ inventario.controlaAntidoping ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
       </section>
 
       <!-- Catálogo -->
@@ -506,8 +558,17 @@ const tarjeta =
           Controlar caducidad
         </label>
         <label v-if="editandoId" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 sm:col-span-2">
-          <input v-model="form.activo" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-emerald-600" />
-          Activo (un insumo desactivado ya no acepta entradas)
+          <input
+            v-model="form.activo"
+            type="checkbox"
+            class="h-4 w-4 rounded border-gray-300 text-emerald-600"
+            :disabled="pruebaProtegida"
+          />
+          {{
+            pruebaProtegida
+              ? 'Activo (no se puede desactivar mientras el antidoping descuente del inventario)'
+              : 'Activo (un insumo desactivado ya no acepta entradas)'
+          }}
         </label>
       </form>
       <template #acciones>
