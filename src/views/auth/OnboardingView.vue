@@ -634,7 +634,6 @@ onMounted(() => {
           :options="perfilesProfesionales"
           validation="required"
           :validation-messages="{ required: 'Este campo es obligatorio' }"
-          help="Define qué documentos podrás elaborar y firmar. Podrás invitar a más personal después."
           v-model="formDataUser.perfilProfesional"
           aria-label="Perfil profesional"
         />
