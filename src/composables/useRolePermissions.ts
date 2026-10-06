@@ -6,6 +6,7 @@ import {
   getDocumentRestrictionMessage,
   getPermissionBlockReason,
   hasBypassRole,
+  isDocumentBlockedForFirmante,
   isPermissionBlockedByRole,
   isPermissionEditableForRole,
   resolvePermissionFlag,
@@ -16,12 +17,16 @@ export function useRolePermissions() {
 
   const userRole = computed(() => userStore.user?.role);
   const userPermisos = computed(() => userStore.user?.permisos);
+  const userPerfilProfesional = computed(
+    () => userStore.user?.perfilProfesional,
+  );
 
   function canManagePermission(permissionKey: PermissionKey): boolean {
     return resolvePermissionFlag(
       userRole.value,
       userPermisos.value,
       permissionKey,
+      userPerfilProfesional.value,
     );
   }
 
@@ -30,6 +35,7 @@ export function useRolePermissions() {
       userRole.value,
       userPermisos.value,
       documentType,
+      userPerfilProfesional.value,
     );
   }
 
@@ -38,6 +44,15 @@ export function useRolePermissions() {
   }
 
   function getRestrictionMessage(documentType: string): string {
+    if (
+      isDocumentBlockedForFirmante(
+        userRole.value,
+        userPerfilProfesional.value,
+        documentType,
+      )
+    ) {
+      return 'Los certificados médicos solo puede expedirlos un médico.';
+    }
     return getDocumentRestrictionMessage(documentType);
   }
 

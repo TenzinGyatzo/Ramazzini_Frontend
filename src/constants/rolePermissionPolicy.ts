@@ -178,6 +178,104 @@ export function hasBypassRole(role: string | undefined | null): boolean {
   return !!role && BYPASS_ROLES.has(role);
 }
 
+/**
+ * Perfil profesional del Principal: separa «dueño del tenant» de la profesión.
+ * Un Principal sin el campo (registros anteriores) se lee como Médico.
+ * Debe coincidir con la política del backend (role-permission-policy.ts).
+ */
+export const PERFILES_PROFESIONALES = [
+  'Médico',
+  'Enfermero/a',
+  'Técnico Evaluador',
+  'Administrativo',
+] as const;
+
+export type PerfilProfesional = (typeof PERFILES_PROFESIONALES)[number];
+
+export const PERFIL_PROFESIONAL_DEFAULT: PerfilProfesional = 'Médico';
+
+export type FirmanteTipo = 'medico' | 'enfermera' | 'tecnico';
+
+/** Perfiles con los que el Principal conserva todos los permisos, clínicos incluidos. */
+const PERFILES_CON_ACCESO_CLINICO_TOTAL: readonly PerfilProfesional[] = [
+  'Médico',
+  'Enfermero/a',
+];
+
+/** Permisos que en el Principal dependen de su perfil profesional y no del rol. */
+const CLINICAL_PERMISSION_KEYS: readonly PermissionKey[] = [
+  'gestionarDocumentosDiagnostico',
+  'gestionarDocumentosEvaluacion',
+  'gestionarOtrosDocumentos',
+  'accesoRiesgosTrabajo',
+];
+
+/** Documentos que solo puede expedir un médico, aun con permiso de diagnóstico. */
+export const DOCUMENT_TYPES_SOLO_MEDICO: readonly string[] = [
+  'certificado',
+  'certificadoExpedito',
+];
+
+/** Perfil profesional vigente del Principal; null para cualquier otro rol. */
+export function resolvePerfilProfesional(
+  role: string | undefined | null,
+  perfilProfesional?: string | null,
+): PerfilProfesional | null {
+  if (role !== 'Principal') return null;
+  return (PERFILES_PROFESIONALES as readonly string[]).includes(
+    perfilProfesional ?? '',
+  )
+    ? (perfilProfesional as PerfilProfesional)
+    : PERFIL_PROFESIONAL_DEFAULT;
+}
+
+/** Principal técnico o administrativo: lo clínico vale lo que trae su perfil por defecto. */
+function principalClinicalPermission(
+  role: string,
+  perfilProfesional: string | null | undefined,
+  permissionKey: PermissionKey,
+): boolean | null {
+  const perfil = resolvePerfilProfesional(role, perfilProfesional);
+  if (
+    !perfil ||
+    PERFILES_CON_ACCESO_CLINICO_TOTAL.includes(perfil) ||
+    !CLINICAL_PERMISSION_KEYS.includes(permissionKey)
+  ) {
+    return null;
+  }
+  return ROLE_DEFAULT_PERMISSIONS[perfil][permissionKey] === true;
+}
+
+/** Tipo de perfil de firmante que le corresponde al usuario; null si no firma. */
+export function resolveFirmanteTipo(
+  role: string | undefined | null,
+  perfilProfesional?: string | null,
+): FirmanteTipo | null {
+  const profesion = resolvePerfilProfesional(role, perfilProfesional) ?? role;
+  switch (profesion) {
+    case 'Médico':
+    case 'Administrador':
+      return 'medico';
+    case 'Enfermero/a':
+      return 'enfermera';
+    case 'Técnico Evaluador':
+      return 'tecnico';
+    default:
+      return null;
+  }
+}
+
+export function isDocumentBlockedForFirmante(
+  role: string | undefined | null,
+  perfilProfesional: string | null | undefined,
+  documentType: string,
+): boolean {
+  return (
+    DOCUMENT_TYPES_SOLO_MEDICO.includes(documentType) &&
+    resolveFirmanteTipo(role, perfilProfesional) === 'enfermera'
+  );
+}
+
 export function isPermissionBlockedByRole(
   role: string,
   permissionKey: PermissionKey,
@@ -232,8 +330,15 @@ export function resolvePermissionFlag(
   role: string | undefined | null,
   permisos: Partial<UserPermissions> | null | undefined,
   permissionKey: PermissionKey,
+  perfilProfesional?: string | null,
 ): boolean {
   if (!role) return false;
+  const clinical = principalClinicalPermission(
+    role,
+    perfilProfesional,
+    permissionKey,
+  );
+  if (clinical !== null) return clinical;
   if (hasBypassRole(role)) return true;
   if (isPermissionBlockedByRole(role, permissionKey)) return false;
   return permisos?.[permissionKey] === true;
@@ -249,10 +354,19 @@ export function canCreateDocumentType(
   role: string | undefined | null,
   permisos: Partial<UserPermissions> | null | undefined,
   documentType: string,
+  perfilProfesional?: string | null,
 ): boolean {
   const permissionKey = getPermissionForDocumentType(documentType);
   if (!permissionKey) return false;
-  return resolvePermissionFlag(role, permisos, permissionKey);
+  if (isDocumentBlockedForFirmante(role, perfilProfesional, documentType)) {
+    return false;
+  }
+  return resolvePermissionFlag(
+    role,
+    permisos,
+    permissionKey,
+    perfilProfesional,
+  );
 }
 
 export const DOCUMENT_DISPLAY_NAMES: Record<string, string> = {

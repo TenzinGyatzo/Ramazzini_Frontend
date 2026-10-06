@@ -4,50 +4,40 @@ import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { useCurrentUser } from '@/composables/useCurrentUser';
+import { resolveFirmanteTipo } from '@/constants/rolePermissionPolicy';
 
 type FirmanteRecord = Record<string, unknown>;
 
-export function getFirmanteRouteNameByRole(role: string | undefined): string {
-  if (role === 'Médico' || role === 'Principal' || role === 'Administrador') {
-    return 'medico-firmante';
-  }
-  if (role === 'Enfermero/a') {
-    return 'enfermera-firmante';
-  }
-  if (role === 'Técnico Evaluador') {
-    return 'tecnico-evaluador-firmante';
-  }
+// En el Principal el tipo de firmante depende de su perfil profesional, no del rol
+export function getFirmanteRouteNameByRole(
+  role: string | undefined,
+  perfilProfesional?: string | null,
+): string {
+  const tipo = resolveFirmanteTipo(role, perfilProfesional);
+  if (tipo === 'medico') return 'medico-firmante';
+  if (tipo === 'enfermera') return 'enfermera-firmante';
+  if (tipo === 'tecnico') return 'tecnico-evaluador-firmante';
   return '';
 }
 
-export function getFirmanteTypeLabelByRole(role: string | undefined): string {
-  if (role === 'Médico' || role === 'Principal' || role === 'Administrador') {
-    return 'Médico';
-  }
-  if (role === 'Enfermero/a') {
-    return 'Enfermero/a';
-  }
-  if (role === 'Técnico Evaluador') {
-    return 'Técnico Evaluador';
-  }
+export function getFirmanteTypeLabelByRole(
+  role: string | undefined,
+  perfilProfesional?: string | null,
+): string {
+  const tipo = resolveFirmanteTipo(role, perfilProfesional);
+  if (tipo === 'medico') return 'Médico';
+  if (tipo === 'enfermera') return 'Enfermero/a';
+  if (tipo === 'tecnico') return 'Técnico Evaluador';
   return '';
 }
 
-function isMedicoRole(role: string | undefined): boolean {
-  return role === 'Médico' || role === 'Principal' || role === 'Administrador';
-}
-
-function isEnfermeraRole(role: string | undefined): boolean {
-  return role === 'Enfermero/a';
-}
-
-function isTecnicoRole(role: string | undefined): boolean {
-  return role === 'Técnico Evaluador';
-}
-
-export function getRequiredFieldsByRole(role: string | undefined): string[] {
+export function getRequiredFieldsByRole(
+  role: string | undefined,
+  perfilProfesional?: string | null,
+): string[] {
+  const tipo = resolveFirmanteTipo(role, perfilProfesional);
   const required = ['nombre', 'primerApellido', 'tituloProfesional'];
-  if (isMedicoRole(role) || isEnfermeraRole(role)) {
+  if (tipo === 'medico' || tipo === 'enfermera') {
     required.push('numeroCedulaProfesional');
   }
   return required;
@@ -56,8 +46,9 @@ export function getRequiredFieldsByRole(role: string | undefined): string[] {
 export function getMissingFields(
   firmante: FirmanteRecord | null,
   role: string | undefined,
+  perfilProfesional?: string | null,
 ): string[] {
-  const requiredFields = getRequiredFieldsByRole(role);
+  const requiredFields = getRequiredFieldsByRole(role, perfilProfesional);
 
   if (!firmante) {
     return requiredFields;
@@ -76,21 +67,24 @@ export function getMissingFields(
 
 function getFirmanteForRole(
   role: string | undefined,
+  perfilProfesional: string | null | undefined,
   medicoFirmante: FirmanteRecord | null,
   enfermeraFirmante: FirmanteRecord | null,
   tecnicoFirmante: FirmanteRecord | null,
 ) {
-  if (isMedicoRole(role)) return medicoFirmante;
-  if (isEnfermeraRole(role)) return enfermeraFirmante;
-  if (isTecnicoRole(role)) return tecnicoFirmante;
+  const tipo = resolveFirmanteTipo(role, perfilProfesional);
+  if (tipo === 'medico') return medicoFirmante;
+  if (tipo === 'enfermera') return enfermeraFirmante;
+  if (tipo === 'tecnico') return tecnicoFirmante;
   return null;
 }
 
 export function buildProfessionalDataValidation(
   role: string | undefined,
   firmante: FirmanteRecord | null,
+  perfilProfesional?: string | null,
 ) {
-  if (!isMedicoRole(role) && !isEnfermeraRole(role) && !isTecnicoRole(role)) {
+  if (!resolveFirmanteTipo(role, perfilProfesional)) {
     return {
       isValid: true,
       missingFields: [] as string[],
@@ -99,13 +93,13 @@ export function buildProfessionalDataValidation(
     };
   }
 
-  const missingFields = getMissingFields(firmante, role);
+  const missingFields = getMissingFields(firmante, role, perfilProfesional);
 
   return {
     isValid: missingFields.length === 0,
     missingFields,
-    routeName: getFirmanteRouteNameByRole(role),
-    firmanteTypeLabel: getFirmanteTypeLabelByRole(role),
+    routeName: getFirmanteRouteNameByRole(role, perfilProfesional),
+    firmanteTypeLabel: getFirmanteTypeLabelByRole(role, perfilProfesional),
   };
 }
 
@@ -121,27 +115,32 @@ export function useProfessionalDataValidation() {
 
   const validationResult = computed(() => {
     const role = currentUser.value?.role;
+    const perfilProfesional = currentUser.value?.perfilProfesional;
     const firmante = getFirmanteForRole(
       role,
+      perfilProfesional,
       medicoFirmante.value as FirmanteRecord | null,
       enfermeraFirmante.value as FirmanteRecord | null,
       tecnicoFirmante.value as FirmanteRecord | null,
     );
 
-    return buildProfessionalDataValidation(role, firmante);
+    return buildProfessionalDataValidation(role, firmante, perfilProfesional);
   });
 
   const loadFirmanteData = async () => {
     const userId = await ensureUserLoaded();
     if (!userId) return;
 
-    const role = currentUser.value?.role;
+    const tipo = resolveFirmanteTipo(
+      currentUser.value?.role,
+      currentUser.value?.perfilProfesional,
+    );
     try {
-      if (isMedicoRole(role)) {
+      if (tipo === 'medico') {
         await medicoStore.loadMedicoFirmante(userId);
-      } else if (isEnfermeraRole(role)) {
+      } else if (tipo === 'enfermera') {
         await enfermeraStore.loadEnfermeraFirmante(userId);
-      } else if (isTecnicoRole(role)) {
+      } else if (tipo === 'tecnico') {
         await tecnicoStore.loadTecnicoFirmante(userId);
       }
     } catch (error) {

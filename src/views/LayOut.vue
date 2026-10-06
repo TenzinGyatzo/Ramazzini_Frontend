@@ -32,6 +32,7 @@ import { inicioResumenState } from "@/composables/inicioResumenCache";
 import { resolveInicioLayoutPresentation } from "@/composables/inicioLayoutPresentation";
 import PlatformTenantBanner from "@/components/PlatformTenantBanner.vue";
 import { listenPlatformContextChanges } from "@/composables/usePlatformContext";
+import { resolveFirmanteTipo } from "@/constants/rolePermissionPolicy";
 
 const {
   isOpen: eliminacionOpen,
@@ -433,34 +434,34 @@ const mostrarNotificacionLogotipo = computed(
   () => datosCargados.value && proveedorSaludStore.logotipoPendiente,
 );
 
+// Tipo de firmante según el rol o, en el Principal, su perfil profesional
+const firmanteTipo = computed(() =>
+  resolveFirmanteTipo(user.user?.role, user.user?.perfilProfesional),
+);
+
+// Roles que también configuran los datos del negocio (logotipo y "Mi Negocio")
+const configuraNegocio = computed(() => {
+  const userRole = user.user?.role;
+  return userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico';
+});
+
+const camposPendientesFirmante = computed(() => {
+  if (firmanteTipo.value === 'medico') return camposPendientesMedico.value;
+  if (firmanteTipo.value === 'enfermera') return camposPendientesEnfermera.value;
+  if (firmanteTipo.value === 'tecnico') return camposPendientesTecnicoEvaluador.value;
+  return [];
+});
+
+const camposNegocioPendientes = computed(
+  () => configuraNegocio.value && camposPendientesProveedor.value.length > 0,
+);
+
 const mostrarNotificacionCampos = computed(() => {
   if (!datosCargados.value) return false;
   // Administrador de plataforma: no completa datos del tenant en el que da soporte
   if (user.user?.role === 'Administrador') return false;
 
-  const userRole = user.user?.role;
-
-  if (
-    userRole === 'Administrador' ||
-    userRole === 'Principal' ||
-    userRole === 'Secundario' ||
-    userRole === 'Médico'
-  ) {
-    return (
-      proveedorSaludStore.camposPendientesProveedor.length > 0 ||
-      camposPendientesMedico.value.length > 0
-    );
-  }
-
-  if (userRole === 'Enfermero/a') {
-    return camposPendientesEnfermera.value.length > 0;
-  }
-
-  if (userRole === 'Técnico Evaluador') {
-    return camposPendientesTecnicoEvaluador.value.length > 0;
-  }
-
-  return false;
+  return camposNegocioPendientes.value || camposPendientesFirmante.value.length > 0;
 });
 
 // Control de animación
@@ -585,105 +586,64 @@ onBeforeUnmount(() => {
 
 // Verificar si se debe mostrar el mensaje de configuración pendiente
 const mostrarMensajePendiente = computed(() => {
-  const userRole = user.user?.role;
   // Administrador de plataforma: no completa datos del tenant en el que da soporte
-  if (userRole === 'Administrador') return false;
-  
-  // Para roles de médicos (Administrador, Principal, Secundario, Médico)
-  if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
-    return logotipoPendiente.value || 
-      camposPendientesProveedor.value.length > 0 || 
-      camposPendientesMedico.value.length > 0;
-  }
-  
-  // Para rol de enfermera
-  if (userRole === 'Enfermero/a') {
-    return camposPendientesEnfermera.value.length > 0;
-  }
-  
-  // Para rol de técnico evaluador
-  if (userRole === 'Técnico Evaluador') {
-    return camposPendientesTecnicoEvaluador.value.length > 0;
-  }
-  
-  return false;
+  if (user.user?.role === 'Administrador') return false;
+
+  return (
+    (configuraNegocio.value && logotipoPendiente.value) ||
+    camposNegocioPendientes.value ||
+    camposPendientesFirmante.value.length > 0
+  );
+});
+
+const nombreSeccionFirmante = computed(() => {
+  if (firmanteTipo.value === 'enfermera') return 'Enfermera Firmante';
+  if (firmanteTipo.value === 'tecnico') return 'Técnico Firmante';
+  return 'Médico Firmante';
 });
 
 // Definir el mensaje adecuado según el estado y el rol
 const mensajeConfiguracion = computed(() => {
-  const userRole = user.user?.role;
-  
-  // Mensajes para roles de médicos
-  if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
-    if ((camposPendientesProveedor.value.length === 4) && (camposPendientesMedico.value.length === 4)) {
+  if (configuraNegocio.value) {
+    if (
+      camposPendientesProveedor.value.length === 4 &&
+      firmanteTipo.value === 'medico' &&
+      camposPendientesMedico.value.length === 4
+    ) {
       return "Tus informes aún no están configurados correctamente.";
-    } else if (camposPendientesProveedor.value.length > 0) {
+    }
+    if (camposPendientesProveedor.value.length > 0) {
       return 'Hay campos pendientes en "Mi Negocio".';
-    } else if (logotipoPendiente.value) {
+    }
+    if (logotipoPendiente.value) {
       return "Aún no has subido el logotipo.";
-    } else if (camposPendientesMedico.value.length > 0) {
-      return 'Hay campos pendientes en "Médico Firmante".';
-    } else {
-      return "Algunos campos están incompletos en tu configuración.";
     }
   }
-  
-  // Mensajes para rol de enfermera
-  if (userRole === 'Enfermero/a') {
-    if (camposPendientesEnfermera.value.length > 0) {
-      return 'Hay campos pendientes en "Enfermera Firmante".';
-    }
+
+  if (camposPendientesFirmante.value.length > 0) {
+    return `Hay campos pendientes en "${nombreSeccionFirmante.value}".`;
   }
-  
-  // Mensajes para rol de técnico evaluador
-  if (userRole === 'Técnico Evaluador') {
-    if (camposPendientesTecnicoEvaluador.value.length > 0) {
-      return 'Hay campos pendientes en "Técnico Firmante".';
-    }
-  }
-  
+
   return "Algunos campos están incompletos en tu configuración.";
 });
 
 // Definir el texto del enlace dependiendo de la situación
 const textoEnlace = computed(() => {
-  const userRole = user.user?.role;
-  
-  if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
-    if (logotipoPendiente.value && !(camposPendientesProveedor.value.length > 0 || camposPendientesMedico.value.length > 0)) {
-      return "Sigue esta guía para hacerlo";
-    } else {
-      return "Sigue esta guía para configurarlos";
-    }
-  }
-  
-  if (userRole === 'Enfermero/a' || userRole === 'Técnico Evaluador') {
-    return "Sigue esta guía para configurarlos";
-  }
-  
-  return "Sigue esta guía para configurarlos";
+  const soloFaltaLogotipo =
+    configuraNegocio.value &&
+    logotipoPendiente.value &&
+    !camposNegocioPendientes.value &&
+    camposPendientesFirmante.value.length === 0;
+
+  return soloFaltaLogotipo
+    ? "Sigue esta guía para hacerlo"
+    : "Sigue esta guía para configurarlos";
 });
 
 // Computed para determinar el tipo de notificación
 const tipoNotificacion = computed(() => {
-  const userRole = user.user?.role;
-  
-  // Para roles de médicos
-  if (userRole === 'Administrador' || userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico') {
-    if (logotipoPendiente.value) return 'error';
-    if (camposPendientesProveedor.value.length > 0 || camposPendientesMedico.value.length > 0) return 'warning';
-  }
-  
-  // Para rol de enfermera
-  if (userRole === 'Enfermero/a') {
-    if (camposPendientesEnfermera.value.length > 0) return 'warning';
-  }
-  
-  // Para rol de técnico evaluador
-  if (userRole === 'Técnico Evaluador') {
-    if (camposPendientesTecnicoEvaluador.value.length > 0) return 'warning';
-  }
-  
+  if (configuraNegocio.value && logotipoPendiente.value) return 'error';
+  if (camposNegocioPendientes.value || camposPendientesFirmante.value.length > 0) return 'warning';
   return 'info';
 });
 
@@ -1146,7 +1106,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
             </RouterLink>
 
             <!-- Médico Firmante -->
-            <RouterLink v-if="user.user?.role === 'Principal' || user.user?.role === 'Médico'" :to="{ name: 'medico-firmante' }" @click="isMenuOpen = false" 
+            <RouterLink v-if="firmanteTipo === 'medico' && user.user?.role !== 'Administrador'" :to="{ name: 'medico-firmante' }" @click="isMenuOpen = false" 
                :class="[
                  'block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group',
                  mostrarTooltipMedico 
@@ -1180,7 +1140,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
             </RouterLink>
 
             <!-- Enfermera Firmante -->
-            <RouterLink v-if="user.user?.role === 'Enfermero/a'" :to="{ name: 'enfermera-firmante' }" @click="isMenuOpen = false" 
+            <RouterLink v-if="firmanteTipo === 'enfermera'" :to="{ name: 'enfermera-firmante' }" @click="isMenuOpen = false" 
                :class="[
                  'block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group',
                  mostrarTooltipEnfermera 
@@ -1214,7 +1174,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
             </RouterLink>
 
             <!-- Técnico Evaluador Firmante -->
-            <RouterLink v-if="user.user?.role === 'Técnico Evaluador'" :to="{ name: 'tecnico-evaluador-firmante' }" @click="isMenuOpen = false" 
+            <RouterLink v-if="firmanteTipo === 'tecnico'" :to="{ name: 'tecnico-evaluador-firmante' }" @click="isMenuOpen = false" 
                :class="[
                  'block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group',
                  mostrarTooltipTecnicoEvaluador 

@@ -28,7 +28,12 @@ const closeModal = () => {
 };
 
 const targetRouteName = computed(() => {
-  return getFirmanteRouteNameByRole(currentUser.value?.role) || props.routeName;
+  return (
+    getFirmanteRouteNameByRole(
+      currentUser.value?.role,
+      currentUser.value?.perfilProfesional,
+    ) || props.routeName
+  );
 });
 
 const goToConfiguration = async () => {

@@ -12,6 +12,8 @@ interface User {
     username: string;
     email: string;
     role: string;
+    /** Solo Principal: su profesión. Ausente = Médico. */
+    perfilProfesional?: string | null;
     /** Administrador de plataforma: tenant activo (null en la consola). Resto: su tenant. */
     idProveedorSalud?: string | null;
     /** Solo Administrador de plataforma: tenant de origen de su cuenta. */

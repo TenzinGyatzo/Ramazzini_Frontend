@@ -27,6 +27,7 @@ const establecimientoPrivado = ref(false);
 const CLUES_SERVICIOS_MEDICOS_PRIVADOS = "9998";
 const formDataUser = reactive({
   username: "",
+  perfilProfesional: "Médico",
   email: "",
   phone: "",
   country: "MX", // País por defecto México
@@ -276,6 +277,14 @@ const goBackToStep1 = () => {
 const resetTransitionState = () => {
   transitioning.value = false;
 };
+
+// Profesión del usuario Principal: define sus permisos clínicos y su tipo de firmante
+const perfilesProfesionales = [
+  { label: "Médico", value: "Médico" },
+  { label: "Enfermero/a", value: "Enfermero/a" },
+  { label: "Técnico Evaluador", value: "Técnico Evaluador" },
+  { label: "Administrativo (no clínico)", value: "Administrativo" },
+];
 
 const perfiles = [
   "Médico único de empresa",
@@ -616,6 +625,18 @@ onMounted(() => {
           v-model="formDataUser.username"
           aria-label="Nombre completo"
           autocomplete="name"
+        />
+
+        <FormKit
+          type="select"
+          label="¿Cuál es tu perfil?"
+          name="perfilProfesional"
+          :options="perfilesProfesionales"
+          validation="required"
+          :validation-messages="{ required: 'Este campo es obligatorio' }"
+          help="Define qué documentos podrás elaborar y firmar. Podrás invitar a más personal después."
+          v-model="formDataUser.perfilProfesional"
+          aria-label="Perfil profesional"
         />
 
         <FormKit

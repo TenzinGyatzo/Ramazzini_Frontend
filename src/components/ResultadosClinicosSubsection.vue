@@ -19,7 +19,8 @@
       >
         <div class="flex flex-col gap-2 sm:gap-3">
           <div
-            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 cursor-pointer"
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3"
+            :class="canManage ? 'cursor-pointer' : ''"
             @click="emitEdit(resultado)"
           >
             <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -81,6 +82,7 @@
                 <span>Detalles</span>
               </button>
               <button
+                v-if="canManage"
                 type="button"
                 @click.stop="openDeleteModal(resultado)"
                 class="text-red-500 hover:text-red-600 transition-colors sm:pr-1"
@@ -126,9 +128,14 @@ const toast: any = inject('toast');
 const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 const isHtmlDark = useHtmlDarkMode();
 
-const props = defineProps<{
-  results: ResultadoClinico[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    results: ResultadoClinico[];
+    /** Sin permiso de documentos de evaluación los resultados son de solo lectura. */
+    canManage?: boolean;
+  }>(),
+  { canManage: true },
+);
 
 const emit = defineEmits<{
   (e: 'edit', resultado: ResultadoClinico): void;
@@ -163,6 +170,7 @@ const isExpanded = (id: string | undefined) => {
 };
 
 const emitEdit = (resultado: ResultadoClinico) => {
+  if (!props.canManage) return;
   emit('edit', resultado);
 };
 

@@ -10,6 +10,7 @@ import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import TecnicoFirmanteAPI from '@/api/TecnicoFirmanteAPI';
 import { formatearTituloYNombreFirmante } from '@/helpers/nombres';
 import { useCurrentUser } from '@/composables/useCurrentUser';
+import { getFirmanteTypeLabelByRole } from '@/composables/useProfessionalDataValidation';
 import { invalidateBorradoresNotaMedicaCache } from '@/composables/useBorradoresNotaMedica';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
@@ -116,14 +117,11 @@ const finalizadorData = computed(() => {
   const firmante = firmanteFinalizador.value;
   
   // Determinar tipo de profesional basado en el rol del usuario
-  let tipo = 'Profesional';
-  if (user.value?.role === 'Médico' || user.value?.role === 'Principal') {
-    tipo = 'Médico';
-  } else if (user.value?.role === 'Enfermero/a') {
-    tipo = 'Enfermero/a';
-  } else if (user.value?.role === 'Técnico Evaluador') {
-    tipo = 'Técnico Evaluador';
-  }
+  const tipo =
+    getFirmanteTypeLabelByRole(
+      user.value?.role,
+      user.value?.perfilProfesional,
+    ) || 'Profesional';
 
   return {
     tipo,

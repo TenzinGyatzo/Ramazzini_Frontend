@@ -31,6 +31,7 @@ import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { verificarLimiteHistoriasDelMes } from '@/helpers/limiteHistoriasDelMes';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
+import { useRolePermissions } from '@/composables/useRolePermissions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
 import { useNavigateWithTreatmentConsent } from '@/composables/useNavigateWithTreatmentConsent';
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
@@ -72,6 +73,9 @@ const { fetchBorradoresPendientes, invalidateBorradoresNotaMedicaCache } =
 
 const { canCreateDocument, getRestrictionMessage, executeIfCanManageDocumentosExternos } =
   usePermissionRestrictions();
+// Los resultados clínicos usan el mismo permiso que los documentos de evaluación
+const { canManageDocumentosEvaluacion: canManageResultadosClinicos } =
+  useRolePermissions();
 const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
 const {
   navigateWithTreatmentConsent,
@@ -557,7 +561,13 @@ const toggleDeletionMode = () => {
     }
 };
 
+const abrirResultadosClinicosPanel = () => {
+  if (!canManageResultadosClinicos.value) return;
+  showResultadosClinicosPanel.value = true;
+};
+
 const handleEditResultado = (resultado: any) => {
+  if (!canManageResultadosClinicos.value) return;
   // Abrir el drawer y prellenar con el resultado
   resultadosClinicos.setCurrent(resultado);
   showResultadosClinicosPanel.value = true;
@@ -1040,7 +1050,7 @@ const añoMasReciente = computed(() => {
         <ModalUpdateDocumentoExterno v-if="showDocumentoExternoUpdateModal"
           @closeModalUpdate="toggleDocumentoExternoUpdateModal" 
           @updateData="() => fetchData(true)"
-          @abrirResultados="showResultadosClinicosPanel = true"
+          @abrirResultados="abrirResultadosClinicosPanel"
         />
       </Transition>
 
@@ -1455,9 +1465,9 @@ const añoMasReciente = computed(() => {
               </div>
   
               <!-- Botón para Registrar Resultados Clínicos -->
-              <div class="expediente-secondary-actions__item flex justify-center">
+              <div v-if="canManageResultadosClinicos" class="expediente-secondary-actions__item flex justify-center">
                 <button
-                  @click="showResultadosClinicosPanel = true"
+                  @click="abrirResultadosClinicosPanel"
                   class="expediente-secondary-btn relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-blue-600 bg-white overflow-hidden transition-all duration-200 hover:bg-blue-50 hover:shadow-lg"
                 >
                   <i class="fas fa-clipboard-check text-blue-600 text-lg ml-4"></i>
@@ -1513,6 +1523,7 @@ const añoMasReciente = computed(() => {
                     <template #extraSection v-if="resultadosPorAnio[year]?.length > 0">
                       <ResultadosClinicosSubsection
                         :results="resultadosPorAnio[year] || []"
+                        :canManage="canManageResultadosClinicos"
                         @edit="handleEditResultado"
                       />
                     </template>
