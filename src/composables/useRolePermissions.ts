@@ -102,6 +102,9 @@ export function useRolePermissions() {
     canAccessRiesgosTrabajo: computed(() =>
       canManagePermission('accesoRiesgosTrabajo'),
     ),
+    canManageInventario: computed(() =>
+      canManagePermission('gestionarInventario'),
+    ),
     canCreateDocument,
     isDocumentRestricted,
     getRestrictionMessage,

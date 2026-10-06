@@ -34,6 +34,7 @@ interface User {
     accesoCompletoEmpresasCentros: boolean;
     accesoDashboardSalud: boolean;
     accesoRiesgosTrabajo: boolean;
+    gestionarInventario?: boolean;
   };
     cuentaActiva?: boolean;
     empresasAsignadas?: string[];

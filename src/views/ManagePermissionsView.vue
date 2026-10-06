@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, inject, watch } from 'vue';
+import { useInventarioStore } from '@/stores/inventario';
 import { useUserStore } from '@/stores/user';
 import PermissionsAPI from '@/api/PermissionsAPI';
 import { onBeforeRouteLeave } from 'vue-router';
@@ -10,6 +11,8 @@ import {
 } from '@/constants/rolePermissionPolicy';
 
 const toast = inject('toast');
+const inventarioStore = useInventarioStore();
+inventarioStore.cargarConfiguracion();
 const userStore = useUserStore();
 const user = computed(() => userStore.user);
 
@@ -577,6 +580,16 @@ onBeforeRouteLeave((to, from, next) => {
                 >
                 <i class="fas fa-exclamation-triangle text-gray-600 text-sm sm:text-base"></i>
                 <span class="text-xs sm:text-sm text-gray-700 leading-snug">Acceso a Riesgos de Trabajo</span>
+              </label>
+
+              <label v-if="inventarioStore.habilitado" class="flex items-center space-x-2 sm:space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  v-model="usuario.permisos.gestionarInventario"
+                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                >
+                <i class="fas fa-boxes-stacked text-gray-600 text-sm sm:text-base"></i>
+                <span class="text-xs sm:text-sm text-gray-700 leading-snug">Gestionar Inventario (entradas, ajustes, bajas y catálogo)</span>
               </label>
             </div>
           </div>

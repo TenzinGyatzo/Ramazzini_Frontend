@@ -154,6 +154,16 @@ const router = createRouter({
           component: () => import("../views/CentrosTrabajoView.vue"),
         },
         {
+          path: "/empresas/:idEmpresa/centros-trabajo/:idCentroTrabajo/inventario",
+          name: "inventario",
+          component: () => import("../views/InventarioView.vue"),
+        },
+        {
+          path: "/inventario",
+          name: "inventario-catalogo",
+          component: () => import("../views/InventarioCatalogoView.vue"),
+        },
+        {
           path: "/empresas/:idEmpresa/centros-trabajo/:idCentroTrabajo/trabajadores",
           name: "trabajadores",
           component: () => import("../views/TrabajadoresView.vue"),

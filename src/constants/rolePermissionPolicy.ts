@@ -9,6 +9,7 @@ export const PERMISSION_KEYS = [
   'accesoCompletoEmpresasCentros',
   'accesoDashboardSalud',
   'accesoRiesgosTrabajo',
+  'gestionarInventario',
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -32,6 +33,7 @@ const ALL_TRUE: UserPermissions = {
   accesoCompletoEmpresasCentros: true,
   accesoDashboardSalud: true,
   accesoRiesgosTrabajo: true,
+  gestionarInventario: true,
 };
 
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
@@ -48,6 +50,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     accesoCompletoEmpresasCentros: false,
     accesoDashboardSalud: true,
     accesoRiesgosTrabajo: true,
+    gestionarInventario: true,
   },
   'Enfermero/a': {
     gestionarEmpresas: false,
@@ -60,6 +63,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     accesoCompletoEmpresasCentros: false,
     accesoDashboardSalud: true,
     accesoRiesgosTrabajo: true,
+    gestionarInventario: true,
   },
   Administrativo: {
     gestionarEmpresas: true,
@@ -72,6 +76,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     accesoCompletoEmpresasCentros: true,
     accesoDashboardSalud: true,
     accesoRiesgosTrabajo: false,
+    gestionarInventario: true,
   },
   'Técnico Evaluador': {
     gestionarEmpresas: false,
@@ -84,6 +89,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     accesoCompletoEmpresasCentros: false,
     accesoDashboardSalud: true,
     accesoRiesgosTrabajo: false,
+    gestionarInventario: true,
   },
 };
 
@@ -341,7 +347,9 @@ export function resolvePermissionFlag(
   if (clinical !== null) return clinical;
   if (hasBypassRole(role)) return true;
   if (isPermissionBlockedByRole(role, permissionKey)) return false;
-  return permisos?.[permissionKey] === true;
+  // Un permiso que el usuario aún no tiene guardado vale lo que su rol trae por defecto
+  const stored = permisos?.[permissionKey];
+  return (stored ?? ROLE_DEFAULT_PERMISSIONS[role]?.[permissionKey]) === true;
 }
 
 export function getPermissionForDocumentType(

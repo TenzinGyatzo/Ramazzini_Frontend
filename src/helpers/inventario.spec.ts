@@ -1,0 +1,84 @@
+import { describe, expect, it } from 'vitest';
+import {
+  cantidadConSigno,
+  cantidadConUnidad,
+  filtrarExistencias,
+  formatearCaducidad,
+} from './inventario';
+import type { FilaExistencia } from '@/interfaces/inventario.interface';
+
+const fila = ({
+  nombre,
+  categoria = 'MEDICAMENTO',
+  ...resumen
+}: Partial<FilaExistencia> & {
+  nombre: string;
+  categoria?: FilaExistencia['insumo']['categoria'];
+}): FilaExistencia => ({
+  existencia: 10,
+  estado: 'DISPONIBLE',
+  caducidadProxima: null,
+  lotesPorCaducar: 0,
+  lotesCaducados: 0,
+  ...resumen,
+  insumo: {
+    _id: nombre,
+    nombre,
+    categoria,
+    unidad: 'tableta',
+    unidadesPorPresentacion: 1,
+    stockMinimo: 0,
+    controlaLote: false,
+    controlaCaducidad: false,
+    activo: true,
+  },
+});
+
+describe('helpers de inventario', () => {
+  it('muestra siempre el signo de la cantidad', () => {
+    expect(cantidadConSigno(100)).toBe('+100');
+    expect(cantidadConSigno(-2)).toBe('−2');
+  });
+
+  it('formatea la caducidad sin desplazarla por zona horaria', () => {
+    expect(formatearCaducidad('2027-05-31T00:00:00.000Z')).toBe('31/05/2027');
+    expect(formatearCaducidad(null)).toBe('—');
+  });
+
+  it('pluraliza la unidad', () => {
+    expect(cantidadConUnidad(1, 'tableta')).toBe('1 tableta');
+    expect(cantidadConUnidad(97, 'tableta')).toBe('97 tabletas');
+    expect(cantidadConUnidad(3, 'par')).toBe('3 pares');
+    expect(cantidadConUnidad(0, 'piezas')).toBe('0 piezas');
+  });
+
+  it('filtra por texto, categoría, stock y caducidad', () => {
+    const filas = [
+      fila({ nombre: 'Paracetamol 500 mg' }),
+      fila({ nombre: 'Ibuprofeno 400 mg', estado: 'BAJO' }),
+      fila({ nombre: 'Ketorolaco 30 mg', estado: 'AGOTADO', lotesCaducados: 1 }),
+      fila({
+        nombre: 'Gasa estéril',
+        categoria: 'MATERIAL_CURACION',
+        lotesPorCaducar: 1,
+      }),
+    ];
+    const nombres = (resultado: FilaExistencia[]) =>
+      resultado.map((f) => f.insumo.nombre);
+
+    expect(nombres(filtrarExistencias(filas, 'TODOS', 'para'))).toEqual([
+      'Paracetamol 500 mg',
+    ]);
+    expect(nombres(filtrarExistencias(filas, 'BAJO_STOCK', ''))).toEqual([
+      'Ibuprofeno 400 mg',
+      'Ketorolaco 30 mg',
+    ]);
+    expect(nombres(filtrarExistencias(filas, 'POR_CADUCAR', ''))).toEqual([
+      'Ketorolaco 30 mg',
+      'Gasa estéril',
+    ]);
+    expect(nombres(filtrarExistencias(filas, 'MATERIAL_CURACION', ''))).toEqual([
+      'Gasa estéril',
+    ]);
+  });
+});

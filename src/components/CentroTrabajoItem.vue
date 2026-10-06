@@ -3,8 +3,10 @@ import { RouterLink } from 'vue-router';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
+import { useInventarioStore } from '@/stores/inventario';
 
 const { canManageCentrosTrabajo, executeIfCanManageCentrosTrabajo } = usePermissionRestrictions();
+const inventario = useInventarioStore();
 
 const props = defineProps({
     centro: {
@@ -121,7 +123,16 @@ const formatDireccion = (centro: CentroTrabajo) => {
                         <span class="centro-item__actions-label text-xs font-medium text-gray-500">Acciones</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button 
+                        <RouterLink
+                            v-if="inventario.habilitado"
+                            :to="{ name: 'inventario', params: { idEmpresa: empresa._id, idCentroTrabajo: centro._id } }"
+                            class="centro-item__action-btn inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 transition-all duration-300 hover:scale-105 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                            title="Inventario del centro de trabajo"
+                        >
+                            <i class="fas fa-boxes-stacked text-xs"></i>
+                            <span class="hidden sm:inline">Inventario</span>
+                        </RouterLink>
+                        <button
                             type="button" 
                             @click="handleEditarCentro(empresa, centro)"
                             :disabled="!canManageCentrosTrabajo"

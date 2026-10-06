@@ -33,6 +33,7 @@ import { resolveInicioLayoutPresentation } from "@/composables/inicioLayoutPrese
 import PlatformTenantBanner from "@/components/PlatformTenantBanner.vue";
 import { listenPlatformContextChanges } from "@/composables/usePlatformContext";
 import { resolveFirmanteTipo } from "@/constants/rolePermissionPolicy";
+import { useInventarioStore } from "@/stores/inventario";
 
 const {
   isOpen: eliminacionOpen,
@@ -58,6 +59,7 @@ provide("requestEliminacion", requestEliminacion);
 
 const user = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const inventarioStore = useInventarioStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
 const enfermeraFirmanteStore = useEnfermeraFirmanteStore();
 const tecnicoFirmanteStore = useTecnicoFirmanteStore();
@@ -272,6 +274,8 @@ onMounted(() => {
       }
       if (currentUser.idProveedorSalud) {
         await proveedorSaludStore.loadProveedorSalud(currentUser.idProveedorSalud);
+        // Decide si se muestran los accesos al inventario; no bloquea la carga
+        inventarioStore.cargarConfiguracion(true);
       }
       if (currentUser._id) {
         await medicoFirmanteStore.loadMedicoFirmante(currentUser._id);
@@ -1295,6 +1299,21 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-user-minus text-red-500 group-hover:text-red-600 transition-colors duration-200"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Eliminar Usuarios</span>
+              </div>
+            </RouterLink>
+          </div>
+
+          <!-- Inventario: quien gobierna el tenant siempre lo ve, para poder habilitarlo -->
+          <div v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador' || inventarioStore.habilitado">
+            <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+              <i class="fa-solid fa-boxes-stacked mr-2 text-emerald-500"></i>
+              Inventario
+            </p>
+            <RouterLink :to="{ name: 'inventario-catalogo' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-list text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Catálogo y configuración</span>
               </div>
             </RouterLink>
           </div>
