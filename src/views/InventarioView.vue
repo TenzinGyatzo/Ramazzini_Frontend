@@ -96,15 +96,33 @@ watch(idCentro, cargar);
 const detalle = ref<DetalleInsumo | null>(null);
 const cargandoDetalle = ref(false);
 
+let solicitudDetalle = 0;
+
+/**
+ * La ventana abre de inmediato con lo que ya está en la tabla; los lotes y los
+ * movimientos llegan después. Si el usuario abre otro insumo o cierra antes de la
+ * respuesta, esa respuesta se descarta.
+ */
 async function abrirDetalle(insumoId: string) {
+  const solicitud = ++solicitudDetalle;
+  const fila = filas.value.find((f) => f.insumo._id === insumoId);
+  if (fila && detalle.value?.insumo._id !== insumoId) {
+    detalle.value = { ...fila, lotes: [], movimientos: [] };
+  }
   cargandoDetalle.value = true;
   try {
     const { data } = await InventarioAPI.getDetalleInsumo(idCentro.value, insumoId);
-    detalle.value = data;
+    if (solicitud !== solicitudDetalle) return;
+    // Si se cerró mientras cargaba, no se vuelve a abrir
+    if (detalle.value?.insumo._id === insumoId || !fila) detalle.value = data;
   } catch (error) {
+    if (solicitud !== solicitudDetalle) return;
     avisar(extractApiErrorMessage(error, 'No se pudo cargar el insumo'), 'error');
+    if (detalle.value?.insumo._id === insumoId && detalle.value.lotes.length === 0) {
+      detalle.value = null;
+    }
   } finally {
-    cargandoDetalle.value = false;
+    if (solicitud === solicitudDetalle) cargandoDetalle.value = false;
   }
 }
 
@@ -740,7 +758,10 @@ const botonSecundario =
       </div>
 
       <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Lotes</h3>
-      <p v-if="detalle.lotes.length === 0" class="mb-4 text-sm text-gray-500">
+      <p v-if="cargandoDetalle && detalle.lotes.length === 0" class="mb-4 text-sm text-gray-500">
+        <i class="fas fa-spinner fa-spin mr-1"></i> Cargando lotes...
+      </p>
+      <p v-else-if="detalle.lotes.length === 0" class="mb-4 text-sm text-gray-500">
         Sin existencia en este centro.
       </p>
       <ul v-else class="mb-4 divide-y divide-gray-100 rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
@@ -778,7 +799,10 @@ const botonSecundario =
       </ul>
 
       <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Últimos movimientos</h3>
-      <p v-if="detalle.movimientos.length === 0" class="text-sm text-gray-500">Sin movimientos.</p>
+      <p v-if="cargandoDetalle && detalle.movimientos.length === 0" class="text-sm text-gray-500">
+        <i class="fas fa-spinner fa-spin mr-1"></i> Cargando movimientos...
+      </p>
+      <p v-else-if="detalle.movimientos.length === 0" class="text-sm text-gray-500">Sin movimientos.</p>
       <ul v-else class="space-y-1 text-sm">
         <li
           v-for="movimiento in detalle.movimientos"
