@@ -687,8 +687,13 @@ const botonSecundario =
                   <p class="font-medium text-gray-900 dark:text-gray-100">{{ fila.insumo.nombre }}</p>
                   <p class="text-xs text-gray-500">{{ etiquetaCategoria(fila.insumo.categoria) }}</p>
                 </td>
-                <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-gray-100">
-                  {{ cantidadConUnidad(fila.consumo, fila.insumo.unidad) }}
+                <td class="px-4 py-3 text-right tabular-nums">
+                  <p class="font-medium text-gray-900 dark:text-gray-100">
+                    {{ cantidadConUnidad(fila.consumo, fila.insumo.unidad) }}
+                  </p>
+                  <p v-if="fila.administrado || fila.entregado" class="text-xs text-gray-500">
+                    {{ fila.administrado }} administrado · {{ fila.entregado }} entregado
+                  </p>
                 </td>
                 <td class="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">{{ fila.entradas }}</td>
                 <td class="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">{{ fila.bajas }}</td>
@@ -705,8 +710,9 @@ const botonSecundario =
           </table>
         </div>
         <p class="mt-2 text-xs text-gray-500">
-          Consumo es lo descontado desde notas médicas y antidoping, menos lo devuelto. Los ajustes son
-          las diferencias registradas por conteo.
+          Consumo es lo descontado desde notas médicas y antidoping, menos lo devuelto; en las notas
+          médicas se desglosa en administrado en consulta y entregado al trabajador. Los ajustes son las
+          diferencias registradas por conteo.
         </p>
       </section>
     </template>

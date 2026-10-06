@@ -195,18 +195,32 @@ export function consumoACsv(
     insumo: { nombre: string; unidad: string; categoria: string };
     entradas: number;
     consumo: number;
+    administrado: number;
+    entregado: number;
     bajas: number;
     ajustes: number;
   }>,
 ): string {
   const lineas = [
-    ['Insumo', 'Categoría', 'Unidad', 'Entradas', 'Consumo', 'Bajas', 'Ajustes'],
+    [
+      'Insumo',
+      'Categoría',
+      'Unidad',
+      'Consumo',
+      'Administrado',
+      'Entregado',
+      'Entradas',
+      'Bajas',
+      'Ajustes',
+    ],
     ...filas.map((fila) => [
       fila.insumo.nombre,
       etiquetaCategoria(fila.insumo.categoria),
       fila.insumo.unidad,
-      fila.entradas,
       fila.consumo,
+      fila.administrado,
+      fila.entregado,
+      fila.entradas,
       fila.bajas,
       fila.ajustes,
     ]),

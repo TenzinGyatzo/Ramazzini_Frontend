@@ -102,6 +102,10 @@ export interface FilaConsumo {
   entradas: number;
   /** Consumo clínico neto: lo descontado por documentos menos lo devuelto. */
   consumo: number;
+  /** Parte del consumo administrada en consulta. */
+  administrado: number;
+  /** Parte del consumo entregada al trabajador. */
+  entregado: number;
   bajas: number;
   /** Ajustes netos por conteo. */
   ajustes: number;

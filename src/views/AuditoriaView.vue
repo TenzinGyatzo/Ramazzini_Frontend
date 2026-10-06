@@ -204,6 +204,12 @@ async function verifyAudit() {
               <option value="WORKER_TRANSFER">Transferencia de trabajador</option>
               <option value="WORKER_FUSION_MANUAL">Fusión de trabajadores</option>
             </optgroup>
+            <optgroup label="Inventario">
+              <option value="INVENTORY_ADJUSTED">Ajuste de inventario</option>
+              <option value="INVENTORY_WRITE_OFF">Baja de inventario</option>
+              <option value="INVENTORY_CATALOG_UPDATED">Catálogo de insumos modificado</option>
+              <option value="INVENTORY_CONFIG_UPDATED">Configuración del inventario modificada</option>
+            </optgroup>
             <optgroup label="Exportaciones">
               <option value="WORKERS_EXPORT_EXCEL">Export Excel trabajadores</option>
               <option value="DASHBOARD_REPORT_EXPORTED">Informe dashboard exportado</option>

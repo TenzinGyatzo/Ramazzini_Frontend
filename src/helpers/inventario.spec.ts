@@ -84,14 +84,16 @@ describe('helpers de inventario', () => {
         },
         entradas: 100,
         consumo: 12,
+        administrado: 4,
+        entregado: 8,
         bajas: 0,
         ajustes: -3,
       },
     ]);
     expect(csv.startsWith('\uFEFF')).toBe(true);
     expect(csv.split('\r\n')).toEqual([
-      '\uFEFFInsumo,Categoría,Unidad,Entradas,Consumo,Bajas,Ajustes',
-      '"Gasa estéril 10 × 10, paquete",Material de curación,pieza,100,12,0,-3',
+      '\uFEFFInsumo,Categoría,Unidad,Consumo,Administrado,Entregado,Entradas,Bajas,Ajustes',
+      '"Gasa estéril 10 × 10, paquete",Material de curación,pieza,12,4,8,100,0,-3',
     ]);
   });
 
