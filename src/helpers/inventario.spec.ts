@@ -5,6 +5,7 @@ import {
   consumoACsv,
   filtrarExistencias,
   formatearCaducidad,
+  normalizarLote,
   periodoMesEnCurso,
   textoAvisoInventario,
 } from './inventario';
@@ -95,6 +96,12 @@ describe('helpers de inventario', () => {
       '\uFEFFInsumo,Categoría,Unidad,Consumo,Administrado,Entregado,Entradas,Bajas,Ajustes',
       '"Gasa estéril 10 × 10, paquete",Material de curación,pieza,12,4,8,100,0,-3',
     ]);
+  });
+
+  it('normaliza el lote a mayúsculas y sin espacios', () => {
+    expect(normalizarLote(' abc 123 ')).toBe('ABC123');
+    expect(normalizarLote('   ')).toBe('');
+    expect(normalizarLote(undefined)).toBe('');
   });
 
   it('pluraliza la unidad', () => {

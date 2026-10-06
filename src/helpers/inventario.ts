@@ -227,3 +227,8 @@ export function consumoACsv(
   ];
   return '\uFEFF' + lineas.map((linea) => linea.map(celdaCsv).join(',')).join('\r\n');
 }
+
+/** Número de lote como se guarda: en mayúsculas y sin espacios. */
+export function normalizarLote(valor: string | null | undefined): string {
+  return (valor ?? '').replace(/\s+/g, '').toUpperCase();
+}

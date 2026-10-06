@@ -21,6 +21,7 @@ import {
   formatearCaducidad,
   formatearFechaHora,
   loteVisible,
+  normalizarLote,
   periodoMesEnCurso,
   type FiltroExistencias,
 } from '@/helpers/inventario';
@@ -215,7 +216,7 @@ function guardarEntrada() {
   if (!esEntero(formEntrada.cantidad, 1)) {
     return avisar('La cantidad debe ser un número entero mayor a cero', 'error');
   }
-  if (insumo.controlaLote && !formEntrada.lote.trim()) {
+  if (insumo.controlaLote && !normalizarLote(formEntrada.lote)) {
     return avisar('Este insumo requiere número de lote', 'error');
   }
   if (insumo.controlaCaducidad && !formEntrada.caducidad) {
@@ -228,7 +229,7 @@ function guardarEntrada() {
         idInsumo: insumo._id,
         cantidad,
         porPresentacion: formEntrada.porPresentacion,
-        lote: insumo.controlaLote ? formEntrada.lote.trim() : undefined,
+        lote: insumo.controlaLote ? normalizarLote(formEntrada.lote) : undefined,
         caducidad: insumo.controlaCaducidad ? formEntrada.caducidad : undefined,
       }),
     'Entrada registrada',
@@ -866,7 +867,16 @@ const botonSecundario =
           </div>
           <div v-if="insumoEntrada.controlaLote">
             <label :class="etiqueta" for="entrada-lote">Lote</label>
-            <input id="entrada-lote" v-model="formEntrada.lote" type="text" maxlength="40" placeholder="Ej. 24B0731" :class="campo" required />
+            <input
+              id="entrada-lote"
+              v-model="formEntrada.lote"
+              type="text"
+              maxlength="40"
+              placeholder="Ej. 24B0731"
+              :class="[campo, 'uppercase placeholder:normal-case']"
+              required
+              @blur="formEntrada.lote = normalizarLote(formEntrada.lote)"
+            />
             <p class="mt-1 text-xs text-gray-500">
               Cópialo tal como viene impreso en el empaque, junto a «Lote», «Lot» o «L».
             </p>
