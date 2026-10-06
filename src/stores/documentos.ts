@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { mensajesDeInventario, type ResumenInventario } from '@/helpers/insumosSuministrados';
 import { ref, computed } from "vue";
 import DocumentosAPI from "@/api/DocumentosAPI";
 import { getToast } from "@/utils/toast";
@@ -261,10 +262,27 @@ export const useDocumentosStore = defineStore("documentos", () => {
     return o;
   }
 
+  /** Inventario clínico: muestra qué descontó o devolvió el guardado de la nota. */
+  function avisarInventario(apiBody: unknown) {
+    const resumen = (apiBody as { inventario?: ResumenInventario } | null)?.inventario;
+    if (!resumen) return;
+    try {
+      const { info, avisos } = mensajesDeInventario(resumen);
+      const toast = getToast();
+      info.forEach((message) => toast.open({ message, type: 'info', position: 'bottom-left' }));
+      avisos.forEach((message) =>
+        toast.open({ message, type: 'warning', position: 'bottom-left', duration: 9000 }),
+      );
+    } catch {
+      // Un aviso que no se pudo mostrar nunca debe afectar el guardado
+    }
+  }
+
   async function createDocument(documentType: string, trabajadorId: string, data: any) {
     try {
       loading.value = true;
       const response = await DocumentosAPI.createDocument(documentType, trabajadorId, data);
+      avisarInventario(response.data);
       return unwrapPersistedDocument(response.data);
     } catch (error) {
       console.error('Error al crear el documento en el store:', error);
@@ -278,6 +296,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     try {
       loading.value = true;
       const response = await DocumentosAPI.updateDocument(documentType, trabajadorId, documentId, data);
+      avisarInventario(response.data);
       return unwrapPersistedDocument(response.data);
     } catch (error) {
       console.error('Error al actualizar el documento en el store:', error);

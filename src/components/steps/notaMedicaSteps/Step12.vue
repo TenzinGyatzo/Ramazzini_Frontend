@@ -2,6 +2,7 @@
 import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import InsumosSuministrados from '@/components/inventario/InsumosSuministrados.vue';
 
 const props = defineProps({
   variant: {
@@ -96,5 +97,7 @@ function removeTratamiento(index) {
         Agregar tratamiento
       </button>
     </div>
+
+    <InsumosSuministrados />
   </div>
 </template>
