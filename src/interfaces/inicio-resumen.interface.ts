@@ -103,6 +103,16 @@ export interface InicioHoyCentroItem {
   actorUsername?: string;
 }
 
+/** Aviso de inventario de un centro: lo que requiere atención y a dónde ir. */
+export interface InicioInventarioAviso {
+  idEmpresa: string;
+  idCentroTrabajo: string;
+  nombreCentro: string;
+  insumosBajoStock: number;
+  lotesPorCaducar: number;
+  lotesCaducados: number;
+}
+
 export interface InicioResumen {
   hasActivity: boolean;
   hasTrabajadores: boolean;
@@ -113,6 +123,8 @@ export interface InicioResumen {
   clientesRecientes: InicioClienteReciente[];
   expedientesRecientes: InicioExpedienteReciente[];
   atencion: InicioAtencionGrupo[];
+  /** Ausente o vacío si el proveedor no usa inventario o el usuario no lo gestiona. */
+  inventario?: InicioInventarioAviso[];
   pendientes: InicioPendienteItem[];
   consejo: InicioConsejo | null;
 }

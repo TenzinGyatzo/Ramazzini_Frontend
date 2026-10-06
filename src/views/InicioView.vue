@@ -10,6 +10,7 @@ import { usePermissionRestrictions } from '@/composables/usePermissionRestrictio
 import { formatInicioRelativeTime } from '@/helpers/formatInicioRelativeTime';
 import InicioMetricCard from '@/components/inicio/InicioMetricCard.vue';
 import InicioActionRow from '@/components/inicio/InicioActionRow.vue';
+import { textoAvisoInventario } from '@/helpers/inventario';
 import InicioSkeletonCard from '@/components/inicio/InicioSkeletonCard.vue';
 import ModalInicioPendientes from '@/components/inicio/ModalInicioPendientes.vue';
 import ModalInicioHoyList from '@/components/inicio/ModalInicioHoyList.vue';
@@ -202,6 +203,18 @@ function metaDocumento(item: InicioHoyDocumentoItem) {
   }
   parts.push(formatInicioRelativeTime(item.createdAt));
   return parts.filter(Boolean).join(' · ');
+}
+
+const avisosInventario = computed(() => resumen.value?.inventario ?? []);
+
+function irAInventario(aviso: { idEmpresa: string; idCentroTrabajo: string }) {
+  router.push({
+    name: 'inventario',
+    params: {
+      idEmpresa: aviso.idEmpresa,
+      idCentroTrabajo: aviso.idCentroTrabajo,
+    },
+  });
 }
 
 function onAtencionClick(grupo: InicioAtencionGrupo) {
@@ -504,7 +517,7 @@ function irAConsejo() {
         </div>
 
         <section
-          v-if="resumen.atencion.length"
+          v-if="resumen.atencion.length || avisosInventario.length"
           class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm max-[479px]:p-3 dark:border-slate-700 dark:bg-slate-800"
         >
           <h2 class="mb-4 text-lg font-semibold text-gray-900 max-[479px]:mb-3 max-[479px]:text-base dark:text-slate-100">
@@ -522,6 +535,21 @@ function irAConsejo() {
                 </span>
                 <span class="block text-sm text-gray-500 dark:text-slate-400">
                   {{ grupo.subtitulo }}
+                </span>
+              </InicioActionRow>
+            </li>
+            <li v-for="aviso in avisosInventario" :key="`inventario-${aviso.idCentroTrabajo}`">
+              <InicioActionRow
+                icon="fas fa-boxes-stacked"
+                icon-tone="amber"
+                test-id="inicio-aviso-inventario"
+                @click="irAInventario(aviso)"
+              >
+                <span class="block font-medium text-gray-900 dark:text-slate-100">
+                  Inventario — {{ aviso.nombreCentro }}
+                </span>
+                <span class="block text-sm text-gray-500 dark:text-slate-400">
+                  {{ textoAvisoInventario(aviso) }}
                 </span>
               </InicioActionRow>
             </li>

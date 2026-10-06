@@ -4,6 +4,7 @@ import {
   cantidadConUnidad,
   filtrarExistencias,
   formatearCaducidad,
+  textoAvisoInventario,
 } from './inventario';
 import type { FilaExistencia } from '@/interfaces/inventario.interface';
 
@@ -43,6 +44,25 @@ describe('helpers de inventario', () => {
   it('formatea la caducidad sin desplazarla por zona horaria', () => {
     expect(formatearCaducidad('2027-05-31T00:00:00.000Z')).toBe('31/05/2027');
     expect(formatearCaducidad(null)).toBe('—');
+  });
+
+  it('resume el aviso de inventario de un centro', () => {
+    expect(
+      textoAvisoInventario({
+        insumosBajoStock: 3,
+        lotesPorCaducar: 1,
+        lotesCaducados: 2,
+      }),
+    ).toBe(
+      '3 insumos agotados o con stock bajo · 2 lotes caducados · 1 lote por caducar',
+    );
+    expect(
+      textoAvisoInventario({
+        insumosBajoStock: 1,
+        lotesPorCaducar: 0,
+        lotesCaducados: 0,
+      }),
+    ).toBe('1 insumo agotado o con stock bajo');
   });
 
   it('pluraliza la unidad', () => {

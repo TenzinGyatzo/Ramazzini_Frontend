@@ -137,3 +137,34 @@ export function insumoVacio(): Omit<Insumo, '_id'> {
     activo: true,
   };
 }
+
+/** «3 insumos con stock bajo · 2 lotes por caducar · 1 lote caducado». */
+export function textoAvisoInventario(aviso: {
+  insumosBajoStock: number;
+  lotesPorCaducar: number;
+  lotesCaducados: number;
+}): string {
+  const partes: string[] = [];
+  if (aviso.insumosBajoStock > 0) {
+    partes.push(
+      aviso.insumosBajoStock === 1
+        ? '1 insumo agotado o con stock bajo'
+        : `${aviso.insumosBajoStock} insumos agotados o con stock bajo`,
+    );
+  }
+  if (aviso.lotesCaducados > 0) {
+    partes.push(
+      aviso.lotesCaducados === 1
+        ? '1 lote caducado'
+        : `${aviso.lotesCaducados} lotes caducados`,
+    );
+  }
+  if (aviso.lotesPorCaducar > 0) {
+    partes.push(
+      aviso.lotesPorCaducar === 1
+        ? '1 lote por caducar'
+        : `${aviso.lotesPorCaducar} lotes por caducar`,
+    );
+  }
+  return partes.join(' · ');
+}
