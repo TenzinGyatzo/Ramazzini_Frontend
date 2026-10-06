@@ -25,13 +25,21 @@ import {
   periodoMesEnCurso,
   type FiltroExistencias,
 } from '@/helpers/inventario';
+import {
+  COLUMNA_LOTE,
+  filasDePlantilla,
+  instruccionesDePlantilla,
+  leerFilasDePlantilla,
+} from '@/helpers/inventarioCargaMasiva';
 import type {
   DetalleInsumo,
+  FilaCargaMasiva,
   FilaExistencia,
   LoteInventario,
   MovimientoInventario,
   PaginaMovimientos,
   ReporteConsumo,
+  ResumenCargaMasiva,
 } from '@/interfaces/inventario.interface';
 
 const toast: any = inject('toast');
@@ -136,7 +144,7 @@ async function refrescar() {
 
 // -------------------------------------------------------------- operaciones
 
-type Operacion = 'entrada' | 'ajuste' | 'baja';
+type Operacion = 'entrada' | 'ajuste' | 'baja' | 'masiva';
 const operacion = ref<Operacion | null>(null);
 const guardando = ref(false);
 const loteSeleccionado = ref<LoteInventario | null>(null);
@@ -280,6 +288,109 @@ function guardarBaja() {
   );
 }
 
+// ------------------------------------------------------------ carga masiva
+
+const archivoCarga = ref('');
+const filasCarga = ref<FilaCargaMasiva[]>([]);
+const resumenCarga = ref<ResumenCargaMasiva | null>(null);
+const leyendoCarga = ref(false);
+const errorCarga = ref('');
+
+const puedeConfirmarCarga = computed(
+  () =>
+    !!resumenCarga.value &&
+    resumenCarga.value.errores.length === 0 &&
+    resumenCarga.value.entradas.length > 0,
+);
+
+function abrirCargaMasiva() {
+  archivoCarga.value = '';
+  filasCarga.value = [];
+  resumenCarga.value = null;
+  errorCarga.value = '';
+  operacion.value = 'masiva';
+}
+
+async function descargarPlantilla() {
+  try {
+    const XLSX = await import('xlsx');
+    const filasPlantilla = filasDePlantilla(insumosActivos.value);
+    const hoja = XLSX.utils.aoa_to_sheet(filasPlantilla);
+    // El lote como texto: así Excel no le quita ceros a la izquierda
+    for (let renglon = 1; renglon < filasPlantilla.length; renglon += 1) {
+      hoja[XLSX.utils.encode_cell({ r: renglon, c: COLUMNA_LOTE })] = {
+        t: 's',
+        v: '',
+        z: '@',
+      };
+    }
+    hoja['!cols'] = [40, 12, 18, 12, 10, 12, 12, 14, 16, 16].map((wch) => ({ wch }));
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, 'Entradas');
+    XLSX.utils.book_append_sheet(
+      libro,
+      XLSX.utils.aoa_to_sheet(instruccionesDePlantilla()),
+      'Instrucciones',
+    );
+    XLSX.writeFile(libro, `Plantilla entradas ${nombreCentro.value || 'inventario'}.xlsx`);
+  } catch {
+    avisar('No se pudo generar la plantilla', 'error');
+  }
+}
+
+async function alElegirArchivo(evento: Event) {
+  const entrada = evento.target as HTMLInputElement;
+  const archivo = entrada.files?.[0];
+  entrada.value = ''; // permite volver a elegir el mismo archivo ya corregido
+  if (!archivo) return;
+
+  archivoCarga.value = archivo.name;
+  resumenCarga.value = null;
+  errorCarga.value = '';
+  leyendoCarga.value = true;
+  try {
+    const XLSX = await import('xlsx');
+    const libro = XLSX.read(await archivo.arrayBuffer(), { type: 'array' });
+    const hoja = libro.Sheets['Entradas'] ?? libro.Sheets[libro.SheetNames[0]];
+    const renglones = XLSX.utils.sheet_to_json<unknown[]>(hoja, {
+      header: 1,
+      raw: true,
+      defval: '',
+    });
+    const { filas: leidas, error } = leerFilasDePlantilla(renglones);
+    if (error) {
+      errorCarga.value = error;
+      return;
+    }
+    if (leidas.length === 0) {
+      errorCarga.value = 'El archivo no tiene renglones capturados.';
+      return;
+    }
+    filasCarga.value = leidas;
+    const { data } = await InventarioAPI.entradasMasivas(idCentro.value, {
+      simular: true,
+      filas: leidas,
+    });
+    resumenCarga.value = data;
+  } catch (error) {
+    errorCarga.value = extractApiErrorMessage(
+      error,
+      'No se pudo leer el archivo. Verifica que sea la plantilla de Excel.',
+    );
+  } finally {
+    leyendoCarga.value = false;
+  }
+}
+
+function confirmarCarga() {
+  if (!puedeConfirmarCarga.value) return;
+  const total = resumenCarga.value?.entradas.length ?? 0;
+  return ejecutar(
+    () => InventarioAPI.entradasMasivas(idCentro.value, { filas: filasCarga.value }),
+    total === 1 ? 'Se registró 1 entrada' : `Se registraron ${total} entradas`,
+  );
+}
+
 // -------------------------------------------------------------- movimientos
 
 const paginaMovimientos = ref<PaginaMovimientos | null>(null);
@@ -411,6 +522,14 @@ const botonSecundario =
         <RouterLink :to="{ name: 'inventario-catalogo' }" :class="botonSecundario">
           <i class="fas fa-list"></i> Catálogo de insumos
         </RouterLink>
+        <button
+          v-if="canManageInventario"
+          type="button"
+          :class="botonSecundario"
+          @click="abrirCargaMasiva"
+        >
+          <i class="fas fa-file-excel"></i> Carga masiva
+        </button>
         <button
           v-if="canManageInventario"
           type="button"
@@ -833,6 +952,129 @@ const botonSecundario =
           @click="abrirEntrada(detalle.insumo._id)"
         >
           <i class="fas fa-plus"></i> Registrar entrada
+        </button>
+      </template>
+    </InventarioModal>
+
+    <!-- Carga masiva -->
+    <InventarioModal
+      v-if="operacion === 'masiva'"
+      titulo="Carga masiva de entradas"
+      ancho="lg"
+      @cerrar="operacion = null"
+    >
+      <ol class="mb-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <li class="flex flex-wrap items-center justify-between gap-2">
+          <span class="min-w-0 flex-1 basis-64">
+            <strong>1.</strong> Descarga la plantilla: trae los insumos activos de tu catálogo.
+            Captura solo los que llegaron.
+          </span>
+          <button type="button" :class="botonSecundario" @click="descargarPlantilla">
+            <i class="fas fa-download"></i> Descargar plantilla
+          </button>
+        </li>
+        <li class="flex flex-wrap items-center justify-between gap-2">
+          <span class="min-w-0 flex-1 basis-64">
+            <strong>2.</strong> Sube el archivo lleno. Se revisa antes de registrar nada.
+            <span v-if="archivoCarga" class="block text-xs text-gray-500">{{ archivoCarga }}</span>
+          </span>
+          <label :class="[botonSecundario, 'cursor-pointer']">
+            <i class="fas fa-upload"></i> Elegir archivo
+            <input type="file" accept=".xlsx,.xls" class="sr-only" @change="alElegirArchivo" />
+          </label>
+        </li>
+      </ol>
+
+      <p v-if="leyendoCarga" class="py-4 text-center text-sm text-gray-500">
+        <i class="fas fa-spinner fa-spin mr-1"></i> Revisando el archivo...
+      </p>
+      <p
+        v-else-if="errorCarga"
+        class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        role="alert"
+      >
+        {{ errorCarga }}
+      </p>
+
+      <div v-else-if="resumenCarga" class="space-y-3 text-sm" data-testid="resumen-carga-masiva">
+        <p class="font-medium text-gray-900 dark:text-gray-100">
+          {{ resumenCarga.entradas.length }}
+          {{ resumenCarga.entradas.length === 1 ? 'entrada lista' : 'entradas listas' }}
+          <span v-if="resumenCarga.errores.length" class="text-red-600">
+            · {{ resumenCarga.errores.length }} con error
+          </span>
+          <span v-if="resumenCarga.omitidas" class="font-normal text-gray-500">
+            · {{ resumenCarga.omitidas }} sin cantidad (se ignoran)
+          </span>
+        </p>
+
+        <p
+          v-if="resumenCarga.cargadoAntes"
+          class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800"
+          role="status"
+        >
+          Ya se registró una carga con exactamente estas entradas el
+          {{ formatearFechaHora(resumenCarga.cargadoAntes) }}. Si la subes otra vez, se
+          registrarán de nuevo.
+        </p>
+
+        <div v-if="resumenCarga.errores.length">
+          <p class="mb-1 font-medium text-red-700">
+            Corrige estos renglones en el archivo y vuelve a subirlo. No se registró nada.
+          </p>
+          <ul class="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-red-200 p-2">
+            <li v-for="error in resumenCarga.errores" :key="`e-${error.fila}`">
+              <span class="font-medium">Renglón {{ error.fila }}</span>
+              <span v-if="error.insumo"> · {{ error.insumo }}</span>: {{ error.mensaje }}
+            </li>
+          </ul>
+        </div>
+
+        <ul v-if="resumenCarga.avisos.length" class="space-y-1 text-amber-700">
+          <li v-for="aviso in resumenCarga.avisos" :key="`a-${aviso.fila}`">
+            Renglón {{ aviso.fila }} · {{ aviso.insumo }}: {{ aviso.mensaje }}
+          </li>
+        </ul>
+
+        <div v-if="resumenCarga.entradas.length && !resumenCarga.errores.length" class="overflow-x-auto">
+          <table class="w-full min-w-[420px] text-sm">
+            <thead class="text-left text-xs uppercase tracking-wide text-gray-500">
+              <tr>
+                <th class="px-2 py-1">Insumo</th>
+                <th class="px-2 py-1 text-right">Entran</th>
+                <th class="px-2 py-1">Lote</th>
+                <th class="px-2 py-1">Caducidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="entrada in resumenCarga.entradas"
+                :key="entrada.fila"
+                class="border-t border-gray-100 dark:border-gray-700"
+              >
+                <td class="px-2 py-1 text-gray-900 dark:text-gray-100">{{ entrada.insumo }}</td>
+                <td class="px-2 py-1 text-right tabular-nums">{{ entrada.unidades }}</td>
+                <td class="px-2 py-1">{{ entrada.lote || '—' }}</td>
+                <td class="px-2 py-1">{{ formatearCaducidad(entrada.caducidad) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <template #acciones>
+        <button type="button" :class="botonSecundario" @click="operacion = null">Cancelar</button>
+        <button
+          type="button"
+          :class="botonPrimario"
+          :disabled="!puedeConfirmarCarga || guardando"
+          @click="confirmarCarga"
+        >
+          {{
+            guardando
+              ? 'Registrando...'
+              : `Registrar ${resumenCarga?.entradas.length ?? 0} entradas`
+          }}
         </button>
       </template>
     </InventarioModal>

@@ -116,3 +116,37 @@ export interface ReporteConsumo {
   hasta: string;
   filas: FilaConsumo[];
 }
+
+/** Renglón de la plantilla de carga masiva; todo viaja como texto. */
+export interface FilaCargaMasiva {
+  fila: number;
+  insumo: string;
+  cantidad: string;
+  presentaciones: string;
+  lote: string;
+  caducidad: string;
+}
+
+export interface MensajeDeFila {
+  fila: number;
+  insumo: string;
+  mensaje: string;
+}
+
+export interface ResumenCargaMasiva {
+  entradas: Array<{
+    fila: number;
+    idInsumo: string;
+    insumo: string;
+    unidades: number;
+    lote: string;
+    caducidad: string | null;
+  }>;
+  errores: MensajeDeFila[];
+  avisos: MensajeDeFila[];
+  /** Insumos de la plantilla sin cantidad: se ignoran. */
+  omitidas: number;
+  /** Fecha en que se cargó un archivo con las mismas entradas, o null. */
+  cargadoAntes: string | null;
+  registradas: number;
+}

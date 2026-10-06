@@ -2,12 +2,14 @@ import api from '@/lib/axios';
 import type {
   ConfiguracionInventario,
   DetalleInsumo,
+  FilaCargaMasiva,
   FilaExistencia,
   Insumo,
   InsumoPayload,
   InsumoSugerido,
   PaginaMovimientos,
   ReporteConsumo,
+  ResumenCargaMasiva,
 } from '@/interfaces/inventario.interface';
 
 const centro = (centroId: string) => `/inventario/centros/${centroId}`;
@@ -82,6 +84,16 @@ export default {
     },
   ) {
     return api.post(`${centro(centroId)}/entradas`, data);
+  },
+
+  entradasMasivas(
+    centroId: string,
+    data: { simular?: boolean; filas: FilaCargaMasiva[] },
+  ) {
+    return api.post<ResumenCargaMasiva>(
+      `${centro(centroId)}/entradas-masivas`,
+      data,
+    );
   },
 
   ajustarExistencia(
