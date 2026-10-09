@@ -5,6 +5,8 @@ withDefaults(
   defineProps<{
     icon: string;
     iconTone?: 'emerald' | 'slate' | 'amber';
+    /** Fondo y color propios del icono (p. ej. el del tipo de documento); sustituye al tono. */
+    iconClass?: string;
     testId?: string;
     interactive?: boolean;
   }>(),
@@ -28,7 +30,7 @@ const slots = useSlots();
   >
     <span
       class="inicio-action-row__icon mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm transition-colors duration-150 max-[479px]:h-8 max-[479px]:w-8"
-      :class="{
+      :class="iconClass || {
         'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 group-hover:text-emerald-700 dark:bg-emerald-950/40':
           iconTone !== 'slate' && iconTone !== 'amber',
         'bg-slate-100 text-slate-600 group-hover:bg-slate-200 group-hover:text-slate-700 dark:bg-slate-700 dark:text-slate-300':

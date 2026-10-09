@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { iconoTipoDocumento } from '@/helpers/iconoTipoDocumento';
 import { RouterLink, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -651,7 +652,8 @@ function irAConsejo() {
         <InicioActionRow
           v-for="item in pageDocumentos"
           :key="item.idDocumento"
-          icon="fas fa-file-lines"
+          :icon="iconoTipoDocumento(item.tipoDocumento).icono"
+          :icon-class="iconoTipoDocumento(item.tipoDocumento).clases"
           test-id="inicio-hoy-documento"
           @click="irAHoyDocumento(item)"
         >
