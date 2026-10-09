@@ -1,12 +1,19 @@
 import incapacidades from '@/lib/axiosIncapacidades';
+import incapacidadesEmpresa from '@/lib/axiosIncapacidadesEmpresa';
 import type {
   CambiosCaso,
   CasoConIncapacidades,
   DatosCaso,
   DatosIncapacidad,
 } from '@/helpers/incapacidades';
+import type { PanelIncapacidades } from '@/helpers/incapacidadesPanel';
 
 export default {
+  /** Seguimiento de la empresa: incapacitados hoy, focos rojos y casos. */
+  getPanelEmpresa(empresaId: string) {
+    return incapacidadesEmpresa.get<PanelIncapacidades>(`/${empresaId}`);
+  },
+
   getCasos(trabajadorId: string) {
     return incapacidades.get<CasoConIncapacidades[]>(`/${trabajadorId}`);
   },

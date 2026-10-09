@@ -3985,6 +3985,15 @@ html.dark-mode .centros-empresa-btn-secondary--riesgos:hover:not(:disabled) {
   background-color: #4c1d95 !important;
 }
 
+html.dark-mode .centros-empresa-btn-secondary--incapacidades {
+  border-color: #38bdf8 !important;
+  color: #7dd3fc !important;
+}
+
+html.dark-mode .centros-empresa-btn-secondary--incapacidades:hover:not(:disabled) {
+  background-color: #0c4a6e !important;
+}
+
 /* ModalRiesgos: tarjetas de agentes y título (hover de Tailwind y .text-lg pierden ante el remapeo) */
 html.dark-mode .modal-riesgos__titulo {
   color: #f1f5f9 !important;
@@ -4034,6 +4043,21 @@ html.dark-mode .modal-carga-documento-externo .modal-close:hover {
 /* Incapacidades: título de la ventana y contador de "incapacitado hoy" */
 html.dark-mode .modal-incapacidades__titulo {
   color: #f1f5f9 !important;
+}
+
+/* Incapacidades por empresa: títulos, y filas cuyo hover de Tailwind pierde ante el remapeo */
+html.dark-mode .incapacidades-empresa__titulo,
+html.dark-mode .incapacidades-empresa__seccion {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .incapacidades-empresa__tarjeta {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html.dark-mode .incapacidades-empresa__fila:hover {
+  background-color: #334155 !important;
 }
 
 html.dark-mode .expediente-contador--alerta {

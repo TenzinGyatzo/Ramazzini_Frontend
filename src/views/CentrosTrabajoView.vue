@@ -18,6 +18,7 @@ import { useUserStore } from '@/stores/user';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
+import { INCAPACIDADES_SOLO_ADMINISTRADOR } from '@/helpers/incapacidades';
 
 const toast: any = inject('toast');
 const { solicitarEliminacionConResumen } = useEliminacion();
@@ -67,6 +68,13 @@ const cargandoVista = ref(true);
 const esProveedorMexicano = computed(() => {
   return proveedorSaludStore.proveedorSalud?.pais === 'MX';
 });
+
+// Incapacidades: en vista previa solo para el Administrador de plataforma, y solo en México
+const incapacidadesDisponibles = computed(
+  () =>
+    esProveedorMexicano.value &&
+    (!INCAPACIDADES_SOLO_ADMINISTRADOR || userStore.user?.role === 'Administrador'),
+);
 
 const openModal = async (empresa: Empresa | null = null, centroTrabajo: CentroTrabajo | null = null) => {
   // Si es un nuevo centro de trabajo (centroTrabajo === null), validar permisos
@@ -428,6 +436,14 @@ watch(
                     <i class="fas fa-hard-hat text-sm"></i>
                     <span>Riesgos de Trabajo</span>
                   </button>
+                  <RouterLink
+                    v-if="incapacidadesDisponibles && empresas.currentEmpresa"
+                    :to="{ name: 'incapacidades-empresa', params: { idEmpresa: empresas.currentEmpresa._id } }"
+                    class="centros-empresa-btn-secondary centros-empresa-btn-secondary--incapacidades nav-action-link"
+                    title="Ver incapacidades de la empresa">
+                    <i class="fas fa-bed text-sm"></i>
+                    <span>Incapacidades</span>
+                  </RouterLink>
                 </div>
                 
               </div>
@@ -694,6 +710,15 @@ button:active {
 
 .centros-empresa-btn-secondary--riesgos:hover:not(:disabled) {
   background-color: #f5f3ff;
+}
+
+.centros-empresa-btn-secondary--incapacidades {
+  border-color: #0284c7;
+  color: #0369a1;
+}
+
+.centros-empresa-btn-secondary--incapacidades:hover:not(:disabled) {
+  background-color: #f0f9ff;
 }
 
 .centros-empresa-btn-secondary:disabled {
