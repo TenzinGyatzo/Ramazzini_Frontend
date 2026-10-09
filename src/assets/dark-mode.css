@@ -4021,3 +4021,12 @@ html.dark-mode .modal-trabajadores__btn-baja:hover {
   border-color: #fb923c !important;
   color: #fdba74 !important;
 }
+
+/* ModalCargaDocumentoExterno: la regla global de .text-lg atenúa el título */
+html.dark-mode .modal-documento-externo__titulo {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .modal-close:hover {
+  background-color: #334155 !important;
+}

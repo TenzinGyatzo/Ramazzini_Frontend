@@ -270,18 +270,21 @@ const handleSubmit = async () => {
     </div>
     <!-- Modal centrado con desplazamiento interno -->
     <div
-      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full sm:w-4/5 md:w-3/5 xl:w-2/5 2xl:w-1/3 p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full max-w-xl p-5 sm:p-6 rounded-xl shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
       :class="{ 'modal-dismiss-pulse': dismissPulse }"
     >
         <!-- Botón para cerrar el modal -->
-        <div
-          class="modal-close absolute h-16 w-16 flex justify-center items-center top-0 right-0 text-5xl text-gray-400 hover:text-gray-500 cursor-pointer"
+        <button
+          type="button"
+          class="modal-close absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-600"
+          title="Cerrar"
+          aria-label="Cerrar"
           @click="requestDismiss">
-          &times;
-        </div>
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
 
-        <h1 class="text-3xl">Subir Documentos Externos</h1>
-        <hr class="mt-2 mb-3">
+        <h1 class="modal-documento-externo__titulo pr-10 text-lg font-semibold text-gray-900">Subir documentos externos</h1>
+        <hr class="mt-3 mb-4">
 
         <!-- Área de arrastrar y soltar -->
         <div class="mb-6">
