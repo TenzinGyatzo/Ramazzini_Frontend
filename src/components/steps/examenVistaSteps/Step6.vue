@@ -6,9 +6,10 @@ import { useDocumentosStore } from '@/stores/documentos';
 const { formDataExamenVista } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-const placasCorrectas = ref(14);
-const porcentajeIshihara = ref(100);
-const interpretacionIshihara = ref('Normal');
+// Lo ya capturado en esta sesión; los valores por defecto solo aplican la primera vez
+const placasCorrectas = ref(formDataExamenVista.placasCorrectas ?? 14);
+const porcentajeIshihara = ref(formDataExamenVista.porcentajeIshihara ?? 100);
+const interpretacionIshihara = ref(formDataExamenVista.interpretacionIshihara ?? 'Normal');
 
 // Computed properties para validaciones y mensajes de error
 const mensajeErrorPlacas = computed(() => {
