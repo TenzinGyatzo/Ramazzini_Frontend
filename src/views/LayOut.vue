@@ -265,6 +265,10 @@ onMounted(() => {
     img.src = src;
   });
 
+  // Administrador en la consola (sin tenant activo): el backend responde 409 a los firmantes
+  const esAdministradorEnConsola = (u: { role?: string; platformContext?: { activeTenant?: unknown } }) =>
+    u.role === 'Administrador' && !u.platformContext?.activeTenant;
+
   watch(
     () => user.user,
     async (currentUser) => {
@@ -277,7 +281,7 @@ onMounted(() => {
         // Decide si se muestran los accesos al inventario; no bloquea la carga
         inventarioStore.cargarConfiguracion(true);
       }
-      if (currentUser._id) {
+      if (currentUser._id && !esAdministradorEnConsola(currentUser)) {
         await medicoFirmanteStore.loadMedicoFirmante(currentUser._id);
         await enfermeraFirmanteStore.loadEnfermeraFirmante(currentUser._id);
         await tecnicoFirmanteStore.loadTecnicoFirmante(currentUser._id);
@@ -298,7 +302,7 @@ onMounted(() => {
         empresasCargadas.value = true;
       });
     }
-    if (user.user._id) {
+    if (user.user._id && !esAdministradorEnConsola(user.user)) {
       await medicoFirmanteStore.loadMedicoFirmante(user.user._id);
       await enfermeraFirmanteStore.loadEnfermeraFirmante(user.user._id);
       await tecnicoFirmanteStore.loadTecnicoFirmante(user.user._id);
