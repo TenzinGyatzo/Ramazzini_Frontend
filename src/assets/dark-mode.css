@@ -3965,3 +3965,8 @@ html.dark-mode .btn-editar-entidad:hover:not(:disabled) {
   border-color: #34d399 !important;
   color: #6ee7b7 !important;
 }
+
+/* ModalBajaTrabajador: la regla global de .text-lg atenúa el título */
+html.dark-mode .modal-baja-trabajador__titulo {
+  color: #f1f5f9 !important;
+}

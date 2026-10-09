@@ -25,6 +25,8 @@ import ModalExportarTrabajadores from '@/components/ModalExportarTrabajadores.vu
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalCentros from '@/components/ModalCentros.vue';
+import ModalBajaTrabajador from '@/components/ModalBajaTrabajador.vue';
+import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import ModalRTs from '@/components/ModalRTs.vue';
 import ModalResumenImportacion from '@/components/ModalResumenImportacion.vue';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
@@ -752,6 +754,30 @@ const toggleEstadoLaboral = async (trabajador: { _id: string; estadoLaboral: str
   }
 };
 
+// La baja se explica y se confirma; el alta es inmediata porque no quita nada de la vista
+type TrabajadorEstadoLaboral = { _id: string; estadoLaboral: string };
+const trabajadorPorDarDeBaja = ref<TrabajadorEstadoLaboral | null>(null);
+const confirmandoBaja = ref(false);
+
+const solicitarCambioEstadoLaboral = (trabajador: TrabajadorEstadoLaboral) => {
+  if (trabajador?.estadoLaboral === 'Activo') {
+    trabajadorPorDarDeBaja.value = trabajador;
+    return;
+  }
+  void toggleEstadoLaboral(trabajador);
+};
+
+const confirmarBaja = async () => {
+  if (!trabajadorPorDarDeBaja.value || confirmandoBaja.value) return;
+  confirmandoBaja.value = true;
+  try {
+    await toggleEstadoLaboral(trabajadorPorDarDeBaja.value);
+  } finally {
+    confirmandoBaja.value = false;
+    trabajadorPorDarDeBaja.value = null;
+  }
+};
+
 function generarNombreArchivoExcel(): string {
   const partes: string[] = ['trabajadores'];
 
@@ -1013,6 +1039,20 @@ const toggleVigencias = () => {
         :duration="{ enter: 230, leave: 150 }"
       >
         <ModalCentros v-if="showCentroModal" @closeModal="cerrarEdicionCentro" />
+      </Transition>
+
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
+        <ModalBajaTrabajador
+          v-if="trabajadorPorDarDeBaja"
+          :nombre-trabajador="formatNombreCompleto(trabajadorPorDarDeBaja)"
+          :confirmando="confirmandoBaja"
+          @confirmar="confirmarBaja"
+          @cancelar="trabajadorPorDarDeBaja = null"
+        />
       </Transition>
 
       <Transition
@@ -1425,7 +1465,7 @@ const toggleVigencias = () => {
             @riesgo-trabajo="openRTsModal(empresas.currentEmpresa, centrosTrabajo.currentCentroTrabajo || null, $event)"
             @riesgos="openRisksModal(empresas.currentEmpresa, centrosTrabajo.currentCentroTrabajo || null, $event)"
             @editar="openModal(empresas.currentEmpresa, centrosTrabajo.currentCentroTrabajo, $event)"
-            @toggle-estado-laboral="toggleEstadoLaboral($event)"
+            @toggle-estado-laboral="solicitarCambioEstadoLaboral($event)"
             @eliminar="solicitarEliminacion('Trabajador', $event.id, $event.nombre, eliminarTrabajador)"
             @fusionar-duplicado="abrirFusionDesdeListado($event)"
             @actualizando-tabla="actualizandoTabla = $event"
