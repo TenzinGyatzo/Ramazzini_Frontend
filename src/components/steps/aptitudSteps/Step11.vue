@@ -1,7 +1,14 @@
 <script setup>
-import { ref, watch, onMounted, toRefs } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { useTrabajadoresStore } from '@/stores/trabajadores';
+import DocumentosAPI from '@/api/DocumentosAPI';
+import { findNearestDocument } from '@/helpers/findNearestDocuments';
+import {
+  MEDIDAS_PREVENTIVAS,
+  medidasPreventivasParaAptitud,
+} from '@/helpers/medidasPreventivasAptitud';
 
 const props = defineProps({
   variant: {
@@ -12,46 +19,124 @@ const props = defineProps({
 });
 const { variant } = toRefs(props);
 
-const mensajeCopiado = ref(false);
-
 const { formDataAptitud } = useFormDataStore();
 const documentos = useDocumentosStore();
+const trabajadores = useTrabajadoresStore();
 
 // Valor local para la medidasPreventivas principal, inicializado con el valor actual del store
 const medidasPreventivas = ref(formDataAptitud.medidasPreventivas || '');
-
-onMounted(() => {
-    if (documentos.currentDocument) {
-        medidasPreventivas.value = documentos.currentDocument.medidasPreventivas;
-    }
-});
 
 // Sincronizar el valor seleccionado con formDataAptitud.medidasPreventivas
 watch(medidasPreventivas, (newValue) => {
     formDataAptitud.medidasPreventivas = newValue;
 });
 
-const openSection = ref(null);
-
-const toggle = (section) => {
-    openSection.value = openSection.value === section ? null : section;
+// Documentos del trabajador y el más cercano de cada tipo a la fecha de la aptitud
+const CAMPOS_FECHA = {
+  historiaClinica: 'fechaHistoriaClinica',
+  exploracionFisica: 'fechaExploracionFisica',
+  examenVista: 'fechaExamenVista',
+  audiometria: 'fechaAudiometria',
+  trastornosEstadoAnimo: 'fechaTrastornosEstadoAnimo',
+  cuestionarioProdromalBreve: 'fechaCuestionarioProdromalBreve',
+  trastornoLimitePersonalidad: 'fechaTrastornoLimitePersonalidad',
+  cuestionarioNordico: 'fechaCuestionarioNordico',
+  evaluacionSuenoVigilia: 'fechaEvaluacionSuenoVigilia',
 };
 
-const isOpen = (section) => openSection.value === section;
+const vecinos = ref(null);
+const cargandoVecinos = ref(true);
 
-// Función para copiar el texto al portapapeles
-const copiarTexto = (texto) => {
-    navigator.clipboard.writeText(texto).then(() => {
-        // Mostrar mensaje temporal de "Copiado"
-        mensajeCopiado.value = true;
-        setTimeout(() => {
-          mensajeCopiado.value = false;
-        }, 2000); // Mensaje se oculta después de 2 segundos
-    }).catch((err) => {
-        console.error('Error al copiar el texto: ', err);
-    });
+const documentosCercanos = computed(() => {
+  if (!vecinos.value) return null;
+  const cercanos = {};
+  for (const [tipo, campoFecha] of Object.entries(CAMPOS_FECHA)) {
+    cercanos[tipo] = findNearestDocument(
+      vecinos.value[tipo] ?? [],
+      formDataAptitud.fechaAptitudPuesto,
+      campoFecha,
+      { sameYearAsReference: true },
+    );
+  }
+  return cercanos;
+});
+
+// Mismo requisito que el paso de alteraciones: sin estos dos documentos no hay base para sugerir
+const faltanDocumentosBase = computed(
+  () =>
+    !!documentosCercanos.value &&
+    (!documentosCercanos.value.historiaClinica || !documentosCercanos.value.exploracionFisica),
+);
+
+const medidasSugeridas = computed(() =>
+  documentosCercanos.value && !faltanDocumentosBase.value
+    ? medidasPreventivasParaAptitud(documentosCercanos.value)
+    : [],
+);
+
+const textoSugerido = computed(() => medidasSugeridas.value.map((medida) => medida.texto).join(' '));
+
+const hallazgosDetectados = computed(() =>
+  medidasSugeridas.value.filter((medida) => medida.clave !== 'generico'),
+);
+
+const escribirSugerencia = () => {
+  if (!textoSugerido.value) return;
+  formDataAptitud.medidasPreventivas = textoSugerido.value;
+  // Recordar lo generado: mientras el campo siga igual, se puede actualizar sin pisar al médico
+  formDataAptitud.medidasPreventivasGeneradas = textoSugerido.value;
 };
 
+// Escribe la sugerencia solo si el campo está vacío o conserva intacto lo generado antes
+const escribirSugerenciaSiNoSeEdito = () => {
+  const actual = (formDataAptitud.medidasPreventivas || '').trim();
+  const generadoAntes = (formDataAptitud.medidasPreventivasGeneradas || '').trim();
+  if (actual === '' || (generadoAntes !== '' && actual === generadoAntes)) {
+    escribirSugerencia();
+  }
+};
+
+onMounted(async () => {
+    if (documentos.currentDocument) {
+        medidasPreventivas.value = documentos.currentDocument.medidasPreventivas;
+    }
+
+    try {
+        const { data } = await DocumentosAPI.getAptitudInformeVecinos(trabajadores.currentTrabajadorId);
+        vecinos.value = data ?? {};
+    } catch (error) {
+        console.error('Error al obtener los documentos para las medidas preventivas:', error);
+    } finally {
+        cargandoVecinos.value = false;
+    }
+});
+
+// Al cargar los documentos y cada vez que cambian los más cercanos (p. ej. otra fecha de aptitud)
+watch(textoSugerido, escribirSugerenciaSiNoSeEdito);
+
+const textoEditado = computed(
+  () =>
+    !!textoSugerido.value &&
+    (formDataAptitud.medidasPreventivas || '').trim() !== textoSugerido.value.trim(),
+);
+
+const medidaYaIncluida = (medida) =>
+  (formDataAptitud.medidasPreventivas || '').includes(medida.texto);
+
+// Pone o quita del campo el texto de una medida del catálogo
+const alternarMedida = (medida) => {
+  const actual = formDataAptitud.medidasPreventivas || '';
+  if (medidaYaIncluida(medida)) {
+    formDataAptitud.medidasPreventivas = actual
+      .split(medida.texto)
+      .join(' ')
+      .replace(/ {2,}/g, ' ')
+      .trim();
+    return;
+  }
+  const base = actual.trim();
+  formDataAptitud.medidasPreventivas = base ? `${base} ${medida.texto}` : medida.texto;
+};
 </script>
 
 <template>
@@ -65,273 +150,62 @@ const copiarTexto = (texto) => {
                 :class="variant === 'compact'
                   ? 'w-full p-2 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 min-h-[12rem]'
                   : 'w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-64'"
-                v-model="formDataAptitud.medidasPreventivas" required>
+                v-model="formDataAptitud.medidasPreventivas"
+                :placeholder="cargandoVecinos ? 'Generando texto...' : ''"
+                required>
             </textarea>
         </div>
 
+        <!-- Qué se detectó y con qué se armó el texto -->
+        <div class="mb-4 text-sm">
+            <p v-if="cargandoVecinos" class="text-gray-500">
+                <i class="fas fa-spinner fa-spin mr-1"></i>
+                Revisando los documentos del trabajador...
+            </p>
+            <p v-else-if="!vecinos" class="text-gray-600">
+                No se pudieron consultar los documentos del trabajador; escribe las medidas manualmente.
+            </p>
+            <p v-else-if="faltanDocumentosBase" class="text-gray-600">
+                Hace falta registrar la historia clínica y/o la exploración física para sugerir las medidas.
+            </p>
+            <template v-else>
+                <p class="text-gray-700 leading-5">
+                    <span class="font-medium">Hallazgos considerados:</span>
+                    {{ hallazgosDetectados.length
+                        ? hallazgosDetectados.map((medida) => medida.hallazgo).join(', ') + '.'
+                        : 'ninguno.' }}
+                </p>
+                <button
+                    v-if="textoEditado"
+                    type="button"
+                    class="mt-2 inline-flex items-center gap-2 rounded-lg border border-emerald-600 bg-white px-3 py-1.5 text-sm font-medium text-emerald-600 transition-colors duration-200 hover:bg-emerald-50"
+                    title="Reemplaza el texto del campo por las medidas sugeridas según los hallazgos"
+                    @click="escribirSugerencia">
+                    <i class="fas fa-rotate-right text-xs"></i>
+                    Regenerar sugerencias
+                </button>
+            </template>
+        </div>
+
+        <!-- Catálogo: agregar una medida a mano -->
         <div class="mb-4">
-            <p class="font-sm mb-1 text-gray-800 leading-5">Se sugiere emitir recomendaciones para cada alteracion encontrada. </p>
-
-            <!-- <p class="font-medium mb-1 text-gray-800 leading-5 mt-4">1. Separa cada recomendacion con punto y seguido.</p> -->
-            
-            <!-- Ejemplos -->
-            <p class="font-sm mb-1 text-gray-800 leading-5 mt-4">Ejemplos de recomendaciones:<span v-if="mensajeCopiado" class="font-medium mb-1 leading-5 ml-2 text-emerald-600 text-sm">¡Copiado!</span></p>
-            
-            <!-- Grid de botones compactos -->
-            <div class="grid grid-cols-2 gap-2 mt-3">
-                <!-- Genérico -->
+            <p class="text-sm mb-2 text-gray-800 leading-5">Recomendaciones en el texto (clic para poner o quitar):</p>
+            <div class="flex flex-wrap gap-2">
                 <button
-                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
-                    :class="isOpen('generico') 
-                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
-                        : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
-                    @click="toggle('generico')">
-                    <span class="truncate">Genérico</span>
-                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('generico') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <!-- Hernia Abdominal -->
-                <button
-                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
-                    :class="isOpen('Hernia') 
-                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
-                        : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
-                    @click="toggle('Hernia')">
-                    <span class="truncate">Hernia Abd.</span>
-                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('Hernia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <!-- Obesidad -->
-                <button
-                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
-                    :class="isOpen('obesidad') 
-                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
-                        : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
-                    @click="toggle('obesidad')">
-                    <span class="truncate">Obesidad</span>
-                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('obesidad') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <!-- Diabetes II (etiqueta corta: evita word-break con scrollbar) -->
-                <button
-                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
-                    :class="isOpen('diabetesMellitus2') 
-                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
-                        : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
-                    @click="toggle('diabetesMellitus2')">
-                    <span class="truncate whitespace-nowrap">Diabetes II</span>
-                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('diabetesMellitus2') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <!-- Hipertensión -->
-                <button
-                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
-                    :class="isOpen('hipertension') 
-                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
-                        : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
-                    @click="toggle('hipertension')">
-                    <span class="truncate">Hipertensión</span>
-                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('hipertension') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <!-- Hipoacusia -->
-                <button
-                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
-                    :class="isOpen('hipoacusia') 
-                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
-                        : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
-                    @click="toggle('hipoacusia')">
-                    <span class="truncate">Hipoacusia</span>
-                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('hipoacusia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <!-- Problemas Respiratorios -->
-                <button
-                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
-                    :class="isOpen('problemasRespiratorios') 
-                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
-                        : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
-                    @click="toggle('problemasRespiratorios')">
-                    <span class="truncate">Respiratorios</span>
-                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('problemasRespiratorios') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-
-                <!-- Lumbalgia -->
-                <button
-                    class="font-medium py-1.5 px-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between gap-1 min-w-0 group"
-                    :class="isOpen('lumbalgia') 
-                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 shadow-sm' 
-                        : 'bg-white text-emerald-600 border border-emerald-600 hover:bg-emerald-600 hover:text-white'"
-                    @click="toggle('lumbalgia')">
-                    <span class="truncate">Lumbalgia</span>
-                    <svg class="w-4 h-4 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isOpen('lumbalgia') }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
+                    v-for="medida in MEDIDAS_PREVENTIVAS"
+                    :key="medida.clave"
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors duration-200"
+                    :class="medidaYaIncluida(medida)
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50'"
+                    :aria-pressed="medidaYaIncluida(medida)"
+                    :title="medida.texto"
+                    @click="alternarMedida(medida)">
+                    <i :class="medidaYaIncluida(medida) ? 'fas fa-check' : 'fas fa-plus'" class="text-xs"></i>
+                    {{ medida.hallazgo }}
                 </button>
             </div>
-
-            <!-- Contenedores desplegables con animaciones -->
-            <!-- Genérico -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2 max-h-0"
-                enter-to-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-to-class="opacity-0 transform -translate-y-2 max-h-0">
-                <div v-if="isOpen('generico')" class="font-medium space-y-2 p-4 border rounded-md shadow-sm bg-white mt-3 overflow-hidden">
-                    <div class="p-4 border-l-4 border-emerald-500 bg-gray-100">
-                        <p class="italic text-sm font-light mb-4 leading-4 text-gray-700 hover:text-emerald-700 cursor-pointer text-justify"
-                            @click="copiarTexto('Es importante usar adecuadamente el EPP, mantener hábitos saludables como una alimentación balanceada, ejercicio regular y descanso adecuado, así como efectuar vigilancia médica con periodicidad anual, incluyendo exámenes generales de laboratorio y gabinete para una vigilancia integral de la salud. ')">
-                            Es importante usar adecuadamente el EPP, mantener hábitos saludables como una alimentación
-                            balanceada, ejercicio regular y descanso adecuado, así como efectuar vigilancia médica con
-                            periodicidad anual, incluyendo exámenes generales de laboratorio y gabinete para una
-                            vigilancia integral de la salud.
-                        </p>
-                    </div>
-                </div>
-            </transition>
-
-            <!-- Hernia Abdominal -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2 max-h-0"
-                enter-to-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-to-class="opacity-0 transform -translate-y-2 max-h-0">
-                <div v-if="isOpen('Hernia')" class="font-medium space-y-2 p-4 border rounded-md shadow-sm bg-white mt-3 text-justify overflow-hidden">
-                    <div class="p-4 border-l-4 border-emerald-500 bg-gray-100">
-                        <p class="italic text-sm font-light mb-4 leading-4 text-gray-700 hover:text-emerald-700 cursor-pointer"
-                            @click="copiarTexto('Es crucial priorizar la prevención y el cuidado de la pared abdominal mediante el fortalecimiento de los músculos centrales, la mejora de la postura y el uso de técnicas adecuadas de levantamiento de objetos. ')">
-                            Es crucial priorizar la prevención y el cuidado de la pared abdominal mediante el fortalecimiento de los músculos centrales, la mejora de la postura y el uso de técnicas adecuadas de levantamiento de objetos.
-                        </p>
-                    </div>
-                </div>
-            </transition>
-
-            <!-- Obesidad -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2 max-h-0"
-                enter-to-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-to-class="opacity-0 transform -translate-y-2 max-h-0">
-                <div v-if="isOpen('obesidad')" class="font-medium space-y-2 p-4 border rounded-md shadow-sm bg-white mt-3 text-justify overflow-hidden">
-                    <div class="p-4 border-l-4 border-emerald-500 bg-gray-100">
-                        <p class="italic text-sm font-light mb-4 leading-4 text-gray-700 hover:text-emerald-700 cursor-pointer"
-                            @click="copiarTexto('Se recomienda adoptar una dieta balanceada y realizar ejercicio físico regularmente para mejorar la salud en general. Estas prácticas ayudan a controlar el peso, disminuir los niveles de grasa corporal, fortalecer los músculos y mejorar la función cardiovascular. Además, reducen el riesgo de desarrollar enfermedades crónicas como la diabetes tipo 2, enfermedades cardíacas y ciertos tipos de cáncer. ')">
-                            Se recomienda adoptar una dieta balanceada y realizar ejercicio físico regularmente para mejorar la salud en general. Estas prácticas ayudan a controlar el peso, disminuir los niveles de grasa corporal, fortalecer los músculos y mejorar la función cardiovascular. Además, reducen el riesgo de desarrollar enfermedades crónicas como la diabetes tipo 2, enfermedades cardíacas y ciertos tipos de cáncer. 
-                        </p>
-                    </div>
-                </div>
-            </transition>
-
-            <!-- Diabetes Tipo II -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2 max-h-0"
-                enter-to-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-to-class="opacity-0 transform -translate-y-2 max-h-0">
-                <div v-if="isOpen('diabetesMellitus2')" class="font-medium space-y-2 p-4 border rounded-md shadow-sm bg-white mt-3 text-justify overflow-hidden">
-                    <div class="p-4 border-l-4 border-emerald-500 bg-gray-100">
-                        <p class="italic text-sm font-light mb-4 leading-4 text-gray-700 hover:text-emerald-700 cursor-pointer"
-                            @click="copiarTexto('Es importante mantener una dieta equilibrada, controlar regularmente los niveles de azúcar en la sangre y visitar al médico familiar para un seguimiento y una correcta gestión de la diabetes tipo 2. ')">
-                            Es importante mantener una dieta equilibrada, controlar regularmente los niveles de azúcar en la sangre y visitar al médico familiar para un seguimiento y una correcta gestión de la diabetes tipo 2. 
-                        </p>
-                    </div>
-                </div>
-            </transition>
-
-            <!-- Hipertensión -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2 max-h-0"
-                enter-to-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-to-class="opacity-0 transform -translate-y-2 max-h-0">
-                <div v-if="isOpen('hipertension')" class="font-medium space-y-2 p-4 border rounded-md shadow-sm bg-white mt-3 overflow-hidden">
-                    <div class="p-4 border-l-4 border-emerald-500 bg-gray-100">
-                        <p class="italic text-sm font-light mb-4 leading-4 text-gray-700 hover:text-emerald-700 cursor-pointer text-justify"
-                            @click="copiarTexto('Es recomendable mantener una dieta baja en sodio, realizar actividad física regularmente, controlar la presión arterial periódicamente y adherirse estrictamente al tratamiento recetado para gestionar la hipertensión de manera efectiva. ')">
-                            Es recomendable mantener una dieta baja en sodio, realizar actividad física regularmente, controlar la presión arterial periódicamente y adherirse estrictamente al tratamiento recetado para gestionar la hipertensión de manera efectiva. 
-                        </p>
-                    </div>
-                </div>
-            </transition>
-
-            <!-- Hipoacusia -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2 max-h-0"
-                enter-to-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-to-class="opacity-0 transform -translate-y-2 max-h-0">
-                <div v-if="isOpen('hipoacusia')" class="font-medium space-y-2 p-4 border rounded-md shadow-sm bg-white mt-3 text-justify overflow-hidden">
-                    <div class="p-4 border-l-4 border-emerald-500 bg-gray-100">
-                        <p class="italic text-sm font-light mb-4 leading-4 text-gray-700 hover:text-emerald-700 cursor-pointer"
-                            @click="copiarTexto('Es fundamental proteger la audición mediante el uso adecuado de protección auditiva en ambientes ruidosos, evitar la exposición prolongada a sonidos de alta intensidad, realizar evaluaciones auditivas periódicas y consultar al especialista ante cualquier cambio en la capacidad auditiva. ')">
-                            Es fundamental proteger la audición mediante el uso adecuado de protección auditiva en ambientes ruidosos, evitar la exposición prolongada a sonidos de alta intensidad, realizar evaluaciones auditivas periódicas y consultar al especialista ante cualquier cambio en la capacidad auditiva.
-                        </p>
-                    </div>
-                </div>
-            </transition>
-
-            <!-- Problemas Respiratorios -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2 max-h-0"
-                enter-to-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-to-class="opacity-0 transform -translate-y-2 max-h-0">
-                <div v-if="isOpen('problemasRespiratorios')" class="font-medium space-y-2 p-4 border rounded-md shadow-sm bg-white mt-3 text-justify overflow-hidden">
-                    <div class="p-4 border-l-4 border-emerald-500 bg-gray-100">
-                        <p class="italic text-sm font-light mb-4 leading-4 text-gray-700 hover:text-emerald-700 cursor-pointer"
-                            @click="copiarTexto('Se recomienda evitar la exposición a agentes irritantes respiratorios, mantener una buena ventilación en los espacios de trabajo, realizar ejercicios de respiración profunda regularmente, evitar el tabaquismo y consultar al médico ante síntomas persistentes como tos, dificultad para respirar o sibilancias. ')">
-                            Se recomienda evitar la exposición a agentes irritantes respiratorios, mantener una buena ventilación en los espacios de trabajo, realizar ejercicios de respiración profunda regularmente, evitar el tabaquismo y consultar al médico ante síntomas persistentes como tos, dificultad para respirar o sibilancias.
-                        </p>
-                    </div>
-                </div>
-            </transition>
-
-            <!-- Lumbalgia -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2 max-h-0"
-                enter-to-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0 max-h-96"
-                leave-to-class="opacity-0 transform -translate-y-2 max-h-0">
-                <div v-if="isOpen('lumbalgia')" class="font-medium space-y-2 p-4 border rounded-md shadow-sm bg-white mt-3 text-justify overflow-hidden">
-                    <div class="p-4 border-l-4 border-emerald-500 bg-gray-100">
-                        <p class="italic text-sm font-light mb-4 leading-4 text-gray-700 hover:text-emerald-700 cursor-pointer"
-                            @click="copiarTexto('Es esencial mantener una postura correcta durante las actividades laborales, realizar ejercicios de fortalecimiento de la musculatura lumbar y abdominal, evitar movimientos bruscos o levantamiento de peso excesivo, y considerar el uso de soportes ergonómicos cuando sea necesario. ')">
-                            Es esencial mantener una postura correcta durante las actividades laborales, realizar ejercicios de fortalecimiento de la musculatura lumbar y abdominal, evitar movimientos bruscos o levantamiento de peso excesivo, y considerar el uso de soportes ergonómicos cuando sea necesario.
-                        </p>
-                    </div>
-                </div>
-            </transition>
-
         </div>
     </div>
     </div>
