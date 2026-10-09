@@ -24,6 +24,12 @@ import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales
 import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 import ModalInasistenciasCardiometabolicas from '@/components/ModalInasistenciasCardiometabolicas.vue';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
+import ModalIncapacidades from '@/components/incapacidades/ModalIncapacidades.vue';
+import IncapacidadesAPI from '@/api/IncapacidadesAPI';
+import {
+  INCAPACIDADES_SOLO_ADMINISTRADOR,
+  type CasoConIncapacidades,
+} from '@/helpers/incapacidades';
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import ModalDeclaracionVeracidad from '@/components/ModalDeclaracionVeracidad.vue';
@@ -1067,6 +1073,34 @@ const tiposDocumentoCrear = [
 ];
 
 // Contadores de la fila "Registrar": dicen qué hay capturado sin abrir cada ventana
+// Incapacidades: en vista previa solo para el Administrador de plataforma, y solo en México
+const incapacidadesDisponibles = computed(
+  () =>
+    proveedorSaludStore.proveedorSalud?.pais === 'MX' &&
+    (!INCAPACIDADES_SOLO_ADMINISTRADOR || userStore.user?.role === 'Administrador'),
+);
+const showIncapacidadesModal = ref(false);
+const casosDeIncapacidad = ref<CasoConIncapacidades[]>([]);
+const incapacitadoHoy = computed(() => casosDeIncapacidad.value.some((c) => c.incapacitadoHoy));
+
+watch(
+  [() => trabajadores.currentTrabajadorId, incapacidadesDisponibles],
+  async ([idTrabajador, disponibles]) => {
+    casosDeIncapacidad.value = [];
+    if (!idTrabajador || !disponibles) return;
+    try {
+      const { data } = await IncapacidadesAPI.getCasos(String(idTrabajador));
+      // Si mientras tanto se cambió de trabajador, este resultado ya no aplica
+      if (String(trabajadores.currentTrabajadorId) === String(idTrabajador)) {
+        casosDeIncapacidad.value = data;
+      }
+    } catch {
+      // El contador es informativo: sin él, el botón sigue abriendo la ventana
+    }
+  },
+  { immediate: true },
+);
+
 const totalAgentesRiesgo = computed(
   () => trabajadores.currentTrabajador?.agentesRiesgoActuales?.length ?? 0,
 );
@@ -1111,6 +1145,18 @@ const crearDocumento = (tipoDocumento: string) =>
         :duration="{ enter: 230, leave: 150 }"
       >
         <ModalRiesgos v-if="showRiesgosModal" @closeModal="showRiesgosModal = false" />
+      </Transition>
+
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
+        <ModalIncapacidades
+          v-if="showIncapacidadesModal"
+          @closeModal="showIncapacidadesModal = false"
+          @cambio="casosDeIncapacidad = $event"
+        />
       </Transition>
 
       <Transition
@@ -1384,6 +1430,26 @@ const crearDocumento = (tipoDocumento: string) =>
                   :class="{ 'expediente-contador--vacio': totalAgentesRiesgo === 0 }"
                   :title="totalAgentesRiesgo === 1 ? '1 agente registrado' : totalAgentesRiesgo + ' agentes registrados'"
                 >{{ totalAgentesRiesgo }}</span>
+              </button>
+              <button
+                v-if="incapacidadesDisponibles"
+                type="button"
+                class="expediente-secondary-btn"
+                :title="incapacitadoHoy
+                  ? 'El trabajador está incapacitado hoy'
+                  : 'Registrar certificados del IMSS y descansos otorgados por la empresa'"
+                @click="showIncapacidadesModal = true"
+              >
+                <i class="fas fa-bed" aria-hidden="true"></i>
+                Incapacidades
+                <span
+                  class="expediente-contador"
+                  :class="{
+                    'expediente-contador--vacio': casosDeIncapacidad.length === 0,
+                    'expediente-contador--alerta': incapacitadoHoy,
+                  }"
+                  :title="casosDeIncapacidad.length === 1 ? '1 caso registrado' : casosDeIncapacidad.length + ' casos registrados'"
+                >{{ casosDeIncapacidad.length }}</span>
               </button>
               <button
                 v-if="canManageResultadosClinicos"
@@ -1754,6 +1820,12 @@ const crearDocumento = (tipoDocumento: string) =>
 .expediente-contador--vacio {
   background-color: #f3f4f6;
   color: #6b7280;
+}
+
+/* Incapacitado hoy */
+.expediente-contador--alerta {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 /* Descarga de un formato: enlace, no botón de registro */

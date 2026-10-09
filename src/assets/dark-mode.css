@@ -4030,3 +4030,13 @@ html.dark-mode .modal-documento-externo__titulo {
 html.dark-mode .modal-carga-documento-externo .modal-close:hover {
   background-color: #334155 !important;
 }
+
+/* Incapacidades: título de la ventana y contador de "incapacitado hoy" */
+html.dark-mode .modal-incapacidades__titulo {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .expediente-contador--alerta {
+  background-color: #7f1d1d !important;
+  color: #fecaca !important;
+}
