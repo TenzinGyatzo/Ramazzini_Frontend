@@ -284,7 +284,7 @@ async function downloadLocalidadesMunicipio() {
 
     <div v-show="showConsultor" class="px-4 pb-4 space-y-5 border-t border-indigo-100 dark:border-indigo-500/30">
       <p class="text-xs text-indigo-800 dark:text-indigo-200 pt-3">
-        Busque el nombre y copie el código a las columnas de la plantilla SIRES.
+        Busque el nombre y copie el código a las columnas de la plantilla.
       </p>
 
       <!-- País -->
