@@ -561,12 +561,40 @@ const interpretacionAutomatica = computed(() => {
   }
 ]); */
 
-const insertarQuick = (texto) => {
-  // Inserta reemplazando o anexando según prefieras:
-  interpretacionAudiometrica.value = texto;
-  // Si deseas anexar en lugar de reemplazar:
-  // interpretacionAudiometrica.value = (interpretacionAudiometrica.value?.trim() ? interpretacionAudiometrica.value.trim() + ' ' : '') + texto;
+/** === 4) LA INTERPRETACIÓN SE ESCRIBE DIRECTO EN EL CAMPO === */
+const MENSAJE_DATOS_INSUFICIENTES = 'Datos insuficientes para generar interpretación automática.';
+
+const hayInterpretacionAutomatica = computed(
+  () => !!interpretacionAutomatica.value && interpretacionAutomatica.value !== MENSAJE_DATOS_INSUFICIENTES,
+);
+
+const escribirInterpretacion = () => {
+  if (!hayInterpretacionAutomatica.value) return;
+  interpretacionAudiometrica.value = interpretacionAutomatica.value;
+  // Recordar lo generado: mientras el campo siga igual, se puede actualizar sin pisar al médico
+  formDataAudiometria.interpretacionAudiometricaGenerada = interpretacionAutomatica.value;
 };
+
+// Escribe la interpretación solo si el campo está vacío o conserva intacto lo generado antes
+const escribirInterpretacionSiNoSeEdito = () => {
+  const actual = (interpretacionAudiometrica.value || '').trim();
+  const generadoAntes = (formDataAudiometria.interpretacionAudiometricaGenerada || '').trim();
+  if (actual === '' || (generadoAntes !== '' && actual === generadoAntes)) {
+    escribirInterpretacion();
+  }
+};
+
+const interpretacionEditada = computed(
+  () =>
+    hayInterpretacionAutomatica.value &&
+    (interpretacionAudiometrica.value || '').trim() !== interpretacionAutomatica.value.trim(),
+);
+
+// Después del onMounted que carga el texto guardado: un documento existente conserva el suyo
+onMounted(escribirInterpretacionSiNoSeEdito);
+
+// Si cambian los umbrales capturados, la interpretación se rehace (mientras no se haya editado)
+watch(interpretacionAutomatica, escribirInterpretacionSiNoSeEdito);
 
 </script>
 
@@ -581,24 +609,32 @@ const insertarQuick = (texto) => {
       <textarea
         class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-48"
         v-model="interpretacionAudiometrica"
+        :placeholder="hayInterpretacionAutomatica ? '' : 'Captura los umbrales de ambos oídos para generar la interpretación.'"
         required
         data-skip-validation
       ></textarea>
     </div>
 
-    <!-- === Interpretación Automática === -->
-    <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold text-emerald-800">Interpretación Automática</h3>
+    <!-- De dónde salió el texto y cómo recuperarlo -->
+    <div class="mb-4 text-sm">
+      <p v-if="!hayInterpretacionAutomatica" class="text-gray-600">
+        Datos insuficientes para generar la interpretación automática: se necesitan al menos tres frecuencias por oído.
+      </p>
+      <template v-else>
+        <p class="text-gray-700 leading-5">
+          La interpretación se genera a partir de los umbrales capturados; puedes editarla.
+        </p>
         <button
-          class="px-3 py-1 rounded-md text-sm text-emerald-700 border border-emerald-600 hover:bg-emerald-100"
-          @click="insertarQuick(interpretacionAutomatica)"
-          title="Usar interpretación automática"
+          v-if="interpretacionEditada"
+          type="button"
+          class="mt-2 inline-flex items-center gap-2 rounded-lg border border-emerald-600 bg-white px-3 py-1.5 text-sm font-medium text-emerald-600 transition-colors duration-200 hover:bg-emerald-50"
+          title="Reemplaza el texto del campo por la interpretación automática"
+          @click="escribirInterpretacion"
         >
-          Usar esta interpretación
+          <i class="fas fa-rotate-right text-xs"></i>
+          Regenerar interpretación
         </button>
-      </div>
-      <p class="text-sm text-emerald-700 italic">{{ interpretacionAutomatica }}</p>
+      </template>
     </div>
 
     <!-- === Quick Inserts === -->
