@@ -271,7 +271,7 @@ watch(
                       v-if="empresas.currentEmpresa?.logotipoEmpresa?.data"
                       :src="'/uploads/logos/' + empresas.currentEmpresa.logotipoEmpresa.data + '?t=' + empresas.currentEmpresa.updatedAt"
                       :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
-                      class="centros-empresa-logo h-16 w-16 rounded-lg object-contain shadow-lg sm:h-20 sm:w-20"
+                      class="centros-empresa-logo h-16 w-16 rounded-lg object-contain sm:h-20 sm:w-20"
                     />
                     <div v-else class="centros-empresa-logo-placeholder centros-empresa-logo flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-100 to-gray-200 sm:h-20 sm:w-20">
                       <i class="centros-empresa-logo-placeholder-icon fas fa-building text-xl text-gray-400"></i>
@@ -348,7 +348,7 @@ watch(
                   <RouterLink
                     v-if="canAccessDashboardSalud && empresas.currentEmpresa && totalTrabajadores > 0"
                     :to="{ name: 'dashboard-empresa', params: { idEmpresa: empresas.currentEmpresa._id } }"
-                    class="centros-empresa-btn-secondary nav-action-link flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-300 hover:from-emerald-600 hover:to-green-600 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    class="centros-empresa-btn-secondary centros-empresa-btn-secondary--salud nav-action-link"
                     title="Ver dashboard de salud">
                     <i class="fas fa-chart-line text-sm"></i>
                     <span>Estadísticas de Salud</span>
@@ -357,7 +357,7 @@ watch(
                     v-else-if="canAccessDashboardSalud"
                     type="button"
                     disabled
-                    class="centros-empresa-btn-secondary flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-sm font-medium text-white opacity-50 cursor-not-allowed"
+                    class="centros-empresa-btn-secondary centros-empresa-btn-secondary--salud"
                     title="No hay trabajadores registrados">
                     <i class="fas fa-chart-line text-sm"></i>
                     <span>Estadísticas de Salud</span>
@@ -365,7 +365,7 @@ watch(
                   <RouterLink
                     v-if="esProveedorMexicano && canAccessRiesgosTrabajo && empresas.currentEmpresa && tieneRiesgosTrabajo"
                     :to="{ name: 'riesgos-trabajo', params: { idEmpresa: empresas.currentEmpresa._id } }"
-                    class="centros-empresa-btn-secondary nav-action-link flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-300 hover:from-purple-600 hover:to-indigo-600 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    class="centros-empresa-btn-secondary centros-empresa-btn-secondary--riesgos nav-action-link"
                     title="Ver riesgos de trabajo">
                     <i class="fas fa-hard-hat text-sm"></i>
                     <span>Riesgos de Trabajo</span>
@@ -374,7 +374,7 @@ watch(
                     v-else-if="esProveedorMexicano && canAccessRiesgosTrabajo"
                     type="button"
                     disabled
-                    class="centros-empresa-btn-secondary flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white opacity-50 cursor-not-allowed"
+                    class="centros-empresa-btn-secondary centros-empresa-btn-secondary--riesgos"
                     :title="!tieneRiesgosTrabajo ? 'No hay riesgos de trabajo registrados' : 'Ver riesgos de trabajo'">
                     <i class="fas fa-hard-hat text-sm"></i>
                     <span>Riesgos de Trabajo</span>
@@ -612,6 +612,44 @@ button:active {
 
 .centros-empresa-count-short {
   display: none;
+}
+
+/* Accesos a otras vistas: secundarios frente a "Nuevo Centro" */
+.centros-empresa-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+}
+
+.centros-empresa-btn-secondary--salud {
+  border-color: #059669;
+  color: #047857;
+}
+
+.centros-empresa-btn-secondary--salud:hover:not(:disabled) {
+  background-color: #ecfdf5;
+}
+
+.centros-empresa-btn-secondary--riesgos {
+  border-color: #7c3aed;
+  color: #6d28d9;
+}
+
+.centros-empresa-btn-secondary--riesgos:hover:not(:disabled) {
+  background-color: #f5f3ff;
+}
+
+.centros-empresa-btn-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 @media (max-width: 479px) {
