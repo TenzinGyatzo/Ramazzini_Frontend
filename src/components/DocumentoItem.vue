@@ -1845,9 +1845,9 @@ const ensurePdfGenerationTracker = () => {
 };
 
 watch(
-    () => [
-      currentDocumentData.value?.pdfStatus,
-      pdfGenerationStore.isLocalGenerating(props.documentoId),
+    [
+      () => currentDocumentData.value?.pdfStatus,
+      () => pdfGenerationStore.isLocalGenerating(props.documentoId),
     ],
     ([status, localGenerating]) => {
         if (status === 'generating' || localGenerating) {
