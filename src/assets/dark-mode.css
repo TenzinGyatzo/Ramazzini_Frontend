@@ -3913,6 +3913,7 @@ html.dark-mode .grupo-documentos__header .text-red-100 {
   color: #fee2e2 !important;
 }
 
+html.dark-mode .trabajadores-header__title,
 html.dark-mode .expediente-trabajador-name {
   color: #f1f5f9 !important;
 }

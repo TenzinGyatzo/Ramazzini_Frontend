@@ -1056,79 +1056,79 @@ const toggleVigencias = () => {
       </div>
 
       <!-- Encabezado de acciones -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 xl:p-6 mb-4 transition-all duration-500 ease-in-out">
-        <div class="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4 xl:gap-6 transition-all duration-500 ease-in-out">
+      <div class="trabajadores-header mb-3 rounded-xl border border-gray-200 bg-white px-4 py-3 sm:px-5">
+        <div class="flex flex-col items-center justify-between gap-3 lg:flex-row">
           <!-- Información con logotipo -->
           <TrabajadoresHeaderSkeleton v-if="headerContextoLoading" />
 
-          <div v-else class="flex items-center gap-4 flex-1 transition-all duration-500 ease-in-out min-w-0">
+          <div v-else class="flex w-full min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <!-- Logo o placeholder -->
-            <div class="flex-shrink-0 transition-all duration-500 ease-in-out">
-              <img
-                v-if="empresas.currentEmpresa?.logotipoEmpresa?.data"
-                :src="'/uploads/logos/' + empresas.currentEmpresa.logotipoEmpresa.data + '?t=' + empresas.currentEmpresa.updatedAt"
-                :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
-                class="w-12 h-12 sm:w-16 sm:h-16 xl:w-20 xl:h-20 object-contain rounded-lg shadow-lg transition-all duration-500 ease-in-out"
-              />
-              <div v-else class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center shadow-lg">
-                <i class="fas fa-building text-white text-xl sm:text-2xl"></i>
-              </div>
+            <img
+              v-if="empresas.currentEmpresa?.logotipoEmpresa?.data"
+              :src="'/uploads/logos/' + empresas.currentEmpresa.logotipoEmpresa.data + '?t=' + empresas.currentEmpresa.updatedAt"
+              :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
+              class="h-12 w-12 shrink-0 rounded-lg object-contain"
+            />
+            <div v-else class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+              <i class="fas fa-building text-lg text-emerald-600"></i>
             </div>
-            
+
             <!-- Título y descripción -->
-            <div class="flex-1 text-center lg:text-left min-w-0 transition-all duration-500 ease-in-out">
-              <h2 class="text-xl xl:text-2xl font-bold text-gray-900 mb-1 xl:mb-2 truncate flex items-center gap-2 transition-all duration-500 ease-in-out">
-                <i class="fas fa-map-marker-alt text-emerald-600 text-lg xl:text-xl transition-all duration-500 ease-in-out"></i>
-                {{ centrosTrabajo.currentCentroTrabajo?.nombreCentro }}
+            <div class="min-w-0 flex-1">
+              <h2 class="trabajadores-header__title flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl">
+                <i class="fas fa-map-marker-alt shrink-0 text-base text-emerald-600"></i>
+                <span class="truncate">{{ centrosTrabajo.currentCentroTrabajo?.nombreCentro }}</span>
               </h2>
-              <p v-if="empresas.currentEmpresa?.nombreComercial" class="text-sm text-gray-600 mt-1 truncate flex items-center transition-all duration-500 ease-in-out">
-                <i class="fas fa-building text-gray-500 text-sm transition-all duration-500 ease-in-out"></i>
-                &nbsp;&nbsp;&nbsp;{{ empresas.currentEmpresa?.nombreComercial }}&nbsp;
-                <span class="hidden xl:inline transition-all duration-500 ease-in-out"> - {{ empresas.currentEmpresa?.razonSocial }}</span>
+              <p v-if="empresas.currentEmpresa?.nombreComercial" class="mt-0.5 flex items-center gap-2 text-sm text-gray-600">
+                <i class="fas fa-building shrink-0 text-xs text-gray-500"></i>
+                <span class="truncate">
+                  {{ empresas.currentEmpresa?.nombreComercial }}
+                  <span class="hidden xl:inline"> - {{ empresas.currentEmpresa?.razonSocial }}</span>
+                </span>
               </p>
             </div>
           </div>
-          
+
           <!-- Botones de acción principales -->
-          <div class="flex flex-col sm:flex-row gap-2 xl:gap-3 w-full lg:w-auto justify-center lg:justify-end transition-all duration-500 ease-in-out">
-            <GreenButton 
-              text="Nuevo Trabajador" 
+          <div class="flex w-full flex-col justify-center gap-2 sm:flex-row lg:w-auto lg:justify-end">
+            <GreenButton
+              text="Nuevo Trabajador"
               size="small"
-              :class="['group', 'xl:!px-6 xl:!py-3 xl:!text-base']"
+              class="group"
               :disabled="!canManageTrabajadores"
-              @click="openModal(null)" 
+              @click="openModal(null)"
               title="Agregar un nuevo trabajador al centro de trabajo"
             >
               <template #icon>
-                <i class="fas fa-user-plus text-sm xl:text-base group-hover:scale-110 transition-transform duration-200"></i>
+                <i class="fas fa-user-plus text-sm group-hover:scale-110 transition-transform duration-200"></i>
               </template>
             </GreenButton>
-            
-            <GreenButton 
-              text="Carga Masiva" 
+
+            <GreenButton
+              text="Carga Masiva"
               variant="outline"
               size="small"
-              :class="['group', 'xl:!px-6 xl:!py-3 xl:!text-base']"
+              class="group"
               :disabled="!canManageTrabajadores"
-              @click="toggleImportModal" 
+              @click="toggleImportModal"
               title="Importar múltiples trabajadores desde un archivo Excel"
             >
               <template #icon>
-                <i class="fas fa-upload text-sm xl:text-base group-hover:scale-110 transition-transform duration-200"></i>
+                <i class="fas fa-upload text-sm group-hover:scale-110 transition-transform duration-200"></i>
               </template>
             </GreenButton>
-            
-            <GreenButton 
-              text="Exportar" 
+
+            <GreenButton
+              text="Exportar"
               variant="secondary"
               size="small"
-              :class="['group', 'xl:!px-6 xl:!py-3 xl:!text-base']"
+              class="group"
               :disabled="!canManageTrabajadores"
-              @click="abrirModalExportar" 
+              @click="abrirModalExportar"
               :title="canManageTrabajadores ? 'Exportar trabajadores filtrados a Excel' : 'No tienes permisos para exportar trabajadores a Excel'"
             >
               <template #icon>
-                <i class="fas fa-file-excel text-sm xl:text-base group-hover:scale-110 transition-transform duration-200"></i>
+                <i class="fas fa-file-excel text-sm group-hover:scale-110 transition-transform duration-200"></i>
               </template>
             </GreenButton>
           </div>
@@ -1136,73 +1136,62 @@ const toggleVigencias = () => {
       </div>
 
       <!-- Panel de controles y filtros -->
-      <div ref="panelFiltrosRef" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-3">
+      <div ref="panelFiltrosRef" class="bg-white rounded-xl border border-gray-200 px-4 py-3 sm:px-5 mb-3">
         <!-- Controles principales -->
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-3">
           <div class="flex flex-wrap items-center gap-2">
             <!-- Toggle filtros -->
             <button
+              type="button"
               @click="mostrarFiltros = !mostrarFiltros"
-              :class="[
-                'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 border',
-                mostrarFiltros 
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' 
-                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
-              ]"
+              :aria-pressed="mostrarFiltros"
+              :class="['inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 border', mostrarFiltros ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300']"
               :title="mostrarFiltros ? 'Ocultar panel de filtros' : 'Mostrar opciones de filtrado avanzado'"
             >
-              <i :class="mostrarFiltros ? 'fa-solid fa-filter-circle-xmark' : 'fa-solid fa-filter'"></i>
-              {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
+              <i class="fa-solid fa-filter"></i>
+              Filtros
             </button>
 
             <!-- Toggle vigencias -->
             <button
+              type="button"
               @click="toggleVigencias"
-              :class="[
-                'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 border',
-                mostrarVigencias
-                  ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
-                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
-              ]"
+              :aria-pressed="mostrarVigencias"
+              :class="['inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 border', mostrarVigencias ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300']"
               :title="mostrarVigencias ? 'Ocultar columnas de vigencias' : 'Mostrar columnas de vigencias'"
             >
               <i class="fa-solid fa-calendar-check"></i>
-              {{ mostrarVigencias ? 'Ocultar vigencias' : 'Mostrar vigencias' }}
+              Vigencias
             </button>
 
             <!-- Toggle columnas -->
             <button
+              type="button"
               @click="toggleColumnasOcultas"
               :disabled="actualizandoTabla"
+              :aria-pressed="mostrarColumnasOcultas"
               :class="[
-                'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 border',
-                actualizandoTabla 
-                  ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' 
-                  : mostrarColumnasOcultas
-                    ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'
-                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
+                'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 border',
+                mostrarColumnasOcultas ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300',
+                actualizandoTabla && 'cursor-not-allowed opacity-60'
               ]"
               :title="actualizandoTabla ? 'Actualizando configuración de tabla...' : (mostrarColumnasOcultas ? 'Mostrar solo columnas básicas' : 'Mostrar todas las columnas disponibles')"
             >
-              <i v-if="actualizandoTabla" class="fa-solid fa-spinner fa-spin"></i>
-              <i v-else :class="mostrarColumnasOcultas ? 'fa-solid fa-table-columns' : 'fa-solid fa-table'"></i>
-              {{ actualizandoTabla ? 'Actualizando...' : (mostrarColumnasOcultas ? 'Mostrar sólo columnas básicas' : 'Mostrar todas las columnas') }}
+              <i :class="actualizandoTabla ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-table-columns'" class="w-3.5 text-center"></i>
+              Todas las columnas
             </button>
 
-             <!-- Toggle leyenda -->
-             <button
-               @click="toggleLeyenda"
-               :class="[
-                 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 border',
-                 mostrarLeyenda
-                   ? 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100'
-                   : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300'
-               ]"
-               :title="mostrarLeyenda ? 'Ocultar explicación de colores' : 'Mostrar explicación de colores'"
-             >
-               <i :class="mostrarLeyenda ? 'fa-solid fa-info-circle' : 'fa-solid fa-info-circle'"></i>
-               {{ mostrarLeyenda ? 'Ocultar explicación' : 'Explicar colores' }}
-             </button>
+            <!-- Toggle leyenda -->
+            <button
+              type="button"
+              @click="toggleLeyenda"
+              :aria-pressed="mostrarLeyenda"
+              :class="['inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 border', mostrarLeyenda ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300']"
+              :title="mostrarLeyenda ? 'Ocultar explicación de colores' : 'Mostrar explicación de colores'"
+            >
+              <i class="fa-solid fa-info-circle"></i>
+              Explicar colores
+            </button>
 
             <!-- Indicador de filtros activos -->
             <div v-if="hayFiltrosActivos" 
@@ -1559,16 +1548,6 @@ a, .cursor-pointer {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
-}
-
-/* Transiciones específicas para el encabezado de acciones */
-.bg-white {
-  transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Transiciones suaves para cambios de tamaño */
-img, div, span, h1, h2, p {
-  transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Transiciones específicas para elementos responsivos */
