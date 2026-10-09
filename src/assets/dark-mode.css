@@ -234,14 +234,6 @@ html.dark-mode .hover\:bg-gray-200:hover {
   background-color: #334155 !important;
 }
 
-html.dark-mode .hover\:from-gray-50:hover {
-  background: linear-gradient(to right, #334155, #475569) !important;
-}
-
-html.dark-mode .hover\:to-gray-100:hover {
-  background: linear-gradient(to right, #334155, #475569) !important;
-}
-
 /* Estados específicos de hover para botones */
 html.dark-mode .hover\:from-blue-50:hover {
   background: linear-gradient(to right, #1e40af, #3730a3) !important;
@@ -289,14 +281,6 @@ html.dark-mode .hover\:from-red-50:hover {
 
 html.dark-mode .hover\:to-red-100:hover {
   background: linear-gradient(to right, #dc2626, #b91c1c) !important;
-}
-
-html.dark-mode .hover\:from-yellow-50:hover {
-  background: linear-gradient(to right, #d97706, #b45309) !important;
-}
-
-html.dark-mode .hover\:to-yellow-100:hover {
-  background: linear-gradient(to right, #d97706, #b45309) !important;
 }
 
 /* Bordes de hover en dark mode */
@@ -640,11 +624,8 @@ html.dark-mode .transition-colors {
 /*
  * Expediente médico (ExpedienteMedicoView, GrupoDocumentos, sugerencias vacías, SlidingButtonPanel):
  * gradientes to-br, cabeceras con via-*, métricas pastel, aviso logotipo, botones secundarios,
- * SliderButton (scoped), badges de resultados clínicos. DocumentoItem: bloque `.documento-item` más abajo.
+ * badges de resultados clínicos. DocumentoItem: bloque `.documento-item` más abajo.
  */
-html.dark-mode .bg-gradient-to-r.from-emerald-600.via-emerald-500.to-emerald-600 {
-  background-image: linear-gradient(to right, #047857, #10b981, #047857) !important;
-}
 
 html.dark-mode .text-emerald-100 {
   color: #a7f3d0 !important;
@@ -845,44 +826,12 @@ html.dark-mode .border-pink-200 {
   border-color: #be185d !important;
 }
 
-html.dark-mode .bg-gradient-to-br.from-teal-50.to-teal-100 {
-  background-image: linear-gradient(to bottom right, #134e4a, #115e59) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-teal-50.to-teal-100:hover {
-  background-image: linear-gradient(to bottom right, #115e59, #0d9488) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-indigo-50.to-indigo-100 {
-  background-image: linear-gradient(to bottom right, #312e81, #3730a3) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-indigo-50.to-indigo-100:hover {
-  background-image: linear-gradient(to bottom right, #3730a3, #4338ca) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-yellow-50.to-yellow-100 {
-  background-image: linear-gradient(to bottom right, #713f12, #854d0e) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-yellow-50.to-yellow-100:hover {
-  background-image: linear-gradient(to bottom right, #854d0e, #a16207) !important;
-}
-
 html.dark-mode .bg-gradient-to-br.from-purple-50.to-purple-100 {
   background-image: linear-gradient(to bottom right, #581c87, #6b21a8) !important;
 }
 
 html.dark-mode .bg-gradient-to-br.from-purple-50.to-purple-100:hover {
   background-image: linear-gradient(to bottom right, #6b21a8, #7e22ce) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-green-50.to-green-100 {
-  background-image: linear-gradient(to bottom right, #14532d, #166534) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-green-50.to-green-100:hover {
-  background-image: linear-gradient(to bottom right, #166534, #15803d) !important;
 }
 
 /* EmpresasView / CentrosTrabajoView / TrabajadoresView: tarjetas vacías con gradientes pastel */
@@ -954,30 +903,6 @@ html.dark-mode .bg-gradient-to-br.from-blue-50.to-blue-100:hover {
   background-image: linear-gradient(to bottom right, #1d4ed8, #2563eb) !important;
 }
 
-html.dark-mode .bg-gradient-to-br.from-red-50.to-red-100 {
-  background-image: linear-gradient(to bottom right, #7f1d1d, #991b1b) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-red-50.to-red-100:hover {
-  background-image: linear-gradient(to bottom right, #991b1b, #b91c1c) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-orange-50.to-orange-100 {
-  background-image: linear-gradient(to bottom right, #9a3412, #c2410c) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-orange-50.to-orange-100:hover {
-  background-image: linear-gradient(to bottom right, #c2410c, #ea580c) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-pink-50.to-pink-100 {
-  background-image: linear-gradient(to bottom right, #9d174d, #be185d) !important;
-}
-
-html.dark-mode .bg-gradient-to-br.from-pink-50.to-pink-100:hover {
-  background-image: linear-gradient(to bottom right, #be185d, #db2777) !important;
-}
-
 html.dark-mode .border-emerald-600.bg-white,
 html.dark-mode button.border-emerald-600.bg-white {
   background-color: #1e293b !important;
@@ -1004,23 +929,6 @@ html.dark-mode button.border-emerald-600.bg-white .text-emerald-600 {
 html.dark-mode .border-blue-600.bg-white .text-blue-600,
 html.dark-mode button.border-blue-600.bg-white .text-blue-600 {
   color: #93c5fd !important;
-}
-
-html.dark-mode .button {
-  background-color: #1e293b !important;
-  border-color: #10b981 !important;
-}
-
-html.dark-mode .button .button__text {
-  color: #6ee7b7 !important;
-}
-
-html.dark-mode .button:hover {
-  background-color: #047857 !important;
-}
-
-html.dark-mode .button .button__icon {
-  background-color: #065f46 !important;
 }
 
 html.dark-mode .bg-rose-100 {
@@ -1123,28 +1031,12 @@ html.dark-mode .manage-permissions-role-hint span {
   color: #fef3c7 !important;
 }
 
-html.dark-mode .hover\:from-gray-100:hover {
-  background-image: linear-gradient(to right, #334155, #475569) !important;
-}
-
-html.dark-mode .hover\:to-gray-200:hover {
-  background-image: linear-gradient(to right, #334155, #475569) !important;
-}
-
 html.dark-mode .hover\:from-gray-200:hover {
   background-image: linear-gradient(to right, #475569, #64748b) !important;
 }
 
 html.dark-mode .hover\:to-gray-300:hover {
   background-image: linear-gradient(to right, #475569, #64748b) !important;
-}
-
-html.dark-mode .hover\:bg-gradient-to-r.hover\:from-emerald-50.hover\:to-green-50:hover {
-  background-image: linear-gradient(to right, rgba(6, 78, 59, 0.55), rgba(22, 101, 52, 0.5)) !important;
-}
-
-html.dark-mode .hover\:bg-gradient-to-r.hover\:from-red-50.hover\:to-pink-50:hover {
-  background-image: linear-gradient(to right, rgba(127, 29, 29, 0.55), rgba(157, 23, 77, 0.45)) !important;
 }
 
 html.dark-mode .bg-green-100 {
@@ -1195,27 +1087,6 @@ html.dark-mode .documento-item input[type='checkbox'].border-gray-300 {
 
 html.dark-mode .documento-item.group:hover .group-hover\:text-emerald-700 {
   color: #6ee7b7 !important;
-}
-
-html.dark-mode .documento-item .bg-gradient-to-b.from-yellow-400.to-orange-500 {
-  background-image: linear-gradient(to bottom, #ca8a04, #ea580c) !important;
-}
-
-html.dark-mode .documento-item .bg-gradient-to-b.from-red-500.to-rose-600 {
-  background-image: linear-gradient(to bottom, #b91c1c, #e11d48) !important;
-}
-
-html.dark-mode .documento-item .bg-gradient-to-b.from-emerald-500.to-green-600 {
-  background-image: linear-gradient(to bottom, #059669, #15803d) !important;
-}
-
-html.dark-mode .documento-item .bg-gradient-to-b.from-gray-300.to-gray-300 {
-  background-color: #64748b !important;
-  background-image: none !important;
-}
-
-html.dark-mode .documento-item .bg-gradient-to-b.from-rose-500.to-red-400 {
-  background-image: linear-gradient(to bottom, #e11d48, #f87171) !important;
 }
 
 html.dark-mode .documento-item .text-emerald-600 {
@@ -3949,4 +3820,99 @@ html.dark-mode .ila-matriz td {
 }
 html.dark-mode .ila-matriz thead.bg-gray-800 th {
   border-color: rgb(255 255 255 / 0.12) !important;
+}
+
+/*
+ * Expediente médico (rediseño): encabezado del trabajador, barra de creación, encabezado
+ * de año y fila de documento con colores sólidos (sin degradados).
+ */
+html.dark-mode .expediente-trabajador-meta .text-violet-600 {
+  color: #c4b5fd !important;
+}
+
+html.dark-mode .expediente-crear-btn:hover {
+  background-color: rgba(6, 78, 59, 0.55) !important;
+  border-color: #34d399 !important;
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .expediente-crear-btn:hover i {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .expediente-secondary-btn {
+  background-color: #1e293b !important;
+  border-color: #10b981 !important;
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .expediente-secondary-btn:hover {
+  background-color: #064e3b !important;
+}
+
+html.dark-mode .expediente-empty__card.bg-teal-50 {
+  background-color: #134e4a !important;
+}
+
+html.dark-mode .expediente-empty__card.bg-red-50 {
+  background-color: #7f1d1d !important;
+}
+
+html.dark-mode .expediente-empty__card.bg-pink-50 {
+  background-color: #9d174d !important;
+}
+
+html.dark-mode .grupo-documentos__header {
+  background-color: #047857 !important;
+}
+
+/* .bg-white se remapea a un fondo opaco; aquí debe seguir siendo un velo translúcido */
+html.dark-mode .grupo-documentos__header .bg-white.bg-opacity-20 {
+  background-color: rgb(255 255 255 / 0.2) !important;
+}
+
+html.dark-mode .documento-item.hover:bg-emerald-50:hover {
+  background-color: rgba(6, 78, 59, 0.55) !important;
+}
+
+html.dark-mode .documento-item.hover:bg-red-50:hover {
+  background-color: rgba(127, 29, 29, 0.55) !important;
+}
+
+/* Franja lateral de disponibilidad del PDF */
+html.dark-mode .documento-item > .w-1.bg-amber-400 {
+  background-color: #d97706 !important;
+}
+
+html.dark-mode .documento-item > .w-1.bg-yellow-400 {
+  background-color: #ca8a04 !important;
+}
+
+html.dark-mode .documento-item > .w-1.bg-red-500 {
+  background-color: #b91c1c !important;
+}
+
+html.dark-mode .documento-item > .w-1.bg-rose-500 {
+  background-color: #e11d48 !important;
+}
+
+html.dark-mode .documento-item > .w-1.bg-emerald-500 {
+  background-color: #059669 !important;
+}
+
+html.dark-mode .documento-item > .w-1.bg-gray-300 {
+  background-color: #64748b !important;
+}
+
+/* La regla global de .text-lg atenúa el color; estos títulos conservan el suyo */
+html.dark-mode .grupo-documentos__header h2 {
+  color: #ffffff !important;
+}
+
+html.dark-mode .grupo-documentos__header .text-red-100 {
+  color: #fee2e2 !important;
+}
+
+html.dark-mode .expediente-trabajador-name {
+  color: #f1f5f9 !important;
 }

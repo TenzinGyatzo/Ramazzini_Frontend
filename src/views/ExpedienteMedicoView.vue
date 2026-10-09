@@ -7,7 +7,6 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useFormDataStore } from '@/stores/formDataStore';
 import GreenButton from '@/components/GreenButton.vue';
-import SliderButton from '@/components/SliderButton.vue';
 import ModalCargaDocumentoExterno from '@/components/ModalCargaDocumentoExterno.vue';
 import ModalUpdateDocumentoExterno from '@/components/ModalUpdateDocumentoExterno.vue';
 import GrupoDocumentos from '@/components/GrupoDocumentos.vue';
@@ -1000,15 +999,38 @@ const totalDocumentosExternos = computed(() => {
   }, 0);
 });
 
-// Computed para el año más reciente con documentos
-const añoMasReciente = computed(() => {
-  const añosDocumentos = Object.keys(documentos.documentsByYear || {}).map(Number);
-  const añosResultados = Object.keys(resultadosClinicos.resultsByYear || {}).map(Number);
-  const todosLosAños = [...new Set([...añosDocumentos, ...añosResultados])];
-  
-  if (todosLosAños.length === 0) return null;
-  return Math.max(...todosLosAños);
+// Datos del trabajador en una sola línea del encabezado
+const datosTrabajador = computed(() => {
+  const t = trabajadores.currentTrabajador;
+  if (!t) return [];
+  const antiguedad = calcularAntiguedad(t.fechaIngreso);
+  return [
+    t.sexo ? { titulo: 'Sexo', texto: t.sexo, icono: t.sexo === 'Masculino' ? 'fas fa-mars text-sky-600' : t.sexo === 'Femenino' ? 'fas fa-venus text-rose-600' : 'fas fa-venus-mars text-violet-600' } : null,
+    t.fechaNacimiento ? { titulo: 'Edad', texto: `${calcularEdad(t.fechaNacimiento)} años`, icono: 'fas fa-birthday-cake text-emerald-500' } : null,
+    t.puesto ? { titulo: 'Puesto', texto: t.puesto, icono: 'fas fa-briefcase text-blue-500' } : null,
+    antiguedad && antiguedad !== '-' ? { titulo: 'Antigüedad', texto: `${antiguedad} de antigüedad`, icono: 'fas fa-clock text-cyan-500' } : null,
+    t.numeroEmpleado ? { titulo: 'Número de empleado', texto: `No. ${t.numeroEmpleado}`, icono: 'fas fa-id-badge text-purple-500' } : null,
+  ].filter((dato): dato is { titulo: string; texto: string; icono: string } => dato !== null);
 });
+
+// Documentos que se crean directo desde el expediente (el resto está en "Más documentos")
+const tiposDocumentoCrear = [
+  { tipo: 'historiaClinica', nombre: 'Historia Clínica', descripcion: 'Entrevista médica', icono: 'fas fa-notes-medical' },
+  { tipo: 'exploracionFisica', nombre: 'Exploración Física', descripcion: 'Aparatos y sistemas', icono: 'fa-solid fa-person' },
+  { tipo: 'examenVista', nombre: 'Examen Vista', descripcion: 'Agudeza visual y colores', icono: 'fas fa-eye' },
+  { tipo: 'audiometria', nombre: 'Audiometría', descripcion: 'Audición', icono: 'fas fa-volume-up' },
+  { tipo: 'aptitud', nombre: 'Aptitud', descripcion: 'Evaluación laboral', icono: 'fas fa-user-check' },
+  { tipo: 'certificado', nombre: 'Certificado', descripcion: 'Certificación médica', icono: 'fas fa-certificate' },
+  { tipo: 'antidoping', nombre: 'Antidoping', descripcion: 'Prueba de sustancias', icono: 'fas fa-flask' },
+  { tipo: 'notaMedica', nombre: 'Nota Médica', descripcion: 'Consultas', icono: 'fas fa-stethoscope' },
+];
+
+const crearDocumento = (tipoDocumento: string) =>
+  navigateTo('crear-documento', {
+    idEmpresa: empresas.currentEmpresaId,
+    idTrabajador: trabajadores.currentTrabajadorId,
+    tipoDocumento,
+  });
 
 </script>
 
@@ -1150,123 +1172,55 @@ const añoMasReciente = computed(() => {
       />
 
         <!-- Header principal con información del trabajador -->
-        <div class="expediente-trabajador-header mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
-          <div class="expediente-trabajador-header__body min-h-[7.5rem] p-6">
+        <div class="expediente-trabajador-header mb-3 rounded-xl border border-gray-200 bg-white">
+          <div class="expediente-trabajador-header__body px-4 py-3 sm:px-5">
             <ExpedienteHeaderSkeleton v-if="expedienteHeaderLoading" />
             <div
               v-else-if="trabajadores.currentTrabajador"
-              class="flex min-w-0 flex-col lg:flex-row lg:items-center lg:justify-between"
+              class="flex min-w-0 items-center gap-3 sm:gap-4"
             >
-                
-                <!-- Información del trabajador -->
-                <div class="expediente-trabajador-identity flex min-w-0 items-center gap-4 sm:mb-4 lg:mb-0">
-                  <!-- Logo de la empresa o placeholder -->
-                  <div class="flex-shrink-0">
-                    <img
-                      v-if="empresas.currentEmpresa?.logotipoEmpresa?.data"
-                      :src="'/uploads/logos/' + empresas.currentEmpresa.logotipoEmpresa.data + '?t=' + empresas.currentEmpresa.updatedAt"
-                      :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
-                      class="expediente-trabajador-logo h-16 w-16 rounded-lg object-contain shadow-lg sm:h-20 sm:w-20"
-                    />
-                    <div v-else class="expediente-trabajador-logo flex h-16 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg sm:h-20 sm:w-20">
-                      <i class="fas fa-building text-xl text-white sm:text-2xl"></i>
-                    </div>
-                  </div>
-                  
-                    <!-- Datos del trabajador -->
-                    <div class="min-w-0 flex-1">
-                      <h1 class="expediente-trabajador-name flex min-w-0 items-center gap-3 text-xl font-bold text-gray-900 sm:text-xl lg:text-2xl xl:text-3xl">
-                        <i class="expediente-trabajador-name-icon fas fa-user shrink-0 text-emerald-600 text-md sm:text-lg lg:text-xl xl:text-2xl"></i>
-                        <span class="expediente-trabajador-name-text min-w-0">{{ formatNombreCompleto(trabajadores.currentTrabajador) }}</span>
-                      </h1>
-                      <div class="expediente-trabajador-meta mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                        <div v-if="trabajadores.currentTrabajador?.sexo" class="expediente-trabajador-meta-item flex min-w-0 items-center gap-2 group relative">
-                          <i v-if="trabajadores.currentTrabajador?.sexo === 'Masculino'" class="fas fa-mars shrink-0 text-sky-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
-                          <i v-else-if="trabajadores.currentTrabajador?.sexo === 'Femenino'" class="fas fa-venus shrink-0 text-rose-600 text-sm sm:text-md lg:text-lg xl:text-xl"></i>
-                          <span v-else class="shrink-0 text-sm leading-none text-violet-600 sm:text-md lg:text-lg xl:text-xl" aria-hidden="true">⚥</span>
-                           <span class="text-item min-w-0 text-sm text-gray-600 sm:text-base">
-                             <span class="block lg:hidden">{{ trabajadores.currentTrabajador.sexo }}</span>
-                             <span class="hidden lg:block 2xl:hidden">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'M' : trabajadores.currentTrabajador.sexo === 'Femenino' ? 'F' : 'I' }}</span>
-                             <span class="hidden 2xl:block">{{ trabajadores.currentTrabajador.sexo }}</span>
-                           </span>
-                        </div>
-                        <div class="expediente-trabajador-meta-item flex min-w-0 items-center gap-2 group relative sm:hidden md:flex">
-                          <i class="fas fa-birthday-cake shrink-0 text-sm text-emerald-500"></i>
-                          <span class="text-item min-w-0 text-sm text-gray-600 sm:text-base">
-                            {{ calcularEdad(trabajadores.currentTrabajador?.fechaNacimiento) }} años
-                          </span>
-                          <div class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100">
-                            Edad
-                            <div class="absolute bottom-full left-1/2 h-0 w-0 -translate-x-1/2 transform border-b-4 border-l-4 border-r-4 border-transparent border-b-gray-800"></div>
-                          </div>
-                        </div>
-                        <div class="expediente-trabajador-meta-item expediente-trabajador-puesto flex min-w-0 items-center gap-2 group relative">
-                          <i class="fas fa-briefcase shrink-0 text-sm text-blue-500"></i>
-                          <span
-                            class="text-item expediente-trabajador-puesto-text min-w-0 text-sm text-gray-600 sm:text-base"
-                            :title="trabajadores.currentTrabajador?.puesto"
-                          >
-                            {{ trabajadores.currentTrabajador?.puesto }}
-                          </span>
-                          <div class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100">
-                            Puesto
-                            <div class="absolute bottom-full left-1/2 h-0 w-0 -translate-x-1/2 transform border-b-4 border-l-4 border-r-4 border-transparent border-b-gray-800"></div>
-                          </div>
-                        </div>
-                        <div
-                          class="expediente-trabajador-meta-item expediente-trabajador-antiguedad flex min-w-0 items-center gap-2 group relative sm:hidden md:flex lg:hidden xl:flex"
-                          :class="{ 'expediente-trabajador-antiguedad--empty': calcularAntiguedad(trabajadores.currentTrabajador?.fechaIngreso) === '-' }"
-                        >
-                          <i class="fas fa-clock shrink-0 text-sm text-cyan-500"></i>
-                          <span class="min-w-0 text-sm text-gray-600 sm:text-base">
-                            {{ calcularAntiguedad(trabajadores.currentTrabajador?.fechaIngreso) }}
-                          </span>
-                          <div class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100">
-                            Antigüedad
-                            <div class="absolute bottom-full left-1/2 h-0 w-0 -translate-x-1/2 transform border-b-4 border-l-4 border-r-4 border-transparent border-b-gray-800"></div>
-                          </div>
-                        </div>
-                        <div v-if="trabajadores.currentTrabajador?.numeroEmpleado" class="expediente-trabajador-meta-item flex min-w-0 items-center gap-2 group relative">
-                          <i class="fas fa-id-badge shrink-0 text-sm text-purple-500"></i>
-                          <span class="min-w-0 text-sm text-gray-600 sm:text-base">
-                            No. {{ trabajadores.currentTrabajador.numeroEmpleado }}
-                          </span>
-                          <div class="absolute top-full left-1/2 z-10 mt-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100">
-                            Número de empleado
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-                
-                <!-- Estadísticas rápidas -->
-                <div class="hidden sm:flex sm:flex-row gap-3">
-                  <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-center sm:w-1/3 md:w-1/3 lg:w-1/2 xl:w-1/3">
-                    <div class="text-2xl font-bold text-emerald-600">{{ totalDocumentosCreados }}</div>
-                    <div class="text-xs text-emerald-700 font-medium">
-                      {{ totalDocumentosCreados === 1 ? 'Documento Creado' : 'Documentos Creados' }}
-                    </div>
-                  </div>
-                  <div class="bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-center sm:w-1/3 md:w-1/3 lg:w-1/2 xl:w-1/3">
-                    <div class="text-2xl font-bold text-purple-600">{{ totalDocumentosExternos }}</div>
-                    <div class="text-xs text-purple-700 font-medium">
-                      {{ totalDocumentosExternos === 1 ? 'Documento Externo' : 'Documentos Externos' }}
-                    </div>
-                  </div>
-                  <div class="hidden sm:block lg:hidden xl:block bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-center sm:w-1/3 md:w-1/3 lg:w-1/2 xl:w-1/3">
-                    <div class="text-2xl font-bold text-orange-600">
-                      {{ añoMasReciente || 'N/A' }}
-                    </div>
-                    <div class="text-xs text-orange-700 font-medium">Año Más Reciente</div>
-                  </div>
-                </div>
+              <!-- Logo de la empresa o placeholder -->
+              <img
+                v-if="empresas.currentEmpresa?.logotipoEmpresa?.data"
+                :src="'/uploads/logos/' + empresas.currentEmpresa.logotipoEmpresa.data + '?t=' + empresas.currentEmpresa.updatedAt"
+                :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
+                class="expediente-trabajador-logo h-12 w-12 shrink-0 rounded-lg object-contain"
+              />
+              <div v-else class="expediente-trabajador-logo flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                <i class="fas fa-building text-lg text-emerald-600"></i>
               </div>
+
+              <!-- Datos del trabajador -->
+              <div class="min-w-0 flex-1">
+                <h1 class="expediente-trabajador-name truncate text-lg font-semibold text-gray-900 sm:text-xl">
+                  {{ formatNombreCompleto(trabajadores.currentTrabajador) }}
+                </h1>
+                <p class="expediente-trabajador-meta mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm text-gray-600">
+                  <span
+                    v-for="dato in datosTrabajador"
+                    :key="dato.titulo"
+                    :title="dato.titulo"
+                    class="inline-flex items-center gap-1.5"
+                  >
+                    <i :class="dato.icono" class="text-xs" aria-hidden="true"></i>
+                    {{ dato.texto }}
+                  </span>
+                </p>
+              </div>
+
+              <!-- Conteo de documentos -->
+              <p class="hidden shrink-0 text-sm text-gray-500 md:block">
+                {{ totalDocumentosCreados }} {{ totalDocumentosCreados === 1 ? 'documento' : 'documentos' }}
+                <span class="text-gray-300" aria-hidden="true">·</span>
+                {{ totalDocumentosExternos }} {{ totalDocumentosExternos === 1 ? 'externo' : 'externos' }}
+              </p>
+            </div>
           </div>
         </div>
 
         <!-- Aviso de logotipo pendiente -->
         <Transition appear name="slide-down">
-          <div v-if="logotipoPendiente" class="mb-1 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <div v-if="logotipoPendiente" class="mb-3 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
             <div class="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
               <i class="fas fa-exclamation-triangle text-amber-600 text-sm"></i>
             </div>
@@ -1283,199 +1237,44 @@ const añoMasReciente = computed(() => {
         </Transition>
 
         <!-- Panel de creación de documentos -->
-        <div class="mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white">
-          <!-- Header del panel -->
-          <div class="expediente-crear-header bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 px-6 py-4">
-            <div class="flex min-w-0 items-center justify-between">
-              <div class="flex min-w-0 items-center gap-3">
-                <div class="expediente-crear-header__icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white bg-opacity-20">
-                  <i class="fas fa-plus text-sm text-white"></i>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <h2 class="expediente-crear-header__title text-lg font-medium text-white">Crear Nuevo Documento</h2>
-                  <p class="expediente-crear-header__subtitle text-sm text-emerald-100">Selecciona el tipo de documento a crear</p>
-                </div>
-              </div>
-            </div>
+        <div class="expediente-docs-panel mb-4 rounded-xl border border-gray-200 bg-white px-4 py-3 sm:px-5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="mr-1 text-sm font-medium text-gray-500">Crear</span>
+            <button
+              v-for="tipo in tiposDocumentoCrear"
+              :key="tipo.tipo"
+              type="button"
+              :title="tipo.descripcion"
+              class="expediente-crear-btn group inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors duration-150 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700"
+              @click="crearDocumento(tipo.tipo)"
+            >
+              <i :class="tipo.icono" class="w-4 text-center text-gray-400 transition-colors duration-150 group-hover:text-emerald-600"></i>
+              {{ tipo.nombre }}
+            </button>
           </div>
 
-          <!-- Botones de documentos -->
-          <div class="expediente-docs-panel p-6">
-            <div class="expediente-docs-grid grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
-              
-              <!-- Historia Clínica -->
-              <button @click="navigateTo('crear-documento', {
-                idEmpresa: empresas.currentEmpresaId,
-                idTrabajador: trabajadores.currentTrabajadorId,
-                tipoDocumento: 'historiaClinica'
-              })" class="expediente-doc-tile group relative bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border-teal-200 hover:border-teal-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <div class="text-center">
-                  <div class="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-teal-600 transition-colors">
-                    <i class="fas fa-notes-medical text-white text-lg"></i>
-                  </div>
-                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Historia Clínica</h3>
-                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Entrevista médica</p>
-                </div>
-              </button>
-
-              <!-- Exploración Física -->
-              <button @click="navigateTo('crear-documento', {
-                idEmpresa: empresas.currentEmpresaId,
-                idTrabajador: trabajadores.currentTrabajadorId,
-                tipoDocumento: 'exploracionFisica'
-              })" class="expediente-doc-tile group relative bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 border-indigo-200 hover:border-indigo-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <div class="text-center">
-                  <div class="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-indigo-600 transition-colors">
-                    <i class="fa-solid fa-person text-white text-xl"></i>
-                  </div>
-                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Exploración Física</h3>
-                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Aparatos y sistemas</p>
-                </div>
-              </button>
-
-              <!-- Examen de la Vista -->
-              <button @click="navigateTo('crear-documento', {
-                idEmpresa: empresas.currentEmpresaId,
-                idTrabajador: trabajadores.currentTrabajadorId,
-                tipoDocumento: 'examenVista'
-              })" class="expediente-doc-tile group relative bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 border-yellow-200 hover:border-yellow-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <div class="text-center">
-                  <div class="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-yellow-600 transition-colors">
-                    <i class="fas fa-eye text-white text-lg"></i>
-                  </div>
-                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Examen Vista</h3>
-                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Agudeza visual y colores</p>
-                </div>
-              </button>
-
-              <!-- Audiometría -->
-              <button @click="navigateTo('crear-documento', {
-                idEmpresa: empresas.currentEmpresaId,
-                idTrabajador: trabajadores.currentTrabajadorId,
-                tipoDocumento: 'audiometria'
-              })" class="expediente-doc-tile group relative bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-purple-200 hover:border-purple-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <div class="text-center">
-                  <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-purple-600 transition-colors">
-                    <i class="fas fa-volume-up text-white text-lg"></i>
-                  </div>
-                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Audiometría</h3>
-                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Audición</p>
-                </div>
-              </button>
-
-              <!-- Aptitud -->
-              <button @click="navigateTo('crear-documento', {
-                idEmpresa: empresas.currentEmpresaId,
-                idTrabajador: trabajadores.currentTrabajadorId,
-                tipoDocumento: 'aptitud'
-              })" class="expediente-doc-tile group relative bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-green-200 hover:border-green-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <div class="text-center">
-                  <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-green-600 transition-colors">
-                    <i class="fas fa-user-check text-white text-lg"></i>
-                  </div>
-                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Aptitud</h3>
-                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Evaluación laboral</p>
-                </div>
-              </button>
-
-              <!-- Certificado -->
-              <button @click="navigateTo('crear-documento', {
-                idEmpresa: empresas.currentEmpresaId,
-                idTrabajador: trabajadores.currentTrabajadorId,
-                tipoDocumento: 'certificado'
-              })" class="expediente-doc-tile group relative bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200 hover:border-blue-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <div class="text-center">
-                  <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-blue-600 transition-colors">
-                    <i class="fas fa-certificate text-white text-lg"></i>
-                  </div>
-                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Certificado</h3>
-                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Certificación médica</p>
-                </div>
-              </button>
-
-              <!-- Antidoping -->
-              <button @click="navigateTo('crear-documento', {
-                idEmpresa: empresas.currentEmpresaId,
-                idTrabajador: trabajadores.currentTrabajadorId,
-                tipoDocumento: 'antidoping'
-              })" class="expediente-doc-tile group relative bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 hover:border-red-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <div class="text-center">
-                  <div class="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-red-600 transition-colors">
-                    <i class="fas fa-flask text-white text-lg"></i>
-                  </div>
-                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Antidoping</h3>
-                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Prueba de sustancias</p>
-                </div>
-              </button>
-
-              <!-- Nota Médica -->
-              <button @click="navigateTo('crear-documento', {
-                idEmpresa: empresas.currentEmpresaId,
-                idTrabajador: trabajadores.currentTrabajadorId,
-                tipoDocumento: 'notaMedica'
-              })" class="expediente-doc-tile group relative bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 border-orange-200 hover:border-orange-400 border-2 rounded-xl p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <div class="text-center">
-                  <div class="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center expediente-doc-tile__icon mx-auto mb-3 group-hover:bg-orange-600 transition-colors">
-                    <i class="fas fa-stethoscope text-white text-lg"></i>
-                  </div>
-                  <h3 class="expediente-doc-tile__title mb-1 text-sm font-semibold text-gray-900">Nota Médica</h3>
-                  <p class="expediente-doc-tile__subtitle text-item text-xs text-gray-600">Consultas</p>
-                </div>
-              </button>
-
-            </div>
-
-            <div class="expediente-secondary-actions flex flex-wrap justify-center items-center gap-4 mt-6">
-              <!-- Documento Externo -->
-              <div class="expediente-secondary-actions__item flex justify-center">
-                <SliderButton 
-                  class="w-full max-w-md" 
-                  @click="toggleDocumentoExternoModal"
-                  @closeModal="toggleDocumentoExternoModal" 
-                >
-                  <span class="sm:hidden">Doc. Ext.</span>
-                  <span class="hidden sm:inline">Documento Externo</span>
-                </SliderButton>
-              </div>
-
-              <!-- Declaración Veracidad -->
-              <div class="expediente-secondary-actions__item flex justify-center">
-                <button
-                  type="button"
-                  @click="toggleDeclaracionVeracidadModal"
-                  class="expediente-secondary-btn relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-emerald-600 bg-white overflow-hidden transition-all duration-200 hover:bg-emerald-50 hover:shadow-lg"
-                >
-                  <i class="fas fa-file-signature text-emerald-600 text-lg ml-4"></i>
-                  <span class="flex-1 text-center text-emerald-600 text-lg ml-3">
-                    <span class="hidden sm:inline">Decl. de</span> Veracidad
-                  </span>
-                </button>
-              </div>
-  
-              <!-- Botón para Cuestionarios de Vigilancia Médica -->
-              <div class="expediente-secondary-actions__item flex justify-center">
-                <button
-                  @click="toggleCuestionariosModal"
-                  class="expediente-secondary-btn relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-emerald-600 bg-white overflow-hidden transition-all duration-200 hover:bg-emerald-50 hover:shadow-lg"
-                >
-                  <i class="fas fa-file-alt text-emerald-600 text-lg ml-4"></i>
-                  <span class="flex-1 text-center text-emerald-600 text-lg ml-3">Más<span class="hidden sm:inline"> documentos</span></span>
-                  <i class="fas fa-arrow-right text-emerald-600 text-sm mr-4 transition-transform duration-200 hover:translate-x-1"></i>
-                </button>
-              </div>
-  
-              <!-- Botón para Registrar Resultados Clínicos -->
-              <div v-if="canManageResultadosClinicos" class="expediente-secondary-actions__item flex justify-center">
-                <button
-                  @click="abrirResultadosClinicosPanel"
-                  class="expediente-secondary-btn relative w-[232px] h-[50px] rounded-lg cursor-pointer flex items-center border-2 border-blue-600 bg-white overflow-hidden transition-all duration-200 hover:bg-blue-50 hover:shadow-lg"
-                >
-                  <i class="fas fa-clipboard-check text-blue-600 text-lg ml-4"></i>
-                  <span class="flex-1 text-center text-blue-600 text-lg ml-3">Resultados</span>
-                  <i class="fas fa-arrow-right text-blue-600 text-sm mr-4 transition-transform duration-200 hover:translate-x-1"></i>
-                </button>
-              </div>
-            </div>
+          <div class="expediente-secondary-actions mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3">
+            <button type="button" class="expediente-secondary-btn" @click="toggleDocumentoExternoModal">
+              <i class="fa-solid fa-arrow-up-from-bracket"></i>
+              Documento externo
+            </button>
+            <button type="button" class="expediente-secondary-btn" @click="toggleDeclaracionVeracidadModal">
+              <i class="fas fa-file-signature"></i>
+              Declaración de veracidad
+            </button>
+            <button type="button" class="expediente-secondary-btn" @click="toggleCuestionariosModal">
+              <i class="fas fa-file-alt"></i>
+              Más documentos
+            </button>
+            <button
+              v-if="canManageResultadosClinicos"
+              type="button"
+              class="expediente-secondary-btn"
+              @click="abrirResultadosClinicosPanel"
+            >
+              <i class="fas fa-clipboard-check"></i>
+              Resultados
+            </button>
           </div>
         </div>
 
@@ -1551,7 +1350,7 @@ const añoMasReciente = computed(() => {
                   </h3>
                   <div class="expediente-empty__grid grid grid-cols-1 md:grid-cols-3 gap-6">
                     
-                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200">
+                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-teal-50 border border-teal-200">
                       <div class="expediente-empty__icon w-16 h-16 bg-teal-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-notes-medical text-white text-xl"></i>
                       </div>
@@ -1568,7 +1367,7 @@ const añoMasReciente = computed(() => {
                       </button>
                     </div>
                     
-                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200">
+                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-red-50 border border-red-200">
                       <div class="expediente-empty__icon w-16 h-16 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-flask text-white text-xl"></i>
                       </div>
@@ -1585,7 +1384,7 @@ const añoMasReciente = computed(() => {
                       </button>
                     </div>
                     
-                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200">
+                    <div class="expediente-empty__card text-center p-6 rounded-xl bg-pink-50 border border-pink-200">
                       <div class="expediente-empty__icon w-16 h-16 bg-pink-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-stethoscope text-white text-xl"></i>
                       </div>
@@ -1705,44 +1504,39 @@ const añoMasReciente = computed(() => {
   animation: gentle-pulse 2s ease-in-out infinite;
 }
 
-/* Efectos de hover para las tarjetas */
-.transform {
-  transition: all 0.3s ease;
+/* Acciones secundarias del panel de creación */
+.expediente-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #059669;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  color: #047857;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
 }
 
-.transform:hover {
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+.expediente-secondary-btn:hover {
+  background-color: #ecfdf5;
 }
 
 @media (max-width: 479px) {
   .expediente-trabajador-header__body {
-    min-height: 0;
     padding: 0.75rem;
   }
 
-  .expediente-trabajador-identity {
-    gap: 0.75rem;
-  }
-
   .expediente-trabajador-logo {
-    width: 3rem;
-    height: 3rem;
+    width: 2.5rem;
+    height: 2.5rem;
   }
 
   .expediente-trabajador-name {
-    gap: 0.5rem;
-    align-items: flex-start;
-  }
-
-  .expediente-trabajador-name-icon {
-    font-size: 0.95rem;
-    margin-top: 0.15rem;
-  }
-
-  .expediente-trabajador-name-text {
     font-size: 1.05rem;
     line-height: 1.25;
-    overflow: hidden;
+    white-space: normal;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -1751,127 +1545,18 @@ const añoMasReciente = computed(() => {
   }
 
   .expediente-trabajador-meta {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 0.75rem;
-    row-gap: 0.2rem;
-    margin-top: 0.4rem;
-  }
-
-  .expediente-trabajador-meta-item {
-    gap: 0.35rem;
-    min-width: 0;
-  }
-
-  .expediente-trabajador-meta-item .text-item,
-  .expediente-trabajador-meta-item span {
     font-size: 0.75rem;
-    line-height: 1.25;
-  }
-
-  .expediente-trabajador-puesto {
-    grid-column: 1 / -1;
-  }
-
-  .expediente-trabajador-puesto-text {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow-wrap: anywhere;
-  }
-
-  .expediente-trabajador-antiguedad--empty {
-    display: none;
-  }
-
-  .expediente-crear-header {
-    padding: 0.65rem 0.75rem;
-  }
-
-  .expediente-crear-header__icon {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  .expediente-crear-header__title {
-    font-size: 0.95rem;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-  }
-
-  .expediente-crear-header__subtitle {
-    font-size: 0.7rem;
-    line-height: 1.3;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow-wrap: anywhere;
+    line-height: 1.35;
   }
 
   .expediente-docs-panel {
     padding: 0.75rem;
   }
 
-  .expediente-docs-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-  }
-
-  .expediente-doc-tile {
-    padding: 0.65rem 0.4rem 0.55rem;
-    min-width: 0;
-  }
-
-  .expediente-doc-tile:hover {
-    transform: none;
-  }
-
-  .expediente-doc-tile__icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    margin-bottom: 0.4rem;
-    border-radius: 0.75rem;
-  }
-
-  .expediente-doc-tile__title {
-    margin-bottom: 0;
-    font-size: 0.7rem;
-    line-height: 1.25;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow-wrap: anywhere;
-  }
-
-  .expediente-doc-tile__subtitle {
-    display: none;
-  }
-
-  .expediente-secondary-actions {
-    gap: 0.5rem;
-    width: 100%;
-  }
-
-  .expediente-secondary-actions__item {
-    width: 100%;
-    max-width: 100%;
-  }
-
+  .expediente-crear-btn,
   .expediente-secondary-btn {
-    width: 100%;
-    max-width: 100%;
-    height: 50px;
-  }
-
-  .expediente-secondary-actions :deep(.button) {
-    width: 100%;
-    max-width: 100%;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
   }
 
   .expediente-empty {
@@ -1946,23 +1631,5 @@ const añoMasReciente = computed(() => {
 /* Mejoras para los botones */
 button:active {
   transform: scale(0.98);
-}
-
-/* Efectos de gradiente mejorados */
-.bg-gradient-to-br {
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
-}
-
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
 }
 </style>

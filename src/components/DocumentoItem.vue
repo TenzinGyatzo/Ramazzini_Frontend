@@ -2166,14 +2166,14 @@ const { antidoping } = props; // Desestructuración para acceder a antidoping
 const indicadorLateral = computed(() => {
   if (isPdfGenerating.value) {
     return {
-      class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-yellow-500 animate-pulse',
+      class: 'absolute top-0 left-0 w-1 h-full bg-amber-400 animate-pulse',
       title: 'Generando PDF...'
     };
   }
 
   if (isPdfFailed.value) {
     return {
-      class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-rose-500 to-red-400',
+      class: 'absolute top-0 left-0 w-1 h-full bg-rose-500',
       title: 'Error al generar PDF - Se puede regenerar'
     };
   }
@@ -2181,7 +2181,7 @@ const indicadorLateral = computed(() => {
   // Verificando disponibilidad
   if (verificandoPDF.value) {
     return {
-      class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-yellow-400 to-orange-500 animate-pulse',
+      class: 'absolute top-0 left-0 w-1 h-full bg-yellow-400 animate-pulse',
       title: 'Verificando disponibilidad del PDF...'
     };
   }
@@ -2191,7 +2191,7 @@ const indicadorLateral = computed(() => {
     // Si está seleccionado en modo eliminación, siempre rojo
     if (props.isSelected) {
       return {
-        class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500 to-rose-600',
+        class: 'absolute top-0 left-0 w-1 h-full bg-red-500',
         title: 'Seleccionado para eliminar'
       };
     }
@@ -2199,12 +2199,12 @@ const indicadorLateral = computed(() => {
     // Si no está seleccionado, verde si está disponible, gris si no
     if (pdfDisponible.value) {
       return {
-        class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-green-600',
+        class: 'absolute top-0 left-0 w-1 h-full bg-emerald-500',
         title: 'PDF disponible'
       };
     } else {
       return {
-        class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-gray-300 to-gray-300',
+        class: 'absolute top-0 left-0 w-1 h-full bg-gray-300',
         title: 'No disponible'
       };
     }
@@ -2213,7 +2213,7 @@ const indicadorLateral = computed(() => {
   // Modo Normal
   if (pdfDisponible.value) {
     return {
-      class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-green-600',
+      class: 'absolute top-0 left-0 w-1 h-full bg-emerald-500',
       title: 'PDF disponible'
     };
   }
@@ -2221,14 +2221,14 @@ const indicadorLateral = computed(() => {
   // Documento externo no disponible (solo en modo normal)
   if (props.documentoTipo.toLowerCase().replace(/\s+/g, '') === 'documentoexterno' && !pdfDisponible.value) {
     return {
-      class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-rose-500 to-red-400',
+      class: 'absolute top-0 left-0 w-1 h-full bg-rose-500',
       title: 'Documento externo no disponible'
     };
   }
 
   // PDF no disponible (modo normal)
   return {
-    class: 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-gray-300 to-gray-300',
+    class: 'absolute top-0 left-0 w-1 h-full bg-gray-300',
     title: 'PDF no disponible - Se puede regenerar'
   };
 });
@@ -2967,10 +2967,10 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
     <!-- Items de documentos -->
     <div
         ref="documentoItemRef"
-        class="documento-item group relative bg-white border rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer overflow-hidden"
+        class="documento-item group relative bg-white border rounded-lg transition-colors duration-150 ease-in-out cursor-pointer overflow-hidden"
         :class="{
-            'hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50': !isDeletionMode,
-            'hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50': isDeletionMode,
+            'hover:bg-emerald-50': !isDeletionMode,
+            'hover:bg-red-50': isDeletionMode,
             'border-amber-300 hover:border-amber-400': isPdfGenerating,
             'border-yellow-300 hover:border-yellow-400': verificandoPDF && !isPdfGenerating,
             'border-gray-200 hover:border-emerald-300': pdfDisponible && !isDeletionMode && !isPdfGenerating,
@@ -2998,7 +2998,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
             PDF fallido
         </div>
 
-        <div class="flex items-center justify-between p-4 pl-6 min-h-[80px] max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3 max-[390px]:p-3 max-[390px]:pl-3">
+        <div class="flex items-center justify-between px-4 py-2.5 pl-5 min-h-[60px] max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3 max-[390px]:p-3 max-[390px]:pl-3">
             <div class="flex items-center flex-1 max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3 w-full">
 
                 <!-- Nota Aclaratoria -->
@@ -3006,7 +3006,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3021,14 +3021,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <div class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" @click="abrirNotaAclaratoria(notaAclaratoria)">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-lg mr-4 group-hover:bg-yellow-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-yellow-100 rounded-lg mr-3 group-hover:bg-yellow-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-exclamation-triangle text-yellow-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Nota Aclaratoria
                                 </h3>
                             </div>
@@ -3052,8 +3052,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Documento que aclara</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Documento que aclara</p>
                                     <p class="font-medium text-sm truncate max-w-full text-blue-600">
                                         {{ documentoQueAclaraTexto }}
                                     </p>
@@ -3063,8 +3063,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Alcance</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Alcance</p>
                                     <p v-if="notaAclaratoria.alcanceAclaracion === 'ACLARA'" class="font-medium text-sm truncate max-w-full text-blue-600">
                                         Aclaración
                                     </p>
@@ -3083,8 +3083,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Impacto</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Impacto</p>
                                     <p v-if="notaAclaratoria.impactoClinico === 'LEVE'" class="font-medium text-sm truncate max-w-full text-green-600">
                                         Leve
                                     </p>
@@ -3106,7 +3106,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3133,14 +3133,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-red-100 rounded-lg mr-4 group-hover:bg-red-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-red-100 rounded-lg mr-3 group-hover:bg-red-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-flask text-red-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Antidoping
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -3174,8 +3174,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resultados</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Resultados</p>
                                     <p v-if="mensajeDetalladoAntidoping" class="font-medium text-sm truncate max-w-full"
                                         :class="positivos ? 'text-red-600' : 'text-gray-800'">
                                         {{ mensajeDetalladoAntidoping }}
@@ -3191,7 +3191,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3218,14 +3218,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mr-4 group-hover:bg-green-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg mr-3 group-hover:bg-green-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-user-check text-green-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-80 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Constancia de Aptitud
                                 </h3>
                             </div>
@@ -3253,7 +3253,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3280,14 +3280,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mr-4 group-hover:bg-green-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg mr-3 group-hover:bg-green-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-user-check text-green-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-80 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Aptitud al Puesto
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -3328,8 +3328,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <!-- <div class="hidden xl:block w-64 flex-shrink-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resultado</p>
+                                <div class="px-3 border-l border-gray-200">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Resultado</p>
                                     <p class="font-medium text-sm truncate"
                                         :class="aptitud.aptitudPuesto === 'No Apto' ? 'text-red-600' : 'text-gray-800'">
                                         {{ aptitud.aptitudPuesto === 'Evaluación No Completada' ? 'No completada' : aptitud.aptitudPuesto.charAt(0).toUpperCase() + aptitud.aptitudPuesto.slice(1).toLowerCase() }}
@@ -3345,7 +3345,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3372,14 +3372,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg mr-3 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-volume-up text-purple-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Audiometría
                                 </h3>
                                 <!-- Mostrar resultado según método de audiometría -->
@@ -3424,8 +3424,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="audiometria.diagnosticoAudiometria" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Diagnóstico</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Diagnóstico</p>
                                     <p class="font-medium text-sm truncate max-w-full text-gray-800">
                                         {{ audiometria.diagnosticoAudiometria.toUpperCase() }}
                                     </p>
@@ -3440,7 +3440,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3467,14 +3467,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg mr-3 group-hover:bg-blue-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-certificate text-blue-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Certificado
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -3508,8 +3508,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Impedimentos Físicos</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Impedimentos Físicos</p>
                                     <p class="font-medium text-sm truncate max-w-full"
                                         :class="certificado.impedimentosFisicos === 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita' ? 'text-gray-800' : 'text-red-600'">
                                         {{ certificado.impedimentosFisicos === 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita' ? 'No presenta impedimentos físicos' : certificado.impedimentosFisicos }}
@@ -3525,7 +3525,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3552,14 +3552,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mr-4 group-hover:bg-blue-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg mr-3 group-hover:bg-blue-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-certificate text-blue-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Certificado Ex.
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -3593,15 +3593,15 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block w-64 flex-shrink-0">
                             <div class="text-sm flex xl:space-x-2">
-                                <div class="hidden xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Impedimentos Físicos</p>
+                                <div class="hidden xl:block px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Impedimentos Físicos</p>
                                     <p class="font-medium text-sm truncate max-w-full"
                                         :class="certificadoExpedito.impedimentosFisicos === 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita' ? 'text-gray-800' : 'text-red-600'">
                                         {{ certificadoExpedito.impedimentosFisicos === 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita' ? 'No presenta impedimentos físicos' : certificadoExpedito.impedimentosFisicos }}
                                     </p>
                                 </div>
-                                <div class="hidden 2xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Aptitud</p>
+                                <div class="hidden 2xl:block px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Aptitud</p>
                                     <p class="font-medium text-sm truncate max-w-full"
                                         :class="certificadoExpedito.aptitudPuesto === 'No Apto' ? 'text-red-600' : 'text-gray-800'">
                                         {{ certificadoExpedito.aptitudPuesto }}
@@ -3617,7 +3617,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3636,7 +3636,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento dinámico -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 rounded-lg mr-4 transition-colors duration-200 flex-shrink-0"
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 rounded-lg mr-3 transition-colors duration-200 flex-shrink-0"
                              :class="obtenerExtensionArchivo(documentoExterno) === 'pdf' ? 'bg-red-100 group-hover:bg-red-200' : 'bg-blue-100 group-hover:bg-blue-200'">
                             <!-- Icono PDF -->
                             <svg v-if="obtenerExtensionArchivo(documentoExterno) === 'pdf'" class="h-6 w-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
@@ -3651,7 +3651,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 min-w-0">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center min-w-0 max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center min-w-0 max-[390px]:text-base">
                                     <span
                                         class="block max-w-full min-w-0 truncate"
                                         :title="documentoExterno.nombreDocumento">
@@ -3703,8 +3703,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             v-if="documentoExterno.notasDocumento && String(documentoExterno.notasDocumento).trim() && String(documentoExterno.notasDocumento).trim() !== 'undefined'"
                             class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Notas</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Notas</p>
                                     <p
                                         class="font-medium text-gray-800 text-sm truncate max-w-full"
                                         :title="documentoExterno.notasDocumento">
@@ -3721,7 +3721,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3748,14 +3748,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-lg mr-4 group-hover:bg-yellow-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-yellow-100 rounded-lg mr-3 group-hover:bg-yellow-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-eye text-yellow-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Examen de la Vista
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -3793,8 +3793,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block flex-shrink-0">
                             <div class="text-sm flex space-x-2">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resultados</p>
+                                <div class="px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Resultados</p>
                                     <p v-if="!examenVista.ojoIzquierdoLejanaConCorreccion && !examenVista.ojoDerechoLejanaConCorreccion" class="font-medium text-sm truncate"
                                         :class="examenVista.sinCorreccionLejanaInterpretacion === 'Visión excepcional' ? 'text-emerald-600' :
                                                examenVista.sinCorreccionLejanaInterpretacion === 'Visión normal' ? 'text-emerald-600' :
@@ -3808,15 +3808,15 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                         {{ examenVista.conCorreccionLejanaInterpretacion }} corregida
                                     </p>
                                 </div>
-                                <div class="hidden 2xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Lentes</p>
+                                <div class="hidden 2xl:block px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Lentes</p>
                                     <p class="font-medium text-sm truncate"
                                         :class="examenVista.requiereLentesUsoGeneral === 'Si' ? 'text-red-600' : 'text-gray-800'">
                                         {{ examenVista.requiereLentesUsoGeneral === 'Si' ? 'Requiere' : examenVista.requiereLentesUsoGeneral === 'No' ? 'No requiere' : examenVista.requiereLentesUsoGeneral }}
                                     </p>
                                 </div>
-                                <div class="hidden xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Ishihara</p>
+                                <div class="hidden xl:block px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Ishihara</p>
                                     <p class="font-medium text-sm truncate"
                                         :class="!examenVista.porcentajeIshihara ? 'text-gray-600' : examenVista.porcentajeIshihara < 80 ? 'text-red-600' : 'text-gray-800'">
                                         {{ !examenVista.porcentajeIshihara ? 'Pendiente' : examenVista.porcentajeIshihara < 80 ? `${examenVista.porcentajeIshihara}% - Daltonismo` : `${examenVista.porcentajeIshihara}% - Normal` }}
@@ -3832,7 +3832,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3859,14 +3859,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg mr-4 group-hover:bg-indigo-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-lg mr-3 group-hover:bg-indigo-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-person text-indigo-600 text-xl"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Exploración Física
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -3904,8 +3904,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block w-64 flex-shrink-0">
                             <div class="text-sm flex xl:space-x-2">
-                                <div class="hidden xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">IMC</p>
+                                <div class="hidden xl:block px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">IMC</p>
                                     <p class="font-medium text-sm truncate"
                                         :class="exploracionFisica.categoriaIMC === 'Bajo peso' ? 'text-amber-600' :
                                                exploracionFisica.categoriaIMC === 'Normal' ? 'text-emerald-600' :
@@ -3916,8 +3916,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                         {{ exploracionFisica.indiceMasaCorporal }} - {{ exploracionFisica.categoriaIMC }}
                                     </p>
                                 </div>
-                                <div class="hidden 2xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Tensión Arterial</p>
+                                <div class="hidden 2xl:block px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Tensión Arterial</p>
                                     <p class="font-medium text-sm truncate"
                                         :class="exploracionFisica.categoriaTensionArterial === 'Óptima' ? 'text-emerald-600' :
                                                exploracionFisica.categoriaTensionArterial === 'Normal' ? 'text-emerald-600' :
@@ -3931,8 +3931,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                         </span>
                                     </p>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-exploracion xl-max-w-dynamic-exploracion-xl xxl-max-w-dynamic-exploracion-2xl">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resumen</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-exploracion xl-max-w-dynamic-exploracion-xl xxl-max-w-dynamic-exploracion-2xl">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Resumen</p>
                                     <p class="font-medium text-sm truncate max-w-full "
                                         :class="exploracionFisica.resumenExploracionFisica === 'Se encuentra clínicamente sano' || exploracionFisica.resumenExploracionFisica === 'Se encuentra clínicamente sana' ? 'text-gray-800' : 'text-red-600'">
                                         {{ exploracionFisica.resumenExploracionFisica === 'Se encuentra clínicamente sano' ? 'Clínicamente sano' : exploracionFisica.resumenExploracionFisica === 'Se encuentra clínicamente sana' ? 'Clínicamente sana' : exploracionFisica.resumenExploracionFisica }}
@@ -3948,7 +3948,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -3975,14 +3975,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-teal-100 rounded-lg mr-4 group-hover:bg-teal-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-teal-100 rounded-lg mr-3 group-hover:bg-teal-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-notes-medical text-teal-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Historia Clínica
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -4016,12 +4016,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block w-64 flex-shrink-0">
                             <div class="text-sm flex xl:space-x-2">
-                                <div class="hidden xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Evaluación</p>
+                                <div class="hidden xl:block px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Evaluación</p>
                                     <p class="font-medium text-gray-800 text-sm truncate">{{ historiaClinica.motivoExamen }}</p>
                                 </div>
-                                <div class="hidden 2xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-1">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Accidente</p>
+                                <div class="hidden 2xl:block px-3 border-l border-gray-200 flex-1">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Accidente</p>
                                     <p class="font-medium text-sm truncate"
                                         :class="historiaClinica.accidenteLaboral === 'Si' && historiaClinica.secuelas !== 'Sin secuelas' ? 'text-red-600' : 'text-gray-800'">
                                         {{
@@ -4031,8 +4031,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                         }}
                                     </p>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-historia xl-max-w-dynamic-historia-xl xxl-max-w-dynamic-historia-2xl">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resumen</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-historia xl-max-w-dynamic-historia-xl xxl-max-w-dynamic-historia-2xl">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Resumen</p>
                                     <p class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
                                         :class="historiaClinica.resumenHistoriaClinica === 'Se refiere actualmente asintomático' || historiaClinica.resumenHistoriaClinica === 'Se refiere actualmente asintomática' ? 'text-gray-800' : 'text-red-600'">
                                         {{ historiaClinica.resumenHistoriaClinica === 'Se refiere actualmente asintomático' ? 'Se refiere asintomático' : historiaClinica.resumenHistoriaClinica === 'Se refiere actualmente asintomática' ? 'Se refiere asintomática' : historiaClinica.resumenHistoriaClinica }}
@@ -4048,7 +4048,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -4075,14 +4075,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mr-4 group-hover:bg-orange-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg mr-3 group-hover:bg-orange-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-stethoscope text-orange-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Nota Médica
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -4122,16 +4122,16 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="notaMedica.diagnostico" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Diagnóstico</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Diagnóstico</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ notaMedica.diagnostico }}</p>
                                 </div>
                             </div>
                         </div>
                         <div v-if="notaMedica.codigoCIE10Principal" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Diagnóstico Principal</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Diagnóstico Principal</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ notaMedica.codigoCIE10Principal }}</p>
                                 </div>
                             </div>
@@ -4144,7 +4144,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -4171,14 +4171,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-lg mr-4 group-hover:bg-emerald-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-emerald-100 rounded-lg mr-3 group-hover:bg-emerald-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-prescription-bottle-medical text-emerald-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Receta Médica
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -4211,8 +4211,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="receta.indicaciones" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Indicaciones</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Indicaciones</p>
                                     <p class="font-medium text-sm truncate max-w-full text-gray-800">
                                         {{ receta.indicaciones }}
                                     </p>
@@ -4227,7 +4227,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -4254,14 +4254,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-pink-100 rounded-lg mr-4 group-hover:bg-pink-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-pink-100 rounded-lg mr-3 group-hover:bg-pink-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-baby text-pink-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Control Prenatal
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -4294,96 +4294,96 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">ENE</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">ENE</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.eneroFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">FEB</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">FEB</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.febreroFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">MAR</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">MAR</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.marzoFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">ABR</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">ABR</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.abrilFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">MAY</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">MAY</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.mayoFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">JUN</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">JUN</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.junioFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">JUL</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">JUL</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.julioFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">AGO</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">AGO</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.agostoFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">SEP</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">SEP</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.septiembreFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">OCT</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">OCT</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.octubreFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">NOV</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">NOV</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.noviembreFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">DIC</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">DIC</p>
                                     <p class="font-medium text-gray-800 text-sm truncate max-w-full">{{ controlPrenatal.diciembreFecha ? '✅' : '➖' }}</p>
                                 </div>
                             </div>
@@ -4396,7 +4396,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -4423,14 +4423,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg mr-3 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-ear-listen text-purple-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Historia Otologica
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -4470,8 +4470,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="historiaOtologica.resultadoCuestionario || historiaOtologica.resultadoCuestionarioPersonalizado" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resultado</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Resultado</p>
                                     <p class="font-medium text-sm truncate max-w-full"
                                        :class="{
                                          'text-green-700': getResultadoCuestionarioColor(historiaOtologica.resultadoCuestionario, historiaOtologica.resultadoCuestionarioPersonalizado) === 'green',
@@ -4492,7 +4492,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0 flex items-center gap-1">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
                             :class="[
                                 isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
                                 isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -4519,14 +4519,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-sky-100 rounded-lg mr-4 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-sky-100 rounded-lg mr-3 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fas fa-wind text-sky-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
                                     Previo Espirometria
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -4566,8 +4566,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <!-- Información adicional (pantallas grandes) -->
                         <div v-if="previoEspirometria.resultadoCuestionario || previoEspirometria.resultadoCuestionarioPersonalizado" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
                             <div class="text-sm">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit max-w-dynamic-base">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resultado</p>
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Resultado</p>
                                     <p class="font-medium text-sm truncate max-w-full"
                                        :class="{
                                          'text-green-700': getResultadoCuestionarioColor(previoEspirometria.resultadoCuestionario, previoEspirometria.resultadoCuestionarioPersonalizado) === 'green',
@@ -4588,7 +4588,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     <!-- Checkbox mejorado -->
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, entrevistaPsicologica, 'Entrevista Psicologica')">
@@ -4610,14 +4610,14 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mouseleave="handleHoverLeave">
 
                         <!-- Icono del documento -->
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-slate-100 rounded-lg mr-4 group-hover:bg-slate-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-slate-100 rounded-lg mr-3 group-hover:bg-slate-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-regular fa-comments text-slate-600 text-lg"></i>
                         </div>
 
                         <!-- Información del documento -->
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Entrevista Psicológica
                                 </h3>
                                 <span
@@ -4654,7 +4654,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
                                 <div
                                     v-if="entrevistaPsicologica.ideacionSuicida === 'Sí'"
-                                    class="hidden xl:block bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 flex-shrink-0">
+                                    class="hidden xl:block px-3 border-l border-gray-200 flex-shrink-0">
                                     <div class="min-w-0">
                                         <p class="text-red-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Riesgo</p>
                                         <p class="font-medium text-sm truncate max-w-full text-red-700">
@@ -4662,8 +4662,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                         </p>
                                     </div>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Conclusión</p>
+                                <div class="px-3 border-l border-gray-200 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Conclusión</p>
                                     <p
                                         class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
                                         :class="entrevistaPsicologicaSinHallazgoConclusion ? 'text-gray-800' : 'text-red-600'"
@@ -4680,7 +4680,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <div v-if="typeof trastornosEstadoAnimo === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, trastornosEstadoAnimo, 'Trastornos Estado Animo')">
@@ -4698,12 +4698,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             trastornosEstadoAnimo.updatedAt ? new Date(trastornosEstadoAnimo.updatedAt).getTime() : null,
                             'Trastornos Estado Animo')"
                         @mouseleave="handleHoverLeave">
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-violet-100 rounded-lg mr-4 group-hover:bg-violet-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-violet-100 rounded-lg mr-3 group-hover:bg-violet-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-wave-square text-violet-600 text-lg"></i>
                         </div>
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Trastornos del estado de ánimo
                                 </h3>
                             </div>
@@ -4725,8 +4725,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Interpretación</p>
+                                <div class="px-3 border-l border-gray-200 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Interpretación</p>
                                     <p
                                         class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
                                         :class="claseColorInterpretacionMdqLista"
@@ -4743,7 +4743,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <div v-if="typeof cuestionarioProdromalBreve === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve')">
@@ -4761,12 +4761,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             cuestionarioProdromalBreve.updatedAt ? new Date(cuestionarioProdromalBreve.updatedAt).getTime() : null,
                             'Cuestionario Prodromal Breve')"
                         @mouseleave="handleHoverLeave">
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mr-4 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg mr-3 group-hover:bg-purple-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-brain text-purple-600 text-lg"></i>
                         </div>
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Cuestionario prodromal breve
                                 </h3>
                             </div>
@@ -4788,8 +4788,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Interpretación</p>
+                                <div class="px-3 border-l border-gray-200 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Interpretación</p>
                                     <p
                                         class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
                                         :class="claseColorInterpretacionPQBLista"
@@ -4806,7 +4806,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <div v-if="typeof trastornoLimitePersonalidad === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, trastornoLimitePersonalidad, 'Trastorno Limite Personalidad')">
@@ -4824,12 +4824,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             trastornoLimitePersonalidad.updatedAt ? new Date(trastornoLimitePersonalidad.updatedAt).getTime() : null,
                             'Trastorno Limite Personalidad')"
                         @mouseleave="handleHoverLeave">
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-rose-100 rounded-lg mr-4 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-rose-100 rounded-lg mr-3 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-heart-crack text-rose-600 text-lg"></i>
                         </div>
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Trastorno límite de la personalidad
                                 </h3>
                             </div>
@@ -4851,8 +4851,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Interpretación</p>
+                                <div class="px-3 border-l border-gray-200 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Interpretación</p>
                                     <p
                                         class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
                                         :class="claseColorInterpretacionTlpLista"
@@ -4869,7 +4869,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <div v-if="typeof cuestionarioNordico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, cuestionarioNordico, 'Cuestionario Nordico')">
@@ -4887,12 +4887,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             cuestionarioNordico.updatedAt ? new Date(cuestionarioNordico.updatedAt).getTime() : null,
                             'Cuestionario Nordico')"
                         @mouseleave="handleHoverLeave">
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-sky-100 rounded-lg mr-4 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-sky-100 rounded-lg mr-3 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-person text-sky-600 text-lg"></i>
                         </div>
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Cuestionario Nórdico
                                 </h3>
                             </div>
@@ -4914,8 +4914,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Resultado</p>
+                                <div class="px-3 border-l border-gray-200 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Resultado</p>
                                     <p
                                         class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
                                         :class="claseColorInterpretacionNordicoLista"
@@ -4932,7 +4932,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <div v-if="typeof evaluacionSuenoVigilia === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, evaluacionSuenoVigilia, 'Evaluacion Sueno Vigilia')">
@@ -4950,12 +4950,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             evaluacionSuenoVigilia.updatedAt ? new Date(evaluacionSuenoVigilia.updatedAt).getTime() : null,
                             'Evaluacion Sueno Vigilia')"
                         @mouseleave="handleHoverLeave">
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg mr-4 group-hover:bg-indigo-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-indigo-100 rounded-lg mr-3 group-hover:bg-indigo-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-moon text-indigo-600 text-lg"></i>
                         </div>
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Evaluación de sueño y vigilia
                                 </h3>
                             </div>
@@ -4977,8 +4977,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex xl:space-x-2 min-w-0 flex-1">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Prioridad de seguimiento</p>
+                                <div class="px-3 border-l border-gray-200 w-fit min-w-0 max-w-dynamic-entrevista-conclusion xl-max-w-dynamic-entrevista-conclusion-xl xxl-max-w-dynamic-entrevista-conclusion-2xl">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Prioridad de seguimiento</p>
                                     <p
                                         class="font-medium text-sm truncate max-w-full xl:max-w-none 2xl:max-w-none"
                                         :class="claseColorInterpretacionSuenoVigiliaLista"
@@ -4995,7 +4995,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <div v-if="typeof eventoSeguimientoCardiometabolico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico')">
@@ -5013,12 +5013,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             eventoSeguimientoCardiometabolico.updatedAt ? new Date(eventoSeguimientoCardiometabolico.updatedAt).getTime() : null,
                             'Evento Seguimiento Cardiometabolico')"
                         @mouseleave="handleHoverLeave">
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-rose-100 rounded-lg mr-4 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-rose-100 rounded-lg mr-3 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-heart-crack text-rose-600 text-lg"></i>
                         </div>
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Evento Seguimiento Cardiometabolico
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -5048,8 +5048,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
                                 <div
-                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">HTA</p>
+                                    class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">HTA</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="claseTextoEstadoCardiometabolicoLista.hipertensionArterial"
@@ -5058,8 +5058,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                     </p>
                                 </div>
                                 <div
-                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">DM2</p>
+                                    class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">DM2</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="claseTextoEstadoCardiometabolicoLista.diabetesMellitusTipo2"
@@ -5068,8 +5068,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                     </p>
                                 </div>
                                 <div
-                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Dislipidemia</p>
+                                    class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Dislipidemia</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="claseTextoEstadoCardiometabolicoLista.dislipidemia"
@@ -5078,8 +5078,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                     </p>
                                 </div>
                                 <div
-                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[11rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Nivel obesidad</p>
+                                    class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[11rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Nivel obesidad</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="claseTextoEstadoCardiometabolicoLista.obesidad"
@@ -5096,7 +5096,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <div v-if="typeof informeLongitudinalCardiometabolico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico')">
@@ -5114,12 +5114,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             informeLongitudinalCardiometabolico.updatedAt ? new Date(informeLongitudinalCardiometabolico.updatedAt).getTime() : null,
                             'Informe Longitudinal Cardiometabolico')"
                         @mouseleave="handleHoverLeave">
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-rose-100 rounded-lg mr-4 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-rose-100 rounded-lg mr-3 group-hover:bg-rose-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-heart-crack text-rose-600 text-lg"></i>
                         </div>
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Informe Longitudinal Cardiometabolico
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -5149,8 +5149,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
                                 <div
-                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Riesgo</p>
+                                    class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Riesgo</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="chipsInformeLongitudinalLista.riesgo.clase"
@@ -5159,8 +5159,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                     </p>
                                 </div>
                                 <div
-                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Trayectoria</p>
+                                    class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Trayectoria</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="chipsInformeLongitudinalLista.trayectoria.clase"
@@ -5169,8 +5169,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                     </p>
                                 </div>
                                 <div
-                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">% Asistencia</p>
+                                    class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[9.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">% Asistencia</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug tabular-nums"
                                         :class="chipsInformeLongitudinalLista.asistencia.clase"
@@ -5179,8 +5179,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                     </p>
                                 </div>
                                 <div
-                                    class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[11rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Consistencia</p>
+                                    class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[11rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Consistencia</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="chipsInformeLongitudinalLista.consistencia.clase"
@@ -5197,7 +5197,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <div v-if="typeof informeLongitudinalAudiometrico === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <div class="mr-4 flex-shrink-0">
                         <input
-                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out hover:scale-110 cursor-pointer"
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out cursor-pointer"
                             :class="isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500'"
                             type="checkbox" :checked="isSelected"
                             @change="(event) => handleCheckboxChange(event, informeLongitudinalAudiometrico, 'Informe Longitudinal Audiometrico')">
@@ -5215,12 +5215,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             informeLongitudinalAudiometrico.updatedAt ? new Date(informeLongitudinalAudiometrico.updatedAt).getTime() : null,
                             'Informe Longitudinal Audiometrico')"
                         @mouseleave="handleHoverLeave">
-                        <div class="hidden md:flex items-center justify-center w-12 h-12 bg-sky-100 rounded-lg mr-4 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-sky-100 rounded-lg mr-3 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
                             <i class="fa-solid fa-ear-listen text-sky-600 text-lg"></i>
                         </div>
                         <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
                             <div class="flex items-center mb-1 flex-wrap gap-1">
-                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
                                     Informe longitudinal audiométrico
                                 </h3>
                                 <BadgeNotaAclaratoria
@@ -5248,8 +5248,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         </div>
                         <div class="hidden xl:flex xl:flex-1 xl:min-w-0 min-w-0">
                             <div class="text-sm flex flex-wrap xl:flex-nowrap xl:space-x-2 gap-y-2 min-w-0 flex-1">
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[8.5rem] max-w-[12.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Periodo</p>
+                                <div class="px-3 border-l border-gray-200 min-w-[8.5rem] max-w-[12.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Periodo</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="chipsInformeLongitudinalAudiometricoLista.periodo.clase"
@@ -5257,16 +5257,16 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                         {{ chipsInformeLongitudinalAudiometricoLista.periodo.label }}
                                     </p>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">Audiometrías</p>
+                                <div class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[10rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Audiometrías</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="chipsInformeLongitudinalAudiometricoLista.audiometrias.clase">
                                         {{ chipsInformeLongitudinalAudiometricoLista.audiometrias.label }}
                                     </p>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">OD</p>
+                                <div class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">OD</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="chipsInformeLongitudinalAudiometricoLista.od.clase"
@@ -5274,8 +5274,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                                         {{ chipsInformeLongitudinalAudiometricoLista.od.label }}
                                     </p>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg px-2 py-1 border border-gray-100 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
-                                    <p class="text-gray-600 text-xs font-medium mb-0.5 uppercase tracking-wide">OI</p>
+                                <div class="px-3 border-l border-gray-200 min-w-[7.5rem] max-w-[10.5rem] flex-shrink-0">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">OI</p>
                                     <p
                                         class="font-medium text-xs sm:text-sm leading-snug"
                                         :class="chipsInformeLongitudinalAudiometricoLista.oi.clase"

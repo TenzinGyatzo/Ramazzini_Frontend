@@ -235,13 +235,9 @@ const hasExtraSection = computed(() => !!slots.extraSection);
 </script>
 
 <template>
-    <div class="w-full rounded-xl shadow-lg overflow-hidden border border-gray-100 bg-white transition-all duration-300 hover:shadow-xl">
-        <!-- Header mejorado con gradiente y contador -->
-        <div class="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 relative overflow-hidden">
-            <!-- Patrón de fondo sutil -->
-            <div class="absolute inset-0 bg-black opacity-5">
-                <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 20px 20px;"></div>
-            </div>
+    <div class="w-full rounded-xl overflow-hidden border border-gray-200 bg-white">
+        <!-- Encabezado del año -->
+        <div class="grupo-documentos__header relative overflow-hidden bg-emerald-600">
 
             <div class="relative px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -253,10 +249,10 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                     </div>
 
                     <div>
-                        <h1 class="text-xl sm:text-2xl font-semibold text-white tracking-normal">
+                        <h2 class="text-lg font-semibold text-white tracking-normal">
                             Expediente {{ year }}
-                        </h1>
-                        <p class="text-emerald-100 text-xs sm:text-sm font-medium tracking-wide">
+                        </h2>
+                        <p class="text-emerald-100 text-xs sm:text-sm">
                             {{ totalDocumentos }} documento{{ totalDocumentos !== 1 ? 's' : '' }} en total
                         </p>
                     </div>
@@ -264,9 +260,9 @@ const hasExtraSection = computed(() => !!slots.extraSection);
 
                 <!-- Indicador de modo eliminación centrado -->
                 <div v-if="isDeletionMode" class="pointer-events-none flex justify-center md:justify-end lg:justify-center w-full md:w-auto md:absolute md:inset-0 md:mr-4">
-                    <div class="flex items-center space-x-3 bg-red-600 bg-opacity-90 rounded-xl px-6 py-3 shadow-lg animate-fade-pulse">
+                    <div class="flex items-center space-x-3 bg-red-600 rounded-lg px-4 py-2 animate-fade-pulse">
                         <i class="fas fa-exclamation-triangle text-red-100 text-lg"></i>
-                        <span class="text-white text-lg font-semibold">Modo eliminación activado</span>
+                        <span class="text-white text-base font-semibold">Modo eliminación activado</span>
                         <i class="fas fa-exclamation-triangle text-red-100 text-lg"></i>
                     </div>
                 </div>
@@ -284,7 +280,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         </div>
 
         <!-- Barra de selección mejorada -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 bg-white border-b border-gray-200">
             <div class="flex flex-wrap items-start sm:items-center gap-3 sm:gap-4">
                 <!-- Checkbox personalizado -->
                 <div class="relative">
@@ -301,8 +297,8 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                         :class="{
                             'bg-emerald-500 border-emerald-600 shadow-sm': selectAll && !isDeletionMode,
                             'bg-red-500 border-red-600 shadow-sm': selectAll && isDeletionMode,
-                            'border-gray-300 hover:border-emerald-500 hover:bg-emerald-50 hover:scale-105': !selectAll && !isDeletionMode,
-                            'border-gray-300 hover:border-red-500 hover:bg-red-50 hover:scale-105': !selectAll && isDeletionMode
+                            'border-gray-300 hover:border-emerald-500 hover:bg-emerald-50': !selectAll && !isDeletionMode,
+                            'border-gray-300 hover:border-red-500 hover:bg-red-50': !selectAll && isDeletionMode
                         }"
                     >
                         <svg v-if="selectAll" class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -867,36 +863,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
 </template>
 
 <style scoped>
-/* Animaciones personalizadas */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.space-y-1 > div {
-    animation: fadeInUp 0.3s ease-out forwards;
-}
-
 /* Hover effects mejorados */
 .hover\:bg-gray-50:hover {
     background-color: #f9fafb;
-    transform: translateX(2px);
 }
 
 /* Transiciones suaves */
 .transition-all {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Efecto de sombra en hover */
-.hover\:shadow-xl:hover {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* Animación del indicador de selección */
@@ -930,7 +904,6 @@ const hasExtraSection = computed(() => !!slots.extraSection);
 /* Efectos de hover mejorados para modo eliminación */
 .hover\:bg-red-50:hover {
     background-color: #fef2f2;
-    transform: translateX(2px);
 }
 
 .hover\:border-red-300:hover {
