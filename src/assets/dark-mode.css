@@ -3940,3 +3940,21 @@ html.dark-mode .centros-empresa-btn-secondary--riesgos {
 html.dark-mode .centros-empresa-btn-secondary--riesgos:hover:not(:disabled) {
   background-color: #4c1d95 !important;
 }
+
+/* ModalRiesgos: tarjetas de agentes y título (hover de Tailwind y .text-lg pierden ante el remapeo) */
+html.dark-mode .modal-riesgos__titulo {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .modal-riesgos__agente:not(.modal-riesgos__agente--activo):hover {
+  border-color: #b45309 !important;
+}
+
+html.dark-mode .modal-riesgos__agente--activo {
+  border-color: #d97706 !important;
+  color: #fde68a !important;
+}
+
+html.dark-mode .modal-riesgos__agente--activo i {
+  color: #fbbf24 !important;
+}
