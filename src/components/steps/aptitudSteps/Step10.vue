@@ -413,7 +413,7 @@ const generarTextoPrecargado = async () => {
         <div class="font-light mb-4">
             <textarea
                 class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-64"
-                v-model="formDataAptitud.resultados" :placeholder="inicioSugerido || 'Cargando datos...'" required>
+                v-model="formDataAptitud.resultados" :placeholder="isMounted ? inicioSugerido : 'Generando texto...'" required>
             </textarea>
         </div>
 

@@ -27,6 +27,9 @@ const { formDataAptitud } = useFormDataStore();
 
 const nearestOpts = { sameYearAsReference: true };
 
+// Mientras se consultan los documentos, el campo avisa que el texto se está armando
+const cargando = ref(true);
+
 // Valor local para alteracionesSalud
 const alteracionesSalud = ref('');
 
@@ -226,6 +229,8 @@ onMounted(async () => {
     actualizarAlteracionesSalud();
   } catch (error) {
     console.error('Error al obtener los documentos:', error);
+  } finally {
+    cargando.value = false;
   }
 });
 
@@ -259,7 +264,7 @@ watch(
           ? 'w-full p-2 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 min-h-[14rem]'
           : 'w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-80'"
         v-model="formDataAptitud.alteracionesSalud"
-        :placeholder="textoBase || 'Cargando datos...'"
+        :placeholder="cargando ? 'Generando texto...' : textoBase"
         required
       >
       </textarea>
