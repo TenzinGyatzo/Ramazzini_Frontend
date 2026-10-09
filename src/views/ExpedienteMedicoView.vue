@@ -24,6 +24,8 @@ import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales
 import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 import ModalInasistenciasCardiometabolicas from '@/components/ModalInasistenciasCardiometabolicas.vue';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
+import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
+import { useUserPermissions } from '@/composables/useUserPermissions';
 import ModalDeclaracionVeracidad from '@/components/ModalDeclaracionVeracidad.vue';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import { useEliminacion } from '@/composables/useEliminacion';
@@ -71,8 +73,13 @@ const resultadosClinicos = useResultadosClinicosStore();
 const { fetchBorradoresPendientes, invalidateBorradoresNotaMedicaCache } =
   useBorradoresNotaMedica();
 
-const { canCreateDocument, getRestrictionMessage, executeIfCanManageDocumentosExternos } =
-  usePermissionRestrictions();
+const {
+  canCreateDocument,
+  getRestrictionMessage,
+  executeIfCanManageDocumentosExternos,
+  executeIfCanManageTrabajadores,
+} = usePermissionRestrictions();
+const { canManageTrabajadores } = useUserPermissions();
 // Los resultados clínicos usan el mismo permiso que los documentos de evaluación
 const { canManageDocumentosEvaluacion: canManageResultadosClinicos } =
   useRolePermissions();
@@ -90,6 +97,38 @@ const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);
 const showDeclaracionVeracidadModal = ref(false);
 const showRiesgosModal = ref(false);
+
+// Editar los datos del trabajador sin salir de su expediente
+const showTrabajadorModal = ref(false);
+
+const contextoTrabajador = () => ({
+  empresaId: String(route.params.idEmpresa ?? empresas.currentEmpresaId ?? ''),
+  centroId: String(route.params.idCentroTrabajo ?? ''),
+  trabajadorId: String(route.params.idTrabajador ?? trabajadores.currentTrabajadorId ?? ''),
+});
+
+const abrirEdicionTrabajador = () => {
+  executeIfCanManageTrabajadores(async () => {
+    const { empresaId, centroId } = contextoTrabajador();
+    if (!empresaId || !centroId || !trabajadores.currentTrabajador?._id) return;
+    // El modal guarda con el centro seleccionado: asegurar que sea el de este trabajador
+    if (String(centrosTrabajo.currentCentroTrabajoId ?? '') !== centroId) {
+      await centrosTrabajo.fetchCentroTrabajoById(empresaId, centroId);
+    }
+    showTrabajadorModal.value = true;
+  }, 'editar trabajadores');
+};
+
+const cerrarEdicionTrabajador = () => {
+  showTrabajadorModal.value = false;
+  // Que el encabezado muestre los datos recién guardados
+  const { empresaId, centroId, trabajadorId } = contextoTrabajador();
+  if (empresaId && centroId && trabajadorId) {
+    void trabajadores
+      .fetchTrabajadorById(empresaId, centroId, trabajadorId)
+      .catch((error) => console.error('Error al recargar el trabajador:', error));
+  }
+};
 const showSubscriptionModal = ref(false);
 const showFinalizeModal = ref(false);
 const isFinalizing = ref(false);
@@ -1067,6 +1106,18 @@ const crearDocumento = (tipoDocumento: string) =>
         name="modal-work"
         :duration="{ enter: 230, leave: 150 }"
       >
+        <ModalTrabajadores
+          v-if="showTrabajadorModal"
+          @closeModal="cerrarEdicionTrabajador"
+          @openSubscriptionModal="showSubscriptionModal = true"
+        />
+      </Transition>
+
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalDeclaracionVeracidad
           v-if="showDeclaracionVeracidadModal"
           :trabajador="trabajadores.currentTrabajador ?? null"
@@ -1202,9 +1253,25 @@ const crearDocumento = (tipoDocumento: string) =>
 
               <!-- Datos del trabajador -->
               <div class="min-w-0 flex-1">
-                <h1 class="expediente-trabajador-name truncate text-lg font-semibold text-gray-900 sm:text-xl">
-                  {{ formatNombreCompleto(trabajadores.currentTrabajador) }}
-                </h1>
+                <div class="flex min-w-0 items-center gap-2">
+                  <h1 class="expediente-trabajador-name min-w-0 truncate text-lg font-semibold text-gray-900 sm:text-xl">
+                    {{ formatNombreCompleto(trabajadores.currentTrabajador) }}
+                  </h1>
+                  <button
+                    type="button"
+                    class="btn-editar-entidad inline-flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors duration-150"
+                    :class="canManageTrabajadores
+                      ? 'hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700'
+                      : 'cursor-not-allowed opacity-50'"
+                    :disabled="!canManageTrabajadores"
+                    :title="canManageTrabajadores ? 'Editar datos del trabajador' : 'No tienes permisos para editar trabajadores'"
+                    :aria-label="'Editar datos del trabajador'"
+                    @click="abrirEdicionTrabajador"
+                  >
+                    <i class="fas fa-pen text-[10px]" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Editar</span>
+                  </button>
+                </div>
                 <p class="expediente-trabajador-meta mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm text-gray-600">
                   <span
                     v-for="dato in datosTrabajador"

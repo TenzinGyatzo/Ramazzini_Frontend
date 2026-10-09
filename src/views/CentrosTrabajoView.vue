@@ -8,6 +8,7 @@ import { ref, inject, computed, watch } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import GreenButton from '@/components/GreenButton.vue';
 import ModalCentros from '@/components/ModalCentros.vue';
+import ModalEmpresas from '@/components/ModalEmpresas.vue';
 import { useEliminacion, type EliminacionRequest } from '@/composables/useEliminacion';
 import EliminacionAPI from '@/api/EliminacionAPI';
 import type { Empresa } from '@/interfaces/empresa.interface';
@@ -29,10 +30,33 @@ const proveedorSaludStore = useProveedorSaludStore();
 const userStore = useUserStore();
 const route = useRoute();
 const router = useRouter();
-const { canManageCentrosTrabajo, canAccessDashboardSalud, canAccessRiesgosTrabajo } = useUserPermissions();
-const { executeIfCanManageCentrosTrabajo } = usePermissionRestrictions();
+const { canManageCentrosTrabajo, canManageEmpresas, canAccessDashboardSalud, canAccessRiesgosTrabajo } = useUserPermissions();
+const { executeIfCanManageCentrosTrabajo, executeIfCanManageEmpresas } = usePermissionRestrictions();
 
 const showModal = ref(false);
+
+// Editar la empresa sin salir de sus centros de trabajo
+const showEmpresaModal = ref(false);
+
+const recargarEmpresaActual = async () => {
+  const empresaId = String(route.params.idEmpresa ?? empresas.currentEmpresaId ?? '');
+  if (!empresaId) return false;
+  await empresas.fetchEmpresaById(empresaId);
+  return true;
+};
+
+const abrirEdicionEmpresa = () => {
+  executeIfCanManageEmpresas(async () => {
+    // El modal edita la empresa cargada completa, no el resumen del listado
+    if (await recargarEmpresaActual()) showEmpresaModal.value = true;
+  }, 'editar empresas');
+};
+
+const cerrarEdicionEmpresa = () => {
+  showEmpresaModal.value = false;
+  // Que el encabezado muestre el nombre y el logotipo recién guardados
+  void recargarEmpresaActual();
+};
 const totalTrabajadores = ref(0);
 const loadingTrabajadores = ref(false);
 const tieneRiesgosTrabajo = ref(false);
@@ -257,6 +281,14 @@ watch(
         <ModalCentros v-if="showModal" @closeModal="closeModal" />
       </Transition>
 
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
+        <ModalEmpresas v-if="showEmpresaModal" @closeModal="cerrarEdicionEmpresa" />
+      </Transition>
+
       <div class="min-h-screen">
         <div class="centros-page mx-auto min-w-0 max-w-7xl px-4 sm:px-6 lg:px-8">
           <!-- Header moderno con información de la empresa -->
@@ -280,12 +312,29 @@ watch(
                   
                   <!-- Información de la empresa -->
                   <div class="min-w-0 flex-1">
-                    <h1
-                      class="centros-empresa-title text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl"
-                      :title="empresas.currentEmpresa?.nombreComercial || 'Cargando empresa...'"
-                    >
-                      {{ empresas.currentEmpresa?.nombreComercial || 'Cargando empresa...' }}
-                    </h1>
+                    <div class="flex min-w-0 items-center gap-2">
+                      <h1
+                        class="centros-empresa-title min-w-0 text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl"
+                        :title="empresas.currentEmpresa?.nombreComercial || 'Cargando empresa...'"
+                      >
+                        {{ empresas.currentEmpresa?.nombreComercial || 'Cargando empresa...' }}
+                      </h1>
+                      <button
+                        v-if="empresas.currentEmpresa"
+                        type="button"
+                        class="btn-editar-entidad inline-flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors duration-150"
+                        :class="canManageEmpresas
+                          ? 'hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700'
+                          : 'cursor-not-allowed opacity-50'"
+                        :disabled="!canManageEmpresas"
+                        :title="canManageEmpresas ? 'Editar datos de la empresa' : 'No tienes permisos para editar empresas'"
+                        :aria-label="'Editar datos de la empresa'"
+                        @click="abrirEdicionEmpresa"
+                      >
+                        <i class="fas fa-pen text-[10px]" aria-hidden="true"></i>
+                        <span class="hidden sm:inline">Editar</span>
+                      </button>
+                    </div>
                     <p
                       v-if="empresas.currentEmpresa?.razonSocial"
                       class="empresa-item-subtitle centros-empresa-subtitle mt-1 text-sm text-gray-600 sm:text-base"

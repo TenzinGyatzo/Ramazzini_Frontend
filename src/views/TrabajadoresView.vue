@@ -24,6 +24,7 @@ import ModalCargaMasiva from '@/components/ModalCargaMasiva.vue';
 import ModalExportarTrabajadores from '@/components/ModalExportarTrabajadores.vue';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
+import ModalCentros from '@/components/ModalCentros.vue';
 import ModalRTs from '@/components/ModalRTs.vue';
 import ModalResumenImportacion from '@/components/ModalResumenImportacion.vue';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
@@ -67,8 +68,8 @@ const trabajadores = useTrabajadoresStore();
 const modalResumenImportacion = useModalResumenImportacionStore();
 const route = useRoute();
 const router = useRouter();
-const { canManageTrabajadores } = useUserPermissions();
-const { executeIfCanManageTrabajadores } = usePermissionRestrictions();
+const { canManageTrabajadores, canManageCentrosTrabajo } = useUserPermissions();
+const { executeIfCanManageTrabajadores, executeIfCanManageCentrosTrabajo } = usePermissionRestrictions();
 const { isSIRES } = useRegulatoryPolicy();
 
 const plantillaImportacion = computed(() =>
@@ -86,6 +87,30 @@ const exportKeysWithData = ref<string[]>([]);
 const showSubscriptionModal = ref(false);
 const showRTsModal = ref(false);
 const showRisksModal = ref(false);
+
+// Editar el centro de trabajo sin salir de su lista de trabajadores
+const showCentroModal = ref(false);
+
+const recargarCentroActual = async () => {
+  const empresaId = String(route.params.idEmpresa ?? empresas.currentEmpresaId ?? '');
+  const centroId = String(route.params.idCentroTrabajo ?? centrosTrabajo.currentCentroTrabajoId ?? '');
+  if (!empresaId || !centroId) return false;
+  await centrosTrabajo.fetchCentroTrabajoById(empresaId, centroId);
+  return true;
+};
+
+const abrirEdicionCentro = () => {
+  executeIfCanManageCentrosTrabajo(async () => {
+    // El modal edita el centro cargado completo, no el resumen del listado
+    if (await recargarCentroActual()) showCentroModal.value = true;
+  }, 'editar centros de trabajo');
+};
+
+const cerrarEdicionCentro = () => {
+  showCentroModal.value = false;
+  // Que el encabezado muestre el nombre recién guardado
+  void recargarCentroActual();
+};
 const showFusionModal = ref(false);
 const fusionTrabajadorA = ref('');
 const fusionTrabajadorB = ref('');
@@ -987,6 +1012,14 @@ const toggleVigencias = () => {
         name="modal-work"
         :duration="{ enter: 230, leave: 150 }"
       >
+        <ModalCentros v-if="showCentroModal" @closeModal="cerrarEdicionCentro" />
+      </Transition>
+
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalFusionTrabajadores
           v-if="showFusionModal && fusionTrabajadorA"
           :trabajador-a-id="fusionTrabajadorA"
@@ -1075,10 +1108,26 @@ const toggleVigencias = () => {
 
             <!-- Título y descripción -->
             <div class="min-w-0 flex-1">
-              <h2 class="trabajadores-header__title flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl">
-                <i class="fas fa-map-marker-alt shrink-0 text-base text-emerald-600"></i>
-                <span class="truncate">{{ centrosTrabajo.currentCentroTrabajo?.nombreCentro }}</span>
-              </h2>
+              <div class="flex min-w-0 items-center gap-2">
+                <h2 class="trabajadores-header__title flex min-w-0 items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl">
+                  <i class="fas fa-map-marker-alt shrink-0 text-base text-emerald-600"></i>
+                  <span class="truncate">{{ centrosTrabajo.currentCentroTrabajo?.nombreCentro }}</span>
+                </h2>
+                <button
+                  type="button"
+                  class="btn-editar-entidad inline-flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors duration-150"
+                  :class="canManageCentrosTrabajo
+                    ? 'hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700'
+                    : 'cursor-not-allowed opacity-50'"
+                  :disabled="!canManageCentrosTrabajo"
+                  :title="canManageCentrosTrabajo ? 'Editar centro de trabajo' : 'No tienes permisos para editar centros de trabajo'"
+                  :aria-label="'Editar centro de trabajo'"
+                  @click="abrirEdicionCentro"
+                >
+                  <i class="fas fa-pen text-[10px]" aria-hidden="true"></i>
+                  <span class="hidden sm:inline">Editar</span>
+                </button>
+              </div>
               <p v-if="empresas.currentEmpresa?.nombreComercial" class="mt-0.5 flex items-center gap-2 text-sm text-gray-600">
                 <i class="fas fa-building shrink-0 text-xs text-gray-500"></i>
                 <span class="truncate">
