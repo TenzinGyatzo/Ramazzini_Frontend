@@ -1,5 +1,6 @@
 <script setup>
 import { inject, ref, watch, computed, provide } from 'vue';
+import ModalBajaTrabajador from '@/components/ModalBajaTrabajador.vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -208,6 +209,8 @@ const estadosCiviles = [
 
 // Variables reactivas para el modal de transferencia
 const mostrarModalTransferencia = ref(false);
+const mostrarModalBaja = ref(false);
+const confirmandoBaja = ref(false);
 const empresasDisponibles = ref([]);
 const empresaSeleccionada = ref(null);
 const centrosDisponibles = ref([]);
@@ -507,8 +510,37 @@ const {
   enabled: () =>
     !showFusionModal.value &&
     !mostrarModalTransferencia.value &&
+    !mostrarModalBaja.value &&
     !trabajadores.loadingModal,
 });
+
+// Baja del trabajador desde su edición: misma explicación y confirmación que en la tabla
+const puedeDarseDeBaja = computed(
+  () => !!trabajadores.currentTrabajador?._id && trabajadores.currentTrabajador?.estadoLaboral === 'Activo',
+);
+
+const confirmarBaja = async () => {
+  if (confirmandoBaja.value) return;
+  const empresaId = empresas.currentEmpresaId;
+  const centroId = centrosTrabajo.currentCentroTrabajoId;
+  const trabajadorId = trabajadores.currentTrabajador?._id;
+  if (!empresaId || !centroId || !trabajadorId) return;
+
+  confirmandoBaja.value = true;
+  try {
+    await trabajadores.updateTrabajador(empresaId, centroId, trabajadorId, { estadoLaboral: 'Inactivo' });
+    toast.open({ message: 'Baja de trabajador registrada' });
+    mostrarModalBaja.value = false;
+    // La baja cierra la edición: lo que no se había guardado del formulario se descarta
+    forceClose();
+    trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId);
+  } catch (error) {
+    console.error('Error al registrar la baja', error);
+    toast.open({ message: 'Error al actualizar el estado laboral', type: 'error' });
+  } finally {
+    confirmandoBaja.value = false;
+  }
+};
 
 const GENERIC_CURP = 'XXXX999999XXXXXX99';
 
@@ -1030,15 +1062,30 @@ const {
             <h1 class="text-2xl sm:text-3xl text-center sm:text-left w-full sm:w-auto">
               {{ trabajadores.currentTrabajador._id ? 'Editar Trabajador' : 'Registrar Trabajador' }}
             </h1>
-            <!-- Botón de transferir solo visible cuando se está editando -->
-            <button
+            <!-- Baja y transferencia: solo al editar un trabajador existente -->
+            <div
               v-if="trabajadores.currentTrabajador._id"
-              class="mr-8 w-full sm:w-auto text-xs sm:text-sm md:text-base px-3 py-2 sm:py-1 text-emerald-600 hover:text-emerald-700 border border-emerald-300 hover:border-emerald-400 rounded-md transition-colors duration-200 hover:bg-emerald-50"
-              @click="transferirTrabajador"
-              title="Transferir a otro centro de trabajo">
-              <span>Transferir</span>
-              <span class="inline sm:hidden"> a otro centro de trabajo</span>
-            </button>
+              class="mr-8 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
+            >
+              <button
+                v-if="puedeDarseDeBaja"
+                type="button"
+                class="modal-trabajadores__btn-baja inline-flex w-full items-center justify-center gap-2 rounded-md border border-orange-300 px-3 py-2 text-xs text-orange-600 transition-colors duration-200 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700 sm:w-auto sm:py-1 sm:text-sm md:text-base"
+                title="Dar de baja: archiva al trabajador sin eliminar su expediente"
+                @click="mostrarModalBaja = true"
+              >
+                <i class="fa-solid fa-person-arrow-down-to-line text-sm"></i>
+                <span>Dar de baja</span>
+              </button>
+              <button
+                type="button"
+                class="inline-flex w-full items-center justify-center gap-2 sm:w-auto text-xs sm:text-sm md:text-base px-3 py-2 sm:py-1 text-emerald-600 hover:text-emerald-700 border border-emerald-300 hover:border-emerald-400 rounded-md transition-colors duration-200 hover:bg-emerald-50"
+                @click="transferirTrabajador"
+                title="Transferir a otro centro de trabajo">
+                <i class="fa-solid fa-right-left text-sm"></i>
+                <span>Transferir<span class="inline sm:hidden"> a otro centro de trabajo</span></span>
+              </button>
+            </div>
           </div>
           <p
             v-if="identificationSectionNotice"
@@ -1764,6 +1811,19 @@ const {
       @fused="onFusionCompletada"
     />
   </Transition>
+    <Transition
+      appear
+      name="modal-work"
+      :duration="{ enter: 230, leave: 150 }"
+    >
+      <ModalBajaTrabajador
+        v-if="mostrarModalBaja"
+        :nombre-trabajador="formatNombreCompleto(trabajadores.currentTrabajador)"
+        :confirmando="confirmandoBaja"
+        @confirmar="confirmarBaja"
+        @cancelar="mostrarModalBaja = false"
+      />
+    </Transition>
   </div>
 </template>
 
