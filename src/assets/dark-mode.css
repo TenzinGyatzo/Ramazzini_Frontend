@@ -3830,24 +3830,68 @@ html.dark-mode .expediente-trabajador-meta .text-violet-600 {
   color: #c4b5fd !important;
 }
 
+html.dark-mode .expediente-docs-row--registrar {
+  border-top-color: #334155 !important;
+}
+
+html.dark-mode .expediente-docs-label {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .expediente-crear-btn {
+  background-color: #1e293b !important;
+  border-color: #10b981 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .expediente-crear-btn i {
+  color: #34d399 !important;
+}
+
 html.dark-mode .expediente-crear-btn:hover {
   background-color: rgba(6, 78, 59, 0.55) !important;
   border-color: #34d399 !important;
   color: #6ee7b7 !important;
 }
 
-html.dark-mode .expediente-crear-btn:hover i {
-  color: #6ee7b7 !important;
-}
-
 html.dark-mode .expediente-secondary-btn {
   background-color: #1e293b !important;
-  border-color: #10b981 !important;
-  color: #6ee7b7 !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .expediente-secondary-btn i,
+html.dark-mode .expediente-accion-link i {
+  color: #64748b !important;
 }
 
 html.dark-mode .expediente-secondary-btn:hover {
-  background-color: #064e3b !important;
+  background-color: rgba(6, 78, 59, 0.55) !important;
+  border-color: #34d399 !important;
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .expediente-secondary-btn:hover i,
+html.dark-mode .expediente-accion-link:hover i {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .expediente-contador {
+  background-color: #065f46 !important;
+  color: #a7f3d0 !important;
+}
+
+html.dark-mode .expediente-contador--vacio {
+  background-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .expediente-accion-link {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .expediente-accion-link:hover {
+  color: #6ee7b7 !important;
 }
 
 html.dark-mode .expediente-empty__card.bg-teal-50 {

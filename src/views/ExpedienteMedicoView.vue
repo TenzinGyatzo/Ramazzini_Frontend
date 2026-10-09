@@ -1066,6 +1066,18 @@ const tiposDocumentoCrear = [
   { tipo: 'notaMedica', nombre: 'Nota Médica', descripcion: 'Consultas', icono: 'fas fa-stethoscope' },
 ];
 
+// Contadores de la fila "Registrar": dicen qué hay capturado sin abrir cada ventana
+const totalAgentesRiesgo = computed(
+  () => trabajadores.currentTrabajador?.agentesRiesgoActuales?.length ?? 0,
+);
+
+const totalResultadosClinicos = computed(() =>
+  Object.values(resultadosClinicos.resultsByYear || {}).reduce(
+    (total, resultados) => total + (Array.isArray(resultados) ? resultados.length : 0),
+    0,
+  ),
+);
+
 const crearDocumento = (tipoDocumento: string) =>
   navigateTo('crear-documento', {
     idEmpresa: empresas.currentEmpresaId,
@@ -1313,54 +1325,93 @@ const crearDocumento = (tipoDocumento: string) =>
           </div>
         </Transition>
 
-        <!-- Panel de creación de documentos -->
+        <!-- Panel de acciones: crear documentos (lo frecuente) y registrar datos del trabajador -->
         <div class="expediente-docs-panel mb-4 rounded-xl border border-gray-200 bg-white px-4 py-3 sm:px-5">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="mr-1 text-sm font-medium text-gray-500">Crear</span>
-            <button
-              v-for="tipo in tiposDocumentoCrear"
-              :key="tipo.tipo"
-              type="button"
-              :title="tipo.descripcion"
-              class="expediente-crear-btn group inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors duration-150 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700"
-              @click="crearDocumento(tipo.tipo)"
-            >
-              <i :class="tipo.icono" class="w-4 text-center text-gray-400 transition-colors duration-150 group-hover:text-emerald-600"></i>
-              {{ tipo.nombre }}
-            </button>
+          <div class="expediente-docs-row">
+            <span class="expediente-docs-label">Crear</span>
+            <div class="expediente-docs-row__botones">
+              <button
+                v-for="tipo in tiposDocumentoCrear"
+                :key="tipo.tipo"
+                type="button"
+                :title="tipo.descripcion"
+                class="expediente-crear-btn"
+                @click="crearDocumento(tipo.tipo)"
+              >
+                <i :class="tipo.icono" aria-hidden="true"></i>
+                {{ tipo.nombre }}
+              </button>
+              <button
+                type="button"
+                class="expediente-crear-btn expediente-crear-btn--mas"
+                title="Cuestionarios, receta, constancias y el resto de los documentos que se pueden crear"
+                @click="toggleCuestionariosModal"
+              >
+                <i class="fas fa-file-alt" aria-hidden="true"></i>
+                Más documentos
+                <i class="fas fa-chevron-down expediente-crear-btn__flecha" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
 
-          <div class="expediente-secondary-actions mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3">
-            <button type="button" class="expediente-secondary-btn" @click="toggleDocumentoExternoModal">
-              <i class="fa-solid fa-arrow-up-from-bracket"></i>
-              Documento externo
-            </button>
-            <button type="button" class="expediente-secondary-btn" @click="toggleDeclaracionVeracidadModal">
-              <i class="fas fa-file-signature"></i>
-              Declaración de veracidad
-            </button>
-            <button
-              type="button"
-              class="expediente-secondary-btn"
-              title="Registrar a qué agentes de riesgo se expone el trabajador"
-              @click="showRiesgosModal = true"
-            >
-              <i class="fa-solid fa-exclamation-triangle"></i>
-              Agentes de riesgo
-            </button>
-            <button type="button" class="expediente-secondary-btn" @click="toggleCuestionariosModal">
-              <i class="fas fa-file-alt"></i>
-              Más documentos
-            </button>
-            <button
-              v-if="canManageResultadosClinicos"
-              type="button"
-              class="expediente-secondary-btn"
-              @click="abrirResultadosClinicosPanel"
-            >
-              <i class="fas fa-clipboard-check"></i>
-              Resultados
-            </button>
+          <div class="expediente-docs-row expediente-docs-row--registrar">
+            <span class="expediente-docs-label">Registrar</span>
+            <div class="expediente-docs-row__botones">
+              <button
+                type="button"
+                class="expediente-secondary-btn"
+                title="Subir un documento elaborado fuera de Ramazzini"
+                @click="toggleDocumentoExternoModal"
+              >
+                <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+                Documentos externos
+                <span
+                  class="expediente-contador"
+                  :class="{ 'expediente-contador--vacio': totalDocumentosExternos === 0 }"
+                  :title="totalDocumentosExternos === 1 ? '1 documento externo en el expediente' : totalDocumentosExternos + ' documentos externos en el expediente'"
+                >{{ totalDocumentosExternos }}</span>
+              </button>
+              <button
+                type="button"
+                class="expediente-secondary-btn"
+                title="Registrar a qué agentes de riesgo se expone el trabajador"
+                @click="showRiesgosModal = true"
+              >
+                <i class="fa-solid fa-exclamation-triangle" aria-hidden="true"></i>
+                Agentes de riesgo
+                <span
+                  class="expediente-contador"
+                  :class="{ 'expediente-contador--vacio': totalAgentesRiesgo === 0 }"
+                  :title="totalAgentesRiesgo === 1 ? '1 agente registrado' : totalAgentesRiesgo + ' agentes registrados'"
+                >{{ totalAgentesRiesgo }}</span>
+              </button>
+              <button
+                v-if="canManageResultadosClinicos"
+                type="button"
+                class="expediente-secondary-btn"
+                title="Registrar resultados de estudios: espirometría, EKG, rayos X, laboratorio y otros"
+                @click="abrirResultadosClinicosPanel"
+              >
+                <i class="fas fa-clipboard-check" aria-hidden="true"></i>
+                Resultados clínicos
+                <span
+                  class="expediente-contador"
+                  :class="{ 'expediente-contador--vacio': totalResultadosClinicos === 0 }"
+                  :title="totalResultadosClinicos === 1 ? '1 resultado registrado' : totalResultadosClinicos + ' resultados registrados'"
+                >{{ totalResultadosClinicos }}</span>
+              </button>
+
+              <!-- No registra nada: descarga el formato que firma el trabajador -->
+              <button
+                type="button"
+                class="expediente-accion-link"
+                title="Descargar el formato para que lo firme el trabajador; ya firmado se sube como documento externo"
+                @click="toggleDeclaracionVeracidadModal"
+              >
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                Declaración de veracidad
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1590,23 +1641,146 @@ const crearDocumento = (tipoDocumento: string) =>
   animation: gentle-pulse 2s ease-in-out infinite;
 }
 
-/* Acciones secundarias del panel de creación */
+/* Panel de acciones: dos filas con su etiqueta; los botones se alinean en columna */
+.expediente-docs-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.expediente-docs-row--registrar {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.expediente-docs-label {
+  flex-shrink: 0;
+  width: 4.5rem;
+  padding-top: 0.5rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.expediente-docs-row__botones {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+/* Crear: lo que se hace todo el día, con el peso visual */
+.expediente-crear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #34d399;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.expediente-crear-btn i {
+  width: 1rem;
+  color: #059669;
+  text-align: center;
+}
+
+.expediente-crear-btn:hover {
+  border-color: #059669;
+  background-color: #ecfdf5;
+  color: #065f46;
+}
+
+/* Abre el menú con el resto de los documentos, no un formulario */
+.expediente-crear-btn--mas {
+  border-style: dashed;
+}
+
+.expediente-crear-btn .expediente-crear-btn__flecha {
+  width: auto;
+  font-size: 0.625rem;
+}
+
+/* Registrar: ocasional, más discreto */
 .expediente-secondary-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #059669;
+  border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   background-color: #ffffff;
-  color: #047857;
+  color: #4b5563;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.expediente-secondary-btn i {
+  color: #9ca3af;
+  transition: color 0.15s ease;
 }
 
 .expediente-secondary-btn:hover {
+  border-color: #6ee7b7;
   background-color: #ecfdf5;
+  color: #047857;
+}
+
+.expediente-secondary-btn:hover i {
+  color: #059669;
+}
+
+.expediente-contador {
+  min-width: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: 9999px;
+  background-color: #d1fae5;
+  color: #065f46;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.expediente-contador--vacio {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Descarga de un formato: enlace, no botón de registro */
+.expediente-accion-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  padding: 0.5rem 0.25rem;
+  color: #4b5563;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.expediente-accion-link i {
+  color: #9ca3af;
+  transition: color 0.15s ease;
+}
+
+.expediente-accion-link:hover {
+  color: #047857;
+  text-decoration: underline;
+}
+
+.expediente-accion-link:hover i {
+  color: #059669;
 }
 
 @media (max-width: 479px) {
@@ -1637,6 +1811,20 @@ const crearDocumento = (tipoDocumento: string) =>
 
   .expediente-docs-panel {
     padding: 0.75rem;
+  }
+
+  .expediente-docs-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .expediente-docs-label {
+    width: auto;
+    padding-top: 0;
+  }
+
+  .expediente-accion-link {
+    margin-left: 0;
   }
 
   .expediente-crear-btn,
