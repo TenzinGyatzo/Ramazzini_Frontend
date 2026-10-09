@@ -79,13 +79,23 @@ const handleSubmit = async () => {
   try {
     const trabajadorId = trabajadores.currentTrabajador?._id;
     const empresaId = empresas.currentEmpresaId;
-    const centroId = centrosTrabajo.currentCentroTrabajoId;
+    // Desde el expediente puede no haber centro seleccionado: se toma el del trabajador
+    const centroId =
+      centrosTrabajo.currentCentroTrabajoId ?? trabajadores.currentTrabajador?.idCentroTrabajo;
 
-    if (!trabajadorId || !empresaId || !centroId) return;
+    if (!trabajadorId || !empresaId || !centroId) {
+      toast.open({ message: 'No se pudo identificar al trabajador o su centro de trabajo.', type: 'error' });
+      return;
+    }
 
+    const agentes = [...agentesSeleccionados.value];
     await trabajadores.updateTrabajador(empresaId, centroId, trabajadorId, {
-      agentesRiesgoActuales: agentesSeleccionados.value
+      agentesRiesgoActuales: agentes
     });
+    // Que el trabajador en pantalla refleje lo guardado al volver a abrir el modal
+    if (trabajadores.currentTrabajador?._id === trabajadorId) {
+      trabajadores.currentTrabajador.agentesRiesgoActuales = agentes;
+    }
 
     toast.open({ message: 'Agentes de riesgo actualizados', type: 'success' });
     forceClose();

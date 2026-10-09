@@ -23,6 +23,7 @@ import ModalAnularDocumento from '@/components/modals/ModalAnularDocumento.vue';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
 import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 import ModalInasistenciasCardiometabolicas from '@/components/ModalInasistenciasCardiometabolicas.vue';
+import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalDeclaracionVeracidad from '@/components/ModalDeclaracionVeracidad.vue';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import { useEliminacion } from '@/composables/useEliminacion';
@@ -88,6 +89,7 @@ const {
 const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);
 const showDeclaracionVeracidadModal = ref(false);
+const showRiesgosModal = ref(false);
 const showSubscriptionModal = ref(false);
 const showFinalizeModal = ref(false);
 const isFinalizing = ref(false);
@@ -1057,6 +1059,14 @@ const crearDocumento = (tipoDocumento: string) =>
         name="modal-work"
         :duration="{ enter: 230, leave: 150 }"
       >
+        <ModalRiesgos v-if="showRiesgosModal" @closeModal="showRiesgosModal = false" />
+      </Transition>
+
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalDeclaracionVeracidad
           v-if="showDeclaracionVeracidadModal"
           :trabajador="trabajadores.currentTrabajador ?? null"
@@ -1261,6 +1271,15 @@ const crearDocumento = (tipoDocumento: string) =>
             <button type="button" class="expediente-secondary-btn" @click="toggleDeclaracionVeracidadModal">
               <i class="fas fa-file-signature"></i>
               Declaración de veracidad
+            </button>
+            <button
+              type="button"
+              class="expediente-secondary-btn"
+              title="Registrar a qué agentes de riesgo se expone el trabajador"
+              @click="showRiesgosModal = true"
+            >
+              <i class="fa-solid fa-exclamation-triangle"></i>
+              Agentes de riesgo
             </button>
             <button type="button" class="expediente-secondary-btn" @click="toggleCuestionariosModal">
               <i class="fas fa-file-alt"></i>
