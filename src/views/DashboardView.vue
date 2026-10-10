@@ -17,6 +17,7 @@ import DescargarInformeDashboard from '@/components/DescargarInformeDashboard.vu
 import ModalPersonalizarInforme from '@/components/ModalPersonalizarInforme.vue';
 import DashboardChartSkeleton from '@/components/skeletons/DashboardChartSkeleton.vue';
 import { formatearNombreFirmante } from '@/helpers/nombres';
+import { SECCIONES_DE_TABLERO, cifrasClave, registrosDe } from '@/helpers/dashboardSecciones';
 
 const toast = inject('toast');
 const router = useRouter()
@@ -2401,6 +2402,57 @@ const mostrarRayosXDistribucion = computed(() => hasAnyPositiveChartData(grafica
 const mostrarAnalisisLaboratorioProporcion = computed(() => hasAnyPositiveChartData(graficaAnalisisLaboratorioProporcionData.value.chart));
 const mostrarAnalisisLaboratorioDistribucion = computed(() => hasAnyPositiveChartData(graficaAnalisisLaboratorioDistribucionData.value));
 
+// ---- Secciones del tablero: agrupan las tarjetas y se ocultan cuando no hay datos en el periodo
+
+const gridTarjetas =
+  'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 auto-rows-[360px] sm:auto-rows-[400px] md:auto-rows-[430px] lg:auto-rows-[460px]';
+
+/** Índice del centro elegido dentro de los datos; null cuando se ven todos. */
+const indiceCentroSeleccionado = computed(() => {
+  if (centroSeleccionado.value === 'Todos') return null;
+  return centrosTrabajo.value.findIndex((c) => c.nombreCentro === centroSeleccionado.value);
+});
+
+const hayRegistros = (...claves) =>
+  claves.some(
+    (clave) => registrosDe(dashboardData.value, indiceCentroSeleccionado.value, clave).length > 0,
+  );
+
+const seccionConDatos = computed(() => ({
+  poblacion: true,
+  exposicion: true,
+  saludMental:
+    mostrarTamizajeBipolar.value || mostrarTamizajeProdromal.value || mostrarTamizajeTLP.value,
+  saludVisual: hayRegistros('agudezaVisual', 'daltonismo'),
+  gabinete:
+    mostrarAudiometriaProporcion.value ||
+    mostrarAudiometriaDistribucion.value ||
+    mostrarEspirometriaProporcion.value ||
+    mostrarEspirometriaDistribucion.value ||
+    mostrarEkgProporcion.value ||
+    mostrarEkgDistribucion.value ||
+    mostrarRayosXProporcion.value ||
+    mostrarRayosXDistribucion.value ||
+    mostrarAnalisisLaboratorioProporcion.value ||
+    mostrarAnalisisLaboratorioDistribucion.value,
+  aptitud: true,
+}));
+
+const seccionesVisibles = computed(() =>
+  SECCIONES_DE_TABLERO.filter((seccion) => seccionConDatos.value[seccion.id]),
+);
+const seccionesSinDatos = computed(() =>
+  SECCIONES_DE_TABLERO.filter((seccion) => !seccionConDatos.value[seccion.id]),
+);
+
+const cifrasDelTablero = computed(() =>
+  cifrasClave(dashboardData.value, indiceCentroSeleccionado.value),
+);
+
+const irASeccion = (id) => {
+  document.getElementById(`tablero-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
 const GRID_COLS_XL = 4;
 
 const avanzarColumnaGridXl = (col, width) => {
@@ -2435,25 +2487,8 @@ const evaluarGrupoEstudiosClinicos = (col, mostrarProporcion, mostrarDistribucio
 };
 
 const espaciosVaciosGridDashboard = computed(() => {
+  // Los estudios de gabinete tienen su propia sección: su cuadrícula empieza en la primera columna
   let col = 0;
-
-  col = avanzarColumnaGridXl(col, 1); // sexo
-  col = avanzarColumnaGridXl(col, 2); // grupos etarios
-  col = avanzarColumnaGridXl(col, 2); // cintura
-  col = avanzarColumnaGridXl(col, 2); // tensión arterial
-  col = avanzarColumnaGridXl(col, 2); // IMC
-  col = avanzarColumnaGridXl(col, 2); // agentes de riesgo
-  col = avanzarColumnaGridXl(col, 2); // enfermedades crónicas
-  col = avanzarColumnaGridXl(col, 2); // antecedentes
-
-  if (mostrarTamizajeBipolar.value) col = avanzarColumnaGridXl(col, 1);
-  if (mostrarTamizajeProdromal.value) col = avanzarColumnaGridXl(col, 1);
-  if (mostrarTamizajeTLP.value) col = avanzarColumnaGridXl(col, 2);
-
-  col = avanzarColumnaGridXl(col, 1); // agudeza visual
-  col = avanzarColumnaGridXl(col, 1); // requieren lentes
-  col = avanzarColumnaGridXl(col, 1); // vista corregida
-  col = avanzarColumnaGridXl(col, 1); // daltonismo
 
   const audiometria = evaluarGrupoEstudiosClinicos(
     col,
@@ -3425,10 +3460,46 @@ const tablaCintura = computed(() => {
             <DashboardChartSkeleton v-for="n in 8" :key="'dashboard-skel-' + n" />
           </div>
 
-          <div
-            v-else
-            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 auto-rows-[360px] sm:auto-rows-[400px] md:auto-rows-[430px] lg:auto-rows-[460px]"
-          >
+          <div v-else>
+            <!-- Cifras clave -->
+            <dl class="dashboard-cifras mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4" data-test="cifras-clave">
+              <div
+                v-for="cifra in cifrasDelTablero"
+                :key="cifra.clave"
+                class="dashboard-cifra rounded-lg border border-gray-200 bg-white px-4 py-3"
+              >
+                <dt class="text-xs font-medium text-gray-500">{{ cifra.titulo }}</dt>
+                <dd class="mt-0.5 text-2xl font-semibold tabular-nums text-gray-900">{{ cifra.valor }}</dd>
+                <dd class="min-h-[1rem] text-xs text-gray-500">{{ cifra.detalle }}</dd>
+              </div>
+            </dl>
+
+            <!-- Índice de secciones -->
+            <nav class="dashboard-indice mb-6 flex flex-wrap items-center gap-2" aria-label="Secciones del tablero">
+              <button
+                v-for="seccion in seccionesVisibles"
+                :key="seccion.id"
+                type="button"
+                class="dashboard-indice__enlace inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 transition-colors duration-150 hover:border-emerald-400 hover:text-emerald-700"
+                data-test="indice-seccion"
+                @click="irASeccion(seccion.id)"
+              >
+                <i :class="[seccion.icono, 'text-xs']" aria-hidden="true"></i>
+                {{ seccion.titulo }}
+              </button>
+            </nav>
+
+            <section
+              v-show="seccionConDatos.poblacion"
+              id="tablero-poblacion"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-poblacion"
+            >
+              <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCIONES_DE_TABLERO[0].icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCIONES_DE_TABLERO[0].titulo }}
+              </h2>
+              <div :class="gridTarjetas">
 
             <!-- Distribución por Sexo -->
             <div v-if="chartWaveVisible(1)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col">
@@ -3855,6 +3926,20 @@ const tablaCintura = computed(() => {
               </div>
             </div>
 
+              </div>
+            </section>
+
+            <section
+              v-show="seccionConDatos.exposicion"
+              id="tablero-exposicion"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-exposicion"
+            >
+              <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCIONES_DE_TABLERO[1].icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCIONES_DE_TABLERO[1].titulo }}
+              </h2>
+              <div :class="gridTarjetas">
             <!-- Riesgos: 2 columnas --> 
             <div v-if="chartWaveVisible(3)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
@@ -4056,6 +4141,20 @@ const tablaCintura = computed(() => {
               </div>
             </div>
 
+              </div>
+            </section>
+
+            <section
+              v-show="seccionConDatos.saludMental"
+              id="tablero-saludMental"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-saludMental"
+            >
+              <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCIONES_DE_TABLERO[2].icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCIONES_DE_TABLERO[2].titulo }}
+              </h2>
+              <div :class="gridTarjetas">
             <!-- Tamizajes psicológicos (TEA, prodromal, TLP) -->
             <div
               v-if="chartWaveVisible(3) && mostrarTamizajeBipolar"
@@ -4212,6 +4311,20 @@ const tablaCintura = computed(() => {
               </div>
             </div>
 
+              </div>
+            </section>
+
+            <section
+              v-show="seccionConDatos.saludVisual"
+              id="tablero-saludVisual"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-saludVisual"
+            >
+              <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCIONES_DE_TABLERO[3].icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCIONES_DE_TABLERO[3].titulo }}
+              </h2>
+              <div :class="gridTarjetas">
             <!-- Agudeza Visual -->
             <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -4361,6 +4474,20 @@ const tablaCintura = computed(() => {
               </h4>
             </div>
 
+              </div>
+            </section>
+
+            <section
+              v-show="seccionConDatos.gabinete"
+              id="tablero-gabinete"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-gabinete"
+            >
+              <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCIONES_DE_TABLERO[4].icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCIONES_DE_TABLERO[4].titulo }}
+              </h2>
+              <div :class="gridTarjetas">
             <!-- Proporción Audiometría Normal/Anormal: 1 columna -->
             <div
               v-if="chartWaveVisible(4) && mostrarAudiometriaProporcion"
@@ -4995,6 +5122,20 @@ const tablaCintura = computed(() => {
               </h4>
             </div>
 
+              </div>
+            </section>
+
+            <section
+              v-show="seccionConDatos.aptitud"
+              id="tablero-aptitud"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-aptitud"
+            >
+              <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCIONES_DE_TABLERO[5].icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCIONES_DE_TABLERO[5].titulo }}
+              </h2>
+              <div :class="gridTarjetas">
             <!-- Aptitud al Puesto: 2 columnas -->
             <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
               <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
@@ -5123,6 +5264,17 @@ const tablaCintura = computed(() => {
               </h4>
             </div>
 
+              </div>
+            </section>
+
+            <p
+              v-if="seccionesSinDatos.length"
+              class="dashboard-sin-datos mb-8 text-sm text-gray-500"
+              data-test="secciones-sin-datos"
+            >
+              <i class="fas fa-circle-info mr-1" aria-hidden="true"></i>
+              Sin registros en este periodo: {{ seccionesSinDatos.map((seccion) => seccion.titulo).join(', ') }}.
+            </p>
           </div>
 
           <!-- =======================

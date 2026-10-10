@@ -4118,3 +4118,20 @@ html.dark-mode .aviso-firmante-ajeno {
   border-color: #0369a1 !important;
   color: #e0f2fe !important;
 }
+
+/* Tablero de salud: títulos de sección, cifras clave e índice */
+html.dark-mode .dashboard-seccion__titulo,
+html.dark-mode .dashboard-cifra dd.text-2xl {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .dashboard-cifra,
+html.dark-mode .dashboard-indice__enlace {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html.dark-mode .dashboard-indice__enlace:hover {
+  border-color: #34d399 !important;
+  color: #6ee7b7 !important;
+}
