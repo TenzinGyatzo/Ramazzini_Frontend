@@ -236,6 +236,15 @@ const tarjeta =
             </p>
           </div>
         </div>
+        <RouterLink
+          :to="{ name: 'incapacidades-informe', params: { idEmpresa: empresaId } }"
+          class="incapacidades-empresa__enlace inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors duration-150 hover:border-emerald-400 hover:text-emerald-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+          title="Totales, indicadores y tendencias de un periodo"
+          data-test="ver-informe"
+        >
+          <i class="fas fa-chart-column text-xs"></i>
+          Informe
+        </RouterLink>
         <label v-if="variosCentros" class="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
           <span class="shrink-0">Centro de trabajo</span>
           <select v-model="filtroCentro" :class="[selectClases, 'min-w-0 max-w-[16rem]']" data-test="filtro-centro">

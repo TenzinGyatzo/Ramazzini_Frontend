@@ -4060,6 +4060,20 @@ html.dark-mode .incapacidades-empresa__fila:hover {
   background-color: #334155 !important;
 }
 
+html.dark-mode .incapacidades-empresa__enlace:hover {
+  border-color: #34d399 !important;
+  color: #6ee7b7 !important;
+}
+
+/* Informe de incapacidades: riel y barras de las gráficas */
+html.dark-mode .informe-barras__riel {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .informe-barras__barra {
+  background-color: #10b981 !important;
+}
+
 html.dark-mode .expediente-contador--alerta {
   background-color: #7f1d1d !important;
   color: #fecaca !important;

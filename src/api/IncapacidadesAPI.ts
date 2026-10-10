@@ -7,11 +7,22 @@ import type {
   DatosIncapacidad,
 } from '@/helpers/incapacidades';
 import type { PanelIncapacidades } from '@/helpers/incapacidadesPanel';
+import type { InformeIncapacidades } from '@/helpers/incapacidadesInforme';
 
 export default {
   /** Seguimiento de la empresa: incapacitados hoy, focos rojos y casos. */
   getPanelEmpresa(empresaId: string) {
     return incapacidadesEmpresa.get<PanelIncapacidades>(`/${empresaId}`);
+  },
+
+  /** Totales, indicadores y tendencias de un periodo (fechas AAAA-MM-DD). */
+  getInformeEmpresa(
+    empresaId: string,
+    filtros: { desde: string; hasta: string; centro?: string },
+  ) {
+    return incapacidadesEmpresa.get<InformeIncapacidades>(`/${empresaId}/informe`, {
+      params: filtros,
+    });
   },
 
   getCasos(trabajadorId: string) {

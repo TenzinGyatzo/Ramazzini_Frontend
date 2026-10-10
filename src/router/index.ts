@@ -139,6 +139,12 @@ const router = createRouter({
           meta: { requiresAuth: true }
         },
         {
+          path: "/empresas/:idEmpresa/incapacidades/informe",
+          name: "incapacidades-informe",
+          component: () => import("../views/IncapacidadesInformeView.vue"),
+          meta: { requiresAuth: true }
+        },
+        {
           path: "dashboard-rt/:idEmpresa",
           name: "dashboard-rt",
           component: () => import("../views/DashboardRTsView.vue"),
