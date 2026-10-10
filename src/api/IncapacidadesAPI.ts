@@ -8,6 +8,7 @@ import type {
 } from '@/helpers/incapacidades';
 import type { PanelIncapacidades } from '@/helpers/incapacidadesPanel';
 import type { InformeIncapacidades } from '@/helpers/incapacidadesInforme';
+import type { CriterioPrima, Siniestralidad } from '@/helpers/incapacidadesPrima';
 
 export default {
   /** Seguimiento de la empresa: incapacitados hoy, focos rojos y casos. */
@@ -21,6 +22,16 @@ export default {
     filtros: { desde: string; hasta: string; centro?: string },
   ) {
     return incapacidadesEmpresa.get<InformeIncapacidades>(`/${empresaId}/informe`, {
+      params: filtros,
+    });
+  },
+
+  /** S, I y D de un año para estimar la prima de riesgo de trabajo. */
+  getPrimaEmpresa(
+    empresaId: string,
+    filtros: { anio: number; criterio: CriterioPrima; centro?: string },
+  ) {
+    return incapacidadesEmpresa.get<Siniestralidad>(`/${empresaId}/prima`, {
       params: filtros,
     });
   },

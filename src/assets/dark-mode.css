@@ -4065,6 +4065,13 @@ html.dark-mode .incapacidades-empresa__enlace:hover {
   color: #6ee7b7 !important;
 }
 
+/* Prima de riesgo: el aviso de estimación conserva su ámbar */
+html.dark-mode .incapacidades-prima__aviso {
+  background-color: #451a03 !important;
+  border-color: #b45309 !important;
+  color: #fde68a !important;
+}
+
 /* Informe de incapacidades: riel y barras de las gráficas */
 html.dark-mode .informe-barras__riel {
   background-color: #334155 !important;
