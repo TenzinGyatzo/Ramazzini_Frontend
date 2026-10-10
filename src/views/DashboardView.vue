@@ -17,6 +17,8 @@ import DescargarInformeDashboard from '@/components/DescargarInformeDashboard.vu
 import ModalPersonalizarInforme from '@/components/ModalPersonalizarInforme.vue';
 import DashboardChartSkeleton from '@/components/skeletons/DashboardChartSkeleton.vue';
 import ListaDeConteos from '@/components/graficas/ListaDeConteos.vue';
+import InformesAdicionalesDashboard from '@/components/InformesAdicionalesDashboard.vue';
+import { armarInforme } from '@/helpers/dashboardInformes';
 import { consultasPorMes, resumirDiagnosticos } from '@/helpers/dashboardDiagnosticos';
 import InventarioAPI from '@/api/InventarioAPI';
 import { useInventarioStore } from '@/stores/inventario';
@@ -2557,6 +2559,54 @@ const seccionConDatos = computed(() => ({
       hayAlertas(alertasInventario.value)),
 }));
 
+// ---- Resumen ejecutivo y datos en Excel: se arman con los datos del tablero en ese momento
+
+const armarInformeDelTablero = () =>
+  armarInforme(
+    {
+      datos: dashboardData.value,
+      indiceCentro: indiceCentroSeleccionado.value,
+      conFiltros: hayFiltrosPoblacion.value,
+      // Salud visual, gabinete y tamizajes ya están calculados para la pantalla
+      tablasDePantalla: [
+        { seccion: 'Salud visual', titulo: 'Agudeza visual sin corrección', filas: tablaVisionSinCorreccion.value },
+        { seccion: 'Gabinete', titulo: 'Audiometría', filas: tablaAudiometriaDistribucion.value },
+        { seccion: 'Gabinete', titulo: 'Espirometría', filas: tablaEspirometriaDistribucion.value },
+        { seccion: 'Gabinete', titulo: 'Electrocardiograma', filas: tablaEkgDistribucion.value },
+        { seccion: 'Gabinete', titulo: 'Rayos X', filas: tablaRayosXDistribucion.value },
+        { seccion: 'Gabinete', titulo: 'Análisis de laboratorio', filas: tablaAnalisisLaboratorioDistribucion.value },
+        { seccion: 'Salud mental', titulo: 'Tamizaje de trastorno límite de la personalidad', filas: tablaTamizajeTLP.value },
+      ],
+      insumos: inventarioStore.habilitado
+        ? consumoDeInsumos.value.map((fila) => ({
+            nombre: fila.insumo.nombre,
+            unidad: fila.insumo.unidad,
+            consumo: fila.consumo,
+            administrado: fila.administrado,
+            entregado: fila.entregado,
+            bajas: fila.bajas,
+          }))
+        : [],
+    },
+    {
+      empresa: empresasStore.currentEmpresa?.nombreComercial ?? '',
+      centro: centroSeleccionado.value,
+      periodo: periodoReporte.value,
+      segmento: textoFiltrosPoblacion.value,
+      responsable: nombreMedicoFirmanteDashboard.value ?? '',
+      fecha: new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }),
+      conclusiones: informePersonalizacionStore.currentPersonalizacion?.conclusiones ?? '',
+      recomendaciones:
+        informePersonalizacionStore.currentPersonalizacion?.formatoRecomendaciones === 'tabla'
+          ? ''
+          : (informePersonalizacionStore.currentPersonalizacion?.recomendacionesTexto ?? ''),
+      recomendacionesTabla:
+        informePersonalizacionStore.currentPersonalizacion?.formatoRecomendaciones === 'tabla'
+          ? (informePersonalizacionStore.currentPersonalizacion?.recomendacionesTabla ?? [])
+          : [],
+    },
+  );
+
 // Con el inventario apagado, su sección no existe: tampoco se anuncia como «sin registros»
 const seccionesDelTablero = computed(() =>
   SECCIONES_DE_TABLERO.filter((seccion) => seccion.id !== 'inventario' || inventarioStore.habilitado),
@@ -3508,6 +3558,14 @@ const tablaCintura = computed(() => {
               :recomendaciones-tabla="informePersonalizacionStore.currentPersonalizacion?.recomendacionesTabla"
             />
             </div>
+
+            <!-- Otros informes: resumen ejecutivo y datos en Excel -->
+            <InformesAdicionalesDashboard
+              v-if="dashboardData.length > 0"
+              :empresa-id="String(route.params.idEmpresa)"
+              :total-trabajadores="totalTrabajadores"
+              :armar="armarInformeDelTablero"
+            />
           </div>
           
           <!-- Filtro de periodo -->
