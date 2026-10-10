@@ -48,6 +48,10 @@ describe('secciones y cifras del tablero de salud', () => {
     expect(cifras[1].detalle).toBe('75 % de los activos');
   });
 
+  it('con filtros de población lo aclara en la plantilla', () => {
+    expect(cifrasClave([norte, sur], null, true)[0].detalle).toBe('Con los filtros elegidos');
+  });
+
   it('sin datos no inventa porcentajes', () => {
     const cifras = cifrasClave([], null);
     expect(cifras.map((c) => c.valor)).toEqual(['0', '0', '0', '0']);

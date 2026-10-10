@@ -4135,3 +4135,14 @@ html.dark-mode .dashboard-indice__enlace:hover {
   border-color: #34d399 !important;
   color: #6ee7b7 !important;
 }
+
+html.dark-mode .dashboard-filtros {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html.dark-mode .dashboard-filtros__campo {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}

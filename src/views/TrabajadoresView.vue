@@ -932,10 +932,14 @@ const filtrosValidos = {
 };
 
 function aplicarFiltrosDesdeQuery(query: RouteLocationNormalizedLoaded['query']) {
-  const filtrosEnQuery = Object.entries(filtrosValidos).filter(([filtroId, valores]) => {
+  const filtrosEnQuery: [string, unknown][] = Object.entries(filtrosValidos).filter(([filtroId, valores]) => {
     const valor = query[filtroId];
     return typeof valor === 'string' && valores.includes(valor);
   });
+  // El puesto no tiene lista fija: llega desde el tablero de salud
+  if (typeof query.puesto === 'string' && query.puesto.trim()) {
+    filtrosEnQuery.push(['puesto', null]);
+  }
 
   if (filtrosEnQuery.length > 0) {
     resetearFiltros(); // 🔁 Limpia localStorage y estado reactivo

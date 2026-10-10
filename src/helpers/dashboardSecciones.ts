@@ -46,7 +46,11 @@ const porcentaje = (parte: number, total: number) =>
  * Cifras que resumen el tablero. La cobertura compara a quienes tienen el
  * documento en el periodo contra los trabajadores activos.
  */
-export function cifrasClave(datos: DatosDeCentro[], indiceCentro: number | null): CifraClave[] {
+export function cifrasClave(
+  datos: DatosDeCentro[],
+  indiceCentro: number | null,
+  conFiltros = false,
+): CifraClave[] {
   const contar = (clave: string) => registrosDe(datos, indiceCentro, clave).length;
   const activos = contar('grupoEtario');
   const conExploracion = contar('imc');
@@ -61,7 +65,7 @@ export function cifrasClave(datos: DatosDeCentro[], indiceCentro: number | null)
       clave: 'activos',
       titulo: 'Trabajadores activos',
       valor: String(activos),
-      detalle: 'Plantilla actual',
+      detalle: conFiltros ? 'Con los filtros elegidos' : 'Plantilla actual',
     },
     {
       clave: 'exploracion',

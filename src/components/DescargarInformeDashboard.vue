@@ -26,6 +26,8 @@ const props = defineProps<{
   tablasDatos?: Record<string, any[] | any>;
   totalTrabajadores?: number;
   centroTrabajo?: string;
+  /** Filtros de población aplicados, descritos en texto; vacío si es toda la plantilla. */
+  segmento?: string;
   tituloMedicoFirmante?: string;
   nombreMedicoFirmante?: string;
   // Secciones personalizadas
@@ -244,7 +246,7 @@ const crearPortada = (): Content[] => {
                     {
                         text: [
                             { text: 'Población Evaluada', style: 'portadaLabel' },
-                            { text: '\n' + `${props.totalTrabajadores || 0} trabajadores`, style: 'portadaValue' }
+                            { text: '\n' + `${props.totalTrabajadores || 0} trabajadores` + (props.segmento ? `\n${props.segmento}` : ''), style: 'portadaValue' }
                         ],
                         margin: [0, 0, 0, 20],
                         alignment: 'left'

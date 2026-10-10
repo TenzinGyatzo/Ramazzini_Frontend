@@ -19,8 +19,15 @@ export default {
         return api.get(`/${empresaId}/${centroTrabajoId}/sexos-y-fechas-nacimiento-activos`);
     },
 
-    getDashboardData(empresaId: string, centroTrabajoId: string, inicio?: string, fin?: string) {
-    const params: any = {};
+    getDashboardData(
+      empresaId: string,
+      centroTrabajoId: string,
+      inicio?: string,
+      fin?: string,
+      filtros: Record<string, string | number> = {},
+    ) {
+    // Filtros de población: puesto, sexo, edad, antigüedad y agente de riesgo
+    const params: any = { ...filtros };
     if (inicio) params.inicio = inicio;
     if (fin) params.fin = fin;
 

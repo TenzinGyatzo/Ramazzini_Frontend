@@ -261,14 +261,21 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     }
   }  
 
-  async function fetchDashboardData(empresaId: string, centroTrabajoId: string, inicio?: string, fin?: string) {
+  async function fetchDashboardData(
+    empresaId: string,
+    centroTrabajoId: string,
+    inicio?: string,
+    fin?: string,
+    filtros: Record<string, string | number> = {},
+  ) {
     try {
       loading.value = true;
       const { data } = await TrabajadoresAPI.getDashboardData(
         empresaId,
         centroTrabajoId,
         inicio,
-        fin
+        fin,
+        filtros,
       );
       return data;
     }
