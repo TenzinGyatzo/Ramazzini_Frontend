@@ -60,7 +60,6 @@ const cerrarEdicionEmpresa = () => {
 };
 const totalTrabajadores = ref(0);
 const loadingTrabajadores = ref(false);
-const tieneRiesgosTrabajo = ref(false);
 const conteosTrabajadoresPorCentro = ref<Record<string, number>>({});
 const cargandoVista = ref(true);
 
@@ -69,10 +68,11 @@ const esProveedorMexicano = computed(() => {
   return proveedorSaludStore.proveedorSalud?.pais === 'MX';
 });
 
-// Incapacidades: en vista previa solo para el Administrador de plataforma, y solo en México
+// Incapacidades (sustituye a la vista de riesgos de trabajo): solo en México y con ese mismo permiso
 const incapacidadesDisponibles = computed(
   () =>
     esProveedorMexicano.value &&
+    canAccessRiesgosTrabajo.value &&
     (!INCAPACIDADES_SOLO_ADMINISTRADOR || userStore.user?.role === 'Administrador'),
 );
 
@@ -175,25 +175,21 @@ const construirEliminacionCentro = (
   },
 });
 
-// Función para obtener trabajadores y riesgos de trabajo en paralelo
+// Cuenta los trabajadores de cada centro de la empresa
 const obtenerDatosEmpresa = async () => {
   if (!empresas.currentEmpresa || centrosTrabajo.centrosTrabajo.length === 0) {
     totalTrabajadores.value = 0;
-    tieneRiesgosTrabajo.value = false;
     conteosTrabajadoresPorCentro.value = {};
     return;
   }
 
   loadingTrabajadores.value = true;
   try {
-    const [conteosPorCentro, riesgosEmpresa] = await Promise.all([
-      Promise.all(
-        centrosTrabajo.centrosTrabajo.map(centro =>
-          trabajadores.countTrabajadoresPorCentro(empresas.currentEmpresa!._id, centro._id)
-        )
-      ),
-      trabajadores.fetchRiesgosTrabajoPorEmpresa(empresas.currentEmpresa._id)
-    ]);
+    const conteosPorCentro = await Promise.all(
+      centrosTrabajo.centrosTrabajo.map(centro =>
+        trabajadores.countTrabajadoresPorCentro(empresas.currentEmpresa!._id, centro._id)
+      )
+    );
 
     const conteos: Record<string, number> = {};
     centrosTrabajo.centrosTrabajo.forEach((centro, index) => {
@@ -204,16 +200,8 @@ const obtenerDatosEmpresa = async () => {
 
     const total = conteosPorCentro.reduce((sum, n) => sum + (typeof n === 'number' ? n : 0), 0);
     totalTrabajadores.value = total;
-
-    if (total === 0) {
-      tieneRiesgosTrabajo.value = false;
-    } else {
-      const tieneRiesgos = riesgosEmpresa && Array.isArray(riesgosEmpresa) && riesgosEmpresa.length > 0;
-      tieneRiesgosTrabajo.value = tieneRiesgos;
-    }
   } catch {
     totalTrabajadores.value = 0;
-    tieneRiesgosTrabajo.value = false;
     conteosTrabajadoresPorCentro.value = {};
   } finally {
     loadingTrabajadores.value = false;
@@ -269,7 +257,6 @@ watch(
       centrosTrabajo.resetCentrosTrabajo();
       conteosTrabajadoresPorCentro.value = {};
       totalTrabajadores.value = 0;
-      tieneRiesgosTrabajo.value = false;
     }
 
     cargarVista(empresaId);
@@ -418,23 +405,6 @@ watch(
                     title="No hay trabajadores registrados">
                     <i class="fas fa-chart-line text-sm"></i>
                     <span>Estadísticas de Salud</span>
-                  </button>
-                  <RouterLink
-                    v-if="esProveedorMexicano && canAccessRiesgosTrabajo && empresas.currentEmpresa && tieneRiesgosTrabajo"
-                    :to="{ name: 'riesgos-trabajo', params: { idEmpresa: empresas.currentEmpresa._id } }"
-                    class="centros-empresa-btn-secondary centros-empresa-btn-secondary--riesgos nav-action-link"
-                    title="Ver riesgos de trabajo">
-                    <i class="fas fa-hard-hat text-sm"></i>
-                    <span>Riesgos de Trabajo</span>
-                  </RouterLink>
-                  <button
-                    v-else-if="esProveedorMexicano && canAccessRiesgosTrabajo"
-                    type="button"
-                    disabled
-                    class="centros-empresa-btn-secondary centros-empresa-btn-secondary--riesgos"
-                    :title="!tieneRiesgosTrabajo ? 'No hay riesgos de trabajo registrados' : 'Ver riesgos de trabajo'">
-                    <i class="fas fa-hard-hat text-sm"></i>
-                    <span>Riesgos de Trabajo</span>
                   </button>
                   <RouterLink
                     v-if="incapacidadesDisponibles && empresas.currentEmpresa"

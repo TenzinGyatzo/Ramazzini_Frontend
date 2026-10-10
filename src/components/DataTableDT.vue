@@ -12,6 +12,7 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useUserPermissions } from '@/composables/useUserPermissions';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import {
   buildExactExpedienteSummaryHtml,
   buildFailedExpedienteSummaryHtml,
@@ -68,6 +69,12 @@ const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const { canManageTrabajadores, executeIfCanManageTrabajadores, executeIfCanAccessRiesgosTrabajo } = usePermissionRestrictions();
 const { canAccessRiesgosTrabajo } = useUserPermissions();
+const proveedorSaludStore = useProveedorSaludStore();
+/**
+ * Fuera de México no hay incapacidades del IMSS: ahí se conserva el registro
+ * anterior de riesgos de trabajo. Si el proveedor aún no carga se asume México.
+ */
+const usaIncapacidades = () => (proveedorSaludStore.proveedorSalud?.pais ?? 'MX') === 'MX';
 
 function guardarFiltroEnLocalStorage(id: string, valor: string) {
   localStorage.setItem(`filtro-${id}`, valor);
@@ -75,6 +82,7 @@ function guardarFiltroEnLocalStorage(id: string, valor: string) {
 
 const emit = defineEmits<{
   (e: 'riesgo-trabajo', trabajador: any): void;
+  (e: 'incapacidades', trabajador: any): void;
   (e: 'riesgos', trabajador: any): void;
   (e: 'editar', trabajador: any): void;
   (e: 'toggle-estado-laboral', trabajador: any): void;
@@ -854,9 +862,9 @@ function inicializarDataTable() {
                   class="btn-rt group absolute right-25 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-violet-200 hover:bg-violet-300 text-violet-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-violet-200 hover:border-violet-100 whitespace-nowrap flex items-center overflow-hidden text-sm"
                   data-id="${escapeHtml(row._id)}"
                 >
-                  RT
+                  ${usaIncapacidades() ? '<i class="fa-solid fa-bed"></i>' : 'RT'}
                   <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
-                    Riesgo de Trabajo
+                    ${usaIncapacidades() ? 'Incapacidades' : 'Riesgo de Trabajo'}
                   </span>
                 </button>
                 ` : ''}
@@ -1021,9 +1029,11 @@ function inicializarDataTable() {
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
+        const incapacidades = usaIncapacidades();
         executeIfCanAccessRiesgosTrabajo(() => {
-          emit('riesgo-trabajo', trabajador);
-        }, 'acceder a riesgos de trabajo');
+          if (incapacidades) emit('incapacidades', trabajador);
+          else emit('riesgo-trabajo', trabajador);
+        }, incapacidades ? 'acceder a incapacidades' : 'acceder a riesgos de trabajo');
       }
     });
 

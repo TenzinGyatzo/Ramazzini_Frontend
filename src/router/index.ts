@@ -136,19 +136,19 @@ const router = createRouter({
           path: "/empresas/:idEmpresa/incapacidades",
           name: "incapacidades-empresa",
           component: () => import("../views/IncapacidadesEmpresaView.vue"),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true, requiresRiesgosTrabajo: true }
         },
         {
           path: "/empresas/:idEmpresa/incapacidades/informe",
           name: "incapacidades-informe",
           component: () => import("../views/IncapacidadesInformeView.vue"),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true, requiresRiesgosTrabajo: true }
         },
         {
           path: "/empresas/:idEmpresa/incapacidades/prima",
           name: "incapacidades-prima",
           component: () => import("../views/IncapacidadesPrimaView.vue"),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true, requiresRiesgosTrabajo: true }
         },
         {
           path: "dashboard-rt/:idEmpresa",

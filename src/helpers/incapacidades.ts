@@ -5,12 +5,12 @@
  */
 
 /**
- * Vista previa: mientras las vistas por empresa y los informes sigan leyendo el
- * módulo anterior de riesgos de trabajo, el módulo solo se muestra al
- * Administrador de plataforma. Mismo interruptor que en el servidor
+ * Interruptor de vista previa: en `true` el módulo solo se muestra al
+ * Administrador de plataforma. Liberado a los proveedores el 2026-10-09.
+ * Mismo interruptor que en el servidor
  * (INCAPACIDADES_SOLO_ADMINISTRADOR en incapacidades.catalogos.ts).
  */
-export const INCAPACIDADES_SOLO_ADMINISTRADOR = true;
+export const INCAPACIDADES_SOLO_ADMINISTRADOR = false;
 
 export type RamoIncapacidad = 'riesgoTrabajo' | 'enfermedadGeneral' | 'maternidad';
 export type OrigenIncapacidad = 'imss' | 'empresa' | 'particular';

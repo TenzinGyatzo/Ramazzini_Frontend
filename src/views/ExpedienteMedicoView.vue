@@ -85,7 +85,7 @@ const {
   executeIfCanManageDocumentosExternos,
   executeIfCanManageTrabajadores,
 } = usePermissionRestrictions();
-const { canManageTrabajadores } = useUserPermissions();
+const { canManageTrabajadores, canAccessRiesgosTrabajo } = useUserPermissions();
 // Los resultados clínicos usan el mismo permiso que los documentos de evaluación
 const { canManageDocumentosEvaluacion: canManageResultadosClinicos } =
   useRolePermissions();
@@ -1073,10 +1073,11 @@ const tiposDocumentoCrear = [
 ];
 
 // Contadores de la fila "Registrar": dicen qué hay capturado sin abrir cada ventana
-// Incapacidades: en vista previa solo para el Administrador de plataforma, y solo en México
+// Incapacidades: solo en México y con el permiso que antes daba acceso a riesgos de trabajo
 const incapacidadesDisponibles = computed(
   () =>
     proveedorSaludStore.proveedorSalud?.pais === 'MX' &&
+    canAccessRiesgosTrabajo.value &&
     (!INCAPACIDADES_SOLO_ADMINISTRADOR || userStore.user?.role === 'Administrador'),
 );
 const showIncapacidadesModal = ref(false);
