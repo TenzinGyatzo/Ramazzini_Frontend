@@ -673,22 +673,14 @@ button:active {
   background-color: #ecfdf5;
 }
 
-.centros-empresa-btn-secondary--riesgos {
+/* Violeta: el mismo color del botón de incapacidades de la tabla de trabajadores */
+.centros-empresa-btn-secondary--incapacidades {
   border-color: #7c3aed;
   color: #6d28d9;
 }
 
-.centros-empresa-btn-secondary--riesgos:hover:not(:disabled) {
-  background-color: #f5f3ff;
-}
-
-.centros-empresa-btn-secondary--incapacidades {
-  border-color: #0284c7;
-  color: #0369a1;
-}
-
 .centros-empresa-btn-secondary--incapacidades:hover:not(:disabled) {
-  background-color: #f0f9ff;
+  background-color: #f5f3ff;
 }
 
 .centros-empresa-btn-secondary:disabled {

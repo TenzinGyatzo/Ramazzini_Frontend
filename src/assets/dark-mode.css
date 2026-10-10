@@ -3976,22 +3976,13 @@ html.dark-mode .centros-empresa-btn-secondary--salud:hover:not(:disabled) {
   background-color: #064e3b !important;
 }
 
-html.dark-mode .centros-empresa-btn-secondary--riesgos {
+html.dark-mode .centros-empresa-btn-secondary--incapacidades {
   border-color: #a78bfa !important;
   color: #c4b5fd !important;
 }
 
-html.dark-mode .centros-empresa-btn-secondary--riesgos:hover:not(:disabled) {
-  background-color: #4c1d95 !important;
-}
-
-html.dark-mode .centros-empresa-btn-secondary--incapacidades {
-  border-color: #38bdf8 !important;
-  color: #7dd3fc !important;
-}
-
 html.dark-mode .centros-empresa-btn-secondary--incapacidades:hover:not(:disabled) {
-  background-color: #0c4a6e !important;
+  background-color: #4c1d95 !important;
 }
 
 /* ModalRiesgos: tarjetas de agentes y título (hover de Tailwind y .text-lg pierden ante el remapeo) */
