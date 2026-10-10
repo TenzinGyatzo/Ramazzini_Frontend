@@ -30,7 +30,16 @@ import {
   sumarConsumo,
 } from '@/helpers/dashboardInventario';
 import { formatearNombreFirmante } from '@/helpers/nombres';
-import { SECCIONES_DE_TABLERO, cifrasClave, registrosDe } from '@/helpers/dashboardSecciones';
+import { SECCIONES_DE_TABLERO, SECCION_COMPARATIVO, cifrasClave, registrosDe } from '@/helpers/dashboardSecciones';
+import {
+  MODOS_DE_COMPARACION,
+  comparar,
+  diagnosticoPrincipal,
+  indicadoresDelPeriodo,
+  periodoDeReferencia,
+  textoDeCambio,
+  textoDeValor,
+} from '@/helpers/dashboardComparativo';
 import {
   RANGOS_DE_ANTIGUEDAD,
   RANGOS_DE_EDAD,
@@ -2559,6 +2568,94 @@ const seccionConDatos = computed(() => ({
       hayAlertas(alertasInventario.value)),
 }));
 
+// ---- Comparativo: el periodo elegido contra otro, con el mismo centro y los mismos filtros
+
+const modoComparacion = ref('anterior');
+const comparacion = ref(null); // { desde, hasta, datos }
+const comparando = ref(false);
+const errorComparacion = ref('');
+let consultaDeComparacion = 0;
+
+const periodoComparable = computed(() =>
+  rangoInvalido.value ? null : periodoDeReferencia(fechaInicio.value, fechaFin.value, modoComparacion.value),
+);
+
+// Al cambiar lo que se ve, la comparación anterior ya no corresponde
+watch(
+  [fechaInicio, fechaFin, modoComparacion, () => JSON.stringify(filtrosPoblacion), () => route.params.idEmpresa],
+  () => {
+    consultaDeComparacion++;
+    comparacion.value = null;
+    comparando.value = false;
+    errorComparacion.value = '';
+  },
+);
+
+const compararPeriodos = async () => {
+  const referencia = periodoComparable.value;
+  if (!referencia || comparando.value) return;
+  const esta = ++consultaDeComparacion;
+  comparando.value = true;
+  errorComparacion.value = '';
+  try {
+    const datos = await Promise.all(
+      centrosTrabajo.value.map((centro) =>
+        trabajadoresStore.fetchDashboardData(
+          String(route.params.idEmpresa),
+          centro._id,
+          referencia.desde,
+          referencia.hasta,
+          parametrosDeFiltros(filtrosPoblacion),
+        ),
+      ),
+    );
+    if (esta !== consultaDeComparacion) return;
+    comparacion.value = { ...referencia, datos };
+  } catch {
+    if (esta !== consultaDeComparacion) return;
+    errorComparacion.value = 'No se pudo consultar el periodo de comparación.';
+  } finally {
+    if (esta === consultaDeComparacion) comparando.value = false;
+  }
+};
+
+const fechaLarga = (iso) => new Date(iso).toLocaleDateString('es-MX', { timeZone: 'UTC' });
+
+const filasComparativas = computed(() =>
+  comparacion.value
+    ? comparar(
+        indicadoresDelPeriodo(dashboardData.value, indiceCentroSeleccionado.value),
+        indicadoresDelPeriodo(comparacion.value.datos, indiceCentroSeleccionado.value),
+      )
+    : [],
+);
+
+const diagnosticosComparados = computed(() =>
+  comparacion.value
+    ? {
+        referencia: diagnosticoPrincipal(comparacion.value.datos, indiceCentroSeleccionado.value),
+        actual: diagnosticoPrincipal(dashboardData.value, indiceCentroSeleccionado.value),
+      }
+    : null,
+);
+
+/** La misma comparación, como tabla para el resumen ejecutivo y el Excel. */
+const tablaComparativa = computed(() =>
+  comparacion.value
+    ? {
+        seccion: 'Comparativo',
+        titulo: `Comparación con el periodo del ${fechaLarga(comparacion.value.desde)} al ${fechaLarga(comparacion.value.hasta)}`,
+        columnas: ['Indicador', 'Periodo de comparación', 'Periodo actual', 'Cambio'],
+        filas: filasComparativas.value.map((fila) => [
+          fila.titulo,
+          textoDeValor(fila.referencia, fila.unidad),
+          textoDeValor(fila.actual, fila.unidad),
+          textoDeCambio(fila),
+        ]),
+      }
+    : null,
+);
+
 // ---- Resumen ejecutivo y datos en Excel: se arman con los datos del tablero en ese momento
 
 const armarInformeDelTablero = () =>
@@ -2593,6 +2690,7 @@ const armarInformeDelTablero = () =>
       centro: centroSeleccionado.value,
       periodo: periodoReporte.value,
       segmento: textoFiltrosPoblacion.value,
+      comparativo: tablaComparativa.value,
       responsable: nombreMedicoFirmanteDashboard.value ?? '',
       fecha: new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }),
       conclusiones: informePersonalizacionStore.currentPersonalizacion?.conclusiones ?? '',
@@ -3739,7 +3837,7 @@ const tablaCintura = computed(() => {
             <!-- Índice de secciones -->
             <nav class="dashboard-indice mb-6 flex flex-wrap items-center gap-2" aria-label="Secciones del tablero">
               <button
-                v-for="seccion in seccionesVisibles"
+                v-for="seccion in [SECCION_COMPARATIVO, ...seccionesVisibles]"
                 :key="seccion.id"
                 type="button"
                 class="dashboard-indice__enlace inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 transition-colors duration-150 hover:border-emerald-400 hover:text-emerald-700"
@@ -3750,6 +3848,99 @@ const tablaCintura = computed(() => {
                 {{ seccion.titulo }}
               </button>
             </nav>
+
+            <!-- Comparar periodos -->
+            <section id="tablero-comparativo" class="dashboard-seccion mb-8 scroll-mt-4" data-test="seccion-comparativo">
+              <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCION_COMPARATIVO.icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCION_COMPARATIVO.titulo }}
+              </h2>
+              <div class="dashboard-cifra rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <p v-if="!periodoComparable" class="text-sm text-gray-500" data-test="comparativo-sin-periodo">
+                  Elige un periodo arriba para compararlo con otro. Sin periodo, el tablero muestra todo el historial y no
+                  hay contra qué comparar.
+                </p>
+                <template v-else>
+                  <div class="flex flex-wrap items-end gap-3">
+                    <label class="flex flex-col">
+                      <span class="mb-0.5 text-[11px] text-gray-500">Comparar el periodo elegido contra</span>
+                      <select
+                        v-model="modoComparacion"
+                        class="dashboard-filtros__campo border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white"
+                        data-test="modo-comparacion"
+                      >
+                        <option v-for="modo in MODOS_DE_COMPARACION" :key="modo.valor" :value="modo.valor">{{ modo.texto }}</option>
+                      </select>
+                    </label>
+                    <p class="mb-1 text-xs text-gray-500" data-test="periodo-referencia">
+                      Del {{ fechaLarga(periodoComparable.desde) }} al {{ fechaLarga(periodoComparable.hasta) }}
+                    </p>
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      :disabled="comparando || dashboardLoading"
+                      data-test="comparar"
+                      @click="compararPeriodos"
+                    >
+                      <i :class="comparando ? 'fas fa-spinner fa-spin' : 'fas fa-code-compare'" class="text-xs"></i>
+                      {{ comparando ? 'Comparando...' : comparacion ? 'Volver a comparar' : 'Comparar' }}
+                    </button>
+                  </div>
+                  <p v-if="errorComparacion" class="mt-2 text-sm text-red-600">{{ errorComparacion }}</p>
+
+                  <div v-if="comparacion" class="mt-3 overflow-x-auto">
+                    <table class="w-full min-w-[36rem] text-left text-sm" data-test="tabla-comparativa">
+                      <thead>
+                        <tr class="border-b border-gray-200 text-xs text-gray-500">
+                          <th scope="col" class="py-1.5 pr-3 font-medium">Indicador</th>
+                          <th scope="col" class="px-3 py-1.5 text-right font-medium">
+                            {{ fechaLarga(comparacion.desde) }} – {{ fechaLarga(comparacion.hasta) }}
+                          </th>
+                          <th scope="col" class="px-3 py-1.5 text-right font-medium">Periodo actual</th>
+                          <th scope="col" class="py-1.5 pl-3 text-right font-medium">Cambio</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100">
+                        <tr v-for="fila in filasComparativas" :key="fila.clave" data-test="fila-comparativa">
+                          <td class="lista-conteos__etiqueta py-1.5 pr-3 text-gray-800">{{ fila.titulo }}</td>
+                          <td class="px-3 py-1.5 text-right tabular-nums text-gray-600">{{ textoDeValor(fila.referencia, fila.unidad) }}</td>
+                          <td class="lista-conteos__cantidad px-3 py-1.5 text-right font-semibold tabular-nums text-gray-900">
+                            {{ textoDeValor(fila.actual, fila.unidad) }}
+                          </td>
+                          <td
+                            class="whitespace-nowrap py-1.5 pl-3 text-right font-medium tabular-nums"
+                            :class="{
+                              'text-red-600': fila.lectura === 'desfavorable',
+                              'text-emerald-600': fila.lectura === 'favorable',
+                              'text-gray-600': fila.lectura === 'neutra',
+                            }"
+                          >
+                            <i
+                              v-if="fila.sentido === 'sube' || fila.sentido === 'baja'"
+                              :class="fila.sentido === 'sube' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"
+                              class="mr-1 text-[10px]"
+                              aria-hidden="true"
+                            ></i>
+                            {{ textoDeCambio(fila) }}
+                          </td>
+                        </tr>
+                        <tr v-if="diagnosticosComparados && (diagnosticosComparados.referencia || diagnosticosComparados.actual)">
+                          <td class="lista-conteos__etiqueta py-1.5 pr-3 text-gray-800">Diagnóstico más frecuente</td>
+                          <td class="px-3 py-1.5 text-right text-xs text-gray-600">{{ diagnosticosComparados.referencia || '—' }}</td>
+                          <td class="px-3 py-1.5 text-right text-xs text-gray-800">{{ diagnosticosComparados.actual || '—' }}</td>
+                          <td></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p class="mt-2 text-xs text-gray-500">
+                      Los porcentajes se calculan sobre los trabajadores evaluados en cada periodo; «pp» son puntos
+                      porcentuales. La plantilla es la actual en ambos periodos. El cambio se marca en rojo o verde solo
+                      donde subir o bajar tiene una lectura clara.
+                    </p>
+                  </div>
+                </template>
+              </div>
+            </section>
 
             <section
               v-show="seccionConDatos.poblacion"

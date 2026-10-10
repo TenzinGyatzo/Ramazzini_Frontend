@@ -61,6 +61,8 @@ export interface InformeDeTablero {
   conclusiones: string;
   recomendaciones: string;
   recomendacionesTabla: { hallazgo: string; medidaPreventiva: string }[];
+  /** Comparación con otro periodo, si el usuario la pidió. */
+  comparativo?: TablaDeInforme | null;
 }
 
 const pct = (parte: number, total: number) => (total > 0 ? Math.round((parte / total) * 100) : 0);
@@ -292,7 +294,16 @@ export function armarInforme(
   fuentes: Fuentes & { conFiltros: boolean },
   contexto: Pick<
     InformeDeTablero,
-    'empresa' | 'centro' | 'periodo' | 'segmento' | 'responsable' | 'fecha' | 'conclusiones' | 'recomendaciones' | 'recomendacionesTabla'
+    | 'empresa'
+    | 'centro'
+    | 'periodo'
+    | 'segmento'
+    | 'responsable'
+    | 'fecha'
+    | 'conclusiones'
+    | 'recomendaciones'
+    | 'recomendacionesTabla'
+    | 'comparativo'
   >,
 ): InformeDeTablero {
   return {
@@ -326,6 +337,12 @@ export function hojasDeExcel(informe: InformeDeTablero): HojaDeInforme[] {
   ];
 
   const hojas: HojaDeInforme[] = [{ nombre: 'Resumen', filas: resumen }];
+  if (informe.comparativo) {
+    hojas.push({
+      nombre: 'Comparativo',
+      filas: [[informe.comparativo.titulo], informe.comparativo.columnas, ...informe.comparativo.filas],
+    });
+  }
   for (const tabla of informe.tablas) {
     let hoja = hojas.find((h) => h.nombre === tabla.seccion);
     if (!hoja) {
@@ -363,8 +380,10 @@ export function definicionResumenEjecutivo(informe: InformeDeTablero): Record<st
     ['Fecha', informe.fecha],
   ];
 
-  const tablas = informe.tablas
-    .filter((tabla) => TABLAS_DEL_RESUMEN.includes(tabla.titulo))
+  const tablas = [
+    ...(informe.comparativo ? [informe.comparativo] : []),
+    ...informe.tablas.filter((tabla) => TABLAS_DEL_RESUMEN.includes(tabla.titulo)),
+  ]
     .flatMap((tabla) => [
       { text: tabla.titulo, style: 'subtitulo' },
       {

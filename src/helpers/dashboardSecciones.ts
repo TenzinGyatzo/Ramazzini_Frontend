@@ -23,6 +23,13 @@ export interface SeccionDeTablero {
   icono: string;
 }
 
+/** Comparación con otro periodo: va antes de las secciones de indicadores y se anuncia en el índice. */
+export const SECCION_COMPARATIVO: SeccionDeTablero = {
+  id: 'comparativo',
+  titulo: 'Comparar periodos',
+  icono: 'fas fa-code-compare',
+};
+
 export const SECCIONES_DE_TABLERO: SeccionDeTablero[] = [
   { id: 'poblacion', titulo: 'Población y salud física', icono: 'fas fa-users' },
   { id: 'exposicion', titulo: 'Exposición y antecedentes', icono: 'fas fa-triangle-exclamation' },

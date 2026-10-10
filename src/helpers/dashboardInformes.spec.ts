@@ -212,6 +212,23 @@ describe('informes del tablero de salud', () => {
     expect(texto).not.toContain('Recomendaciones');
   });
 
+  it('el comparativo, si se pidió, entra al Excel y al resumen ejecutivo', () => {
+    const comparativo = {
+      seccion: 'Comparativo',
+      titulo: 'Comparación con el periodo del 2025-01-01 al 2025-03-31',
+      columnas: ['Indicador', 'Periodo de comparación', 'Periodo actual', 'Cambio'],
+      filas: [['Con sobrepeso u obesidad', '30 %', '50 %', '+20 pp']],
+    };
+    const informe = armarInforme({ ...fuentes, conFiltros: false }, { ...contexto, comparativo });
+    const hojas = hojasDeExcel(informe);
+    expect(hojas[1].nombre).toBe('Comparativo');
+    expect(hojas[1].filas).toContainEqual(['Con sobrepeso u obesidad', '30 %', '50 %', '+20 pp']);
+    expect(JSON.stringify(definicionResumenEjecutivo(informe))).toContain('+20 pp');
+
+    const sinComparativo = armarInforme({ ...fuentes, conFiltros: false }, contexto);
+    expect(hojasDeExcel(sinComparativo).map((h) => h.nombre)).not.toContain('Comparativo');
+  });
+
   it('nombra los archivos con la empresa y la fecha', () => {
     const informe = armarInforme({ ...fuentes, conFiltros: false }, contexto);
     expect(nombreDeArchivo('ResumenEjecutivo', informe, '2026-10-10', 'pdf')).toBe(
