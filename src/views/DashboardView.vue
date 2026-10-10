@@ -19,6 +19,7 @@ import DashboardChartSkeleton from '@/components/skeletons/DashboardChartSkeleto
 import ListaDeConteos from '@/components/graficas/ListaDeConteos.vue';
 import InformesAdicionalesDashboard from '@/components/InformesAdicionalesDashboard.vue';
 import { armarInforme } from '@/helpers/dashboardInformes';
+import { informeTematico } from '@/helpers/dashboardInformesTematicos';
 import { consultasPorMes, resumirDiagnosticos } from '@/helpers/dashboardDiagnosticos';
 import InventarioAPI from '@/api/InventarioAPI';
 import { useInventarioStore } from '@/stores/inventario';
@@ -2658,9 +2659,7 @@ const tablaComparativa = computed(() =>
 
 // ---- Resumen ejecutivo y datos en Excel: se arman con los datos del tablero en ese momento
 
-const armarInformeDelTablero = () =>
-  armarInforme(
-    {
+const fuentesDeInforme = () => ({
       datos: dashboardData.value,
       indiceCentro: indiceCentroSeleccionado.value,
       conFiltros: hayFiltrosPoblacion.value,
@@ -2684,8 +2683,9 @@ const armarInformeDelTablero = () =>
             bajas: fila.bajas,
           }))
         : [],
-    },
-    {
+});
+
+const contextoDeInforme = () => ({
       empresa: empresasStore.currentEmpresa?.nombreComercial ?? '',
       centro: centroSeleccionado.value,
       periodo: periodoReporte.value,
@@ -2702,8 +2702,10 @@ const armarInformeDelTablero = () =>
         informePersonalizacionStore.currentPersonalizacion?.formatoRecomendaciones === 'tabla'
           ? (informePersonalizacionStore.currentPersonalizacion?.recomendacionesTabla ?? [])
           : [],
-    },
-  );
+});
+
+const armarInformeDelTablero = () => armarInforme(fuentesDeInforme(), contextoDeInforme());
+const armarInformeTematico = (tema) => informeTematico(tema, fuentesDeInforme(), contextoDeInforme());
 
 // Con el inventario apagado, su sección no existe: tampoco se anuncia como «sin registros»
 const seccionesDelTablero = computed(() =>
@@ -3663,6 +3665,7 @@ const tablaCintura = computed(() => {
               :empresa-id="String(route.params.idEmpresa)"
               :total-trabajadores="totalTrabajadores"
               :armar="armarInformeDelTablero"
+              :armar-tema="armarInformeTematico"
             />
           </div>
           

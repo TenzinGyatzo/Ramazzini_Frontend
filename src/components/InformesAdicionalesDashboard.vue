@@ -9,6 +9,7 @@ import {
   nombreDeArchivo,
   type InformeDeTablero,
 } from '@/helpers/dashboardInformes';
+import { TEMAS_DE_INFORME, tituloDeTema, type TemaDeInforme } from '@/helpers/dashboardInformesTematicos';
 
 /**
  * Informes del tablero de salud además del informe completo: un resumen
@@ -20,10 +21,14 @@ const props = defineProps<{
   totalTrabajadores: number;
   /** Se arma al pedir el informe, con lo que el tablero muestra en ese momento. */
   armar: () => InformeDeTablero;
+  /** Informe de un tema, con lo que el tablero muestra en ese momento. */
+  armarTema: (tema: TemaDeInforme) => InformeDeTablero;
 }>();
 
 const toast = inject<any>('toast', null);
-const generando = ref<'' | 'resumen' | 'excel'>('');
+const generando = ref<'' | 'resumen' | 'excel' | 'tema'>('');
+/** El selector vuelve a su opción inicial después de generar. */
+const temaElegido = ref<TemaDeInforme | ''>('');
 const hoy = () => new Date().toISOString().slice(0, 10);
 
 /** Queda en la bitácora igual que el informe completo. */
@@ -50,6 +55,25 @@ const resumenEjecutivo = async () => {
     toast?.open?.({ message: 'No se pudo generar el resumen ejecutivo.', type: 'error' });
   } finally {
     generando.value = '';
+  }
+};
+
+const informeDelTema = async () => {
+  const tema = temaElegido.value;
+  if (!tema || generando.value) return;
+  generando.value = 'tema';
+  try {
+    const informe = props.armarTema(tema);
+    await registrar(informe);
+    pdfMake
+      .createPdf(definicionResumenEjecutivo(informe, { titulo: tituloDeTema(tema), todasLasTablas: true }) as any)
+      .download(nombreDeArchivo(tituloDeTema(tema).replace(/\s+/g, ''), informe, hoy(), 'pdf'));
+  } catch (error) {
+    console.error('Error al generar el informe temático:', error);
+    toast?.open?.({ message: 'No se pudo generar el informe temático.', type: 'error' });
+  } finally {
+    generando.value = '';
+    temaElegido.value = '';
   }
 };
 
@@ -95,6 +119,20 @@ const boton =
       <i :class="generando === 'resumen' ? 'fas fa-spinner fa-spin' : 'fas fa-file-lines'" class="mr-1"></i>
       Resumen ejecutivo
     </button>
+    <label class="relative flex w-full sm:w-auto">
+      <span class="sr-only">Informe temático</span>
+      <select
+        v-model="temaElegido"
+        class="informes-tematicos w-full sm:w-auto rounded-lg border border-emerald-600 bg-white px-3 py-2 text-emerald-700 shadow transition duration-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+        :disabled="!!generando"
+        title="PDF con las tablas, los hallazgos y los diagnósticos de consulta de un tema"
+        data-test="informe-tematico"
+        @change="informeDelTema"
+      >
+        <option value="" disabled>{{ generando === 'tema' ? 'Generando...' : 'Informe temático…' }}</option>
+        <option v-for="tema in TEMAS_DE_INFORME" :key="tema.valor" :value="tema.valor">{{ tema.texto }}</option>
+      </select>
+    </label>
     <button
       type="button"
       :class="[boton, 'bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-600']"

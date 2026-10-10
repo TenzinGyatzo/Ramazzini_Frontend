@@ -370,8 +370,17 @@ export const nombreDeArchivo = (prefijo: string, informe: InformeDeTablero, hoy:
 /** Tablas que entran al resumen; el resto queda para el informe completo y el Excel. */
 const TABLAS_DEL_RESUMEN = ['Aptitud al puesto', 'Diagnósticos de las consultas', 'Agentes de riesgo'];
 const FILAS_POR_TABLA_EN_RESUMEN = 8;
+const FILAS_POR_TABLA_EN_TEMATICO = 25;
 
-export function definicionResumenEjecutivo(informe: InformeDeTablero): Record<string, any> {
+export function definicionResumenEjecutivo(
+  informe: InformeDeTablero,
+  opciones: {
+    /** Título del documento; por defecto, el del resumen ejecutivo. */
+    titulo?: string;
+    /** Incluye todas las tablas del informe, completas, en lugar de las principales. */
+    todasLasTablas?: boolean;
+  } = {},
+): Record<string, any> {
   const ficha = [
     ['Centro de trabajo', informe.centro],
     ['Periodo', informe.periodo],
@@ -382,7 +391,7 @@ export function definicionResumenEjecutivo(informe: InformeDeTablero): Record<st
 
   const tablas = [
     ...(informe.comparativo ? [informe.comparativo] : []),
-    ...informe.tablas.filter((tabla) => TABLAS_DEL_RESUMEN.includes(tabla.titulo)),
+    ...informe.tablas.filter((tabla) => opciones.todasLasTablas || TABLAS_DEL_RESUMEN.includes(tabla.titulo)),
   ]
     .flatMap((tabla) => [
       { text: tabla.titulo, style: 'subtitulo' },
@@ -393,7 +402,7 @@ export function definicionResumenEjecutivo(informe: InformeDeTablero): Record<st
           body: [
             tabla.columnas.map((columna) => ({ text: columna, style: 'encabezado' })),
             ...tabla.filas
-              .slice(0, FILAS_POR_TABLA_EN_RESUMEN)
+              .slice(0, opciones.todasLasTablas ? FILAS_POR_TABLA_EN_TEMATICO : FILAS_POR_TABLA_EN_RESUMEN)
               .map((fila) => fila.map((celda, i) => ({ text: String(celda), alignment: i ? 'right' : 'left' }))),
           ],
         },
@@ -432,7 +441,7 @@ export function definicionResumenEjecutivo(informe: InformeDeTablero): Record<st
     pageSize: 'LETTER',
     pageMargins: [48, 48, 48, 54],
     content: [
-      { text: 'Resumen ejecutivo de salud laboral', style: 'titulo' },
+      { text: opciones.titulo ?? 'Resumen ejecutivo de salud laboral', style: 'titulo' },
       { text: informe.empresa, style: 'empresa' },
       {
         table: { widths: ['auto', '*'], body: ficha.map(([dato, valor]) => [{ text: dato, bold: true }, valor]) },

@@ -4160,3 +4160,9 @@ html.dark-mode .lista-conteos__riel {
 html.dark-mode .lista-conteos__barra {
   background-color: #10b981 !important;
 }
+
+html.dark-mode .informes-tematicos {
+  background-color: #1e293b !important;
+  border-color: #10b981 !important;
+  color: #6ee7b7 !important;
+}
