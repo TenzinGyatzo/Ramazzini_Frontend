@@ -16,6 +16,8 @@ import { es } from 'date-fns/locale'
 import DescargarInformeDashboard from '@/components/DescargarInformeDashboard.vue';
 import ModalPersonalizarInforme from '@/components/ModalPersonalizarInforme.vue';
 import DashboardChartSkeleton from '@/components/skeletons/DashboardChartSkeleton.vue';
+import ListaDeConteos from '@/components/graficas/ListaDeConteos.vue';
+import { consultasPorMes, resumirDiagnosticos } from '@/helpers/dashboardDiagnosticos';
 import { formatearNombreFirmante } from '@/helpers/nombres';
 import { SECCIONES_DE_TABLERO, cifrasClave, registrosDe } from '@/helpers/dashboardSecciones';
 import {
@@ -242,6 +244,7 @@ function chartWaveVisible(wave) {
 }
 
 let cargarDatosSeq = 0;
+let centroDeLaRutaPendiente = true;
 
 const cargarDatos = async (empresaId, inicio, fin) => {
   if (!empresaId) return;
@@ -267,7 +270,14 @@ const cargarDatos = async (empresaId, inicio, fin) => {
     empresasStore.currentEmpresa = empresa;
     centrosTrabajo.value = centros;
 
-    const centroGuardado = cargarCentroSeleccionado();
+    // Desde la tarjeta de un centro se llega con ese centro ya elegido; aplica una sola vez
+    const centroDeLaRuta = centroDeLaRutaPendiente
+      ? centros.find((c) => String(c._id) === String(route.query.centro))?.nombreCentro
+      : undefined;
+    centroDeLaRutaPendiente = false;
+    if (centroDeLaRuta) guardarCentroSeleccionado(centroDeLaRuta);
+
+    const centroGuardado = centroDeLaRuta ?? cargarCentroSeleccionado();
     centroSeleccionado.value = validarCentroSeleccionado(centroGuardado, centros);
 
     if (centros.length === 0) {
@@ -2441,6 +2451,25 @@ const hayRegistros = (...claves) =>
     (clave) => registrosDe(dashboardData.value, indiceCentroSeleccionado.value, clave).length > 0,
   );
 
+// ---- Diagnósticos de las consultas
+
+const diagnosticosDeConsultas = computed(() =>
+  resumirDiagnosticos(registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'diagnosticos')),
+);
+
+const consultasMensuales = computed(() => {
+  const meses = consultasPorMes(
+    registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'consultas').map(
+      (consulta) => consulta?.fechaNotaMedica,
+    ),
+  );
+  const maximo = Math.max(1, ...meses.map((mes) => mes.cantidad));
+  return meses.map((mes) => ({
+    ...mes,
+    alto: `${mes.cantidad ? Math.max(4, (mes.cantidad / maximo) * 100) : 0}%`,
+  }));
+});
+
 const seccionConDatos = computed(() => ({
   poblacion: true,
   exposicion: true,
@@ -2459,6 +2488,7 @@ const seccionConDatos = computed(() => ({
     mostrarAnalisisLaboratorioProporcion.value ||
     mostrarAnalisisLaboratorioDistribucion.value,
   aptitud: true,
+  diagnosticos: diagnosticosDeConsultas.value.total > 0,
 }));
 
 const seccionesVisibles = computed(() =>
@@ -5367,6 +5397,85 @@ const tablaCintura = computed(() => {
               </h4>
             </div>
 
+              </div>
+            </section>
+
+            <!-- Diagnósticos de las consultas -->
+            <section
+              v-show="seccionConDatos.diagnosticos"
+              id="tablero-diagnosticos"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-diagnosticos"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCIONES_DE_TABLERO[6].icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCIONES_DE_TABLERO[6].titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="resumen-diagnosticos">
+                {{ diagnosticosDeConsultas.total }}
+                {{ diagnosticosDeConsultas.total === 1 ? 'diagnóstico registrado' : 'diagnósticos registrados' }}
+                con código CIE-10, entre principales y secundarios, en {{ totalConsultas }}
+                {{ totalConsultas === 1 ? 'consulta' : 'consultas' }} del periodo.
+                <template v-if="diagnosticosDeConsultas.primeraVez || diagnosticosDeConsultas.subsecuentes">
+                  De los principales, {{ diagnosticosDeConsultas.primeraVez }} de primera vez y
+                  {{ diagnosticosDeConsultas.subsecuentes }} subsecuentes.
+                </template>
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="diagnosticos-frecuentes">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                    Diagnósticos más frecuentes
+                  </h3>
+                  <ListaDeConteos
+                    :filas="diagnosticosDeConsultas.porCodigo"
+                    :total="diagnosticosDeConsultas.total"
+                  />
+                </div>
+
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="diagnosticos-capitulos">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                    Por grupo de enfermedades
+                  </h3>
+                  <ListaDeConteos
+                    :filas="diagnosticosDeConsultas.porCapitulo"
+                    :total="diagnosticosDeConsultas.total"
+                    :limite="12"
+                  />
+                  <p class="mt-3 text-xs italic text-gray-500">Capítulos de la CIE-10.</p>
+                </div>
+
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col xl:col-span-2" data-test="consultas-por-mes">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                    Consultas por mes
+                  </h3>
+                  <div class="overflow-x-auto">
+                    <ol class="flex h-40 items-end gap-2" :style="{ minWidth: consultasMensuales.length * 2.75 + 'rem' }">
+                      <li
+                        v-for="mes in consultasMensuales"
+                        :key="mes.clave"
+                        class="flex h-full min-w-0 flex-1 flex-col items-center justify-end"
+                        :title="`${mes.etiqueta}: ${mes.cantidad} ${mes.cantidad === 1 ? 'consulta' : 'consultas'}`"
+                        data-test="consultas-mes"
+                      >
+                        <span class="mb-1 text-xs tabular-nums text-gray-700">{{ mes.cantidad || '' }}</span>
+                        <span class="lista-conteos__barra w-full max-w-[3rem] rounded-t bg-emerald-500" :style="{ height: mes.alto }"></span>
+                      </li>
+                    </ol>
+                    <ol
+                      class="mt-1 flex gap-2 border-t border-gray-200 pt-1"
+                      :style="{ minWidth: consultasMensuales.length * 2.75 + 'rem' }"
+                      aria-hidden="true"
+                    >
+                      <li
+                        v-for="mes in consultasMensuales"
+                        :key="mes.clave"
+                        class="min-w-0 flex-1 truncate text-center text-[11px] text-gray-500"
+                      >
+                        {{ mes.etiqueta }}
+                      </li>
+                    </ol>
+                  </div>
+                </div>
               </div>
             </section>
 

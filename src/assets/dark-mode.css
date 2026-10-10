@@ -4146,3 +4146,17 @@ html.dark-mode .dashboard-filtros__campo {
   border-color: #475569 !important;
   color: #e2e8f0 !important;
 }
+
+/* Listas de conteos del tablero (diagnósticos de las consultas) */
+html.dark-mode .lista-conteos__etiqueta,
+html.dark-mode .lista-conteos__cantidad {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .lista-conteos__riel {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .lista-conteos__barra {
+  background-color: #10b981 !important;
+}

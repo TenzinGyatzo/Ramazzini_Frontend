@@ -58,7 +58,7 @@ describe('secciones y cifras del tablero de salud', () => {
     expect(cifras.map((c) => c.detalle)).toEqual(['Plantilla actual', '', '', '']);
   });
 
-  it('define las seis secciones en el orden de la pantalla', () => {
+  it('define las secciones en el orden de la pantalla', () => {
     expect(SECCIONES_DE_TABLERO.map((s) => s.id)).toEqual([
       'poblacion',
       'exposicion',
@@ -66,6 +66,7 @@ describe('secciones y cifras del tablero de salud', () => {
       'saludVisual',
       'gabinete',
       'aptitud',
+      'diagnosticos',
     ]);
   });
 });
