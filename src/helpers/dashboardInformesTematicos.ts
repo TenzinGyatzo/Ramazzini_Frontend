@@ -177,7 +177,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
   }
 
   return {
-    ...armarInforme({ ...fuentes, conFiltros: !!contexto.segmento }, { ...contexto, comparativo: null }),
+    ...armarInforme({ ...fuentes, conFiltros: !!contexto.segmento }, { ...contexto, comparativo: null, porCentro: null }),
     hallazgos,
     tablas: tablas.filter((t): t is TablaDeInforme => !!t && t.filas.some((fila) => numero(fila) > 0)),
   };

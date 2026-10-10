@@ -185,3 +185,57 @@ export function diagnosticoPrincipal(datos: Datos, indiceCentro: number | null):
   const principal = resumen.porCodigo[0];
   return principal ? `${principal.etiqueta} (${principal.cantidad})` : '';
 }
+
+// ---- Entre centros de trabajo
+
+export interface FilaDeCentro {
+  id: string;
+  nombre: string;
+  activos: number;
+  indicadores: Indicador[];
+}
+
+export interface ComparativoDeCentros {
+  filas: FilaDeCentro[];
+  /**
+   * Por indicador calificable, el centro con el valor menos favorable. Solo se
+   * señala cuando al menos dos centros tienen el dato y no están empatados.
+   */
+  menosFavorable: Record<string, string>;
+}
+
+/** Los mismos indicadores para cada centro; el periodo y los filtros son los del tablero. */
+export function compararCentros(
+  datos: Datos,
+  centros: { _id: string; nombreCentro: string }[],
+): ComparativoDeCentros {
+  const filas: FilaDeCentro[] = centros.map((centro, indice) => ({
+    id: String(centro._id),
+    nombre: centro.nombreCentro,
+    activos: registrosDe(datos, indice, 'grupoEtario').length,
+    indicadores: indicadoresDelPeriodo(datos, indice),
+  }));
+
+  const menosFavorable: Record<string, string> = {};
+  for (const indicador of filas[0]?.indicadores ?? []) {
+    if (indicador.subirEsMalo === null) continue;
+    const conDato = filas
+      .map((fila) => ({ id: fila.id, valor: fila.indicadores.find((i) => i.clave === indicador.clave)?.valor ?? null }))
+      .filter((fila): fila is { id: string; valor: number } => fila.valor !== null);
+    if (conDato.length < 2) continue;
+    const valores = conDato.map((fila) => fila.valor);
+    const peor = indicador.subirEsMalo ? Math.max(...valores) : Math.min(...valores);
+    const empatados = conDato.filter((fila) => fila.valor === peor);
+    if (empatados.length === 1 && Math.max(...valores) !== Math.min(...valores)) {
+      menosFavorable[indicador.clave] = empatados[0].id;
+    }
+  }
+  return { filas, menosFavorable };
+}
+
+/** Columnas de la tabla por centro, en el orden de los indicadores. */
+export const columnasDeCentros = (comparativo: ComparativoDeCentros): string[] => [
+  'Centro de trabajo',
+  'Trabajadores activos',
+  ...(comparativo.filas[0]?.indicadores ?? []).map((indicador) => indicador.titulo),
+];

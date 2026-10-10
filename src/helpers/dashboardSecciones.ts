@@ -26,7 +26,7 @@ export interface SeccionDeTablero {
 /** Comparación con otro periodo: va antes de las secciones de indicadores y se anuncia en el índice. */
 export const SECCION_COMPARATIVO: SeccionDeTablero = {
   id: 'comparativo',
-  titulo: 'Comparar periodos',
+  titulo: 'Comparar periodos y centros',
   icono: 'fas fa-code-compare',
 };
 

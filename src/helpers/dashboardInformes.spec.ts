@@ -229,6 +229,25 @@ describe('informes del tablero de salud', () => {
     expect(hojasDeExcel(sinComparativo).map((h) => h.nombre)).not.toContain('Comparativo');
   });
 
+  it('con varios centros, el Excel lleva la hoja por centro', () => {
+    const porCentro = {
+      seccion: 'Por centro',
+      titulo: 'Indicadores por centro de trabajo',
+      columnas: ['Centro de trabajo', 'Trabajadores activos', 'Con sobrepeso u obesidad'],
+      filas: [
+        ['Planta Norte', 40, '20 %'],
+        ['Planta Sur', 25, '60 %'],
+      ],
+    };
+    const hojas = hojasDeExcel(armarInforme({ ...fuentes, conFiltros: false }, { ...contexto, porCentro }));
+    const hoja = hojas.find((h) => h.nombre === 'Por centro');
+    expect(hoja?.filas).toContainEqual(['Planta Sur', 25, '60 %']);
+    // No entra al resumen ejecutivo: es una tabla ancha, de detalle
+    expect(
+      JSON.stringify(definicionResumenEjecutivo(armarInforme({ ...fuentes, conFiltros: false }, { ...contexto, porCentro }))),
+    ).not.toContain('Planta Sur');
+  });
+
   it('nombra los archivos con la empresa y la fecha', () => {
     const informe = armarInforme({ ...fuentes, conFiltros: false }, contexto);
     expect(nombreDeArchivo('ResumenEjecutivo', informe, '2026-10-10', 'pdf')).toBe(

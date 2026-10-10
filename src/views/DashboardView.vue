@@ -34,7 +34,9 @@ import { formatearNombreFirmante } from '@/helpers/nombres';
 import { SECCIONES_DE_TABLERO, SECCION_COMPARATIVO, cifrasClave, registrosDe } from '@/helpers/dashboardSecciones';
 import {
   MODOS_DE_COMPARACION,
+  columnasDeCentros,
   comparar,
+  compararCentros,
   diagnosticoPrincipal,
   indicadoresDelPeriodo,
   periodoDeReferencia,
@@ -2657,6 +2659,29 @@ const tablaComparativa = computed(() =>
     : null,
 );
 
+// ---- Comparativo entre centros: los datos de cada centro ya están cargados, no hace consultas
+
+const comparativoDeCentros = computed(() =>
+  centrosTrabajo.value.length > 1 && dashboardData.value.length
+    ? compararCentros(dashboardData.value, centrosTrabajo.value)
+    : null,
+);
+
+const tablaPorCentro = computed(() =>
+  comparativoDeCentros.value
+    ? {
+        seccion: 'Por centro',
+        titulo: 'Indicadores por centro de trabajo',
+        columnas: columnasDeCentros(comparativoDeCentros.value),
+        filas: comparativoDeCentros.value.filas.map((fila) => [
+          fila.nombre,
+          fila.activos,
+          ...fila.indicadores.map((indicador) => textoDeValor(indicador.valor, indicador.unidad)),
+        ]),
+      }
+    : null,
+);
+
 // ---- Resumen ejecutivo y datos en Excel: se arman con los datos del tablero en ese momento
 
 const fuentesDeInforme = () => ({
@@ -2691,6 +2716,7 @@ const contextoDeInforme = () => ({
       periodo: periodoReporte.value,
       segmento: textoFiltrosPoblacion.value,
       comparativo: tablaComparativa.value,
+      porCentro: tablaPorCentro.value,
       responsable: nombreMedicoFirmanteDashboard.value ?? '',
       fecha: new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }),
       conclusiones: informePersonalizacionStore.currentPersonalizacion?.conclusiones ?? '',
@@ -3942,6 +3968,57 @@ const tablaCintura = computed(() => {
                     </p>
                   </div>
                 </template>
+              </div>
+
+              <!-- Entre centros de trabajo -->
+              <div
+                v-if="comparativoDeCentros"
+                class="dashboard-cifra mt-3 rounded-lg border border-gray-200 bg-white px-4 py-3"
+                data-test="comparativo-centros"
+              >
+                <h3 class="dashboard-seccion__titulo text-sm font-semibold text-gray-800">Entre centros de trabajo</h3>
+                <div class="mt-2 overflow-x-auto">
+                  <table class="w-full min-w-[52rem] text-left text-sm">
+                    <thead>
+                      <tr class="border-b border-gray-200 text-xs text-gray-500">
+                        <th
+                          v-for="(columna, i) in columnasDeCentros(comparativoDeCentros)"
+                          :key="columna"
+                          scope="col"
+                          class="py-1.5 font-medium"
+                          :class="i ? 'px-2 text-right' : 'pr-3'"
+                        >
+                          {{ columna }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                      <tr
+                        v-for="fila in comparativoDeCentros.filas"
+                        :key="fila.id"
+                        :class="{ 'font-semibold': fila.nombre === centroSeleccionado }"
+                        data-test="fila-centro"
+                      >
+                        <td class="lista-conteos__etiqueta py-1.5 pr-3 text-gray-800">{{ fila.nombre }}</td>
+                        <td class="px-2 py-1.5 text-right tabular-nums text-gray-600">{{ fila.activos }}</td>
+                        <td
+                          v-for="indicador in fila.indicadores"
+                          :key="indicador.clave"
+                          class="px-2 py-1.5 text-right tabular-nums"
+                          :class="comparativoDeCentros.menosFavorable[indicador.clave] === fila.id ? 'text-red-600 font-semibold' : 'text-gray-700'"
+                          :title="indicador.base !== undefined ? `Sobre ${indicador.base} evaluados` : ''"
+                        >
+                          {{ textoDeValor(indicador.valor, indicador.unidad) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p class="mt-2 text-xs text-gray-500">
+                  Con el periodo y los filtros elegidos, sin importar el centro seleccionado arriba. En rojo, el centro
+                  con el valor menos favorable de cada indicador; con pocos evaluados, una diferencia grande puede no
+                  significar nada (pasa el cursor para ver sobre cuántos se calculó).
+                </p>
               </div>
             </section>
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  columnasDeCentros,
   comparar,
+  compararCentros,
   diagnosticoPrincipal,
   indicadoresDelPeriodo,
   periodoDeReferencia,
@@ -118,5 +120,63 @@ describe('comparativo entre periodos del tablero de salud', () => {
   it('dice el diagnóstico más frecuente de cada periodo', () => {
     expect(diagnosticoPrincipal(periodo(1, 1, 1, 0, 3), null)).toBe('J00X - RINOFARINGITIS (3)');
     expect(diagnosticoPrincipal([], null)).toBe('');
+  });
+
+  describe('entre centros de trabajo', () => {
+    const conPlantilla = (datosDeCentro: Record<string, unknown>[], activos: number) => [
+      { ...datosDeCentro[0], grupoEtario: [veces(activos, {})] },
+    ];
+    const norte = conPlantilla(periodo(2, 8, 9, 1, 30), 40)[0];
+    const sur = conPlantilla(periodo(6, 4, 7, 3, 12), 25)[0];
+    const centros = [
+      { _id: 'c1', nombreCentro: 'Planta Norte' },
+      { _id: 'c2', nombreCentro: 'Planta Sur' },
+    ];
+
+    it('calcula los mismos indicadores para cada centro', () => {
+      const { filas } = compararCentros([norte, sur], centros);
+      expect(filas.map((f) => [f.nombre, f.activos])).toEqual([
+        ['Planta Norte', 40],
+        ['Planta Sur', 25],
+      ]);
+      const valor = (i: number, clave: string) => filas[i].indicadores.find((x) => x.clave === clave)?.valor;
+      expect(valor(0, 'sobrepeso')).toBe(20);
+      expect(valor(1, 'sobrepeso')).toBe(60);
+      expect(valor(0, 'aptos')).toBe(90);
+      expect(valor(1, 'aptos')).toBe(70);
+      expect(valor(1, 'consultas')).toBe(12);
+    });
+
+    it('señala el centro menos favorable solo donde hay una lectura clara', () => {
+      const { menosFavorable } = compararCentros([norte, sur], centros);
+      // Más sobrepeso y menos aptos: Planta Sur
+      expect(menosFavorable.sobrepeso).toBe('c2');
+      expect(menosFavorable.aptos).toBe('c2');
+      // Presión y cintura están empatadas; los conteos no se califican
+      expect(menosFavorable.presion).toBeUndefined();
+      expect(menosFavorable.cintura).toBeUndefined();
+      expect(menosFavorable.consultas).toBeUndefined();
+    });
+
+    it('con un solo centro con datos no señala a ninguno', () => {
+      const { menosFavorable, filas } = compararCentros([norte, {}], centros);
+      expect(menosFavorable).toEqual({});
+      expect(filas[1].activos).toBe(0);
+      expect(filas[1].indicadores.find((i) => i.clave === 'sobrepeso')?.valor).toBeNull();
+    });
+
+    it('arma las columnas de la tabla', () => {
+      expect(columnasDeCentros(compararCentros([norte, sur], centros))).toEqual([
+        'Centro de trabajo',
+        'Trabajadores activos',
+        'Trabajadores con exploración física',
+        'Con sobrepeso u obesidad',
+        'Con presión arterial alta o hipertensión',
+        'Con cintura de alto riesgo',
+        'Trabajadores con aptitud evaluada',
+        'Aptos sin restricciones',
+        'Consultas médicas',
+      ]);
+    });
   });
 });

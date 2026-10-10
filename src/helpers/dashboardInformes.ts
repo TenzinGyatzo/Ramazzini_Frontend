@@ -63,6 +63,8 @@ export interface InformeDeTablero {
   recomendacionesTabla: { hallazgo: string; medidaPreventiva: string }[];
   /** Comparación con otro periodo, si el usuario la pidió. */
   comparativo?: TablaDeInforme | null;
+  /** Los mismos indicadores por centro de trabajo, cuando la empresa tiene varios. */
+  porCentro?: TablaDeInforme | null;
 }
 
 const pct = (parte: number, total: number) => (total > 0 ? Math.round((parte / total) * 100) : 0);
@@ -304,6 +306,7 @@ export function armarInforme(
     | 'recomendaciones'
     | 'recomendacionesTabla'
     | 'comparativo'
+    | 'porCentro'
   >,
 ): InformeDeTablero {
   return {
@@ -341,6 +344,12 @@ export function hojasDeExcel(informe: InformeDeTablero): HojaDeInforme[] {
     hojas.push({
       nombre: 'Comparativo',
       filas: [[informe.comparativo.titulo], informe.comparativo.columnas, ...informe.comparativo.filas],
+    });
+  }
+  if (informe.porCentro) {
+    hojas.push({
+      nombre: 'Por centro',
+      filas: [[informe.porCentro.titulo], informe.porCentro.columnas, ...informe.porCentro.filas],
     });
   }
   for (const tabla of informe.tablas) {
