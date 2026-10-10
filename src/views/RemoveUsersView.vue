@@ -4,6 +4,7 @@ import { useUserStore } from "@/stores/user";
 import UserItem from "@/components/UserItem.vue";
 import AuthAPI from "@/api/AuthAPI";
 import PermissionsAPI from "@/api/PermissionsAPI";
+import { rutaDePerfilFirmante } from "@/composables/usePerfilFirmanteDeUsuario";
 
 const toast = inject("toast");
 const requestEliminacion = inject("requestEliminacion");
@@ -11,6 +12,11 @@ const requestEliminacion = inject("requestEliminacion");
 const userStore = useUserStore();
 const usuarios = ref([]);
 const loading = ref(true);
+
+// Solo el Administrador de plataforma abre el perfil de firmante de otro usuario
+// El rol se lee al pintar: al recargar la página el usuario puede llegar después de montar la vista
+const rutaFirmanteDe = (usuario) =>
+  userStore.user?.role === "Administrador" ? rutaDePerfilFirmante(usuario) : null;
 
 onMounted(async () => {
   const idProveedorSalud = userStore.user?.idProveedorSalud;
@@ -110,6 +116,7 @@ const toggleAccountStatus = async (email) => {
         :phone="usuario.phone"
         :role="usuario.role"
         :cuentaActiva="usuario.cuentaActiva"
+        :rutaFirmante="rutaFirmanteDe(usuario)"
         @eliminarUsuario="solicitarEliminacionUsuario"
         @toggleAccountStatus="toggleAccountStatus"
       />

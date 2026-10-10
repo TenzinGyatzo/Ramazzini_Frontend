@@ -3,6 +3,8 @@ import { ref, inject, watch, computed, provide, onUnmounted } from 'vue';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
+import { usePerfilFirmanteDeUsuario } from '@/composables/usePerfilFirmanteDeUsuario';
+import AvisoPerfilFirmanteAjeno from '@/components/AvisoPerfilFirmanteAjeno.vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useCurpPolicy } from '@/composables/useCurpPolicy';
 import { useNom024Fields } from '@/composables/useNom024Fields';
@@ -38,6 +40,11 @@ import {
 } from '@/helpers/trabajadorSexoCurp';
 
 const tecnicoFirmante = useTecnicoFirmanteStore();
+// El Administrador de plataforma puede abrir aquí el perfil de un usuario del proveedor
+const perfilAjeno = usePerfilFirmanteDeUsuario({
+  limpiar: () => tecnicoFirmante.clear(),
+  cargar: (idUsuario) => tecnicoFirmante.loadTecnicoFirmante(idUsuario),
+});
 const proveedorSaludStore = useProveedorSaludStore();
 const userStore = useUserStore();
 const router = useRouter();
@@ -509,7 +516,7 @@ const handleSubmit = async (data) => {
     }
   });
 
-  formData.append('idUser', userStore.user?._id);
+  formData.append('idUser', perfilAjeno.idUsuario.value);
 
   if (firmaArchivo.value) {
     formData.append('firma', firmaArchivo.value);
@@ -568,6 +575,11 @@ const firmaSrc = computed(() => {
         <div v-else>
           <h1 class="text-3xl">Datos del técnico firmante</h1>
           <hr class="mt-2 mb-3">
+
+          <AvisoPerfilFirmanteAjeno
+              v-if="perfilAjeno.esDeOtroUsuario"
+              :usuario="perfilAjeno.usuario.value"
+          />
 
           <p
             v-if="identificationSectionNotice"

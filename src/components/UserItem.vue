@@ -24,6 +24,11 @@ defineProps({
     cuentaActiva: {
         type: Boolean,
         default: true
+    },
+    /** Pantalla de firmante del usuario; solo la recibe el Administrador de plataforma. */
+    rutaFirmante: {
+        type: Object,
+        default: null
     }
 });
 
@@ -64,6 +69,14 @@ defineEmits(['eliminarUsuario', 'toggleAccountStatus']);
 
         <!-- Botones de acción -->
         <div class="mt-4 md:mt-0 md:ml-4 w-full md:w-auto flex flex-col space-y-2">
+            <!-- Perfil de firmante (Administrador de plataforma) -->
+            <RouterLink v-if="rutaFirmante" :to="rutaFirmante"
+                class="user-item-firmante w-full md:w-auto min-w-[140px] px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white uppercase rounded-lg transition duration-300 text-sm sm:text-base flex items-center justify-center"
+                title="Ver y editar su perfil de firmante"
+                data-test="perfil-firmante">
+                <i class="fas fa-signature mr-2"></i>
+                Firmante
+            </RouterLink>
             <!-- Botón de suspender/reactivar -->
             <button v-if="role != 'Principal'" type="button"
                 :class="[

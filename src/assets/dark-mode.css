@@ -4111,3 +4111,10 @@ html.dark-mode .expediente-contador--alerta {
   background-color: #7f1d1d !important;
   color: #fecaca !important;
 }
+
+/* Perfil de firmante de otro usuario (Administrador de plataforma) */
+html.dark-mode .aviso-firmante-ajeno {
+  background-color: #0c4a6e !important;
+  border-color: #0369a1 !important;
+  color: #e0f2fe !important;
+}
