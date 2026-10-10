@@ -45,12 +45,23 @@ const informe = (cambios: Record<string, unknown> = {}) => ({
     trabajadoresConIncapacidad: 2,
     recaidas: 0,
     incapacidadesPermanentes: 0,
+    casosConSecuelas: 1,
     defunciones: 0,
   },
   indicadores: { tasaAusentismo: 0.22, indiceFrecuencia: 0.08, indiceGravedad: 0.63, duracionMedia: 8.33 },
   tendencias: {
     porGrupoDiagnostico: [{ clave: 'respiratorio', casos: 2, dias: 15 }],
     porRegionAnatomica: [{ clave: 'espaldaBaja', casos: 1, dias: 10 }],
+    porNaturalezaLesion: [{ clave: 'esguince', casos: 1, dias: 10 }],
+    porDuracion: [
+      { clave: 'sinIncapacidad', casos: 0 },
+      { clave: 'de1a3', casos: 1 },
+      { clave: 'de4a7', casos: 0 },
+      { clave: 'de8a14', casos: 2 },
+      { clave: 'de15a30', casos: 0 },
+      { clave: 'de31a90', casos: 0 },
+      { clave: 'masDe90', casos: 0 },
+    ],
     porPuesto: [{ clave: 'Soldador', casos: 3, dias: 25 }],
     porCentro: [
       { clave: 'c1', casos: 2, dias: 20, trabajadoresActivos: 25 },
@@ -117,6 +128,11 @@ describe('IncapacidadesInformeView', () => {
     expect(wrapper.find('[data-test="por-grupo"]').text()).toContain('Respiratorio');
     expect(wrapper.find('[data-test="por-region"]').text()).toContain('Espalda baja (lumbar)');
     expect(wrapper.find('[data-test="por-centro"]').text()).toContain('Planta Norte');
+    expect(wrapper.find('[data-test="por-naturaleza"]').text()).toContain('Esguince');
+    expect(wrapper.find('[data-test="casos-con-secuelas"]').text()).toBe('1');
+    const duraciones = wrapper.findAll('[data-test="duracion"]');
+    expect(duraciones).toHaveLength(7);
+    expect(duraciones.map((d) => d.text())).toEqual(['', '1', '', '2', '', '', '']);
     expect(wrapper.findAll('[data-test="mes"]')).toHaveLength(2);
     expect(wrapper.findAll('[data-test="dia-semana"]')[0].text()).toBe('2');
     expect(wrapper.find('[data-test="trabajador"]').text()).toContain('López Ana');

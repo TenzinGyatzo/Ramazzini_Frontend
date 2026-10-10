@@ -22,12 +22,23 @@ const informe = (): InformeIncapacidades => ({
     trabajadoresConIncapacidad: 2,
     recaidas: 0,
     incapacidadesPermanentes: 0,
+    casosConSecuelas: 1,
     defunciones: 0,
   },
   indicadores: { tasaAusentismo: 0.69, indiceFrecuencia: 0.08, indiceGravedad: 0.63, duracionMedia: 8.33 },
   tendencias: {
     porGrupoDiagnostico: [{ clave: 'respiratorio', casos: 2, dias: 15 }],
     porRegionAnatomica: [{ clave: 'espaldaBaja', casos: 1, dias: 10 }],
+    porNaturalezaLesion: [{ clave: 'esguince', casos: 1, dias: 10 }],
+    porDuracion: [
+      { clave: 'sinIncapacidad', casos: 0 },
+      { clave: 'de1a3', casos: 1 },
+      { clave: 'de4a7', casos: 0 },
+      { clave: 'de8a14', casos: 2 },
+      { clave: 'de15a30', casos: 0 },
+      { clave: 'de31a90', casos: 0 },
+      { clave: 'masDe90', casos: 0 },
+    ],
     porPuesto: [{ clave: 'Soldador', casos: 3, dias: 25 }],
     porCentro: [{ clave: 'c1', casos: 3, dias: 25, trabajadoresActivos: 40 }],
     porMes: [
@@ -89,6 +100,9 @@ describe('informe de incapacidades', () => {
 
     expect(tendencias).toContainEqual(['Espalda baja (lumbar)', 1, 10]);
     expect(tendencias).toContainEqual(['Planta Norte', 3, 25]);
+    expect(tendencias).toContainEqual(['Esguince', 1, 10]);
+    expect(tendencias).toContainEqual(['De 8 a 14 días', 2]);
+    expect(resumen).toContainEqual(['Casos con secuelas', 1]);
     expect(tendencias).toContainEqual(['Lunes', 2]);
     expect(tendencias).toContainEqual(['Espalda baja (lumbar)', 'Soldador', 1]);
     expect(porMes[1]).toEqual(['ene 2026', 2, 12]);

@@ -17,11 +17,13 @@ import {
   DIAS_DE_LA_SEMANA,
   INDICADORES,
   PERIODOS_DE_INFORME,
+  TRAMOS_DE_DURACION,
   exportarInformeExcel,
   fechasDePeriodo,
   textoDeGrupo,
   textoDeIndicador,
   textoDeMes,
+  textoDeNaturaleza,
   textoDePuesto,
   textoDeRegion,
   type Agrupado,
@@ -114,7 +116,21 @@ const barras = (filas: Agrupado[], texto: (clave: string) => string) =>
 
 const porGrupo = computed(() => barras(informe.value?.tendencias.porGrupoDiagnostico ?? [], textoDeGrupo));
 const porRegion = computed(() => barras(informe.value?.tendencias.porRegionAnatomica ?? [], textoDeRegion));
+const porNaturaleza = computed(() =>
+  barras(informe.value?.tendencias.porNaturalezaLesion ?? [], textoDeNaturaleza),
+);
 const porPuesto = computed(() => barras(informe.value?.tendencias.porPuesto ?? [], textoDePuesto));
+
+const duraciones = computed(() => {
+  const lista = informe.value?.tendencias.porDuracion ?? [];
+  const maximo = Math.max(1, ...lista.map((tramo) => tramo.casos));
+  return lista.map((tramo) => ({
+    ...tramo,
+    texto: TRAMOS_DE_DURACION[tramo.clave]?.texto ?? tramo.clave,
+    corto: TRAMOS_DE_DURACION[tramo.clave]?.corto ?? tramo.clave,
+    alto: `${tramo.casos ? Math.max(6, (tramo.casos / maximo) * 100) : 0}%`,
+  }));
+});
 const porCentro = computed(() =>
   barras(informe.value?.tendencias.porCentro ?? [], (clave) => nombreDeCentro.value.get(clave) ?? 'Centro'),
 );
@@ -312,6 +328,10 @@ const cifra = 'mt-0.5 text-2xl font-semibold tabular-nums text-gray-900 dark:tex
                     <dd class="text-lg font-semibold tabular-nums text-gray-900 dark:text-slate-100">{{ informe.totales.incapacidadesPermanentes }}</dd>
                   </div>
                   <div>
+                    <dt :class="etiqueta" title="Casos con secuelas registradas, contados por la fecha de su alta">Casos con secuelas</dt>
+                    <dd class="text-lg font-semibold tabular-nums text-gray-900 dark:text-slate-100" data-test="casos-con-secuelas">{{ informe.totales.casosConSecuelas ?? 0 }}</dd>
+                  </div>
+                  <div>
                     <dt :class="etiqueta">Defunciones</dt>
                     <dd class="text-lg font-semibold tabular-nums text-gray-900 dark:text-slate-100">{{ informe.totales.defunciones }}</dd>
                   </div>
@@ -407,6 +427,39 @@ const cifra = 'mt-0.5 text-2xl font-semibold tabular-nums text-gray-900 dark:tex
               <h2 id="informe-region" :class="tituloDeSeccion">¿Dónde se lastiman? Región anatómica</h2>
               <div class="px-4 py-3" data-test="por-region">
                 <InformeBarras :filas="porRegion" vacio="Ningún caso del periodo tiene región anatómica." />
+              </div>
+            </section>
+
+            <section v-if="porNaturaleza.length" :class="tarjeta" aria-labelledby="informe-naturaleza">
+              <h2 id="informe-naturaleza" :class="tituloDeSeccion">Naturaleza de la lesión en riesgos de trabajo</h2>
+              <div class="px-4 py-3" data-test="por-naturaleza">
+                <InformeBarras :filas="porNaturaleza" />
+              </div>
+            </section>
+
+            <section :class="tarjeta" aria-labelledby="informe-duracion">
+              <h2 id="informe-duracion" :class="tituloDeSeccion">Casos por duración</h2>
+              <div class="px-4 py-3">
+                <ol class="flex h-28 items-end gap-2">
+                  <li
+                    v-for="tramo in duraciones"
+                    :key="tramo.clave"
+                    class="flex h-full flex-1 flex-col items-center justify-end"
+                    :title="`${tramo.texto}: ${tramo.casos} ${tramo.casos === 1 ? 'caso' : 'casos'}`"
+                    data-test="duracion"
+                  >
+                    <span class="mb-1 text-xs tabular-nums text-gray-700 dark:text-slate-300">{{ tramo.casos || '' }}</span>
+                    <span class="informe-barras__barra w-full max-w-[3rem] rounded-t bg-emerald-500" :style="{ height: tramo.alto }"></span>
+                  </li>
+                </ol>
+                <ol class="mt-1 flex gap-2 border-t border-gray-200 pt-1 dark:border-slate-700" aria-hidden="true">
+                  <li v-for="tramo in duraciones" :key="tramo.clave" class="flex-1 text-center text-[11px] text-gray-500 dark:text-slate-400">
+                    {{ tramo.corto }}
+                  </li>
+                </ol>
+                <p class="mt-2 text-xs text-gray-500 dark:text-slate-400">
+                  Días de incapacidad que acumula cada caso completo, aunque parte haya ocurrido fuera del periodo.
+                </p>
               </div>
             </section>
 

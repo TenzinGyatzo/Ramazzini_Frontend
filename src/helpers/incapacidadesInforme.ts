@@ -7,6 +7,7 @@ import * as xlsx from 'xlsx';
 import { formatNombreCompleto } from './formatNombreCompleto';
 import {
   GRUPOS_DIAGNOSTICO,
+  NATURALEZAS_LESION,
   RAMOS,
   REGIONES_ANATOMICAS,
   TIPOS_RIESGO,
@@ -38,6 +39,7 @@ export interface InformeIncapacidades {
     trabajadoresConIncapacidad: number;
     recaidas: number;
     incapacidadesPermanentes: number;
+    casosConSecuelas: number;
     defunciones: number;
   };
   indicadores: {
@@ -49,6 +51,10 @@ export interface InformeIncapacidades {
   tendencias: {
     porGrupoDiagnostico: Agrupado[];
     porRegionAnatomica: Agrupado[];
+    /** Solo riesgos de trabajo. */
+    porNaturalezaLesion: Agrupado[];
+    /** Casos según los días de incapacidad del caso completo. */
+    porDuracion: { clave: string; casos: number }[];
     porPuesto: Agrupado[];
     porCentro: (Agrupado & { trabajadoresActivos: number })[];
     porMes: { mes: string; casos: number; dias: number }[];
@@ -129,6 +135,19 @@ export function textoDeClave(opciones: Opcion[] | null, clave: string): string {
 
 export const textoDeGrupo = (clave: string) => textoDeClave(GRUPOS_DIAGNOSTICO, clave);
 export const textoDeRegion = (clave: string) => textoDeClave(REGIONES_ANATOMICAS, clave);
+export const textoDeNaturaleza = (clave: string) => textoDeClave(NATURALEZAS_LESION, clave);
+
+/** Tramos de duración, con las claves que entrega el servidor. */
+export const TRAMOS_DE_DURACION: Record<string, { texto: string; corto: string }> = {
+  sinIncapacidad: { texto: 'Sin incapacidad', corto: '0' },
+  de1a3: { texto: 'De 1 a 3 días', corto: '1-3' },
+  de4a7: { texto: 'De 4 a 7 días', corto: '4-7' },
+  de8a14: { texto: 'De 8 a 14 días', corto: '8-14' },
+  de15a30: { texto: 'De 15 a 30 días', corto: '15-30' },
+  de31a90: { texto: 'De 31 a 90 días', corto: '31-90' },
+  masDe90: { texto: 'Más de 90 días', corto: '+90' },
+};
+export const textoDeDuracion = (clave: string) => TRAMOS_DE_DURACION[clave]?.texto ?? clave;
 export const textoDeTipoRiesgo = (clave: string) => textoDeClave(TIPOS_RIESGO, clave);
 export const textoDePuesto = (clave: string) => textoDeClave(null, clave);
 
@@ -203,6 +222,7 @@ export function hojasDeInforme(
     ...TIPOS_RIESGO.map((tipo): Celda[] => [`   ${tipo.texto}`, totales.riesgosPorTipo[tipo.valor] ?? 0]),
     ['Recaídas', totales.recaidas],
     ['Incapacidades permanentes', totales.incapacidadesPermanentes],
+    ['Casos con secuelas', totales.casosConSecuelas ?? 0],
     ['Defunciones', totales.defunciones],
     [],
     ['Días de incapacidad', totales.dias.total],
@@ -229,6 +249,10 @@ export function hojasDeInforme(
 
   const hojaTendencias: Celda[][] = [
     ...tabla('Región anatómica', tendencias.porRegionAnatomica, textoDeRegion),
+    ...tabla('Naturaleza de la lesión (riesgos de trabajo)', tendencias.porNaturalezaLesion ?? [], textoDeNaturaleza),
+    ['Duración del caso', 'Casos'],
+    ...(tendencias.porDuracion ?? []).map((tramo): Celda[] => [textoDeDuracion(tramo.clave), tramo.casos]),
+    [],
     ...tabla('Puesto', tendencias.porPuesto, textoDePuesto),
     ...tabla('Centro de trabajo', tendencias.porCentro, (clave) => nombreDeCentro.get(clave) ?? clave),
     ['Día de la semana de inicio', 'Casos nuevos'],
