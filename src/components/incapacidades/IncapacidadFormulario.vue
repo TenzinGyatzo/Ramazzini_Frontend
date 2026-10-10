@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { computed, inject, reactive, ref, watch } from 'vue';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
+import { useCurrentUser } from '@/composables/useCurrentUser';
+import ZonaDeArchivos from './ZonaDeArchivos.vue';
+import {
+  TIPOS_RESPALDO,
+  errorDeArchivo,
+  subirRespaldosPendientes,
+  textoDeTamano,
+  tiposParaCaso,
+  type RespaldoPendiente,
+  type TipoRespaldo,
+} from '@/helpers/incapacidadesRespaldos';
 import {
   CALIFICACIONES,
   GRUPOS_CON_REGION,
@@ -17,6 +28,7 @@ import {
   hoyISO,
   mensajeDeError,
   ramoDe,
+  soloFecha,
   sumarDias,
   textoDe,
   type CaracterIncapacidad,
@@ -153,15 +165,75 @@ const datosDelCaso = (): DatosCaso => ({
     : {}),
 });
 
+// ---- Documentos de respaldo: se eligen aquí y se suben al guardar
+
+const { ensureUserLoaded } = useCurrentUser();
+const respaldos = ref<RespaldoPendiente[]>([]);
+const errorDeRespaldos = ref('');
+
+/** El certificado va con la incapacidad; los formatos ST, con el caso de riesgo de trabajo. */
+const tiposDeRespaldo = computed(() => {
+  if (!form.ramo) return [];
+  const delCaso = tiposParaCaso(form.ramo);
+  return form.sinIncapacidad
+    ? delCaso
+    : [...TIPOS_RESPALDO.filter((tipo) => tipo.valor === 'certificadoIncapacidad'), ...delCaso];
+});
+
+const tipoPorDefecto = (): TipoRespaldo => tiposDeRespaldo.value[0]?.valor ?? 'otro';
+
+const agregarRespaldos = (archivos: File[]) => {
+  const rechazados: string[] = [];
+  for (const archivo of archivos) {
+    const error = errorDeArchivo(archivo);
+    if (error) rechazados.push(`${archivo.name}: ${error}`);
+    else respaldos.value.push({ archivo, tipo: tipoPorDefecto() });
+  }
+  errorDeRespaldos.value = rechazados.join(' ');
+};
+
+// Al cambiar de ramo o marcar «sin incapacidad», un tipo que ya no aplica vuelve al primero disponible
+watch(tiposDeRespaldo, (tipos) => {
+  const validos = tipos.map((tipo) => tipo.valor);
+  for (const respaldo of respaldos.value) {
+    if (!validos.includes(respaldo.tipo)) respaldo.tipo = tipoPorDefecto();
+  }
+});
+
+/** Sube lo elegido una vez creado el registro; lo que falle se avisa, sin deshacer el registro. */
+const subirRespaldos = async (guardado: CasoConIncapacidades) => {
+  if (!respaldos.value.length) return;
+  const usuarioId = await ensureUserLoaded();
+  const fallidos = usuarioId
+    ? await subirRespaldosPendientes(respaldos.value, {
+        trabajadorId: props.trabajadorId,
+        usuarioId: String(usuarioId),
+        caso: guardado.caso,
+        incapacidad: form.sinIncapacidad
+          ? null
+          : guardado.incapacidades.find((i) => soloFecha(i.fechaInicio) === form.fechaInicio),
+        hoy: hoyISO(),
+      })
+    : respaldos.value.map((respaldo) => respaldo.archivo.name);
+  if (fallidos.length) {
+    toast?.open?.({
+      message: `El registro se guardó, pero no se pudo subir: ${fallidos.join(', ')}. Adjúntalo desde la lista.`,
+      type: 'warning',
+      duration: 8000,
+    });
+  }
+};
+
 const guardar = async () => {
   intentoGuardar.value = true;
   if (Object.keys(errores.value).length || guardando.value) return;
   guardando.value = true;
   try {
+    let guardado: CasoConIncapacidades;
     if (form.sinIncapacidad) {
-      await IncapacidadesAPI.abrirCaso(props.trabajadorId, datosDelCaso());
+      ({ data: guardado } = await IncapacidadesAPI.abrirCaso(props.trabajadorId, datosDelCaso()));
     } else {
-      await IncapacidadesAPI.registrarIncapacidad(props.trabajadorId, {
+      ({ data: guardado } = await IncapacidadesAPI.registrarIncapacidad(props.trabajadorId, {
         ...(props.casoBase ? { idCaso: props.casoBase.caso._id } : { caso: datosDelCaso() }),
         incapacidad: {
           origen: form.origen,
@@ -172,8 +244,9 @@ const guardar = async () => {
           fechaExpedicion: form.origen === 'imss' && form.fechaExpedicion ? form.fechaExpedicion : undefined,
           conGoceDeSueldo: form.origen === 'empresa' ? form.conGoceDeSueldo : undefined,
         },
-      });
+      }));
     }
+    await subirRespaldos(guardado);
     toast?.open?.({
       message: form.sinIncapacidad ? 'Riesgo de trabajo registrado' : 'Incapacidad registrada',
       type: 'success',
@@ -405,6 +478,51 @@ const opcionInactiva =
           <label :class="etiqueta" for="caso-notas">Notas (opcional)</label>
           <textarea id="caso-notas" v-model="form.notas" rows="2" maxlength="2000" :class="campo"></textarea>
         </div>
+      </fieldset>
+      <!-- Documentos de respaldo -->
+      <fieldset class="space-y-2">
+        <legend :class="etiqueta">
+          Documentos de respaldo (opcional):
+          {{ form.sinIncapacidad ? 'formatos del IMSS' : esRiesgo ? 'certificado y formatos del IMSS' : 'certificado' }}
+        </legend>
+        <ZonaDeArchivos multiple :deshabilitada="guardando" @archivos="agregarRespaldos" />
+        <p v-if="errorDeRespaldos" class="text-xs text-red-600 dark:text-red-400" data-test="error-respaldos">
+          {{ errorDeRespaldos }}
+        </p>
+        <ul v-if="respaldos.length" class="space-y-1.5">
+          <li
+            v-for="(respaldo, indice) in respaldos"
+            :key="indice"
+            class="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-800"
+            data-test="respaldo-pendiente"
+          >
+            <i
+              :class="respaldo.archivo.name.toLowerCase().endsWith('.pdf') ? 'fas fa-file-pdf text-red-500' : 'fas fa-file-image text-sky-500'"
+              aria-hidden="true"
+            ></i>
+            <span class="min-w-0 flex-1 truncate font-medium text-gray-800 dark:text-slate-200">{{ respaldo.archivo.name }}</span>
+            <span class="shrink-0 text-gray-500 dark:text-slate-400">{{ textoDeTamano(respaldo.archivo.size) }}</span>
+            <select
+              v-if="tiposDeRespaldo.length > 1"
+              v-model="respaldo.tipo"
+              class="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+              aria-label="Tipo de documento"
+              data-test="tipo-pendiente"
+            >
+              <option v-for="tipo in tiposDeRespaldo" :key="tipo.valor" :value="tipo.valor" :title="tipo.descripcion">
+                {{ tipo.texto }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="shrink-0 font-medium text-gray-600 hover:underline dark:text-slate-300"
+              :disabled="guardando"
+              @click="respaldos.splice(indice, 1)"
+            >
+              Quitar
+            </button>
+          </li>
+        </ul>
       </fieldset>
     </template>
 

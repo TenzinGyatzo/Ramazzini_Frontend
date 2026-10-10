@@ -7,6 +7,7 @@ import { useEscapeToClose } from '@/composables/useEscapeToClose';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import IncapacidadFormulario from './IncapacidadFormulario.vue';
 import CasoSeguimientoFormulario from './CasoSeguimientoFormulario.vue';
+import RespaldosIncapacidad from './RespaldosIncapacidad.vue';
 import {
   CALIFICACIONES,
   CARACTERES,
@@ -29,6 +30,8 @@ const emit = defineEmits<{
   (e: 'closeModal'): void;
   /** Cambió algo: quien abrió la ventana puede refrescar sus contadores. */
   (e: 'cambio', casos: CasoConIncapacidades[]): void;
+  /** Se adjuntó un respaldo: el expediente tiene un documento externo nuevo. */
+  (e: 'documentos'): void;
 }>();
 
 const toast = inject<any>('toast');
@@ -81,6 +84,17 @@ const alGuardar = async () => {
   vista.value = { tipo: 'lista' };
   await cargar();
 };
+
+const alAdjuntar = async () => {
+  emit('documentos');
+  await cargar();
+};
+
+/** Respaldos de una incapacidad, o los del caso cuando no se indica ninguna. */
+const respaldosDe = (item: CasoConIncapacidades, incapacidad?: Incapacidad) =>
+  (item.respaldos ?? []).filter((respaldo) =>
+    incapacidad ? respaldo.idIncapacidad === incapacidad._id : !respaldo.idIncapacidad,
+  );
 
 const resumen = computed(() => ({
   casos: casos.value.length,
@@ -279,7 +293,7 @@ const botonPeligro =
             </div>
 
             <!-- Sin casos -->
-            <div v-if="!casos.length" class="rounded-lg border border-dashed border-gray-300 px-4 py-10 text-center dark:border-slate-600">
+            <div v-if="!casos.length" class="px-4 py-10 text-center">
               <i class="fas fa-clipboard-check mb-2 text-2xl text-gray-300 dark:text-slate-600" aria-hidden="true"></i>
               <p class="text-sm font-medium text-gray-700 dark:text-slate-300">Sin incapacidades registradas</p>
               <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">
@@ -379,11 +393,39 @@ const botonPeligro =
                         <i class="fa-solid fa-trash-can text-xs"></i>
                       </button>
                     </template>
+                    <RespaldosIncapacidad
+                      v-if="puedeGestionar || respaldosDe(item, incapacidad).length"
+                      class="basis-full"
+                      :trabajador-id="trabajadorId"
+                      :caso="item.caso"
+                      :incapacidad="incapacidad"
+                      :respaldos="respaldosDe(item, incapacidad)"
+                      :puede-adjuntar="puedeGestionar"
+                      @subido="alAdjuntar"
+                    />
                   </li>
                 </ul>
                 <p v-else class="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">
                   Sin incapacidades: el trabajador siguió laborando.
                 </p>
+
+                <!-- Documentos del caso -->
+                <div
+                  v-if="puedeGestionar || respaldosDe(item).length"
+                  class="flex flex-wrap items-start gap-x-3 gap-y-1 border-t border-gray-100 px-3 py-2 dark:border-slate-700"
+                >
+                  <span class="mt-1 shrink-0 text-xs font-medium text-gray-500 dark:text-slate-400">
+                    {{ item.caso.ramo === 'riesgoTrabajo' ? 'Formatos del caso' : 'Documentos del caso' }}
+                  </span>
+                  <RespaldosIncapacidad
+                    class="min-w-0 flex-1"
+                    :trabajador-id="trabajadorId"
+                    :caso="item.caso"
+                    :respaldos="respaldosDe(item)"
+                    :puede-adjuntar="puedeGestionar"
+                    @subido="alAdjuntar"
+                  />
+                </div>
 
                 <!-- Acciones del caso -->
                 <div v-if="puedeGestionar" class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-3 py-2 dark:border-slate-700">

@@ -4065,6 +4065,41 @@ html.dark-mode .incapacidades-empresa__enlace:hover {
   color: #6ee7b7 !important;
 }
 
+/* Zona para soltar archivos de las incapacidades */
+html.dark-mode .zona-archivos {
+  border-color: #475569 !important;
+  background-color: rgba(15, 23, 42, 0.4) !important;
+}
+
+html.dark-mode .zona-archivos:hover {
+  border-color: #34d399 !important;
+  background-color: rgba(6, 78, 59, 0.22) !important;
+}
+
+html.dark-mode .zona-archivos--sobre {
+  border-color: #10b981 !important;
+  background-color: rgba(6, 95, 70, 0.32) !important;
+}
+
+html.dark-mode .zona-archivos .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .zona-archivos .text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+/* Respaldos de incapacidad: el hover de Tailwind pierde ante el remapeo de .bg-white */
+html.dark-mode .respaldos-incapacidad__documento {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .respaldos-incapacidad__documento:hover {
+  border-color: #34d399 !important;
+  color: #6ee7b7 !important;
+}
+
 /* Prima de riesgo: el aviso de estimación conserva su ámbar */
 html.dark-mode .incapacidades-prima__aviso {
   background-color: #451a03 !important;

@@ -75,6 +75,8 @@ export interface CasoConIncapacidades {
   estado: EstadoCaso;
   dias: DesgloseDias;
   incapacitadoHoy: boolean;
+  /** Documentos que respaldan el caso; solo en la consulta por trabajador. */
+  respaldos?: import('./incapacidadesRespaldos').Respaldo[];
 }
 
 export interface DatosCaso {

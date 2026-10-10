@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import ModalIncapacidades from './ModalIncapacidades.vue';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
+import { abrirRespaldo, subirRespaldo, subirRespaldosPendientes } from '@/helpers/incapacidadesRespaldos';
 
 const TRABAJADOR = '65f000000000000000000001';
 const puedeGestionar = ref(true);
@@ -32,6 +33,31 @@ vi.mock('@/stores/trabajadores', () => ({
 vi.mock('@/composables/useUserPermissions', () => ({
   useUserPermissions: () => ({ canAccessRiesgosTrabajo: puedeGestionar }),
 }));
+
+vi.mock('@/composables/useCurrentUser', () => ({
+  useCurrentUser: () => ({ ensureUserLoaded: async () => 'u1' }),
+}));
+
+vi.mock('@/helpers/incapacidadesRespaldos', async (original) => ({
+  ...(await original<typeof import('@/helpers/incapacidadesRespaldos')>()),
+  subirRespaldo: vi.fn().mockResolvedValue(undefined),
+  abrirRespaldo: vi.fn().mockResolvedValue(undefined),
+  subirRespaldosPendientes: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('@/api/DocumentosAPI', () => ({ default: {} }));
+vi.mock('@/lib/clinicalFiles', () => ({ fetchClinicalFileBlob: vi.fn() }));
+
+const respaldo = (campos: Record<string, unknown> = {}) => ({
+  _id: 'doc1',
+  nombreDocumento: 'Incapacidad IMSS folio AB123',
+  fechaDocumento: '2026-03-02T00:00:00.000Z',
+  extension: '.pdf',
+  rutaDocumento: 'expedientes-medicos/E/C/T',
+  tipo: 'certificadoIncapacidad',
+  idIncapacidad: 'inc1',
+  ...campos,
+});
 
 const fractura = () => ({
   caso: {
@@ -185,5 +211,187 @@ describe('ModalIncapacidades', () => {
     expect(boton(wrapper, 'Eliminar caso')).toBeUndefined();
     expect(wrapper.find('button[title="Eliminar incapacidad"]').exists()).toBe(false);
     expect(wrapper.text()).toContain('02-03-2026 al 08-03-2026');
+  });
+
+  describe('respaldos', () => {
+    const conRespaldos = () => ({
+      ...fractura(),
+      respaldos: [
+        respaldo(),
+        respaldo({ _id: 'doc2', nombreDocumento: 'ST-7 Probable accidente de trabajo', tipo: 'st7', idIncapacidad: undefined }),
+      ],
+    });
+
+    it('muestra el certificado en su incapacidad y los formatos en el caso, y los abre', async () => {
+      const { wrapper } = await montar([conRespaldos()]);
+      const documentos = wrapper.findAll('[data-test="respaldo"]');
+      expect(documentos.map((d) => d.text())).toEqual(['Certificado', 'ST-7']);
+
+      await documentos[1].trigger('click');
+      expect(abrirRespaldo).toHaveBeenCalledWith(expect.objectContaining({ _id: 'doc2' }));
+    });
+
+    it('adjunta el certificado de una incapacidad con su folio y su fecha', async () => {
+      const { wrapper } = await montar([fractura()]);
+      // Primer botón: la incapacidad inicial
+      await wrapper.findAll('[data-test="adjuntar"]')[0].trigger('click');
+      expect((wrapper.find('[data-test="fecha"]').element as HTMLInputElement).value).toBe('2026-03-02');
+      // El tipo no se pregunta: es el certificado
+      expect(wrapper.find('[data-test="tipo"]').exists()).toBe(false);
+
+      await wrapper.find('[data-test="formulario"]').trigger('submit');
+      expect(wrapper.find('[data-test="error"]').text()).toBe('Elige un archivo.');
+      expect(subirRespaldo).not.toHaveBeenCalled();
+
+      const archivo = new File([new Uint8Array(100)], 'escaneo.pdf', { type: 'application/pdf' });
+      const campo = wrapper.find('[data-test="archivo"]');
+      Object.defineProperty(campo.element, 'files', { value: [archivo] });
+      await campo.trigger('change');
+      await wrapper.find('[data-test="formulario"]').trigger('submit');
+      await flushPromises();
+
+      expect(subirRespaldo).toHaveBeenCalledWith({
+        trabajadorId: TRABAJADOR,
+        usuarioId: 'u1',
+        archivo,
+        tipo: 'certificadoIncapacidad',
+        fecha: '2026-03-02',
+        nombre: 'Incapacidad IMSS folio AB123',
+        idCaso: 'caso1',
+        idIncapacidad: 'inc1',
+      });
+      expect(wrapper.emitted('documentos')).toHaveLength(1);
+      // Vuelve a consultar para mostrar el documento
+      expect(IncapacidadesAPI.getCasos).toHaveBeenCalledTimes(2);
+    });
+
+    it('en el caso de riesgo de trabajo se elige el formato', async () => {
+      const { wrapper } = await montar([fractura()]);
+      const botones = wrapper.findAll('[data-test="adjuntar"]');
+      // Dos incapacidades y, al final, el caso
+      expect(botones).toHaveLength(3);
+      await botones[2].trigger('click');
+
+      const tipo = wrapper.find('[data-test="tipo"]');
+      expect(tipo.findAll('option').map((o) => o.text())).toEqual(['ST-7', 'ST-9', 'ST-2', 'ST-3', 'Otro documento']);
+      await tipo.setValue('st2');
+
+      const archivo = new File([new Uint8Array(100)], 'alta.jpg', { type: 'image/jpeg' });
+      const campo = wrapper.find('[data-test="archivo"]');
+      Object.defineProperty(campo.element, 'files', { value: [archivo] });
+      await campo.trigger('change');
+      await wrapper.find('[data-test="formulario"]').trigger('submit');
+      await flushPromises();
+
+      expect(subirRespaldo).toHaveBeenCalledWith(
+        expect.objectContaining({ tipo: 'st2', nombre: 'ST-2 Dictamen de alta', idCaso: 'caso1', idIncapacidad: undefined }),
+      );
+    });
+
+    it('el estado vacío no parece una zona para soltar archivos', async () => {
+      const { wrapper } = await montar([]);
+      expect(wrapper.html()).not.toContain('border-dashed');
+    });
+
+    it('la zona de archivos acepta arrastrar y soltar, y rechaza lo que pesa más de 3 MB', async () => {
+      const { wrapper } = await montar([fractura()]);
+      await wrapper.findAll('[data-test="adjuntar"]')[0].trigger('click');
+      const zona = wrapper.find('[data-test="zona-archivos"]');
+      expect(zona.classes()).toContain('border-dashed');
+      expect(zona.text()).toContain('Arrastra el archivo aquí o haz clic para seleccionar');
+
+      await zona.trigger('dragenter');
+      expect(zona.text()).toContain('¡Suelta el archivo aquí!');
+
+      expect(zona.text()).toContain('máximo 3 MB');
+      const pesado = new File([new Uint8Array(3 * 1024 * 1024 + 1)], 'foto.jpg', { type: 'image/jpeg' });
+      await zona.trigger('drop', { dataTransfer: { files: [pesado] } });
+      expect(wrapper.find('[data-test="error"]').text()).toContain('3 MB');
+      expect(wrapper.find('[data-test="elegido"]').exists()).toBe(false);
+
+      const ligero = new File([new Uint8Array(2048)], 'certificado.pdf', { type: 'application/pdf' });
+      await wrapper.find('[data-test="zona-archivos"]').trigger('drop', { dataTransfer: { files: [ligero] } });
+      expect(wrapper.find('[data-test="elegido"]').text()).toContain('certificado.pdf');
+      expect(wrapper.find('[data-test="elegido"]').text()).toContain('2 KB');
+    });
+
+    it('al registrar se pueden elegir los documentos, y se suben al guardar', async () => {
+      const guardado = fractura();
+      guardado.incapacidades.push({
+        _id: 'inc3',
+        idCaso: 'caso1',
+        origen: 'imss',
+        caracter: 'subsecuente',
+        folio: 'AB125',
+        fechaInicio: '2026-03-16T00:00:00.000Z',
+        dias: 7,
+        fechaTermino: '2026-03-22T00:00:00.000Z',
+      });
+      vi.mocked(IncapacidadesAPI.registrarIncapacidad).mockResolvedValueOnce({ data: guardado } as any);
+
+      const { wrapper } = await montar([fractura()]);
+      await boton(wrapper, 'Agregar subsecuente').trigger('click');
+      await wrapper.find('#inc-folio').setValue('AB125');
+      await wrapper.find('#inc-dias').setValue(7);
+
+      const certificado = new File([new Uint8Array(2048)], 'certificado.pdf', { type: 'application/pdf' });
+      const formato = new File([new Uint8Array(2048)], 'st2.jpg', { type: 'image/jpeg' });
+      const invalido = new File([new Uint8Array(10)], 'acta.docx');
+      await wrapper
+        .find('[data-test="zona-archivos"]')
+        .trigger('drop', { dataTransfer: { files: [certificado, formato, invalido] } });
+
+      expect(wrapper.find('[data-test="error-respaldos"]').text()).toContain('acta.docx');
+      const pendientes = wrapper.findAll('[data-test="respaldo-pendiente"]');
+      expect(pendientes).toHaveLength(2);
+      // Por defecto es el certificado; el segundo se marca como ST-2
+      const tipos = wrapper.findAll('[data-test="tipo-pendiente"]');
+      expect((tipos[0].element as HTMLSelectElement).value).toBe('certificadoIncapacidad');
+      await tipos[1].setValue('st2');
+
+      await wrapper.find('form').trigger('submit');
+      await flushPromises();
+
+      expect(subirRespaldosPendientes).toHaveBeenCalledWith(
+        [
+          { archivo: certificado, tipo: 'certificadoIncapacidad' },
+          { archivo: formato, tipo: 'st2' },
+        ],
+        expect.objectContaining({
+          trabajadorId: TRABAJADOR,
+          usuarioId: 'u1',
+          caso: expect.objectContaining({ _id: 'caso1' }),
+          // La incapacidad recién registrada, no las anteriores del caso
+          incapacidad: expect.objectContaining({ _id: 'inc3' }),
+        }),
+      );
+    });
+
+    it('si un documento no sube, el registro se conserva y se avisa', async () => {
+      vi.mocked(IncapacidadesAPI.registrarIncapacidad).mockResolvedValueOnce({ data: fractura() } as any);
+      vi.mocked(subirRespaldosPendientes).mockResolvedValueOnce(['certificado.pdf']);
+
+      const { wrapper, toast } = await montar([fractura()]);
+      await boton(wrapper, 'Agregar subsecuente').trigger('click');
+      await wrapper.find('#inc-folio').setValue('AB125');
+      await wrapper.find('#inc-dias').setValue(7);
+      const certificado = new File([new Uint8Array(2048)], 'certificado.pdf', { type: 'application/pdf' });
+      await wrapper.find('[data-test="zona-archivos"]').trigger('drop', { dataTransfer: { files: [certificado] } });
+      await wrapper.find('form').trigger('submit');
+      await flushPromises();
+
+      expect(toast.open).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'warning', message: expect.stringContaining('no se pudo subir: certificado.pdf') }),
+      );
+      // Regresa a la lista con el registro guardado
+      expect(IncapacidadesAPI.getCasos).toHaveBeenCalledTimes(2);
+    });
+
+    it('sin permiso se pueden abrir, pero no adjuntar', async () => {
+      puedeGestionar.value = false;
+      const { wrapper } = await montar([conRespaldos()]);
+      expect(wrapper.findAll('[data-test="respaldo"]')).toHaveLength(2);
+      expect(wrapper.find('[data-test="adjuntar"]').exists()).toBe(false);
+    });
   });
 });

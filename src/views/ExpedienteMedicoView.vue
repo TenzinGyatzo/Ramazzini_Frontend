@@ -1156,6 +1156,7 @@ const crearDocumento = (tipoDocumento: string) =>
           v-if="showIncapacidadesModal"
           @closeModal="showIncapacidadesModal = false"
           @cambio="casosDeIncapacidad = $event"
+          @documentos="() => fetchData(true)"
         />
       </Transition>
 
