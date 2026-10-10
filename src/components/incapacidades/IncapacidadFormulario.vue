@@ -2,6 +2,7 @@
 import { computed, inject, reactive, ref, watch } from 'vue';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
 import { useCurrentUser } from '@/composables/useCurrentUser';
+import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import ZonaDeArchivos from './ZonaDeArchivos.vue';
 import {
   TIPOS_RESPALDO,
@@ -49,6 +50,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'guardado'): void;
   (e: 'cancelar'): void;
+  /** Hay datos capturados sin guardar. */
+  (e: 'sucio', valor: boolean): void;
 }>();
 
 const toast = inject<any>('toast');
@@ -199,6 +202,15 @@ watch(tiposDeRespaldo, (tipos) => {
     if (!validos.includes(respaldo.tipo)) respaldo.tipo = tipoPorDefecto();
   }
 });
+
+const { isDirty } = useDirtySnapshot(
+  () => ({
+    ...form,
+    respaldos: respaldos.value.map((respaldo) => [respaldo.archivo.name, respaldo.tipo]),
+  }),
+  { markCleanOnMount: true },
+);
+watch(isDirty, (valor) => emit('sucio', valor));
 
 /** Sube lo elegido una vez creado el registro; lo que falle se avisa, sin deshacer el registro. */
 const subirRespaldos = async (guardado: CasoConIncapacidades) => {

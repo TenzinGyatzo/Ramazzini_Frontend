@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from 'vue';
+import { computed, inject, onMounted, ref, watch } from 'vue';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
+import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useUserPermissions } from '@/composables/useUserPermissions';
-import { useEscapeToClose } from '@/composables/useEscapeToClose';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import IncapacidadFormulario from './IncapacidadFormulario.vue';
 import CasoSeguimientoFormulario from './CasoSeguimientoFormulario.vue';
@@ -70,6 +71,7 @@ const cargar = async () => {
 
 onMounted(cargar);
 
+/** Desde un formulario se vuelve a la lista; desde la lista se cierra la ventana. */
 const cerrar = () => {
   if (vista.value.tipo !== 'lista') {
     vista.value = { tipo: 'lista' };
@@ -78,7 +80,28 @@ const cerrar = () => {
   emit('closeModal');
 };
 
-useEscapeToClose(cerrar);
+/** El formulario abierto tiene datos sin guardar. */
+const formularioSucio = ref(false);
+watch(
+  () => vista.value.tipo,
+  () => {
+    formularioSucio.value = false;
+  },
+);
+
+/** Zonas de «adjuntar» de la lista con un archivo elegido que aún no se sube. */
+const adjuntosPendientes = ref<string[]>([]);
+const marcarAdjunto = (clave: string, pendiente: boolean) => {
+  adjuntosPendientes.value = adjuntosPendientes.value.filter((otra) => otra !== clave);
+  if (pendiente) adjuntosPendientes.value.push(clave);
+};
+const hayCambios = computed(() => formularioSucio.value || adjuntosPendientes.value.length > 0);
+
+// Con cambios sin guardar, salir del formulario o cerrar la ventana pide confirmar el descarte
+const { showDiscardConfirm, dismissPulse, requestDismiss, continueEditing, confirmDiscard } =
+  useModalDirtyGuard({ isDirty: hayCambios, onClose: cerrar });
+
+const cerrarVentana = () => requestDismiss(() => emit('closeModal'));
 
 const alGuardar = async () => {
   vista.value = { tipo: 'lista' };
@@ -180,11 +203,13 @@ const botonPeligro =
   <div class="modal modal-incapacidades fixed top-0 left-0 z-50 flex h-screen w-full items-center justify-center p-4 sm:p-8">
     <div
       class="modal-work-overlay absolute top-0 left-0 h-full w-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
-      @click="cerrar"
+      :class="{ 'modal-backdrop-pulse': dismissPulse }"
+      @click="requestDismiss()"
     ></div>
 
     <div
       class="modal-work-panel modal-inner relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white text-gray-800 shadow-md shadow-slate-900 dark:bg-slate-800 dark:text-slate-100"
+      :class="{ 'modal-dismiss-pulse': dismissPulse }"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-incapacidades-titulo"
@@ -197,7 +222,7 @@ const botonPeligro =
           class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-slate-700"
           title="Volver a la lista"
           aria-label="Volver a la lista"
-          @click="vista = { tipo: 'lista' }"
+          @click="requestDismiss()"
         >
           <i class="fa-solid fa-arrow-left text-sm"></i>
         </button>
@@ -217,7 +242,7 @@ const botonPeligro =
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-700"
           title="Cerrar"
           aria-label="Cerrar"
-          @click="emit('closeModal')"
+          @click="cerrarVentana"
         >
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
@@ -231,7 +256,8 @@ const botonPeligro =
           :casos="casos"
           :caso-base="vista.casoBase"
           @guardado="alGuardar"
-          @cancelar="vista = { tipo: 'lista' }"
+          @cancelar="requestDismiss()"
+          @sucio="formularioSucio = $event"
         />
 
         <!-- Seguimiento -->
@@ -240,7 +266,8 @@ const botonPeligro =
           :trabajador-id="trabajadorId"
           :item="vista.item"
           @guardado="alGuardar"
-          @cancelar="vista = { tipo: 'lista' }"
+          @cancelar="requestDismiss()"
+          @sucio="formularioSucio = $event"
         />
 
         <!-- Lista -->
@@ -402,6 +429,7 @@ const botonPeligro =
                       :respaldos="respaldosDe(item, incapacidad)"
                       :puede-adjuntar="puedeGestionar"
                       @subido="alAdjuntar"
+                      @sucio="marcarAdjunto(incapacidad._id, $event)"
                     />
                   </li>
                 </ul>
@@ -424,6 +452,7 @@ const botonPeligro =
                     :respaldos="respaldosDe(item)"
                     :puede-adjuntar="puedeGestionar"
                     @subido="alAdjuntar"
+                    @sucio="marcarAdjunto(item.caso._id, $event)"
                   />
                 </div>
 
@@ -459,5 +488,11 @@ const botonPeligro =
         </template>
       </div>
     </div>
+
+    <ModalDiscardConfirmDialog
+      :open="showDiscardConfirm"
+      @continue-editing="continueEditing"
+      @discard="confirmDiscard"
+    />
   </div>
 </template>

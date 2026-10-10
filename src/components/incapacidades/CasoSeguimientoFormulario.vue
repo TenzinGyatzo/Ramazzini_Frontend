@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, inject, reactive, ref } from 'vue';
+import { computed, inject, reactive, ref, watch } from 'vue';
+import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
 import {
   CALIFICACIONES,
@@ -23,6 +24,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'guardado'): void;
   (e: 'cancelar'): void;
+  /** Hay cambios sin guardar. */
+  (e: 'sucio', valor: boolean): void;
 }>();
 
 const toast = inject<any>('toast');
@@ -47,6 +50,9 @@ const form = reactive({
   defuncion: !!caso.defuncion,
   fechaDefuncion: soloFecha(caso.fechaDefuncion),
 });
+
+const { isDirty } = useDirtySnapshot(() => ({ ...form }), { markCleanOnMount: true });
+watch(isDirty, (valor) => emit('sucio', valor));
 
 const guardando = ref(false);
 const intentoGuardar = ref(false);

@@ -112,9 +112,14 @@ const formAbierto = ref(false);
 const editandoId = ref<string | null>(null);
 const form = reactive(insumoVacio());
 
+/** Cómo estaba el formulario al abrirse, para saber si hay cambios sin guardar. */
+const formAlAbrir = ref('');
+const formConCambios = computed(() => JSON.stringify(form) !== formAlAbrir.value);
+
 function abrirNuevo() {
   editandoId.value = null;
   Object.assign(form, insumoVacio());
+  formAlAbrir.value = JSON.stringify(form);
   formAbierto.value = true;
 }
 
@@ -132,6 +137,7 @@ function abrirEdicion(insumo: Insumo) {
     parametrosAntidoping: insumo.parametrosAntidoping,
     activo: insumo.activo,
   });
+  formAlAbrir.value = JSON.stringify(form);
   formAbierto.value = true;
 }
 
@@ -203,6 +209,12 @@ const gruposSugeridos = computed(() =>
 );
 const disponibles = computed(() =>
   listaSugerida.value.filter((i) => !i.yaExiste).map((i) => i.nombre),
+);
+/** La lista abre con todos los disponibles marcados; cambiar esa selección cuenta como cambio. */
+const seleccionConCambios = computed(
+  () =>
+    !cargandoLista.value &&
+    [...elegidos.value].sort().join('\n') !== [...disponibles.value].sort().join('\n'),
 );
 
 async function abrirListaSugerida() {
@@ -444,6 +456,7 @@ const tarjeta =
       v-if="listaAbierta"
       titulo="Lista sugerida de insumos"
       ancho="lg"
+      :sucio="seleccionConCambios && !guardando"
       @cerrar="listaAbierta = false"
     >
       <p v-if="cargandoLista" class="py-8 text-center text-gray-500">
@@ -491,8 +504,8 @@ const tarjeta =
           </fieldset>
         </template>
       </template>
-      <template #acciones>
-        <button type="button" :class="botonSecundario" @click="listaAbierta = false">Cancelar</button>
+      <template #acciones="{ cerrar }">
+        <button type="button" :class="botonSecundario" @click="cerrar">Cancelar</button>
         <button
           v-if="disponibles.length > 0"
           type="button"
@@ -509,6 +522,7 @@ const tarjeta =
       v-if="formAbierto"
       :titulo="editandoId ? 'Editar insumo' : 'Agregar insumo'"
       ancho="lg"
+      :sucio="formConCambios && !guardando"
       @cerrar="formAbierto = false"
     >
       <form id="form-insumo" class="grid gap-3 sm:grid-cols-2" @submit.prevent="guardarInsumo">
@@ -571,8 +585,8 @@ const tarjeta =
           }}
         </label>
       </form>
-      <template #acciones>
-        <button type="button" :class="botonSecundario" @click="formAbierto = false">Cancelar</button>
+      <template #acciones="{ cerrar }">
+        <button type="button" :class="botonSecundario" @click="cerrar">Cancelar</button>
         <button type="submit" form="form-insumo" :class="botonPrimario" :disabled="guardando">
           {{ guardando ? 'Guardando...' : 'Guardar' }}
         </button>

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import ModalIncapacidades from './ModalIncapacidades.vue';
@@ -211,6 +211,107 @@ describe('ModalIncapacidades', () => {
     expect(boton(wrapper, 'Eliminar caso')).toBeUndefined();
     expect(wrapper.find('button[title="Eliminar incapacidad"]').exists()).toBe(false);
     expect(wrapper.text()).toContain('02-03-2026 al 08-03-2026');
+  });
+
+  describe('cambios sin guardar', () => {
+    const descarte = () => document.body.querySelector('[role="alertdialog"]');
+    const botonDeDescarte = (texto: string) =>
+      [...(descarte()?.querySelectorAll('button') ?? [])].find((b) => b.textContent?.includes(texto));
+
+    afterEach(() => {
+      document.body.innerHTML = '';
+    });
+
+    it('sin cambios, cancelar vuelve a la lista sin preguntar', async () => {
+      const { wrapper } = await montar([fractura()]);
+      await boton(wrapper, 'Agregar subsecuente').trigger('click');
+      await boton(wrapper, 'Cancelar').trigger('click');
+      expect(descarte()).toBeNull();
+      expect(wrapper.text()).toContain('Accidente de trabajo · Fractura');
+    });
+
+    it('con datos capturados, cancelar, la X y el fondo piden confirmar el descarte', async () => {
+      const { wrapper } = await montar([fractura()]);
+      await boton(wrapper, 'Agregar subsecuente').trigger('click');
+      await wrapper.find('#inc-folio').setValue('AB125');
+
+      await boton(wrapper, 'Cancelar').trigger('click');
+      expect(descarte()).not.toBeNull();
+      // Seguir editando conserva lo capturado
+      botonDeDescarte('Seguir editando')?.click();
+      await flushPromises();
+      expect(descarte()).toBeNull();
+      expect((wrapper.find('#inc-folio').element as HTMLInputElement).value).toBe('AB125');
+
+      await wrapper.find('.modal-work-overlay').trigger('click');
+      expect(descarte()).not.toBeNull();
+      botonDeDescarte('Seguir editando')?.click();
+      await flushPromises();
+
+      await wrapper.find('button[aria-label="Cerrar"]').trigger('click');
+      expect(descarte()).not.toBeNull();
+      expect(wrapper.emitted('closeModal')).toBeUndefined();
+      // Descartar desde la X cierra la ventana
+      botonDeDescarte('Descartar cambios')?.click();
+      await flushPromises();
+      expect(wrapper.emitted('closeModal')).toHaveLength(1);
+    });
+
+    it('descartar desde Cancelar vuelve a la lista, no cierra la ventana', async () => {
+      const { wrapper } = await montar([fractura()]);
+      await boton(wrapper, 'Calificación, alta y secuelas').trigger('click');
+      await wrapper.find('#seg-calificacion').setValue('probable');
+
+      await boton(wrapper, 'Cancelar').trigger('click');
+      botonDeDescarte('Descartar cambios')?.click();
+      await flushPromises();
+
+      expect(wrapper.emitted('closeModal')).toBeUndefined();
+      expect(wrapper.text()).toContain('Accidente de trabajo · Fractura');
+      // De vuelta en la lista ya no hay nada que descartar
+      await wrapper.find('button[aria-label="Cerrar"]').trigger('click');
+      expect(descarte()).toBeNull();
+      expect(wrapper.emitted('closeModal')).toHaveLength(1);
+    });
+
+    it('un archivo elegido en «Adjuntar» sin subir también pide confirmar', async () => {
+      const { wrapper } = await montar([fractura()]);
+      await wrapper.findAll('[data-test="adjuntar"]')[0].trigger('click');
+
+      // Abrir la zona sin elegir archivo no cuenta como cambio
+      await wrapper.find('.modal-work-overlay').trigger('click');
+      expect(descarte()).toBeNull();
+      expect(wrapper.emitted('closeModal')).toHaveLength(1);
+
+      const certificado = new File([new Uint8Array(2048)], 'certificado.pdf', { type: 'application/pdf' });
+      await wrapper.find('[data-test="zona-archivos"]').trigger('drop', { dataTransfer: { files: [certificado] } });
+      await wrapper.find('button[aria-label="Cerrar"]').trigger('click');
+      expect(descarte()).not.toBeNull();
+      expect(wrapper.emitted('closeModal')).toHaveLength(1);
+
+      botonDeDescarte('Seguir editando')?.click();
+      await flushPromises();
+      expect(wrapper.find('[data-test="elegido"]').text()).toContain('certificado.pdf');
+
+      // Al quitar el archivo ya no hay nada que descartar
+      await boton(wrapper.find('[data-test="formulario"]'), 'Quitar').trigger('click');
+      await wrapper.find('button[aria-label="Cerrar"]').trigger('click');
+      expect(descarte()).toBeNull();
+      expect(wrapper.emitted('closeModal')).toHaveLength(2);
+    });
+
+    it('después de guardar no pregunta', async () => {
+      const { wrapper } = await montar([fractura()]);
+      await boton(wrapper, 'Agregar subsecuente').trigger('click');
+      await wrapper.find('#inc-folio').setValue('AB125');
+      await wrapper.find('#inc-dias').setValue(7);
+      await wrapper.find('form').trigger('submit');
+      await flushPromises();
+
+      await wrapper.find('button[aria-label="Cerrar"]').trigger('click');
+      expect(descarte()).toBeNull();
+      expect(wrapper.emitted('closeModal')).toHaveLength(1);
+    });
   });
 
   describe('respaldos', () => {

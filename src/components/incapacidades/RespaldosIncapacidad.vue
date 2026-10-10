@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch } from 'vue';
+import { computed, inject, onBeforeUnmount, ref, watch } from 'vue';
 import ZonaDeArchivos from './ZonaDeArchivos.vue';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 import { fechaCorta, hoyISO, mensajeDeError, type Caso, type Incapacidad } from '@/helpers/incapacidades';
@@ -29,7 +29,11 @@ const props = defineProps<{
   puedeAdjuntar: boolean;
 }>();
 
-const emit = defineEmits<{ (e: 'subido'): void }>();
+const emit = defineEmits<{
+  (e: 'subido'): void;
+  /** Hay un archivo elegido que todavía no se sube. */
+  (e: 'sucio', valor: boolean): void;
+}>();
 
 const toast = inject<any>('toast', null);
 const { ensureUserLoaded } = useCurrentUser();
@@ -45,6 +49,12 @@ const archivo = ref<File | null>(null);
 const error = ref('');
 const subiendo = ref(false);
 const abriendo = ref('');
+
+const pendiente = computed(() => adjuntando.value && !!archivo.value && !subiendo.value);
+watch(pendiente, (valor) => emit('sucio', valor));
+onBeforeUnmount(() => {
+  if (pendiente.value) emit('sucio', false);
+});
 
 const sugerirFecha = () => {
   fecha.value = fechaSugerida(tipo.value, props.caso, props.incapacidad, hoyISO());

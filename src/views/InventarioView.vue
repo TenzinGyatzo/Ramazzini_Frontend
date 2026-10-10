@@ -174,6 +174,10 @@ const unidadesEntrada = computed(() => {
     : formEntrada.cantidad;
 });
 
+/** Cómo estaba el formulario de entrada al abrirse, para saber si ya se capturó algo. */
+const entradaAlAbrir = ref('');
+const entradaConCambios = computed(() => JSON.stringify(formEntrada) !== entradaAlAbrir.value);
+
 function abrirEntrada(insumoId = '') {
   Object.assign(formEntrada, {
     idInsumo: insumoId,
@@ -182,12 +186,19 @@ function abrirEntrada(insumoId = '') {
     lote: '',
     caducidad: '',
   });
+  entradaAlAbrir.value = JSON.stringify(formEntrada);
   operacion.value = 'entrada';
 }
+
+const ajusteAlAbrir = ref('');
+const ajusteConCambios = computed(() => JSON.stringify(formAjuste) !== ajusteAlAbrir.value);
+const bajaAlAbrir = ref('');
+const bajaConCambios = computed(() => JSON.stringify(formBaja) !== bajaAlAbrir.value);
 
 function abrirAjuste(lote: LoteInventario) {
   loteSeleccionado.value = lote;
   Object.assign(formAjuste, { existenciaContada: lote.existencia < 0 ? 0 : lote.existencia, motivo: '' });
+  ajusteAlAbrir.value = JSON.stringify(formAjuste);
   operacion.value = 'ajuste';
 }
 
@@ -198,6 +209,7 @@ function abrirBaja(lote: LoteInventario) {
     motivo: lote.estado === 'CADUCADO' ? 'Caducidad' : MOTIVOS_BAJA[0],
     observaciones: '',
   });
+  bajaAlAbrir.value = JSON.stringify(formBaja);
   operacion.value = 'baja';
 }
 
@@ -961,6 +973,7 @@ const botonSecundario =
       v-if="operacion === 'masiva'"
       titulo="Carga masiva de entradas"
       ancho="lg"
+      :sucio="!!archivoCarga && !guardando"
       @cerrar="operacion = null"
     >
       <ol class="mb-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
@@ -1062,8 +1075,8 @@ const botonSecundario =
         </div>
       </div>
 
-      <template #acciones>
-        <button type="button" :class="botonSecundario" @click="operacion = null">Cancelar</button>
+      <template #acciones="{ cerrar }">
+        <button type="button" :class="botonSecundario" @click="cerrar">Cancelar</button>
         <button
           type="button"
           :class="botonPrimario"
@@ -1080,7 +1093,12 @@ const botonSecundario =
     </InventarioModal>
 
     <!-- Registrar entrada -->
-    <InventarioModal v-if="operacion === 'entrada'" titulo="Registrar entrada" @cerrar="operacion = null">
+    <InventarioModal
+      v-if="operacion === 'entrada'"
+      titulo="Registrar entrada"
+      :sucio="entradaConCambios && !guardando"
+      @cerrar="operacion = null"
+    >
       <form id="form-entrada" class="space-y-3" @submit.prevent="guardarEntrada">
         <div>
           <label :class="etiqueta" for="entrada-insumo">Insumo</label>
@@ -1129,8 +1147,8 @@ const botonSecundario =
           </div>
         </template>
       </form>
-      <template #acciones>
-        <button type="button" :class="botonSecundario" @click="operacion = null">Cancelar</button>
+      <template #acciones="{ cerrar }">
+        <button type="button" :class="botonSecundario" @click="cerrar">Cancelar</button>
         <button type="submit" form="form-entrada" :class="botonPrimario" :disabled="guardando">
           {{ guardando ? 'Guardando...' : 'Registrar entrada' }}
         </button>
@@ -1141,6 +1159,7 @@ const botonSecundario =
     <InventarioModal
       v-if="operacion === 'ajuste' && loteSeleccionado && detalle"
       titulo="Ajustar existencia"
+      :sucio="ajusteConCambios && !guardando"
       @cerrar="operacion = null"
     >
       <form id="form-ajuste" class="space-y-3" @submit.prevent="guardarAjuste">
@@ -1157,8 +1176,8 @@ const botonSecundario =
           <input id="ajuste-motivo" v-model="formAjuste.motivo" type="text" maxlength="200" placeholder="Ej. Conteo físico, error de captura" :class="campo" required />
         </div>
       </form>
-      <template #acciones>
-        <button type="button" :class="botonSecundario" @click="operacion = null">Cancelar</button>
+      <template #acciones="{ cerrar }">
+        <button type="button" :class="botonSecundario" @click="cerrar">Cancelar</button>
         <button type="submit" form="form-ajuste" :class="botonPrimario" :disabled="guardando">
           {{ guardando ? 'Guardando...' : 'Ajustar' }}
         </button>
@@ -1169,6 +1188,7 @@ const botonSecundario =
     <InventarioModal
       v-if="operacion === 'baja' && loteSeleccionado && detalle"
       titulo="Dar de baja"
+      :sucio="bajaConCambios && !guardando"
       @cerrar="operacion = null"
     >
       <form id="form-baja" class="space-y-3" @submit.prevent="guardarBaja">
@@ -1191,8 +1211,8 @@ const botonSecundario =
           <input id="baja-observaciones" v-model="formBaja.observaciones" type="text" maxlength="200" :class="campo" />
         </div>
       </form>
-      <template #acciones>
-        <button type="button" :class="botonSecundario" @click="operacion = null">Cancelar</button>
+      <template #acciones="{ cerrar }">
+        <button type="button" :class="botonSecundario" @click="cerrar">Cancelar</button>
         <button type="submit" form="form-baja" :class="botonPrimario" :disabled="guardando">
           {{ guardando ? 'Guardando...' : 'Dar de baja' }}
         </button>
