@@ -2730,6 +2730,14 @@ const contextoDeInforme = () => ({
           : [],
 });
 
+/** Lo que el informe completo agrega al final: diagnósticos de las consultas e inventario. */
+const seccionesAdicionalesDelInformeCompleto = computed(() => ({
+  diagnosticos: diagnosticosDeConsultas.value,
+  totalConsultas: totalConsultas.value,
+  insumos: fuentesDeInforme().insumos,
+  periodoInventario: `del ${fechaLarga(periodoInventario.value.desde)} al ${fechaLarga(periodoInventario.value.hasta)}`,
+}));
+
 const armarInformeDelTablero = () => armarInforme(fuentesDeInforme(), contextoDeInforme());
 const armarInformeTematico = (tema) => informeTematico(tema, fuentesDeInforme(), contextoDeInforme());
 
@@ -3650,6 +3658,7 @@ const tablaCintura = computed(() => {
               :total-trabajadores="totalTrabajadores"
               :centro-trabajo="centroSeleccionado"
               :segmento="textoFiltrosPoblacion"
+              :secciones-adicionales="seccionesAdicionalesDelInformeCompleto"
               :tablas-datos="{
                 imc: tablaIMC,
                 aptitud: tablaAptitud,

@@ -12,6 +12,7 @@ import { ref, nextTick, watch, computed, onMounted } from 'vue';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import InformesAPI from '@/api/InformesAPI';
 import { formatearTituloProfesional } from '@/helpers/nombres';
+import { seccionesAdicionalesDelInforme, type SeccionesAdicionales } from '@/helpers/dashboardInformeCompleto';
 
 const props = defineProps<{
   refsGraficas: Record<string, any>;
@@ -28,6 +29,8 @@ const props = defineProps<{
   centroTrabajo?: string;
   /** Filtros de población aplicados, descritos en texto; vacío si es toda la plantilla. */
   segmento?: string;
+  /** Diagnósticos de las consultas e inventario: secciones al final, antes de las conclusiones. */
+  seccionesAdicionales?: SeccionesAdicionales;
   tituloMedicoFirmante?: string;
   nombreMedicoFirmante?: string;
   // Secciones personalizadas
@@ -2091,6 +2094,11 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
         }
         numeroSeccion++; // Incrementar para las siguientes secciones
     }
+
+    // Diagnósticos de las consultas e inventario, cuando hay registros
+    const adicionales = seccionesAdicionalesDelInforme(props.seccionesAdicionales ?? {}, numeroSeccion);
+    contenido.push(...(adicionales.contenido as Content[]));
+    numeroSeccion = adicionales.siguienteNumero;
 
     // Secciones personalizadas
     // Agregar conclusiones si existen
