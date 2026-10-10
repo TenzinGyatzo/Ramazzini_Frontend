@@ -67,6 +67,7 @@ describe('secciones y cifras del tablero de salud', () => {
       'gabinete',
       'aptitud',
       'diagnosticos',
+      'inventario',
     ]);
   });
 });

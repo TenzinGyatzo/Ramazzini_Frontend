@@ -31,6 +31,7 @@ export const SECCIONES_DE_TABLERO: SeccionDeTablero[] = [
   { id: 'gabinete', titulo: 'Estudios de gabinete', icono: 'fas fa-stethoscope' },
   { id: 'aptitud', titulo: 'Aptitud y consultas', icono: 'fas fa-clipboard-check' },
   { id: 'diagnosticos', titulo: 'Diagnósticos de las consultas', icono: 'fas fa-notes-medical' },
+  { id: 'inventario', titulo: 'Inventario', icono: 'fas fa-boxes-stacked' },
 ];
 
 export interface CifraClave {

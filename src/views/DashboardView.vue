@@ -18,6 +18,15 @@ import ModalPersonalizarInforme from '@/components/ModalPersonalizarInforme.vue'
 import DashboardChartSkeleton from '@/components/skeletons/DashboardChartSkeleton.vue';
 import ListaDeConteos from '@/components/graficas/ListaDeConteos.vue';
 import { consultasPorMes, resumirDiagnosticos } from '@/helpers/dashboardDiagnosticos';
+import InventarioAPI from '@/api/InventarioAPI';
+import { useInventarioStore } from '@/stores/inventario';
+import { cantidadConUnidad } from '@/helpers/inventario';
+import {
+  alertasDeExistencias,
+  hayAlertas,
+  periodoDeInventario,
+  sumarConsumo,
+} from '@/helpers/dashboardInventario';
 import { formatearNombreFirmante } from '@/helpers/nombres';
 import { SECCIONES_DE_TABLERO, cifrasClave, registrosDe } from '@/helpers/dashboardSecciones';
 import {
@@ -2470,6 +2479,58 @@ const consultasMensuales = computed(() => {
   }));
 });
 
+// ---- Inventario clínico: consumo del periodo y existencias de hoy, de los centros que se ven
+
+const inventarioStore = useInventarioStore();
+const inventarioDelTablero = ref({ consumo: [], existencias: [] });
+const periodoInventario = computed(() =>
+  periodoDeInventario(fechaInicio.value, fechaFin.value, format(new Date(), 'yyyy-MM-dd')),
+);
+let consultaDeInventario = 0;
+
+const cargarInventario = async () => {
+  const esta = ++consultaDeInventario;
+  const centros =
+    indiceCentroSeleccionado.value === null
+      ? centrosTrabajo.value
+      : [centrosTrabajo.value[indiceCentroSeleccionado.value]].filter(Boolean);
+  if (!inventarioStore.habilitado || !centros.length) {
+    inventarioDelTablero.value = { consumo: [], existencias: [] };
+    return;
+  }
+  const { desde, hasta } = periodoInventario.value;
+  // Un centro sin acceso o con error no impide ver los demás
+  const sinError = (peticion) => peticion.then(({ data }) => data).catch(() => null);
+  const [consumo, existencias] = await Promise.all([
+    Promise.all(centros.map((c) => sinError(InventarioAPI.getConsumo(c._id, { desde, hasta })))),
+    Promise.all(centros.map((c) => sinError(InventarioAPI.getExistencias(c._id)))),
+  ]);
+  if (esta !== consultaDeInventario) return;
+  inventarioDelTablero.value = { consumo, existencias };
+};
+
+watch(
+  [
+    () => inventarioStore.habilitado,
+    () => centrosTrabajo.value.map((c) => c._id).join(','),
+    indiceCentroSeleccionado,
+    fechaInicio,
+    fechaFin,
+  ],
+  () => {
+    if (rangoInvalido.value) return;
+    cargarInventario();
+  },
+  { immediate: true },
+);
+
+const consumoDeInsumos = computed(() => sumarConsumo(inventarioDelTablero.value.consumo));
+const insumosMasConsumidos = computed(() => consumoDeInsumos.value.filter((f) => f.consumo > 0).slice(0, 10));
+const insumosConBajas = computed(() =>
+  consumoDeInsumos.value.filter((f) => f.bajas > 0).sort((a, b) => b.bajas - a.bajas),
+);
+const alertasInventario = computed(() => alertasDeExistencias(inventarioDelTablero.value.existencias));
+
 const seccionConDatos = computed(() => ({
   poblacion: true,
   exposicion: true,
@@ -2489,13 +2550,23 @@ const seccionConDatos = computed(() => ({
     mostrarAnalisisLaboratorioDistribucion.value,
   aptitud: true,
   diagnosticos: diagnosticosDeConsultas.value.total > 0,
+  inventario:
+    inventarioStore.habilitado &&
+    (consumoDeInsumos.value.length > 0 ||
+      alertasInventario.value.conExistencia > 0 ||
+      hayAlertas(alertasInventario.value)),
 }));
 
+// Con el inventario apagado, su sección no existe: tampoco se anuncia como «sin registros»
+const seccionesDelTablero = computed(() =>
+  SECCIONES_DE_TABLERO.filter((seccion) => seccion.id !== 'inventario' || inventarioStore.habilitado),
+);
+
 const seccionesVisibles = computed(() =>
-  SECCIONES_DE_TABLERO.filter((seccion) => seccionConDatos.value[seccion.id]),
+  seccionesDelTablero.value.filter((seccion) => seccionConDatos.value[seccion.id]),
 );
 const seccionesSinDatos = computed(() =>
-  SECCIONES_DE_TABLERO.filter((seccion) => !seccionConDatos.value[seccion.id]),
+  seccionesDelTablero.value.filter((seccion) => !seccionConDatos.value[seccion.id]),
 );
 
 const cifrasDelTablero = computed(() =>
@@ -5475,6 +5546,124 @@ const tablaCintura = computed(() => {
                       </li>
                     </ol>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Inventario clínico -->
+            <section
+              v-show="seccionConDatos.inventario"
+              id="tablero-inventario"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-inventario"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[SECCIONES_DE_TABLERO[7].icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ SECCIONES_DE_TABLERO[7].titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="periodo-inventario">
+                Consumo del {{ new Date(periodoInventario.desde).toLocaleDateString('es-MX', { timeZone: 'UTC' }) }}
+                al {{ new Date(periodoInventario.hasta).toLocaleDateString('es-MX', { timeZone: 'UTC' }) }}<template v-if="periodoInventario.porDefecto"> (año en curso, porque no hay un periodo elegido)</template>.
+                Las existencias son las de hoy.
+                <template v-if="hayFiltrosPoblacion">Esta sección no responde a los filtros de trabajadores.</template>
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-4">
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col xl:col-span-2" data-test="inventario-consumo">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                    Insumos más consumidos
+                  </h3>
+                  <p v-if="!insumosMasConsumidos.length" class="py-6 text-center text-sm text-gray-500">
+                    Sin consumo registrado en el periodo.
+                  </p>
+                  <div v-else class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                      <thead>
+                        <tr class="text-xs text-gray-500">
+                          <th scope="col" class="py-1 pr-3 font-medium">Insumo</th>
+                          <th scope="col" class="px-2 py-1 text-right font-medium">Consumo</th>
+                          <th scope="col" class="px-2 py-1 text-right font-medium" title="Aplicado o usado durante la consulta">Administrado</th>
+                          <th scope="col" class="py-1 pl-2 text-right font-medium" title="Entregado al trabajador para llevar">Entregado</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-200">
+                        <tr v-for="fila in insumosMasConsumidos" :key="fila.insumo._id" data-test="insumo-consumido">
+                          <td class="lista-conteos__etiqueta py-1.5 pr-3 text-gray-800">{{ fila.insumo.nombre }}</td>
+                          <td class="lista-conteos__cantidad whitespace-nowrap px-2 py-1.5 text-right font-semibold tabular-nums text-gray-900">
+                            {{ cantidadConUnidad(fila.consumo, fila.insumo.unidad) }}
+                          </td>
+                          <td class="px-2 py-1.5 text-right tabular-nums text-gray-600">{{ fila.administrado }}</td>
+                          <td class="py-1.5 pl-2 text-right tabular-nums text-gray-600">{{ fila.entregado }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="inventario-bajas">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                    Bajas en el periodo
+                  </h3>
+                  <p v-if="!insumosConBajas.length" class="py-6 text-center text-sm text-gray-500">
+                    Sin bajas por caducidad, daño o merma.
+                  </p>
+                  <ul v-else class="space-y-1.5 text-sm">
+                    <li
+                      v-for="fila in insumosConBajas.slice(0, 10)"
+                      :key="fila.insumo._id"
+                      class="flex items-baseline justify-between gap-3"
+                    >
+                      <span class="lista-conteos__etiqueta min-w-0 truncate text-gray-800">{{ fila.insumo.nombre }}</span>
+                      <span class="lista-conteos__cantidad shrink-0 whitespace-nowrap font-semibold tabular-nums text-gray-900">
+                        {{ cantidadConUnidad(fila.bajas, fila.insumo.unidad) }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="inventario-existencias">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                    Existencias hoy
+                  </h3>
+                  <dl class="space-y-2 text-sm">
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Insumos con existencia</dt>
+                      <dd class="lista-conteos__cantidad font-semibold tabular-nums text-gray-900">{{ alertasInventario.conExistencia }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600" title="Con existencia mínima definida y en cero">Agotados</dt>
+                      <dd class="font-semibold tabular-nums" :class="alertasInventario.agotados ? 'text-red-600' : 'lista-conteos__cantidad text-gray-900'">
+                        {{ alertasInventario.agotados }}
+                      </dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Por debajo del mínimo</dt>
+                      <dd class="font-semibold tabular-nums" :class="alertasInventario.bajoMinimo ? 'text-amber-600' : 'lista-conteos__cantidad text-gray-900'">
+                        {{ alertasInventario.bajoMinimo }}
+                      </dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Lotes por caducar</dt>
+                      <dd class="font-semibold tabular-nums" :class="alertasInventario.lotesPorCaducar ? 'text-amber-600' : 'lista-conteos__cantidad text-gray-900'">
+                        {{ alertasInventario.lotesPorCaducar }}
+                      </dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Lotes caducados</dt>
+                      <dd class="font-semibold tabular-nums" :class="alertasInventario.lotesCaducados ? 'text-red-600' : 'lista-conteos__cantidad text-gray-900'">
+                        {{ alertasInventario.lotesCaducados }}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p v-if="indiceCentroSeleccionado === null && centrosTrabajo.length > 1" class="mt-3 text-xs italic text-gray-500">
+                    Suma de todos los centros: un insumo agotado en dos centros cuenta dos veces.
+                  </p>
+                  <RouterLink
+                    v-else-if="centrosTrabajo[indiceCentroSeleccionado ?? 0]"
+                    :to="{ name: 'inventario', params: { idEmpresa: route.params.idEmpresa, idCentroTrabajo: centrosTrabajo[indiceCentroSeleccionado ?? 0]._id } }"
+                    class="mt-3 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                  >
+                    Ver inventario del centro
+                  </RouterLink>
                 </div>
               </div>
             </section>
