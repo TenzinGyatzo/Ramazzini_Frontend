@@ -176,7 +176,7 @@ const clasePuntoAlerta = (alerta) =>
         {{ TITULO_PRIORIDAD_SUENO_VIGILIA[resultado.prioridad] }}
         <span v-if="!resultado.completo" class="text-xs font-normal text-gray-500">(evaluación incompleta)</span>
       </p>
-      <ul v-if="alertas.length" class="mt-2 grid gap-x-4 gap-y-0.5 sm:grid-cols-2 text-xs sm:text-sm">
+      <ul v-if="alertas.length" class="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2 text-xs sm:text-sm">
         <li v-for="alerta in alertas" :key="alerta.clave" class="flex items-start gap-2" :data-alerta="alerta.clave">
           <span class="mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full" :class="clasePuntoAlerta(alerta)"></span>
           <span :class="alerta.nivel === 'informativo' ? 'text-gray-600' : 'font-medium text-gray-900'">

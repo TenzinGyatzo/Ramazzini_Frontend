@@ -1,6 +1,6 @@
 <script setup lang="ts">
 declare const pdfMake: typeof import('pdfmake/build/pdfmake');
-import { computed, inject, reactive, ref, watch } from 'vue';
+import { computed, inject, nextTick, reactive, ref, watch } from 'vue';
 import * as xlsx from 'xlsx';
 import InformesAPI from '@/api/InformesAPI';
 import { informePersonalizacionService } from '@/api/informe-personalizacion.service';
@@ -92,6 +92,13 @@ const estados = computed(
 );
 
 const elegido = ref<IdDeInforme>('completo');
+const detalle = ref<HTMLElement | null>(null);
+/** En pantallas angostas el detalle queda debajo de la lista: al elegir, se lleva a la vista. */
+const elegir = (id: IdDeInforme) => {
+  elegido.value = id;
+  if (!window.matchMedia?.('(max-width: 767px)').matches) return;
+  nextTick(() => detalle.value?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }));
+};
 const definicion = computed(() => definicionDe(elegido.value));
 const estado = computed(() => estados.value[elegido.value]);
 const informesDe = (grupo: string) => INFORMES_DEL_TABLERO.filter((informe) => informe.grupo === grupo);
@@ -433,7 +440,7 @@ const alHacerClic = (evento: MouseEvent) => {
               "
               :aria-pressed="elegido === informe.id"
               :data-test="`informe-${informe.id}`"
-              @click="elegido = informe.id"
+              @click="elegir(informe.id)"
             >
               <i
                 class="mt-0.5 w-4 text-center"
@@ -457,7 +464,7 @@ const alHacerClic = (evento: MouseEvent) => {
           </div>
         </nav>
 
-        <section class="min-w-0 flex-1 p-5 md:overflow-y-auto" data-test="informe-detalle">
+        <section ref="detalle" class="min-w-0 flex-1 p-5 md:overflow-y-auto" data-test="informe-detalle">
           <div class="flex flex-wrap items-center gap-2">
             <h3 class="text-base font-semibold text-gray-900">{{ definicion.nombre }}</h3>
             <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600">
@@ -476,12 +483,12 @@ const alHacerClic = (evento: MouseEvent) => {
           </div>
 
           <h4 class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-500">Qué incluye con estos datos</h4>
-          <ul class="mt-2 grid gap-x-6 gap-y-1 sm:grid-cols-2">
+          <ul class="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
             <li
               v-for="parte in estado.incluye"
               :key="parte.texto"
               class="flex items-start gap-2 text-sm"
-              :class="parte.incluido ? 'text-gray-800' : 'text-gray-400'"
+              :class="parte.incluido ? 'text-gray-800' : 'text-gray-500'"
             >
               <i class="mt-1 w-3 text-xs" :class="parte.incluido ? 'fas fa-check text-emerald-600' : 'fas fa-minus'"></i>
               <span>

@@ -213,7 +213,7 @@ const cifra = 'mt-0.5 text-2xl font-semibold tabular-nums text-gray-900 dark:tex
       </div>
 
       <div v-else-if="datos" :class="{ 'opacity-60': cargando }" :aria-busy="cargando">
-        <div class="mb-3 grid gap-3 lg:grid-cols-2">
+        <div class="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <!-- Siniestralidad -->
           <section :class="tarjeta" aria-labelledby="prima-siniestralidad">
             <h2 id="prima-siniestralidad" :class="tituloDeSeccion">Siniestralidad de {{ datos.anio }}, según lo registrado</h2>

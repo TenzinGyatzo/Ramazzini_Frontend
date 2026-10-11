@@ -297,7 +297,7 @@ const cifra = 'mt-0.5 text-2xl font-semibold tabular-nums text-gray-900 dark:tex
 
         <template v-else>
           <!-- Totales -->
-          <div class="mb-3 grid gap-3 lg:grid-cols-2">
+          <div class="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
             <section :class="tarjeta" aria-labelledby="informe-casos">
               <h2 id="informe-casos" :class="tituloDeSeccion">Casos nuevos</h2>
               <div class="px-4 py-3">
@@ -415,7 +415,7 @@ const cifra = 'mt-0.5 text-2xl font-semibold tabular-nums text-gray-900 dark:tex
           </section>
 
           <!-- Tendencias -->
-          <div class="mb-3 grid gap-3 lg:grid-cols-2">
+          <div class="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
             <section v-if="informe.conDiagnosticos" :class="tarjeta" aria-labelledby="informe-grupo">
               <h2 id="informe-grupo" :class="tituloDeSeccion">¿De qué se enferman? Grupo de diagnóstico</h2>
               <div class="px-4 py-3" data-test="por-grupo">

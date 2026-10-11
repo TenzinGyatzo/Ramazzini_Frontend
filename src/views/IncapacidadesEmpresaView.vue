@@ -306,7 +306,7 @@ const tarjeta =
           </div>
         </dl>
 
-        <div class="mb-3 grid gap-3 lg:grid-cols-2">
+        <div class="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <!-- Incapacitados hoy -->
           <section :class="tarjeta" aria-labelledby="incapacitados-hoy-titulo">
             <h2
@@ -455,7 +455,8 @@ const tarjeta =
             </button>
           </div>
 
-          <div v-else class="overflow-x-auto">
+          <!-- relative: la etiqueta solo para lectores de pantalla no debe salirse del área desplazable -->
+          <div v-else class="relative overflow-x-auto">
             <table class="w-full min-w-[44rem] text-left text-sm">
               <thead>
                 <tr class="incapacidades-empresa__encabezados border-b border-gray-200 text-xs font-medium text-gray-500 dark:border-slate-700 dark:text-slate-400">

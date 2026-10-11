@@ -674,7 +674,7 @@ const botonSecundario =
                 </td>
                 <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
                   {{ formatearCaducidad(fila.caducidadProxima) }}
-                  <span v-if="fila.lotesCaducados > 0" class="ml-1 text-xs font-medium text-red-600">
+                  <span v-if="fila.lotesCaducados > 0" class="ml-1 text-xs font-medium text-red-600 dark:text-red-400">
                     · {{ fila.lotesCaducados }} caducado{{ fila.lotesCaducados === 1 ? '' : 's' }}
                   </span>
                   <span v-else-if="fila.lotesPorCaducar > 0" class="ml-1 text-xs font-medium text-amber-600">
@@ -695,7 +695,7 @@ const botonSecundario =
       <!-- Movimientos -->
       <section v-else-if="pestana === 'movimientos'">
         <form
-          class="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+          class="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
           @submit.prevent="aplicarFiltrosMovimientos"
         >
           <select v-model="filtrosMovimientos.idInsumo" :class="campo" aria-label="Insumo">

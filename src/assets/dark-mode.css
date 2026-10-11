@@ -234,6 +234,119 @@ html.dark-mode .hover\:bg-gray-200:hover {
   background-color: #334155 !important;
 }
 
+/*
+ * Clases de Tailwind sin remapeo que quedaban claras en modo oscuro (revisión del
+ * parche de octubre de 2026). Van aquí arriba para que las reglas de cada
+ * componente, más abajo, sigan ganando.
+ */
+html.dark-mode .hover\:bg-emerald-50:hover,
+html.dark-mode .hover\:bg-emerald-50\/40:hover,
+html.dark-mode .hover\:bg-emerald-50\/50:hover,
+html.dark-mode .hover\:bg-emerald-50\/60:hover {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+}
+
+html.dark-mode .hover\:bg-emerald-100:hover,
+html.dark-mode .group:hover .group-hover\:bg-emerald-200 {
+  background-color: rgba(16, 185, 129, 0.28) !important;
+}
+
+html.dark-mode .bg-emerald-50\/60 {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+}
+
+html.dark-mode .hover\:bg-red-50:hover {
+  background-color: rgba(239, 68, 68, 0.16) !important;
+}
+
+html.dark-mode .hover\:bg-orange-50:hover {
+  background-color: rgba(249, 115, 22, 0.22) !important;
+}
+
+html.dark-mode .group:hover .group-hover\:bg-amber-200 {
+  background-color: rgba(180, 83, 9, 0.6) !important;
+}
+
+html.dark-mode .bg-amber-50\/90 {
+  background-color: rgba(120, 53, 15, 0.5) !important;
+}
+
+html.dark-mode .bg-gray-50\/80 {
+  background-color: rgb(30 41 59 / 0.9) !important;
+}
+
+html.dark-mode .bg-white\/70 {
+  background-color: rgb(30 41 59 / 0.7) !important;
+}
+
+html.dark-mode .bg-sky-50 {
+  background-color: rgba(14, 165, 233, 0.14) !important;
+}
+
+html.dark-mode .bg-sky-100 {
+  background-color: rgba(14, 165, 233, 0.22) !important;
+}
+
+html.dark-mode .text-sky-800,
+html.dark-mode .text-sky-900 {
+  color: #bae6fd !important;
+}
+
+html.dark-mode .border-sky-200 {
+  border-color: #0369a1 !important;
+}
+
+html.dark-mode .bg-violet-200 {
+  background-color: rgba(91, 33, 182, 0.55) !important;
+}
+
+html.dark-mode .border-violet-200,
+html.dark-mode .hover\:border-violet-100:hover {
+  border-color: #6d28d9 !important;
+}
+
+html.dark-mode .border-emerald-300 {
+  border-color: #059669 !important;
+}
+
+html.dark-mode .border-orange-300 {
+  border-color: #c2410c !important;
+}
+
+html.dark-mode .hover\:border-amber-300:hover {
+  border-color: #d97706 !important;
+}
+
+html.dark-mode .hover\:border-gray-300:hover {
+  border-color: #64748b !important;
+}
+
+html.dark-mode .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+html.dark-mode .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #334155 !important;
+}
+
+html.dark-mode .hover\:text-emerald-700:hover {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .hover\:text-gray-700:hover,
+html.dark-mode .group:hover .group-hover\:text-gray-900 {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .hover\:text-red-700:hover {
+  color: #fca5a5 !important;
+}
+
+html.dark-mode .hover\:text-orange-700:hover {
+  color: #fdba74 !important;
+}
+
+html.dark-mode .focus\:ring-emerald-200:focus {
+  --tw-ring-color: rgba(16, 185, 129, 0.45) !important;
+}
+
 /* Estados específicos de hover para botones */
 html.dark-mode .hover\:from-blue-50:hover {
   background: linear-gradient(to right, #1e40af, #3730a3) !important;
