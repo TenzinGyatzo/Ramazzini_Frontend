@@ -107,19 +107,3 @@ export function exportarTrabajadoresDesdeFrontend(
   return { ok: true, exportedColumnCount: keysParaArchivo.length };
 }
 
-export function exportarRiesgosTrabajoDesdeFrontend(riesgosFiltrados: any[], nombreArchivo = 'riesgos-trabajo.xlsx') {
-  const worksheet = xlsx.utils.json_to_sheet(riesgosFiltrados);
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, worksheet, 'RiesgosTrabajo');
-
-  const excelBuffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  });
-
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = nombreArchivo;
-  link.click();
-  URL.revokeObjectURL(link.href);
-}

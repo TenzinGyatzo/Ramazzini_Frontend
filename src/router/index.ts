@@ -127,12 +127,6 @@ const router = createRouter({
           meta: { requiresAuth: true, requiresDashboardSalud: true }
         },
         {
-          path: "riesgos-trabajo/:idEmpresa",
-          name: "riesgos-trabajo",
-          component: () => import("../views/RiesgosTrabajoView.vue"),
-          meta: { requiresAuth: true, requiresRiesgosTrabajo: true }
-        },
-        {
           path: "/empresas/:idEmpresa/incapacidades",
           name: "incapacidades-empresa",
           component: () => import("../views/IncapacidadesEmpresaView.vue"),
@@ -148,12 +142,6 @@ const router = createRouter({
           path: "/empresas/:idEmpresa/incapacidades/prima",
           name: "incapacidades-prima",
           component: () => import("../views/IncapacidadesPrimaView.vue"),
-          meta: { requiresAuth: true, requiresRiesgosTrabajo: true }
-        },
-        {
-          path: "dashboard-rt/:idEmpresa",
-          name: "dashboard-rt",
-          component: () => import("../views/DashboardRTsView.vue"),
           meta: { requiresAuth: true, requiresRiesgosTrabajo: true }
         },
         {

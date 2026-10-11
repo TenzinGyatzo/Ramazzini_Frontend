@@ -11,7 +11,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
-import { useUserPermissions } from '@/composables/useUserPermissions';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import {
   buildExactExpedienteSummaryHtml,
@@ -68,20 +67,15 @@ const route = useRoute();
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const { canManageTrabajadores, executeIfCanManageTrabajadores, executeIfCanAccessRiesgosTrabajo } = usePermissionRestrictions();
-const { canAccessRiesgosTrabajo } = useUserPermissions();
 const proveedorSaludStore = useProveedorSaludStore();
-/**
- * Fuera de México no hay incapacidades del IMSS: ahí se conserva el registro
- * anterior de riesgos de trabajo. Si el proveedor aún no carga se asume México.
- */
-const usaIncapacidades = () => (proveedorSaludStore.proveedorSalud?.pais ?? 'MX') === 'MX';
+/** Las incapacidades son del IMSS: el botón solo existe para proveedores de México. */
+const usaIncapacidades = () => proveedorSaludStore.proveedorSalud?.pais === 'MX';
 
 function guardarFiltroEnLocalStorage(id: string, valor: string) {
   localStorage.setItem(`filtro-${id}`, valor);
 }
 
 const emit = defineEmits<{
-  (e: 'riesgo-trabajo', trabajador: any): void;
   (e: 'incapacidades', trabajador: any): void;
   (e: 'riesgos', trabajador: any): void;
   (e: 'editar', trabajador: any): void;
@@ -855,16 +849,16 @@ function inicializarDataTable() {
           return `
               <div class="relative h-[32px]">
 
-              <!-- RTs -->
-                ${canAccessRiesgosTrabajo ? `
+              <!-- Incapacidades -->
+                ${usaIncapacidades() ? `
                 <button
                   type="button"
-                  class="btn-rt group absolute right-25 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-violet-200 hover:bg-violet-300 text-violet-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-violet-200 hover:border-violet-100 whitespace-nowrap flex items-center overflow-hidden text-sm"
+                  class="btn-incapacidades group absolute right-25 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-violet-200 hover:bg-violet-300 text-violet-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-violet-200 hover:border-violet-100 whitespace-nowrap flex items-center overflow-hidden text-sm"
                   data-id="${escapeHtml(row._id)}"
                 >
-                  ${usaIncapacidades() ? '<i class="fa-solid fa-bed"></i>' : 'RT'}
+                  <i class="fa-solid fa-bed"></i>
                   <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
-                    ${usaIncapacidades() ? 'Incapacidades' : 'Riesgo de Trabajo'}
+                    Incapacidades
                   </span>
                 </button>
                 ` : ''}
@@ -1023,17 +1017,15 @@ function inicializarDataTable() {
       router.push(buildExpedienteRoute(idTrabajador));
     });
 
-    $(document).on('click', '.btn-rt', function (event) {
+    $(document).on('click', '.btn-incapacidades', function (event) {
       event.stopPropagation();
 
       const id = $(this).data('id');
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
-        const incapacidades = usaIncapacidades();
         executeIfCanAccessRiesgosTrabajo(() => {
-          if (incapacidades) emit('incapacidades', trabajador);
-          else emit('riesgo-trabajo', trabajador);
-        }, incapacidades ? 'acceder a incapacidades' : 'acceder a riesgos de trabajo');
+          emit('incapacidades', trabajador);
+        }, 'acceder a incapacidades');
       }
     });
 
@@ -1136,7 +1128,7 @@ onBeforeUnmount(() => {
   }
 
   $(document).off('click', '.btn-expediente');
-  $(document).off('click', '.btn-rt');
+  $(document).off('click', '.btn-incapacidades');
   $(document).off('click', '.btn-riesgos');
   $(document).off('click', '.btn-fusionar');
   $(document).off('click', '.btn-editar');

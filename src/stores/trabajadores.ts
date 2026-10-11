@@ -234,19 +234,6 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     }
   }
 
-  async function fetchRiesgosTrabajoPorEmpresa(empresaId: string) {
-    try {
-      loading.value = true;
-      const { data } = await EmpresasAPI.getRiesgosTrabajoPorEmpresa(empresaId);
-      return data;
-    } catch (error) {
-      console.error('Error al obtener riesgos por empresa', error);
-      throw error;
-    } finally {
-      loading.value = false;
-    }
-  }
-
   async function fetchSexosYFechasNacimientoActivos(empresaId: string, centroTrabajoId: string) {
     try {
       loading.value = true;
@@ -512,7 +499,6 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     fetchTrabajadores,
     countTrabajadoresPorCentro,
     fetchTrabajadoresConHistoria,
-    fetchRiesgosTrabajoPorEmpresa,
     fetchSexosYFechasNacimientoActivos,
     fetchDashboardData,
     fetchTrabajadorById,

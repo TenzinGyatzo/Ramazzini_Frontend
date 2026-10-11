@@ -29,10 +29,6 @@ export default {
     });
   },
 
-  getRiesgosTrabajoPorEmpresa(empresaId: string) {
-    return api.get(`/${empresaId}/riesgos-trabajo`);
-  },
-
   deleteEmpresaById(empresaId: string, deletionPassword?: string) {
     return api.delete(`/eliminar-empresa/${empresaId}`, {
       headers: deletionPasswordHeaders(deletionPassword),

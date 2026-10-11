@@ -7,7 +7,6 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useRoute, useRouter } from 'vue-router';
-import { useRiesgoTrabajoStore } from '@/stores/riesgosTrabajo';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { useEditionLabel } from '@/composables/useEditionLabel';
 import { useUserStore } from '@/stores/user';
@@ -20,12 +19,10 @@ const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
-const riesgosTrabajo = useRiesgoTrabajoStore();
 const user = useUserStore();
 
 const isMounted = ref(false);
 const hasVisitedDashboard = ref(false);
-const hasVisitedRiesgosTrabajo = ref(false);
 
 async function syncRouteState(params: typeof route.params) {
   const { redirectedTrabajadorId } = await sidebar.initializeState(params);
@@ -68,16 +65,12 @@ watch(() => route.name, (newRouteName) => {
   if (newRouteName === 'dashboard-empresa' && empresas.currentEmpresaId) {
     hasVisitedDashboard.value = true;
   }
-  if (newRouteName === 'riesgos-trabajo' && empresas.currentEmpresaId) {
-    hasVisitedRiesgosTrabajo.value = true;
-  }
 });
 
 // Resetear el estado cuando cambia la empresa
 watch(() => empresas.currentEmpresaId, (newEmpresaId, oldEmpresaId) => {
   if (newEmpresaId !== oldEmpresaId) {
     hasVisitedDashboard.value = false;
-    hasVisitedRiesgosTrabajo.value = false;
   }
 });
 
@@ -131,7 +124,6 @@ const showCentroTrabajoSection = computed(() => !!user.user && centrosTrabajo.cu
 const showTrabajadorSection = computed(() => !!user.user && trabajadores.currentTrabajadorId && centrosTrabajo.currentCentroTrabajoId && empresas.currentEmpresaId);
 const showDocumentoSection = computed(() => !!user.user && documentos.currentTypeOfDocument && trabajadores.currentTrabajadorId && centrosTrabajo.currentCentroTrabajoId && empresas.currentEmpresaId);
 const showAnalyticsSection = computed(() => !!user.user && empresas.currentEmpresaId && hasVisitedDashboard.value);
-const showRiesgosSection = computed(() => !!user.user && empresas.currentEmpresaId && hasVisitedRiesgosTrabajo.value);
 
 const { editionLabel, editionVersion, editionVersionPrefixed } = useEditionLabel();
 
@@ -354,49 +346,6 @@ const footerEditionText = computed(() => {
         </div>
       </Transition>
 
-      <!-- Sección Riesgos -->
-      <Transition name="slide-fade" :duration="900">
-        <div v-if="showRiesgosSection" class="section">
-          <div class="section-header" v-if="!sidebar.collapsed">
-            <span class="section-title">Riesgos</span>
-            <div class="section-indicator"></div>
-          </div>
-          
-          <SidebarLink 
-            :to="{ name: 'riesgos-trabajo', params: { idEmpresa: empresas.currentEmpresaId } }" 
-            icon="fas fa-hard-hat"
-            :tooltip="`Riesgos de Trabajo`"
-            class="leading-5" 
-            @click.stop>
-            <p class="text-sm">Riesgos de Trabajo</p>
-            <p class="font-light text-xs overflow-hidden text-ellipsis max-w-[155px]">
-              {{ empresas.currentEmpresa?.nombreComercial || 'Nombre no disponible' }}
-            </p>
-          </SidebarLink>
-        </div>
-      </Transition>
-
-      <!-- Sección Estadísticas RT -->
-      <Transition name="slide-fade" :duration="900">
-        <div v-if="showRiesgosSection" class="section">
-          <div class="section-header" v-if="!sidebar.collapsed">
-            <span class="section-title">Estadísticas RT</span>
-            <div class="section-indicator"></div>
-          </div>
-          
-          <SidebarLink 
-            :to="{ name: 'dashboard-rt', params: { idEmpresa: empresas.currentEmpresaId } }" 
-            icon="fas fa-chart-line"
-            :tooltip="`Estadísticas RT`"
-            class="leading-5" 
-            @click.stop>
-            <p class="text-sm">Estadísticas RT</p>
-            <p class="font-light text-xs overflow-hidden text-ellipsis max-w-[155px]">
-              {{ empresas.currentEmpresa?.nombreComercial || 'Nombre no disponible' }}
-            </p>
-          </SidebarLink>
-        </div>
-      </Transition>
     </div>
 
     <!-- Footer del Sidebar -->

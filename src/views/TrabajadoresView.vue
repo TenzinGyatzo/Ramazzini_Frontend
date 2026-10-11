@@ -27,7 +27,6 @@ import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalCentros from '@/components/ModalCentros.vue';
 import ModalBajaTrabajador from '@/components/ModalBajaTrabajador.vue';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
-import ModalRTs from '@/components/ModalRTs.vue';
 import ModalIncapacidades from '@/components/incapacidades/ModalIncapacidades.vue';
 import ModalResumenImportacion from '@/components/ModalResumenImportacion.vue';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
@@ -88,7 +87,6 @@ const showExportModal = ref(false);
 const exportRowCount = ref(0);
 const exportKeysWithData = ref<string[]>([]);
 const showSubscriptionModal = ref(false);
-const showRTsModal = ref(false);
 const showRisksModal = ref(false);
 
 // Editar el centro de trabajo sin salir de su lista de trabajadores
@@ -645,22 +643,7 @@ const solicitarEliminacion = (
 };
 provide('solicitarEliminacion', solicitarEliminacion);
 
-const openRTsModal = async (empresa: Empresa | null, centro: CentroTrabajo | null, trabajador: Trabajador | null) => {
-  if (empresa && centro && trabajador) {
-    trabajadores.hydrateCurrentTrabajadorFromListado(trabajador);
-  }
-
-  showRTsModal.value = true;
-
-  if (empresa && centro && trabajador?._id) {
-    void trabajadores.fetchTrabajadorById(empresa._id, centro._id, trabajador._id)
-      .catch((error) => console.error('Error al cargar el trabajador:', error));
-  }
-};
-
-const closeRTsModal = () => showRTsModal.value = false;
-
-// Incapacidades: sustituye al registro de riesgos de trabajo en los proveedores de México
+// Incapacidades: solo para proveedores de México
 const showIncapacidadesModal = ref(false);
 const openIncapacidadesModal = (trabajador: Trabajador | null) => {
   if (!trabajador?._id) return;
@@ -1035,8 +1018,7 @@ const toggleVigencias = () => {
         name="modal-work"
         :duration="{ enter: 230, leave: 150 }"
       >
-        <ModalRTs v-if="showRTsModal" @closeModal="closeRTsModal" @solicitarEliminacion="solicitarEliminacion" />
-        <ModalIncapacidades v-else-if="showIncapacidadesModal" @closeModal="showIncapacidadesModal = false" />
+        <ModalIncapacidades v-if="showIncapacidadesModal" @closeModal="showIncapacidadesModal = false" />
       </Transition>
 
       <Transition
@@ -1476,7 +1458,6 @@ const toggleVigencias = () => {
             v-if="mostrarTabla"
             :tabla-lista="tablaLista"
             class="table-auto z-1"
-            @riesgo-trabajo="openRTsModal(empresas.currentEmpresa, centrosTrabajo.currentCentroTrabajo || null, $event)"
             @incapacidades="openIncapacidadesModal($event)"
             @riesgos="openRisksModal(empresas.currentEmpresa, centrosTrabajo.currentCentroTrabajo || null, $event)"
             @editar="openModal(empresas.currentEmpresa, centrosTrabajo.currentCentroTrabajo, $event)"

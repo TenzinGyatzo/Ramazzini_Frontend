@@ -6,7 +6,6 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { useRiesgoTrabajoStore } from '@/stores/riesgosTrabajo';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useTecnicoFirmanteStore } from '@/stores/tecnicoFirmante';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -22,7 +21,6 @@ export function resetSessionScopedState() {
   useCentrosTrabajoStore().clear();
   useTrabajadoresStore().clear();
   useDocumentosStore().clear();
-  useRiesgoTrabajoStore().clear();
   useMedicoFirmanteStore().clear();
   useEnfermeraFirmanteStore().clear();
   useTecnicoFirmanteStore().clear();
