@@ -30,13 +30,17 @@ interface Rango {
   max?: number;
 }
 
-/** Años cumplidos, ambos extremos incluidos. */
+/**
+ * Años cumplidos, ambos extremos incluidos. Los cortes coinciden con los de la
+ * gráfica de grupos etarios (16–20, 21–25… en dashboardDataProcessor.ts): cada
+ * opción abarca dos o tres de sus barras completas.
+ */
 export const RANGOS_DE_EDAD: Rango[] = [
-  { clave: 'menos30', texto: 'Menores de 30 años', max: 29 },
-  { clave: 'de30a39', texto: 'De 30 a 39 años', min: 30, max: 39 },
-  { clave: 'de40a49', texto: 'De 40 a 49 años', min: 40, max: 49 },
-  { clave: 'de50a59', texto: 'De 50 a 59 años', min: 50, max: 59 },
-  { clave: 'desde60', texto: '60 años o más', min: 60 },
+  { clave: 'hasta30', texto: 'Hasta 30 años', max: 30 },
+  { clave: 'de31a40', texto: 'De 31 a 40 años', min: 31, max: 40 },
+  { clave: 'de41a50', texto: 'De 41 a 50 años', min: 41, max: 50 },
+  { clave: 'de51a60', texto: 'De 51 a 60 años', min: 51, max: 60 },
+  { clave: 'desde61', texto: '61 años o más', min: 61 },
 ];
 
 export const RANGOS_DE_ANTIGUEDAD: Rango[] = [

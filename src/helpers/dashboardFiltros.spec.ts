@@ -18,9 +18,9 @@ describe('filtros de población del tablero de salud', () => {
   });
 
   it('convierte los rangos en mínimos y máximos de años cumplidos', () => {
-    expect(parametrosDeFiltros(filtros({ edad: 'menos30' }))).toEqual({ edadMax: 29 });
-    expect(parametrosDeFiltros(filtros({ edad: 'de40a49' }))).toEqual({ edadMin: 40, edadMax: 49 });
-    expect(parametrosDeFiltros(filtros({ edad: 'desde60' }))).toEqual({ edadMin: 60 });
+    expect(parametrosDeFiltros(filtros({ edad: 'hasta30' }))).toEqual({ edadMax: 30 });
+    expect(parametrosDeFiltros(filtros({ edad: 'de41a50' }))).toEqual({ edadMin: 41, edadMax: 50 });
+    expect(parametrosDeFiltros(filtros({ edad: 'desde61' }))).toEqual({ edadMin: 61 });
     expect(parametrosDeFiltros(filtros({ antiguedad: 'menos1' }))).toEqual({ antiguedadMax: 0 });
     expect(parametrosDeFiltros(filtros({ antiguedad: 'desde10' }))).toEqual({ antiguedadMin: 10 });
     // Una clave desconocida no manda nada
@@ -31,7 +31,7 @@ describe('filtros de población del tablero de salud', () => {
     const elegidos = filtros({
       puesto: 'Soldador',
       sexo: 'Femenino',
-      edad: 'de40a49',
+      edad: 'de41a50',
       antiguedad: 'de5a9',
       agente: 'Ruido',
     });
@@ -40,13 +40,13 @@ describe('filtros de población del tablero de salud', () => {
       puesto: 'Soldador',
       sexo: 'Femenino',
       agente: 'Ruido',
-      edadMin: 40,
-      edadMax: 49,
+      edadMin: 41,
+      edadMax: 50,
       antiguedadMin: 5,
       antiguedadMax: 9,
     });
     expect(textoDeFiltros(elegidos)).toBe(
-      'Puesto: Soldador · Sexo: Femenino · De 40 a 49 años · Antigüedad: de 5 a 9 años · Expuestos a: Ruido',
+      'Puesto: Soldador · Sexo: Femenino · De 41 a 50 años · Antigüedad: de 5 a 9 años · Expuestos a: Ruido',
     );
   });
 
@@ -55,7 +55,7 @@ describe('filtros de población del tablero de salud', () => {
       consulta: { puesto: 'Soldador', sexo: 'Masculino', exposicion: 'Polvos' },
       sinEquivalente: [],
     });
-    expect(filtrosParaLaTabla(filtros({ edad: 'de30a39', antiguedad: 'menos1' }))).toEqual({
+    expect(filtrosParaLaTabla(filtros({ edad: 'de31a40', antiguedad: 'menos1' }))).toEqual({
       consulta: {},
       sinEquivalente: ['edad', 'antigüedad'],
     });

@@ -3926,7 +3926,7 @@ const tablaCintura = computed(() => {
                   </div>
                   <p v-if="errorComparacion" class="mt-2 text-sm text-red-600">{{ errorComparacion }}</p>
 
-                  <div v-if="comparacion" class="mt-3 overflow-x-auto">
+                  <div v-if="comparacion" class="mt-3 overflow-x-auto overflow-y-hidden">
                     <table class="w-full min-w-[36rem] text-left text-sm" data-test="tabla-comparativa">
                       <thead>
                         <tr class="border-b border-gray-200 text-xs text-gray-500">
@@ -3986,7 +3986,7 @@ const tablaCintura = computed(() => {
                 data-test="comparativo-centros"
               >
                 <h3 class="dashboard-seccion__titulo text-sm font-semibold text-gray-800">Entre centros de trabajo</h3>
-                <div class="mt-2 overflow-x-auto">
+                <div class="mt-2 overflow-x-auto overflow-y-hidden">
                   <table class="w-full min-w-[52rem] text-left text-sm">
                     <thead>
                       <tr class="border-b border-gray-200 text-xs text-gray-500">
