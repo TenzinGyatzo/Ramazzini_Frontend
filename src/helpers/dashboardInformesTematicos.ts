@@ -21,6 +21,23 @@ export const TEMAS_DE_INFORME: { valor: TemaDeInforme; texto: string; titulo: st
   { valor: 'musculoesqueletico', texto: 'Sistema musculoesquelético', titulo: 'Informe del sistema musculoesquelético' },
 ];
 
+/** Tablas que cada informe temático puede llevar, en orden; salen las que tienen registros. */
+export const TABLAS_DE_TEMA: Record<TemaDeInforme, string[]> = {
+  cardiometabolico: [
+    'Índice de masa corporal',
+    'Circunferencia de cintura',
+    'Presión arterial',
+    'Antecedentes de diabetes, hipertensión y cardiopatía',
+    'Diagnósticos metabólicos y cardiovasculares en las consultas',
+  ],
+  auditivo: ['Exposición a ruido', 'Audiometría', 'Diagnósticos de oído en las consultas'],
+  musculoesqueletico: [
+    'Exposición a factores ergonómicos y vibraciones',
+    'Antecedentes de lumbalgia y accidentes',
+    'Diagnósticos musculoesqueléticos y traumatismos en las consultas',
+  ],
+};
+
 export const tituloDeTema = (tema: TemaDeInforme) =>
   TEMAS_DE_INFORME.find((t) => t.valor === tema)?.titulo ?? 'Informe temático';
 
@@ -88,16 +105,9 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const imc = tabla('Índice de masa corporal');
     const cintura = tabla('Circunferencia de cintura');
     const presion = tabla('Presión arterial');
-    const cronicas = recortar(
-      tabla('Enfermedades crónicas'),
-      /diab|hipertens|cardi/i,
-      'Antecedentes de diabetes, hipertensión y cardiopatía',
-    );
-    const dx = diagnosticosDeCapitulos(
-      diagnosticos,
-      ['IV', 'IX'],
-      'Diagnósticos metabólicos y cardiovasculares en las consultas',
-    );
+    const titulos = TABLAS_DE_TEMA.cardiometabolico;
+    const cronicas = recortar(tabla('Enfermedades crónicas'), /diab|hipertens|cardi/i, titulos[3]);
+    const dx = diagnosticosDeCapitulos(diagnosticos, ['IV', 'IX'], titulos[4]);
     tablas = [imc, cintura, presion, cronicas, dx];
 
     if (total(imc)) {
@@ -128,9 +138,10 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
   }
 
   if (tema === 'auditivo') {
-    const ruido = recortar(agentes, /^ruido$/i, 'Exposición a ruido');
+    const titulos = TABLAS_DE_TEMA.auditivo;
+    const ruido = recortar(agentes, /^ruido$/i, titulos[0]);
     const audiometria = tabla('Audiometría');
-    const dx = diagnosticosDeCapitulos(diagnosticos, ['VIII'], 'Diagnósticos de oído en las consultas');
+    const dx = diagnosticosDeCapitulos(diagnosticos, ['VIII'], titulos[2]);
     tablas = [ruido, audiometria, dx];
 
     if (ruido) {
@@ -150,17 +161,10 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
   }
 
   if (tema === 'musculoesqueletico') {
-    const ergonomia = recortar(agentes, /ergon|vibraci/i, 'Exposición a factores ergonómicos y vibraciones');
-    const antecedentes = recortar(
-      tabla('Antecedentes referidos'),
-      /lumbalg|accidente/i,
-      'Antecedentes de lumbalgia y accidentes',
-    );
-    const dx = diagnosticosDeCapitulos(
-      diagnosticos,
-      ['XIII', 'XIX'],
-      'Diagnósticos musculoesqueléticos y traumatismos en las consultas',
-    );
+    const titulos = TABLAS_DE_TEMA.musculoesqueletico;
+    const ergonomia = recortar(agentes, /ergon|vibraci/i, titulos[0]);
+    const antecedentes = recortar(tabla('Antecedentes referidos'), /lumbalg|accidente/i, titulos[1]);
+    const dx = diagnosticosDeCapitulos(diagnosticos, ['XIII', 'XIX'], titulos[2]);
     tablas = [ergonomia, antecedentes, dx];
 
     const ergonomicos = sumaDe(ergonomia ?? undefined, /ergon/i);

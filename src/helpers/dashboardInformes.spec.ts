@@ -188,10 +188,10 @@ describe('informes del tablero de salud', () => {
     expect(JSON.stringify(definicionResumenEjecutivo(informe))).toContain('Puesto: Soldador');
   });
 
-  it('el resumen ejecutivo lleva cifras, hallazgos, tablas principales, conclusiones y recomendaciones', () => {
+  it('el resumen para dirección lleva cifras, hallazgos, tablas principales, conclusiones y recomendaciones', () => {
     const informe = armarInforme({ ...fuentes, conFiltros: false }, contexto);
     const texto = JSON.stringify(definicionResumenEjecutivo(informe));
-    expect(texto).toContain('Resumen ejecutivo de salud laboral');
+    expect(texto).toContain('Resumen de salud laboral para dirección');
     expect(texto).toContain('Aceros del Norte, S.A.');
     expect(texto).toContain('Dra. Ana López');
     expect(texto).toContain('tiene sobrepeso u obesidad');

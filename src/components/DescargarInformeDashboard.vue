@@ -38,6 +38,8 @@ const props = defineProps<{
   formatoRecomendaciones?: 'texto' | 'tabla';
   recomendacionesTexto?: string;
   recomendacionesTabla?: Array<{hallazgo: string, medidaPreventiva: string}>;
+  /** Sin botones propios: lo dispara la ventana de informes con generarPDF y descargarPDF. */
+  sinBotones?: boolean;
 }>();
 
 // Store del proveedor de salud
@@ -2647,6 +2649,8 @@ const descargarPDF = async () => {
   }, 100);
 };
 
+defineExpose({ generarPDF, descargarPDF });
+
 // Función para crear tablas en PDF con colores condicionales
 const crearTablaPDF = (datos: any[], columnas: string[], titulo: string, tipoTabla: string = 'general'): Content[] => {
   if (!datos || datos.length === 0) return [];
@@ -2760,7 +2764,7 @@ const crearTablaPDF = (datos: any[], columnas: string[], titulo: string, tipoTab
     <Transition name="fade">
       <div 
         v-if="mostrarModalGeneracion" 
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+        class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
         @click="!generandoPDF && mensajeExito ? cerrarModal() : null"
       >
         <div class="bg-white rounded-xl p-6 shadow-xl max-w-md w-full mx-4" @click.stop>
@@ -2793,7 +2797,7 @@ const crearTablaPDF = (datos: any[], columnas: string[], titulo: string, tipoTab
       </div>
     </Transition>
 
-    <div class="flex items-center gap-4 self-center">
+    <div v-if="!sinBotones" class="flex items-center gap-4 self-center">
     <button
         @click="generarPDF"
         :disabled="generandoPDF"

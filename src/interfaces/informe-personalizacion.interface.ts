@@ -3,10 +3,20 @@ export interface RecomendacionItem {
   medidaPreventiva: string;
 }
 
+/** Informes del tablero con conclusiones y recomendaciones propias. */
+export type TipoDeInformePersonalizable =
+  | 'completo'
+  | 'resumen'
+  | 'cardiometabolico'
+  | 'auditivo'
+  | 'musculoesqueletico';
+
 export interface InformePersonalizacion {
   _id?: string;
   idEmpresa: string;
   idCentroTrabajo?: string;
+  /** Ausente en registros anteriores a los tipos: informe completo. */
+  tipoInforme?: TipoDeInformePersonalizable;
   conclusiones?: string;
   formatoRecomendaciones: 'texto' | 'tabla';
   recomendacionesTexto?: string;

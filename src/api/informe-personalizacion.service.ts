@@ -1,8 +1,9 @@
 import axios from 'axios';
-import type { 
-  InformePersonalizacion, 
-  CreateInformePersonalizacionDto, 
-  UpdateInformePersonalizacionDto 
+import type {
+  InformePersonalizacion,
+  CreateInformePersonalizacionDto,
+  TipoDeInformePersonalizable,
+  UpdateInformePersonalizacionDto,
 } from '@/interfaces/informe-personalizacion.interface';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://ramazzini.app';
@@ -10,8 +11,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://ramazzini.app';
 class InformePersonalizacionService {
   private baseURL = `${API_URL}/api/informe-personalizacion`;
 
-  private requestConfig() {
+  /** El tipo viaja en la consulta; sin él, el servidor usa el informe completo. */
+  private requestConfig(tipo?: TipoDeInformePersonalizable) {
     return {
+      ...(tipo ? { params: { tipo } } : {}),
       withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
@@ -30,20 +33,24 @@ class InformePersonalizacionService {
   }
 
   async findByEmpresaAndCentro(
-    idEmpresa: string, 
-    idCentroTrabajo: string
+    idEmpresa: string,
+    idCentroTrabajo: string,
+    tipo?: TipoDeInformePersonalizable,
   ): Promise<InformePersonalizacion | null> {
     const response = await axios.get(
       `${this.baseURL}/empresa/${idEmpresa}/centro/${idCentroTrabajo}`,
-      this.requestConfig()
+      this.requestConfig(tipo),
     );
     return response.data;
   }
 
-  async findByEmpresaOnly(idEmpresa: string): Promise<InformePersonalizacion | null> {
+  async findByEmpresaOnly(
+    idEmpresa: string,
+    tipo?: TipoDeInformePersonalizable,
+  ): Promise<InformePersonalizacion | null> {
     const response = await axios.get(
       `${this.baseURL}/empresa/${idEmpresa}/centro`,
-      this.requestConfig()
+      this.requestConfig(tipo),
     );
     return response.data;
   }
@@ -54,22 +61,28 @@ class InformePersonalizacionService {
   }
 
   async upsertByEmpresa(
-    idEmpresa: string, 
-    data: UpdateInformePersonalizacionDto
+    idEmpresa: string,
+    data: UpdateInformePersonalizacionDto,
+    tipo?: TipoDeInformePersonalizable,
   ): Promise<InformePersonalizacion> {
-    const response = await axios.put(`${this.baseURL}/upsert/empresa/${idEmpresa}`, data, this.requestConfig());
+    const response = await axios.put(
+      `${this.baseURL}/upsert/empresa/${idEmpresa}`,
+      data,
+      this.requestConfig(tipo),
+    );
     return response.data;
   }
 
   async upsertByEmpresaAndCentro(
     idEmpresa: string,
     idCentroTrabajo: string,
-    data: UpdateInformePersonalizacionDto
+    data: UpdateInformePersonalizacionDto,
+    tipo?: TipoDeInformePersonalizable,
   ): Promise<InformePersonalizacion> {
     const response = await axios.put(
       `${this.baseURL}/upsert/empresa/${idEmpresa}/centro/${idCentroTrabajo}`,
       data,
-      this.requestConfig()
+      this.requestConfig(tipo),
     );
     return response.data;
   }

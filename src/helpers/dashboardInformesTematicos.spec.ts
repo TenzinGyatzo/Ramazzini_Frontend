@@ -146,6 +146,6 @@ describe('informes temáticos del tablero de salud', () => {
     expect(texto).toContain('Circunferencia de cintura');
     expect(texto).toContain('E119 - DIABETES MELLITUS');
     expect(texto).toContain('Puesto: Soldador');
-    expect(texto).not.toContain('Resumen ejecutivo de salud laboral');
+    expect(texto).not.toContain('Resumen de salud laboral para dirección');
   });
 });

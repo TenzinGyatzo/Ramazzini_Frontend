@@ -1,6 +1,6 @@
 /**
  * Tablero de salud: informes adicionales al informe completo en PDF.
- *  - Resumen ejecutivo: una o dos páginas con cifras clave, hallazgos redactados
+ *  - Resumen para dirección: una o dos páginas con cifras clave, hallazgos redactados
  *    a partir de los datos y las tablas principales.
  *  - Datos en Excel: todas las tablas del tablero, una hoja por sección.
  * Ambos salen de las mismas tablas, que se arman aquí sin depender de la pantalla.
@@ -18,6 +18,7 @@ import {
 } from './dashboardDataProcessor';
 import { consultasPorMes, resumirDiagnosticos, type DiagnosticoDeTablero } from './dashboardDiagnosticos';
 import { cifrasClave, registrosDe, type CifraClave } from './dashboardSecciones';
+import { htmlToPdfMakeContent, isHtmlContentEmpty } from './pdfHtmlParser';
 
 type Celda = string | number;
 
@@ -58,6 +59,7 @@ export interface InformeDeTablero {
   cifras: CifraClave[];
   hallazgos: string[];
   tablas: TablaDeInforme[];
+  /** Texto con formato (HTML del editor), propio de cada tipo de informe. */
   conclusiones: string;
   recomendaciones: string;
   recomendacionesTabla: { hallazgo: string; medidaPreventiva: string }[];
@@ -374,17 +376,18 @@ const sinEspacios = (texto: string) =>
 export const nombreDeArchivo = (prefijo: string, informe: InformeDeTablero, hoy: string, extension: string) =>
   `${prefijo}_${sinEspacios(informe.empresa) || 'Empresa'}_${hoy}.${extension}`;
 
-// ---- Resumen ejecutivo (pdfmake)
+// ---- Resumen para dirección e informes temáticos (pdfmake)
 
 /** Tablas que entran al resumen; el resto queda para el informe completo y el Excel. */
 const TABLAS_DEL_RESUMEN = ['Aptitud al puesto', 'Diagnósticos de las consultas', 'Agentes de riesgo'];
 const FILAS_POR_TABLA_EN_RESUMEN = 8;
 const FILAS_POR_TABLA_EN_TEMATICO = 25;
+export const TITULO_DEL_RESUMEN = 'Resumen de salud laboral para dirección';
 
 export function definicionResumenEjecutivo(
   informe: InformeDeTablero,
   opciones: {
-    /** Título del documento; por defecto, el del resumen ejecutivo. */
+    /** Título del documento; por defecto, el del resumen para dirección. */
     titulo?: string;
     /** Incluye todas las tablas del informe, completas, en lugar de las principales. */
     todasLasTablas?: boolean;
@@ -450,7 +453,7 @@ export function definicionResumenEjecutivo(
     pageSize: 'LETTER',
     pageMargins: [48, 48, 48, 54],
     content: [
-      { text: opciones.titulo ?? 'Resumen ejecutivo de salud laboral', style: 'titulo' },
+      { text: opciones.titulo ?? TITULO_DEL_RESUMEN, style: 'titulo' },
       { text: informe.empresa, style: 'empresa' },
       {
         table: { widths: ['auto', '*'], body: ficha.map(([dato, valor]) => [{ text: dato, bold: true }, valor]) },
@@ -475,12 +478,9 @@ export function definicionResumenEjecutivo(
         ? { ul: informe.hallazgos, style: 'parrafo' }
         : { text: 'No hay registros suficientes en el periodo para describir hallazgos.', style: 'parrafo' },
       ...tablas,
-      ...(informe.conclusiones
-        ? [
-            { text: 'Conclusiones', style: 'subtitulo' },
-            { text: informe.conclusiones, style: 'parrafo' },
-          ]
-        : []),
+      ...(isHtmlContentEmpty(informe.conclusiones)
+        ? []
+        : [{ text: 'Conclusiones', style: 'subtitulo' }, ...htmlToPdfMakeContent(informe.conclusiones)]),
       ...recomendaciones,
       {
         text: 'Los hallazgos se redactan automáticamente a partir de los registros del periodo; describen los datos y no sustituyen la valoración del responsable médico.',
@@ -497,6 +497,8 @@ export function definicionResumenEjecutivo(
       encabezado: { bold: true, fillColor: '#ecfdf5' },
       cifra: { fontSize: 18, bold: true, color: '#111827' },
       parrafo: { fontSize: 9.5, lineHeight: 1.25 },
+      // Estilo que usa el texto con formato de las conclusiones
+      textoNormal: { fontSize: 9.5, lineHeight: 1.25 },
     },
     defaultStyle: { fontSize: 9.5 },
   };

@@ -4161,8 +4161,18 @@ html.dark-mode .lista-conteos__barra {
   background-color: #10b981 !important;
 }
 
-html.dark-mode .informes-tematicos {
-  background-color: #1e293b !important;
+/* Ventana de informes del tablero */
+html.dark-mode .informes-opcion:hover {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .informes-opcion--elegida,
+html.dark-mode .informes-opcion--elegida:hover {
+  background-color: rgba(16, 185, 129, 0.15) !important;
   border-color: #10b981 !important;
-  color: #6ee7b7 !important;
+}
+
+html.dark-mode .informes-texto-anterior {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
 }

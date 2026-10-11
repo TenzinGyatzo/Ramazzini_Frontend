@@ -14,10 +14,9 @@ import GraficaPastel from '@/components/graficas/GraficaPastel.vue';
 import { subDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import DescargarInformeDashboard from '@/components/DescargarInformeDashboard.vue';
-import ModalPersonalizarInforme from '@/components/ModalPersonalizarInforme.vue';
+import ModalInformesDashboard from '@/components/ModalInformesDashboard.vue';
 import DashboardChartSkeleton from '@/components/skeletons/DashboardChartSkeleton.vue';
 import ListaDeConteos from '@/components/graficas/ListaDeConteos.vue';
-import InformesAdicionalesDashboard from '@/components/InformesAdicionalesDashboard.vue';
 import { armarInforme } from '@/helpers/dashboardInformes';
 import { informeTematico } from '@/helpers/dashboardInformesTematicos';
 import { consultasPorMes, resumirDiagnosticos } from '@/helpers/dashboardDiagnosticos';
@@ -2682,7 +2681,7 @@ const tablaPorCentro = computed(() =>
     : null,
 );
 
-// ---- Resumen ejecutivo y datos en Excel: se arman con los datos del tablero en ese momento
+// ---- Informes que no son el completo: se arman con los datos del tablero en ese momento
 
 const fuentesDeInforme = () => ({
       datos: dashboardData.value,
@@ -2719,15 +2718,10 @@ const contextoDeInforme = () => ({
       porCentro: tablaPorCentro.value,
       responsable: nombreMedicoFirmanteDashboard.value ?? '',
       fecha: new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }),
-      conclusiones: informePersonalizacionStore.currentPersonalizacion?.conclusiones ?? '',
-      recomendaciones:
-        informePersonalizacionStore.currentPersonalizacion?.formatoRecomendaciones === 'tabla'
-          ? ''
-          : (informePersonalizacionStore.currentPersonalizacion?.recomendacionesTexto ?? ''),
-      recomendacionesTabla:
-        informePersonalizacionStore.currentPersonalizacion?.formatoRecomendaciones === 'tabla'
-          ? (informePersonalizacionStore.currentPersonalizacion?.recomendacionesTabla ?? [])
-          : [],
+      // Cada informe tiene sus conclusiones y recomendaciones: las pone la ventana de informes
+      conclusiones: '',
+      recomendaciones: '',
+      recomendacionesTabla: [],
 });
 
 /** Lo que el informe completo agrega al final: diagnósticos de las consultas e inventario. */
@@ -3502,20 +3496,27 @@ const obtenerBase64Logo = async (ruta) => {
   });
 };
 
-// Funciones para el modal de personalización
-const abrirModalPersonalizacion = () => {
-  mostrarModalPersonalizacion.value = true;
-};
+// ---- Ventana de informes
+const mostrarInformes = ref(false);
+const refInformeCompleto = ref(null);
+const idCentroSeleccionado = computed(() =>
+  centroSeleccionado.value !== 'Todos'
+    ? centrosTrabajo.value.find((c) => c.nombreCentro === centroSeleccionado.value)?._id
+    : undefined,
+);
 
-const cerrarModalPersonalizacion = () => {
-  mostrarModalPersonalizacion.value = false;
+/** El informe completo lo arma el componente que tiene las gráficas. */
+const generarInformeCompleto = (modo) =>
+  modo === 'ver' ? refInformeCompleto.value?.generarPDF() : refInformeCompleto.value?.descargarPDF();
+
+/** El informe completo lee sus conclusiones del store: se actualizan al guardarlas en la ventana. */
+const alGuardarConclusiones = (tipo, personalizacion) => {
+  if (tipo === 'completo') informePersonalizacionStore.currentPersonalizacion = personalizacion;
 };
 
 
 const logoBase64 = ref();
 
-// Variables para el modal de personalización
-const mostrarModalPersonalizacion = ref(false);
 
 watch(
   () => empresasStore.currentEmpresa,
@@ -3610,19 +3611,24 @@ const tablaCintura = computed(() => {
         <!-- Ajustado a nivel del encabezado -->
         <div class="mb-4 flex flex-col xl:flex-row xl:items-end gap-4 xl:gap-6">
           <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch gap-3 sm:gap-4 w-full">
-            <!-- Botón para personalizar informe -->
+            <!-- Todos los informes y sus conclusiones se piden desde una sola ventana -->
             <button
-              @click="abrirModalPersonalizacion"
-              class="w-full sm:w-auto justify-center gap-2 px-4 py-2 rounded-lg shadow transition duration-300 flex items-center bg-blue-600 hover:bg-blue-700 text-white"
-              title="Personalizar secciones del informe"
+              type="button"
+              class="w-full sm:w-auto justify-center gap-2 px-4 py-2 rounded-lg shadow transition duration-300 flex items-center bg-emerald-600 hover:bg-emerald-700 text-white disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="dashboardData.length === 0"
+              :title="dashboardData.length === 0 ? 'Aún no hay datos para generar informes' : 'Ver, descargar y personalizar los informes'"
+              data-test="abrir-informes"
+              @click="mostrarInformes = true"
             >
-              <i class="fas fa-edit mr-1"></i>
-              Conclusiones y recomendaciones
+              <i class="fas fa-file-lines mr-1"></i>
+              Informes
             </button>
-            
-            <div class="w-full sm:w-auto">
+
+              <!-- Sin botones propios: genera el informe completo cuando la ventana lo pide -->
               <DescargarInformeDashboard
               v-if="dashboardData.length > 0"
+              ref="refInformeCompleto"
+              sin-botones
               :empresa-id="String(route.params.idEmpresa)"
               :refs-graficas="{
                 imc: { ref: refIMC, config: { type: 'bar', data: graficaIMCData, options: graficaIMCOptionsPDF } },
@@ -3691,16 +3697,6 @@ const tablaCintura = computed(() => {
               :formato-recomendaciones="informePersonalizacionStore.currentPersonalizacion?.formatoRecomendaciones"
               :recomendaciones-texto="informePersonalizacionStore.currentPersonalizacion?.recomendacionesTexto"
               :recomendaciones-tabla="informePersonalizacionStore.currentPersonalizacion?.recomendacionesTabla"
-            />
-            </div>
-
-            <!-- Otros informes: resumen ejecutivo y datos en Excel -->
-            <InformesAdicionalesDashboard
-              v-if="dashboardData.length > 0"
-              :empresa-id="String(route.params.idEmpresa)"
-              :total-trabajadores="totalTrabajadores"
-              :armar="armarInformeDelTablero"
-              :armar-tema="armarInformeTematico"
             />
           </div>
           
@@ -6033,11 +6029,21 @@ const tablaCintura = computed(() => {
     </div>
   </Transition>
 
-  <!-- Modal de personalización del informe -->
-  <ModalPersonalizarInforme
-    :is-open="mostrarModalPersonalizacion"
-    :id-empresa="empresasStore.currentEmpresa?._id"
-    :id-centro-trabajo="centroSeleccionado !== 'Todos' ? centrosTrabajo.find(c => c.nombreCentro === centroSeleccionado)?._id : undefined"
-    @close="cerrarModalPersonalizacion"
+  <!-- Ventana de informes: generar cada uno y capturar sus conclusiones y recomendaciones -->
+  <ModalInformesDashboard
+    v-if="empresasStore.currentEmpresa?._id"
+    :abierto="mostrarInformes"
+    :empresa-id="empresasStore.currentEmpresa._id"
+    :centro-id="idCentroSeleccionado"
+    :centro="centroSeleccionado"
+    :periodo="periodoReporte"
+    :segmento="textoFiltrosPoblacion"
+    :total-trabajadores="totalTrabajadores"
+    :secciones="seccionConDatos"
+    :armar="armarInformeDelTablero"
+    :armar-tema="armarInformeTematico"
+    :generar-completo="generarInformeCompleto"
+    @cerrar="mostrarInformes = false"
+    @guardada="alGuardarConclusiones"
   />
 </template>
