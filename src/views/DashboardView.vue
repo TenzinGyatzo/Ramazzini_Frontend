@@ -44,6 +44,7 @@ import { resumirNordico, resumirSueno } from '@/helpers/dashboardCuestionarios';
 import { resumirAntidoping } from '@/helpers/dashboardAntidoping';
 import { resumirHabitos } from '@/helpers/dashboardHabitos';
 import { resumirVigencia } from '@/helpers/dashboardVigencia';
+import { NORDICO_EN_TABLA, SUENO_EN_TABLA } from '@/helpers/documentosEnTabla';
 import {
   resumirCardiometabolico,
   resumirConsultas,
@@ -2567,9 +2568,10 @@ const repartoDeObesidad = computed(() => {
 });
 
 const segmentosAntidoping = computed(() => [
-  { etiqueta: 'Con algún positivo', cantidad: antidopingDelTablero.value.pruebasPositivas, color: COLORES_DE_DONA.riesgo },
+  { etiqueta: 'Con algún positivo', clave: 'Positivo', cantidad: antidopingDelTablero.value.pruebasPositivas, color: COLORES_DE_DONA.riesgo },
   {
     etiqueta: 'Negativas',
+    clave: 'Negativo',
     cantidad: antidopingDelTablero.value.pruebas - antidopingDelTablero.value.pruebasPositivas,
     color: COLORES_DE_DONA.resto,
   },
@@ -2580,19 +2582,19 @@ const cantidadDe = (conteos, clave) => conteos.find((conteo) => conteo.clave ===
 const segmentosNordico = computed(() => {
   const semaforo = nordicoDelTablero.value.semaforo;
   return [
-    { etiqueta: 'Requieren seguimiento', cantidad: cantidadDe(semaforo, 'rojo'), color: COLORES_DE_DONA.riesgo },
-    { etiqueta: 'Con molestias', cantidad: cantidadDe(semaforo, 'amarillo'), color: COLORES_DE_DONA.atencion },
-    { etiqueta: 'Sin molestias', cantidad: cantidadDe(semaforo, 'verde'), color: COLORES_DE_DONA.resto },
+    { etiqueta: 'Requieren seguimiento', clave: NORDICO_EN_TABLA.rojo, cantidad: cantidadDe(semaforo, 'rojo'), color: COLORES_DE_DONA.riesgo },
+    { etiqueta: 'Con molestias', clave: NORDICO_EN_TABLA.amarillo, cantidad: cantidadDe(semaforo, 'amarillo'), color: COLORES_DE_DONA.atencion },
+    { etiqueta: 'Sin molestias', clave: NORDICO_EN_TABLA.verde, cantidad: cantidadDe(semaforo, 'verde'), color: COLORES_DE_DONA.resto },
   ];
 });
 
 const segmentosSueno = computed(() => {
   const niveles = suenoDelTablero.value.prioridad;
   return [
-    { etiqueta: 'Frecuente', cantidad: cantidadDe(niveles, 'rojo'), color: COLORES_DE_DONA.riesgo },
-    { etiqueta: 'Semanal', cantidad: cantidadDe(niveles, 'naranja'), color: COLORES_DE_DONA.alerta },
-    { etiqueta: 'Ocasional', cantidad: cantidadDe(niveles, 'amarillo'), color: COLORES_DE_DONA.atencion },
-    { etiqueta: 'Sin síntomas', cantidad: cantidadDe(niveles, 'verde'), color: COLORES_DE_DONA.resto },
+    { etiqueta: 'Frecuente', clave: SUENO_EN_TABLA.rojo, cantidad: cantidadDe(niveles, 'rojo'), color: COLORES_DE_DONA.riesgo },
+    { etiqueta: 'Semanal', clave: SUENO_EN_TABLA.naranja, cantidad: cantidadDe(niveles, 'naranja'), color: COLORES_DE_DONA.alerta },
+    { etiqueta: 'Ocasional', clave: SUENO_EN_TABLA.amarillo, cantidad: cantidadDe(niveles, 'amarillo'), color: COLORES_DE_DONA.atencion },
+    { etiqueta: 'Sin síntomas', clave: SUENO_EN_TABLA.verde, cantidad: cantidadDe(niveles, 'verde'), color: COLORES_DE_DONA.resto },
   ];
 });
 
@@ -2614,6 +2616,14 @@ const suenoDelTablero = computed(() => resumirSueno(registrosSueno.value));
 /** Filas medidas cada una sobre su propio total, para la lista de barras. */
 const conTotal = (filas, cantidad, total) =>
   filas.map((fila) => ({ clave: fila.clave, etiqueta: fila.etiqueta, cantidad: fila[cantidad], total: fila[total] }));
+
+/** De los hábitos, la tabla de trabajadores filtra por tabaquismo y por alcoholismo. */
+const habitosNavegables = computed(() =>
+  conTotal(habitosDelTablero.value.habitos, 'cantidad', 'evaluados').map((fila) => ({
+    ...fila,
+    sinDestino: !['tabaquismo', 'alcoholismo'].includes(fila.clave),
+  })),
+);
 
 /** «12 (40 %)»: cuántos y qué parte de los evaluados. */
 const conPorcentaje = (parte, total) => (total > 0 ? `${parte} (${Math.round((parte / total) * 100)} %)` : String(parte));
@@ -4969,9 +4979,16 @@ const tablaCintura = computed(() => {
               <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="habitos-lista">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Hábitos de riesgo referidos</h3>
-                  <ListaDeConteos :filas="conTotal(habitosDelTablero.habitos, 'cantidad', 'evaluados')" tono="atencion" />
+                  <ListaDeConteos
+                    :filas="habitosNavegables"
+                    tono="atencion"
+                    navegable
+                    data-test="habitos-barras"
+                    @elegir="(fila) => manejarRedireccionFiltroChart('Si', fila.clave)"
+                  />
                   <p class="mt-3 text-xs italic text-gray-500">
                     Cada hábito se mide sobre quienes contestaron esa pregunta. Es lo que el trabajador refiere, no una medición.
+                    Tabaquismo y consumo de alcohol llevan a la lista de trabajadores que lo refirieron.
                   </p>
                 </div>
               </div>
@@ -6068,8 +6085,11 @@ const tablaCintura = computed(() => {
                     :cantidad="nordicoDelTablero.conMolestia12Meses"
                     :total="nordicoDelTablero.evaluados"
                     nota="Trabajadores con alguna molestia en los últimos 12 meses."
+                    navegable
                     data-test="nordico-dona"
+                    @elegir="(segmento) => manejarRedireccionFiltroChart(segmento.clave, 'nordico')"
                   />
+                  <p class="mt-2 text-center text-xs italic text-gray-500">Al hacer clic se abren los trabajadores según su documento más reciente, que puede no ser del periodo elegido.</p>
                   <dl class="mt-4 space-y-2 border-t border-gray-200 pt-3 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Con molestia en los últimos 7 días</dt>
@@ -6150,8 +6170,11 @@ const tablaCintura = computed(() => {
                     :cantidad="suenoDelTablero.conSeguimiento"
                     :total="suenoDelTablero.evaluados"
                     nota="Trabajadores con síntomas semanales o frecuentes."
+                    navegable
                     data-test="sueno-dona"
+                    @elegir="(segmento) => manejarRedireccionFiltroChart(segmento.clave, 'sueno')"
                   />
+                  <p class="mt-2 text-center text-xs italic text-gray-500">Al hacer clic se abren los trabajadores según su documento más reciente, que puede no ser del periodo elegido.</p>
                   <dl v-if="suenoDelTablero.conHoras" class="mt-4 space-y-2 border-t border-gray-200 pt-3 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Horas de sueño por cada 24, en promedio</dt>
@@ -6211,9 +6234,13 @@ const tablaCintura = computed(() => {
                     :total="antidopingDelTablero.pruebas"
                     unidad="Pruebas"
                     nota="Pruebas positivas a alguna sustancia."
-                    class="mb-4"
+                    navegable
                     data-test="antidoping-dona"
+                    @elegir="(segmento) => manejarRedireccionFiltroChart(segmento.clave, 'antidoping')"
                   />
+                  <p class="mb-4 mt-2 text-center text-xs italic text-gray-500">
+                    Al hacer clic se abren los trabajadores según su prueba más reciente, que puede no ser del periodo elegido.
+                  </p>
                   <dl class="space-y-2 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Pruebas realizadas</dt>

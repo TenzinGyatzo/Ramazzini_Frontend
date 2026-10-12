@@ -268,7 +268,9 @@ export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
  * muestran; no interpreta causas ni recomienda.
  */
 /** Cuántos antecedentes crónicos y cuántos grupos de diagnósticos se mencionan. */
-const ANTECEDENTES_EN_HALLAZGOS = 4;
+const ANTECEDENTES_EN_HALLAZGOS = 5;
+/** Los de mayor peso para la aptitud y el riesgo cardiovascular de una plantilla. */
+const ANTECEDENTES_FIJOS = ['hipertensivosPP', 'diabeticosPP', 'cardiopaticosPP'];
 /** El padecimiento, no el adjetivo de la tabla («hipertensivos»). */
 const NOMBRE_DE_ANTECEDENTE: Record<string, string> = {
   diabeticosPP: 'diabetes',
@@ -304,8 +306,17 @@ export function hallazgosDelTablero(fuentes: Fuentes): string[] {
       `${pct(c.cintura.alto, totalCintura)} % tiene circunferencia de cintura de alto riesgo (${c.cintura.alto} de ${totalCintura}).`,
     );
   }
-  // Antecedentes crónicos presentes, del más al menos frecuente
-  const cronicas = c.cronicas.filter((fila) => fila[1] > 0).sort((a, b) => b[1] - a[1]);
+  // Hipertensión, diabetes y cardiopatía siempre, aunque nadie las refiera; después,
+  // los demás antecedentes crónicos presentes, del más al menos frecuente
+  const siempre = ANTECEDENTES_FIJOS.map((clave) => c.cronicas.find((fila) => fila[0] === clave)).filter(
+    (fila): fila is [string, number, number] => !!fila,
+  );
+  const demas = c.cronicas
+    .filter((fila) => !ANTECEDENTES_FIJOS.includes(fila[0]) && fila[1] > 0)
+    .sort((a, b) => b[1] - a[1]);
+  // Sin historias clínicas en el periodo no hay nada que afirmar, ni siquiera un cero
+  const hayHistorias = registrosDe(fuentes.datos, fuentes.indiceCentro, 'enfermedadesCronicas').length > 0;
+  const cronicas = hayHistorias ? [...siempre, ...demas] : [];
   if (cronicas.length) {
     hallazgos.push(
       `Antecedentes crónicos referidos en la historia clínica: ${cronicas

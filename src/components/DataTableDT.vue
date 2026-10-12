@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { categoriaDeAudiometriaExterna, resultadoDeAudiometriaExterna } from '@/helpers/audiometriaExternaEnTabla';
+import { documentosEnTabla } from '@/helpers/documentosEnTabla';
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import DataTablesCore from 'datatables.net-dt';
 import 'datatables.net-select-dt';
@@ -538,7 +539,7 @@ function inicializarDataTable() {
     };
 
     // Definir las columnas que se ocultan por defecto
-    const columnasOcultas = [2, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42];
+    const columnasOcultas = [2, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47];
 
     dataTableInstance = new DataTablesCore('#customTable', {
       data: props.rows,
@@ -828,6 +829,38 @@ function inicializarDataTable() {
         }, defaultContent: '-' }, // 40
         { data: 'consultaResumen.fechaNotaMedica', title: 'Consultas', render: d => d ? 'Si' : 'No', defaultContent: '-' }, // 41
         { data: 'estadoLaboral', title: 'Estado Laboral' }, // 42
+        // Lo referido en la historia clínica (sí o no) y el documento más reciente de cada tipo.
+        // Columnas de datos nuevas van aquí, antes de Expediente y Acciones.
+        {
+          data: null,
+          title: 'Tabaquismo',
+          render: (_dato, _tipo, row) => documentosEnTabla(row).tabaquismo,
+          defaultContent: '-',
+        }, // 43
+        {
+          data: null,
+          title: 'Alcoholismo',
+          render: (_dato, _tipo, row) => documentosEnTabla(row).alcoholismo,
+          defaultContent: '-',
+        }, // 44
+        {
+          data: null,
+          title: 'Antidoping',
+          render: (_dato, _tipo, row) => documentosEnTabla(row).antidoping,
+          defaultContent: '-',
+        }, // 45
+        {
+          data: null,
+          title: 'Cuestionario Nórdico',
+          render: (_dato, _tipo, row) => documentosEnTabla(row).nordico,
+          defaultContent: '-',
+        }, // 46
+        {
+          data: null,
+          title: 'Sueño y vigilia',
+          render: (_dato, _tipo, row) => documentosEnTabla(row).sueno,
+          defaultContent: '-',
+        }, // 47
         {
           data: null,
           title: 'Expediente',
@@ -844,7 +877,7 @@ function inicializarDataTable() {
               </a>
             `;
           }
-        }, // 43
+        }, // 48
         {
           data: null,
           title: 'Acciones',
@@ -959,7 +992,7 @@ function inicializarDataTable() {
               </div>
             `;
           }
-        }, // 44
+        }, // 49
       ],
       deferRender: true,
       scrollX: true,
@@ -1001,8 +1034,8 @@ function inicializarDataTable() {
         { targets: 39, width: '90px' }, // Laboratorio RC
         { targets: 40, width: '60px' }, // Agentes Riesgo
         { targets: 41, width: '60px' }, // Consultas
-        { targets: 43, width: '95px', className: 'columna-expediente' },
-        { targets: 44, width: '248px', className: 'columna-acciones' } // Acciones con clase específica
+        { targets: 48, width: '95px', className: 'columna-expediente' },
+        { targets: 49, width: '248px', className: 'columna-acciones' } // Acciones con clase específica
       ]
     });
 
@@ -1174,7 +1207,12 @@ function aplicarTodosLosFiltrosDesdeLocalStorage() {
     { id: 'ekgRc', columna: 37 },
     { id: 'rayosXRc', columna: 38 },
     { id: 'laboratorioRc', columna: 39 },
-    { id: 'estadoLaboral', columna: 42 }
+    { id: 'estadoLaboral', columna: 42 },
+    { id: 'tabaquismo', columna: 43 },
+    { id: 'alcoholismo', columna: 44 },
+    { id: 'antidoping', columna: 45 },
+    { id: 'nordico', columna: 46 },
+    { id: 'sueno', columna: 47 }
   ];
 
       // 1. Limpiar filtros anteriores
@@ -1321,7 +1359,7 @@ defineExpose({
 // Agregar watcher para la prop mostrarColumnasOcultas
 watch(() => props.mostrarColumnasOcultas, (nuevoValor) => {
   if (dataTableInstance) {
-    const columnasOcultas = [2, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42];
+    const columnasOcultas = [2, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47];
     
     // Cambiar la visibilidad de las columnas
     columnasOcultas.forEach((columnaIndex) => {

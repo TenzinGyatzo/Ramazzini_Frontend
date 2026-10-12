@@ -16,6 +16,8 @@ interface Fila {
   /** Si la fila se mide sobre su propio total («3 de 20»), en lugar del total de la lista. */
   total?: number;
   tono?: Tono;
+  /** En una lista navegable, esta fila no lleva a ninguna parte. */
+  sinDestino?: boolean;
 }
 
 const props = withDefaults(
@@ -69,11 +71,14 @@ const porcentaje = (fila: Fila) =>
   <ul v-else class="space-y-3">
     <li v-for="fila in mostradas" :key="fila.clave" data-test="conteo">
       <component
-        :is="navegable ? 'button' : 'div'"
-        :type="navegable ? 'button' : undefined"
+        :is="navegable && !fila.sinDestino ? 'button' : 'div'"
+        :type="navegable && !fila.sinDestino ? 'button' : undefined"
         class="block w-full text-left"
-        :class="navegable ? '-mx-2 w-[calc(100%+1rem)] cursor-pointer rounded px-2 py-1 transition hover:bg-gray-200' : ''"
-        @click="navegable && emit('elegir', fila)"
+        :class="[
+          navegable ? '-mx-2 w-[calc(100%+1rem)] rounded px-2 py-1' : '',
+          navegable && !fila.sinDestino ? 'cursor-pointer transition hover:bg-gray-200' : '',
+        ]"
+        @click="navegable && !fila.sinDestino && emit('elegir', fila)"
       >
       <div class="flex items-baseline justify-between gap-3">
         <span class="lista-conteos__etiqueta min-w-0 truncate text-sm text-gray-800" :title="fila.etiqueta">{{ fila.etiqueta }}</span>

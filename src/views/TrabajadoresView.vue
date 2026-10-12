@@ -38,6 +38,12 @@ import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
 import type { Trabajador } from '../interfaces/trabajador.interface';
 import { useUserPermissions } from '@/composables/useUserPermissions';
+import {
+  OPCIONES_ANTIDOPING,
+  OPCIONES_NORDICO,
+  OPCIONES_SI_NO,
+  OPCIONES_SUENO,
+} from '@/helpers/documentosEnTabla';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useEliminacion, type EliminacionRequest } from '@/composables/useEliminacion';
 import EliminacionAPI from '@/api/EliminacionAPI';
@@ -300,6 +306,12 @@ const filtrosConfig: FiltroConfigItem[] = [
   { id: 'ekgRc', groupId: 'estudios', label: 'EKG', opciones: ['Normal', 'Anormal', 'No concluyente', '-'] },
   { id: 'rayosXRc', groupId: 'estudios', label: 'Rayos X', opciones: ['Normal', 'Anormal', 'No concluyente', '-'] },
   { id: 'laboratorioRc', groupId: 'estudios', label: 'Laboratorios', opciones: ['Normal', 'Anormal', 'No concluyente', '-'] },
+  // Del documento más reciente de cada trabajador
+  { id: 'antidoping', groupId: 'estudios', label: 'Antidoping (último)', opciones: OPCIONES_ANTIDOPING },
+  { id: 'nordico', groupId: 'estudios', label: 'Cuestionario Nórdico', opciones: OPCIONES_NORDICO },
+  { id: 'sueno', groupId: 'estudios', label: 'Sueño y vigilia', opciones: OPCIONES_SUENO },
+  { id: 'tabaquismo', groupId: 'antecedentes', label: 'Tabaquismo', opciones: OPCIONES_SI_NO },
+  { id: 'alcoholismo', groupId: 'antecedentes', label: 'Alcoholismo', opciones: OPCIONES_SI_NO },
 ];
 
 const idsEnFiltrosRapidos = new Set<string>(filtrosRapidosIds);
@@ -395,6 +407,11 @@ const filtros = reactive<Record<string, string>>({
   ekgRc: '',
   rayosXRc: '',
   laboratorioRc: '',
+  antidoping: '',
+  nordico: '',
+  sueno: '',
+  tabaquismo: '',
+  alcoholismo: '',
   periodo: '',
   estadoLaboral: 'Activo',
 });
@@ -912,6 +929,11 @@ const filtrosValidos = {
   ekgRc: ['Normal', 'Anormal', 'No concluyente', '-'],
   rayosXRc: ['Normal', 'Anormal', 'No concluyente', '-'],
   laboratorioRc: ['Normal', 'Anormal', 'No concluyente', '-'],
+  antidoping: OPCIONES_ANTIDOPING,
+  nordico: OPCIONES_NORDICO,
+  sueno: OPCIONES_SUENO,
+  tabaquismo: OPCIONES_SI_NO,
+  alcoholismo: OPCIONES_SI_NO,
 };
 
 function aplicarFiltrosDesdeQuery(query: RouteLocationNormalizedLoaded['query']) {

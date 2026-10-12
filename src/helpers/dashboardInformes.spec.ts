@@ -83,7 +83,8 @@ describe('informes del tablero de salud', () => {
       '50 % de los trabajadores con exploración física tiene sobrepeso u obesidad (4 de 8).',
       '25 % presentó presión arterial alta o en rango de hipertensión (2 de 8).',
       '25 % tiene circunferencia de cintura de alto riesgo (2 de 8).',
-      'Antecedentes crónicos referidos en la historia clínica: hipertensión 2 (25 %), diabetes 1 (13 %).',
+      // Hipertensión, diabetes y cardiopatía van siempre, aunque nadie las refiera
+      'Antecedentes crónicos referidos en la historia clínica: hipertensión 2 (25 %), diabetes 1 (13 %), cardiopatía 0 (0 %).',
       '1 trabajador refiere antecedente de lumbalgia (13 %).',
       'El agente de riesgo con más trabajadores expuestos es ruido: 7 trabajadores (70 % de la plantilla).',
       // La aptitud no lleva hallazgo: su tabla ya lo dice
