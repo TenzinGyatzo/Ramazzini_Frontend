@@ -3479,6 +3479,9 @@ function handleClickTablaAntecedentes(condicion) {
   manejarRedireccionFiltroChart('Si', campoFiltro);
 }
 
+/** De las cifras clave, la de consultas lleva a los trabajadores que las tuvieron. */
+const cifraNavega = (cifra) => cifra.clave === 'consultas' && totalConsultas.value > 0;
+
 function handleClickConsultas() {
   if (totalConsultas.value === 0) return;
 
@@ -3602,6 +3605,21 @@ function handleClickGraficaAudiometriaDistribucion(evt, elements) {
 
   manejarRedireccionFiltroChart(valorFiltro, 'categoriaAudiometria');
 }
+
+/**
+ * Las donas de los demás estudios de gabinete llevan a los trabajadores con ese
+ * resultado; la tabla de trabajadores usa las mismas tres categorías.
+ */
+const irAResultadoDeEstudio = (datos, filtro) => (_evento, elementos) => {
+  if (!elementos.length) return;
+  const resultado = datos().chart.labels[elementos[0].index];
+  if (!['Normal', 'Anormal', 'No concluyente'].includes(resultado)) return;
+  manejarRedireccionFiltroChart(resultado, filtro);
+};
+const clicEspirometria = irAResultadoDeEstudio(() => graficaEspirometriaProporcionData.value, 'espirometriaRc');
+const clicEkg = irAResultadoDeEstudio(() => graficaEkgProporcionData.value, 'ekgRc');
+const clicRayosX = irAResultadoDeEstudio(() => graficaRayosXProporcionData.value, 'rayosXRc');
+const clicLaboratorio = irAResultadoDeEstudio(() => graficaAnalisisLaboratorioProporcionData.value, 'laboratorioRc');
 
 function handleClickGraficaAudiometriaProporcion(evt, elements) {
   if (!elements.length) return;
@@ -3998,6 +4016,12 @@ const tablaCintura = computed(() => {
                 v-for="cifra in cifrasDelTablero"
                 :key="cifra.clave"
                 class="dashboard-cifra rounded-lg border border-gray-200 bg-white px-4 py-3"
+                :class="{ 'cursor-pointer transition hover:border-emerald-500': cifraNavega(cifra) }"
+                :role="cifraNavega(cifra) ? 'button' : undefined"
+                :tabindex="cifraNavega(cifra) ? 0 : undefined"
+                :title="cifraNavega(cifra) ? 'Ver a los trabajadores con consultas médicas' : undefined"
+                @click="cifraNavega(cifra) && handleClickConsultas()"
+                @keydown.enter="cifraNavega(cifra) && handleClickConsultas()"
               >
                 <dt class="text-xs font-medium text-gray-500">{{ cifra.titulo }}</dt>
                 <dd class="mt-0.5 text-2xl font-semibold tabular-nums text-gray-900">{{ cifra.valor }}</dd>
@@ -5389,7 +5413,7 @@ const tablaCintura = computed(() => {
                 v-if="graficaEspirometriaProporcionData.chart?.labels?.length"
                 ref="refEspirometriaProporcion"
                 :data="graficaEspirometriaProporcionData.chart"
-                :options="{ ...opcionesGenericasAnillo }"
+                :options="{ ...opcionesGenericasAnillo, onClick: clicEspirometria }"
                 :cantidad="graficaEspirometriaProporcionData.conAnormal"
                 :porcentaje="graficaEspirometriaProporcionData.porcentaje"
               />
@@ -5515,7 +5539,7 @@ const tablaCintura = computed(() => {
                 v-if="graficaEkgProporcionData.chart?.labels?.length"
                 ref="refEkgProporcion"
                 :data="graficaEkgProporcionData.chart"
-                :options="{ ...opcionesGenericasAnillo }"
+                :options="{ ...opcionesGenericasAnillo, onClick: clicEkg }"
                 :cantidad="graficaEkgProporcionData.conAnormal"
                 :porcentaje="graficaEkgProporcionData.porcentaje"
               />
@@ -5641,7 +5665,7 @@ const tablaCintura = computed(() => {
                 v-if="graficaRayosXProporcionData.chart?.labels?.length"
                 ref="refRayosXProporcion"
                 :data="graficaRayosXProporcionData.chart"
-                :options="{ ...opcionesGenericasAnillo }"
+                :options="{ ...opcionesGenericasAnillo, onClick: clicRayosX }"
                 :cantidad="graficaRayosXProporcionData.conAnormal"
                 :porcentaje="graficaRayosXProporcionData.porcentaje"
               />
@@ -5767,7 +5791,7 @@ const tablaCintura = computed(() => {
                 v-if="graficaAnalisisLaboratorioProporcionData.chart?.labels?.length"
                 ref="refAnalisisLaboratorioProporcion"
                 :data="graficaAnalisisLaboratorioProporcionData.chart"
-                :options="{ ...opcionesGenericasAnillo }"
+                :options="{ ...opcionesGenericasAnillo, onClick: clicLaboratorio }"
                 :cantidad="graficaAnalisisLaboratorioProporcionData.conAnormal"
                 :porcentaje="graficaAnalisisLaboratorioProporcionData.porcentaje"
               />
@@ -5963,18 +5987,24 @@ const tablaCintura = computed(() => {
                 <div v-if="nordicoDelTablero.puestos.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-puestos">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Puestos con más trabajadores con molestias</h3>
                   <ul class="space-y-1.5 text-sm">
-                    <li
-                      v-for="puesto in nordicoDelTablero.puestos.slice(0, 10)"
-                      :key="puesto.clave"
-                      class="flex items-baseline justify-between gap-3"
-                    >
-                      <span class="lista-conteos__etiqueta min-w-0 truncate text-gray-800">{{ puesto.etiqueta }}</span>
-                      <span class="lista-conteos__cantidad shrink-0 whitespace-nowrap font-semibold tabular-nums text-gray-900">
-                        {{ puesto.cantidad }} de {{ puesto.evaluados }}
-                      </span>
+                    <li v-for="puesto in nordicoDelTablero.puestos.slice(0, 10)" :key="puesto.clave">
+                      <button
+                        type="button"
+                        class="-mx-2 flex w-[calc(100%+1rem)] cursor-pointer items-baseline justify-between gap-3 rounded px-2 py-1 text-left transition hover:bg-gray-200"
+                        :title="`Ver a los trabajadores del puesto ${puesto.etiqueta}`"
+                        data-test="nordico-puesto"
+                        @click="manejarRedireccionFiltroChart(puesto.etiqueta, 'puesto')"
+                      >
+                        <span class="lista-conteos__etiqueta min-w-0 truncate text-gray-800">{{ puesto.etiqueta }}</span>
+                        <span class="lista-conteos__cantidad shrink-0 whitespace-nowrap font-semibold tabular-nums text-gray-900">
+                          {{ puesto.cantidad }} de {{ puesto.evaluados }}
+                        </span>
+                      </button>
                     </li>
                   </ul>
-                  <p class="mt-3 text-xs italic text-gray-500">Con molestia en los últimos 12 meses, de los evaluados en cada puesto.</p>
+                  <p class="mt-3 text-xs italic text-gray-500">
+                    Con molestia en los últimos 12 meses, de los evaluados en cada puesto. Al hacer clic se abren todos los trabajadores de ese puesto.
+                  </p>
                 </div>
               </div>
             </section>
@@ -6110,8 +6140,8 @@ const tablaCintura = computed(() => {
                 {{ seccionDe('aptitud').titulo }}
               </h2>
               <div :class="gridTarjetas">
-            <!-- Aptitud al Puesto: 2 columnas -->
-            <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
+            <!-- Aptitud al puesto: ocupa toda la fila -->
+            <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-4">
               <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
                 <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Aptitud al Puesto
@@ -6198,45 +6228,6 @@ const tablaCintura = computed(() => {
               </div>
             </div>
 
-            <!-- Consultas -->
-            <div v-if="chartWaveVisible(1)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
-              <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
-                <div class="flex flex-col gap-0.5">
-                  <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    Consultas Médicas
-                    <span class="relative cursor-help">
-                      <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
-                      <span
-                        class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 md:bottom-auto md:top-1/2 md:left-full md:ml-2 md:-translate-x-0 md:-translate-y-1/2 w-64 text-sm font-normal bg-white text-gray-700 border border-gray-300 rounded shadow-lg px-3 py-2 opacity-0 peer-hover:opacity-100 transition-opacity z-10 pointer-events-none"
-                      >
-                        Cantidad total de <span class="font-semibold text-emerald-600">consultas médicas</span> otorgadas a los trabajadores en el período seleccionado.
-                      </span>
-                    </span>
-                  </h3>
-
-                </div>
-              </div>
-
-              <!-- Número principal -->
-              <div 
-                :class="[
-                  'flex-1 flex items-center justify-center text-center rounded-lg transition',
-                  totalConsultas > 0 ? 'cursor-pointer hover:bg-emerald-50' : 'cursor-default'
-                ]"
-                @click="handleClickConsultas"
-              >
-                <div class="text-center">
-                  <div class="text-8xl font-medium text-emerald-600">
-                    {{ totalConsultas }}
-                  </div>
-                  <div class="text-sm text-gray-500 mt-1 whitespace-pre-line">{{ rangoPeriodo }}</div>
-                </div>
-              </div>
-
-              <h4 class="text-xs text-gray-600 font-normal italic text-center">
-                Actividad médica
-              </h4>
-            </div>
 
               </div>
             </section>

@@ -63,7 +63,7 @@ export const SECCIONES_DE_TABLERO: SeccionDeTablero[] = [
   { id: 'musculoesqueletico', titulo: 'Molestias musculoesqueléticas', icono: 'fas fa-person-walking' },
   { id: 'sueno', titulo: 'Sueño y vigilia', icono: 'fas fa-bed' },
   { id: 'antidoping', titulo: 'Pruebas antidoping', icono: 'fas fa-vial' },
-  { id: 'aptitud', titulo: 'Aptitud y consultas', icono: 'fas fa-clipboard-check' },
+  { id: 'aptitud', titulo: 'Aptitud al puesto', icono: 'fas fa-clipboard-check' },
   { id: 'diagnosticos', titulo: 'Consultas y diagnósticos', icono: 'fas fa-notes-medical' },
   { id: 'incapacidades', titulo: 'Incapacidades', icono: 'fas fa-bed-pulse' },
   { id: 'inventario', titulo: 'Inventario', icono: 'fas fa-boxes-stacked' },
