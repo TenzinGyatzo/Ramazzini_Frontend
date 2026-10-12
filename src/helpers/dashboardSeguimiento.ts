@@ -38,6 +38,14 @@ const LABORATORIO: { clave: string; etiqueta: string; fueraDeMeta: string[] }[] 
   { clave: 'trigliceridos', etiqueta: 'Triglicéridos', fueraDeMeta: ['Límite alto', 'Alto', 'Muy alto'] },
 ];
 
+/** Grados que el seguimiento registra para la obesidad, del menor al mayor. */
+export const GRADOS_DE_OBESIDAD: { clave: string; etiqueta: string }[] = [
+  { clave: 'SOBREPESO', etiqueta: 'Sobrepeso' },
+  { clave: 'OBESIDAD_I', etiqueta: 'Obesidad I' },
+  { clave: 'OBESIDAD_II', etiqueta: 'Obesidad II' },
+  { clave: 'OBESIDAD_III', etiqueta: 'Obesidad III' },
+];
+
 export interface ResumenCardiometabolico {
   /** Trabajadores con al menos un evento de seguimiento en el periodo. */
   enSeguimiento: number;
@@ -46,6 +54,11 @@ export interface ResumenCardiometabolico {
   control: { clave: string; etiqueta: string; controlados: number; noControlados: number; valorados: number }[];
   /** Por estudio capturado: cuántos fuera de meta, de los que tienen un resultado valorable. */
   laboratorio: (Conteo & { evaluados: number })[];
+  /**
+   * La obesidad no se valora como controlada o no: el seguimiento registra su
+   * grado. Los cuatro grados, en orden, y cuántos trabajadores lo tienen capturado.
+   */
+  obesidad: { total: number; grados: Conteo[] };
 }
 
 export function resumirCardiometabolico(registros: CardiometabolicoDeTablero[]): ResumenCardiometabolico {
@@ -72,6 +85,13 @@ export function resumirCardiometabolico(registros: CardiometabolicoDeTablero[]):
         evaluados: categorias.length,
       };
     }).filter((estudio) => estudio.evaluados > 0),
+    obesidad: {
+      total: registros.filter((r) => GRADOS_DE_OBESIDAD.some((grado) => grado.clave === r.gradoObesidad)).length,
+      grados: GRADOS_DE_OBESIDAD.map((grado) => ({
+        ...grado,
+        cantidad: registros.filter((r) => r.gradoObesidad === grado.clave).length,
+      })),
+    },
   };
 }
 
@@ -79,6 +99,7 @@ export const TITULOS_CARDIOMETABOLICO = {
   condiciones: 'Seguimiento cardiometabólico: condiciones',
   control: 'Seguimiento cardiometabólico: control en la última visita',
   laboratorio: 'Seguimiento cardiometabólico: laboratorio fuera de meta',
+  obesidad: 'Seguimiento cardiometabólico: grado de obesidad',
 } as const;
 
 export function tablasCardiometabolico(registros: CardiometabolicoDeTablero[]): TablaDeInforme[] {
@@ -108,6 +129,14 @@ export function tablasCardiometabolico(registros: CardiometabolicoDeTablero[]): 
       titulo: TITULOS_CARDIOMETABOLICO.laboratorio,
       columnas: ['Estudio', 'Fuera de meta', 'Con resultado', 'Porcentaje'],
       filas: r.laboratorio.map((e) => [e.etiqueta, e.cantidad, e.evaluados, `${pct(e.cantidad, e.evaluados)} %`]),
+    });
+  }
+  if (r.obesidad.total) {
+    tablas.push({
+      seccion,
+      titulo: TITULOS_CARDIOMETABOLICO.obesidad,
+      columnas: ['Grado en la última visita', 'Trabajadores', 'Porcentaje'],
+      filas: r.obesidad.grados.map((g) => [g.etiqueta, g.cantidad, `${pct(g.cantidad, r.obesidad.total)} %`]),
     });
   }
   return tablas;

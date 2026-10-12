@@ -71,6 +71,18 @@ describe('tablero: seguimiento cardiometabólico', () => {
     expect(hallazgosCardiometabolico([])).toEqual([]);
     expect(tablasCardiometabolico([evento()])).toEqual([]);
     expect(tablasCardiometabolico(EVENTOS)).toHaveLength(3);
+    // El grado de obesidad solo sale si alguien lo tiene capturado
+    const conObesidad = [...EVENTOS, evento({ diagnosticos: ['OBESIDAD'], gradoObesidad: 'OBESIDAD_II' })];
+    expect(resumirCardiometabolico(conObesidad).obesidad).toEqual({
+      total: 1,
+      grados: [
+        { clave: 'SOBREPESO', etiqueta: 'Sobrepeso', cantidad: 0 },
+        { clave: 'OBESIDAD_I', etiqueta: 'Obesidad I', cantidad: 0 },
+        { clave: 'OBESIDAD_II', etiqueta: 'Obesidad II', cantidad: 1 },
+        { clave: 'OBESIDAD_III', etiqueta: 'Obesidad III', cantidad: 0 },
+      ],
+    });
+    expect(tablasCardiometabolico(conObesidad).at(-1)?.titulo).toBe('Seguimiento cardiometabólico: grado de obesidad');
     const hallazgos = hallazgosCardiometabolico(EVENTOS);
     expect(hallazgos[0]).toBe(
       '3 trabajadores tienen seguimiento cardiometabólico en el periodo: hipertensión arterial 3, diabetes mellitus tipo 2 1.',

@@ -10,6 +10,8 @@ import { useInformePersonalizacionStore } from '@/stores/informePersonalizacion'
 import { clasificarPorEdadYSexo, ordenarPorGrupoEtario, contarPorCategoriaIMC, etiquetasEnfermedades, contarEnfermedadesCronicas, etiquetasAntecedentesReferidos, contarAntecedentesReferidos, etiquetasVisionSinCorreccion, calcularRequierenLentes, contarVisionSinCorreccion, calcularVistaCorregida, calcularDaltonismo, etiquetasAptitudPuesto, etiquetasAptitudPuestoTabla, contarPorAptitudPuesto, calcularCircunferenciaCintura, contarConsultasUltimos30Dias, etiquetasAgentesRiesgo, contarAgentesRiesgo, contarPorSexo, categoriasTensionArterialOrdenadas, contarPorCategoriaTensionArterial, calcularProporcionAudiometria, distribuirResultadosHBC, calcularProporcionResultadosClinicos, distribuirResultadosClinicos, distribuirResultadosClinicosPorCategoriasMultiples, mapToCategoriasMultiples, ordenTipoAlteracionEkg, ordenTipoAlteracionEspirometria, ordenTipoAlteracionRayosX, ordenTipoAlteracionAnalisisLaboratorio, etiquetasTipoAlteracionEkg, etiquetasTipoAlteracionEspirometria, etiquetasTipoAlteracionRayosX, etiquetasTipoAlteracionAnalisisLaboratorio, calcularAnilloTamizajeBipolarTEA, calcularAnilloTamizajeProdromalCPB, calcularBarrasFranjasTamizajeTLP, tablaFranjasTamizajeTLP } from '@/helpers/dashboardDataProcessor';
 import GraficaBarras from '@/components/graficas/GraficaBarras.vue';
 import GraficaAnillo from '@/components/graficas/GraficaAnillo.vue';
+import DonaConLeyenda from '@/components/graficas/DonaConLeyenda.vue';
+import DonasPequenas from '@/components/graficas/DonasPequenas.vue';
 import GraficaPastel from '@/components/graficas/GraficaPastel.vue';
 import { subDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -41,6 +43,7 @@ import {
 import { resumirNordico, resumirSueno } from '@/helpers/dashboardCuestionarios';
 import { resumirAntidoping } from '@/helpers/dashboardAntidoping';
 import { resumirHabitos } from '@/helpers/dashboardHabitos';
+import { resumirVigencia } from '@/helpers/dashboardVigencia';
 import {
   resumirCardiometabolico,
   resumirConsultas,
@@ -2481,6 +2484,9 @@ const mostrarAnalisisLaboratorioDistribucion = computed(() => hasAnyPositiveChar
 
 const gridTarjetas =
   'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 auto-rows-[340px] sm:auto-rows-[360px] md:auto-rows-[380px] lg:auto-rows-[400px]';
+/** La misma rejilla, pero la fila crece si una tarjeta necesita más alto (la dona de vigencia con su leyenda). */
+const gridTarjetasQueCrecen =
+  'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 auto-rows-[minmax(340px,auto)] sm:auto-rows-[minmax(360px,auto)] md:auto-rows-[minmax(380px,auto)] lg:auto-rows-[minmax(400px,auto)]';
 
 /** Índice del centro elegido dentro de los datos; null cuando se ven todos. */
 const indiceCentroSeleccionado = computed(() => {
@@ -2519,6 +2525,88 @@ const consultasDelTablero = computed(() =>
   resumirConsultas(registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'consultas')),
 );
 const antidopingDelTablero = computed(() => resumirAntidoping(registrosAntidoping.value));
+// ---- Donas de las secciones nuevas: lo que importa en color, el resto en gris
+
+const COLORES_DE_DONA = { riesgo: '#DC2626', alerta: '#F97316', atencion: '#F59E0B', favorable: '#10B981', resto: '#D1D5DB' };
+
+/** Altura de cada columna respecto al mes con más pruebas, y qué parte de ella son positivas. */
+const antidopingMensual = computed(() => {
+  const meses = antidopingDelTablero.value.porMes;
+  const maximo = Math.max(1, ...meses.map((mes) => mes.pruebas));
+  return meses.map((mes) => ({
+    ...mes,
+    alto: `${Math.max(6, (mes.pruebas / maximo) * 100)}%`,
+    altoPositivas: `${(mes.positivas / mes.pruebas) * 100}%`,
+  }));
+});
+
+// Vigencia de la aptitud al día de hoy: no depende del periodo, sí de los filtros de trabajadores
+const vigenciaDelTablero = computed(() =>
+  resumirVigencia(registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'aptitudVigencia')),
+);
+const segmentosVigencia = computed(() => [
+  { etiqueta: 'Vencida', clave: 'Vencido', cantidad: vigenciaDelTablero.value.vencidas, color: COLORES_DE_DONA.riesgo },
+  { etiqueta: 'Por vencer', clave: 'Por vencer', cantidad: vigenciaDelTablero.value.porVencer, color: COLORES_DE_DONA.atencion },
+  { etiqueta: 'Vigente', clave: 'Vigente', cantidad: vigenciaDelTablero.value.vigentes, color: COLORES_DE_DONA.favorable },
+]);
+
+/** Grados de obesidad en seguimiento, con los colores de la gráfica de IMC. */
+const COLORES_DE_OBESIDAD = { SOBREPESO: '#F59E0B', OBESIDAD_I: '#F97316', OBESIDAD_II: '#DC2626', OBESIDAD_III: '#7F1D1D' };
+const repartoDeObesidad = computed(() => {
+  const { total, grados } = cardiometabolicoDelTablero.value.obesidad;
+  if (!total) return null;
+  return {
+    etiqueta: 'Obesidad',
+    rotulo: `${total} en seguimiento, por grado`,
+    segmentos: grados.map((grado) => ({
+      etiqueta: grado.etiqueta,
+      cantidad: grado.cantidad,
+      color: COLORES_DE_OBESIDAD[grado.clave],
+    })),
+  };
+});
+
+const segmentosAntidoping = computed(() => [
+  { etiqueta: 'Con algún positivo', cantidad: antidopingDelTablero.value.pruebasPositivas, color: COLORES_DE_DONA.riesgo },
+  {
+    etiqueta: 'Negativas',
+    cantidad: antidopingDelTablero.value.pruebas - antidopingDelTablero.value.pruebasPositivas,
+    color: COLORES_DE_DONA.resto,
+  },
+]);
+
+const cantidadDe = (conteos, clave) => conteos.find((conteo) => conteo.clave === clave)?.cantidad ?? 0;
+
+const segmentosNordico = computed(() => {
+  const semaforo = nordicoDelTablero.value.semaforo;
+  return [
+    { etiqueta: 'Requieren seguimiento', cantidad: cantidadDe(semaforo, 'rojo'), color: COLORES_DE_DONA.riesgo },
+    { etiqueta: 'Con molestias', cantidad: cantidadDe(semaforo, 'amarillo'), color: COLORES_DE_DONA.atencion },
+    { etiqueta: 'Sin molestias', cantidad: cantidadDe(semaforo, 'verde'), color: COLORES_DE_DONA.resto },
+  ];
+});
+
+const segmentosSueno = computed(() => {
+  const niveles = suenoDelTablero.value.prioridad;
+  return [
+    { etiqueta: 'Frecuente', cantidad: cantidadDe(niveles, 'rojo'), color: COLORES_DE_DONA.riesgo },
+    { etiqueta: 'Semanal', cantidad: cantidadDe(niveles, 'naranja'), color: COLORES_DE_DONA.alerta },
+    { etiqueta: 'Ocasional', cantidad: cantidadDe(niveles, 'amarillo'), color: COLORES_DE_DONA.atencion },
+    { etiqueta: 'Sin síntomas', cantidad: cantidadDe(niveles, 'verde'), color: COLORES_DE_DONA.resto },
+  ];
+});
+
+const segmentosProteccion = computed(() => {
+  const uso = otologicaDelTablero.value.proteccion;
+  return [
+    { etiqueta: 'Nunca', cantidad: cantidadDe(uso, 'NUNCA'), color: COLORES_DE_DONA.riesgo },
+    { etiqueta: 'A veces', cantidad: cantidadDe(uso, 'A VECES'), color: COLORES_DE_DONA.atencion },
+    { etiqueta: 'Siempre', cantidad: cantidadDe(uso, 'SIEMPRE'), color: COLORES_DE_DONA.favorable },
+  ];
+});
+const sinProteccionSiempre = computed(
+  () => cantidadDe(otologicaDelTablero.value.proteccion, 'NUNCA') + cantidadDe(otologicaDelTablero.value.proteccion, 'A VECES'),
+);
 const habitosDelTablero = computed(() => resumirHabitos(registrosHabitos.value));
 const nordicoDelTablero = computed(() => resumirNordico(registrosNordico.value));
 const suenoDelTablero = computed(() => resumirSueno(registrosSueno.value));
@@ -2533,7 +2621,10 @@ const conPorcentaje = (parte, total) => (total > 0 ? `${parte} (${Math.round((pa
 /** Qué parte de los trabajadores activos tiene el documento; vacío si no se puede afirmar. */
 const coberturaDe = (evaluados) => {
   const activos = registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'grupoEtario').length;
-  return activos > 0 && evaluados <= activos ? `${Math.round((evaluados / activos) * 100)} % de los activos` : '';
+  if (activos <= 0 || evaluados > activos) return '';
+  const porcentaje = Math.round((evaluados / activos) * 100);
+  // Unos cuantos entre muchos no son «0 %»
+  return `${evaluados > 0 && porcentaje === 0 ? 'menos de 1' : porcentaje} % de los activos`;
 };
 
 /** Secciones opcionales que estos centros han usado alguna vez. */
@@ -3653,6 +3744,18 @@ const obtenerBase64Logo = async (ruta) => {
 
 // ---- Ventana de informes
 const mostrarInformes = ref(false);
+
+// Al llegar desde el botón «Informes» de la vista de trabajadores, la ventana se abre sola cuando ya hay datos
+let abrirInformesAlCargar = route.query.informes === '1';
+watch(
+  () => dashboardLoading.value || dashboardData.value.length === 0,
+  (sinDatosAun) => {
+    if (sinDatosAun || !abrirInformesAlCargar) return;
+    abrirInformesAlCargar = false;
+    mostrarInformes.value = true;
+  },
+  { immediate: true },
+);
 const refInformeCompleto = ref(null);
 const idCentroSeleccionado = computed(() =>
   centroSeleccionado.value !== 'Todos'
@@ -4729,7 +4832,7 @@ const tablaCintura = computed(() => {
             <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
                 <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  Antecedentes relacionados con enfermedades crónicas
+                  Enfermedades crónicas referidas
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
                     <span
@@ -4898,10 +5001,21 @@ const tablaCintura = computed(() => {
                   <p class="mt-3 text-xs italic text-gray-500">Un trabajador puede tener más de una condición.</p>
                 </div>
 
-                <div v-if="cardiometabolicoDelTablero.control.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-control">
+                <div v-if="cardiometabolicoDelTablero.control.length || cardiometabolicoDelTablero.obesidad.total" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-control">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">En control en su última visita</h3>
-                  <ListaDeConteos :filas="conTotal(cardiometabolicoDelTablero.control, 'controlados', 'valorados')" tono="favorable" />
-                  <p class="mt-3 text-xs italic text-gray-500">Sobre quienes tienen el control valorado; no cuentan los «no valorable».</p>
+                  <DonasPequenas
+                    :filas="conTotal(cardiometabolicoDelTablero.control, 'controlados', 'valorados')"
+                    :color="COLORES_DE_DONA.favorable"
+                    :color-en-cero="COLORES_DE_DONA.riesgo"
+                    :reparto="repartoDeObesidad"
+                    data-test="cardiometabolico-donas"
+                  />
+                  <p class="mt-3 text-xs italic text-gray-500">
+                    Sobre quienes tienen el control valorado; no cuentan los «no valorable».
+                    <template v-if="cardiometabolicoDelTablero.obesidad.total">
+                      La obesidad no se valora como controlada o no: su anillo muestra el grado registrado en la última visita.
+                    </template>
+                  </p>
                 </div>
 
                 <div v-if="cardiometabolicoDelTablero.laboratorio.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-laboratorio">
@@ -5918,8 +6032,13 @@ const tablaCintura = computed(() => {
 
                 <div v-if="otologicaDelTablero.expuestosConRespuesta" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="otologica-proteccion">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Uso de protección auditiva</h3>
-                  <ListaDeConteos :filas="otologicaDelTablero.proteccion" :total="otologicaDelTablero.expuestosConRespuesta" />
-                  <p class="mt-3 text-xs italic text-gray-500">Entre quienes dijeron trabajar en ambientes ruidosos.</p>
+                  <DonaConLeyenda
+                    :segmentos="segmentosProteccion"
+                    :cantidad="sinProteccionSiempre"
+                    :total="otologicaDelTablero.expuestosConRespuesta"
+                    nota="No la usan siempre, entre quienes dijeron trabajar en ambientes ruidosos."
+                    data-test="proteccion-dona"
+                  />
                 </div>
               </div>
             </section>
@@ -5944,7 +6063,13 @@ const tablaCintura = computed(() => {
               <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-resultado">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Resultado del cuestionario</h3>
-                  <ListaDeConteos :filas="nordicoDelTablero.semaforo" :total="nordicoDelTablero.evaluados" />
+                  <DonaConLeyenda
+                    :segmentos="segmentosNordico"
+                    :cantidad="nordicoDelTablero.conMolestia12Meses"
+                    :total="nordicoDelTablero.evaluados"
+                    nota="Trabajadores con alguna molestia en los últimos 12 meses."
+                    data-test="nordico-dona"
+                  />
                   <dl class="mt-4 space-y-2 border-t border-gray-200 pt-3 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Con molestia en los últimos 7 días</dt>
@@ -5984,24 +6109,15 @@ const tablaCintura = computed(() => {
                   <ListaDeConteos :filas="nordicoDelTablero.zonasRelacionLaboral" :total="nordicoDelTablero.evaluados" />
                 </div>
 
-                <div v-if="nordicoDelTablero.puestos.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-puestos">
+                <div v-if="nordicoDelTablero.puestos.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-puestos">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Puestos con más trabajadores con molestias</h3>
-                  <ul class="space-y-1.5 text-sm">
-                    <li v-for="puesto in nordicoDelTablero.puestos.slice(0, 10)" :key="puesto.clave">
-                      <button
-                        type="button"
-                        class="-mx-2 flex w-[calc(100%+1rem)] cursor-pointer items-baseline justify-between gap-3 rounded px-2 py-1 text-left transition hover:bg-gray-200"
-                        :title="`Ver a los trabajadores del puesto ${puesto.etiqueta}`"
-                        data-test="nordico-puesto"
-                        @click="manejarRedireccionFiltroChart(puesto.etiqueta, 'puesto')"
-                      >
-                        <span class="lista-conteos__etiqueta min-w-0 truncate text-gray-800">{{ puesto.etiqueta }}</span>
-                        <span class="lista-conteos__cantidad shrink-0 whitespace-nowrap font-semibold tabular-nums text-gray-900">
-                          {{ puesto.cantidad }} de {{ puesto.evaluados }}
-                        </span>
-                      </button>
-                    </li>
-                  </ul>
+                  <ListaDeConteos
+                    :filas="conTotal(nordicoDelTablero.puestos, 'cantidad', 'evaluados')"
+                    tono="atencion"
+                    navegable
+                    data-test="nordico-puesto"
+                    @elegir="(fila) => manejarRedireccionFiltroChart(fila.etiqueta, 'puesto')"
+                  />
                   <p class="mt-3 text-xs italic text-gray-500">
                     Con molestia en los últimos 12 meses, de los evaluados en cada puesto. Al hacer clic se abren todos los trabajadores de ese puesto.
                   </p>
@@ -6029,7 +6145,13 @@ const tablaCintura = computed(() => {
               <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-nivel">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Nivel general</h3>
-                  <ListaDeConteos :filas="suenoDelTablero.prioridad" :total="suenoDelTablero.evaluados" />
+                  <DonaConLeyenda
+                    :segmentos="segmentosSueno"
+                    :cantidad="suenoDelTablero.conSeguimiento"
+                    :total="suenoDelTablero.evaluados"
+                    nota="Trabajadores con síntomas semanales o frecuentes."
+                    data-test="sueno-dona"
+                  />
                   <dl v-if="suenoDelTablero.conHoras" class="mt-4 space-y-2 border-t border-gray-200 pt-3 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Horas de sueño por cada 24, en promedio</dt>
@@ -6082,7 +6204,16 @@ const tablaCintura = computed(() => {
               </p>
               <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="antidoping-resumen">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Resultados</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Pruebas con algún positivo</h3>
+                  <DonaConLeyenda
+                    :segmentos="segmentosAntidoping"
+                    :cantidad="antidopingDelTablero.pruebasPositivas"
+                    :total="antidopingDelTablero.pruebas"
+                    unidad="Pruebas"
+                    nota="Pruebas positivas a alguna sustancia."
+                    class="mb-4"
+                    data-test="antidoping-dona"
+                  />
                   <dl class="space-y-2 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Pruebas realizadas</dt>
@@ -6116,15 +6247,36 @@ const tablaCintura = computed(() => {
 
                 <div v-if="antidopingDelTablero.porMes.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="antidoping-meses">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Pruebas por mes</h3>
-                  <ul class="space-y-1.5 text-sm">
-                    <li v-for="mes in antidopingDelTablero.porMes" :key="mes.clave" class="flex items-baseline justify-between gap-3">
-                      <span class="lista-conteos__etiqueta text-gray-800">{{ mes.etiqueta }}</span>
-                      <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
-                        <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ mes.pruebas }}</span>
-                        {{ mes.pruebas === 1 ? 'prueba' : 'pruebas' }}<template v-if="mes.positivas"> · {{ mes.positivas }} con positivo</template>
-                      </span>
-                    </li>
-                  </ul>
+                  <!-- Columnas: una por mes con pruebas; lo positivo, en rojo, sobre el resto -->
+                  <div class="overflow-x-auto">
+                    <div class="mx-auto w-max">
+                      <ol class="flex h-40 items-end gap-3">
+                        <li
+                          v-for="mes in antidopingMensual"
+                          :key="mes.clave"
+                          class="flex h-full w-14 flex-col items-center justify-end"
+                          :title="`${mes.etiqueta}: ${mes.pruebas} ${mes.pruebas === 1 ? 'prueba' : 'pruebas'}, ${mes.positivas} con algún positivo`"
+                          data-test="antidoping-mes"
+                        >
+                          <span class="mb-1 text-xs tabular-nums text-gray-700">{{ mes.pruebas }}</span>
+                          <span class="flex w-10 flex-col overflow-hidden rounded-t" :style="{ height: mes.alto }">
+                            <span v-if="mes.positivas" class="bg-red-600" :style="{ height: mes.altoPositivas }"></span>
+                            <span class="lista-conteos__barra flex-1 bg-gray-600" data-tono="neutro"></span>
+                          </span>
+                        </li>
+                      </ol>
+                      <ol class="mt-1 flex gap-3 border-t border-gray-200 pt-1" aria-hidden="true">
+                        <li v-for="mes in antidopingMensual" :key="mes.clave" class="w-14 text-center text-[11px] text-gray-500">
+                          {{ mes.etiqueta }}
+                        </li>
+                      </ol>
+                    </div>
+                  </div>
+                  <p class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-gray-600">
+                    <span class="inline-flex items-center gap-1.5"><span class="lista-conteos__barra h-2.5 w-2.5 rounded-sm bg-gray-600" data-tono="neutro"></span>Negativas</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-red-600"></span>Con algún positivo</span>
+                  </p>
+                  <p class="mt-2 text-center text-xs italic text-gray-500">Solo aparecen los meses en que hubo pruebas.</p>
                 </div>
               </div>
             </section>
@@ -6139,9 +6291,9 @@ const tablaCintura = computed(() => {
                 <i :class="[seccionDe('aptitud').icono, 'text-emerald-600']" aria-hidden="true"></i>
                 {{ seccionDe('aptitud').titulo }}
               </h2>
-              <div :class="gridTarjetas">
-            <!-- Aptitud al puesto: ocupa toda la fila -->
-            <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-4">
+              <div :class="gridTarjetasQueCrecen">
+            <!-- Aptitud al puesto: media fila; a todo el ancho las barras quedan demasiado largas -->
+            <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
               <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
                 <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Aptitud al Puesto
@@ -6229,6 +6381,32 @@ const tablaCintura = computed(() => {
             </div>
 
 
+
+            <!-- Vigencia de la aptitud: al día de hoy, con la última aptitud de cada trabajador activo -->
+            <div
+              v-if="vigenciaDelTablero.conAptitud"
+              class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
+              data-test="aptitud-vigencia"
+            >
+              <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Vigencia de la aptitud</h3>
+              <DonaConLeyenda
+                :segmentos="segmentosVigencia"
+                :cantidad="vigenciaDelTablero.vencidas + vigenciaDelTablero.porVencer"
+                :total="vigenciaDelTablero.conAptitud"
+                nota="Trabajadores con la aptitud vencida o por vencer."
+                navegable
+                @elegir="(segmento) => manejarRedireccionFiltroChart(segmento.clave, 'vigencia')"
+              />
+              <p class="mt-3 text-center text-xs italic text-gray-500">
+                Al día de hoy, con la aptitud más reciente de cada trabajador activo: no cambia con el periodo. Dura un año y
+                está por vencer en sus últimos dos meses.
+                <template v-if="vigenciaDelTablero.sinAptitud">
+                  {{ vigenciaDelTablero.sinAptitud }}
+                  {{ vigenciaDelTablero.sinAptitud === 1 ? 'trabajador activo no tiene' : 'trabajadores activos no tienen' }}
+                  aptitud registrada.
+                </template>
+              </p>
+            </div>
               </div>
             </section>
 

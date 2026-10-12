@@ -267,6 +267,19 @@ export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
  * Hallazgos redactados a partir de los datos. Solo dice lo que los datos
  * muestran; no interpreta causas ni recomienda.
  */
+/** Cuántos antecedentes crónicos y cuántos grupos de diagnósticos se mencionan. */
+const ANTECEDENTES_EN_HALLAZGOS = 4;
+/** El padecimiento, no el adjetivo de la tabla («hipertensivos»). */
+const NOMBRE_DE_ANTECEDENTE: Record<string, string> = {
+  diabeticosPP: 'diabetes',
+  hipertensivosPP: 'hipertensión',
+  cardiopaticosPP: 'cardiopatía',
+  epilepticosPP: 'epilepsia',
+  respiratorios: 'enfermedad respiratoria',
+  alergicos: 'alergias',
+};
+const GRUPOS_EN_HALLAZGOS = 3;
+
 export function hallazgosDelTablero(fuentes: Fuentes): string[] {
   const c = calcular(fuentes);
   const hallazgos: string[] = [];
@@ -291,10 +304,20 @@ export function hallazgosDelTablero(fuentes: Fuentes): string[] {
       `${pct(c.cintura.alto, totalCintura)} % tiene circunferencia de cintura de alto riesgo (${c.cintura.alto} de ${totalCintura}).`,
     );
   }
-  const cronica = mayor(c.cronicas);
-  if (cronica) {
+  // Antecedentes crónicos presentes, del más al menos frecuente
+  const cronicas = c.cronicas.filter((fila) => fila[1] > 0).sort((a, b) => b[1] - a[1]);
+  if (cronicas.length) {
     hallazgos.push(
-      `El antecedente crónico más frecuente es ${(etiquetasEnfermedades[cronica[0]] ?? cronica[0]).toLowerCase()}: ${plural(cronica[1], 'trabajador', 'trabajadores')} (${cronica[2]} %).`,
+      `Antecedentes crónicos referidos en la historia clínica: ${cronicas
+        .slice(0, ANTECEDENTES_EN_HALLAZGOS)
+        .map((fila) => `${NOMBRE_DE_ANTECEDENTE[fila[0]] ?? (etiquetasEnfermedades[fila[0]] ?? fila[0]).toLowerCase()} ${fila[1]} (${fila[2]} %)`)
+        .join(', ')}.`,
+    );
+  }
+  const lumbalgia = c.antecedentes.find(([clave]) => clave === 'lumbalgias');
+  if (lumbalgia && lumbalgia[1] > 0) {
+    hallazgos.push(
+      `${plural(lumbalgia[1], 'trabajador refiere', 'trabajadores refieren')} antecedente de lumbalgia (${lumbalgia[2]} %).`,
     );
   }
   const agente = mayor(c.agentes);
@@ -303,15 +326,7 @@ export function hallazgosDelTablero(fuentes: Fuentes): string[] {
       `El agente de riesgo con más trabajadores expuestos es ${agente[0].toLowerCase()}: ${plural(agente[1], 'trabajador', 'trabajadores')} (${agente[2]} % de la plantilla).`,
     );
   }
-  const evaluadosAptitud = suma(c.aptitud);
-  if (evaluadosAptitud) {
-    const aptos = c.aptitud.find(([categoria]) => categoria === 'Apto Sin Restricciones')?.[1] ?? 0;
-    const noAptos = c.aptitud.find(([categoria]) => categoria === 'No Apto')?.[1] ?? 0;
-    hallazgos.push(
-      `De ${plural(evaluadosAptitud, 'trabajador con aptitud evaluada', 'trabajadores con aptitud evaluada')}, ${pct(aptos, evaluadosAptitud)} % resultó apto sin restricciones` +
-        (noAptos ? ` y ${noAptos} no ${noAptos === 1 ? 'apto' : 'aptos'}.` : '.'),
-    );
-  }
+  // La aptitud no lleva hallazgo: su tabla ya lo dice
   const de = (clave: string) => registrosDe(fuentes.datos, fuentes.indiceCentro, clave);
   hallazgos.push(...hallazgosNordico(de('cuestionarioNordico') as NordicoDeTablero[]));
   hallazgos.push(...hallazgosSueno(de('suenoVigilia') as SuenoDeTablero[]));
@@ -322,11 +337,13 @@ export function hallazgosDelTablero(fuentes: Fuentes): string[] {
   hallazgos.push(...hallazgosIncapacidades(fuentes.incapacidades));
   if (c.consultas.length) {
     const principal = c.diagnosticos.porCodigo[0];
-    const grupo = c.diagnosticos.porCapitulo[0];
+    const grupos = c.diagnosticos.porCapitulo.slice(0, GRUPOS_EN_HALLAZGOS);
     hallazgos.push(
       `Se registraron ${plural(c.consultas.length, 'consulta médica', 'consultas médicas')}` +
         (principal
-          ? `. El diagnóstico más frecuente fue ${principal.etiqueta} (${plural(principal.cantidad, 'registro', 'registros')}) y el grupo de enfermedades más frecuente, ${grupo.etiqueta.toLowerCase()} (${pct(grupo.cantidad, c.diagnosticos.total)} % de los diagnósticos).`
+          ? `. ${grupos.length === 1 ? 'El grupo de enfermedades más frecuente fue' : 'Los grupos de enfermedades más frecuentes fueron'} ${grupos
+              .map((grupo) => `${grupo.etiqueta.toLowerCase()} (${pct(grupo.cantidad, c.diagnosticos.total)} %)`)
+              .join(', ')}; el diagnóstico más frecuente, ${principal.etiqueta} (${plural(principal.cantidad, 'registro', 'registros')}).`
           : '.'),
     );
   }

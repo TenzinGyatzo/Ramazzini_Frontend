@@ -84,12 +84,16 @@ describe('tablero: hábitos', () => {
     expect(resumirHabitos(HISTORIAS).habitos.map((h) => h.clave)).not.toContain('toxicomanias');
     expect(resumirHabitos([{ tabaquismo: null }]).habitos).toEqual([]);
     expect(tablasHabitos([{ tabaquismo: null }])).toEqual([]);
-    expect(hallazgosHabitos([{ tabaquismo: 'No' }])).toEqual([]);
+    // Se menciona aunque nadie lo refiera: también es un dato
+    expect(hallazgosHabitos([{ tabaquismo: 'No' }])).toEqual([
+      'Hábitos referidos en la historia clínica: tabaquismo 0 % (0 de 1).',
+    ]);
+    expect(hallazgosHabitos([{ actividadFisicaDeficiente: 'Si' }])).toEqual([]);
   });
 
-  it('el hallazgo nombra el hábito con mayor proporción', () => {
+  it('el hallazgo menciona siempre tabaquismo y consumo de alcohol', () => {
     expect(hallazgosHabitos(HISTORIAS)).toEqual([
-      'En la historia clínica, el hábito de riesgo más referido es actividad física insuficiente: 67 % (2 de 3).',
+      'Hábitos referidos en la historia clínica: tabaquismo 33 % (1 de 3) y consumo de alcohol 0 % (0 de 2).',
     ]);
     expect(tablasHabitos(HISTORIAS)[0].filas[0]).toEqual(['Tabaquismo', 1, '33 %']);
   });

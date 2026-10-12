@@ -83,10 +83,11 @@ describe('informes del tablero de salud', () => {
       '50 % de los trabajadores con exploración física tiene sobrepeso u obesidad (4 de 8).',
       '25 % presentó presión arterial alta o en rango de hipertensión (2 de 8).',
       '25 % tiene circunferencia de cintura de alto riesgo (2 de 8).',
-      'El antecedente crónico más frecuente es hipertensivos: 2 trabajadores (25 %).',
+      'Antecedentes crónicos referidos en la historia clínica: hipertensión 2 (25 %), diabetes 1 (13 %).',
+      '1 trabajador refiere antecedente de lumbalgia (13 %).',
       'El agente de riesgo con más trabajadores expuestos es ruido: 7 trabajadores (70 % de la plantilla).',
-      'De 8 trabajadores con aptitud evaluada, 75 % resultó apto sin restricciones y 1 no apto.',
-      'Se registraron 4 consultas médicas. El diagnóstico más frecuente fue J00X - RINOFARINGITIS AGUDA (3 registros) y el grupo de enfermedades más frecuente, sistema respiratorio (75 % de los diagnósticos).',
+      // La aptitud no lleva hallazgo: su tabla ya lo dice
+      'Se registraron 4 consultas médicas. Los grupos de enfermedades más frecuentes fueron sistema respiratorio (75 %), sistema musculoesquelético (25 %); el diagnóstico más frecuente, J00X - RINOFARINGITIS AGUDA (3 registros).',
       'El insumo más consumido fue Paracetamol 500 mg: 42 (tableta).',
     ]);
   });

@@ -57,11 +57,13 @@ export function tablasHabitos(registros: HabitosDeTablero[]): TablaDeInforme[] {
   ];
 }
 
+/** Tabaquismo y consumo de alcohol siempre que se hayan preguntado, aunque nadie los refiera. */
 export function hallazgosHabitos(registros: HabitosDeTablero[]): string[] {
-  const presentes = resumirHabitos(registros).habitos.filter((h) => h.cantidad > 0);
-  if (!presentes.length) return [];
-  const mayor = [...presentes].sort((a, b) => pct(b.cantidad, b.evaluados) - pct(a.cantidad, a.evaluados))[0];
+  const habitos = resumirHabitos(registros).habitos.filter((h) => h.clave === 'tabaquismo' || h.clave === 'alcoholismo');
+  if (!habitos.length) return [];
   return [
-    `En la historia clínica, el hábito de riesgo más referido es ${mayor.etiqueta.toLowerCase()}: ${pct(mayor.cantidad, mayor.evaluados)} % (${mayor.cantidad} de ${mayor.evaluados}).`,
+    `Hábitos referidos en la historia clínica: ${habitos
+      .map((h) => `${h.etiqueta.toLowerCase()} ${pct(h.cantidad, h.evaluados)} % (${h.cantidad} de ${h.evaluados})`)
+      .join(' y ')}.`,
   ];
 }

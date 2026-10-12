@@ -124,7 +124,7 @@ describe('ventana de informes del tablero', () => {
     const cardio = estadoDeInforme('cardiometabolico', datos());
     expect(cardio.disponible).toBe(true);
     expect(incluidos(cardio)).toEqual(['Índice de masa corporal']);
-    expect(omitidos(cardio)).toHaveLength(8);
+    expect(omitidos(cardio)).toHaveLength(9);
   });
 
   it('el Excel lista sus hojas', () => {

@@ -70,7 +70,7 @@ const trabajadores = useTrabajadoresStore();
 const modalResumenImportacion = useModalResumenImportacionStore();
 const route = useRoute();
 const router = useRouter();
-const { canManageTrabajadores, canManageCentrosTrabajo } = useUserPermissions();
+const { canManageTrabajadores, canManageCentrosTrabajo, canAccessDashboardSalud } = useUserPermissions();
 const { executeIfCanManageTrabajadores, executeIfCanManageCentrosTrabajo } = usePermissionRestrictions();
 const { isSIRES } = useRegulatoryPolicy();
 
@@ -1163,6 +1163,27 @@ const toggleVigencias = () => {
                   <i class="fas fa-pen text-[10px]" aria-hidden="true"></i>
                   <span class="hidden sm:inline">Editar</span>
                 </button>
+                <!-- Estadísticas e informes de salud de este centro: abren el tablero con el centro ya elegido -->
+                <template v-if="canAccessDashboardSalud">
+                  <RouterLink
+                    :to="{ name: 'dashboard-empresa', params: { idEmpresa: route.params.idEmpresa }, query: { centro: route.params.idCentroTrabajo } }"
+                    class="btn-editar-entidad inline-flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700"
+                    title="Estadísticas de salud de este centro de trabajo"
+                    data-test="estadisticas-centro"
+                  >
+                    <i class="fas fa-chart-line text-[10px]" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Estadísticas</span>
+                  </RouterLink>
+                  <RouterLink
+                    :to="{ name: 'dashboard-empresa', params: { idEmpresa: route.params.idEmpresa }, query: { centro: route.params.idCentroTrabajo, informes: '1' } }"
+                    class="btn-editar-entidad inline-flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700"
+                    title="Abre las estadísticas de este centro con la ventana de informes lista para generar el PDF o el Excel"
+                    data-test="informes-centro"
+                  >
+                    <i class="fas fa-file-lines text-[10px]" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Informes</span>
+                  </RouterLink>
+                </template>
               </div>
               <p v-if="empresas.currentEmpresa?.nombreComercial" class="mt-0.5 flex items-center gap-2 text-sm text-gray-600">
                 <i class="fas fa-building shrink-0 text-xs text-gray-500"></i>

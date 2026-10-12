@@ -108,7 +108,10 @@ describe('tablero: Cuestionario Nórdico', () => {
     const hallazgos = hallazgosNordico(NORDICOS);
     expect(hallazgos[0]).toContain('50 % reportó molestias');
     expect(hallazgos[0]).toContain('la zona más frecuente fue espalda baja (2)');
-    expect(hallazgos).toHaveLength(3);
+    expect(hallazgos[1]).toBe(
+      '1 trabajador requiere seguimiento por molestia reciente, intensa o que le impidió trabajar (25 % de los evaluados).',
+    );
+    expect(hallazgos).toHaveLength(4);
   });
 });
 

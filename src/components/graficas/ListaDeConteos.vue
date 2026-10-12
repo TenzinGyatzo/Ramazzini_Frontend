@@ -4,7 +4,8 @@ import { computed } from 'vue';
 /**
  * Lista de barras horizontales para conteos: una fila por concepto, en el orden
  * recibido. El color dice algo: verde es favorable, ámbar pide atención, naranja
- * y rojo son riesgo, y gris es un conteo sin valoración.
+ * y rojo son riesgo, y gris es un conteo sin valoración. Con `navegable`, cada
+ * fila avisa al hacer clic para que la pantalla lleve a la lista correspondiente.
  */
 type Tono = 'neutro' | 'favorable' | 'atencion' | 'alerta' | 'riesgo';
 
@@ -27,9 +28,12 @@ const props = withDefaults(
     vacio?: string;
     /** Color de las filas que no traen el suyo. */
     tono?: Tono;
+    navegable?: boolean;
   }>(),
-  { limite: 10, vacio: 'Sin registros en el periodo.', tono: 'neutro' },
+  { limite: 10, vacio: 'Sin registros en el periodo.', tono: 'neutro', navegable: false },
 );
+
+const emit = defineEmits<{ (e: 'elegir', fila: Fila): void }>();
 
 // Los mismos colores que usan las gráficas del tablero
 const BARRA: Record<Tono, string> = {
@@ -64,6 +68,13 @@ const porcentaje = (fila: Fila) =>
   <p v-if="!filas.length" class="py-6 text-center text-sm text-gray-500">{{ vacio }}</p>
   <ul v-else class="space-y-3">
     <li v-for="fila in mostradas" :key="fila.clave" data-test="conteo">
+      <component
+        :is="navegable ? 'button' : 'div'"
+        :type="navegable ? 'button' : undefined"
+        class="block w-full text-left"
+        :class="navegable ? '-mx-2 w-[calc(100%+1rem)] cursor-pointer rounded px-2 py-1 transition hover:bg-gray-200' : ''"
+        @click="navegable && emit('elegir', fila)"
+      >
       <div class="flex items-baseline justify-between gap-3">
         <span class="lista-conteos__etiqueta min-w-0 truncate text-sm text-gray-800" :title="fila.etiqueta">{{ fila.etiqueta }}</span>
         <span class="lista-conteos__detalle shrink-0 whitespace-nowrap text-sm text-gray-600">
@@ -80,6 +91,7 @@ const porcentaje = (fila: Fila) =>
           :style="{ width: ancho(fila) }"
         ></div>
       </div>
+      </component>
     </li>
     <li v-if="restantes.length" class="pt-1 text-xs text-gray-500" data-test="conteo-restantes">
       Y {{ restantes.length }} más, con

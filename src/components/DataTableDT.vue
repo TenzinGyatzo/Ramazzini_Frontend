@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { categoriaDeAudiometriaExterna, resultadoDeAudiometriaExterna } from '@/helpers/audiometriaExternaEnTabla';
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import DataTablesCore from 'datatables.net-dt';
 import 'datatables.net-select-dt';
@@ -698,6 +699,8 @@ function inicializarDataTable() {
           render: function(_data, type, row) {
             const resumen = row.audiometriaResumen || null;
             if (!resumen) return '-';
+            const deExterna = resultadoDeAudiometriaExterna(resumen);
+            if (deExterna !== null) return deExterna;
             
             // Lógica para determinar Normal/Anormal (binario)
             const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -734,6 +737,8 @@ function inicializarDataTable() {
           render: function(_data, type, row) {
             const resumen = row.audiometriaResumen || null;
             if (!resumen) return '-';
+            const deExterna = categoriaDeAudiometriaExterna(resumen);
+            if (deExterna !== null) return deExterna;
             
             
             // Lógica para determinar categoría

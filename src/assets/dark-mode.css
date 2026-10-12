@@ -4270,6 +4270,15 @@ html.dark-mode .lista-conteos__riel {
   background-color: #334155 !important;
 }
 
+/* Donas pequeñas: el riel gris claro deslumbra sobre fondo oscuro */
+html.dark-mode .donas-pequenas__riel {
+  stroke: #475569;
+}
+
+html.dark-mode .donas-pequenas__reparto {
+  border-color: #334155 !important;
+}
+
 html.dark-mode .lista-conteos__detalle {
   color: #94a3b8 !important;
 }

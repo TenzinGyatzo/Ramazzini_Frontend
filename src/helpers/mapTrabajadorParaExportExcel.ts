@@ -1,8 +1,11 @@
+import { categoriaDeAudiometriaExterna, resultadoDeAudiometriaExterna } from './audiometriaExternaEnTabla';
 import { calcularEdad, calcularAntiguedad, determinarVistaCorregida } from '@/helpers/dates';
 
 function mapAudiometria(row: any): string {
   const resumen = row.audiometriaResumen || null;
   if (!resumen) return '-';
+  const deExterna = resultadoDeAudiometriaExterna(resumen);
+  if (deExterna !== null) return deExterna;
 
   const isNum = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
 
@@ -29,6 +32,8 @@ function mapAudiometria(row: any): string {
 function mapCategoriaAudiometria(row: any): string {
   const resumen = row.audiometriaResumen || null;
   if (!resumen) return '-';
+  const deExterna = categoriaDeAudiometriaExterna(resumen);
+  if (deExterna !== null) return deExterna;
 
   const isNum = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
 

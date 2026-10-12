@@ -251,6 +251,12 @@ export function hallazgosNordico(registros: NordicoDeTablero[]): string[] {
     `De ${plural(r.evaluados, 'trabajador con Cuestionario Nórdico', 'trabajadores con Cuestionario Nórdico')}, ${pct(r.conMolestia12Meses, r.evaluados)} % reportó molestias musculoesqueléticas en los últimos 12 meses (${r.conMolestia12Meses})` +
       (r.zonas12Meses[0] ? `; la zona más frecuente fue ${r.zonas12Meses[0].etiqueta.toLowerCase()} (${r.zonas12Meses[0].cantidad}).` : '.'),
   ];
+  const seguimiento = r.semaforo.find((s) => s.clave === 'rojo')?.cantidad ?? 0;
+  if (seguimiento) {
+    hallazgos.push(
+      `${plural(seguimiento, 'trabajador requiere', 'trabajadores requieren')} seguimiento por molestia reciente, intensa o que le impidió trabajar (${pct(seguimiento, r.evaluados)} % de los evaluados).`,
+    );
+  }
   if (r.conImpedimento) {
     hallazgos.push(
       `${plural(r.conImpedimento, 'trabajador reportó', 'trabajadores reportaron')} que alguna molestia le impidió hacer su trabajo habitual.`,
