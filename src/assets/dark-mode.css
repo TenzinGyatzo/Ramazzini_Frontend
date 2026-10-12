@@ -4270,8 +4270,13 @@ html.dark-mode .lista-conteos__riel {
   background-color: #334155 !important;
 }
 
-html.dark-mode .lista-conteos__barra {
-  background-color: #10b981 !important;
+html.dark-mode .lista-conteos__detalle {
+  color: #94a3b8 !important;
+}
+
+/* La barra conserva el color de su significado; solo el gris se aclara */
+html.dark-mode .lista-conteos__barra[data-tono='neutro'] {
+  background-color: #94a3b8 !important;
 }
 
 /* Ventana de informes del tablero */

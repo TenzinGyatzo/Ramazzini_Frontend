@@ -4,7 +4,7 @@
  * otológica cuenta el documento más reciente de cada trabajador en el periodo;
  * de las consultas cuentan todas.
  */
-import type { Conteo } from './dashboardCuestionarios';
+import type { Conteo, Tono } from './dashboardCuestionarios';
 import type { TablaDeInforme } from './dashboardInformes';
 import type { InformeIncapacidades } from './incapacidadesInforme';
 import { RAMOS } from './incapacidades';
@@ -148,10 +148,10 @@ const SINTOMAS_OTOLOGICOS: { clave: string; etiqueta: string }[] = [
   { clave: 'musicaFuerteAudifonos', etiqueta: 'Música fuerte con audífonos' },
 ];
 
-const PROTECCION: { clave: string; etiqueta: string }[] = [
-  { clave: 'SIEMPRE', etiqueta: 'Siempre' },
-  { clave: 'A VECES', etiqueta: 'A veces' },
-  { clave: 'NUNCA', etiqueta: 'Nunca' },
+const PROTECCION: { clave: string; etiqueta: string; tono: Tono }[] = [
+  { clave: 'SIEMPRE', etiqueta: 'Siempre', tono: 'favorable' },
+  { clave: 'A VECES', etiqueta: 'A veces', tono: 'atencion' },
+  { clave: 'NUNCA', etiqueta: 'Nunca', tono: 'riesgo' },
 ];
 
 export interface ResumenOtologico {

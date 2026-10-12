@@ -2480,7 +2480,7 @@ const mostrarAnalisisLaboratorioDistribucion = computed(() => hasAnyPositiveChar
 // ---- Secciones del tablero: agrupan las tarjetas y se ocultan cuando no hay datos en el periodo
 
 const gridTarjetas =
-  'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 auto-rows-[360px] sm:auto-rows-[400px] md:auto-rows-[430px] lg:auto-rows-[460px]';
+  'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 auto-rows-[340px] sm:auto-rows-[360px] md:auto-rows-[380px] lg:auto-rows-[400px]';
 
 /** Índice del centro elegido dentro de los datos; null cuando se ven todos. */
 const indiceCentroSeleccionado = computed(() => {
@@ -2522,6 +2522,10 @@ const antidopingDelTablero = computed(() => resumirAntidoping(registrosAntidopin
 const habitosDelTablero = computed(() => resumirHabitos(registrosHabitos.value));
 const nordicoDelTablero = computed(() => resumirNordico(registrosNordico.value));
 const suenoDelTablero = computed(() => resumirSueno(registrosSueno.value));
+
+/** Filas medidas cada una sobre su propio total, para la lista de barras. */
+const conTotal = (filas, cantidad, total) =>
+  filas.map((fila) => ({ clave: fila.clave, etiqueta: fila.etiqueta, cantidad: fila[cantidad], total: fila[total] }));
 
 /** «12 (40 %)»: cuántos y qué parte de los evaluados. */
 const conPorcentaje = (parte, total) => (total > 0 ? `${parte} (${Math.round((parte / total) * 100)} %)` : String(parte));
@@ -3976,7 +3980,7 @@ const tablaCintura = computed(() => {
 
           <div
             v-if="dashboardLoading"
-            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 auto-rows-[360px] sm:auto-rows-[400px] md:auto-rows-[430px] lg:auto-rows-[460px]"
+            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 auto-rows-[340px] sm:auto-rows-[360px] md:auto-rows-[380px] lg:auto-rows-[400px]"
           >
             <DashboardChartSkeleton v-for="n in 8" :key="'dashboard-skel-' + n" />
           </div>
@@ -4169,8 +4173,8 @@ const tablaCintura = computed(() => {
             <!-- Distribución por Sexo -->
             <div v-if="chartWaveVisible(1)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col">
               <!-- Header con tooltip -->
-              <div class="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
-                <h3 class="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Distribución sexos
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4181,11 +4185,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaSexo = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaSexo === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4196,7 +4200,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaSexo = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaSexo === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4224,8 +4228,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-base sm:text-lg lg:text-xl">Sexo</th>
-                          <th class="py-2 px-4 text-center text-base sm:text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Sexo</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4235,8 +4239,8 @@ const tablaCintura = computed(() => {
                           class="border-t hover:bg-gray-200 transition cursor-pointer"
                           @click="handleClickTablaSexo(sexo)"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">{{ sexo }}</td>
-                          <td class="py-1 px-4 text-center text-base sm:text-lg lg:text-xl">
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ sexo }}</td>
+                          <td class="py-1.5 px-3 text-center text-sm">
                             <span
                               :class="[
                                 sexo === 'Masculino' ? 'text-blue-700' : (sexo === 'Femenino' ? 'text-pink-700' : 'text-gray-700')
@@ -4256,8 +4260,8 @@ const tablaCintura = computed(() => {
 
             <!-- Grupos Etarios: 2 columnas -->
             <div v-if="chartWaveVisible(1)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
-                <h3 class="text-base sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Distribución por Grupos Etarios
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4268,11 +4272,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaGruposEtarios = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaGruposEtarios === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4283,7 +4287,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaGruposEtarios = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaGruposEtarios === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4304,9 +4308,9 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-base sm:text-lg lg:text-xl">Grupo Etario</th>
-                          <th class="py-2 px-4 text-center text-base sm:text-lg lg:text-xl">Hombres</th>
-                          <th class="py-2 px-4 text-center text-base sm:text-lg lg:text-xl">Mujeres</th>
+                          <th class="py-2 px-3 text-left text-sm">Grupo Etario</th>
+                          <th class="py-2 px-3 text-center text-sm">Hombres</th>
+                          <th class="py-2 px-3 text-center text-sm">Mujeres</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4315,9 +4319,9 @@ const tablaCintura = computed(() => {
                           :key="grupo"
                           class="border-t hover:bg-gray-200 transition"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">{{ grupo }}</td>
-                          <td class="py-1 px-4 text-center text-blue-700 text-base sm:text-lg lg:text-xl">{{ datos.Masculino }}</td>
-                          <td class="py-1 px-4 text-center text-pink-700 text-base sm:text-lg lg:text-xl">{{ datos.Femenino }}</td>
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ grupo }}</td>
+                          <td class="py-1.5 px-3 text-center text-blue-700 text-sm">{{ datos.Masculino }}</td>
+                          <td class="py-1.5 px-3 text-center text-pink-700 text-sm">{{ datos.Femenino }}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -4328,10 +4332,10 @@ const tablaCintura = computed(() => {
 
             <!-- Cintura -->
             <div v-if="chartWaveVisible(3)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col">
-              <div class="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
+              <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
                 <!-- Título + descripción -->
                 <div class="flex flex-col gap-0.5">
-                  <h3 class="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                     Riesgo por Cintura
                     <span class="relative cursor-help">
                       <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4343,11 +4347,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </h3>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaCintura = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaCintura === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4358,7 +4362,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaCintura = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaCintura === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4385,8 +4389,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-base sm:text-lg lg:text-xl">Categoría</th>
-                          <th class="py-2 px-4 text-center text-base sm:text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Categoría</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4396,10 +4400,10 @@ const tablaCintura = computed(() => {
                           class="border-t hover:bg-gray-200 transition cursor-pointer"
                           @click="handleClickTablaCintura(categoria)"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">{{ categoria }}</td>
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ categoria }}</td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-base sm:text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               categoria === 'Bajo Riesgo'
                                 ? 'text-emerald-700'
                                 : categoria === 'Alto Riesgo'
@@ -4419,8 +4423,8 @@ const tablaCintura = computed(() => {
 
             <!-- Alteraciones en la presión arterial -->
             <div v-if="chartWaveVisible(3)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
-                <h3 class="text-base sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Alteraciones en la presión arterial
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4431,11 +4435,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaTensionArterial = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaTensionArterial === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4446,7 +4450,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaTensionArterial = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaTensionArterial === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4470,8 +4474,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-base sm:text-lg lg:text-xl">Categoría</th>
-                          <th class="py-2 px-4 text-center text-base sm:text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Categoría</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4481,10 +4485,10 @@ const tablaCintura = computed(() => {
                           class="border-t hover:bg-gray-200 transition cursor-pointer"
                           @click="handleClickTablaTensionArterial(categoria)"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">{{ categoria }}</td>
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ categoria }}</td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-base sm:text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               categoria === 'Óptima'
                                 ? 'text-emerald-700'
                                 : categoria === 'Normal'
@@ -4508,8 +4512,8 @@ const tablaCintura = computed(() => {
 
             <!-- IMC: 2 columnas -->
             <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
-                <h3 class="text-base sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Distribución por categoría de IMC
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4520,11 +4524,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaIMC = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaIMC === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4535,7 +4539,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaIMC = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaIMC === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4559,8 +4563,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-base sm:text-lg lg:text-xl">Categoría IMC</th>
-                          <th class="py-2 px-4 text-center text-base sm:text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Categoría IMC</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4570,10 +4574,10 @@ const tablaCintura = computed(() => {
                           class="border-t hover:bg-gray-200 transition cursor-pointer"
                           @click="handleClickTablaIMC(categoria)"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">{{ categoria }}</td>
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ categoria }}</td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-base sm:text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               categoria === 'Normal'
                                 ? 'text-emerald-700'
                                 : ['Bajo peso', 'Sobrepeso'].includes(categoria)
@@ -4607,8 +4611,8 @@ const tablaCintura = computed(() => {
               <div :class="gridTarjetas">
             <!-- Riesgos: 2 columnas --> 
             <div v-if="chartWaveVisible(3)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
-                <h3 class="text-base sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Exposición a factores de riesgo
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4620,11 +4624,11 @@ const tablaCintura = computed(() => {
                   </span>
                 </h3>
 
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaAgentes = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaAgentes === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4635,7 +4639,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaAgentes = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaAgentes === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -4661,8 +4665,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-base sm:text-lg lg:text-xl">Agente de Riesgo</th>
-                          <th class="py-2 px-4 text-center text-base sm:text-lg lg:text-xl">Expuestos</th>
+                          <th class="py-2 px-3 text-left text-sm">Agente de Riesgo</th>
+                          <th class="py-2 px-3 text-center text-sm">Expuestos</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4671,10 +4675,10 @@ const tablaCintura = computed(() => {
                           :key="agente"
                           class="border-t hover:bg-gray-200 transition"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">
                             {{ etiquetasAgentesRiesgo[agente] || agente }}
                           </td>
-                          <td class="py-1 px-4 text-center text-base sm:text-lg lg:text-xl"
+                          <td class="py-1.5 px-3 text-center text-sm"
                               :class="cantidad === 0 ? 'text-emerald-700' : 'text-rose-600'"
                           >
                             {{ cantidad }} <span class="text-sm text-gray-500">({{ porcentaje }}%)</span>
@@ -4689,8 +4693,8 @@ const tablaCintura = computed(() => {
 
             <!-- Crónicas --> 
             <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Antecedentes relacionados con enfermedades crónicas
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4716,8 +4720,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-lg lg:text-xl">Antecedentes</th>
-                          <th class="py-2 px-4 text-center text-lg lg:text-xl">Casos</th>
+                          <th class="py-2 px-3 text-left text-sm">Antecedentes</th>
+                          <th class="py-2 px-3 text-center text-sm">Casos</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4727,12 +4731,12 @@ const tablaCintura = computed(() => {
                           class="border-t hover:bg-gray-200 cursor-pointer transition"
                           @click="handleClickTablaEnfermedades(condicion)"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-lg lg:text-xl">
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">
                             {{ etiquetasEnfermedades[condicion] || condicion }}
                           </td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               cantidad === 0 ? 'text-emerald-700' : 'text-rose-600'
                             ]"
                           >
@@ -4748,8 +4752,8 @@ const tablaCintura = computed(() => {
 
             <!-- Localizados --> 
             <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Antecedentes de problemas localizados
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4776,8 +4780,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-lg lg:text-xl">Antecedentes</th>
-                          <th class="py-2 px-4 text-center text-lg lg:text-xl">Casos</th>
+                          <th class="py-2 px-3 text-left text-sm">Antecedentes</th>
+                          <th class="py-2 px-3 text-center text-sm">Casos</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4787,12 +4791,12 @@ const tablaCintura = computed(() => {
                           class="border-t hover:bg-gray-200 cursor-pointer transition"
                           @click="handleClickTablaAntecedentes(condicion)"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-lg lg:text-xl">
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">
                             {{ etiquetasAntecedentesReferidos[condicion] || condicion }}
                           </td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               cantidad === 0 ? 'text-emerald-700' : 'text-rose-600'
                             ]"
                           >
@@ -4825,26 +4829,10 @@ const tablaCintura = computed(() => {
                 {{ habitosDelTablero.evaluados === 1 ? 'trabajador' : 'trabajadores' }} en su historia clínica más reciente
                 del periodo<template v-if="coberturaDe(habitosDelTablero.evaluados)"> ({{ coberturaDe(habitosDelTablero.evaluados) }})</template>.
               </p>
-              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="habitos-lista">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Hábitos de riesgo referidos</h3>
-                  <ul class="space-y-2">
-                    <li v-for="habito in habitosDelTablero.habitos" :key="habito.clave" data-test="habito">
-                      <div class="flex items-baseline justify-between gap-3 text-sm">
-                        <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ habito.etiqueta }}</span>
-                        <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
-                          <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ habito.cantidad }}</span>
-                          de {{ habito.evaluados }} · {{ habito.evaluados ? Math.round((habito.cantidad / habito.evaluados) * 100) : 0 }} %
-                        </span>
-                      </div>
-                      <div class="lista-conteos__riel mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
-                        <div
-                          class="lista-conteos__barra h-full rounded-full bg-emerald-500"
-                          :style="{ width: (habito.evaluados ? (habito.cantidad / habito.evaluados) * 100 : 0) + '%' }"
-                        ></div>
-                      </div>
-                    </li>
-                  </ul>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Hábitos de riesgo referidos</h3>
+                  <ListaDeConteos :filas="conTotal(habitosDelTablero.habitos, 'cantidad', 'evaluados')" tono="atencion" />
                   <p class="mt-3 text-xs italic text-gray-500">
                     Cada hábito se mide sobre quienes contestaron esa pregunta. Es lo que el trabajador refiere, no una medición.
                   </p>
@@ -4869,54 +4857,22 @@ const tablaCintura = computed(() => {
                 periodo<template v-if="coberturaDe(cardiometabolicoDelTablero.enSeguimiento)"> ({{ coberturaDe(cardiometabolicoDelTablero.enSeguimiento) }})</template>.
                 De cada uno cuenta su visita más reciente.
               </p>
-              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div v-if="cardiometabolicoDelTablero.condiciones.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-condiciones">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Condiciones en seguimiento</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Condiciones en seguimiento</h3>
                   <ListaDeConteos :filas="cardiometabolicoDelTablero.condiciones" :total="cardiometabolicoDelTablero.enSeguimiento" />
                   <p class="mt-3 text-xs italic text-gray-500">Un trabajador puede tener más de una condición.</p>
                 </div>
 
                 <div v-if="cardiometabolicoDelTablero.control.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-control">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">En control en su última visita</h3>
-                  <ul class="space-y-2">
-                    <li v-for="fila in cardiometabolicoDelTablero.control" :key="fila.clave">
-                      <div class="flex items-baseline justify-between gap-3 text-sm">
-                        <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ fila.etiqueta }}</span>
-                        <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
-                          <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ fila.controlados }}</span>
-                          de {{ fila.valorados }} · {{ fila.valorados ? Math.round((fila.controlados / fila.valorados) * 100) : 0 }} %
-                        </span>
-                      </div>
-                      <div class="lista-conteos__riel mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
-                        <div
-                          class="lista-conteos__barra h-full rounded-full bg-emerald-500"
-                          :style="{ width: (fila.valorados ? (fila.controlados / fila.valorados) * 100 : 0) + '%' }"
-                        ></div>
-                      </div>
-                    </li>
-                  </ul>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">En control en su última visita</h3>
+                  <ListaDeConteos :filas="conTotal(cardiometabolicoDelTablero.control, 'controlados', 'valorados')" tono="favorable" />
                   <p class="mt-3 text-xs italic text-gray-500">Sobre quienes tienen el control valorado; no cuentan los «no valorable».</p>
                 </div>
 
                 <div v-if="cardiometabolicoDelTablero.laboratorio.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-laboratorio">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Laboratorio fuera de meta</h3>
-                  <ul class="space-y-2">
-                    <li v-for="fila in cardiometabolicoDelTablero.laboratorio" :key="fila.clave">
-                      <div class="flex items-baseline justify-between gap-3 text-sm">
-                        <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ fila.etiqueta }}</span>
-                        <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
-                          <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ fila.cantidad }}</span>
-                          de {{ fila.evaluados }} · {{ fila.evaluados ? Math.round((fila.cantidad / fila.evaluados) * 100) : 0 }} %
-                        </span>
-                      </div>
-                      <div class="lista-conteos__riel mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
-                        <div
-                          class="lista-conteos__barra h-full rounded-full bg-emerald-500"
-                          :style="{ width: (fila.evaluados ? (fila.cantidad / fila.evaluados) * 100 : 0) + '%' }"
-                        ></div>
-                      </div>
-                    </li>
-                  </ul>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Laboratorio fuera de meta</h3>
+                  <ListaDeConteos :filas="conTotal(cardiometabolicoDelTablero.laboratorio, 'cantidad', 'evaluados')" tono="atencion" />
                   <p class="mt-3 text-xs italic text-gray-500">Sobre quienes tienen un resultado valorable de cada estudio en su última visita.</p>
                 </div>
               </div>
@@ -4938,8 +4894,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(3) && mostrarTamizajeBipolar"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-1 xl:col-span-1"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Riesgo tamizaje bipolar (trastorno estado de ánimo)
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4968,8 +4924,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(3) && mostrarTamizajeProdromal"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-1 xl:col-span-1"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Riesgo tamizaje psicótico (prodromal breve)
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -4998,8 +4954,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(3) && mostrarTamizajeTLP"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4 gap-2">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Tamizaje rasgos límite (TLP)
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5015,7 +4971,7 @@ const tablaCintura = computed(() => {
                     type="button"
                     @click="vistaTamizajeTLP = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaTamizajeTLP === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5027,7 +4983,7 @@ const tablaCintura = computed(() => {
                     type="button"
                     @click="vistaTamizajeTLP = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaTamizajeTLP === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5055,8 +5011,8 @@ const tablaCintura = computed(() => {
                     >
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-base sm:text-lg lg:text-xl">Categoría</th>
-                          <th class="py-2 px-4 text-center text-base sm:text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Categoría</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -5065,12 +5021,12 @@ const tablaCintura = computed(() => {
                           :key="categoria"
                           class="border-t hover:bg-gray-50 transition"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-base sm:text-lg lg:text-xl">
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">
                             {{ categoria }}
                           </td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-base sm:text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               categoria === 'Síntomas improbables'
                                 ? 'text-emerald-700'
                                 : cantidad === 0
@@ -5105,8 +5061,8 @@ const tablaCintura = computed(() => {
               <div :class="gridTarjetas">
             <!-- Agudeza Visual -->
             <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Agudeza Visual
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5123,8 +5079,8 @@ const tablaCintura = computed(() => {
                 <table class="min-w-full text-sm border border-gray-300 rounded h-full overflow-x-auto">
                   <thead class="bg-gray-100 text-gray-700">
                     <tr>
-                      <th class="py-2 px-4 text-left text-lg whitespace-nowrap">Categoría</th>
-                      <th class="py-2 px-4 text-center text-lg whitespace-nowrap">Trab.</th>
+                      <th class="py-2 px-3 text-left text-sm">Categoría</th>
+                      <th class="py-2 px-3 text-center text-sm">Trab.</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -5134,12 +5090,12 @@ const tablaCintura = computed(() => {
                       class="border-t hover:bg-gray-200 transition cursor-pointer"
                       @click="handleClickTablaAgudeza(categoria)"
                     >
-                      <td class="py-1 px-4 font-medium text-gray-700 text-base whitespace-nowrap">
+                      <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">
                         {{ etiquetasVisionSinCorreccion[categoria] || categoria }}
                       </td>
                       <td
                         :class="[ 
-                        'py-1 px-4 text-center text-lg whitespace-nowrap',
+                        'py-1.5 px-3 text-center text-sm whitespace-nowrap',
                         cantidad === 0 ? 'text-emerald-700' :
                         categoria === 'Visión ligeramente reducida'
                           ? 'text-amber-600'
@@ -5159,8 +5115,8 @@ const tablaCintura = computed(() => {
             <!-- Requieren Lentes -->
             <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
               <!-- Header con tooltip -->
-              <div class="flex items-start justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Requieren Lentes
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5191,8 +5147,8 @@ const tablaCintura = computed(() => {
 
             <!-- Vista corregida -->
             <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Vista Corregida
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5224,8 +5180,8 @@ const tablaCintura = computed(() => {
 
             <!-- Daltonismo -->
             <div v-if="chartWaveVisible(4)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Daltonismo
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5271,8 +5227,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarAudiometriaProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Proporción Audiometría
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5302,8 +5258,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarAudiometriaDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Distribución Audiometría
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5312,11 +5268,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaAudiometriaDistribucion = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaAudiometriaDistribucion === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5327,7 +5283,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaAudiometriaDistribucion = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaAudiometriaDistribucion === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5354,8 +5310,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                      <thead class="bg-gray-100 text-gray-700">
                        <tr>
-                         <th class="py-2 px-4 text-left text-lg lg:text-xl">Categoría HBC</th>
-                         <th class="py-2 px-4 text-center text-lg lg:text-xl">Trabajadores</th>
+                         <th class="py-2 px-3 text-left text-sm">Categoría HBC</th>
+                         <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                        </tr>
                      </thead>
                  <tbody>
@@ -5365,10 +5321,10 @@ const tablaCintura = computed(() => {
                      class="border-t hover:bg-gray-200 transition cursor-pointer"
                      @click="handleClickTablaAudiometriaDistribucion(categoria)"
                    >
-                     <td class="py-1 px-4 font-medium text-gray-700 text-lg lg:text-xl">{{ categoria }}</td>
+                     <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ categoria }}</td>
                      <td
                        :class="[
-                         'py-1 px-4 text-center text-lg lg:text-xl',
+                         'py-1.5 px-3 text-center text-sm',
                          categoria === 'Normal'
                            ? 'text-emerald-700'
                            : categoria === 'Hipoacusia leve'
@@ -5407,8 +5363,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarEspirometriaProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Proporción Espirometría
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5438,8 +5394,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarEspirometriaDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Distribución Espirometría
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5448,11 +5404,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaEspirometriaDistribucion = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaEspirometriaDistribucion === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5463,7 +5419,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaEspirometriaDistribucion = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaEspirometriaDistribucion === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5490,8 +5446,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-lg lg:text-xl">Resultado</th>
-                          <th class="py-2 px-4 text-center text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Resultado</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -5500,10 +5456,10 @@ const tablaCintura = computed(() => {
                           :key="resultado"
                           class="border-t hover:bg-gray-200 transition"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-lg lg:text-xl">{{ resultado }}</td>
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ resultado }}</td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               resultado === 'Normal' ? 'text-emerald-700' : 'text-amber-600'
                             ]"
                           >
@@ -5533,8 +5489,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarEkgProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Proporción EKG
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5564,8 +5520,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarEkgDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Distribución EKG
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5574,11 +5530,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaEkgDistribucion = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaEkgDistribucion === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5589,7 +5545,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaEkgDistribucion = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaEkgDistribucion === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5616,8 +5572,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-lg lg:text-xl">Resultado</th>
-                          <th class="py-2 px-4 text-center text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Resultado</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -5626,10 +5582,10 @@ const tablaCintura = computed(() => {
                           :key="resultado"
                           class="border-t hover:bg-gray-200 transition"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-lg lg:text-xl">{{ resultado }}</td>
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ resultado }}</td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               resultado === 'Normal' ? 'text-emerald-700' : 'text-amber-600'
                             ]"
                           >
@@ -5659,8 +5615,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarRayosXProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Proporción Rayos X
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5690,8 +5646,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarRayosXDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Distribución Rayos X
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5700,11 +5656,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaRayosXDistribucion = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaRayosXDistribucion === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5715,7 +5671,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaRayosXDistribucion = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaRayosXDistribucion === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5742,8 +5698,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-lg lg:text-xl">Resultado</th>
-                          <th class="py-2 px-4 text-center text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Resultado</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -5752,10 +5708,10 @@ const tablaCintura = computed(() => {
                           :key="resultado"
                           class="border-t hover:bg-gray-200 transition"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-lg lg:text-xl">{{ resultado }}</td>
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ resultado }}</td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               resultado === 'Normal' ? 'text-emerald-700' : 'text-amber-600'
                             ]"
                           >
@@ -5785,8 +5741,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarAnalisisLaboratorioProporcion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Proporción Análisis de laboratorio
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5816,8 +5772,8 @@ const tablaCintura = computed(() => {
               v-if="chartWaveVisible(4) && mostrarAnalisisLaboratorioDistribucion"
               class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2"
             >
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Distribución Análisis de laboratorio
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -5826,11 +5782,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaAnalisisLaboratorioDistribucion = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaAnalisisLaboratorioDistribucion === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5841,7 +5797,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaAnalisisLaboratorioDistribucion = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaAnalisisLaboratorioDistribucion === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -5868,8 +5824,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-lg lg:text-xl">Resultado</th>
-                          <th class="py-2 px-4 text-center text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Resultado</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -5878,10 +5834,10 @@ const tablaCintura = computed(() => {
                           :key="resultado"
                           class="border-t hover:bg-gray-200 transition"
                         >
-                          <td class="py-1 px-4 font-medium text-gray-700 text-lg lg:text-xl">{{ resultado }}</td>
+                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ resultado }}</td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               resultado === 'Normal' ? 'text-emerald-700' : 'text-amber-600'
                             ]"
                           >
@@ -5919,31 +5875,15 @@ const tablaCintura = computed(() => {
                 {{ otologicaDelTablero.evaluados === 1 ? 'trabajador' : 'trabajadores' }} en su historia otológica más reciente
                 del periodo<template v-if="coberturaDe(otologicaDelTablero.evaluados)"> ({{ coberturaDe(otologicaDelTablero.evaluados) }})</template>.
               </p>
-              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div v-if="otologicaDelTablero.respuestas.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="otologica-respuestas">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Síntomas y exposición referidos</h3>
-                  <ul class="space-y-2">
-                    <li v-for="fila in otologicaDelTablero.respuestas" :key="fila.clave">
-                      <div class="flex items-baseline justify-between gap-3 text-sm">
-                        <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ fila.etiqueta }}</span>
-                        <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
-                          <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ fila.cantidad }}</span>
-                          de {{ fila.evaluados }} · {{ fila.evaluados ? Math.round((fila.cantidad / fila.evaluados) * 100) : 0 }} %
-                        </span>
-                      </div>
-                      <div class="lista-conteos__riel mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
-                        <div
-                          class="lista-conteos__barra h-full rounded-full bg-emerald-500"
-                          :style="{ width: (fila.evaluados ? (fila.cantidad / fila.evaluados) * 100 : 0) + '%' }"
-                        ></div>
-                      </div>
-                    </li>
-                  </ul>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Síntomas y exposición referidos</h3>
+                  <ListaDeConteos :filas="conTotal(otologicaDelTablero.respuestas, 'cantidad', 'evaluados')" tono="atencion" />
                   <p class="mt-3 text-xs italic text-gray-500">Cada respuesta se mide sobre quienes la contestaron.</p>
                 </div>
 
                 <div v-if="otologicaDelTablero.expuestosConRespuesta" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="otologica-proteccion">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Uso de protección auditiva</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Uso de protección auditiva</h3>
                   <ListaDeConteos :filas="otologicaDelTablero.proteccion" :total="otologicaDelTablero.expuestosConRespuesta" />
                   <p class="mt-3 text-xs italic text-gray-500">Entre quienes dijeron trabajar en ambientes ruidosos.</p>
                 </div>
@@ -5967,9 +5907,9 @@ const tablaCintura = computed(() => {
                 periodo<template v-if="coberturaDe(nordicoDelTablero.evaluados)"> ({{ coberturaDe(nordicoDelTablero.evaluados) }})</template>.
                 De cada uno cuenta su cuestionario más reciente.
               </p>
-              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-resultado">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Resultado del cuestionario</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Resultado del cuestionario</h3>
                   <ListaDeConteos :filas="nordicoDelTablero.semaforo" :total="nordicoDelTablero.evaluados" />
                   <dl class="mt-4 space-y-2 border-t border-gray-200 pt-3 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
@@ -5988,7 +5928,7 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div v-if="nordicoDelTablero.zonas12Meses.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-zonas-12">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Zonas con molestia en los últimos 12 meses</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Zonas con molestia en los últimos 12 meses</h3>
                   <ListaDeConteos :filas="nordicoDelTablero.zonas12Meses" :total="nordicoDelTablero.evaluados" />
                   <p class="mt-3 text-xs italic text-gray-500">
                     Trabajadores por zona; izquierda y derecha cuentan como una. Un trabajador puede reportar varias, así que los porcentajes no suman 100 %.
@@ -5996,22 +5936,22 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div v-if="nordicoDelTablero.zonas7Dias.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-zonas-7">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Zonas con molestia en los últimos 7 días</h3>
-                  <ListaDeConteos :filas="nordicoDelTablero.zonas7Dias" :total="nordicoDelTablero.evaluados" />
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Zonas con molestia en los últimos 7 días</h3>
+                  <ListaDeConteos :filas="nordicoDelTablero.zonas7Dias" :total="nordicoDelTablero.evaluados" tono="atencion" />
                 </div>
 
                 <div v-if="nordicoDelTablero.zonasImpedimento.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-impedimento">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Zonas cuya molestia impidió trabajar</h3>
-                  <ListaDeConteos :filas="nordicoDelTablero.zonasImpedimento" :total="nordicoDelTablero.evaluados" />
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Zonas cuya molestia impidió trabajar</h3>
+                  <ListaDeConteos :filas="nordicoDelTablero.zonasImpedimento" :total="nordicoDelTablero.evaluados" tono="riesgo" />
                 </div>
 
                 <div v-if="nordicoDelTablero.zonasRelacionLaboral.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-laboral">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Zonas que relacionan con su trabajo</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Zonas que relacionan con su trabajo</h3>
                   <ListaDeConteos :filas="nordicoDelTablero.zonasRelacionLaboral" :total="nordicoDelTablero.evaluados" />
                 </div>
 
                 <div v-if="nordicoDelTablero.puestos.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-puestos">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Puestos con más trabajadores con molestias</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Puestos con más trabajadores con molestias</h3>
                   <ul class="space-y-1.5 text-sm">
                     <li
                       v-for="puesto in nordicoDelTablero.puestos.slice(0, 10)"
@@ -6046,9 +5986,9 @@ const tablaCintura = computed(() => {
                 periodo<template v-if="coberturaDe(suenoDelTablero.evaluados)"> ({{ coberturaDe(suenoDelTablero.evaluados) }})</template>.
                 De cada uno cuenta su evaluación más reciente.
               </p>
-              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-nivel">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Nivel general</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Nivel general</h3>
                   <ListaDeConteos :filas="suenoDelTablero.prioridad" :total="suenoDelTablero.evaluados" />
                   <dl v-if="suenoDelTablero.conHoras" class="mt-4 space-y-2 border-t border-gray-200 pt-3 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
@@ -6064,25 +6004,18 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div v-if="suenoDelTablero.areas.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-areas">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Síntomas semanales o frecuentes por área</h3>
-                  <dl class="space-y-2 text-sm">
-                    <div v-for="area in suenoDelTablero.areas" :key="area.clave" class="flex items-baseline justify-between gap-3">
-                      <dt class="text-gray-600">{{ area.etiqueta }}</dt>
-                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">
-                        {{ conPorcentaje(area.cantidad, area.evaluados) }}
-                      </dd>
-                    </div>
-                  </dl>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Síntomas semanales o frecuentes por área</h3>
+                  <ListaDeConteos :filas="conTotal(suenoDelTablero.areas, 'cantidad', 'evaluados')" tono="alerta" />
                   <p class="mt-3 text-xs italic text-gray-500">Trabajadores con síntomas al menos una vez por semana, de los evaluados en cada área.</p>
                 </div>
 
                 <div v-if="suenoDelTablero.alertas.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-alertas">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Hallazgos y alertas</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Hallazgos y alertas</h3>
                   <ListaDeConteos :filas="suenoDelTablero.alertas" :total="suenoDelTablero.evaluados" />
                 </div>
 
                 <div v-if="suenoDelTablero.horarios.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-horarios">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Horario laboral de los evaluados</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Horario laboral de los evaluados</h3>
                   <ListaDeConteos :filas="suenoDelTablero.horarios" :total="suenoDelTablero.evaluados" />
                 </div>
               </div>
@@ -6107,9 +6040,9 @@ const tablaCintura = computed(() => {
                 {{ antidopingDelTablero.trabajadores === 1 ? 'trabajador' : 'trabajadores' }}<template v-if="coberturaDe(antidopingDelTablero.trabajadores)"> ({{ coberturaDe(antidopingDelTablero.trabajadores) }})</template>.
                 Cuentan todas las pruebas: un trabajador puede tener más de una.
               </p>
-              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="antidoping-resumen">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Resultados</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Resultados</h3>
                   <dl class="space-y-2 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Pruebas realizadas</dt>
@@ -6134,15 +6067,15 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div v-if="antidopingDelTablero.porSustancia.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="antidoping-sustancias">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Positivos por sustancia</h3>
-                  <ListaDeConteos :filas="antidopingDelTablero.porSustancia" :total="antidopingDelTablero.pruebas" />
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Positivos por sustancia</h3>
+                  <ListaDeConteos :filas="antidopingDelTablero.porSustancia" :total="antidopingDelTablero.pruebas" tono="riesgo" />
                   <p class="mt-3 text-xs italic text-gray-500">
                     Pruebas positivas a cada sustancia, sobre el total de pruebas. Una prueba puede ser positiva a varias.
                   </p>
                 </div>
 
                 <div v-if="antidopingDelTablero.porMes.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="antidoping-meses">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Pruebas por mes</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Pruebas por mes</h3>
                   <ul class="space-y-1.5 text-sm">
                     <li v-for="mes in antidopingDelTablero.porMes" :key="mes.clave" class="flex items-baseline justify-between gap-3">
                       <span class="lista-conteos__etiqueta text-gray-800">{{ mes.etiqueta }}</span>
@@ -6169,8 +6102,8 @@ const tablaCintura = computed(() => {
               <div :class="gridTarjetas">
             <!-- Aptitud al Puesto: 2 columnas -->
             <div v-if="chartWaveVisible(2)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col col-span-1 sm:col-span-2 xl:col-span-2">
-              <div class="flex items-center justify-between border-b border-gray-200 pb-2 mb-4">
-                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
+                <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                   Aptitud al Puesto
                   <span class="relative cursor-help">
                     <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -6179,11 +6112,11 @@ const tablaCintura = computed(() => {
                     </span>
                   </span>
                 </h3>
-                <div class="flex gap-2">
+                <div class="flex shrink-0 gap-1.5">
                   <button
                     @click="vistaAptitud = 'grafico'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaAptitud === 'grafico'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -6194,7 +6127,7 @@ const tablaCintura = computed(() => {
                   <button
                     @click="vistaAptitud = 'tabla'"
                     :class="[
-                      'px-3 py-1 rounded text-sm font-medium',
+                      'px-2.5 py-0.5 rounded text-xs font-medium',
                       vistaAptitud === 'tabla'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
@@ -6220,8 +6153,8 @@ const tablaCintura = computed(() => {
                     <table class="min-w-full text-sm border border-gray-300 rounded h-full">
                       <thead class="bg-gray-100 text-gray-700">
                         <tr>
-                          <th class="py-2 px-4 text-left text-lg lg:text-xl">Resultado</th>
-                          <th class="py-2 px-4 text-center text-lg lg:text-xl">Trabajadores</th>
+                          <th class="py-2 px-3 text-left text-sm">Resultado</th>
+                          <th class="py-2 px-3 text-center text-sm">Trabajadores</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -6231,12 +6164,12 @@ const tablaCintura = computed(() => {
                           class="border-t hover:bg-gray-200 transition cursor-pointer"
                           @click="handleClickTablaAptitud(categoria)"
                         >
-                        <td class="py-1 px-4 font-medium text-gray-700 text-lg lg:text-xl">
+                        <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">
                           {{ etiquetasAptitudPuestoTabla[categoria] || categoria }}
                         </td>
                           <td
                             :class="[
-                              'py-1 px-4 text-center text-lg lg:text-xl',
+                              'py-1.5 px-3 text-center text-sm',
                               categoria === 'Apto Sin Restricciones' ? 'text-emerald-700' :
                               categoria === 'Apto Con Precaución' ? 'text-amber-600' :
                               categoria === 'Apto Con Restricciones' ? 'text-orange-600' :
@@ -6257,9 +6190,9 @@ const tablaCintura = computed(() => {
 
             <!-- Consultas -->
             <div v-if="chartWaveVisible(1)" class="bg-gray-50 p-6 rounded-lg shadow flex flex-col">
-              <div class="flex items-start justify-between border-b border-gray-200 pb-2 mb-4">
+              <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 border-b border-gray-200 pb-2 mb-4">
                 <div class="flex flex-col gap-0.5">
-                  <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                  <h3 class="min-w-0 text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
                     Consultas Médicas
                     <span class="relative cursor-help">
                       <i class="fas fa-info-circle text-gray-400 hover:text-emerald-600 peer"></i>
@@ -6319,9 +6252,9 @@ const tablaCintura = computed(() => {
                   {{ diagnosticosDeConsultas.subsecuentes }} subsecuentes.
                 </template>
               </p>
-              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div v-if="consultasDelTablero.trabajadores !== null" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="consultas-resumen">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Consultas del periodo</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Consultas del periodo</h3>
                   <dl class="space-y-2 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Consultas</dt>
@@ -6343,12 +6276,12 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div v-if="consultasDelTablero.tipos.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="consultas-tipos">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Tipo de nota</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Tipo de nota</h3>
                   <ListaDeConteos :filas="consultasDelTablero.tipos" :total="consultasDelTablero.consultas" />
                 </div>
 
                 <div v-if="diagnosticosDeConsultas.total > 0" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="diagnosticos-frecuentes">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">
                     Diagnósticos más frecuentes
                   </h3>
                   <ListaDeConteos
@@ -6358,7 +6291,7 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div v-if="diagnosticosDeConsultas.total > 0" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="diagnosticos-capitulos">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">
                     Por grupo de enfermedades
                   </h3>
                   <ListaDeConteos
@@ -6370,7 +6303,7 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col xl:col-span-2" data-test="consultas-por-mes">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">
                     Consultas por mes
                   </h3>
                   <div class="overflow-x-auto">
@@ -6383,7 +6316,7 @@ const tablaCintura = computed(() => {
                         data-test="consultas-mes"
                       >
                         <span class="mb-1 text-xs tabular-nums text-gray-700">{{ mes.cantidad || '' }}</span>
-                        <span class="lista-conteos__barra w-full max-w-[3rem] rounded-t bg-emerald-500" :style="{ height: mes.alto }"></span>
+                        <span class="lista-conteos__barra w-full max-w-[3rem] rounded-t bg-slate-500" data-tono="neutro" :style="{ height: mes.alto }"></span>
                       </li>
                     </ol>
                     <ol
@@ -6422,9 +6355,9 @@ const tablaCintura = computed(() => {
                 al {{ new Date(periodoInventario.hasta).toLocaleDateString('es-MX', { timeZone: 'UTC' }) }}<template v-if="periodoInventario.porDefecto"> (año en curso, porque no hay un periodo elegido)</template>.
                 <template v-if="hayFiltrosPoblacion">Esta sección no responde a los filtros de trabajadores.</template>
               </p>
-              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="incapacidades-resumen">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Resumen</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Resumen</h3>
                   <dl class="space-y-2 text-sm">
                     <div class="flex items-baseline justify-between gap-3">
                       <dt class="text-gray-600">Casos nuevos</dt>
@@ -6452,7 +6385,7 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div v-if="incapacidadesDelTablero.porRamo.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="incapacidades-ramos">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Por ramo</h3>
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Por ramo</h3>
                   <ul class="space-y-1.5 text-sm">
                     <li v-for="ramo in incapacidadesDelTablero.porRamo" :key="ramo.clave" class="flex items-baseline justify-between gap-3">
                       <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ ramo.etiqueta }}</span>
@@ -6484,7 +6417,7 @@ const tablaCintura = computed(() => {
               </p>
               <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-4">
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col xl:col-span-2" data-test="inventario-consumo">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">
                     Insumos más consumidos
                   </h3>
                   <p v-if="!insumosMasConsumidos.length" class="py-6 text-center text-sm text-gray-500">
@@ -6515,7 +6448,7 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="inventario-bajas">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">
                     Bajas en el periodo
                   </h3>
                   <p v-if="!insumosConBajas.length" class="py-6 text-center text-sm text-gray-500">
@@ -6536,7 +6469,7 @@ const tablaCintura = computed(() => {
                 </div>
 
                 <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="inventario-existencias">
-                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">
                     Existencias hoy
                   </h3>
                   <dl class="space-y-2 text-sm">

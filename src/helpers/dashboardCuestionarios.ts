@@ -14,11 +14,23 @@ import {
 } from './evaluacionSuenoVigilia';
 import type { TablaDeInforme } from './dashboardInformes';
 
+/** Lo que significa una fila: decide su color en pantalla. */
+export type Tono = 'neutro' | 'favorable' | 'atencion' | 'alerta' | 'riesgo';
+
 export interface Conteo {
   clave: string;
   etiqueta: string;
   cantidad: number;
+  tono?: Tono;
 }
+
+/** Del verde al rojo, como los resultados de los cuestionarios. */
+export const TONO_DE_NIVEL: Record<string, Tono> = {
+  verde: 'favorable',
+  amarillo: 'atencion',
+  naranja: 'alerta',
+  rojo: 'riesgo',
+};
 
 const pct = (parte: number, total: number) => (total > 0 ? Math.round((parte / total) * 100) : 0);
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
@@ -97,7 +109,11 @@ export function resumirNordico(registros: NordicoDeTablero[]): ResumenNordico {
   }
   return {
     evaluados: registros.length,
-    semaforo: SEMAFOROS_NORDICO.map((s) => ({ ...s, cantidad: registros.filter((r) => r.semaforo === s.clave).length })),
+    semaforo: SEMAFOROS_NORDICO.map((s) => ({
+      ...s,
+      cantidad: registros.filter((r) => r.semaforo === s.clave).length,
+      tono: TONO_DE_NIVEL[s.clave],
+    })),
     conMolestia12Meses: con('regionesMolestia12Meses'),
     conMolestia7Dias: con('regionesMolestia7Dias'),
     conImpedimento: con('regionesImpedimento'),
@@ -126,7 +142,11 @@ export interface SuenoDeTablero {
 
 const NIVELES = NIVELES_SUENO_VIGILIA.map((nivel) => ({ clave: nivel, etiqueta: ETIQUETA_NIVEL_SUENO_VIGILIA[nivel] }));
 const porNivel = (niveles: (string | undefined)[]): Conteo[] =>
-  NIVELES.map((nivel) => ({ ...nivel, cantidad: niveles.filter((n) => n === nivel.clave).length }));
+  NIVELES.map((nivel) => ({
+    ...nivel,
+    cantidad: niveles.filter((n) => n === nivel.clave).length,
+    tono: TONO_DE_NIVEL[nivel.clave],
+  }));
 
 /** Síntomas al menos semanales: los niveles que el documento marca para seguimiento. */
 const esRelevante = (nivel: string | undefined) => nivel === 'naranja' || nivel === 'rojo';
@@ -172,6 +192,7 @@ export function resumirSueno(registros: SuenoDeTablero[]): ResumenSueno {
       clave: alerta.clave,
       etiqueta: alerta.texto,
       cantidad: registros.filter((r) => r.alertas.includes(alerta.clave)).length,
+      tono: TONO_DE_NIVEL[alerta.nivel] ?? ('neutro' as Tono),
     }))
       .filter((alerta) => alerta.cantidad > 0)
       .sort((x, y) => y.cantidad - x.cantidad),

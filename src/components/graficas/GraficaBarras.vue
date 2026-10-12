@@ -15,6 +15,9 @@ const props = defineProps({
 
 const isHtmlDark = useHtmlDarkMode()
 
+// El contenedor decide el tamaño: la gráfica no impone su proporción
+const opcionesQueLlenan = computed(() => ({ ...themedOptions.value, responsive: true, maintainAspectRatio: false }))
+
 const themedOptions = computed(() => {
   const base = props.options || {}
   if (!isHtmlDark.value) return base
@@ -86,5 +89,10 @@ const themedOptions = computed(() => {
 </script>
 
 <template>
-  <Bar :data="data" :options="themedOptions" :height="147" />
+  <div class="relative h-full min-h-[12rem] w-full">
+    <!-- Llena el alto de la tarjeta; sin alto definido, conserva un mínimo. Un solo elemento raíz: las tarjetas lo animan al alternar con la tabla -->
+    <div class="absolute inset-0">
+      <Bar :data="data" :options="opcionesQueLlenan" />
+    </div>
+  </div>
 </template>
