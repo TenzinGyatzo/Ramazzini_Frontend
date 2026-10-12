@@ -44,6 +44,7 @@ import {
   OPCIONES_SI_NO,
   OPCIONES_SUENO,
 } from '@/helpers/documentosEnTabla';
+import { OPCIONES_DE_EDAD } from '@/helpers/edadEnTabla';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useEliminacion, type EliminacionRequest } from '@/composables/useEliminacion';
 import EliminacionAPI from '@/api/EliminacionAPI';
@@ -310,6 +311,7 @@ const filtrosConfig: FiltroConfigItem[] = [
   { id: 'antidoping', groupId: 'estudios', label: 'Antidoping (último)', opciones: OPCIONES_ANTIDOPING },
   { id: 'nordico', groupId: 'estudios', label: 'Cuestionario Nórdico', opciones: OPCIONES_NORDICO },
   { id: 'sueno', groupId: 'estudios', label: 'Sueño y vigilia', opciones: OPCIONES_SUENO },
+  { id: 'edad', groupId: 'general', label: 'Edad (años)', opciones: OPCIONES_DE_EDAD },
   { id: 'tabaquismo', groupId: 'antecedentes', label: 'Tabaquismo', opciones: OPCIONES_SI_NO },
   { id: 'alcoholismo', groupId: 'antecedentes', label: 'Alcoholismo', opciones: OPCIONES_SI_NO },
 ];
@@ -412,6 +414,7 @@ const filtros = reactive<Record<string, string>>({
   sueno: '',
   tabaquismo: '',
   alcoholismo: '',
+  edad: '',
   periodo: '',
   estadoLaboral: 'Activo',
 });
@@ -934,6 +937,7 @@ const filtrosValidos = {
   sueno: OPCIONES_SUENO,
   tabaquismo: OPCIONES_SI_NO,
   alcoholismo: OPCIONES_SI_NO,
+  edad: OPCIONES_DE_EDAD,
 };
 
 function aplicarFiltrosDesdeQuery(query: RouteLocationNormalizedLoaded['query']) {

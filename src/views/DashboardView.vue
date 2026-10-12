@@ -3327,6 +3327,18 @@ const graficaGruposEtariosData = computed(() => {
   }
 })
 
+/** Una barra de la gráfica es un grupo de edad y, dentro de él, hombres o mujeres. */
+const irAGrupoEtario = (grupo, sexo) =>
+  manejarRedireccionFiltroChart(grupo, 'edad', {}, sexo ? { sexo } : {});
+const clicEnGruposEtarios = (_evento, elementos) => {
+  if (!elementos.length) return;
+  const { index, datasetIndex } = elementos[0];
+  irAGrupoEtario(graficaGruposEtariosData.value.labels[index], datasetIndex === 0 ? 'Masculino' : 'Femenino');
+};
+const manitaSobreBarras = (evento, elementos) => {
+  if (evento.chart?.canvas) evento.chart.canvas.style.cursor = elementos.length ? 'pointer' : 'default';
+};
+
 const graficaGruposEtariosOptions = {
   // indexAxis: 'y', // HORIZONTAL
   responsive: true,
@@ -3411,7 +3423,8 @@ const graficaGruposEtariosOptionsPDF = {
 }
 
 // Handlers para ir a la vista de trabajadores con filtros aplicados
-function manejarRedireccionFiltroChart(labelOriginal, filtroId, mapaValores = {}) {
+/** `otros`: más filtros de la tabla que acompañan al principal (p. ej. el sexo junto al grupo de edad). */
+function manejarRedireccionFiltroChart(labelOriginal, filtroId, mapaValores = {}, otros = {}) {
   if (centroSeleccionado.value === 'Todos') {
     toast.open({
       message: 'Selecciona un centro de trabajo para ver los trabajadores correspondientes.',
@@ -3443,6 +3456,7 @@ function manejarRedireccionFiltroChart(labelOriginal, filtroId, mapaValores = {}
     },
     query: {
       ...delTablero.consulta,
+      ...otros,
       [filtroId]: valorFiltro
     }
   });
@@ -4448,7 +4462,12 @@ const tablaCintura = computed(() => {
               <div class="flex-1 overflow-x-auto">
                 <Transition name="fade" mode="out-in">
                   <template v-if="vistaGruposEtarios === 'grafico'">
-                    <GraficaBarras ref="refGruposEtarios" :key="vistaGruposEtariosKey" :data="graficaGruposEtariosData" :options="graficaGruposEtariosOptions" />
+                    <GraficaBarras
+                      ref="refGruposEtarios"
+                      :key="vistaGruposEtariosKey"
+                      :data="graficaGruposEtariosData"
+                      :options="{ ...graficaGruposEtariosOptions, onClick: clicEnGruposEtarios, onHover: manitaSobreBarras }"
+                    />
                   </template>
 
                   <template v-else>
@@ -4466,9 +4485,22 @@ const tablaCintura = computed(() => {
                           :key="grupo"
                           class="border-t hover:bg-gray-200 transition"
                         >
-                          <td class="py-1.5 px-3 font-medium text-gray-700 text-sm">{{ grupo }}</td>
-                          <td class="py-1.5 px-3 text-center text-blue-700 text-sm">{{ datos.Masculino }}</td>
-                          <td class="py-1.5 px-3 text-center text-pink-700 text-sm">{{ datos.Femenino }}</td>
+                          <td
+                            class="py-1.5 px-3 font-medium text-gray-700 text-sm cursor-pointer"
+                            title="Ver a los trabajadores de este grupo de edad"
+                            data-test="grupo-etario"
+                            @click="irAGrupoEtario(grupo)"
+                          >{{ grupo }}</td>
+                          <td
+                            class="py-1.5 px-3 text-center text-blue-700 text-sm cursor-pointer"
+                            title="Ver a los hombres de este grupo de edad"
+                            @click="irAGrupoEtario(grupo, 'Masculino')"
+                          >{{ datos.Masculino }}</td>
+                          <td
+                            class="py-1.5 px-3 text-center text-pink-700 text-sm cursor-pointer"
+                            title="Ver a las mujeres de este grupo de edad"
+                            @click="irAGrupoEtario(grupo, 'Femenino')"
+                          >{{ datos.Femenino }}</td>
                         </tr>
                       </tbody>
                     </table>

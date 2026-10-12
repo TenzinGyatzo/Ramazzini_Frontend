@@ -9,7 +9,8 @@ import {
 } from '@/helpers/tamizajePsicologicoCriterios';
 
 // GRUPOS ETARIOS
-const gruposEtarios = [
+/** Grupos de cinco años de la gráfica; la tabla de trabajadores filtra por ellos mismos. */
+export const GRUPOS_ETARIOS = [
     { rango: '16–20', min: 16, max: 20 },
     { rango: '21–25', min: 21, max: 25 },
     { rango: '26–30', min: 26, max: 30 },
@@ -24,7 +25,7 @@ const gruposEtarios = [
   ];
   
   export function obtenerGrupoEtario(edad: number): string | null {
-    const grupo = gruposEtarios.find(({ min, max }) => edad >= min && edad <= max);
+    const grupo = GRUPOS_ETARIOS.find(({ min, max }) => edad >= min && edad <= max);
     return grupo ? grupo.rango : null;
   }
   

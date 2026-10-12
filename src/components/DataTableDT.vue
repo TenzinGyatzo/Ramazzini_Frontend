@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { categoriaDeAudiometriaExterna, resultadoDeAudiometriaExterna } from '@/helpers/audiometriaExternaEnTabla';
 import { documentosEnTabla } from '@/helpers/documentosEnTabla';
+import { expresionDeEdad } from '@/helpers/edadEnTabla';
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import DataTablesCore from 'datatables.net-dt';
 import 'datatables.net-select-dt';
@@ -1212,7 +1213,8 @@ function aplicarTodosLosFiltrosDesdeLocalStorage() {
     { id: 'alcoholismo', columna: 44 },
     { id: 'antidoping', columna: 45 },
     { id: 'nordico', columna: 46 },
-    { id: 'sueno', columna: 47 }
+    { id: 'sueno', columna: 47 },
+    { id: 'edad', columna: 7 }
   ];
 
       // 1. Limpiar filtros anteriores
@@ -1238,6 +1240,9 @@ function aplicarTodosLosFiltrosDesdeLocalStorage() {
       // Aplicar como expresión regular simple, sin anclar (^$) para permitir coincidencias parciales
       const regex = valor === '' ? '' : valor === '-' ? '^-$' : valor;
       dataTableInstance.column(columna).search(regex, true, false);
+    } else if (id === 'edad') {
+      // La columna muestra «34 años»: el grupo se traduce a las edades que abarca
+      dataTableInstance.column(columna).search(expresionDeEdad(valor), true, false);
     } else if (id === 'categoriaAudiometria') {
       // Ahora usa filtro estándar de DataTables en la columna 35
       const regex = valor === '' ? '' : valor === '-' ? '^-$' : `^${valor}$`;
