@@ -74,13 +74,18 @@ describe('secciones y cifras del tablero de salud', () => {
     expect(SECCIONES_DE_TABLERO.map((s) => s.id)).toEqual([
       'poblacion',
       'exposicion',
+      'habitos',
+      'cardiometabolico',
       'saludMental',
       'saludVisual',
       'gabinete',
+      'otologica',
       'musculoesqueletico',
       'sueno',
+      'antidoping',
       'aptitud',
       'diagnosticos',
+      'incapacidades',
       'inventario',
     ]);
   });

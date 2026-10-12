@@ -27,6 +27,21 @@ import {
   type NordicoDeTablero,
   type SuenoDeTablero,
 } from './dashboardCuestionarios';
+import { hallazgosAntidoping, tablasAntidoping, type AntidopingDeTablero } from './dashboardAntidoping';
+import { hallazgosHabitos, tablasHabitos, type HabitosDeTablero } from './dashboardHabitos';
+import {
+  hallazgosCardiometabolico,
+  hallazgosIncapacidades,
+  hallazgosOtologica,
+  tablasCardiometabolico,
+  tablasConsultas,
+  tablasIncapacidades,
+  tablasOtologica,
+  type CardiometabolicoDeTablero,
+  type ConsultaDeTablero,
+  type OtologicaDeTablero,
+  type ResumenIncapacidades,
+} from './dashboardSeguimiento';
 
 type Celda = string | number;
 
@@ -121,6 +136,8 @@ interface Fuentes {
   /** Tablas de salud visual, gabinete y tamizajes que la pantalla ya calculó. */
   tablasDePantalla?: TablaDePantalla[];
   insumos?: InsumoConsumido[];
+  /** Resumen del módulo de incapacidades para el mismo periodo y centro, si aplica. */
+  incapacidades?: ResumenIncapacidades | null;
 }
 
 /** Trabajadores por categoría de circunferencia de cintura. */
@@ -189,6 +206,7 @@ export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
       conPorcentaje('Antecedentes', 'Antecedentes referidos', 'Antecedente', c.antecedentes, etiquetasAntecedentesReferidos),
     );
   }
+  tablas.push(...tablasHabitos(registrosDe(fuentes.datos, fuentes.indiceCentro, 'habitos') as HabitosDeTablero[]));
   if (suma(c.agentes)) tablas.push(conPorcentaje('Exposición', 'Agentes de riesgo', 'Agente', c.agentes));
 
   for (const tabla of fuentes.tablasDePantalla ?? []) tablas.push(tablaDePantalla(tabla));
@@ -196,6 +214,9 @@ export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
   const de = (clave: string) => registrosDe(fuentes.datos, fuentes.indiceCentro, clave);
   tablas.push(...tablasNordico(de('cuestionarioNordico') as NordicoDeTablero[]));
   tablas.push(...tablasSueno(de('suenoVigilia') as SuenoDeTablero[]));
+  tablas.push(...tablasAntidoping(de('antidoping') as AntidopingDeTablero[]));
+  tablas.push(...tablasCardiometabolico(de('cardiometabolico') as CardiometabolicoDeTablero[]));
+  tablas.push(...tablasOtologica(de('otologica') as OtologicaDeTablero[]));
 
   if (suma(c.aptitud)) tablas.push(conPorcentaje('Aptitud', 'Aptitud al puesto', 'Resultado', c.aptitud));
 
@@ -218,6 +239,8 @@ export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
       filas: c.diagnosticos.porCapitulo.map(fila),
     });
   }
+  tablas.push(...tablasConsultas(c.consultas as ConsultaDeTablero[]));
+  tablas.push(...tablasIncapacidades(fuentes.incapacidades));
   const meses = consultasPorMes(c.consultas.map((consulta) => consulta?.fechaNotaMedica));
   if (meses.length) {
     tablas.push({
@@ -292,6 +315,11 @@ export function hallazgosDelTablero(fuentes: Fuentes): string[] {
   const de = (clave: string) => registrosDe(fuentes.datos, fuentes.indiceCentro, clave);
   hallazgos.push(...hallazgosNordico(de('cuestionarioNordico') as NordicoDeTablero[]));
   hallazgos.push(...hallazgosSueno(de('suenoVigilia') as SuenoDeTablero[]));
+  hallazgos.push(...hallazgosHabitos(de('habitos') as HabitosDeTablero[]));
+  hallazgos.push(...hallazgosAntidoping(de('antidoping') as AntidopingDeTablero[]));
+  hallazgos.push(...hallazgosCardiometabolico(de('cardiometabolico') as CardiometabolicoDeTablero[]));
+  hallazgos.push(...hallazgosOtologica(de('otologica') as OtologicaDeTablero[]));
+  hallazgos.push(...hallazgosIncapacidades(fuentes.incapacidades));
   if (c.consultas.length) {
     const principal = c.diagnosticos.porCodigo[0];
     const grupo = c.diagnosticos.porCapitulo[0];

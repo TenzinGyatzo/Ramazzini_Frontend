@@ -15,6 +15,16 @@ import {
   type SuenoDeTablero,
 } from './dashboardCuestionarios';
 import { LEYENDA_SUENO_VIGILIA } from './evaluacionSuenoVigilia';
+import { hallazgosAntidoping, tablasAntidoping, type AntidopingDeTablero } from './dashboardAntidoping';
+import { tablasHabitos, type HabitosDeTablero } from './dashboardHabitos';
+import {
+  hallazgosCardiometabolico,
+  hallazgosOtologica,
+  tablasCardiometabolico,
+  tablasOtologica,
+  type CardiometabolicoDeTablero,
+  type OtologicaDeTablero,
+} from './dashboardSeguimiento';
 
 const FILAS_DE_DIAGNOSTICOS = 15;
 const FILAS_DE_INSUMOS = 15;
@@ -51,6 +61,14 @@ export interface SeccionesAdicionales {
   nordico?: NordicoDeTablero[] | null;
   /** Resultado de la evaluación de sueño y vigilia más reciente de cada trabajador. */
   sueno?: SuenoDeTablero[] | null;
+  /** Hábitos referidos en la historia clínica más reciente de cada trabajador. */
+  habitos?: HabitosDeTablero[] | null;
+  /** Pruebas antidoping del periodo. */
+  antidoping?: AntidopingDeTablero[] | null;
+  /** Último evento de seguimiento cardiometabólico de cada trabajador. */
+  cardiometabolico?: CardiometabolicoDeTablero[] | null;
+  /** Historia otológica más reciente de cada trabajador. */
+  otologica?: OtologicaDeTablero[] | null;
 }
 
 const tablasDeInforme = (tablas: TablaDeInforme[]): Contenido[] =>
@@ -66,6 +84,48 @@ export function seccionesAdicionalesDelInforme(
 ): { contenido: Contenido[]; siguienteNumero: number } {
   const contenido: Contenido[] = [];
   let numero = numeroSeccion;
+
+  const habitos = tablasHabitos(datos.habitos ?? []);
+  if (habitos.length) {
+    contenido.push(
+      { text: `${numero}. HÁBITOS Y ESTILO DE VIDA`, style: 'tituloSeccion', pageBreak: 'before' },
+      {
+        text: 'Hábitos que los trabajadores refirieron en su historia clínica más reciente del periodo. Cada porcentaje se calcula sobre quienes contestaron esa pregunta. Son factores que se pueden modificar y sobre los que tienen más efecto las acciones preventivas.',
+        style: 'textoNormal',
+      },
+      ...tablasDeInforme(habitos),
+    );
+    numero++;
+  }
+
+  const cardiometabolico = datos.cardiometabolico ?? [];
+  if (cardiometabolico.length) {
+    contenido.push(
+      { text: `${numero}. SEGUIMIENTO CARDIOMETABÓLICO`, style: 'tituloSeccion', pageBreak: 'before' },
+      {
+        text: 'Trabajadores con hipertensión, diabetes, dislipidemia u obesidad que tienen seguimiento en el servicio médico. De cada uno se toma su visita más reciente del periodo: si la condición estaba en control y cómo salieron sus estudios de laboratorio.',
+        style: 'textoNormal',
+      },
+      { ul: hallazgosCardiometabolico(cardiometabolico), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...tablasDeInforme(tablasCardiometabolico(cardiometabolico)),
+    );
+    numero++;
+  }
+
+  const otologica = tablasOtologica(datos.otologica ?? []);
+  if (otologica.length) {
+    const hallazgos = hallazgosOtologica(datos.otologica ?? []);
+    contenido.push(
+      { text: `${numero}. ANTECEDENTES AUDITIVOS`, style: 'tituloSeccion', pageBreak: 'before' },
+      {
+        text: 'Lo que los trabajadores refirieron en su historia otológica más reciente del periodo: síntomas auditivos, exposición a ruido y uso de protección auditiva. Cada porcentaje se calcula sobre quienes contestaron esa pregunta.',
+        style: 'textoNormal',
+      },
+      ...(hallazgos.length ? [{ ul: hallazgos, style: 'textoNormal', margin: [0, 6, 0, 0] }] : []),
+      ...tablasDeInforme(otologica),
+    );
+    numero++;
+  }
 
   const nordico = datos.nordico ?? [];
   if (nordico.length) {
@@ -92,6 +152,20 @@ export function seccionesAdicionalesDelInforme(
       { ul: hallazgosSueno(sueno), style: 'textoNormal', margin: [0, 6, 0, 0] },
       ...tablasDeInforme(tablasSueno(sueno)),
       { text: LEYENDA_SUENO_VIGILIA, style: 'textoNormal', italics: true },
+    );
+    numero++;
+  }
+
+  const antidoping = datos.antidoping ?? [];
+  if (antidoping.length) {
+    contenido.push(
+      { text: `${numero}. PRUEBAS ANTIDOPING`, style: 'tituloSeccion', pageBreak: 'before' },
+      {
+        text: 'Pruebas de detección de sustancias realizadas en el periodo. Se cuentan todas las pruebas: un mismo trabajador puede tener más de una.',
+        style: 'textoNormal',
+      },
+      { ul: hallazgosAntidoping(antidoping), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...tablasDeInforme(tablasAntidoping(antidoping)),
     );
     numero++;
   }

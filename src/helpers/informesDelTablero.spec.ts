@@ -74,9 +74,13 @@ describe('ventana de informes del tablero', () => {
     const estado = estadoDeInforme('completo', datos());
     expect(estado.disponible).toBe(true);
     expect(omitidos(estado)).toEqual([
+      'Hábitos y estilo de vida',
+      'Seguimiento cardiometabólico',
       'Tamizajes psicológicos',
+      'Antecedentes auditivos',
       'Molestias musculoesqueléticas',
       'Sueño y vigilia',
+      'Pruebas antidoping',
       'Consumo de insumos',
     ]);
     expect(incluidos(estado)).toContain('Diagnósticos de las consultas');
@@ -113,14 +117,14 @@ describe('ventana de informes del tablero', () => {
     const auditivo = estadoDeInforme('auditivo', datos());
     expect(auditivo.disponible).toBe(false);
     expect(auditivo.motivo).toBe('Sin exposición a ruido, audiometrías ni diagnósticos de oído en el periodo');
-    expect(omitidos(auditivo)).toEqual(['Exposición a ruido', 'Audiometría', 'Diagnósticos de oído en las consultas']);
+    expect(omitidos(auditivo).slice(0, 3)).toEqual(['Exposición a ruido', 'Audiometría', 'Diagnósticos de oído en las consultas']);
   });
 
   it('un informe temático con registros dice cuáles de sus tablas saldrán', () => {
     const cardio = estadoDeInforme('cardiometabolico', datos());
     expect(cardio.disponible).toBe(true);
     expect(incluidos(cardio)).toEqual(['Índice de masa corporal']);
-    expect(omitidos(cardio)).toHaveLength(4);
+    expect(omitidos(cardio)).toHaveLength(8);
   });
 
   it('el Excel lista sus hojas', () => {

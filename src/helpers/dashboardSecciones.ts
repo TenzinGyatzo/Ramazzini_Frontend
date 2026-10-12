@@ -54,13 +54,18 @@ export const SECCION_COMPARATIVO: SeccionDeTablero = {
 export const SECCIONES_DE_TABLERO: SeccionDeTablero[] = [
   { id: 'poblacion', titulo: 'Población y salud física', icono: 'fas fa-users' },
   { id: 'exposicion', titulo: 'Exposición y antecedentes', icono: 'fas fa-triangle-exclamation' },
+  { id: 'habitos', titulo: 'Hábitos y estilo de vida', icono: 'fas fa-person-running' },
+  { id: 'cardiometabolico', titulo: 'Seguimiento cardiometabólico', icono: 'fas fa-heart-pulse' },
   { id: 'saludMental', titulo: 'Salud mental', icono: 'fas fa-brain' },
   { id: 'saludVisual', titulo: 'Salud visual', icono: 'fas fa-eye' },
   { id: 'gabinete', titulo: 'Estudios de gabinete', icono: 'fas fa-stethoscope' },
+  { id: 'otologica', titulo: 'Antecedentes auditivos', icono: 'fas fa-ear-listen' },
   { id: 'musculoesqueletico', titulo: 'Molestias musculoesqueléticas', icono: 'fas fa-person-walking' },
   { id: 'sueno', titulo: 'Sueño y vigilia', icono: 'fas fa-bed' },
+  { id: 'antidoping', titulo: 'Pruebas antidoping', icono: 'fas fa-vial' },
   { id: 'aptitud', titulo: 'Aptitud y consultas', icono: 'fas fa-clipboard-check' },
-  { id: 'diagnosticos', titulo: 'Diagnósticos de las consultas', icono: 'fas fa-notes-medical' },
+  { id: 'diagnosticos', titulo: 'Consultas y diagnósticos', icono: 'fas fa-notes-medical' },
+  { id: 'incapacidades', titulo: 'Incapacidades', icono: 'fas fa-bed-pulse' },
   { id: 'inventario', titulo: 'Inventario', icono: 'fas fa-boxes-stacked' },
 ];
 

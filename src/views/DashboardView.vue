@@ -39,6 +39,17 @@ import {
   seccionDe,
 } from '@/helpers/dashboardSecciones';
 import { resumirNordico, resumirSueno } from '@/helpers/dashboardCuestionarios';
+import { resumirAntidoping } from '@/helpers/dashboardAntidoping';
+import { resumirHabitos } from '@/helpers/dashboardHabitos';
+import {
+  resumirCardiometabolico,
+  resumirConsultas,
+  resumirIncapacidades,
+  resumirOtologica,
+} from '@/helpers/dashboardSeguimiento';
+import IncapacidadesAPI from '@/api/IncapacidadesAPI';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useUserPermissions } from '@/composables/useUserPermissions';
 import { LEYENDA_SUENO_VIGILIA } from '@/helpers/evaluacionSuenoVigilia';
 import {
   MODOS_DE_COMPARACION,
@@ -2490,6 +2501,25 @@ const registrosNordico = computed(() =>
 const registrosSueno = computed(() =>
   registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'suenoVigilia'),
 );
+const registrosAntidoping = computed(() =>
+  registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'antidoping'),
+);
+const registrosHabitos = computed(() =>
+  registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'habitos'),
+);
+const registrosCardiometabolico = computed(() =>
+  registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'cardiometabolico'),
+);
+const registrosOtologica = computed(() =>
+  registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'otologica'),
+);
+const cardiometabolicoDelTablero = computed(() => resumirCardiometabolico(registrosCardiometabolico.value));
+const otologicaDelTablero = computed(() => resumirOtologica(registrosOtologica.value));
+const consultasDelTablero = computed(() =>
+  resumirConsultas(registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'consultas')),
+);
+const antidopingDelTablero = computed(() => resumirAntidoping(registrosAntidoping.value));
+const habitosDelTablero = computed(() => resumirHabitos(registrosHabitos.value));
 const nordicoDelTablero = computed(() => resumirNordico(registrosNordico.value));
 const suenoDelTablero = computed(() => resumirSueno(registrosSueno.value));
 
@@ -2569,6 +2599,49 @@ watch(
   { immediate: true },
 );
 
+// ---- Incapacidades: resumen del módulo, con el mismo periodo y centro. No responde a los filtros de población.
+
+const proveedorSaludStore = useProveedorSaludStore();
+const { canAccessRiesgosTrabajo } = useUserPermissions();
+const informeDeIncapacidades = ref(null);
+let consultaDeIncapacidades = 0;
+
+const cargarIncapacidades = async () => {
+  const esta = ++consultaDeIncapacidades;
+  const empresaId = empresasStore.currentEmpresa?._id;
+  // El módulo solo existe para proveedores de México y requiere su permiso
+  if (!empresaId || proveedorSaludStore.proveedorSalud?.pais !== 'MX' || !canAccessRiesgosTrabajo.value) {
+    informeDeIncapacidades.value = null;
+    return;
+  }
+  const { desde, hasta } = periodoInventario.value;
+  const centro =
+    indiceCentroSeleccionado.value === null ? undefined : centrosTrabajo.value[indiceCentroSeleccionado.value]?._id;
+  const informe = await IncapacidadesAPI.getInformeEmpresa(empresaId, { desde, hasta, ...(centro ? { centro } : {}) })
+    .then(({ data }) => data)
+    .catch(() => null);
+  if (esta === consultaDeIncapacidades) informeDeIncapacidades.value = informe;
+};
+
+watch(
+  [
+    () => empresasStore.currentEmpresa?._id,
+    () => proveedorSaludStore.proveedorSalud?.pais,
+    () => canAccessRiesgosTrabajo.value,
+    () => centrosTrabajo.value.map((c) => c._id).join(','),
+    indiceCentroSeleccionado,
+    fechaInicio,
+    fechaFin,
+  ],
+  () => {
+    if (rangoInvalido.value) return;
+    cargarIncapacidades();
+  },
+  { immediate: true },
+);
+
+const incapacidadesDelTablero = computed(() => resumirIncapacidades(informeDeIncapacidades.value));
+
 const consumoDeInsumos = computed(() => sumarConsumo(inventarioDelTablero.value.consumo));
 const insumosMasConsumidos = computed(() => consumoDeInsumos.value.filter((f) => f.consumo > 0).slice(0, 10));
 const insumosConBajas = computed(() =>
@@ -2593,10 +2666,15 @@ const seccionConDatos = computed(() => ({
     mostrarRayosXDistribucion.value ||
     mostrarAnalisisLaboratorioProporcion.value ||
     mostrarAnalisisLaboratorioDistribucion.value,
+  habitos: habitosDelTablero.value.habitos.length > 0,
+  cardiometabolico: cardiometabolicoDelTablero.value.enSeguimiento > 0,
+  otologica: otologicaDelTablero.value.respuestas.length > 0 || otologicaDelTablero.value.expuestosConRespuesta > 0,
+  incapacidades: !!incapacidadesDelTablero.value,
+  antidoping: antidopingDelTablero.value.pruebas > 0,
   musculoesqueletico: nordicoDelTablero.value.evaluados > 0,
   sueno: suenoDelTablero.value.evaluados > 0,
   aptitud: true,
-  diagnosticos: diagnosticosDeConsultas.value.total > 0,
+  diagnosticos: diagnosticosDeConsultas.value.total > 0 || consultasDelTablero.value.consultas > 0,
   inventario:
     inventarioStore.habilitado &&
     (consumoDeInsumos.value.length > 0 ||
@@ -2731,6 +2809,7 @@ const fuentesDeInforme = () => ({
         { seccion: 'Gabinete', titulo: 'Análisis de laboratorio', filas: tablaAnalisisLaboratorioDistribucion.value },
         { seccion: 'Salud mental', titulo: 'Tamizaje de trastorno límite de la personalidad', filas: tablaTamizajeTLP.value },
       ],
+      incapacidades: incapacidadesDelTablero.value,
       insumos: inventarioStore.habilitado
         ? consumoDeInsumos.value.map((fila) => ({
             nombre: fila.insumo.nombre,
@@ -2765,6 +2844,10 @@ const seccionesAdicionalesDelInformeCompleto = computed(() => ({
   insumos: fuentesDeInforme().insumos,
   nordico: registrosNordico.value,
   sueno: registrosSueno.value,
+  habitos: registrosHabitos.value,
+  antidoping: registrosAntidoping.value,
+  cardiometabolico: registrosCardiometabolico.value,
+  otologica: registrosOtologica.value,
   periodoInventario: `del ${fechaLarga(periodoInventario.value.desde)} al ${fechaLarga(periodoInventario.value.hasta)}`,
 }));
 
@@ -2773,7 +2856,12 @@ const armarInformeTematico = (tema) => informeTematico(tema, fuentesDeInforme(),
 
 // Con el inventario apagado, su sección no existe: tampoco se anuncia como «sin registros»
 const seccionesDelTablero = computed(() =>
-  SECCIONES_DE_TABLERO.filter((seccion) => seccion.id !== 'inventario' || inventarioStore.habilitado),
+  SECCIONES_DE_TABLERO.filter(
+    (seccion) =>
+      (seccion.id !== 'inventario' || inventarioStore.habilitado) &&
+      // Las incapacidades vienen de otro módulo y no hay cómo saber si el proveedor lo usa: sin casos, no se anuncian
+      (seccion.id !== 'incapacidades' || !!incapacidadesDelTablero.value),
+  ),
 );
 
 const seccionesVisibles = computed(() =>
@@ -4721,6 +4809,119 @@ const tablaCintura = computed(() => {
               </div>
             </section>
 
+            <!-- Hábitos y estilo de vida (historia clínica) -->
+            <section
+              v-show="seccionConDatos.habitos"
+              id="tablero-habitos"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-habitos"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[seccionDe('habitos').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('habitos').titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="resumen-habitos">
+                Lo que refirieron {{ habitosDelTablero.evaluados }}
+                {{ habitosDelTablero.evaluados === 1 ? 'trabajador' : 'trabajadores' }} en su historia clínica más reciente
+                del periodo<template v-if="coberturaDe(habitosDelTablero.evaluados)"> ({{ coberturaDe(habitosDelTablero.evaluados) }})</template>.
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="habitos-lista">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Hábitos de riesgo referidos</h3>
+                  <ul class="space-y-2">
+                    <li v-for="habito in habitosDelTablero.habitos" :key="habito.clave" data-test="habito">
+                      <div class="flex items-baseline justify-between gap-3 text-sm">
+                        <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ habito.etiqueta }}</span>
+                        <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
+                          <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ habito.cantidad }}</span>
+                          de {{ habito.evaluados }} · {{ habito.evaluados ? Math.round((habito.cantidad / habito.evaluados) * 100) : 0 }} %
+                        </span>
+                      </div>
+                      <div class="lista-conteos__riel mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
+                        <div
+                          class="lista-conteos__barra h-full rounded-full bg-emerald-500"
+                          :style="{ width: (habito.evaluados ? (habito.cantidad / habito.evaluados) * 100 : 0) + '%' }"
+                        ></div>
+                      </div>
+                    </li>
+                  </ul>
+                  <p class="mt-3 text-xs italic text-gray-500">
+                    Cada hábito se mide sobre quienes contestaron esa pregunta. Es lo que el trabajador refiere, no una medición.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Seguimiento cardiometabólico -->
+            <section
+              v-show="seccionConDatos.cardiometabolico"
+              id="tablero-cardiometabolico"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-cardiometabolico"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[seccionDe('cardiometabolico').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('cardiometabolico').titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="resumen-cardiometabolico">
+                {{ cardiometabolicoDelTablero.enSeguimiento }}
+                {{ cardiometabolicoDelTablero.enSeguimiento === 1 ? 'trabajador' : 'trabajadores' }} con seguimiento en el
+                periodo<template v-if="coberturaDe(cardiometabolicoDelTablero.enSeguimiento)"> ({{ coberturaDe(cardiometabolicoDelTablero.enSeguimiento) }})</template>.
+                De cada uno cuenta su visita más reciente.
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+                <div v-if="cardiometabolicoDelTablero.condiciones.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-condiciones">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Condiciones en seguimiento</h3>
+                  <ListaDeConteos :filas="cardiometabolicoDelTablero.condiciones" :total="cardiometabolicoDelTablero.enSeguimiento" />
+                  <p class="mt-3 text-xs italic text-gray-500">Un trabajador puede tener más de una condición.</p>
+                </div>
+
+                <div v-if="cardiometabolicoDelTablero.control.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-control">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">En control en su última visita</h3>
+                  <ul class="space-y-2">
+                    <li v-for="fila in cardiometabolicoDelTablero.control" :key="fila.clave">
+                      <div class="flex items-baseline justify-between gap-3 text-sm">
+                        <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ fila.etiqueta }}</span>
+                        <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
+                          <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ fila.controlados }}</span>
+                          de {{ fila.valorados }} · {{ fila.valorados ? Math.round((fila.controlados / fila.valorados) * 100) : 0 }} %
+                        </span>
+                      </div>
+                      <div class="lista-conteos__riel mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
+                        <div
+                          class="lista-conteos__barra h-full rounded-full bg-emerald-500"
+                          :style="{ width: (fila.valorados ? (fila.controlados / fila.valorados) * 100 : 0) + '%' }"
+                        ></div>
+                      </div>
+                    </li>
+                  </ul>
+                  <p class="mt-3 text-xs italic text-gray-500">Sobre quienes tienen el control valorado; no cuentan los «no valorable».</p>
+                </div>
+
+                <div v-if="cardiometabolicoDelTablero.laboratorio.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="cardiometabolico-laboratorio">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Laboratorio fuera de meta</h3>
+                  <ul class="space-y-2">
+                    <li v-for="fila in cardiometabolicoDelTablero.laboratorio" :key="fila.clave">
+                      <div class="flex items-baseline justify-between gap-3 text-sm">
+                        <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ fila.etiqueta }}</span>
+                        <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
+                          <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ fila.cantidad }}</span>
+                          de {{ fila.evaluados }} · {{ fila.evaluados ? Math.round((fila.cantidad / fila.evaluados) * 100) : 0 }} %
+                        </span>
+                      </div>
+                      <div class="lista-conteos__riel mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
+                        <div
+                          class="lista-conteos__barra h-full rounded-full bg-emerald-500"
+                          :style="{ width: (fila.evaluados ? (fila.cantidad / fila.evaluados) * 100 : 0) + '%' }"
+                        ></div>
+                      </div>
+                    </li>
+                  </ul>
+                  <p class="mt-3 text-xs italic text-gray-500">Sobre quienes tienen un resultado valorable de cada estudio en su última visita.</p>
+                </div>
+              </div>
+            </section>
+
             <section
               v-show="seccionConDatos.saludMental"
               id="tablero-saludMental"
@@ -5702,6 +5903,53 @@ const tablaCintura = computed(() => {
               </div>
             </section>
 
+            <!-- Antecedentes auditivos (historia otológica) -->
+            <section
+              v-show="seccionConDatos.otologica"
+              id="tablero-otologica"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-otologica"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[seccionDe('otologica').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('otologica').titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="resumen-otologica">
+                Lo que refirieron {{ otologicaDelTablero.evaluados }}
+                {{ otologicaDelTablero.evaluados === 1 ? 'trabajador' : 'trabajadores' }} en su historia otológica más reciente
+                del periodo<template v-if="coberturaDe(otologicaDelTablero.evaluados)"> ({{ coberturaDe(otologicaDelTablero.evaluados) }})</template>.
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+                <div v-if="otologicaDelTablero.respuestas.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="otologica-respuestas">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Síntomas y exposición referidos</h3>
+                  <ul class="space-y-2">
+                    <li v-for="fila in otologicaDelTablero.respuestas" :key="fila.clave">
+                      <div class="flex items-baseline justify-between gap-3 text-sm">
+                        <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ fila.etiqueta }}</span>
+                        <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
+                          <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ fila.cantidad }}</span>
+                          de {{ fila.evaluados }} · {{ fila.evaluados ? Math.round((fila.cantidad / fila.evaluados) * 100) : 0 }} %
+                        </span>
+                      </div>
+                      <div class="lista-conteos__riel mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
+                        <div
+                          class="lista-conteos__barra h-full rounded-full bg-emerald-500"
+                          :style="{ width: (fila.evaluados ? (fila.cantidad / fila.evaluados) * 100 : 0) + '%' }"
+                        ></div>
+                      </div>
+                    </li>
+                  </ul>
+                  <p class="mt-3 text-xs italic text-gray-500">Cada respuesta se mide sobre quienes la contestaron.</p>
+                </div>
+
+                <div v-if="otologicaDelTablero.expuestosConRespuesta" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="otologica-proteccion">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Uso de protección auditiva</h3>
+                  <ListaDeConteos :filas="otologicaDelTablero.proteccion" :total="otologicaDelTablero.expuestosConRespuesta" />
+                  <p class="mt-3 text-xs italic text-gray-500">Entre quienes dijeron trabajar en ambientes ruidosos.</p>
+                </div>
+              </div>
+            </section>
+
             <!-- Molestias musculoesqueléticas (Cuestionario Nórdico) -->
             <section
               v-show="seccionConDatos.musculoesqueletico"
@@ -5839,6 +6087,73 @@ const tablaCintura = computed(() => {
                 </div>
               </div>
               <p class="mt-3 text-xs italic text-gray-500">{{ LEYENDA_SUENO_VIGILIA }}</p>
+            </section>
+
+            <!-- Pruebas antidoping -->
+            <section
+              v-show="seccionConDatos.antidoping"
+              id="tablero-antidoping"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-antidoping"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[seccionDe('antidoping').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('antidoping').titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="resumen-antidoping">
+                {{ antidopingDelTablero.pruebas }}
+                {{ antidopingDelTablero.pruebas === 1 ? 'prueba' : 'pruebas' }} en el periodo a
+                {{ antidopingDelTablero.trabajadores }}
+                {{ antidopingDelTablero.trabajadores === 1 ? 'trabajador' : 'trabajadores' }}<template v-if="coberturaDe(antidopingDelTablero.trabajadores)"> ({{ coberturaDe(antidopingDelTablero.trabajadores) }})</template>.
+                Cuentan todas las pruebas: un trabajador puede tener más de una.
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="antidoping-resumen">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Resultados</h3>
+                  <dl class="space-y-2 text-sm">
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Pruebas realizadas</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ antidopingDelTablero.pruebas }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Pruebas con algún positivo</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ conPorcentaje(antidopingDelTablero.pruebasPositivas, antidopingDelTablero.pruebas) }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Trabajadores evaluados</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ antidopingDelTablero.trabajadores }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Trabajadores con algún positivo</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ conPorcentaje(antidopingDelTablero.trabajadoresConPositivo, antidopingDelTablero.trabajadores) }}</dd>
+                    </div>
+                  </dl>
+                  <p v-if="!antidopingDelTablero.pruebasPositivas" class="mt-3 text-sm text-gray-600">
+                    Todas las pruebas del periodo resultaron negativas.
+                  </p>
+                </div>
+
+                <div v-if="antidopingDelTablero.porSustancia.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="antidoping-sustancias">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Positivos por sustancia</h3>
+                  <ListaDeConteos :filas="antidopingDelTablero.porSustancia" :total="antidopingDelTablero.pruebas" />
+                  <p class="mt-3 text-xs italic text-gray-500">
+                    Pruebas positivas a cada sustancia, sobre el total de pruebas. Una prueba puede ser positiva a varias.
+                  </p>
+                </div>
+
+                <div v-if="antidopingDelTablero.porMes.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="antidoping-meses">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Pruebas por mes</h3>
+                  <ul class="space-y-1.5 text-sm">
+                    <li v-for="mes in antidopingDelTablero.porMes" :key="mes.clave" class="flex items-baseline justify-between gap-3">
+                      <span class="lista-conteos__etiqueta text-gray-800">{{ mes.etiqueta }}</span>
+                      <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
+                        <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ mes.pruebas }}</span>
+                        {{ mes.pruebas === 1 ? 'prueba' : 'pruebas' }}<template v-if="mes.positivas"> · {{ mes.positivas }} con positivo</template>
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </section>
 
             <section
@@ -5994,7 +6309,7 @@ const tablaCintura = computed(() => {
                 <i :class="[seccionDe('diagnosticos').icono, 'text-emerald-600']" aria-hidden="true"></i>
                 {{ seccionDe('diagnosticos').titulo }}
               </h2>
-              <p class="mb-3 text-sm text-gray-500" data-test="resumen-diagnosticos">
+              <p v-if="diagnosticosDeConsultas.total > 0" class="mb-3 text-sm text-gray-500" data-test="resumen-diagnosticos">
                 {{ diagnosticosDeConsultas.total }}
                 {{ diagnosticosDeConsultas.total === 1 ? 'diagnóstico registrado' : 'diagnósticos registrados' }}
                 con código CIE-10, entre principales y secundarios, en {{ totalConsultas }}
@@ -6005,7 +6320,34 @@ const tablaCintura = computed(() => {
                 </template>
               </p>
               <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
-                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="diagnosticos-frecuentes">
+                <div v-if="consultasDelTablero.trabajadores !== null" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="consultas-resumen">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Consultas del periodo</h3>
+                  <dl class="space-y-2 text-sm">
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Consultas</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ consultasDelTablero.consultas }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Trabajadores atendidos</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ consultasDelTablero.trabajadores }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Consultas por trabajador atendido</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ consultasDelTablero.promedio }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Trabajadores con 3 o más consultas</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ conPorcentaje(consultasDelTablero.frecuentes, consultasDelTablero.trabajadores) }}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div v-if="consultasDelTablero.tipos.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="consultas-tipos">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Tipo de nota</h3>
+                  <ListaDeConteos :filas="consultasDelTablero.tipos" :total="consultasDelTablero.consultas" />
+                </div>
+
+                <div v-if="diagnosticosDeConsultas.total > 0" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="diagnosticos-frecuentes">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
                     Diagnósticos más frecuentes
                   </h3>
@@ -6015,7 +6357,7 @@ const tablaCintura = computed(() => {
                   />
                 </div>
 
-                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="diagnosticos-capitulos">
+                <div v-if="diagnosticosDeConsultas.total > 0" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="diagnosticos-capitulos">
                   <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">
                     Por grupo de enfermedades
                   </h3>
@@ -6063,6 +6405,67 @@ const tablaCintura = computed(() => {
             </section>
 
             <!-- Inventario clínico -->
+            <!-- Incapacidades (resumen del módulo de incapacidades) -->
+            <section
+              v-if="incapacidadesDelTablero"
+              v-show="seccionConDatos.incapacidades"
+              id="tablero-incapacidades"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-incapacidades"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[seccionDe('incapacidades').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('incapacidades').titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="periodo-incapacidades">
+                Del {{ new Date(periodoInventario.desde).toLocaleDateString('es-MX', { timeZone: 'UTC' }) }}
+                al {{ new Date(periodoInventario.hasta).toLocaleDateString('es-MX', { timeZone: 'UTC' }) }}<template v-if="periodoInventario.porDefecto"> (año en curso, porque no hay un periodo elegido)</template>.
+                <template v-if="hayFiltrosPoblacion">Esta sección no responde a los filtros de trabajadores.</template>
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="incapacidades-resumen">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Resumen</h3>
+                  <dl class="space-y-2 text-sm">
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Casos nuevos</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ incapacidadesDelTablero.casos }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Días de incapacidad</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ incapacidadesDelTablero.dias }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Trabajadores con incapacidad</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ incapacidadesDelTablero.trabajadores }}</dd>
+                    </div>
+                    <div v-if="incapacidadesDelTablero.ausentismo !== null" class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Tasa de ausentismo</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">{{ incapacidadesDelTablero.ausentismo + ' %' }}</dd>
+                    </div>
+                  </dl>
+                  <RouterLink
+                    :to="{ name: 'incapacidades-informe', params: { idEmpresa: route.params.idEmpresa } }"
+                    class="mt-3 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                  >
+                    Ver el informe de incapacidades
+                  </RouterLink>
+                </div>
+
+                <div v-if="incapacidadesDelTablero.porRamo.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="incapacidades-ramos">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Por ramo</h3>
+                  <ul class="space-y-1.5 text-sm">
+                    <li v-for="ramo in incapacidadesDelTablero.porRamo" :key="ramo.clave" class="flex items-baseline justify-between gap-3">
+                      <span class="lista-conteos__etiqueta min-w-0 text-gray-800">{{ ramo.etiqueta }}</span>
+                      <span class="shrink-0 whitespace-nowrap text-xs text-gray-500">
+                        <span class="lista-conteos__cantidad text-sm font-semibold tabular-nums text-gray-900">{{ ramo.cantidad }}</span>
+                        {{ ramo.cantidad === 1 ? 'caso' : 'casos' }} · {{ ramo.dias }} {{ ramo.dias === 1 ? 'día' : 'días' }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
             <section
               v-show="seccionConDatos.inventario"
               id="tablero-inventario"

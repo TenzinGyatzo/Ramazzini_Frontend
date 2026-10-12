@@ -5,6 +5,14 @@
 import type { InformeDeTablero } from './dashboardInformes';
 import { TABLAS_DE_TEMA, type TemaDeInforme } from './dashboardInformesTematicos';
 import { TITULOS_NORDICO } from './dashboardCuestionarios';
+import { TITULOS_CARDIOMETABOLICO, TITULOS_OTOLOGICA } from './dashboardSeguimiento';
+
+/** Tablas de los informes temáticos que dependen de un documento opcional, y de cuál. */
+const SECCION_DE_TABLA: Record<string, string> = Object.fromEntries([
+  ...Object.values(TITULOS_NORDICO).map((titulo) => [titulo, 'musculoesqueletico']),
+  ...Object.values(TITULOS_CARDIOMETABOLICO).map((titulo) => [titulo, 'cardiometabolico']),
+  ...Object.values(TITULOS_OTOLOGICA).map((titulo) => [titulo, 'otologica']),
+]);
 
 export type IdDeInforme = 'completo' | 'resumen' | TemaDeInforme | 'excel';
 /** Informes que llevan conclusiones y recomendaciones propias (el Excel no). */
@@ -102,11 +110,15 @@ const SECCIONES_DEL_COMPLETO: { texto: string; seccion: string | null }[] = [
   { texto: 'Composición demográfica', seccion: null },
   { texto: 'Indicadores de salud física', seccion: null },
   { texto: 'Antecedentes y agentes de riesgo', seccion: null },
+  { texto: 'Hábitos y estilo de vida', seccion: 'habitos' },
+  { texto: 'Seguimiento cardiometabólico', seccion: 'cardiometabolico' },
   { texto: 'Salud visual', seccion: 'saludVisual' },
   { texto: 'Tamizajes psicológicos', seccion: 'saludMental' },
   { texto: 'Estudios de gabinete', seccion: 'gabinete' },
+  { texto: 'Antecedentes auditivos', seccion: 'otologica' },
   { texto: 'Molestias musculoesqueléticas', seccion: 'musculoesqueletico' },
   { texto: 'Sueño y vigilia', seccion: 'sueno' },
+  { texto: 'Pruebas antidoping', seccion: 'antidoping' },
   { texto: 'Aptitud al puesto', seccion: null },
   { texto: 'Diagnósticos de las consultas', seccion: 'diagnosticos' },
   { texto: 'Consumo de insumos', seccion: 'inventario' },
@@ -191,7 +203,7 @@ export function estadoDeInforme(id: IdDeInforme, datos: DatosParaEstado): Estado
       .filter(
         (parte) =>
           parte.incluido ||
-          !((Object.values(TITULOS_NORDICO) as string[]).includes(parte.texto) && sinHistorial('musculoesqueletico')),
+          !(SECCION_DE_TABLA[parte.texto] && sinHistorial(SECCION_DE_TABLA[parte.texto])),
       ),
   };
 }

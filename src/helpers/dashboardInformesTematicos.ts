@@ -13,6 +13,15 @@ import {
 } from './dashboardInformes';
 import { registrosDe } from './dashboardSecciones';
 import { TITULOS_NORDICO, hallazgosNordico, type NordicoDeTablero } from './dashboardCuestionarios';
+import { TITULO_HABITOS, hallazgosHabitos, type HabitosDeTablero } from './dashboardHabitos';
+import {
+  TITULOS_CARDIOMETABOLICO,
+  TITULOS_OTOLOGICA,
+  hallazgosCardiometabolico,
+  hallazgosOtologica,
+  type CardiometabolicoDeTablero,
+  type OtologicaDeTablero,
+} from './dashboardSeguimiento';
 
 export type TemaDeInforme = 'cardiometabolico' | 'auditivo' | 'musculoesqueletico';
 
@@ -30,8 +39,15 @@ export const TABLAS_DE_TEMA: Record<TemaDeInforme, string[]> = {
     'Presión arterial',
     'Antecedentes de diabetes, hipertensión y cardiopatía',
     'Diagnósticos metabólicos y cardiovasculares en las consultas',
+    TITULO_HABITOS,
+    ...Object.values(TITULOS_CARDIOMETABOLICO),
   ],
-  auditivo: ['Exposición a ruido', 'Audiometría', 'Diagnósticos de oído en las consultas'],
+  auditivo: [
+    'Exposición a ruido',
+    'Audiometría',
+    'Diagnósticos de oído en las consultas',
+    ...Object.values(TITULOS_OTOLOGICA),
+  ],
   musculoesqueletico: [
     'Exposición a factores ergonómicos y vibraciones',
     'Antecedentes de lumbalgia y accidentes',
@@ -111,7 +127,15 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const titulos = TABLAS_DE_TEMA.cardiometabolico;
     const cronicas = recortar(tabla('Enfermedades crónicas'), /diab|hipertens|cardi/i, titulos[3]);
     const dx = diagnosticosDeCapitulos(diagnosticos, ['IV', 'IX'], titulos[4]);
-    tablas = [imc, cintura, presion, cronicas, dx];
+    tablas = [
+      imc,
+      cintura,
+      presion,
+      cronicas,
+      tabla(TITULO_HABITOS),
+      ...Object.values(TITULOS_CARDIOMETABOLICO).map((titulo) => tabla(titulo)),
+      dx,
+    ];
 
     if (total(imc)) {
       const exceso = sumaDe(imc, /sobrepeso|obesidad/i);
@@ -137,6 +161,12 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
           .join(', ')}.`,
       );
     }
+    hallazgos.push(...hallazgosHabitos(registrosDe(fuentes.datos, fuentes.indiceCentro, 'habitos') as HabitosDeTablero[]));
+    hallazgos.push(
+      ...hallazgosCardiometabolico(
+        registrosDe(fuentes.datos, fuentes.indiceCentro, 'cardiometabolico') as CardiometabolicoDeTablero[],
+      ),
+    );
     hallazgos.push(...hallazgoDeDiagnosticos(dx, 'del grupo metabólico o cardiovascular'));
   }
 
@@ -145,7 +175,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const ruido = recortar(agentes, /^ruido$/i, titulos[0]);
     const audiometria = tabla('Audiometría');
     const dx = diagnosticosDeCapitulos(diagnosticos, ['VIII'], titulos[2]);
-    tablas = [ruido, audiometria, dx];
+    tablas = [ruido, audiometria, ...Object.values(TITULOS_OTOLOGICA).map((titulo) => tabla(titulo)), dx];
 
     if (ruido) {
       const expuestos = numero(ruido.filas[0]);
@@ -160,6 +190,9 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
         `De ${plural(total(audiometria), 'audiometría', 'audiometrías')}, ${alterados} ${alterados === 1 ? 'tuvo' : 'tuvieron'} un resultado distinto de normal (${pct(alterados, total(audiometria))} %).`,
       );
     }
+    hallazgos.push(
+      ...hallazgosOtologica(registrosDe(fuentes.datos, fuentes.indiceCentro, 'otologica') as OtologicaDeTablero[]),
+    );
     hallazgos.push(...hallazgoDeDiagnosticos(dx, 'de oído'));
   }
 
