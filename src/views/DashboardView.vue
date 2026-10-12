@@ -19,6 +19,7 @@ import DescargarInformeDashboard from '@/components/DescargarInformeDashboard.vu
 import ModalInformesDashboard from '@/components/ModalInformesDashboard.vue';
 import DashboardChartSkeleton from '@/components/skeletons/DashboardChartSkeleton.vue';
 import ListaDeConteos from '@/components/graficas/ListaDeConteos.vue';
+import { porcentajeDeCobertura, resumirCobertura } from '@/helpers/dashboardCobertura';
 import { armarInforme } from '@/helpers/dashboardInformes';
 import { informeTematico } from '@/helpers/dashboardInformesTematicos';
 import { consultasPorMes, resumirDiagnosticos } from '@/helpers/dashboardDiagnosticos';
@@ -2639,6 +2640,13 @@ const coberturaDe = (evaluados) => {
 
 /** Secciones opcionales que estos centros han usado alguna vez. */
 const historialDelTablero = computed(() => historialDe(dashboardData.value, indiceCentroSeleccionado.value));
+/** De los expuestos a ruido, polvos o riesgos ergonómicos, cuántos tienen el estudio que les corresponde. */
+const coberturaDelTablero = computed(() =>
+  resumirCobertura(
+    registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'coberturaExposicion'),
+    historialDelTablero.value,
+  ),
+);
 
 // ---- Diagnósticos de las consultas
 
@@ -4989,6 +4997,39 @@ const tablaCintura = computed(() => {
               </div>
             </div>
 
+              </div>
+
+              <!-- Cobertura según la exposición: franja a todo lo ancho, sin alto fijo -->
+              <div
+                v-if="coberturaDelTablero.length"
+                class="mt-4 sm:mt-5 bg-gray-50 p-4 sm:p-6 rounded-lg shadow"
+                data-test="cobertura-exposicion"
+              >
+                <h3 class="mb-1 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">
+                  Vigilancia según la exposición
+                </h3>
+                <p class="mb-4 text-sm text-gray-500">
+                  De los trabajadores activos expuestos a cada factor, cuántos tienen en el periodo el estudio que le corresponde.
+                </p>
+                <ul class="grid grid-cols-1 gap-x-8 gap-y-4" :class="coberturaDelTablero.length > 1 ? (coberturaDelTablero.length > 2 ? 'lg:grid-cols-3' : 'lg:grid-cols-2') : ''">
+                  <li v-for="fila in coberturaDelTablero" :key="fila.clave" class="min-w-0" data-test="cobertura-fila">
+                    <p class="lista-conteos__etiqueta text-sm text-gray-800">{{ fila.etiqueta }}</p>
+                    <p class="lista-conteos__detalle mt-1 text-sm text-gray-600">
+                      <span class="lista-conteos__cantidad text-2xl font-semibold tabular-nums text-gray-900">{{ fila.cantidad }}</span>
+                      de {{ fila.total }} · {{ porcentajeDeCobertura(fila) }} %
+                    </p>
+                    <div class="lista-conteos__riel mt-2 h-3 overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        class="lista-conteos__barra h-full rounded-full bg-gray-600"
+                        data-tono="neutro"
+                        :style="{ width: Math.max(fila.cantidad ? 2 : 0, porcentajeDeCobertura(fila)) + '%' }"
+                      ></div>
+                    </div>
+                  </li>
+                </ul>
+                <p class="mt-4 text-xs italic text-gray-500">
+                  La exposición es la registrada hoy en cada trabajador; el estudio cuenta si se hizo dentro del periodo elegido.
+                </p>
               </div>
             </section>
 
