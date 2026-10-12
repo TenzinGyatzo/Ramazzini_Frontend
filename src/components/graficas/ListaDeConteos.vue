@@ -31,12 +31,13 @@ const props = withDefaults(
   { limite: 10, vacio: 'Sin registros en el periodo.', tono: 'neutro' },
 );
 
+// Los mismos colores que usan las gráficas del tablero
 const BARRA: Record<Tono, string> = {
-  neutro: 'bg-slate-500',
+  neutro: 'bg-gray-600',
   favorable: 'bg-emerald-500',
   atencion: 'bg-amber-500',
   alerta: 'bg-orange-500',
-  riesgo: 'bg-red-500',
+  riesgo: 'bg-red-600',
 };
 
 const mostradas = computed(() => props.filas.slice(0, props.limite));

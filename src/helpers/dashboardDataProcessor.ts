@@ -388,7 +388,7 @@ export function calcularCircunferenciaCintura(data: any[]) {
         {
           data: [alto, aumentado, bajo],
           // backgroundColor: ['#F97316', '#FBBF24', '#D1D5DB'] // Naranja cálido, amarillo cálido y gris claro
-          backgroundColor: ['#e11d48', '#F97316', '#9CA3AF'], // Rojo, naranja cálido y gris claro
+          backgroundColor: ['#DC2626', '#F59E0B', '#10B981'], // Rojo, ámbar y verde: los mismos del resto del tablero
           hoverOffset: 8,
         }
       ]

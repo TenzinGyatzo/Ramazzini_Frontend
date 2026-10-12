@@ -3017,8 +3017,14 @@ const tablaAgentesRiesgo = computed(() => {
   return contarAgentesRiesgo(trabajadores);
 });
 
+/** La gráfica muestra solo los agentes con trabajadores expuestos; la tabla conserva la lista completa. */
+const agentesConExpuestos = computed(() => {
+  const conExpuestos = tablaAgentesRiesgo.value.filter(([, cantidad]) => cantidad > 0);
+  return conExpuestos.length ? conExpuestos : tablaAgentesRiesgo.value;
+});
+
 const graficaAgentesRiesgoData = computed(() => {
-  const conteo = tablaAgentesRiesgo.value;
+  const conteo = agentesConExpuestos.value;
 
   return {
     labels: conteo.map(([agente]) => etiquetasAgentesRiesgo[agente] || agente),
@@ -3046,7 +3052,7 @@ const graficaAgentesRiesgoOptions = {
         },
         label: (context) => {
           const index = context.dataIndex;
-          const [_, cantidad, porcentaje] = tablaAgentesRiesgo.value[index];
+          const [_, cantidad, porcentaje] = agentesConExpuestos.value[index];
           return `Expuestos: ${cantidad} (${porcentaje}%)`;
         }
       }
@@ -3058,7 +3064,7 @@ const graficaAgentesRiesgoOptions = {
       font: { weight: 'bold', size: 12 },
       formatter: (_valor, context) => {
         const index = context.dataIndex;
-        const [_, cantidad, porcentaje] = tablaAgentesRiesgo.value[index];
+        const [_, cantidad, porcentaje] = agentesConExpuestos.value[index];
         return `${cantidad} (${porcentaje}%)`;
       }
     }
@@ -3114,7 +3120,7 @@ const graficaAgentesRiesgoOptionsPDF = {
         },
         label: (context) => {
           const index = context.dataIndex;
-          const [_, cantidad, porcentaje] = tablaAgentesRiesgo.value[index];
+          const [_, cantidad, porcentaje] = agentesConExpuestos.value[index];
           return `Expuestos: ${cantidad} (${porcentaje}%)`;
         }
       }
@@ -3126,7 +3132,7 @@ const graficaAgentesRiesgoOptionsPDF = {
       font: { weight: 'bold', size: 12 },
       formatter: (_valor, context) => {
         const index = context.dataIndex;
-        const [_, cantidad, porcentaje] = tablaAgentesRiesgo.value[index];
+        const [_, cantidad, porcentaje] = agentesConExpuestos.value[index];
         return `${cantidad} (${porcentaje}%)`;
       }
     }
@@ -4298,6 +4304,10 @@ const tablaCintura = computed(() => {
                 </div>
               </div>
 
+              <p v-if="vistaGruposEtarios !== 'tabla'" class="mb-2 flex items-center gap-4 text-xs text-gray-600" data-test="leyenda-grupos-etarios">
+                <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm" style="background-color: #0ea5e9"></span>Hombres</span>
+                <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm" style="background-color: #f43f5e"></span>Mujeres</span>
+              </p>
               <div class="flex-1 overflow-x-auto">
                 <Transition name="fade" mode="out-in">
                   <template v-if="vistaGruposEtarios === 'grafico'">
@@ -6316,7 +6326,7 @@ const tablaCintura = computed(() => {
                         data-test="consultas-mes"
                       >
                         <span class="mb-1 text-xs tabular-nums text-gray-700">{{ mes.cantidad || '' }}</span>
-                        <span class="lista-conteos__barra w-full max-w-[3rem] rounded-t bg-slate-500" data-tono="neutro" :style="{ height: mes.alto }"></span>
+                        <span class="lista-conteos__barra w-full max-w-[3rem] rounded-t bg-gray-600" data-tono="neutro" :style="{ height: mes.alto }"></span>
                       </li>
                     </ol>
                     <ol
