@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
+import { addMonths } from "date-fns";
 
 const api = {
     getContratacion: vi.fn(),
@@ -124,8 +125,8 @@ describe("PlatformContratacionPanel", () => {
         const wrapper = await montar(conContrato());
         await wrapper.find('[data-testid="contratacion-registrar-pago"]').trigger("click");
         const hasta = wrapper.find('[data-testid="pago-hasta"]');
-        const pagado = new Date(enDias(20));
-        pagado.setMonth(pagado.getMonth() + 1);
+        // addMonths, como el componente y el servidor: un 31 pasa al último día del mes siguiente
+        const pagado = addMonths(new Date(enDias(20)), 1);
         expect((hasta.element as HTMLInputElement).value).toBe(
             `${pagado.getFullYear()}-${String(pagado.getMonth() + 1).padStart(2, "0")}-${String(pagado.getDate()).padStart(2, "0")}`,
         );
