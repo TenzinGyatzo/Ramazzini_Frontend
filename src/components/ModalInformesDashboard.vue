@@ -52,6 +52,8 @@ const props = defineProps<{
   totalTrabajadores: number;
   /** Secciones del tablero que tienen registros. */
   secciones: Record<string, boolean>;
+  /** Secciones opcionales que el centro ha usado alguna vez. */
+  historial?: Record<string, boolean>;
   /** Se arman al pedirlos, con lo que el tablero muestra en ese momento. */
   armar: () => InformeDeTablero;
   armarTema: (tema: TemaDeInforme) => InformeDeTablero;
@@ -75,6 +77,7 @@ const TEMAS: TemaDeInforme[] = ['cardiometabolico', 'auditivo', 'musculoesquelet
 const datos = computed<DatosParaEstado>(() => ({
   totalTrabajadores: props.totalTrabajadores,
   secciones: props.secciones,
+  historial: props.historial,
   general: props.armar(),
   tematicos: {
     cardiometabolico: props.armarTema('cardiometabolico'),

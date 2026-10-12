@@ -17,6 +17,27 @@ export function registrosDe(
   return centros.flatMap((centro) => centro?.[clave]?.[0] ?? []);
 }
 
+/**
+ * Secciones opcionales que los centros que se están viendo han usado alguna
+ * vez, con o sin registros en el periodo. Una sección sin datos y sin historial
+ * no se menciona: ese proveedor no usa esos documentos. Con historial sí se
+ * avisa que no hay registros con los filtros actuales. Sin el dato del
+ * servidor, se asume que hay historial.
+ */
+export function historialDe(datos: unknown[], indiceCentro: number | null): Record<string, boolean> {
+  const centros = (indiceCentro === null ? datos : [datos[indiceCentro]]) as ({ historial?: Record<string, boolean> } | null | undefined)[];
+  const historial: Record<string, boolean> = {};
+  for (const centro of centros) {
+    for (const [seccion, usado] of Object.entries(centro?.historial ?? {})) {
+      historial[seccion] = historial[seccion] || !!usado;
+    }
+  }
+  return historial;
+}
+
+export const seccionDe = (id: string) =>
+  SECCIONES_DE_TABLERO.find((seccion) => seccion.id === id) ?? SECCIONES_DE_TABLERO[0];
+
 export interface SeccionDeTablero {
   id: string;
   titulo: string;
@@ -36,6 +57,8 @@ export const SECCIONES_DE_TABLERO: SeccionDeTablero[] = [
   { id: 'saludMental', titulo: 'Salud mental', icono: 'fas fa-brain' },
   { id: 'saludVisual', titulo: 'Salud visual', icono: 'fas fa-eye' },
   { id: 'gabinete', titulo: 'Estudios de gabinete', icono: 'fas fa-stethoscope' },
+  { id: 'musculoesqueletico', titulo: 'Molestias musculoesqueléticas', icono: 'fas fa-person-walking' },
+  { id: 'sueno', titulo: 'Sueño y vigilia', icono: 'fas fa-bed' },
   { id: 'aptitud', titulo: 'Aptitud y consultas', icono: 'fas fa-clipboard-check' },
   { id: 'diagnosticos', titulo: 'Diagnósticos de las consultas', icono: 'fas fa-notes-medical' },
   { id: 'inventario', titulo: 'Inventario', icono: 'fas fa-boxes-stacked' },

@@ -19,6 +19,14 @@ import {
 import { consultasPorMes, resumirDiagnosticos, type DiagnosticoDeTablero } from './dashboardDiagnosticos';
 import { cifrasClave, registrosDe, type CifraClave } from './dashboardSecciones';
 import { htmlToPdfMakeContent, isHtmlContentEmpty } from './pdfHtmlParser';
+import {
+  hallazgosNordico,
+  hallazgosSueno,
+  tablasNordico,
+  tablasSueno,
+  type NordicoDeTablero,
+  type SuenoDeTablero,
+} from './dashboardCuestionarios';
 
 type Celda = string | number;
 
@@ -185,6 +193,10 @@ export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
 
   for (const tabla of fuentes.tablasDePantalla ?? []) tablas.push(tablaDePantalla(tabla));
 
+  const de = (clave: string) => registrosDe(fuentes.datos, fuentes.indiceCentro, clave);
+  tablas.push(...tablasNordico(de('cuestionarioNordico') as NordicoDeTablero[]));
+  tablas.push(...tablasSueno(de('suenoVigilia') as SuenoDeTablero[]));
+
   if (suma(c.aptitud)) tablas.push(conPorcentaje('Aptitud', 'Aptitud al puesto', 'Resultado', c.aptitud));
 
   if (c.diagnosticos.total) {
@@ -277,6 +289,9 @@ export function hallazgosDelTablero(fuentes: Fuentes): string[] {
         (noAptos ? ` y ${noAptos} no ${noAptos === 1 ? 'apto' : 'aptos'}.` : '.'),
     );
   }
+  const de = (clave: string) => registrosDe(fuentes.datos, fuentes.indiceCentro, clave);
+  hallazgos.push(...hallazgosNordico(de('cuestionarioNordico') as NordicoDeTablero[]));
+  hallazgos.push(...hallazgosSueno(de('suenoVigilia') as SuenoDeTablero[]));
   if (c.consultas.length) {
     const principal = c.diagnosticos.porCodigo[0];
     const grupo = c.diagnosticos.porCapitulo[0];

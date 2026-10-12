@@ -30,7 +30,16 @@ import {
   sumarConsumo,
 } from '@/helpers/dashboardInventario';
 import { formatearNombreFirmante } from '@/helpers/nombres';
-import { SECCIONES_DE_TABLERO, SECCION_COMPARATIVO, cifrasClave, registrosDe } from '@/helpers/dashboardSecciones';
+import {
+  SECCIONES_DE_TABLERO,
+  SECCION_COMPARATIVO,
+  cifrasClave,
+  historialDe,
+  registrosDe,
+  seccionDe,
+} from '@/helpers/dashboardSecciones';
+import { resumirNordico, resumirSueno } from '@/helpers/dashboardCuestionarios';
+import { LEYENDA_SUENO_VIGILIA } from '@/helpers/evaluacionSuenoVigilia';
 import {
   MODOS_DE_COMPARACION,
   columnasDeCentros,
@@ -2473,6 +2482,29 @@ const hayRegistros = (...claves) =>
     (clave) => registrosDe(dashboardData.value, indiceCentroSeleccionado.value, clave).length > 0,
   );
 
+// ---- Cuestionario Nórdico y sueño: el documento más reciente de cada trabajador en el periodo
+
+const registrosNordico = computed(() =>
+  registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'cuestionarioNordico'),
+);
+const registrosSueno = computed(() =>
+  registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'suenoVigilia'),
+);
+const nordicoDelTablero = computed(() => resumirNordico(registrosNordico.value));
+const suenoDelTablero = computed(() => resumirSueno(registrosSueno.value));
+
+/** «12 (40 %)»: cuántos y qué parte de los evaluados. */
+const conPorcentaje = (parte, total) => (total > 0 ? `${parte} (${Math.round((parte / total) * 100)} %)` : String(parte));
+
+/** Qué parte de los trabajadores activos tiene el documento; vacío si no se puede afirmar. */
+const coberturaDe = (evaluados) => {
+  const activos = registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'grupoEtario').length;
+  return activos > 0 && evaluados <= activos ? `${Math.round((evaluados / activos) * 100)} % de los activos` : '';
+};
+
+/** Secciones opcionales que estos centros han usado alguna vez. */
+const historialDelTablero = computed(() => historialDe(dashboardData.value, indiceCentroSeleccionado.value));
+
 // ---- Diagnósticos de las consultas
 
 const diagnosticosDeConsultas = computed(() =>
@@ -2561,6 +2593,8 @@ const seccionConDatos = computed(() => ({
     mostrarRayosXDistribucion.value ||
     mostrarAnalisisLaboratorioProporcion.value ||
     mostrarAnalisisLaboratorioDistribucion.value,
+  musculoesqueletico: nordicoDelTablero.value.evaluados > 0,
+  sueno: suenoDelTablero.value.evaluados > 0,
   aptitud: true,
   diagnosticos: diagnosticosDeConsultas.value.total > 0,
   inventario:
@@ -2729,6 +2763,8 @@ const seccionesAdicionalesDelInformeCompleto = computed(() => ({
   diagnosticos: diagnosticosDeConsultas.value,
   totalConsultas: totalConsultas.value,
   insumos: fuentesDeInforme().insumos,
+  nordico: registrosNordico.value,
+  sueno: registrosSueno.value,
   periodoInventario: `del ${fechaLarga(periodoInventario.value.desde)} al ${fechaLarga(periodoInventario.value.hasta)}`,
 }));
 
@@ -2743,8 +2779,11 @@ const seccionesDelTablero = computed(() =>
 const seccionesVisibles = computed(() =>
   seccionesDelTablero.value.filter((seccion) => seccionConDatos.value[seccion.id]),
 );
+// Sin datos y sin historial, la sección ni se menciona: ese proveedor no usa esos documentos
 const seccionesSinDatos = computed(() =>
-  seccionesDelTablero.value.filter((seccion) => !seccionConDatos.value[seccion.id]),
+  seccionesDelTablero.value.filter(
+    (seccion) => !seccionConDatos.value[seccion.id] && historialDelTablero.value[seccion.id] !== false,
+  ),
 );
 
 const cifrasDelTablero = computed(() =>
@@ -4034,8 +4073,8 @@ const tablaCintura = computed(() => {
               data-test="seccion-poblacion"
             >
               <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
-                <i :class="[SECCIONES_DE_TABLERO[0].icono, 'text-emerald-600']" aria-hidden="true"></i>
-                {{ SECCIONES_DE_TABLERO[0].titulo }}
+                <i :class="[seccionDe('poblacion').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('poblacion').titulo }}
               </h2>
               <div :class="gridTarjetas">
 
@@ -4474,8 +4513,8 @@ const tablaCintura = computed(() => {
               data-test="seccion-exposicion"
             >
               <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
-                <i :class="[SECCIONES_DE_TABLERO[1].icono, 'text-emerald-600']" aria-hidden="true"></i>
-                {{ SECCIONES_DE_TABLERO[1].titulo }}
+                <i :class="[seccionDe('exposicion').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('exposicion').titulo }}
               </h2>
               <div :class="gridTarjetas">
             <!-- Riesgos: 2 columnas --> 
@@ -4689,8 +4728,8 @@ const tablaCintura = computed(() => {
               data-test="seccion-saludMental"
             >
               <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
-                <i :class="[SECCIONES_DE_TABLERO[2].icono, 'text-emerald-600']" aria-hidden="true"></i>
-                {{ SECCIONES_DE_TABLERO[2].titulo }}
+                <i :class="[seccionDe('saludMental').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('saludMental').titulo }}
               </h2>
               <div :class="gridTarjetas">
             <!-- Tamizajes psicológicos (TEA, prodromal, TLP) -->
@@ -4859,8 +4898,8 @@ const tablaCintura = computed(() => {
               data-test="seccion-saludVisual"
             >
               <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
-                <i :class="[SECCIONES_DE_TABLERO[3].icono, 'text-emerald-600']" aria-hidden="true"></i>
-                {{ SECCIONES_DE_TABLERO[3].titulo }}
+                <i :class="[seccionDe('saludVisual').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('saludVisual').titulo }}
               </h2>
               <div :class="gridTarjetas">
             <!-- Agudeza Visual -->
@@ -5022,8 +5061,8 @@ const tablaCintura = computed(() => {
               data-test="seccion-gabinete"
             >
               <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
-                <i :class="[SECCIONES_DE_TABLERO[4].icono, 'text-emerald-600']" aria-hidden="true"></i>
-                {{ SECCIONES_DE_TABLERO[4].titulo }}
+                <i :class="[seccionDe('gabinete').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('gabinete').titulo }}
               </h2>
               <div :class="gridTarjetas">
             <!-- Proporción Audiometría Normal/Anormal: 1 columna -->
@@ -5663,6 +5702,145 @@ const tablaCintura = computed(() => {
               </div>
             </section>
 
+            <!-- Molestias musculoesqueléticas (Cuestionario Nórdico) -->
+            <section
+              v-show="seccionConDatos.musculoesqueletico"
+              id="tablero-musculoesqueletico"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-musculoesqueletico"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[seccionDe('musculoesqueletico').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('musculoesqueletico').titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="resumen-nordico">
+                {{ nordicoDelTablero.evaluados }}
+                {{ nordicoDelTablero.evaluados === 1 ? 'trabajador' : 'trabajadores' }} con Cuestionario Nórdico en el
+                periodo<template v-if="coberturaDe(nordicoDelTablero.evaluados)"> ({{ coberturaDe(nordicoDelTablero.evaluados) }})</template>.
+                De cada uno cuenta su cuestionario más reciente.
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-resultado">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Resultado del cuestionario</h3>
+                  <ListaDeConteos :filas="nordicoDelTablero.semaforo" :total="nordicoDelTablero.evaluados" />
+                  <dl class="mt-4 space-y-2 border-t border-gray-200 pt-3 text-sm">
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Con molestia en los últimos 7 días</dt>
+                      <dd class="lista-conteos__cantidad font-semibold tabular-nums text-gray-900">{{ conPorcentaje(nordicoDelTablero.conMolestia7Dias, nordicoDelTablero.evaluados) }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Alguna molestia les impidió trabajar</dt>
+                      <dd class="lista-conteos__cantidad font-semibold tabular-nums text-gray-900">{{ conPorcentaje(nordicoDelTablero.conImpedimento, nordicoDelTablero.evaluados) }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600" title="Según lo que respondió el trabajador">Relacionan alguna molestia con su trabajo</dt>
+                      <dd class="lista-conteos__cantidad font-semibold tabular-nums text-gray-900">{{ conPorcentaje(nordicoDelTablero.conRelacionLaboral, nordicoDelTablero.evaluados) }}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div v-if="nordicoDelTablero.zonas12Meses.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-zonas-12">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Zonas con molestia en los últimos 12 meses</h3>
+                  <ListaDeConteos :filas="nordicoDelTablero.zonas12Meses" :total="nordicoDelTablero.evaluados" />
+                  <p class="mt-3 text-xs italic text-gray-500">
+                    Trabajadores por zona; izquierda y derecha cuentan como una. Un trabajador puede reportar varias, así que los porcentajes no suman 100 %.
+                  </p>
+                </div>
+
+                <div v-if="nordicoDelTablero.zonas7Dias.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-zonas-7">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Zonas con molestia en los últimos 7 días</h3>
+                  <ListaDeConteos :filas="nordicoDelTablero.zonas7Dias" :total="nordicoDelTablero.evaluados" />
+                </div>
+
+                <div v-if="nordicoDelTablero.zonasImpedimento.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-impedimento">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Zonas cuya molestia impidió trabajar</h3>
+                  <ListaDeConteos :filas="nordicoDelTablero.zonasImpedimento" :total="nordicoDelTablero.evaluados" />
+                </div>
+
+                <div v-if="nordicoDelTablero.zonasRelacionLaboral.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-laboral">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Zonas que relacionan con su trabajo</h3>
+                  <ListaDeConteos :filas="nordicoDelTablero.zonasRelacionLaboral" :total="nordicoDelTablero.evaluados" />
+                </div>
+
+                <div v-if="nordicoDelTablero.puestos.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="nordico-puestos">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Puestos con más trabajadores con molestias</h3>
+                  <ul class="space-y-1.5 text-sm">
+                    <li
+                      v-for="puesto in nordicoDelTablero.puestos.slice(0, 10)"
+                      :key="puesto.clave"
+                      class="flex items-baseline justify-between gap-3"
+                    >
+                      <span class="lista-conteos__etiqueta min-w-0 truncate text-gray-800">{{ puesto.etiqueta }}</span>
+                      <span class="lista-conteos__cantidad shrink-0 whitespace-nowrap font-semibold tabular-nums text-gray-900">
+                        {{ puesto.cantidad }} de {{ puesto.evaluados }}
+                      </span>
+                    </li>
+                  </ul>
+                  <p class="mt-3 text-xs italic text-gray-500">Con molestia en los últimos 12 meses, de los evaluados en cada puesto.</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Sueño y vigilia -->
+            <section
+              v-show="seccionConDatos.sueno"
+              id="tablero-sueno"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-sueno"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[seccionDe('sueno').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('sueno').titulo }}
+              </h2>
+              <p class="mb-3 text-sm text-gray-500" data-test="resumen-sueno">
+                {{ suenoDelTablero.evaluados }}
+                {{ suenoDelTablero.evaluados === 1 ? 'trabajador' : 'trabajadores' }} con evaluación de sueño y vigilia en el
+                periodo<template v-if="coberturaDe(suenoDelTablero.evaluados)"> ({{ coberturaDe(suenoDelTablero.evaluados) }})</template>.
+                De cada uno cuenta su evaluación más reciente.
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
+                <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-nivel">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Nivel general</h3>
+                  <ListaDeConteos :filas="suenoDelTablero.prioridad" :total="suenoDelTablero.evaluados" />
+                  <dl v-if="suenoDelTablero.conHoras" class="mt-4 space-y-2 border-t border-gray-200 pt-3 text-sm">
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Horas de sueño por cada 24, en promedio</dt>
+                      <dd class="lista-conteos__cantidad font-semibold tabular-nums text-gray-900">{{ suenoDelTablero.promedioHoras }}</dd>
+                    </div>
+                    <div class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">Duermen menos de 7 horas</dt>
+                      <dd class="lista-conteos__cantidad font-semibold tabular-nums text-gray-900">{{ conPorcentaje(suenoDelTablero.suenoCorto, suenoDelTablero.conHoras) }}</dd>
+                    </div>
+                  </dl>
+                  <p class="mt-3 text-xs italic text-gray-500">El nivel general es el del área más afectada de cada trabajador.</p>
+                </div>
+
+                <div v-if="suenoDelTablero.areas.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-areas">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Síntomas semanales o frecuentes por área</h3>
+                  <dl class="space-y-2 text-sm">
+                    <div v-for="area in suenoDelTablero.areas" :key="area.clave" class="flex items-baseline justify-between gap-3">
+                      <dt class="text-gray-600">{{ area.etiqueta }}</dt>
+                      <dd class="lista-conteos__cantidad whitespace-nowrap font-semibold tabular-nums text-gray-900">
+                        {{ conPorcentaje(area.cantidad, area.evaluados) }}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p class="mt-3 text-xs italic text-gray-500">Trabajadores con síntomas al menos una vez por semana, de los evaluados en cada área.</p>
+                </div>
+
+                <div v-if="suenoDelTablero.alertas.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-alertas">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Hallazgos y alertas</h3>
+                  <ListaDeConteos :filas="suenoDelTablero.alertas" :total="suenoDelTablero.evaluados" />
+                </div>
+
+                <div v-if="suenoDelTablero.horarios.length > 1" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="sueno-horarios">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-xl font-semibold text-gray-800">Horario laboral de los evaluados</h3>
+                  <ListaDeConteos :filas="suenoDelTablero.horarios" :total="suenoDelTablero.evaluados" />
+                </div>
+              </div>
+              <p class="mt-3 text-xs italic text-gray-500">{{ LEYENDA_SUENO_VIGILIA }}</p>
+            </section>
+
             <section
               v-show="seccionConDatos.aptitud"
               id="tablero-aptitud"
@@ -5670,8 +5848,8 @@ const tablaCintura = computed(() => {
               data-test="seccion-aptitud"
             >
               <h2 class="dashboard-seccion__titulo mb-3 flex items-center gap-2 text-lg font-semibold text-gray-800">
-                <i :class="[SECCIONES_DE_TABLERO[5].icono, 'text-emerald-600']" aria-hidden="true"></i>
-                {{ SECCIONES_DE_TABLERO[5].titulo }}
+                <i :class="[seccionDe('aptitud').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('aptitud').titulo }}
               </h2>
               <div :class="gridTarjetas">
             <!-- Aptitud al Puesto: 2 columnas -->
@@ -5813,8 +5991,8 @@ const tablaCintura = computed(() => {
               data-test="seccion-diagnosticos"
             >
               <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
-                <i :class="[SECCIONES_DE_TABLERO[6].icono, 'text-emerald-600']" aria-hidden="true"></i>
-                {{ SECCIONES_DE_TABLERO[6].titulo }}
+                <i :class="[seccionDe('diagnosticos').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('diagnosticos').titulo }}
               </h2>
               <p class="mb-3 text-sm text-gray-500" data-test="resumen-diagnosticos">
                 {{ diagnosticosDeConsultas.total }}
@@ -5892,8 +6070,8 @@ const tablaCintura = computed(() => {
               data-test="seccion-inventario"
             >
               <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
-                <i :class="[SECCIONES_DE_TABLERO[7].icono, 'text-emerald-600']" aria-hidden="true"></i>
-                {{ SECCIONES_DE_TABLERO[7].titulo }}
+                <i :class="[seccionDe('inventario').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('inventario').titulo }}
               </h2>
               <p class="mb-3 text-sm text-gray-500" data-test="periodo-inventario">
                 Consumo del {{ new Date(periodoInventario.desde).toLocaleDateString('es-MX', { timeZone: 'UTC' }) }}
@@ -6008,7 +6186,7 @@ const tablaCintura = computed(() => {
               data-test="secciones-sin-datos"
             >
               <i class="fas fa-circle-info mr-1" aria-hidden="true"></i>
-              Sin registros en este periodo: {{ seccionesSinDatos.map((seccion) => seccion.titulo).join(', ') }}.
+              Sin registros con el periodo y los filtros elegidos: {{ seccionesSinDatos.map((seccion) => seccion.titulo).join(', ') }}.
             </p>
           </div>
 
@@ -6040,6 +6218,7 @@ const tablaCintura = computed(() => {
     :segmento="textoFiltrosPoblacion"
     :total-trabajadores="totalTrabajadores"
     :secciones="seccionConDatos"
+    :historial="historialDelTablero"
     :armar="armarInformeDelTablero"
     :armar-tema="armarInformeTematico"
     :generar-completo="generarInformeCompleto"

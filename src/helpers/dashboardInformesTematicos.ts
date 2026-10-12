@@ -12,6 +12,7 @@ import {
   type TablaDeInforme,
 } from './dashboardInformes';
 import { registrosDe } from './dashboardSecciones';
+import { TITULOS_NORDICO, hallazgosNordico, type NordicoDeTablero } from './dashboardCuestionarios';
 
 export type TemaDeInforme = 'cardiometabolico' | 'auditivo' | 'musculoesqueletico';
 
@@ -35,6 +36,8 @@ export const TABLAS_DE_TEMA: Record<TemaDeInforme, string[]> = {
     'Exposición a factores ergonómicos y vibraciones',
     'Antecedentes de lumbalgia y accidentes',
     'Diagnósticos musculoesqueléticos y traumatismos en las consultas',
+    // Del Cuestionario Nórdico, si el proveedor lo aplica
+    ...Object.values(TITULOS_NORDICO),
   ],
 };
 
@@ -165,7 +168,8 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const ergonomia = recortar(agentes, /ergon|vibraci/i, titulos[0]);
     const antecedentes = recortar(tabla('Antecedentes referidos'), /lumbalg|accidente/i, titulos[1]);
     const dx = diagnosticosDeCapitulos(diagnosticos, ['XIII', 'XIX'], titulos[2]);
-    tablas = [ergonomia, antecedentes, dx];
+    const nordico = generales.filter((t) => (Object.values(TITULOS_NORDICO) as string[]).includes(t.titulo));
+    tablas = [ergonomia, antecedentes, ...nordico, dx];
 
     const ergonomicos = sumaDe(ergonomia ?? undefined, /ergon/i);
     if (ergonomicos) {
@@ -177,6 +181,9 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     if (lumbalgias) {
       hallazgos.push(`${plural(lumbalgias, 'trabajador refiere', 'trabajadores refieren')} antecedente de lumbalgia en su historia clínica.`);
     }
+    hallazgos.push(
+      ...hallazgosNordico(registrosDe(fuentes.datos, fuentes.indiceCentro, 'cuestionarioNordico') as NordicoDeTablero[]),
+    );
     hallazgos.push(...hallazgoDeDiagnosticos(dx, 'del grupo musculoesquelético o de traumatismos'));
   }
 

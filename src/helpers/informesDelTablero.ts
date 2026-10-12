@@ -4,6 +4,7 @@
  */
 import type { InformeDeTablero } from './dashboardInformes';
 import { TABLAS_DE_TEMA, type TemaDeInforme } from './dashboardInformesTematicos';
+import { TITULOS_NORDICO } from './dashboardCuestionarios';
 
 export type IdDeInforme = 'completo' | 'resumen' | TemaDeInforme | 'excel';
 /** Informes que llevan conclusiones y recomendaciones propias (el Excel no). */
@@ -104,6 +105,8 @@ const SECCIONES_DEL_COMPLETO: { texto: string; seccion: string | null }[] = [
   { texto: 'Salud visual', seccion: 'saludVisual' },
   { texto: 'Tamizajes psicológicos', seccion: 'saludMental' },
   { texto: 'Estudios de gabinete', seccion: 'gabinete' },
+  { texto: 'Molestias musculoesqueléticas', seccion: 'musculoesqueletico' },
+  { texto: 'Sueño y vigilia', seccion: 'sueno' },
   { texto: 'Aptitud al puesto', seccion: null },
   { texto: 'Diagnósticos de las consultas', seccion: 'diagnosticos' },
   { texto: 'Consumo de insumos', seccion: 'inventario' },
@@ -121,17 +124,25 @@ export interface DatosParaEstado {
   secciones: Record<string, boolean>;
   general: InformeDeTablero;
   tematicos: Record<TemaDeInforme, InformeDeTablero>;
+  /**
+   * Secciones opcionales que el centro ha usado alguna vez. Lo que no tiene
+   * registros ni historial no se anuncia como omitido: ese proveedor no lo usa.
+   */
+  historial?: Record<string, boolean>;
 }
 
 export function estadoDeInforme(id: IdDeInforme, datos: DatosParaEstado): EstadoDeInforme {
   const tiene = (titulo: string, informe = datos.general) => informe.tablas.some((tabla) => tabla.titulo === titulo);
+  const sinHistorial = (seccion: string) => datos.historial?.[seccion] === false;
 
   if (id === 'completo') {
     const disponible = datos.totalTrabajadores > 0;
     return {
       disponible,
       motivo: disponible ? '' : 'No hay trabajadores con los filtros elegidos',
-      incluye: SECCIONES_DEL_COMPLETO.map(({ texto, seccion }) => ({
+      incluye: SECCIONES_DEL_COMPLETO.filter(
+        ({ seccion }) => seccion === null || !!datos.secciones[seccion] || !sinHistorial(seccion),
+      ).map(({ texto, seccion }) => ({
         texto,
         incluido: disponible && (seccion === null || !!datos.secciones[seccion]),
       })),
@@ -175,7 +186,13 @@ export function estadoDeInforme(id: IdDeInforme, datos: DatosParaEstado): Estado
   return {
     disponible,
     motivo: disponible ? '' : MOTIVO_SIN_DATOS[id],
-    incluye: TABLAS_DE_TEMA[id].map((titulo) => ({ texto: titulo, incluido: tiene(titulo, tematico) })),
+    incluye: TABLAS_DE_TEMA[id]
+      .map((titulo) => ({ texto: titulo, incluido: tiene(titulo, tematico) }))
+      .filter(
+        (parte) =>
+          parte.incluido ||
+          !((Object.values(TITULOS_NORDICO) as string[]).includes(parte.texto) && sinHistorial('musculoesqueletico')),
+      ),
   };
 }
 

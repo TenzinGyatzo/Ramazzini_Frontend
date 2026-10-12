@@ -5,7 +5,16 @@
  * (components/DescargarInformeDashboard.vue).
  */
 import type { ResumenDeDiagnosticos } from './dashboardDiagnosticos';
-import type { InsumoConsumido } from './dashboardInformes';
+import type { InsumoConsumido, TablaDeInforme } from './dashboardInformes';
+import {
+  hallazgosNordico,
+  hallazgosSueno,
+  tablasNordico,
+  tablasSueno,
+  type NordicoDeTablero,
+  type SuenoDeTablero,
+} from './dashboardCuestionarios';
+import { LEYENDA_SUENO_VIGILIA } from './evaluacionSuenoVigilia';
 
 const FILAS_DE_DIAGNOSTICOS = 15;
 const FILAS_DE_INSUMOS = 15;
@@ -38,7 +47,14 @@ export interface SeccionesAdicionales {
   insumos?: InsumoConsumido[] | null;
   /** Periodo del consumo, ya redactado: «del 1/1/2026 al 10/10/2026». */
   periodoInventario?: string;
+  /** Resultado del Cuestionario Nórdico más reciente de cada trabajador. */
+  nordico?: NordicoDeTablero[] | null;
+  /** Resultado de la evaluación de sueño y vigilia más reciente de cada trabajador. */
+  sueno?: SuenoDeTablero[] | null;
 }
+
+const tablasDeInforme = (tablas: TablaDeInforme[]): Contenido[] =>
+  tablas.flatMap((t) => tabla(t.titulo, t.columnas, t.filas));
 
 /**
  * Contenido de las secciones adicionales, numeradas a partir de `numeroSeccion`.
@@ -50,6 +66,35 @@ export function seccionesAdicionalesDelInforme(
 ): { contenido: Contenido[]; siguienteNumero: number } {
   const contenido: Contenido[] = [];
   let numero = numeroSeccion;
+
+  const nordico = datos.nordico ?? [];
+  if (nordico.length) {
+    contenido.push(
+      { text: `${numero}. MOLESTIAS MUSCULOESQUELÉTICAS`, style: 'tituloSeccion', pageBreak: 'before' },
+      {
+        text: 'Resultados del Cuestionario Nórdico, en el que cada trabajador señala las zonas del cuerpo donde ha tenido dolor o molestias. De cada trabajador se toma su cuestionario más reciente del periodo. Un trabajador puede reportar varias zonas, por lo que los porcentajes se calculan sobre los trabajadores evaluados y no suman 100 %.',
+        style: 'textoNormal',
+      },
+      { ul: hallazgosNordico(nordico), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...tablasDeInforme(tablasNordico(nordico)),
+    );
+    numero++;
+  }
+
+  const sueno = datos.sueno ?? [];
+  if (sueno.length) {
+    contenido.push(
+      { text: `${numero}. SUEÑO Y VIGILIA`, style: 'tituloSeccion', pageBreak: 'before' },
+      {
+        text: 'Resultados de la evaluación de sueño y vigilia: qué tan seguido los trabajadores reportan problemas para dormir, somnolencia, fatiga o falta de concentración. De cada trabajador se toma su evaluación más reciente del periodo.',
+        style: 'textoNormal',
+      },
+      { ul: hallazgosSueno(sueno), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...tablasDeInforme(tablasSueno(sueno)),
+      { text: LEYENDA_SUENO_VIGILIA, style: 'textoNormal', italics: true },
+    );
+    numero++;
+  }
 
   const diagnosticos = datos.diagnosticos;
   if (diagnosticos && diagnosticos.total > 0) {

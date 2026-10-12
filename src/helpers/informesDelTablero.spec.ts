@@ -73,7 +73,12 @@ describe('ventana de informes del tablero', () => {
   it('el informe completo anuncia las secciones que el tablero tiene con datos', () => {
     const estado = estadoDeInforme('completo', datos());
     expect(estado.disponible).toBe(true);
-    expect(omitidos(estado)).toEqual(['Tamizajes psicológicos', 'Consumo de insumos']);
+    expect(omitidos(estado)).toEqual([
+      'Tamizajes psicológicos',
+      'Molestias musculoesqueléticas',
+      'Sueño y vigilia',
+      'Consumo de insumos',
+    ]);
     expect(incluidos(estado)).toContain('Diagnósticos de las consultas');
   });
 

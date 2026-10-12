@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SECCIONES_DE_TABLERO, cifrasClave, registrosDe } from './dashboardSecciones';
+import { SECCIONES_DE_TABLERO, cifrasClave, historialDe, registrosDe } from './dashboardSecciones';
 
 const centro = (campos: Record<string, unknown[]>) =>
   Object.fromEntries(Object.entries(campos).map(([clave, lista]) => [clave, [lista]]));
@@ -58,6 +58,18 @@ describe('secciones y cifras del tablero de salud', () => {
     expect(cifras.map((c) => c.detalle)).toEqual(['Plantilla actual', '', '', '']);
   });
 
+  it('una sección tiene historial si alguno de los centros que se ven la ha usado', () => {
+    const centros = [
+      { historial: { sueno: false, saludMental: true } },
+      { historial: { sueno: true, saludMental: false, musculoesqueletico: false } },
+      {},
+    ];
+    expect(historialDe(centros, null)).toEqual({ sueno: true, saludMental: true, musculoesqueletico: false });
+    expect(historialDe(centros, 0)).toEqual({ sueno: false, saludMental: true });
+    // Un servidor que aún no manda el dato: no se afirma nada
+    expect(historialDe(centros, 2)).toEqual({});
+  });
+
   it('define las secciones en el orden de la pantalla', () => {
     expect(SECCIONES_DE_TABLERO.map((s) => s.id)).toEqual([
       'poblacion',
@@ -65,6 +77,8 @@ describe('secciones y cifras del tablero de salud', () => {
       'saludMental',
       'saludVisual',
       'gabinete',
+      'musculoesqueletico',
+      'sueno',
       'aptitud',
       'diagnosticos',
       'inventario',
