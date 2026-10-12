@@ -3899,7 +3899,7 @@ const tablaCintura = computed(() => {
           </div>
         
         <!-- Ajustado a nivel del encabezado -->
-        <div class="mb-4 flex flex-col xl:flex-row xl:items-end gap-4 xl:gap-6">
+        <div class="mb-3 flex flex-col xl:flex-row xl:items-end gap-3 xl:gap-6">
           <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch gap-3 sm:gap-4 w-full">
             <!-- Todos los informes y sus conclusiones se piden desde una sola ventana -->
             <button
@@ -3992,15 +3992,28 @@ const tablaCintura = computed(() => {
           
           <!-- Filtro de periodo -->
           <div class="flex flex-col justify-end text-xs w-full xl:w-auto">
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-x-2">
               <label class="block text-xs font-medium text-gray-700 mb-1">Periodo</label>
+              <!-- Aviso de filtro, en el mismo renglón que la etiqueta para no ocupar alto propio -->
+              <transition name="fade">
+                <span
+                  v-if="fechaInicio && fechaFin"
+                  class="mb-1 flex items-center gap-1 text-xs"
+                  :class="rangoInvalido ? 'text-rose-600' : 'text-emerald-600'"
+                  data-test="aviso-periodo"
+                >
+                  <i :class="['fas', rangoInvalido ? 'fa-circle-exclamation text-rose-500' : 'fa-filter text-emerald-500']"></i>
+                  {{ rangoInvalido
+                    ? 'Corrige el orden de las fechas'
+                    : `${new Date(fechaInicio).toLocaleDateString('es-MX', { timeZone: 'UTC' })} - ${new Date(fechaFin).toLocaleDateString('es-MX', { timeZone: 'UTC' })}` }}
+                </span>
+              </transition>
               <transition name="fade">
                 <button 
                   v-if="fechaInicio || fechaFin"
                   @click="limpiarFechas"
-                  class="block text-xs font-medium mb-1 text-red-600 hover:text-red-500"
+                  class="ml-auto block text-xs font-medium mb-1 text-red-600 hover:text-red-500"
                 >
-                  &nbsp;
                   <i class="fa-solid fa-calendar-xmark"></i>
                   &nbsp;Limpiar
                 </button>
@@ -4043,36 +4056,6 @@ const tablaCintura = computed(() => {
               </div>
             </div>
 
-            <!-- Testigo de filtro -->
-            <!-- Este div externo SIEMPRE existe y tiene una altura mínima -->
-            <div class="min-h-[1.5rem]">
-              <!-- Aquí va el elemento que aparece/desaparece -->
-              <transition name="fade">
-                <div
-                  v-if="fechaInicio && fechaFin"
-                  class="flex items-center gap-1 mt-2"
-                >
-                  <!-- Contenido del testigo -->
-                  <i
-                    :class="[
-                      'fas',
-                      'text-xs',
-                      rangoInvalido ? 'fa-circle-exclamation text-rose-500' : 'fa-filter text-emerald-500'
-                    ]"
-                  ></i>
-                  <span
-                    :class="[
-                      'text-xs',
-                      rangoInvalido ? 'text-rose-600' : 'text-emerald-600'
-                    ]"
-                  >
-                    {{ rangoInvalido
-                      ? 'Filtro no aplicado: corrige el orden de las fechas'
-                      : `Filtro aplicado: ${new Date(fechaInicio).toLocaleDateString('es-MX', { timeZone: 'UTC' })} - ${new Date(fechaFin).toLocaleDateString('es-MX', { timeZone: 'UTC' })}` }}
-                  </span>
-                </div>
-              </transition>
-            </div>
 
           </div>
         </div>
