@@ -4322,7 +4322,7 @@ html.dark-mode .grupo-documentos__fila--arrastrada {
   background-color: rgba(6, 78, 59, 0.45) !important;
 }
 
-html.dark-mode .grupo-documentos__asa button:hover:not(:disabled) {
+html.dark-mode .grupo-documentos__flecha:hover:not(:disabled) {
   background-color: #334155 !important;
 }
 

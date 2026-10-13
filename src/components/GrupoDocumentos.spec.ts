@@ -137,7 +137,7 @@ describe('GrupoDocumentos', () => {
   const tiposMostrados = (wrapper: ReturnType<typeof montar>) =>
     wrapper.findAll('.doc-stub').map((el) => el.attributes('data-tipo'));
   const idsMostrados = (wrapper: ReturnType<typeof montar>) =>
-    wrapper.findAll('.doc-stub').map((el) => el.attributes('data-id'));
+    wrapper.findAll('.grupo-documentos__fila').map((el) => el.attributes('data-documento'));
   const items = (wrapper: ReturnType<typeof montar>) =>
     wrapper.findAllComponents({ name: 'DocumentoItem' });
 
@@ -416,7 +416,7 @@ describe('GrupoDocumentos', () => {
     const boton = (wrapper: ReturnType<typeof montar>, texto: string) =>
       wrapper.findAll('button').find((b) => b.text().includes(texto));
     const filaDe = (wrapper: ReturnType<typeof montar>, id: string) =>
-      wrapper.findAll('.grupo-documentos__fila').find((f) => f.find(`[data-id="${id}"]`).exists())!;
+      wrapper.find(`.grupo-documentos__fila[data-documento="${id}"]`);
 
     beforeEach(() => {
       guardarOrdenApi.mockReset();
@@ -611,12 +611,12 @@ describe('GrupoDocumentos', () => {
     const boton = (wrapper: ReturnType<typeof montar>, texto: string) =>
       wrapper.findAll('button').find((b) => b.text().includes(texto));
     const filaDe = (wrapper: ReturnType<typeof montar>, id: string) =>
-      wrapper.findAll('.grupo-documentos__fila').find((f) => f.find(`[data-id="${id}"]`).exists())!;
+      wrapper.find(`.grupo-documentos__fila[data-documento="${id}"]`);
     const encabezados = (wrapper: ReturnType<typeof montar>) => wrapper.findAll('.grupo-documentos__subgrupo');
     const enSubgrupo = (wrapper: ReturnType<typeof montar>) =>
       wrapper
         .findAll('.grupo-documentos__fila--en-subgrupo')
-        .map((f) => f.find('.doc-stub').attributes('data-id'));
+        .map((f) => f.attributes('data-documento'));
 
     beforeEach(() => {
       guardarOrdenApi.mockReset();
@@ -853,6 +853,57 @@ describe('GrupoDocumentos', () => {
       expect(guardarOrdenApi).toHaveBeenCalledWith('trab-1', '2025', { orden: [], subgrupos: [] });
       expect(encabezados(wrapper)).toHaveLength(1);
       expect(encabezados(wrapper)[0].text()).toContain('automático');
+    });
+  });
+
+  describe('modo organizar: filas compactas', () => {
+    const delAnio = () => ({
+      aptitudes: [documento('aptitud', 'fechaAptitudPuesto')],
+      documentosExternos: [documento('documentoExterno', 'fechaDocumento', '1', { nombreDocumento: 'Espirometría' })],
+      recetas: [documento('receta', 'fechaReceta')],
+    });
+    const boton = (wrapper: ReturnType<typeof montar>, texto: string) =>
+      wrapper.findAll('button').find((b) => b.text().includes(texto));
+    const fila = (wrapper: ReturnType<typeof montar>, id: string) =>
+      wrapper.find(`.grupo-documentos__fila[data-documento="${id}"]`);
+
+    it('al organizar cada documento es una línea con su nombre y su fecha, sin sus acciones', async () => {
+      const wrapper = montar({ documents: delAnio() });
+      expect(wrapper.findAll('.doc-stub')).toHaveLength(3);
+
+      await boton(wrapper, 'Organizar')!.trigger('click');
+
+      expect(wrapper.findAll('.doc-stub')).toHaveLength(0);
+      expect(wrapper.findAll('.grupo-documentos__fila--compacta')).toHaveLength(3);
+      expect(fila(wrapper, 'aptitud-1').text()).toContain('Aptitud para el Puesto');
+      expect(fila(wrapper, 'aptitud-1').text()).toContain('15-03-2025');
+      expect(fila(wrapper, 'receta-1').text()).toContain('Receta');
+    });
+
+    it('un documento externo se reconoce por el nombre con que se subió', async () => {
+      const wrapper = montar({ documents: delAnio() });
+      await boton(wrapper, 'Organizar')!.trigger('click');
+      expect(fila(wrapper, 'documentoExterno-1').text()).toContain('Espirometría');
+      expect(fila(wrapper, 'documentoExterno-1').text()).not.toContain('Documento Externo');
+    });
+
+    it('el selector de subgrupo solo aparece cuando hay subgrupos y va en la misma línea', async () => {
+      const wrapper = montar({ documents: delAnio() });
+      await boton(wrapper, 'Organizar')!.trigger('click');
+      expect(wrapper.findAll('select')).toHaveLength(0);
+
+      await boton(wrapper, 'Nuevo subgrupo')!.trigger('click');
+      await flushPromises();
+      expect(wrapper.findAll('select')).toHaveLength(3);
+      expect(fila(wrapper, 'aptitud-1').find('select').attributes('aria-label')).toBe('Subgrupo de este documento');
+    });
+
+    it('al salir del modo vuelven las filas completas', async () => {
+      const wrapper = montar({ documents: delAnio() });
+      await boton(wrapper, 'Organizar')!.trigger('click');
+      await boton(wrapper, 'Cancelar')!.trigger('click');
+      expect(wrapper.findAll('.doc-stub')).toHaveLength(3);
+      expect(wrapper.findAll('.grupo-documentos__fila--compacta')).toHaveLength(0);
     });
   });
 });

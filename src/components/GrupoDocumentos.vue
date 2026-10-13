@@ -12,6 +12,7 @@ import {
     anioTieneOrdenManual,
     documentosDe,
     estructuraDelAnio,
+    nombreTipoDocumento,
     type DocumentoDelExpediente,
     type ElementoDelAnio,
     type SubgrupoDelAnio,
@@ -35,6 +36,7 @@ import {
     renombrarSubgrupo,
 } from '@/helpers/organizarExpediente';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
+import { iconoTipoDocumento } from '@/helpers/iconoTipoDocumento';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 
 const documentosStore = useDocumentosStore();
@@ -278,6 +280,14 @@ function alArrastrarSobreEncabezado(evento: DragEvent, fila: FilaEncabezado) {
     }
 }
 
+// Lo que identifica a un documento en la línea compacta del modo organizar
+const nombreDeDocumento = ({ definicion, documento }: DocumentoDelExpediente) =>
+    definicion.tipo === 'documentoExterno'
+        ? documento.nombreDocumento || nombreTipoDocumento(definicion.tipo)
+        : nombreTipoDocumento(definicion.tipo);
+const fechaDeDocumento = ({ definicion, documento }: DocumentoDelExpediente) =>
+    documento[definicion.campoFecha] ? convertirFechaISOaDDMMYYYY(documento[definicion.campoFecha]) : '';
+
 const esElArrastrado = (fila: FilaEncabezado | FilaDocumento) => {
     const quien = arrastrado.value;
     if (!organizando.value || !quien) return false;
@@ -479,7 +489,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <p class="text-sm text-gray-700 min-w-0">
                 <i class="fas fa-arrows-up-down text-emerald-600 mr-1" aria-hidden="true"></i>
                 <span class="font-semibold">Organizando el expediente {{ year }}.</span>
-                Arrastra los documentos o usa las flechas, y agrúpalos en subgrupos si lo necesitas. El PDF combinado saldrá en este orden.
+                Arrastra o usa las flechas. El PDF combinado saldrá en este orden.
             </p>
             <div class="flex flex-wrap items-center gap-2 lg:justify-end lg:shrink-0">
                 <button
@@ -600,63 +610,62 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                     @dragover="organizando && $event.preventDefault()"
                     @drop="organizando && $event.preventDefault()"
                 >
-                    <template v-if="organizando">
-                        <div
-                            class="grupo-documentos__asa flex flex-col items-center justify-center gap-0.5 px-1.5 sm:px-2 border-r border-gray-200 text-gray-500 cursor-grab"
+                    <div v-if="organizando" class="flex flex-1 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-2 sm:px-3 py-1.5">
+                        <span
+                            class="grupo-documentos__asa flex items-center justify-center h-7 w-5 text-gray-400 cursor-grab"
                             draggable="true"
+                            title="Arrastra para mover el subgrupo"
                             @dragstart="iniciarArrastre($event, { clase: 'subgrupo', id: fila.subgrupo.id })"
                             @dragend="arrastrado = null"
                         >
-                            <button
-                                type="button"
-                                class="h-8 w-8 rounded-lg hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
-                                :disabled="fila.indice === 0 || guardandoOrden"
-                                title="Subir subgrupo"
-                                aria-label="Subir subgrupo"
-                                @click="moverSubgrupoUnPaso(fila.subgrupo.id, -1)"
-                            >
-                                <i class="fas fa-arrow-up text-sm" aria-hidden="true"></i>
-                            </button>
-                            <i class="fas fa-grip-vertical text-gray-400" aria-hidden="true"></i>
-                            <button
-                                type="button"
-                                class="h-8 w-8 rounded-lg hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
-                                :disabled="fila.indice === elementosEnPantalla.length - 1 || guardandoOrden"
-                                title="Bajar subgrupo"
-                                aria-label="Bajar subgrupo"
-                                @click="moverSubgrupoUnPaso(fila.subgrupo.id, 1)"
-                            >
-                                <i class="fas fa-arrow-down text-sm" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                        <div class="flex flex-1 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2">
-                            <i class="fas fa-folder-open text-amber-500" aria-hidden="true"></i>
-                            <input
-                                type="text"
-                                class="grupo-documentos__nombre-subgrupo flex-1 min-w-[9rem] rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                :value="fila.subgrupo.nombre"
-                                :maxlength="MAX_LONGITUD_NOMBRE_SUBGRUPO"
-                                :data-subgrupo-nombre="fila.subgrupo.id"
-                                aria-label="Nombre del subgrupo"
-                                placeholder="Nombre del subgrupo"
-                                @input="renombrar(fila.subgrupo.id, $event)"
-                            >
-                            <span class="text-xs text-gray-500 whitespace-nowrap">
-                                {{ fila.subgrupo.documentos.length }} documento{{ fila.subgrupo.documentos.length !== 1 ? 's' : '' }}
-                            </span>
-                            <button
-                                type="button"
-                                class="text-sm font-medium text-gray-600 hover:text-red-600 hover:underline whitespace-nowrap"
-                                title="Quitar el subgrupo; sus documentos quedan sueltos en el mismo lugar"
-                                @click="quitar(fila.subgrupo.id)"
-                            >
-                                <i class="fas fa-folder-minus mr-1" aria-hidden="true"></i>Quitar subgrupo
-                            </button>
-                            <p v-if="fila.subgrupo.documentos.length === 0" class="basis-full text-xs text-gray-500">
-                                Vacío. Trae documentos con el selector «Subgrupo» de cada uno, con las flechas o arrastrándolos aquí.
-                            </p>
-                        </div>
-                    </template>
+                            <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                        </span>
+                        <button
+                            type="button"
+                            class="grupo-documentos__flecha h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                            :disabled="fila.indice === 0 || guardandoOrden"
+                            title="Subir subgrupo"
+                            aria-label="Subir subgrupo"
+                            @click="moverSubgrupoUnPaso(fila.subgrupo.id, -1)"
+                        >
+                            <i class="fas fa-arrow-up text-xs" aria-hidden="true"></i>
+                        </button>
+                        <button
+                            type="button"
+                            class="grupo-documentos__flecha h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                            :disabled="fila.indice === elementosEnPantalla.length - 1 || guardandoOrden"
+                            title="Bajar subgrupo"
+                            aria-label="Bajar subgrupo"
+                            @click="moverSubgrupoUnPaso(fila.subgrupo.id, 1)"
+                        >
+                            <i class="fas fa-arrow-down text-xs" aria-hidden="true"></i>
+                        </button>
+                        <i class="fas fa-folder-open text-amber-500 ml-1" aria-hidden="true"></i>
+                        <input
+                            type="text"
+                            class="grupo-documentos__nombre-subgrupo flex-1 min-w-[9rem] sm:max-w-sm rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            :value="fila.subgrupo.nombre"
+                            :maxlength="MAX_LONGITUD_NOMBRE_SUBGRUPO"
+                            :data-subgrupo-nombre="fila.subgrupo.id"
+                            aria-label="Nombre del subgrupo"
+                            placeholder="Nombre del subgrupo"
+                            @input="renombrar(fila.subgrupo.id, $event)"
+                        >
+                        <span class="text-xs text-gray-500 whitespace-nowrap">
+                            {{ fila.subgrupo.documentos.length }} documento{{ fila.subgrupo.documentos.length !== 1 ? 's' : '' }}
+                        </span>
+                        <button
+                            type="button"
+                            class="sm:ml-auto text-sm font-medium text-gray-600 hover:text-red-600 hover:underline whitespace-nowrap"
+                            title="Quitar el subgrupo; sus documentos quedan sueltos en el mismo lugar"
+                            @click="quitar(fila.subgrupo.id)"
+                        >
+                            <i class="fas fa-folder-minus mr-1" aria-hidden="true"></i>Quitar subgrupo
+                        </button>
+                        <p v-if="fila.subgrupo.documentos.length === 0" class="basis-full text-xs text-gray-500">
+                            Vacío. Trae documentos arrastrándolos aquí, con las flechas o con el selector de subgrupo de cada uno.
+                        </p>
+                    </div>
                     <div v-else class="flex items-center gap-3 w-full px-4 sm:px-6 py-2">
                         <input
                             type="checkbox"
@@ -694,10 +703,11 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                     v-else
                     class="grupo-documentos__fila transition-all duration-200 hover:bg-gray-50"
                     :class="{
-                        'flex items-stretch': organizando,
+                        'grupo-documentos__fila--compacta': organizando,
                         'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo,
                         'grupo-documentos__fila--arrastrada': esElArrastrado(fila),
                     }"
+                    :data-documento="fila.item.documento._id"
                     :draggable="organizando"
                     @dragstart="iniciarArrastre($event, { clase: 'documento', item: fila.item })"
                     @dragenter="alArrastrarSobreDocumento($event, fila)"
@@ -705,43 +715,57 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                     @dragend="arrastrado = null"
                     @drop="organizando && $event.preventDefault()"
                 >
+                    <!-- Al organizar, cada documento es una sola línea: lo necesario para reconocerlo y moverlo -->
                     <div
                         v-if="organizando"
-                        class="grupo-documentos__asa flex flex-col items-center justify-center gap-0.5 px-1.5 sm:px-2 bg-gray-50 border-r border-b border-gray-200 text-gray-500 cursor-grab"
+                        class="flex flex-wrap items-center gap-x-2 gap-y-1 px-2 sm:px-3 py-1.5 border-b border-gray-100 cursor-grab"
                     >
+                        <span class="flex items-center justify-center h-7 w-5 text-gray-400" aria-hidden="true">
+                            <i class="fas fa-grip-vertical"></i>
+                        </span>
                         <button
                             type="button"
-                            class="h-8 w-8 rounded-lg hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                            class="grupo-documentos__flecha h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
                             :disabled="!puedeMover(fila.item, -1) || guardandoOrden"
                             title="Subir"
                             aria-label="Subir documento"
                             @click="moverUnPaso(fila.item, -1)"
                         >
-                            <i class="fas fa-arrow-up text-sm" aria-hidden="true"></i>
+                            <i class="fas fa-arrow-up text-xs" aria-hidden="true"></i>
                         </button>
-                        <i class="fas fa-grip-vertical text-gray-400" aria-hidden="true"></i>
                         <button
                             type="button"
-                            class="h-8 w-8 rounded-lg hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                            class="grupo-documentos__flecha h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
                             :disabled="!puedeMover(fila.item, 1) || guardandoOrden"
                             title="Bajar"
                             aria-label="Bajar documento"
                             @click="moverUnPaso(fila.item, 1)"
                         >
-                            <i class="fas fa-arrow-down text-sm" aria-hidden="true"></i>
+                            <i class="fas fa-arrow-down text-xs" aria-hidden="true"></i>
                         </button>
-                    </div>
-                    <div :class="organizando ? 'flex-1 min-w-0' : undefined">
+                        <span
+                            class="shrink-0 w-7 h-7 ml-1 rounded-md flex items-center justify-center text-sm"
+                            :class="iconoTipoDocumento(fila.item.definicion.tipo).clases"
+                            aria-hidden="true"
+                        >
+                            <i :class="iconoTipoDocumento(fila.item.definicion.tipo).icono"></i>
+                        </span>
+                        <!-- En pantallas angostas el nombre conserva su ancho y el selector baja a otro renglón -->
+                        <span class="flex flex-1 min-w-[9rem] flex-col sm:flex-row sm:items-baseline sm:gap-2">
+                            <span class="text-sm font-medium text-gray-800 truncate">{{ nombreDeDocumento(fila.item) }}</span>
+                            <span class="text-xs text-gray-500 whitespace-nowrap">{{ fechaDeDocumento(fila.item) }}</span>
+                        </span>
                         <label
-                            v-if="organizando && subgruposEnPantalla.length > 0"
-                            class="flex items-center gap-2 px-3 pt-2 text-xs text-gray-500"
+                            v-if="subgruposEnPantalla.length > 0"
+                            class="flex items-center gap-1.5 ml-auto text-xs text-gray-500"
+                            title="Subgrupo de este documento"
                         >
                             <i class="fas fa-folder text-amber-500" aria-hidden="true"></i>
-                            Subgrupo
                             <select
                                 class="grupo-documentos__selector-subgrupo max-w-[14rem] rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700"
                                 :value="fila.subgrupo?.id ?? ''"
                                 :disabled="guardandoOrden"
+                                aria-label="Subgrupo de este documento"
                                 @change="cambiarSubgrupoDe(fila.item, $event)"
                             >
                                 <option value="">Sin subgrupo</option>
@@ -750,22 +774,21 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                                 </option>
                             </select>
                         </label>
-                        <div :class="organizando ? 'pointer-events-none select-none' : undefined">
-                            <DocumentoItem
-                                v-bind="{ [fila.item.definicion.tipo]: fila.item.documento }"
-                                :documentoId="fila.item.documento._id"
-                                :documentoTipo="fila.item.definicion.tipo"
-                                :toggleRouteSelection="toggleRouteSelection"
-                                :isDeletionMode="isDeletionMode"
-                                :isSelected="isDocumentoSelected(fila.item.documento._id)"
-                                @eliminarDocumento="$emit('eliminarDocumento', fila.item.documento._id, convertirFechaISOaDDMMYYYY(fila.item.documento[fila.item.definicion.campoFecha]), fila.item.definicion.tipo)"
-                                @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                                @abrirModalUpdate="$emit('abrirModalUpdate')"
-                                @openSubscriptionModal="emit('openSubscriptionModal')"
-                                @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                            />
-                        </div>
                     </div>
+                    <DocumentoItem
+                        v-else
+                        v-bind="{ [fila.item.definicion.tipo]: fila.item.documento }"
+                        :documentoId="fila.item.documento._id"
+                        :documentoTipo="fila.item.definicion.tipo"
+                        :toggleRouteSelection="toggleRouteSelection"
+                        :isDeletionMode="isDeletionMode"
+                        :isSelected="isDocumentoSelected(fila.item.documento._id)"
+                        @eliminarDocumento="$emit('eliminarDocumento', fila.item.documento._id, convertirFechaISOaDDMMYYYY(fila.item.documento[fila.item.definicion.campoFecha]), fila.item.definicion.tipo)"
+                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
+                        @abrirModalUpdate="$emit('abrirModalUpdate')"
+                        @openSubscriptionModal="emit('openSubscriptionModal')"
+                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
+                    />
                 </div>
             </template>
         </div>
