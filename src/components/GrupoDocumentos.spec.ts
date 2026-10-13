@@ -7,6 +7,18 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { ROLE_DEFAULT_PERMISSIONS } from '@/constants/rolePermissionPolicy';
 
+// SortableJS no arrastra en las pruebas: se registra cada lista para simular dónde se suelta
+const listasArrastrables = vi.hoisted(() => [] as Array<{ el: HTMLElement; opciones: any }>);
+vi.mock('sortablejs', () => ({
+  default: class {
+    constructor(el: HTMLElement, opciones: unknown) {
+      listasArrastrables.push({ el, opciones });
+    }
+    option() {}
+    destroy() {}
+  },
+}));
+
 const guardarOrdenApi = vi.hoisted(() => vi.fn());
 vi.mock('@/api/DocumentosAPI', () => ({
   default: { guardarOrdenDelAnio: guardarOrdenApi },
@@ -144,6 +156,7 @@ describe('GrupoDocumentos', () => {
   beforeEach(() => {
     pinia = createPinia();
     setActivePinia(pinia);
+    listasArrastrables.length = 0;
     toast = { open: vi.fn() };
     configurar();
   });
@@ -495,23 +508,6 @@ describe('GrupoDocumentos', () => {
       expect(wrapper.text()).toContain('orden personalizado');
     });
 
-    it('arrastrar un documento sobre otro lo coloca en ese lugar', async () => {
-      const wrapper = montar({ documents: delAnio() });
-      await boton(wrapper, 'Organizar')!.trigger('click');
-      await filaDe(wrapper, 'receta-b').trigger('dragstart');
-      await filaDe(wrapper, 'aptitud-1').trigger('dragenter');
-      await filaDe(wrapper, 'aptitud-1').trigger('drop');
-      expect(idsMostrados(wrapper)).toEqual(['receta-b', 'aptitud-1', 'documentoExterno-1', 'receta-a']);
-    });
-
-    it('fuera del modo organizar las filas no se pueden arrastrar', async () => {
-      const wrapper = montar({ documents: delAnio() });
-      expect(filaDe(wrapper, 'aptitud-1').attributes('draggable')).toBe('false');
-      await filaDe(wrapper, 'receta-b').trigger('dragstart');
-      await filaDe(wrapper, 'aptitud-1').trigger('dragenter');
-      expect(idsMostrados(wrapper)).toEqual(POR_DEFECTO);
-    });
-
     it('cancelar descarta lo movido sin guardar', async () => {
       const wrapper = montar({ documents: delAnio() });
       await boton(wrapper, 'Organizar')!.trigger('click');
@@ -701,7 +697,7 @@ describe('GrupoDocumentos', () => {
 
       const nombre = wrapper.find('input[aria-label="Nombre del subgrupo"]');
       expect((nombre.element as HTMLInputElement).value).toBe('Nuevo subgrupo');
-      expect(encabezados(wrapper)[0].text()).toContain('Vacío');
+      expect(wrapper.text()).toContain('Vacío');
       await nombre.setValue('Antidoping');
 
       await filaDe(wrapper, 'documentoExterno-1').find('select').setValue(wrapper.find('select option:nth-child(2)').attributes('value'));
@@ -808,15 +804,6 @@ describe('GrupoDocumentos', () => {
       expect(enSubgrupo(wrapper)).toEqual(['antidoping-1', 'documentoExterno-1']);
     });
 
-    it('arrastrar un documento sobre el encabezado lo mete al subgrupo', async () => {
-      useDocumentosStore().organizacionPorAnio = conSubgrupo();
-      const wrapper = montar({ documents: delAnio() });
-      await boton(wrapper, 'Organizar')!.trigger('click');
-      await filaDe(wrapper, 'notaMedica-b').trigger('dragstart');
-      await encabezados(wrapper)[0].trigger('dragenter');
-      expect(enSubgrupo(wrapper)).toEqual(['notaMedica-b', 'antidoping-1', 'documentoExterno-1']);
-    });
-
     it('quitar el subgrupo deja sus documentos sueltos en el mismo lugar', async () => {
       useDocumentosStore().organizacionPorAnio = conSubgrupo();
       const wrapper = montar({ documents: delAnio() });
@@ -904,6 +891,142 @@ describe('GrupoDocumentos', () => {
       await boton(wrapper, 'Cancelar')!.trigger('click');
       expect(wrapper.findAll('.doc-stub')).toHaveLength(3);
       expect(wrapper.findAll('.grupo-documentos__fila--compacta')).toHaveLength(0);
+    });
+  });
+
+  describe('modo organizar: arrastrar y soltar', () => {
+    const delAnio = () => ({
+      aptitudes: [documento('aptitud', 'fechaAptitudPuesto')],
+      antidopings: [documento('antidoping', 'fechaAntidoping')],
+      recetas: [documento('receta', 'fechaReceta', 'a'), documento('receta', 'fechaReceta', 'b')],
+      documentosExternos: [documento('documentoExterno', 'fechaDocumento')],
+    });
+    const ref = (documentType: string, documentId: string, subgrupoId?: string) =>
+      subgrupoId ? { documentType, documentId, subgrupoId } : { documentType, documentId };
+    const conSubgrupo = () => ({
+      '2025': {
+        orden: [
+          ref('aptitud', 'aptitud-1'),
+          ref('antidoping', 'antidoping-1', 'sg-anti'),
+          ref('documentoExterno', 'documentoExterno-1', 'sg-anti'),
+          ref('receta', 'receta-a'),
+          ref('receta', 'receta-b'),
+        ],
+        subgrupos: [{ id: 'sg-anti', nombre: 'Antidoping' }],
+      },
+    });
+    const boton = (wrapper: ReturnType<typeof montar>, texto: string) =>
+      wrapper.findAll('button').find((b) => b.text().includes(texto));
+    const enSubgrupo = (wrapper: ReturnType<typeof montar>) =>
+      wrapper.findAll('.grupo-documentos__fila--en-subgrupo').map((f) => f.attributes('data-documento'));
+
+    /** Simula soltar un elemento (documento o subgrupo) en la lista `contenedor` ('' = el año), en `indice`. */
+    async function soltar(wrapper: ReturnType<typeof montar>, selector: string, contenedor: string, indice: number) {
+      const elemento = wrapper.find(`.organizador__item${selector}`).element as HTMLElement;
+      const origen = listasArrastrables.find((l) => l.el === elemento.parentElement)!;
+      const destino = listasArrastrables.find((l) => (l.el.dataset.contenedor ?? '') === contenedor)!;
+      const arrastrables = [...origen.el.children].filter((hijo) => hijo.classList.contains('organizador__item'));
+      origen.opciones.onStart({ item: elemento });
+      origen.opciones.onEnd({
+        item: elemento,
+        from: origen.el,
+        to: destino.el,
+        oldDraggableIndex: arrastrables.indexOf(elemento),
+        newDraggableIndex: indice,
+      });
+      await flushPromises();
+    }
+
+    const organizar = async () => {
+      useDocumentosStore().organizacionPorAnio = conSubgrupo();
+      const wrapper = montar({ documents: delAnio() });
+      await boton(wrapper, 'Organizar')!.trigger('click');
+      return wrapper;
+    };
+
+    beforeEach(() => {
+      guardarOrdenApi.mockReset();
+      guardarOrdenApi.mockImplementation((_t: string, _anio: string, organizacion: { orden: unknown[] }) =>
+        Promise.resolve({ data: { organizacion } }),
+      );
+      useTrabajadoresStore().currentTrabajadorId = 'trab-1' as any;
+    });
+
+    it('fuera del modo organizar no hay listas arrastrables; al entrar hay una por el año y una por subgrupo', async () => {
+      useDocumentosStore().organizacionPorAnio = conSubgrupo();
+      const wrapper = montar({ documents: delAnio() });
+      expect(listasArrastrables).toHaveLength(0);
+      await boton(wrapper, 'Organizar')!.trigger('click');
+      expect(listasArrastrables.map((l) => l.el.dataset.contenedor)).toEqual(expect.arrayContaining(['', 'sg-anti']));
+      expect(listasArrastrables).toHaveLength(2);
+    });
+
+    it('soltar un documento suelto en otro lugar del año lo reordena', async () => {
+      const wrapper = await organizar();
+      await soltar(wrapper, '[data-documento="receta-b"]', '', 0);
+      expect(idsMostrados(wrapper)).toEqual(['receta-b', 'aptitud-1', 'antidoping-1', 'documentoExterno-1', 'receta-a']);
+    });
+
+    it('soltar un documento dentro de un subgrupo lo mete en esa posición', async () => {
+      const wrapper = await organizar();
+      await soltar(wrapper, '[data-documento="receta-a"]', 'sg-anti', 1);
+      expect(enSubgrupo(wrapper)).toEqual(['antidoping-1', 'receta-a', 'documentoExterno-1']);
+    });
+
+    it('soltar fuera un documento de un subgrupo lo deja suelto donde cayó', async () => {
+      const wrapper = await organizar();
+      await soltar(wrapper, '[data-documento="documentoExterno-1"]', '', 0);
+      expect(enSubgrupo(wrapper)).toEqual(['antidoping-1']);
+      expect(idsMostrados(wrapper)[0]).toBe('documentoExterno-1');
+    });
+
+    it('soltar el subgrupo completo lo mueve con sus documentos', async () => {
+      const wrapper = await organizar();
+      await soltar(wrapper, '[data-subgrupo="sg-anti"]', '', 3);
+      expect(idsMostrados(wrapper)).toEqual(['aptitud-1', 'receta-a', 'receta-b', 'antidoping-1', 'documentoExterno-1']);
+      expect(enSubgrupo(wrapper)).toEqual(['antidoping-1', 'documentoExterno-1']);
+    });
+
+    it('la lista de un subgrupo acepta documentos pero no otro subgrupo', async () => {
+      const wrapper = await organizar();
+      const interna = listasArrastrables.find((l) => l.el.dataset.contenedor === 'sg-anti')!;
+      const delAnioCompleto = listasArrastrables.find((l) => (l.el.dataset.contenedor ?? '') === '')!;
+      const documentoSuelto = wrapper.find('.organizador__item[data-documento="aptitud-1"]').element;
+      const bloque = wrapper.find('.organizador__item[data-subgrupo="sg-anti"]').element;
+
+      expect(interna.opciones.group.put(null, null, documentoSuelto)).toBe(true);
+      expect(interna.opciones.group.put(null, null, bloque)).toBe(false);
+      expect(delAnioCompleto.opciones.group.put(null, null, bloque)).toBe(true);
+    });
+
+    it('soltar en el mismo lugar no cuenta como cambio', async () => {
+      const wrapper = await organizar();
+      await soltar(wrapper, '[data-documento="aptitud-1"]', '', 0);
+      expect(boton(wrapper, 'Guardar orden')!.attributes('disabled')).toBeDefined();
+    });
+
+    it('lo acomodado arrastrando se guarda igual que con las flechas', async () => {
+      const wrapper = await organizar();
+      await soltar(wrapper, '[data-documento="receta-b"]', 'sg-anti', 0);
+      await boton(wrapper, 'Guardar orden')!.trigger('click');
+      await flushPromises();
+
+      expect(guardarOrdenApi.mock.calls[0][2].orden).toEqual([
+        ref('aptitud', 'aptitud-1'),
+        ref('receta', 'receta-b', 'sg-anti'),
+        ref('antidoping', 'antidoping-1', 'sg-anti'),
+        ref('documentoExterno', 'documentoExterno-1', 'sg-anti'),
+        ref('receta', 'receta-a'),
+      ]);
+    });
+
+    it('el arrastre respeta los controles de la fila y espera un toque sostenido en pantallas táctiles', async () => {
+      await organizar();
+      const { opciones } = listasArrastrables[0];
+      expect(opciones.filter).toBe('button, select, input');
+      expect(opciones.preventOnFilter).toBe(false);
+      expect(opciones.delayOnTouchOnly).toBe(true);
+      expect(opciones.draggable).toBe('.organizador__item');
     });
   });
 });

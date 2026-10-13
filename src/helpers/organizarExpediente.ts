@@ -107,25 +107,25 @@ export function moverDocumento(
   return copia;
 }
 
-/** Coloca un documento en el lugar de otro (arrastrar y soltar), dentro del mismo contenedor que el destino. */
-export function colocarDocumentoSobre(
+/**
+ * Coloca un documento donde se soltó al arrastrarlo: dentro de un subgrupo o suelto en el
+ * año (`null`), en la posición indicada entre los elementos de ese contenedor.
+ */
+export function colocarDocumentoEn(
   elementos: readonly ElementoDelAnio[],
   item: DocumentoDelExpediente,
-  destino: DocumentoDelExpediente,
+  subgrupoId: string | null,
+  posicion: number,
 ): ElementoDelAnio[] {
-  if (item === destino) return [...elementos];
-  const origen = ubicar(elementos, item);
-  const antes = ubicar(elementos, destino);
-  if (!origen || !antes) return [...elementos];
-  // Al venir de arriba el documento queda después del destino; al venir de abajo, antes
-  const vieneDeArriba =
-    origen.indice < antes.indice || (origen.indice === antes.indice && origen.posicion < antes.posicion);
-
+  if (!ubicar(elementos, item)) return [...elementos];
   const copia = retirar(elementos, item);
-  const lugar = ubicar(copia, destino)!;
-  const desplazamiento = vieneDeArriba ? 1 : 0;
-  if (lugar.subgrupo) lugar.subgrupo.documentos.splice(lugar.posicion + desplazamiento, 0, item);
-  else copia.splice(lugar.indice + desplazamiento, 0, { clase: 'documento', item });
+  if (!subgrupoId) {
+    copia.splice(Math.min(Math.max(posicion, 0), copia.length), 0, { clase: 'documento', item });
+    return copia;
+  }
+  const destino = copia.find((elemento) => esSubgrupo(elemento) && elemento.id === subgrupoId);
+  if (!esSubgrupo(destino)) return [...elementos];
+  destino.documentos.splice(Math.min(Math.max(posicion, 0), destino.documentos.length), 0, item);
   return copia;
 }
 
@@ -150,22 +150,6 @@ export function moverASubgrupo(
   }
   const indiceDelSubgrupo = copia.findIndex((elemento) => esSubgrupo(elemento) && elemento.id === origen.subgrupo!.id);
   copia.splice(indiceDelSubgrupo + 1, 0, { clase: 'documento', item });
-  return copia;
-}
-
-/** Suelta un documento arrastrado sobre el encabezado de un subgrupo: entra al inicio, o sale por arriba si ya era suyo. */
-export function colocarDocumentoEnEncabezado(
-  elementos: readonly ElementoDelAnio[],
-  item: DocumentoDelExpediente,
-  subgrupoId: string,
-): ElementoDelAnio[] {
-  const origen = ubicar(elementos, item);
-  if (!origen) return [...elementos];
-  const copia = retirar(elementos, item);
-  const indice = copia.findIndex((elemento) => esSubgrupo(elemento) && elemento.id === subgrupoId);
-  if (indice < 0) return [...elementos];
-  if (origen.subgrupo?.id === subgrupoId) copia.splice(indice, 0, { clase: 'documento', item });
-  else (copia[indice] as SubgrupoDelAnio).documentos.unshift(item);
   return copia;
 }
 
@@ -201,7 +185,7 @@ export function moverSubgrupo(elementos: readonly ElementoDelAnio[], id: string,
   return copia;
 }
 
-/** Arrastrar un subgrupo sobre otro elemento del año: toma su lugar. */
+/** Coloca el subgrupo completo en la posición donde se soltó, entre los elementos del año. */
 export function colocarSubgrupoEn(elementos: readonly ElementoDelAnio[], id: string, indiceDestino: number) {
   const copia = copiarEstructura(elementos);
   const indice = copia.findIndex((elemento) => esSubgrupo(elemento) && elemento.id === id);

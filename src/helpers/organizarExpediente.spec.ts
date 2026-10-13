@@ -13,8 +13,7 @@ import {
   type ElementoDelAnio,
 } from './documentosExpediente';
 import {
-  colocarDocumentoEnEncabezado,
-  colocarDocumentoSobre,
+  colocarDocumentoEn,
   colocarSubgrupoEn,
   copiarParaOrganizar,
   crearSubgrupo,
@@ -216,40 +215,23 @@ describe('modo organizar: operaciones', () => {
     expect(resumen(moverASubgrupo(e, doc(e, 'ap'), 'no-existe'))).toEqual(resumen(e));
   });
 
-  it('arrastrar sobre otro documento lo coloca en su lugar, también entre contenedores', () => {
+  it('soltar un documento lo deja en el contenedor y la posición donde cayó', () => {
     const e = base();
-    expect(resumen(colocarDocumentoSobre(e, doc(e, 'n2'), doc(e, 'ap')))).toEqual([
-      'n2',
-      'ap',
-      'Antidoping[ad,ex]',
-      'n1',
-    ]);
-    expect(resumen(colocarDocumentoSobre(e, doc(e, 'ap'), doc(e, 'n1')))).toEqual([
-      'Antidoping[ad,ex]',
-      'n1',
-      'ap',
-      'n2',
-    ]);
-    expect(resumen(colocarDocumentoSobre(e, doc(e, 'n1'), doc(e, 'ex')))).toEqual(['ap', 'Antidoping[ad,n1,ex]', 'n2']);
-    expect(resumen(colocarDocumentoSobre(e, doc(e, 'ex'), doc(e, 'n2')))).toEqual([
-      'ap',
-      'Antidoping[ad]',
-      'n1',
-      'n2',
-      'ex',
-    ]);
+    // Entre los elementos del año
+    expect(resumen(colocarDocumentoEn(e, doc(e, 'n2'), null, 0))).toEqual(['n2', 'ap', 'Antidoping[ad,ex]', 'n1']);
+    expect(resumen(colocarDocumentoEn(e, doc(e, 'ap'), null, 2))).toEqual(['Antidoping[ad,ex]', 'n1', 'ap', 'n2']);
+    // Dentro de un subgrupo
+    expect(resumen(colocarDocumentoEn(e, doc(e, 'n1'), 'sg', 1))).toEqual(['ap', 'Antidoping[ad,n1,ex]', 'n2']);
+    expect(resumen(colocarDocumentoEn(e, doc(e, 'ex'), 'sg', 0))).toEqual(['ap', 'Antidoping[ex,ad]', 'n1', 'n2']);
+    // De un subgrupo hacia afuera
+    expect(resumen(colocarDocumentoEn(e, doc(e, 'ex'), null, 3))).toEqual(['ap', 'Antidoping[ad]', 'n1', 'ex', 'n2']);
   });
 
-  it('arrastrar sobre el encabezado mete el documento al inicio, o lo saca por arriba si ya era suyo', () => {
+  it('soltar fuera de rango lo deja en el extremo, y en un subgrupo inexistente no cambia nada', () => {
     const e = base();
-    expect(resumen(colocarDocumentoEnEncabezado(e, doc(e, 'n2'), 'sg'))).toEqual(['ap', 'Antidoping[n2,ad,ex]', 'n1']);
-    expect(resumen(colocarDocumentoEnEncabezado(e, doc(e, 'ex'), 'sg'))).toEqual([
-      'ap',
-      'ex',
-      'Antidoping[ad]',
-      'n1',
-      'n2',
-    ]);
+    expect(resumen(colocarDocumentoEn(e, doc(e, 'ap'), null, 99))).toEqual(['Antidoping[ad,ex]', 'n1', 'n2', 'ap']);
+    expect(resumen(colocarDocumentoEn(e, doc(e, 'ap'), 'sg', 99))).toEqual(['Antidoping[ad,ex,ap]', 'n1', 'n2']);
+    expect(resumen(colocarDocumentoEn(e, doc(e, 'ap'), 'no-existe', 0))).toEqual(resumen(e));
   });
 
   it('crea, renombra, mueve y quita subgrupos', () => {

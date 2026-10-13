@@ -4317,9 +4317,18 @@ html.dark-mode .grupo-documentos__selector-subgrupo {
 }
 
 /* Modo organizar del grupo del año */
-html.dark-mode .grupo-documentos__fila--arrastrada {
+html.dark-mode .organizador__hueco {
   outline-color: #047857 !important;
   background-color: rgba(6, 78, 59, 0.45) !important;
+}
+
+html.dark-mode .organizador__documento,
+html.dark-mode .organizador__bloque-subgrupo {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode .organizador__miembros--vacio {
+  border-left-color: #b45309 !important;
 }
 
 html.dark-mode .grupo-documentos__flecha:hover:not(:disabled) {

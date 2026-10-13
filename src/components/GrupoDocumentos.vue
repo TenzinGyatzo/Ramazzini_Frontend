@@ -12,7 +12,6 @@ import {
     anioTieneOrdenManual,
     documentosDe,
     estructuraDelAnio,
-    nombreTipoDocumento,
     type DocumentoDelExpediente,
     type ElementoDelAnio,
     type SubgrupoDelAnio,
@@ -20,23 +19,14 @@ import {
 import {
     MAX_LONGITUD_NOMBRE_SUBGRUPO,
     NOMBRE_SUBGRUPO_POR_DEFECTO,
-    colocarDocumentoEnEncabezado,
-    colocarDocumentoSobre,
-    colocarSubgrupoEn,
     copiarEstructura,
     copiarParaOrganizar,
     crearSubgrupo,
     huellaDe,
-    moverASubgrupo,
-    moverDocumento,
-    moverSubgrupo,
     organizacionDe,
-    puedeMoverDocumento,
-    quitarSubgrupo,
-    renombrarSubgrupo,
 } from '@/helpers/organizarExpediente';
+import OrganizadorDocumentos from './organizador/OrganizadorDocumentos.vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
-import { iconoTipoDocumento } from '@/helpers/iconoTipoDocumento';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 
 const documentosStore = useDocumentosStore();
@@ -138,11 +128,9 @@ const ordenPersonalizado = computed(() =>
 );
 
 // Modo organizar: se acomoda una copia y solo al guardar se vuelve la organización del año
-type Arrastrado = { clase: 'documento'; item: DocumentoDelExpediente } | { clase: 'subgrupo'; id: string };
 const borradorDeOrden = shallowRef<ElementoDelAnio[] | null>(null);
 const organizando = computed(() => borradorDeOrden.value !== null);
 const guardandoOrden = ref(false);
-const arrastrado = shallowRef<Arrastrado | null>(null);
 
 const elementosEnPantalla = computed(() => borradorDeOrden.value ?? elementosGuardados.value);
 const documentosEnOrden = computed(() => documentosDe(elementosEnPantalla.value));
@@ -163,7 +151,6 @@ interface FilaEncabezado {
     clase: 'encabezado';
     clave: string;
     subgrupo: SubgrupoDelAnio;
-    indice: number;
     plegado: boolean;
 }
 interface FilaDocumento {
@@ -171,27 +158,25 @@ interface FilaDocumento {
     clave: string;
     item: DocumentoDelExpediente;
     subgrupo: SubgrupoDelAnio | null;
-    indice: number;
 }
 
-// El año, fila por fila: cada subgrupo es un encabezado seguido de sus documentos
+// El año fuera del modo organizar, fila por fila: cada subgrupo es un encabezado seguido de sus documentos
 const filas = computed(() => {
     const resultado: Array<FilaEncabezado | FilaDocumento> = [];
-    const filaDe = (item: DocumentoDelExpediente, subgrupo: SubgrupoDelAnio | null, indice: number): FilaDocumento => ({
+    const filaDe = (item: DocumentoDelExpediente, subgrupo: SubgrupoDelAnio | null): FilaDocumento => ({
         clase: 'documento',
         clave: `${item.definicion.tipo}-${item.documento._id ?? resultado.length}`,
         item,
         subgrupo,
-        indice,
     });
-    elementosEnPantalla.value.forEach((elemento, indice) => {
+    elementosGuardados.value.forEach((elemento) => {
         if (elemento.clase === 'documento') {
-            resultado.push(filaDe(elemento.item, null, indice));
+            resultado.push(filaDe(elemento.item, null));
             return;
         }
-        const plegado = !organizando.value && plegados.value.has(elemento.id);
-        resultado.push({ clase: 'encabezado', clave: `subgrupo-${elemento.id}`, subgrupo: elemento, indice, plegado });
-        if (!plegado) elemento.documentos.forEach((item) => resultado.push(filaDe(item, elemento, indice)));
+        const plegado = plegados.value.has(elemento.id);
+        resultado.push({ clase: 'encabezado', clave: `subgrupo-${elemento.id}`, subgrupo: elemento, plegado });
+        if (!plegado) elemento.documentos.forEach((item) => resultado.push(filaDe(item, elemento)));
     });
     return resultado;
 });
@@ -218,83 +203,19 @@ function iniciarOrganizacion() {
 function cancelarOrganizacion() {
     if (guardandoOrden.value) return;
     borradorDeOrden.value = null;
-    arrastrado.value = null;
 }
-
-/** Aplica un cambio a la copia que se está organizando. */
-function editar(cambio: (elementos: ElementoDelAnio[]) => ElementoDelAnio[]) {
-    if (borradorDeOrden.value) borradorDeOrden.value = cambio(borradorDeOrden.value);
-}
-
-const puedeMover = (item: DocumentoDelExpediente, paso: -1 | 1) =>
-    !!borradorDeOrden.value && puedeMoverDocumento(borradorDeOrden.value, item, paso);
-const moverUnPaso = (item: DocumentoDelExpediente, paso: -1 | 1) =>
-    editar((elementos) => moverDocumento(elementos, item, paso));
-const moverSubgrupoUnPaso = (id: string, paso: -1 | 1) => editar((elementos) => moverSubgrupo(elementos, id, paso));
-const renombrar = (id: string, evento: Event) =>
-    editar((elementos) => renombrarSubgrupo(elementos, id, (evento.target as HTMLInputElement).value));
-const quitar = (id: string) => editar((elementos) => quitarSubgrupo(elementos, id));
-const cambiarSubgrupoDe = (item: DocumentoDelExpediente, evento: Event) =>
-    editar((elementos) => moverASubgrupo(elementos, item, (evento.target as HTMLSelectElement).value || null));
 
 const raizDelGrupo = ref<HTMLElement | null>(null);
 let consecutivoDeSubgrupo = 0;
 async function nuevoSubgrupo() {
     const id = `sg-${Date.now().toString(36)}-${(consecutivoDeSubgrupo++).toString(36)}`;
-    editar((elementos) => crearSubgrupo(elementos, id));
+    if (!borradorDeOrden.value) return;
+    borradorDeOrden.value = crearSubgrupo(borradorDeOrden.value, id);
     await nextTick();
     const campo = raizDelGrupo.value?.querySelector<HTMLInputElement>(`[data-subgrupo-nombre="${id}"]`);
     campo?.focus();
     campo?.select();
 }
-
-function iniciarArrastre(evento: DragEvent, quien: Arrastrado) {
-    if (!organizando.value) return;
-    arrastrado.value = quien;
-    if (evento.dataTransfer) {
-        evento.dataTransfer.effectAllowed = 'move';
-        evento.dataTransfer.setData('text/plain', quien.clase === 'documento' ? String(quien.item.documento._id ?? '') : quien.id);
-    }
-}
-
-function alArrastrarSobreDocumento(evento: DragEvent, fila: FilaDocumento) {
-    const quien = arrastrado.value;
-    if (!organizando.value || !quien) return;
-    evento.preventDefault();
-    if (quien.clase === 'documento') {
-        editar((elementos) => colocarDocumentoSobre(elementos, quien.item, fila.item));
-    } else if (!fila.subgrupo) {
-        // Un subgrupo solo se acomoda entre los elementos sueltos del año
-        editar((elementos) => colocarSubgrupoEn(elementos, quien.id, fila.indice));
-    }
-}
-
-function alArrastrarSobreEncabezado(evento: DragEvent, fila: FilaEncabezado) {
-    const quien = arrastrado.value;
-    if (!organizando.value || !quien) return;
-    evento.preventDefault();
-    if (quien.clase === 'documento') {
-        editar((elementos) => colocarDocumentoEnEncabezado(elementos, quien.item, fila.subgrupo.id));
-    } else if (quien.id !== fila.subgrupo.id) {
-        editar((elementos) => colocarSubgrupoEn(elementos, quien.id, fila.indice));
-    }
-}
-
-// Lo que identifica a un documento en la línea compacta del modo organizar
-const nombreDeDocumento = ({ definicion, documento }: DocumentoDelExpediente) =>
-    definicion.tipo === 'documentoExterno'
-        ? documento.nombreDocumento || nombreTipoDocumento(definicion.tipo)
-        : nombreTipoDocumento(definicion.tipo);
-const fechaDeDocumento = ({ definicion, documento }: DocumentoDelExpediente) =>
-    documento[definicion.campoFecha] ? convertirFechaISOaDDMMYYYY(documento[definicion.campoFecha]) : '';
-
-const esElArrastrado = (fila: FilaEncabezado | FilaDocumento) => {
-    const quien = arrastrado.value;
-    if (!organizando.value || !quien) return false;
-    return fila.clase === 'documento'
-        ? quien.clase === 'documento' && quien.item === fila.item
-        : quien.clase === 'subgrupo' && quien.id === fila.subgrupo.id;
-};
 
 function restablecerOrden() {
     borradorDeOrden.value = copiarEstructura(elementosPorDefecto.value);
@@ -324,7 +245,6 @@ async function guardarOrden() {
         });
     } finally {
         guardandoOrden.value = false;
-        arrastrado.value = null;
     }
 }
 
@@ -597,186 +517,61 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             </div>
         </div>
 
+        <!-- Modo organizar: el año en filas compactas que se acomodan arrastrando -->
+        <OrganizadorDocumentos
+            v-if="borradorDeOrden"
+            :elementos="borradorDeOrden"
+            :bloqueado="guardandoOrden"
+            @update:elementos="borradorDeOrden = $event"
+        />
+
         <!-- Documentos del año, en el orden del expediente; los subgrupos son un encabezado y sus documentos -->
-        <div>
+        <div v-else>
             <template v-for="fila in filas" :key="fila.clave">
                 <!-- Encabezado de subgrupo -->
                 <div
                     v-if="fila.clase === 'encabezado'"
-                    class="grupo-documentos__subgrupo flex items-stretch bg-gray-50 border-y border-gray-200"
-                    :class="{ 'grupo-documentos__fila--arrastrada': esElArrastrado(fila) }"
+                    class="grupo-documentos__subgrupo flex items-center gap-3 w-full px-4 sm:px-6 py-2 bg-gray-50 border-y border-gray-200"
                     :data-subgrupo="fila.subgrupo.id"
-                    @dragenter="alArrastrarSobreEncabezado($event, fila)"
-                    @dragover="organizando && $event.preventDefault()"
-                    @drop="organizando && $event.preventDefault()"
                 >
-                    <div v-if="organizando" class="flex flex-1 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-2 sm:px-3 py-1.5">
-                        <span
-                            class="grupo-documentos__asa flex items-center justify-center h-7 w-5 text-gray-400 cursor-grab"
-                            draggable="true"
-                            title="Arrastra para mover el subgrupo"
-                            @dragstart="iniciarArrastre($event, { clase: 'subgrupo', id: fila.subgrupo.id })"
-                            @dragend="arrastrado = null"
-                        >
-                            <i class="fas fa-grip-vertical" aria-hidden="true"></i>
-                        </span>
-                        <button
-                            type="button"
-                            class="grupo-documentos__flecha h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
-                            :disabled="fila.indice === 0 || guardandoOrden"
-                            title="Subir subgrupo"
-                            aria-label="Subir subgrupo"
-                            @click="moverSubgrupoUnPaso(fila.subgrupo.id, -1)"
-                        >
-                            <i class="fas fa-arrow-up text-xs" aria-hidden="true"></i>
-                        </button>
-                        <button
-                            type="button"
-                            class="grupo-documentos__flecha h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
-                            :disabled="fila.indice === elementosEnPantalla.length - 1 || guardandoOrden"
-                            title="Bajar subgrupo"
-                            aria-label="Bajar subgrupo"
-                            @click="moverSubgrupoUnPaso(fila.subgrupo.id, 1)"
-                        >
-                            <i class="fas fa-arrow-down text-xs" aria-hidden="true"></i>
-                        </button>
-                        <i class="fas fa-folder-open text-amber-500 ml-1" aria-hidden="true"></i>
-                        <input
-                            type="text"
-                            class="grupo-documentos__nombre-subgrupo flex-1 min-w-[9rem] sm:max-w-sm rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                            :value="fila.subgrupo.nombre"
-                            :maxlength="MAX_LONGITUD_NOMBRE_SUBGRUPO"
-                            :data-subgrupo-nombre="fila.subgrupo.id"
-                            aria-label="Nombre del subgrupo"
-                            placeholder="Nombre del subgrupo"
-                            @input="renombrar(fila.subgrupo.id, $event)"
-                        >
+                    <input
+                        type="checkbox"
+                        class="grupo-documentos__casilla-subgrupo w-4 h-4 shrink-0 rounded border-gray-300 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                        :checked="subgrupoSeleccionado(fila.subgrupo)"
+                        :disabled="fila.subgrupo.documentos.length === 0"
+                        :aria-label="`Seleccionar los documentos de ${fila.subgrupo.nombre}`"
+                        :title="`Seleccionar los documentos de ${fila.subgrupo.nombre}`"
+                        @change="alternarSeleccionDeSubgrupo(fila.subgrupo)"
+                    >
+                    <button
+                        type="button"
+                        class="flex flex-1 min-w-0 items-center gap-2 text-left"
+                        :aria-expanded="!fila.plegado"
+                        :title="fila.plegado ? 'Mostrar los documentos del subgrupo' : 'Ocultar los documentos del subgrupo'"
+                        @click="alternarPlegado(fila.subgrupo.id)"
+                    >
+                        <i class="fas text-xs text-gray-400 w-3" :class="fila.plegado ? 'fa-chevron-right' : 'fa-chevron-down'" aria-hidden="true"></i>
+                        <i class="fas text-amber-500" :class="fila.plegado ? 'fa-folder' : 'fa-folder-open'" aria-hidden="true"></i>
+                        <span class="font-semibold text-sm text-gray-800 truncate">{{ fila.subgrupo.nombre }}</span>
                         <span class="text-xs text-gray-500 whitespace-nowrap">
                             {{ fila.subgrupo.documentos.length }} documento{{ fila.subgrupo.documentos.length !== 1 ? 's' : '' }}
                         </span>
-                        <button
-                            type="button"
-                            class="sm:ml-auto text-sm font-medium text-gray-600 hover:text-red-600 hover:underline whitespace-nowrap"
-                            title="Quitar el subgrupo; sus documentos quedan sueltos en el mismo lugar"
-                            @click="quitar(fila.subgrupo.id)"
-                        >
-                            <i class="fas fa-folder-minus mr-1" aria-hidden="true"></i>Quitar subgrupo
-                        </button>
-                        <p v-if="fila.subgrupo.documentos.length === 0" class="basis-full text-xs text-gray-500">
-                            Vacío. Trae documentos arrastrándolos aquí, con las flechas o con el selector de subgrupo de cada uno.
-                        </p>
-                    </div>
-                    <div v-else class="flex items-center gap-3 w-full px-4 sm:px-6 py-2">
-                        <input
-                            type="checkbox"
-                            class="grupo-documentos__casilla-subgrupo w-4 h-4 shrink-0 rounded border-gray-300 cursor-pointer disabled:opacity-40 disabled:cursor-default"
-                            :checked="subgrupoSeleccionado(fila.subgrupo)"
-                            :disabled="fila.subgrupo.documentos.length === 0"
-                            :aria-label="`Seleccionar los documentos de ${fila.subgrupo.nombre}`"
-                            :title="`Seleccionar los documentos de ${fila.subgrupo.nombre}`"
-                            @change="alternarSeleccionDeSubgrupo(fila.subgrupo)"
-                        >
-                        <button
-                            type="button"
-                            class="flex flex-1 min-w-0 items-center gap-2 text-left"
-                            :aria-expanded="!fila.plegado"
-                            :title="fila.plegado ? 'Mostrar los documentos del subgrupo' : 'Ocultar los documentos del subgrupo'"
-                            @click="alternarPlegado(fila.subgrupo.id)"
-                        >
-                            <i class="fas text-xs text-gray-400 w-3" :class="fila.plegado ? 'fa-chevron-right' : 'fa-chevron-down'" aria-hidden="true"></i>
-                            <i class="fas text-amber-500" :class="fila.plegado ? 'fa-folder' : 'fa-folder-open'" aria-hidden="true"></i>
-                            <span class="font-semibold text-sm text-gray-800 truncate">{{ fila.subgrupo.nombre }}</span>
-                            <span class="text-xs text-gray-500 whitespace-nowrap">
-                                {{ fila.subgrupo.documentos.length }} documento{{ fila.subgrupo.documentos.length !== 1 ? 's' : '' }}
-                            </span>
-                            <span
-                                v-if="fila.subgrupo.automatico"
-                                class="text-[11px] text-gray-400 whitespace-nowrap"
-                                title="Ramazzini reunió estos documentos por su tipo. Con «Organizar» puedes cambiarlo o quitarlo."
-                            >· automático</span>
-                        </button>
-                    </div>
+                        <span
+                            v-if="fila.subgrupo.automatico"
+                            class="text-[11px] text-gray-400 whitespace-nowrap"
+                            title="Ramazzini reunió estos documentos por su tipo. Con «Organizar» puedes cambiarlo o quitarlo."
+                        >· automático</span>
+                    </button>
                 </div>
 
                 <!-- Documento -->
                 <div
                     v-else
                     class="grupo-documentos__fila transition-all duration-200 hover:bg-gray-50"
-                    :class="{
-                        'grupo-documentos__fila--compacta': organizando,
-                        'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo,
-                        'grupo-documentos__fila--arrastrada': esElArrastrado(fila),
-                    }"
+                    :class="{ 'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo }"
                     :data-documento="fila.item.documento._id"
-                    :draggable="organizando"
-                    @dragstart="iniciarArrastre($event, { clase: 'documento', item: fila.item })"
-                    @dragenter="alArrastrarSobreDocumento($event, fila)"
-                    @dragover="organizando && $event.preventDefault()"
-                    @dragend="arrastrado = null"
-                    @drop="organizando && $event.preventDefault()"
                 >
-                    <!-- Al organizar, cada documento es una sola línea: lo necesario para reconocerlo y moverlo -->
-                    <div
-                        v-if="organizando"
-                        class="flex flex-wrap items-center gap-x-2 gap-y-1 px-2 sm:px-3 py-1.5 border-b border-gray-100 cursor-grab"
-                    >
-                        <span class="flex items-center justify-center h-7 w-5 text-gray-400" aria-hidden="true">
-                            <i class="fas fa-grip-vertical"></i>
-                        </span>
-                        <button
-                            type="button"
-                            class="grupo-documentos__flecha h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
-                            :disabled="!puedeMover(fila.item, -1) || guardandoOrden"
-                            title="Subir"
-                            aria-label="Subir documento"
-                            @click="moverUnPaso(fila.item, -1)"
-                        >
-                            <i class="fas fa-arrow-up text-xs" aria-hidden="true"></i>
-                        </button>
-                        <button
-                            type="button"
-                            class="grupo-documentos__flecha h-7 w-7 rounded-md text-gray-500 hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
-                            :disabled="!puedeMover(fila.item, 1) || guardandoOrden"
-                            title="Bajar"
-                            aria-label="Bajar documento"
-                            @click="moverUnPaso(fila.item, 1)"
-                        >
-                            <i class="fas fa-arrow-down text-xs" aria-hidden="true"></i>
-                        </button>
-                        <span
-                            class="shrink-0 w-7 h-7 ml-1 rounded-md flex items-center justify-center text-sm"
-                            :class="iconoTipoDocumento(fila.item.definicion.tipo).clases"
-                            aria-hidden="true"
-                        >
-                            <i :class="iconoTipoDocumento(fila.item.definicion.tipo).icono"></i>
-                        </span>
-                        <!-- En pantallas angostas el nombre conserva su ancho y el selector baja a otro renglón -->
-                        <span class="flex flex-1 min-w-[9rem] flex-col sm:flex-row sm:items-baseline sm:gap-2">
-                            <span class="text-sm font-medium text-gray-800 truncate">{{ nombreDeDocumento(fila.item) }}</span>
-                            <span class="text-xs text-gray-500 whitespace-nowrap">{{ fechaDeDocumento(fila.item) }}</span>
-                        </span>
-                        <label
-                            v-if="subgruposEnPantalla.length > 0"
-                            class="flex items-center gap-1.5 ml-auto text-xs text-gray-500"
-                            title="Subgrupo de este documento"
-                        >
-                            <i class="fas fa-folder text-amber-500" aria-hidden="true"></i>
-                            <select
-                                class="grupo-documentos__selector-subgrupo max-w-[14rem] rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700"
-                                :value="fila.subgrupo?.id ?? ''"
-                                :disabled="guardandoOrden"
-                                aria-label="Subgrupo de este documento"
-                                @change="cambiarSubgrupoDe(fila.item, $event)"
-                            >
-                                <option value="">Sin subgrupo</option>
-                                <option v-for="subgrupo in subgruposEnPantalla" :key="subgrupo.id" :value="subgrupo.id">
-                                    {{ subgrupo.nombre.trim() || NOMBRE_SUBGRUPO_POR_DEFECTO }}
-                                </option>
-                            </select>
-                        </label>
-                    </div>
                     <DocumentoItem
-                        v-else
                         v-bind="{ [fila.item.definicion.tipo]: fila.item.documento }"
                         :documentoId="fila.item.documento._id"
                         :documentoTipo="fila.item.definicion.tipo"
@@ -824,13 +619,6 @@ const hasExtraSection = computed(() => !!slots.extraSection);
     .grupo-documentos__fila--en-subgrupo {
         margin-left: 1.5rem;
     }
-}
-
-/* Fila que se está arrastrando en modo organizar */
-.grupo-documentos__fila--arrastrada {
-    outline: 2px solid #6ee7b7;
-    outline-offset: -2px;
-    background-color: #ecfdf5;
 }
 
 /* Hover effects mejorados */
