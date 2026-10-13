@@ -23,6 +23,7 @@ import ModalAnularDocumento from '@/components/modals/ModalAnularDocumento.vue';
 import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales.vue';
 import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 import ModalInasistenciasCardiometabolicas from '@/components/ModalInasistenciasCardiometabolicas.vue';
+import ModalOrdenDocumentos from '@/components/ModalOrdenDocumentos.vue';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalIncapacidades from '@/components/incapacidades/ModalIncapacidades.vue';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
@@ -87,8 +88,10 @@ const {
 } = usePermissionRestrictions();
 const { canManageTrabajadores, canAccessRiesgosTrabajo } = useUserPermissions();
 // Los resultados clínicos usan el mismo permiso que los documentos de evaluación
-const { canManageDocumentosEvaluacion: canManageResultadosClinicos } =
-  useRolePermissions();
+const {
+  canManageDocumentosEvaluacion: canManageResultadosClinicos,
+  canConfigurarOrdenDocumentos,
+} = useRolePermissions();
 const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
 const {
   navigateWithTreatmentConsent,
@@ -142,6 +145,7 @@ const showAnularModal = ref(false);
 const showCuestionariosModal = ref(false);
 const showProfessionalDataModal = ref(false);
 const showInasistenciasModal = ref(false);
+const showOrdenDocumentosModal = ref(false);
 const showResultadosClinicosPanel = ref(false);
 const selectedDocumentId = ref<string | null>(null);
 const selectedDocumentName = ref<string>('');
@@ -1238,6 +1242,11 @@ const crearDocumento = (tipoDocumento: string) =>
         @close="showInasistenciasModal = false"
       />
 
+      <ModalOrdenDocumentos
+        :visible="showOrdenDocumentosModal"
+        @close="showOrdenDocumentosModal = false"
+      />
+
       <Transition appear name="fade">
         <ModalDatosProfesionales 
           v-if="showProfessionalDataModal" 
@@ -1501,6 +1510,20 @@ const crearDocumento = (tipoDocumento: string) =>
             <div v-else key="docs-content">
               <Transition appear mode="out-in" name="slide-up">
                 <div>
+                  <div
+                    v-if="yearsWithRecords.length && canConfigurarOrdenDocumentos"
+                    class="flex justify-end mb-1"
+                  >
+                    <button
+                      type="button"
+                      class="expediente-accion-link"
+                      title="Elegir en qué orden aparecen los tipos de documento en todos los expedientes"
+                      @click="showOrdenDocumentosModal = true"
+                    >
+                      <i class="fa-solid fa-arrow-down-short-wide" aria-hidden="true"></i>
+                      Orden de los documentos
+                    </button>
+                  </div>
                   <div v-if="yearsWithRecords.length" class="space-y-6">
                 <div
                   v-for="(year, yearIndex) in yearsWithRecords"

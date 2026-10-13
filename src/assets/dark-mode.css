@@ -4303,3 +4303,51 @@ html.dark-mode .informes-texto-anterior {
   background-color: #1e293b !important;
   color: #e2e8f0 !important;
 }
+
+/* Subgrupos del año */
+html.dark-mode .grupo-documentos__fila--en-subgrupo {
+  border-left-color: #b45309 !important;
+}
+
+html.dark-mode .grupo-documentos__nombre-subgrupo,
+html.dark-mode .grupo-documentos__selector-subgrupo {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Modo organizar del grupo del año */
+html.dark-mode .grupo-documentos__fila--arrastrada {
+  outline-color: #047857 !important;
+  background-color: rgba(6, 78, 59, 0.45) !important;
+}
+
+html.dark-mode .grupo-documentos__asa button:hover:not(:disabled) {
+  background-color: #334155 !important;
+}
+
+/* Orden por defecto de los documentos del expediente */
+html.dark-mode .modal-orden-documentos .modal-orden-documentos-panel {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155;
+}
+
+html.dark-mode .modal-orden-documentos .modal-orden-documentos-header,
+html.dark-mode .modal-orden-documentos .modal-orden-documentos-footer {
+  border-color: #334155 !important;
+}
+
+html.dark-mode .modal-orden-documentos .modal-orden-documentos-footer {
+  background-color: #0f172a !important;
+}
+
+html.dark-mode .modal-orden-documentos .modal-orden-documentos-fila:hover,
+html.dark-mode .modal-orden-documentos button:hover:not(:disabled):not(.bg-emerald-600) {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .modal-orden-documentos .modal-orden-documentos-fila--arrastrada {
+  border-color: #047857 !important;
+  background-color: rgba(6, 78, 59, 0.45) !important;
+}

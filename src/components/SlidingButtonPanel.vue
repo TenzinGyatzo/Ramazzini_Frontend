@@ -7,6 +7,11 @@ import { useEmpresasStore } from "@/stores/empresas";
 import { useUserStore } from "@/stores/user";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { usePdfGenerationStore } from "@/stores/pdfGeneration";
+import { useDocumentosStore } from "@/stores/documentos";
+import {
+  ordenarComoEnExpediente,
+  posicionesEnExpediente,
+} from "@/helpers/documentosExpediente";
 import { generarInformePdf } from "@/composables/useGenerarInformePdf";
 import { headClinicalFile } from "@/lib/clinicalFiles";
 import { getToast } from "@/utils/toast";
@@ -17,6 +22,7 @@ const empresas = useEmpresasStore();
 const userStore = useUserStore();
 const pdfGenerationStore = usePdfGenerationStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const documentosStore = useDocumentosStore();
 const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
 
 const props = defineProps({
@@ -85,33 +91,15 @@ const loading = ref(false);
 
 const today = new Date();
 
-/** Orden de fusión por documentType camelCase de dominio. */
-const documentOrder = {
-  notaAclaratoria: 1,
-  constanciaAptitud: 2,
-  aptitud: 3,
-  historiaClinica: 4,
-  exploracionFisica: 5,
-  examenVista: 6,
-  historiaOtologica: 7,
-  audiometria: 8,
-  antidoping: 9,
-  certificado: 10,
-  previoEspirometria: 11,
-  documentoExterno: 12,
-  notaMedica: 13,
-  controlPrenatal: 14,
-  certificadoExpedito: 15,
-  receta: 16,
-  entrevistaPsicologica: 17,
-  trastornosEstadoAnimo: 18,
-  cuestionarioProdromalBreve: 19,
-  trastornoLimitePersonalidad: 20,
-  cuestionarioNordico: 21,
-  evaluacionSuenoVigilia: 22,
-  eventoSeguimientoCardiometabolico: 23,
-  informeLongitudinalCardiometabolico: 24,
-};
+/** El PDF combinado sigue el orden en que el expediente muestra los documentos. */
+const posicionesEnPantalla = computed(() =>
+  posicionesEnExpediente(
+    documentosStore.documentsByYear,
+    proveedorSaludStore.ordenTiposDocumento,
+    { controlPrenatalEnabled: controlPrenatalEnabled.value },
+    documentosStore.organizacionPorAnio,
+  ),
+);
 
 const isVisible = ref(true);
 
@@ -137,17 +125,13 @@ const handleClick = async () => {
     return;
   }
 
-  const orderedDocuments = props.selectedDocuments
-    .filter(
+  const orderedDocuments = ordenarComoEnExpediente(
+    props.selectedDocuments.filter(
       (doc) =>
         controlPrenatalEnabled.value || doc.documentType !== "controlPrenatal",
-    )
-    .sort((a, b) => {
-      return (
-        (documentOrder[a.documentType] || Infinity) -
-        (documentOrder[b.documentType] || Infinity)
-      );
-    });
+    ),
+    posicionesEnPantalla.value,
+  );
 
   try {
     const response = await axios.post(

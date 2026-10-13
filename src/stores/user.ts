@@ -35,6 +35,7 @@ interface User {
     accesoDashboardSalud: boolean;
     accesoRiesgosTrabajo: boolean;
     gestionarInventario?: boolean;
+    configurarOrdenDocumentos?: boolean;
   };
     cuentaActiva?: boolean;
     empresasAsignadas?: string[];

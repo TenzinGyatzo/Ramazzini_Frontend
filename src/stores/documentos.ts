@@ -3,6 +3,7 @@ import { mensajesDeInventario, type ResumenInventario } from '@/helpers/insumosS
 import { ref, computed } from "vue";
 import DocumentosAPI from "@/api/DocumentosAPI";
 import { getToast } from "@/utils/toast";
+import type { OrganizacionDelAnio, OrganizacionPorAnio } from "@/helpers/documentosExpediente";
 import type {
   Antidoping,
   Aptitud,
@@ -63,6 +64,8 @@ export type DocumentsByYear = {
 
 export const useDocumentosStore = defineStore("documentos", () => {
   const documentsByYear = ref<DocumentsByYear>({});
+  /** Orden manual y subgrupos por año; un año sin entrada usa el orden por defecto. */
+  const organizacionPorAnio = ref<OrganizacionPorAnio>({});
   const loading = ref(true);
   const currentTypeOfDocument = ref<string | null>(null);
   const currentDocumentId = ref<string | null>(null);
@@ -142,6 +145,25 @@ export const useDocumentosStore = defineStore("documentos", () => {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  /** El orden manual es accesorio: si no se puede leer, el expediente se muestra en el orden por defecto. */
+  async function cargarOrganizacion(trabajadorId: string): Promise<OrganizacionPorAnio> {
+    try {
+      const { data } = await DocumentosAPI.getOrganizacion(trabajadorId);
+      return data && typeof data === 'object' ? (data as OrganizacionPorAnio) : {};
+    } catch (error) {
+      console.error('No se pudo cargar el orden manual del expediente', error);
+      return {};
+    }
+  }
+
+  async function guardarOrdenDelAnio(trabajadorId: string, anio: string, organizacion: OrganizacionDelAnio) {
+    const { data } = await DocumentosAPI.guardarOrdenDelAnio(trabajadorId, anio, organizacion);
+    const siguiente = { ...organizacionPorAnio.value };
+    if (data?.organizacion) siguiente[anio] = data.organizacion;
+    else delete siguiente[anio];
+    organizacionPorAnio.value = siguiente;
+  }
+
   let fetchAllDocumentsGeneration = 0;
 
   async function fetchAllDocuments(trabajadorId: string) {
@@ -152,10 +174,14 @@ export const useDocumentosStore = defineStore("documentos", () => {
       let lastError: unknown;
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          const response = await DocumentosAPI.getAllDocuments(trabajadorId);
+          const [response, organizacion] = await Promise.all([
+            DocumentosAPI.getAllDocuments(trabajadorId),
+            cargarOrganizacion(trabajadorId),
+          ]);
           if (generation !== fetchAllDocumentsGeneration) return;
 
           const payload = response.data as Record<string, unknown>;
+          organizacionPorAnio.value = organizacion;
           documentsByYear.value = {};
           DOCUMENT_STORE_KEYS.forEach((tipo) => {
             const raw = payload[tipo];
@@ -247,6 +273,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
 
   function clear() {
     documentsByYear.value = {};
+    organizacionPorAnio.value = {};
     currentTypeOfDocument.value = null;
     currentDocumentId.value = null;
     currentDocument.value = null;
@@ -364,6 +391,8 @@ export const useDocumentosStore = defineStore("documentos", () => {
   return {
     loading,
     documentsByYear,
+    organizacionPorAnio,
+    guardarOrdenDelAnio,
     currentTypeOfDocument,
     currentDocumentId,
     currentDocument,

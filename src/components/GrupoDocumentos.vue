@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, useSlots } from 'vue';
+import { ref, shallowRef, watch, computed, inject, nextTick, useSlots } from 'vue';
 import type { DocumentsByYear } from '@/stores/documentos';
 import DocumentoItem from './DocumentoItem.vue';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
@@ -8,9 +8,39 @@ import { obtenerRutaDocumento, obtenerNombreArchivo, obtenerFechaDocumento } fro
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import {
+    anioTieneOrdenManual,
+    documentosDe,
+    estructuraDelAnio,
+    type DocumentoDelExpediente,
+    type ElementoDelAnio,
+    type SubgrupoDelAnio,
+} from '@/helpers/documentosExpediente';
+import {
+    MAX_LONGITUD_NOMBRE_SUBGRUPO,
+    NOMBRE_SUBGRUPO_POR_DEFECTO,
+    colocarDocumentoEnEncabezado,
+    colocarDocumentoSobre,
+    colocarSubgrupoEn,
+    copiarEstructura,
+    copiarParaOrganizar,
+    crearSubgrupo,
+    huellaDe,
+    moverASubgrupo,
+    moverDocumento,
+    moverSubgrupo,
+    organizacionDe,
+    puedeMoverDocumento,
+    quitarSubgrupo,
+    renombrarSubgrupo,
+} from '@/helpers/organizarExpediente';
+import { useTrabajadoresStore } from '@/stores/trabajadores';
+import { extractApiErrorMessage } from '@/helpers/apiErrors';
 
 const documentosStore = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
+const trabajadoresStore = useTrabajadoresStore();
+const toast = inject<{ open: (o: { message: string; type?: string }) => void } | undefined>('toast', undefined);
 
 const documentImmutabilityEnabled = computed(() => proveedorSaludStore.documentImmutabilityEnabled);
 const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
@@ -88,37 +118,216 @@ const canDeleteAnyDocument = computed(() => {
          canManageOtrosDocumentos.value;
 });
 
-// Calcular el total de documentos para mostrar en el header
-const slots = useSlots();
-const totalDocumentos = computed(() => {
-    return (
-           (props.documents.notasAclaratorias?.length || 0) +
-           (props.documents.constanciasAptitud?.length || 0) +
-           (props.documents.aptitudes?.length || 0) +
-           (props.documents.historiasClinicas?.length || 0) +
-           (props.documents.exploracionesFisicas?.length || 0) +
-           (props.documents.examenesVista?.length || 0) +
-           (props.documents.audiometrias?.length || 0) +
-           (props.documents.antidopings?.length || 0) +
-           (props.documents.certificados?.length || 0) +
-           (props.documents.certificadosExpedito?.length || 0) +
-           (props.documents.documentosExternos?.length || 0) +
-           (props.documents.notasMedicas?.length || 0) +
-           (controlPrenatalEnabled.value ? (props.documents.controlPrenatal?.length || 0) : 0) +
-           (props.documents.historiaOtologica?.length || 0) +
-           (props.documents.previoEspirometria?.length || 0) +
-           (props.documents.recetas?.length || 0) +
-           (props.documents.entrevistasPsicologicas?.length || 0) +
-           (props.documents.trastornosEstadoAnimo?.length || 0) +
-           (props.documents.cuestionarioProdromalBreve?.length || 0) +
-           (props.documents.trastornoLimitePersonalidad?.length || 0) +
-           (props.documents.cuestionarioNordico?.length || 0) +
-           (props.documents.evaluacionSuenoVigilia?.length || 0) +
-           (props.documents.eventoSeguimientoCardiometabolico?.length || 0) +
-           (props.documents.informeLongitudinalCardiometabolico?.length || 0) +
-           (props.documents.informeLongitudinalAudiometrico?.length || 0)
-    );
+// Orden por defecto del proveedor y, encima, lo que alguien acomodó a mano en el año (orden y subgrupos)
+const opcionesDeOrden = computed(() => ({ controlPrenatalEnabled: controlPrenatalEnabled.value }));
+const opcionesConOrganizacion = computed(() => ({
+    ...opcionesDeOrden.value,
+    ordenManual: documentosStore.organizacionPorAnio[props.year]?.orden,
+    subgrupos: documentosStore.organizacionPorAnio[props.year]?.subgrupos,
+}));
+const elementosPorDefecto = computed(() =>
+    estructuraDelAnio(props.documents, proveedorSaludStore.ordenTiposDocumento, opcionesDeOrden.value),
+);
+const elementosGuardados = computed(() =>
+    estructuraDelAnio(props.documents, proveedorSaludStore.ordenTiposDocumento, opcionesConOrganizacion.value),
+);
+const ordenPersonalizado = computed(() =>
+    anioTieneOrdenManual(props.documents, proveedorSaludStore.ordenTiposDocumento, opcionesConOrganizacion.value),
+);
+
+// Modo organizar: se acomoda una copia y solo al guardar se vuelve la organización del año
+type Arrastrado = { clase: 'documento'; item: DocumentoDelExpediente } | { clase: 'subgrupo'; id: string };
+const borradorDeOrden = shallowRef<ElementoDelAnio[] | null>(null);
+const organizando = computed(() => borradorDeOrden.value !== null);
+const guardandoOrden = ref(false);
+const arrastrado = shallowRef<Arrastrado | null>(null);
+
+const elementosEnPantalla = computed(() => borradorDeOrden.value ?? elementosGuardados.value);
+const documentosEnOrden = computed(() => documentosDe(elementosEnPantalla.value));
+const subgruposEnPantalla = computed(() =>
+    elementosEnPantalla.value.filter((elemento): elemento is SubgrupoDelAnio => elemento.clase === 'subgrupo'),
+);
+
+// Subgrupos plegados: preferencia de quien mira, no se guarda; siempre abren desplegados
+const plegados = ref<Set<string>>(new Set());
+function alternarPlegado(id: string) {
+    const siguiente = new Set(plegados.value);
+    if (siguiente.has(id)) siguiente.delete(id);
+    else siguiente.add(id);
+    plegados.value = siguiente;
+}
+
+interface FilaEncabezado {
+    clase: 'encabezado';
+    clave: string;
+    subgrupo: SubgrupoDelAnio;
+    indice: number;
+    plegado: boolean;
+}
+interface FilaDocumento {
+    clase: 'documento';
+    clave: string;
+    item: DocumentoDelExpediente;
+    subgrupo: SubgrupoDelAnio | null;
+    indice: number;
+}
+
+// El año, fila por fila: cada subgrupo es un encabezado seguido de sus documentos
+const filas = computed(() => {
+    const resultado: Array<FilaEncabezado | FilaDocumento> = [];
+    const filaDe = (item: DocumentoDelExpediente, subgrupo: SubgrupoDelAnio | null, indice: number): FilaDocumento => ({
+        clase: 'documento',
+        clave: `${item.definicion.tipo}-${item.documento._id ?? resultado.length}`,
+        item,
+        subgrupo,
+        indice,
+    });
+    elementosEnPantalla.value.forEach((elemento, indice) => {
+        if (elemento.clase === 'documento') {
+            resultado.push(filaDe(elemento.item, null, indice));
+            return;
+        }
+        const plegado = !organizando.value && plegados.value.has(elemento.id);
+        resultado.push({ clase: 'encabezado', clave: `subgrupo-${elemento.id}`, subgrupo: elemento, indice, plegado });
+        if (!plegado) elemento.documentos.forEach((item) => resultado.push(filaDe(item, elemento, indice)));
+    });
+    return resultado;
 });
+
+// Reordenar es presentación: basta con poder gestionar algún tipo de documento
+const puedeOrganizar = computed(() =>
+    canManageDocumentosDiagnostico.value ||
+    canManageDocumentosEvaluacion.value ||
+    canManageDocumentosExternos.value ||
+    canManageOtrosDocumentos.value,
+);
+
+const hayCambiosDeOrden = computed(() =>
+    !!borradorDeOrden.value && huellaDe(borradorDeOrden.value) !== huellaDe(elementosGuardados.value),
+);
+const borradorEsElPorDefecto = computed(() =>
+    !!borradorDeOrden.value && huellaDe(borradorDeOrden.value) === huellaDe(elementosPorDefecto.value),
+);
+
+function iniciarOrganizacion() {
+    borradorDeOrden.value = copiarParaOrganizar(elementosGuardados.value);
+}
+
+function cancelarOrganizacion() {
+    if (guardandoOrden.value) return;
+    borradorDeOrden.value = null;
+    arrastrado.value = null;
+}
+
+/** Aplica un cambio a la copia que se está organizando. */
+function editar(cambio: (elementos: ElementoDelAnio[]) => ElementoDelAnio[]) {
+    if (borradorDeOrden.value) borradorDeOrden.value = cambio(borradorDeOrden.value);
+}
+
+const puedeMover = (item: DocumentoDelExpediente, paso: -1 | 1) =>
+    !!borradorDeOrden.value && puedeMoverDocumento(borradorDeOrden.value, item, paso);
+const moverUnPaso = (item: DocumentoDelExpediente, paso: -1 | 1) =>
+    editar((elementos) => moverDocumento(elementos, item, paso));
+const moverSubgrupoUnPaso = (id: string, paso: -1 | 1) => editar((elementos) => moverSubgrupo(elementos, id, paso));
+const renombrar = (id: string, evento: Event) =>
+    editar((elementos) => renombrarSubgrupo(elementos, id, (evento.target as HTMLInputElement).value));
+const quitar = (id: string) => editar((elementos) => quitarSubgrupo(elementos, id));
+const cambiarSubgrupoDe = (item: DocumentoDelExpediente, evento: Event) =>
+    editar((elementos) => moverASubgrupo(elementos, item, (evento.target as HTMLSelectElement).value || null));
+
+const raizDelGrupo = ref<HTMLElement | null>(null);
+let consecutivoDeSubgrupo = 0;
+async function nuevoSubgrupo() {
+    const id = `sg-${Date.now().toString(36)}-${(consecutivoDeSubgrupo++).toString(36)}`;
+    editar((elementos) => crearSubgrupo(elementos, id));
+    await nextTick();
+    const campo = raizDelGrupo.value?.querySelector<HTMLInputElement>(`[data-subgrupo-nombre="${id}"]`);
+    campo?.focus();
+    campo?.select();
+}
+
+function iniciarArrastre(evento: DragEvent, quien: Arrastrado) {
+    if (!organizando.value) return;
+    arrastrado.value = quien;
+    if (evento.dataTransfer) {
+        evento.dataTransfer.effectAllowed = 'move';
+        evento.dataTransfer.setData('text/plain', quien.clase === 'documento' ? String(quien.item.documento._id ?? '') : quien.id);
+    }
+}
+
+function alArrastrarSobreDocumento(evento: DragEvent, fila: FilaDocumento) {
+    const quien = arrastrado.value;
+    if (!organizando.value || !quien) return;
+    evento.preventDefault();
+    if (quien.clase === 'documento') {
+        editar((elementos) => colocarDocumentoSobre(elementos, quien.item, fila.item));
+    } else if (!fila.subgrupo) {
+        // Un subgrupo solo se acomoda entre los elementos sueltos del año
+        editar((elementos) => colocarSubgrupoEn(elementos, quien.id, fila.indice));
+    }
+}
+
+function alArrastrarSobreEncabezado(evento: DragEvent, fila: FilaEncabezado) {
+    const quien = arrastrado.value;
+    if (!organizando.value || !quien) return;
+    evento.preventDefault();
+    if (quien.clase === 'documento') {
+        editar((elementos) => colocarDocumentoEnEncabezado(elementos, quien.item, fila.subgrupo.id));
+    } else if (quien.id !== fila.subgrupo.id) {
+        editar((elementos) => colocarSubgrupoEn(elementos, quien.id, fila.indice));
+    }
+}
+
+const esElArrastrado = (fila: FilaEncabezado | FilaDocumento) => {
+    const quien = arrastrado.value;
+    if (!organizando.value || !quien) return false;
+    return fila.clase === 'documento'
+        ? quien.clase === 'documento' && quien.item === fila.item
+        : quien.clase === 'subgrupo' && quien.id === fila.subgrupo.id;
+};
+
+function restablecerOrden() {
+    borradorDeOrden.value = copiarEstructura(elementosPorDefecto.value);
+}
+
+async function guardarOrden() {
+    const borrador = borradorDeOrden.value;
+    const trabajadorId = trabajadoresStore.currentTrabajadorId;
+    if (!borrador || guardandoOrden.value || !hayCambiosDeOrden.value || !trabajadorId) return;
+    guardandoOrden.value = true;
+    try {
+        // Lo que se ve sin organizar no se guarda: el año vuelve a seguir al orden del proveedor
+        const organizacion = borradorEsElPorDefecto.value ? { orden: [], subgrupos: [] } : organizacionDe(borrador);
+        const vuelveAlPorDefecto = organizacion.orden.length === 0 && organizacion.subgrupos.length === 0;
+        await documentosStore.guardarOrdenDelAnio(trabajadorId, props.year, organizacion);
+        borradorDeOrden.value = null;
+        toast?.open({
+            message: vuelveAlPorDefecto
+                ? `El expediente ${props.year} volvió al orden por defecto`
+                : `Organización del expediente ${props.year} guardada`,
+            type: 'success',
+        });
+    } catch (error) {
+        toast?.open({
+            message: extractApiErrorMessage(error, 'No se pudo guardar la organización de los documentos'),
+            type: 'error',
+        });
+    } finally {
+        guardandoOrden.value = false;
+        arrastrado.value = null;
+    }
+}
+
+// Si el año cambia por fuera (se crea o elimina un documento) o se entra a eliminar, se sale del modo
+watch(elementosGuardados, () => {
+    borradorDeOrden.value = null;
+});
+watch(() => props.isDeletionMode, (activo) => {
+    if (activo) borradorDeOrden.value = null;
+});
+
+const slots = useSlots();
+const totalDocumentos = computed(() => documentosEnOrden.value.length);
 
 function construirRutaDocumento(
     doc: { _id: string },
@@ -137,48 +346,19 @@ const documentoRutasInfo = computed(() => {
     const items: Array<{ documentId: string; documentType: string; filePath: string }> = [];
     const itemsDeletables: Array<{ documentId: string; documentType: string; filePath: string }> = [];
 
-    const pushDoc = (
-        doc: { _id?: string; estado?: string },
-        documentType: string,
-        tipoLabel: string,
-        store?: ReturnType<typeof useDocumentosStore>,
-    ) => {
-        if (!doc._id) return;
-        const filePath = construirRutaDocumento(doc as { _id: string }, tipoLabel, store);
-        const item = { documentId: doc._id, documentType, filePath };
+    documentosEnOrden.value.forEach(({ definicion, documento }) => {
+        if (!documento._id) return;
+        const filePath = construirRutaDocumento(
+            documento as { _id: string },
+            definicion.etiquetaRuta,
+            definicion.rutaConStore ? documentosStore : undefined,
+        );
+        const item = { documentId: documento._id, documentType: definicion.tipo, filePath };
         items.push(item);
-        if (!isDocumentoInmutable(doc)) {
+        if (!isDocumentoInmutable(documento)) {
             itemsDeletables.push(item);
         }
-    };
-
-    props.documents.notasAclaratorias?.forEach((doc) => pushDoc(doc, 'notaAclaratoria', 'Nota Aclaratoria', documentosStore));
-    props.documents.constanciasAptitud?.forEach((doc) => pushDoc(doc, 'constanciaAptitud', 'Constancia de Aptitud'));
-    props.documents.aptitudes?.forEach((doc) => pushDoc(doc, 'aptitud', 'Aptitud'));
-    props.documents.historiasClinicas?.forEach((doc) => pushDoc(doc, 'historiaClinica', 'Historia Clinica'));
-    props.documents.exploracionesFisicas?.forEach((doc) => pushDoc(doc, 'exploracionFisica', 'Exploracion Fisica'));
-    props.documents.examenesVista?.forEach((doc) => pushDoc(doc, 'examenVista', 'Examen Vista'));
-    props.documents.audiometrias?.forEach((doc) => pushDoc(doc, 'audiometria', 'Audiometria'));
-    props.documents.antidopings?.forEach((doc) => pushDoc(doc, 'antidoping', 'Antidoping'));
-    props.documents.certificados?.forEach((doc) => pushDoc(doc, 'certificado', 'Certificado'));
-    props.documents.certificadosExpedito?.forEach((doc) => pushDoc(doc, 'certificadoExpedito', 'Certificado Expedito'));
-    props.documents.documentosExternos?.forEach((doc) => pushDoc(doc, 'documentoExterno', 'Documento Externo'));
-    props.documents.notasMedicas?.forEach((doc) => pushDoc(doc, 'notaMedica', 'Nota Medica'));
-    if (controlPrenatalEnabled.value) {
-        props.documents.controlPrenatal?.forEach((doc) => pushDoc(doc, 'controlPrenatal', 'Control Prenatal'));
-    }
-    props.documents.historiaOtologica?.forEach((doc) => pushDoc(doc, 'historiaOtologica', 'Historia Otologica'));
-    props.documents.informeLongitudinalAudiometrico?.forEach((doc) => pushDoc(doc, 'informeLongitudinalAudiometrico', 'Informe Longitudinal Audiometrico'));
-    props.documents.previoEspirometria?.forEach((doc) => pushDoc(doc, 'previoEspirometria', 'Previo Espirometria'));
-    props.documents.recetas?.forEach((doc) => pushDoc(doc, 'receta', 'Receta'));
-    props.documents.entrevistasPsicologicas?.forEach((doc) => pushDoc(doc, 'entrevistaPsicologica', 'Entrevista Psicologica'));
-    props.documents.trastornosEstadoAnimo?.forEach((doc) => pushDoc(doc, 'trastornosEstadoAnimo', 'Trastornos Estado Animo'));
-    props.documents.cuestionarioProdromalBreve?.forEach((doc) => pushDoc(doc, 'cuestionarioProdromalBreve', 'Cuestionario Prodromal Breve'));
-    props.documents.trastornoLimitePersonalidad?.forEach((doc) => pushDoc(doc, 'trastornoLimitePersonalidad', 'Trastorno Limite Personalidad'));
-    props.documents.cuestionarioNordico?.forEach((doc) => pushDoc(doc, 'cuestionarioNordico', 'Cuestionario Nordico'));
-    props.documents.evaluacionSuenoVigilia?.forEach((doc) => pushDoc(doc, 'evaluacionSuenoVigilia', 'Evaluacion Sueno Vigilia'));
-    props.documents.eventoSeguimientoCardiometabolico?.forEach((doc) => pushDoc(doc, 'eventoSeguimientoCardiometabolico', 'Evento Seguimiento Cardiometabolico'));
-    props.documents.informeLongitudinalCardiometabolico?.forEach((doc) => pushDoc(doc, 'informeLongitudinalCardiometabolico', 'Informe Longitudinal Cardiometabólico'));
+    });
 
     return { items, itemsDeletables };
 });
@@ -196,6 +376,21 @@ const isDocumentoSelected = (documentoId: string | undefined) => {
     if (!documentoId) return false;
     return props.selectedDocuments.some((d) => d.documentId === documentoId);
 };
+
+// Selección por subgrupo: los mismos documentos que «Seleccionar todos» tomaría, pero solo los suyos
+function itemsDeSubgrupo(subgrupo: SubgrupoDelAnio) {
+    const ids = new Set(subgrupo.documentos.map((item) => item.documento._id));
+    const candidatos = props.isDeletionMode ? itemsDeletablesDelGrupo.value : itemsDelGrupo.value;
+    return candidatos.filter((item) => ids.has(item.documentId));
+}
+const subgrupoSeleccionado = (subgrupo: SubgrupoDelAnio) => {
+    const items = itemsDeSubgrupo(subgrupo);
+    return items.length > 0 && items.every((item) => isDocumentoSelected(item.documentId));
+};
+function alternarSeleccionDeSubgrupo(subgrupo: SubgrupoDelAnio) {
+    const marcar = !subgrupoSeleccionado(subgrupo);
+    itemsDeSubgrupo(subgrupo).forEach((item) => props.toggleRouteSelection(item, marcar));
+}
 
 // Calcular cuántos documentos de este grupo están seleccionados
 const documentosSeleccionadosDelGrupo = computed(() => {
@@ -235,7 +430,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
 </script>
 
 <template>
-    <div class="w-full rounded-xl overflow-hidden border border-gray-200 bg-white">
+    <div ref="raizDelGrupo" class="w-full rounded-xl overflow-hidden border border-gray-200 bg-white">
         <!-- Encabezado del año -->
         <div class="grupo-documentos__header relative overflow-hidden bg-emerald-600">
 
@@ -253,7 +448,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                             Expediente {{ year }}
                         </h2>
                         <p class="text-emerald-100 text-xs sm:text-sm">
-                            {{ totalDocumentos }} documento{{ totalDocumentos !== 1 ? 's' : '' }} en total
+                            {{ totalDocumentos }} documento{{ totalDocumentos !== 1 ? 's' : '' }} en total<span v-if="ordenPersonalizado" title="Alguien acomodó a mano los documentos de este año"> · orden personalizado</span>
                         </p>
                     </div>
                 </div>
@@ -279,8 +474,53 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             </div>
         </div>
 
+        <!-- Modo organizar: acomodar los documentos del año -->
+        <div v-if="organizando" class="grupo-documentos__organizar flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 px-4 sm:px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <p class="text-sm text-gray-700 min-w-0">
+                <i class="fas fa-arrows-up-down text-emerald-600 mr-1" aria-hidden="true"></i>
+                <span class="font-semibold">Organizando el expediente {{ year }}.</span>
+                Arrastra los documentos o usa las flechas, y agrúpalos en subgrupos si lo necesitas. El PDF combinado saldrá en este orden.
+            </p>
+            <div class="flex flex-wrap items-center gap-2 lg:justify-end lg:shrink-0">
+                <button
+                    type="button"
+                    class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-100 whitespace-nowrap"
+                    :disabled="guardandoOrden"
+                    title="Crear un subgrupo para reunir documentos, por ejemplo «Antidoping»"
+                    @click="nuevoSubgrupo"
+                >
+                    <i class="fas fa-folder-plus text-amber-500 mr-1" aria-hidden="true"></i>Nuevo subgrupo
+                </button>
+                <button
+                    type="button"
+                    class="text-sm font-medium text-gray-600 hover:text-emerald-700 hover:underline disabled:opacity-40 disabled:no-underline mr-1 whitespace-nowrap"
+                    :disabled="borradorEsElPorDefecto || guardandoOrden"
+                    title="Volver al orden por tipo de documento, solo con los subgrupos automáticos"
+                    @click="restablecerOrden"
+                >
+                    <i class="fas fa-rotate-left mr-1" aria-hidden="true"></i>Restablecer orden por defecto
+                </button>
+                <button
+                    type="button"
+                    class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-100"
+                    :disabled="guardandoOrden"
+                    @click="cancelarOrganizacion"
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    class="rounded-lg bg-emerald-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 whitespace-nowrap"
+                    :disabled="!hayCambiosDeOrden || guardandoOrden"
+                    @click="guardarOrden"
+                >
+                    {{ guardandoOrden ? 'Guardando…' : 'Guardar orden' }}
+                </button>
+            </div>
+        </div>
+
         <!-- Barra de selección mejorada -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 bg-white border-b border-gray-200">
+        <div v-if="!organizando" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 bg-white border-b border-gray-200">
             <div class="flex flex-wrap items-start sm:items-center gap-3 sm:gap-4">
                 <!-- Checkbox personalizado -->
                 <div class="relative">
@@ -320,9 +560,20 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                 </div>
             </div>
 
-            <!-- Botón de modo eliminación (solo visible si tiene todos los permisos) -->
-            <div v-if="canDeleteAnyDocument" class="flex items-center w-full sm:w-auto justify-center sm:justify-end gap-2">
+            <!-- Organizar (con algún permiso de documentos) y modo eliminación (con todos) -->
+            <div v-if="canDeleteAnyDocument || puedeOrganizar" class="flex items-center w-full sm:w-auto justify-center sm:justify-end gap-2">
                 <button
+                    v-if="puedeOrganizar && !isDeletionMode && totalDocumentos > 0"
+                    type="button"
+                    class="flex items-center justify-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-200 text-sm font-medium w-full sm:w-auto bg-gray-50 hover:bg-gray-100 text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-700"
+                    title="Acomodar a mano los documentos de este año"
+                    @click="iniciarOrganizacion"
+                >
+                    <i class="fas fa-arrows-up-down text-xs text-gray-400" aria-hidden="true"></i>
+                    <span>Organizar</span>
+                </button>
+                <button
+                    v-if="canDeleteAnyDocument"
                     @click="toggleDeletionMode"
                     class="flex items-center justify-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-200 text-sm font-medium w-full sm:w-auto"
                     :class="isDeletionMode
@@ -336,510 +587,187 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             </div>
         </div>
 
-        <!-- Contenido de documentos con espaciado mejorado -->
-        <div class="divide-gray-100">
-
-            <!-- Notas Aclaratorias -->
-            <div v-if="documents.notasAclaratorias && documents.notasAclaratorias.length > 0">
-                <div v-for="(notaAclaratoria, index) in documents.notasAclaratorias" :key="notaAclaratoria._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :notaAclaratoria="notaAclaratoria"
-                        :documentoId="notaAclaratoria._id"
-                        :documentoTipo="'notaAclaratoria'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(notaAclaratoria._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', notaAclaratoria._id, convertirFechaISOaDDMMYYYY(notaAclaratoria.fechaNotaAclaratoria), 'notaAclaratoria')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
+        <!-- Documentos del año, en el orden del expediente; los subgrupos son un encabezado y sus documentos -->
+        <div>
+            <template v-for="fila in filas" :key="fila.clave">
+                <!-- Encabezado de subgrupo -->
+                <div
+                    v-if="fila.clase === 'encabezado'"
+                    class="grupo-documentos__subgrupo flex items-stretch bg-gray-50 border-y border-gray-200"
+                    :class="{ 'grupo-documentos__fila--arrastrada': esElArrastrado(fila) }"
+                    :data-subgrupo="fila.subgrupo.id"
+                    @dragenter="alArrastrarSobreEncabezado($event, fila)"
+                    @dragover="organizando && $event.preventDefault()"
+                    @drop="organizando && $event.preventDefault()"
+                >
+                    <template v-if="organizando">
+                        <div
+                            class="grupo-documentos__asa flex flex-col items-center justify-center gap-0.5 px-1.5 sm:px-2 border-r border-gray-200 text-gray-500 cursor-grab"
+                            draggable="true"
+                            @dragstart="iniciarArrastre($event, { clase: 'subgrupo', id: fila.subgrupo.id })"
+                            @dragend="arrastrado = null"
+                        >
+                            <button
+                                type="button"
+                                class="h-8 w-8 rounded-lg hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                                :disabled="fila.indice === 0 || guardandoOrden"
+                                title="Subir subgrupo"
+                                aria-label="Subir subgrupo"
+                                @click="moverSubgrupoUnPaso(fila.subgrupo.id, -1)"
+                            >
+                                <i class="fas fa-arrow-up text-sm" aria-hidden="true"></i>
+                            </button>
+                            <i class="fas fa-grip-vertical text-gray-400" aria-hidden="true"></i>
+                            <button
+                                type="button"
+                                class="h-8 w-8 rounded-lg hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                                :disabled="fila.indice === elementosEnPantalla.length - 1 || guardandoOrden"
+                                title="Bajar subgrupo"
+                                aria-label="Bajar subgrupo"
+                                @click="moverSubgrupoUnPaso(fila.subgrupo.id, 1)"
+                            >
+                                <i class="fas fa-arrow-down text-sm" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="flex flex-1 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2">
+                            <i class="fas fa-folder-open text-amber-500" aria-hidden="true"></i>
+                            <input
+                                type="text"
+                                class="grupo-documentos__nombre-subgrupo flex-1 min-w-[9rem] rounded-md border border-gray-300 bg-white px-2 py-1 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                :value="fila.subgrupo.nombre"
+                                :maxlength="MAX_LONGITUD_NOMBRE_SUBGRUPO"
+                                :data-subgrupo-nombre="fila.subgrupo.id"
+                                aria-label="Nombre del subgrupo"
+                                placeholder="Nombre del subgrupo"
+                                @input="renombrar(fila.subgrupo.id, $event)"
+                            >
+                            <span class="text-xs text-gray-500 whitespace-nowrap">
+                                {{ fila.subgrupo.documentos.length }} documento{{ fila.subgrupo.documentos.length !== 1 ? 's' : '' }}
+                            </span>
+                            <button
+                                type="button"
+                                class="text-sm font-medium text-gray-600 hover:text-red-600 hover:underline whitespace-nowrap"
+                                title="Quitar el subgrupo; sus documentos quedan sueltos en el mismo lugar"
+                                @click="quitar(fila.subgrupo.id)"
+                            >
+                                <i class="fas fa-folder-minus mr-1" aria-hidden="true"></i>Quitar subgrupo
+                            </button>
+                            <p v-if="fila.subgrupo.documentos.length === 0" class="basis-full text-xs text-gray-500">
+                                Vacío. Trae documentos con el selector «Subgrupo» de cada uno, con las flechas o arrastrándolos aquí.
+                            </p>
+                        </div>
+                    </template>
+                    <div v-else class="flex items-center gap-3 w-full px-4 sm:px-6 py-2">
+                        <input
+                            type="checkbox"
+                            class="grupo-documentos__casilla-subgrupo w-4 h-4 shrink-0 rounded border-gray-300 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                            :checked="subgrupoSeleccionado(fila.subgrupo)"
+                            :disabled="fila.subgrupo.documentos.length === 0"
+                            :aria-label="`Seleccionar los documentos de ${fila.subgrupo.nombre}`"
+                            :title="`Seleccionar los documentos de ${fila.subgrupo.nombre}`"
+                            @change="alternarSeleccionDeSubgrupo(fila.subgrupo)"
+                        >
+                        <button
+                            type="button"
+                            class="flex flex-1 min-w-0 items-center gap-2 text-left"
+                            :aria-expanded="!fila.plegado"
+                            :title="fila.plegado ? 'Mostrar los documentos del subgrupo' : 'Ocultar los documentos del subgrupo'"
+                            @click="alternarPlegado(fila.subgrupo.id)"
+                        >
+                            <i class="fas text-xs text-gray-400 w-3" :class="fila.plegado ? 'fa-chevron-right' : 'fa-chevron-down'" aria-hidden="true"></i>
+                            <i class="fas text-amber-500" :class="fila.plegado ? 'fa-folder' : 'fa-folder-open'" aria-hidden="true"></i>
+                            <span class="font-semibold text-sm text-gray-800 truncate">{{ fila.subgrupo.nombre }}</span>
+                            <span class="text-xs text-gray-500 whitespace-nowrap">
+                                {{ fila.subgrupo.documentos.length }} documento{{ fila.subgrupo.documentos.length !== 1 ? 's' : '' }}
+                            </span>
+                            <span
+                                v-if="fila.subgrupo.automatico"
+                                class="text-[11px] text-gray-400 whitespace-nowrap"
+                                title="Ramazzini reunió estos documentos por su tipo. Con «Organizar» puedes cambiarlo o quitarlo."
+                            >· automático</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Constancias de Aptitud -->
-            <div v-if="documents.constanciasAptitud && documents.constanciasAptitud.length > 0">
-                <div v-for="(constanciaAptitud, index) in documents.constanciasAptitud" :key="constanciaAptitud._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :constanciaAptitud="constanciaAptitud"
-                        :documentoId="constanciaAptitud._id"
-                        :documentoTipo="'constanciaAptitud'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(constanciaAptitud._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', constanciaAptitud._id, convertirFechaISOaDDMMYYYY(constanciaAptitud.fechaConstanciaAptitud), 'constanciaAptitud')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
+                <!-- Documento -->
+                <div
+                    v-else
+                    class="grupo-documentos__fila transition-all duration-200 hover:bg-gray-50"
+                    :class="{
+                        'flex items-stretch': organizando,
+                        'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo,
+                        'grupo-documentos__fila--arrastrada': esElArrastrado(fila),
+                    }"
+                    :draggable="organizando"
+                    @dragstart="iniciarArrastre($event, { clase: 'documento', item: fila.item })"
+                    @dragenter="alArrastrarSobreDocumento($event, fila)"
+                    @dragover="organizando && $event.preventDefault()"
+                    @dragend="arrastrado = null"
+                    @drop="organizando && $event.preventDefault()"
+                >
+                    <div
+                        v-if="organizando"
+                        class="grupo-documentos__asa flex flex-col items-center justify-center gap-0.5 px-1.5 sm:px-2 bg-gray-50 border-r border-b border-gray-200 text-gray-500 cursor-grab"
+                    >
+                        <button
+                            type="button"
+                            class="h-8 w-8 rounded-lg hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                            :disabled="!puedeMover(fila.item, -1) || guardandoOrden"
+                            title="Subir"
+                            aria-label="Subir documento"
+                            @click="moverUnPaso(fila.item, -1)"
+                        >
+                            <i class="fas fa-arrow-up text-sm" aria-hidden="true"></i>
+                        </button>
+                        <i class="fas fa-grip-vertical text-gray-400" aria-hidden="true"></i>
+                        <button
+                            type="button"
+                            class="h-8 w-8 rounded-lg hover:bg-gray-200 hover:text-emerald-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                            :disabled="!puedeMover(fila.item, 1) || guardandoOrden"
+                            title="Bajar"
+                            aria-label="Bajar documento"
+                            @click="moverUnPaso(fila.item, 1)"
+                        >
+                            <i class="fas fa-arrow-down text-sm" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div :class="organizando ? 'flex-1 min-w-0' : undefined">
+                        <label
+                            v-if="organizando && subgruposEnPantalla.length > 0"
+                            class="flex items-center gap-2 px-3 pt-2 text-xs text-gray-500"
+                        >
+                            <i class="fas fa-folder text-amber-500" aria-hidden="true"></i>
+                            Subgrupo
+                            <select
+                                class="grupo-documentos__selector-subgrupo max-w-[14rem] rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700"
+                                :value="fila.subgrupo?.id ?? ''"
+                                :disabled="guardandoOrden"
+                                @change="cambiarSubgrupoDe(fila.item, $event)"
+                            >
+                                <option value="">Sin subgrupo</option>
+                                <option v-for="subgrupo in subgruposEnPantalla" :key="subgrupo.id" :value="subgrupo.id">
+                                    {{ subgrupo.nombre.trim() || NOMBRE_SUBGRUPO_POR_DEFECTO }}
+                                </option>
+                            </select>
+                        </label>
+                        <div :class="organizando ? 'pointer-events-none select-none' : undefined">
+                            <DocumentoItem
+                                v-bind="{ [fila.item.definicion.tipo]: fila.item.documento }"
+                                :documentoId="fila.item.documento._id"
+                                :documentoTipo="fila.item.definicion.tipo"
+                                :toggleRouteSelection="toggleRouteSelection"
+                                :isDeletionMode="isDeletionMode"
+                                :isSelected="isDocumentoSelected(fila.item.documento._id)"
+                                @eliminarDocumento="$emit('eliminarDocumento', fila.item.documento._id, convertirFechaISOaDDMMYYYY(fila.item.documento[fila.item.definicion.campoFecha]), fila.item.definicion.tipo)"
+                                @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
+                                @abrirModalUpdate="$emit('abrirModalUpdate')"
+                                @openSubscriptionModal="emit('openSubscriptionModal')"
+                                @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
+                            />
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Aptitudes -->
-            <div v-if="documents.aptitudes && documents.aptitudes.length > 0">
-                <div v-for="(aptitud, index) in documents.aptitudes" :key="aptitud._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :aptitud="aptitud"
-                        :documentoId="aptitud._id"
-                        :documentoTipo="'aptitud'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(aptitud._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', aptitud._id, convertirFechaISOaDDMMYYYY(aptitud.fechaAptitudPuesto), 'aptitud')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Historias Clinicas -->
-            <div v-if="documents.historiasClinicas && documents.historiasClinicas.length > 0">
-                <div v-for="(historiaClinica, index) in documents.historiasClinicas" :key="historiaClinica._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :historiaClinica="historiaClinica"
-                        :documentoId="historiaClinica._id"
-                        :documentoTipo="'historiaClinica'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(historiaClinica._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', historiaClinica._id, convertirFechaISOaDDMMYYYY(historiaClinica.fechaHistoriaClinica), 'historiaClinica')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Exploraciones Fisicas -->
-            <div v-if="documents.exploracionesFisicas && documents.exploracionesFisicas.length > 0">
-                <div v-for="(exploracionFisica, index) in documents.exploracionesFisicas" :key="exploracionFisica._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :exploracionFisica="exploracionFisica"
-                        :documentoId="exploracionFisica._id"
-                        :documentoTipo="'exploracionFisica'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(exploracionFisica._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', exploracionFisica._id, convertirFechaISOaDDMMYYYY(exploracionFisica.fechaExploracionFisica), 'exploracionFisica')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Examenes de la Vista -->
-            <div v-if="documents.examenesVista && documents.examenesVista.length > 0">
-                <div v-for="(examenVista, index) in documents.examenesVista" :key="examenVista._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :examenVista="examenVista"
-                        :documentoId="examenVista._id"
-                        :documentoTipo="'examenVista'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(examenVista._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', examenVista._id, convertirFechaISOaDDMMYYYY(examenVista.fechaExamenVista), 'examenVista')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Historia Otologica -->
-            <div v-if="documents.historiaOtologica && documents.historiaOtologica.length > 0">
-                <div v-for="(historiaOtologica, index) in documents.historiaOtologica" :key="historiaOtologica._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :historiaOtologica="historiaOtologica"
-                        :documentoId="historiaOtologica._id"
-                        :documentoTipo="'historiaOtologica'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(historiaOtologica._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', historiaOtologica._id, convertirFechaISOaDDMMYYYY(historiaOtologica.fechaHistoriaOtologica), 'historiaOtologica')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Audiometrías -->
-            <div v-if="documents.audiometrias && documents.audiometrias.length > 0">
-                <div v-for="(audiometria, index) in documents.audiometrias" :key="audiometria._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :audiometria="audiometria"
-                        :documentoId="audiometria._id"
-                        :documentoTipo="'audiometria'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(audiometria._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', audiometria._id, convertirFechaISOaDDMMYYYY(audiometria.fechaAudiometria), 'audiometria')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Informe Longitudinal Audiometrico -->
-            <div v-if="documents.informeLongitudinalAudiometrico && documents.informeLongitudinalAudiometrico.length > 0">
-                <div v-for="(informeLongitudinalAudiometrico, index) in documents.informeLongitudinalAudiometrico" :key="informeLongitudinalAudiometrico._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :informeLongitudinalAudiometrico="informeLongitudinalAudiometrico"
-                        :documentoId="informeLongitudinalAudiometrico._id"
-                        :documentoTipo="'informeLongitudinalAudiometrico'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(informeLongitudinalAudiometrico._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', informeLongitudinalAudiometrico._id, convertirFechaISOaDDMMYYYY(informeLongitudinalAudiometrico.fechaInformeLongitudinalAudiometrico), 'informeLongitudinalAudiometrico')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Antidopings -->
-            <div v-if="documents.antidopings && documents.antidopings.length > 0">
-                <div v-for="(antidoping, index) in documents.antidopings" :key="antidoping._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :antidoping="antidoping"
-                        :documentoId="antidoping._id"
-                        :documentoTipo="'antidoping'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(antidoping._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', antidoping._id, convertirFechaISOaDDMMYYYY(antidoping.fechaAntidoping), 'antidoping')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Certificados -->
-            <div v-if="documents.certificados && documents.certificados.length > 0">
-                <div v-for="(certificado, index) in documents.certificados" :key="certificado._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :certificado="certificado"
-                        :documentoId="certificado._id"
-                        :documentoTipo="'certificado'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(certificado._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', certificado._id, convertirFechaISOaDDMMYYYY(certificado.fechaCertificado), 'certificado')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Previo Espirometria -->
-            <div v-if="documents.previoEspirometria && documents.previoEspirometria.length > 0">
-                <div v-for="(previoEspirometria, index) in documents.previoEspirometria" :key="previoEspirometria._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :previoEspirometria="previoEspirometria"
-                        :documentoId="previoEspirometria._id"
-                        :documentoTipo="'previoEspirometria'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(previoEspirometria._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', previoEspirometria._id, convertirFechaISOaDDMMYYYY(previoEspirometria.fechaPrevioEspirometria), 'previoEspirometria')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Documentos Externos -->
-            <div v-if="documents.documentosExternos && documents.documentosExternos.length > 0">
-                <div v-for="(documentoExterno, index) in documents.documentosExternos" :key="documentoExterno._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :documentoExterno="documentoExterno"
-                        :documentoId="documentoExterno._id"
-                        :documentoTipo="'documentoExterno'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(documentoExterno._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', documentoExterno._id, convertirFechaISOaDDMMYYYY(documentoExterno.fechaDocumento), 'documentoExterno')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @abrirModalUpdate="$emit('abrirModalUpdate')"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Notas Medicas -->
-            <div v-if="documents.notasMedicas && documents.notasMedicas.length > 0">
-                <div v-for="(notaMedica, index) in documents.notasMedicas" :key="notaMedica._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :notaMedica="notaMedica"
-                        :documentoId="notaMedica._id"
-                        :documentoTipo="'notaMedica'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(notaMedica._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', notaMedica._id, convertirFechaISOaDDMMYYYY(notaMedica.fechaNotaMedica), 'notaMedica')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-            <!-- Control Prenatal -->
-            <div v-if="controlPrenatalEnabled && documents.controlPrenatal && documents.controlPrenatal.length > 0">
-                <div v-for="(controlPrenatal, index) in documents.controlPrenatal" :key="controlPrenatal._id"
-                     class="transition-all duration-200 hover:bg-gray-50"
->
-                    <DocumentoItem
-                        :controlPrenatal="controlPrenatal"
-                        :documentoId="controlPrenatal._id"
-                        :documentoTipo="'controlPrenatal'"
-                        :toggleRouteSelection="toggleRouteSelection"
-                        :isDeletionMode="isDeletionMode"
-                        :isSelected="isDocumentoSelected(controlPrenatal._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', controlPrenatal._id, convertirFechaISOaDDMMYYYY(controlPrenatal.fechaInicioControlPrenatal), 'controlPrenatal')"
-                        @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                        @openSubscriptionModal="emit('openSubscriptionModal')"
-                        @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                    />
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Certificados Expedito -->
-        <div v-if="documents.certificadosExpedito && documents.certificadosExpedito.length > 0">
-            <div v-for="(certificadoExpedito, index) in documents.certificadosExpedito" :key="certificadoExpedito._id"
-                    class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem
-                    :certificadoExpedito="certificadoExpedito"
-                    :documentoId="certificadoExpedito._id"
-                    :documentoTipo="'certificadoExpedito'"
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(certificadoExpedito._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', certificadoExpedito._id, convertirFechaISOaDDMMYYYY(certificadoExpedito.fechaCertificadoExpedito), 'certificadoExpedito')"
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Recetas -->
-        <div v-if="documents.recetas && documents.recetas.length > 0">
-            <div v-for="(receta, index) in documents.recetas" :key="receta._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem
-                    :receta="receta"
-                    :documentoId="receta._id"
-                    :documentoTipo="'receta'"
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(receta._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', receta._id, convertirFechaISOaDDMMYYYY(receta.fechaReceta), 'receta')"
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Entrevista Psicologica -->
-        <div v-if="documents.entrevistasPsicologicas && documents.entrevistasPsicologicas.length > 0">
-            <div v-for="(entrevistaPsicologica, index) in documents.entrevistasPsicologicas" :key="entrevistaPsicologica._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem
-                    :entrevistaPsicologica="entrevistaPsicologica"
-                    :documentoId="entrevistaPsicologica._id"
-                    :documentoTipo="'entrevistaPsicologica'"
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(entrevistaPsicologica._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', entrevistaPsicologica._id, convertirFechaISOaDDMMYYYY(entrevistaPsicologica.fechaEntrevistaPsicologica), 'entrevistaPsicologica')"
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Trastornos Estado Animo -->
-        <div v-if="documents.trastornosEstadoAnimo && documents.trastornosEstadoAnimo.length > 0">
-            <div v-for="(trastornosEstadoAnimo, index) in documents.trastornosEstadoAnimo" :key="trastornosEstadoAnimo._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem
-                    :trastornosEstadoAnimo="trastornosEstadoAnimo"
-                    :documentoId="trastornosEstadoAnimo._id"
-                    :documentoTipo="'trastornosEstadoAnimo'"
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(trastornosEstadoAnimo._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', trastornosEstadoAnimo._id, convertirFechaISOaDDMMYYYY(trastornosEstadoAnimo.fechaTrastornosEstadoAnimo), 'trastornosEstadoAnimo')"
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Cuestionario Prodromal Breve -->
-        <div v-if="documents.cuestionarioProdromalBreve && documents.cuestionarioProdromalBreve.length > 0">
-            <div v-for="(cuestionarioProdromalBreve, index) in documents.cuestionarioProdromalBreve" :key="cuestionarioProdromalBreve._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem
-                    :cuestionarioProdromalBreve="cuestionarioProdromalBreve"
-                    :documentoId="cuestionarioProdromalBreve._id"
-                    :documentoTipo="'cuestionarioProdromalBreve'"
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(cuestionarioProdromalBreve._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', cuestionarioProdromalBreve._id, convertirFechaISOaDDMMYYYY(cuestionarioProdromalBreve.fechaCuestionarioProdromalBreve), 'cuestionarioProdromalBreve')"
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Trastorno Limite Personalidad -->
-        <div v-if="documents.trastornoLimitePersonalidad && documents.trastornoLimitePersonalidad.length > 0">
-            <div v-for="(trastornoLimitePersonalidad, index) in documents.trastornoLimitePersonalidad" :key="trastornoLimitePersonalidad._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem
-                    :trastornoLimitePersonalidad="trastornoLimitePersonalidad"
-                    :documentoId="trastornoLimitePersonalidad._id"
-                    :documentoTipo="'trastornoLimitePersonalidad'"
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(trastornoLimitePersonalidad._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', trastornoLimitePersonalidad._id, convertirFechaISOaDDMMYYYY(trastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad), 'trastornoLimitePersonalidad')"
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Cuestionario Nórdico -->
-        <div v-if="documents.cuestionarioNordico && documents.cuestionarioNordico.length > 0">
-            <div v-for="(cuestionarioNordico, index) in documents.cuestionarioNordico" :key="cuestionarioNordico._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem
-                    :cuestionarioNordico="cuestionarioNordico"
-                    :documentoId="cuestionarioNordico._id"
-                    :documentoTipo="'cuestionarioNordico'"
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(cuestionarioNordico._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', cuestionarioNordico._id, convertirFechaISOaDDMMYYYY(cuestionarioNordico.fechaCuestionarioNordico), 'cuestionarioNordico')"
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Evaluación de sueño y vigilia -->
-        <div v-if="documents.evaluacionSuenoVigilia && documents.evaluacionSuenoVigilia.length > 0">
-            <div v-for="(evaluacionSuenoVigilia, index) in documents.evaluacionSuenoVigilia" :key="evaluacionSuenoVigilia._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem
-                    :evaluacionSuenoVigilia="evaluacionSuenoVigilia"
-                    :documentoId="evaluacionSuenoVigilia._id"
-                    :documentoTipo="'evaluacionSuenoVigilia'"
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(evaluacionSuenoVigilia._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', evaluacionSuenoVigilia._id, convertirFechaISOaDDMMYYYY(evaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia), 'evaluacionSuenoVigilia')"
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Evento Seguimiento Cardiometabolico -->
-        <div v-if="documents.eventoSeguimientoCardiometabolico && documents.eventoSeguimientoCardiometabolico.length > 0">
-            <div v-for="(eventoSeguimientoCardiometabolico, index) in documents.eventoSeguimientoCardiometabolico" :key="eventoSeguimientoCardiometabolico._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem 
-                    :eventoSeguimientoCardiometabolico="eventoSeguimientoCardiometabolico" 
-                    :documentoId="eventoSeguimientoCardiometabolico._id" 
-                    :documentoTipo="'eventoSeguimientoCardiometabolico'" 
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(eventoSeguimientoCardiometabolico._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', eventoSeguimientoCardiometabolico._id, convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico), 'eventoSeguimientoCardiometabolico')" 
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
-        </div>
-
-        <!-- Informe Longitudinal Cardiometabolico -->
-        <div v-if="documents.informeLongitudinalCardiometabolico && documents.informeLongitudinalCardiometabolico.length > 0">
-            <div v-for="(informeLongitudinalCardiometabolico, index) in documents.informeLongitudinalCardiometabolico" :key="informeLongitudinalCardiometabolico._id"
-                 class="transition-all duration-200 hover:bg-gray-50"
->
-                <DocumentoItem 
-                    :informeLongitudinalCardiometabolico="informeLongitudinalCardiometabolico" 
-                    :documentoId="informeLongitudinalCardiometabolico._id" 
-                    :documentoTipo="'informeLongitudinalCardiometabolico'" 
-                    :toggleRouteSelection="toggleRouteSelection"
-                    :isDeletionMode="isDeletionMode"
-                    :isSelected="isDocumentoSelected(informeLongitudinalCardiometabolico._id)"
-                    @eliminarDocumento="$emit('eliminarDocumento', informeLongitudinalCardiometabolico._id, convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico), 'informeLongitudinalCardiometabolico')" 
-                    @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
-                    @openSubscriptionModal="emit('openSubscriptionModal')"
-                    @abrirModalFinalizar="(id, name, type) => $emit('abrirModalFinalizar', id, name, type)"
-                />
-            </div>
+            </template>
         </div>
 
         <div
@@ -863,6 +791,25 @@ const hasExtraSection = computed(() => !!slots.extraSection);
 </template>
 
 <style scoped>
+/* Documentos que pertenecen a un subgrupo: sangría con una guía a la izquierda */
+.grupo-documentos__fila--en-subgrupo {
+    margin-left: 0.75rem;
+    border-left: 3px solid #fcd34d;
+}
+
+@media (min-width: 640px) {
+    .grupo-documentos__fila--en-subgrupo {
+        margin-left: 1.5rem;
+    }
+}
+
+/* Fila que se está arrastrando en modo organizar */
+.grupo-documentos__fila--arrastrada {
+    outline: 2px solid #6ee7b7;
+    outline-offset: -2px;
+    background-color: #ecfdf5;
+}
+
 /* Hover effects mejorados */
 .hover\:bg-gray-50:hover {
     background-color: #f9fafb;

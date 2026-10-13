@@ -2,6 +2,7 @@ import { ref, onMounted, computed } from "vue";
 import { defineStore } from "pinia";
 import ProveedorSaludAPI from "@/api/ProveedorSaludAPI";
 import { isMexicoProvider } from "@/helpers/proveedorPais";
+import { resolverOrdenTipos } from "@/helpers/documentosExpediente";
 import { resolverFechaFinTrial } from '@/utils/periodoPrueba';
 import {
     contratoVigente,
@@ -51,6 +52,8 @@ interface ProveedorSalud {
     razonSocial: string;
     pais: string;
     clues?: string; // NOM-024: Clave Única de Establecimientos de Salud
+    /** Orden por defecto de los tipos de documento en el expediente; ausente = el de siempre. */
+    ordenDocumentosExpediente?: string[];
     logotipoEmpresa: {
         data: string;
         contentType: string;
@@ -159,6 +162,19 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
             throw error;
         } finally {
             saving.value = false;
+        }
+    }
+
+    /** Orden por defecto de los documentos del expediente; una lista vacía vuelve al de siempre. */
+    async function guardarOrdenDocumentosExpediente(orden: string[]) {
+        const idProveedorSalud = proveedorSalud.value?._id;
+        if (!idProveedorSalud) throw new Error("Proveedor de salud no cargado");
+        const { data } = await ProveedorSaludAPI.updateOrdenDocumentosExpediente(idProveedorSalud, orden);
+        if (proveedorSalud.value) {
+            proveedorSalud.value = {
+                ...proveedorSalud.value,
+                ordenDocumentosExpediente: data.ordenDocumentosExpediente,
+            };
         }
     }
 
@@ -357,6 +373,10 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
     const confidentialityAgreementEnabled = computed(() => regulatoryPolicy.value?.features.confidentialityAgreementEnabled ?? false);
     const auditTrailEnabled = computed(() => regulatoryPolicy.value?.features.auditTrailEnabled ?? false);
     const controlPrenatalEnabled = computed(() => regulatoryPolicy.value?.features.controlPrenatalEnabled ?? true);
+
+    // Orden de los tipos de documento en el expediente (el del proveedor o el de siempre)
+    const ordenTiposDocumento = computed(() => resolverOrdenTipos(proveedorSalud.value?.ordenDocumentosExpediente));
+    const ordenDocumentosPersonalizado = computed(() => (proveedorSalud.value?.ordenDocumentosExpediente?.length ?? 0) > 0);
     
     // Helpers basados en policy - Validations
     const curpFirmantesRequired = computed(() => regulatoryPolicy.value?.validation.curpFirmantes === 'required');
@@ -418,6 +438,8 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         confidentialityAgreementEnabled,
         auditTrailEnabled,
         controlPrenatalEnabled,
+        ordenTiposDocumento,
+        ordenDocumentosPersonalizado,
         // Validations
         curpFirmantesRequired,
         workerCurpRequired,
@@ -440,6 +462,7 @@ export const useProveedorSaludStore = defineStore("proveedorSalud", () => {
         getProveedorById,
         createProveedor,
         updateProveedorById,
+        guardarOrdenDocumentosExpediente,
         discardEmptyOnboardingProveedor,
         removeProveedorById,
         verificarPeriodoDePrueba,

@@ -591,6 +591,16 @@ onBeforeRouteLeave((to, from, next) => {
                 <i class="fas fa-boxes-stacked text-gray-600 text-sm sm:text-base"></i>
                 <span class="text-xs sm:text-sm text-gray-700 leading-snug">Gestionar Inventario (entradas, ajustes, bajas y catálogo)</span>
               </label>
+
+              <label class="flex items-center space-x-2 sm:space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  v-model="usuario.permisos.configurarOrdenDocumentos"
+                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                >
+                <i class="fas fa-arrow-down-short-wide text-gray-600 text-sm sm:text-base"></i>
+                <span class="text-xs sm:text-sm text-gray-700 leading-snug">Configurar el orden por defecto de los documentos (aplica a todos los expedientes)</span>
+              </label>
             </div>
           </div>
         </div>

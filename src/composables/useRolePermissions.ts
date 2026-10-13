@@ -105,6 +105,9 @@ export function useRolePermissions() {
     canManageInventario: computed(() =>
       canManagePermission('gestionarInventario'),
     ),
+    canConfigurarOrdenDocumentos: computed(() =>
+      canManagePermission('configurarOrdenDocumentos'),
+    ),
     canCreateDocument,
     isDocumentRestricted,
     getRestrictionMessage,

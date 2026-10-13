@@ -56,6 +56,10 @@ export default {
         return proveedor.get("/obtener-proveedores-salud");
     },
 
+    updateOrdenDocumentosExpediente(proveedorId: string, orden: string[]) {
+        return proveedor.patch(`${proveedorId}/orden-documentos-expediente`, { orden });
+    },
+
     getPanelAdmin(ids?: string[]) {
         const params = ids?.length ? { ids: ids.join(',') } : undefined;
         return proveedor.get('/panel-admin', { params });

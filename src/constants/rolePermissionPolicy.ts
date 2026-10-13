@@ -10,6 +10,7 @@ export const PERMISSION_KEYS = [
   'accesoDashboardSalud',
   'accesoRiesgosTrabajo',
   'gestionarInventario',
+  'configurarOrdenDocumentos',
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -34,6 +35,7 @@ const ALL_TRUE: UserPermissions = {
   accesoDashboardSalud: true,
   accesoRiesgosTrabajo: true,
   gestionarInventario: true,
+  configurarOrdenDocumentos: true,
 };
 
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
@@ -51,6 +53,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     accesoDashboardSalud: true,
     accesoRiesgosTrabajo: true,
     gestionarInventario: true,
+    configurarOrdenDocumentos: false,
   },
   'Enfermero/a': {
     gestionarEmpresas: false,
@@ -64,6 +67,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     accesoDashboardSalud: true,
     accesoRiesgosTrabajo: true,
     gestionarInventario: true,
+    configurarOrdenDocumentos: false,
   },
   Administrativo: {
     gestionarEmpresas: true,
@@ -77,6 +81,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     accesoDashboardSalud: true,
     accesoRiesgosTrabajo: false,
     gestionarInventario: true,
+    configurarOrdenDocumentos: false,
   },
   'Técnico Evaluador': {
     gestionarEmpresas: false,
@@ -90,6 +95,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, UserPermissions> = {
     accesoDashboardSalud: true,
     accesoRiesgosTrabajo: false,
     gestionarInventario: true,
+    configurarOrdenDocumentos: false,
   },
 };
 

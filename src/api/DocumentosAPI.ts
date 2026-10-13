@@ -5,6 +5,23 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/todos`);
     },
 
+    /** Orden manual y subgrupos de los documentos, por año. */
+    getOrganizacion(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/organizacion`);
+    },
+
+    /** Guarda el orden manual y los subgrupos de un año; un orden vacío lo devuelve al orden por defecto. */
+    guardarOrdenDelAnio(
+        trabajadorId: string,
+        anio: string,
+        organizacion: {
+            orden: Array<{ documentType: string; documentId: string; subgrupoId?: string }>;
+            subgrupos?: Array<{ id: string; nombre: string }>;
+        },
+    ) {
+        return api.put(`/expedientes/${trabajadorId}/organizacion/${anio}/orden`, organizacion);
+    },
+
     getDocumentosConteos(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/conteos`);
     },
