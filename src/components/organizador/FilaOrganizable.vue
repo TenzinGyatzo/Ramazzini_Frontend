@@ -106,15 +106,14 @@ const fecha = computed(() => {
 </template>
 
 <style scoped>
-/* Documentos que pertenecen a un subgrupo: sangría con una guía a la izquierda */
+/* Documentos que pertenecen a un subgrupo: van con sangría */
 .grupo-documentos__fila--en-subgrupo {
-  margin-left: 0.75rem;
-  border-left: 3px solid #fcd34d;
+  margin-left: 0.5rem;
 }
 
 @media (min-width: 640px) {
   .grupo-documentos__fila--en-subgrupo {
-    margin-left: 1.5rem;
+    margin-left: 1rem;
   }
 }
 </style>

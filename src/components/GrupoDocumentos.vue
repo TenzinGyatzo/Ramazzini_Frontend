@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, shallowRef, watch, computed, inject, nextTick, useSlots } from 'vue';
+import { ref, shallowRef, watch, computed, inject, nextTick, useSlots, getCurrentInstance, onBeforeUnmount } from 'vue';
+import type { Router } from 'vue-router';
 import type { DocumentsByYear } from '@/stores/documentos';
 import DocumentoItem from './DocumentoItem.vue';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
@@ -26,6 +27,7 @@ import {
     organizacionDe,
 } from '@/helpers/organizarExpediente';
 import OrganizadorDocumentos from './organizador/OrganizadorDocumentos.vue';
+import ModalDiscardConfirmDialog from './ModalDiscardConfirmDialog.vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 
@@ -158,8 +160,6 @@ interface FilaDocumento {
     clave: string;
     item: DocumentoDelExpediente;
     subgrupo: SubgrupoDelAnio | null;
-    /** Cierra visualmente el subgrupo. */
-    ultimaDelSubgrupo: boolean;
 }
 
 // El año fuera del modo organizar, fila por fila: cada subgrupo es un encabezado seguido de sus documentos
@@ -170,7 +170,6 @@ const filas = computed(() => {
         clave: `${item.definicion.tipo}-${item.documento._id ?? resultado.length}`,
         item,
         subgrupo,
-        ultimaDelSubgrupo: !!subgrupo && subgrupo.documentos[subgrupo.documentos.length - 1] === item,
     });
     elementosGuardados.value.forEach((elemento) => {
         if (elemento.clase === 'documento') {
@@ -203,10 +202,55 @@ function iniciarOrganizacion() {
     borradorDeOrden.value = copiarParaOrganizar(elementosGuardados.value);
 }
 
-function cancelarOrganizacion() {
+// Antes de perder lo acomodado sin guardar (cancelar, salir del expediente) se pregunta
+const preguntaDeDescarte = shallowRef<{ responder: (descartar: boolean) => void } | null>(null);
+
+function confirmarDescarte(): Promise<boolean> {
+    if (!hayCambiosDeOrden.value) return Promise.resolve(true);
+    preguntaDeDescarte.value?.responder(false);
+    return new Promise((resolve) => {
+        preguntaDeDescarte.value = { responder: resolve };
+    });
+}
+
+function responderDescarte(descartar: boolean) {
+    const pregunta = preguntaDeDescarte.value;
+    preguntaDeDescarte.value = null;
+    pregunta?.responder(descartar);
+}
+
+async function cancelarOrganizacion() {
     if (guardandoOrden.value) return;
+    if (!(await confirmarDescarte())) return;
     borradorDeOrden.value = null;
 }
+
+// Mientras haya cambios sin guardar: aviso al cambiar de pantalla y al cerrar o recargar la pestaña.
+// El enrutador se toma de la aplicación para que el componente también funcione sin él.
+const router = getCurrentInstance()?.appContext.config.globalProperties.$router as Router | undefined;
+let quitarGuardiaDeRuta: (() => void) | null = null;
+const alCerrarLaPestana = (evento: BeforeUnloadEvent) => {
+    evento.preventDefault();
+    evento.returnValue = '';
+};
+
+function dejarDeVigilarLaSalida() {
+    quitarGuardiaDeRuta?.();
+    quitarGuardiaDeRuta = null;
+    window.removeEventListener('beforeunload', alCerrarLaPestana);
+}
+
+watch(hayCambiosDeOrden, (hayCambios) => {
+    dejarDeVigilarLaSalida();
+    if (!hayCambios) return;
+    window.addEventListener('beforeunload', alCerrarLaPestana);
+    quitarGuardiaDeRuta = router?.beforeEach(() => confirmarDescarte()) ?? null;
+});
+
+onBeforeUnmount(() => {
+    dejarDeVigilarLaSalida();
+    responderDescarte(false);
+});
 
 const raizDelGrupo = ref<HTMLElement | null>(null);
 let consecutivoDeSubgrupo = 0;
@@ -520,6 +564,12 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             </div>
         </div>
 
+        <ModalDiscardConfirmDialog
+            :open="!!preguntaDeDescarte"
+            @continue-editing="responderDescarte(false)"
+            @discard="responderDescarte(true)"
+        />
+
         <!-- Modo organizar: el año en filas compactas que se acomodan arrastrando -->
         <OrganizadorDocumentos
             v-if="borradorDeOrden"
@@ -534,8 +584,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                 <!-- Encabezado de subgrupo -->
                 <div
                     v-if="fila.clase === 'encabezado'"
-                    class="grupo-documentos__subgrupo grupo-documentos__subgrupo--encabezado flex items-center gap-3 w-full px-4 sm:px-6 py-2.5"
-                    :class="{ 'grupo-documentos__subgrupo--plegado': fila.plegado || fila.subgrupo.documentos.length === 0 }"
+                    class="grupo-documentos__subgrupo flex items-center gap-3 w-full px-4 sm:px-6 py-2 bg-gray-50 border-y border-gray-200"
                     :data-subgrupo="fila.subgrupo.id"
                 >
                     <input
@@ -549,21 +598,21 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                     >
                     <button
                         type="button"
-                        class="flex flex-1 min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-left"
+                        class="flex flex-1 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-left"
                         :aria-expanded="!fila.plegado"
                         :title="fila.plegado ? 'Mostrar los documentos del subgrupo' : 'Ocultar los documentos del subgrupo'"
                         @click="alternarPlegado(fila.subgrupo.id)"
                     >
-                        <i class="fas text-xs text-amber-700 w-3" :class="fila.plegado ? 'fa-chevron-right' : 'fa-chevron-down'" aria-hidden="true"></i>
-                        <i class="fas text-[1.1rem] text-amber-500" :class="fila.plegado ? 'fa-folder' : 'fa-folder-open'" aria-hidden="true"></i>
-                        <span class="grupo-documentos__subgrupo-nombre font-semibold text-base text-gray-900 truncate">{{ fila.subgrupo.nombre }}</span>
-                        <span class="grupo-documentos__subgrupo-conteo text-sm text-gray-600 whitespace-nowrap">
+                        <i class="fas text-xs text-gray-400 w-3" :class="fila.plegado ? 'fa-chevron-right' : 'fa-chevron-down'" aria-hidden="true"></i>
+                        <i class="fas text-amber-500" :class="fila.plegado ? 'fa-folder' : 'fa-folder-open'" aria-hidden="true"></i>
+                        <span class="font-semibold text-sm text-gray-800 truncate">{{ fila.subgrupo.nombre }}</span>
+                        <span class="text-xs text-gray-500 whitespace-nowrap">
                             <template v-if="fila.subgrupo.documentos.length === 0">Sin documentos todavía</template>
                             <template v-else>{{ fila.subgrupo.documentos.length }} documento{{ fila.subgrupo.documentos.length !== 1 ? 's' : '' }}</template>
                         </span>
                         <span
                             v-if="fila.subgrupo.automatico"
-                            class="grupo-documentos__subgrupo-automatico inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-800 whitespace-nowrap"
+                            class="grupo-documentos__subgrupo-automatico inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-2 py-0.5 text-[11px] font-medium text-gray-600 whitespace-nowrap"
                             title="Ramazzini reunió estos documentos por su tipo. Con «Organizar» puedes cambiarlo o quitarlo."
                         >
                             <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>Automático
@@ -575,10 +624,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                 <div
                     v-else
                     class="grupo-documentos__fila transition-all duration-200 hover:bg-gray-50"
-                    :class="{
-                        'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo,
-                        'grupo-documentos__fila--ultima-del-subgrupo': fila.ultimaDelSubgrupo,
-                    }"
+                    :class="{ 'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo }"
                     :data-documento="fila.item.documento._id"
                 >
                     <DocumentoItem
@@ -619,31 +665,14 @@ const hasExtraSection = computed(() => !!slots.extraSection);
 </template>
 
 <style scoped>
-/*
- * Subgrupo en la vista normal: el encabezado y una banda a la izquierda de sus documentos,
- * del mismo tono, forman un solo bloque. La banda es ancha y suave para no confundirse con
- * la raya de color que cada documento ya trae.
- */
-.grupo-documentos__subgrupo--encabezado {
-    background-color: #fef3c7;
-    border-top: 1px solid #fcd34d;
-}
-
-.grupo-documentos__subgrupo--plegado {
-    border-bottom: 1px solid #fcd34d;
-}
-
+/* Documentos que pertenecen a un subgrupo: van con sangría */
 .grupo-documentos__fila--en-subgrupo {
-    border-left: 0.75rem solid #fef3c7;
-}
-
-.grupo-documentos__fila--ultima-del-subgrupo {
-    border-bottom: 0.5rem solid #fef3c7;
+    margin-left: 0.5rem;
 }
 
 @media (min-width: 640px) {
     .grupo-documentos__fila--en-subgrupo {
-        border-left-width: 1.25rem;
+        margin-left: 1rem;
     }
 }
 

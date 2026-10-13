@@ -152,7 +152,7 @@ function alSoltar({ elemento, hacia, indice }: MovimientoEnLista) {
             @mover="(paso) => moverUnPaso(item, paso)"
             @cambiar-subgrupo="(id) => cambiarSubgrupoDe(item, id)"
           />
-          <p v-if="elemento.documentos.length === 0" class="organizador__vacio px-3 py-3 text-xs text-gray-500">
+          <p v-if="elemento.documentos.length === 0" class="organizador__vacio px-3 py-1.5 text-xs text-gray-500">
             Vacío. Arrastra documentos aquí, o usa sus flechas o su selector de subgrupo.
           </p>
         </ListaOrdenable>
@@ -164,14 +164,13 @@ function alSoltar({ elemento, hacia, indice }: MovimientoEnLista) {
 <style scoped>
 /* Zona donde soltar documentos en un subgrupo que aún no tiene ninguno */
 .organizador__miembros--vacio {
-  margin-left: 0.75rem;
-  border-left: 3px solid #fcd34d;
-  min-height: 2.5rem;
+  margin-left: 0.5rem;
+  min-height: 1.75rem;
 }
 
 @media (min-width: 640px) {
   .organizador__miembros--vacio {
-    margin-left: 1.5rem;
+    margin-left: 1rem;
   }
 }
 
@@ -189,5 +188,17 @@ function alSoltar({ elemento, hacia, indice }: MovimientoEnLista) {
   border-radius: 0.5rem;
   opacity: 0.95;
   cursor: grabbing;
+}
+</style>
+
+<style>
+/*
+ * Al arrastrar un subgrupo solo viaja su encabezado: sus documentos (o su zona vacía) se
+ * ocultan tanto en lo que va en el aire como en el hueco, para que mida lo mismo que una
+ * fila de documento y se acomode igual de fácil. Al soltarlo vuelven a verse.
+ */
+.organizador__bloque-subgrupo.organizador__hueco .organizador__miembros,
+.organizador__bloque-subgrupo.organizador__en-el-aire .organizador__miembros {
+  display: none;
 }
 </style>

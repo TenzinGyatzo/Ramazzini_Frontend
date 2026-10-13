@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
@@ -111,6 +111,8 @@ function politica(features: Record<string, unknown> = {}) {
 describe('GrupoDocumentos', () => {
   let pinia: ReturnType<typeof createPinia>;
   let toast: { open: ReturnType<typeof vi.fn> };
+  /** Enrutador de mentira: guarda la guardia que el componente registra y avisa cuando la retira. */
+  let enrutador: { beforeEach: ReturnType<typeof vi.fn>; guardia: (() => Promise<boolean>) | null; retirada: ReturnType<typeof vi.fn> };
 
   function configurar(opciones: { features?: Record<string, unknown>; role?: string } = {}) {
     const proveedorSaludStore = useProveedorSaludStore();
@@ -128,9 +130,26 @@ describe('GrupoDocumentos', () => {
     } as any;
   }
 
+  // Cada prueba desmonta lo que montó: el componente vigila la salida de la página mientras hay cambios
+  const montados: Array<{ unmount: () => void }> = [];
+  afterEach(() => {
+    montados.splice(0).forEach((wrapper) => wrapper.unmount());
+  });
+
   function montar(props: Record<string, unknown> = {}, slots: Record<string, string> = {}) {
+    const wrapper = montarSinRegistrar(props, slots);
+    montados.push(wrapper);
+    return wrapper;
+  }
+
+  function montarSinRegistrar(props: Record<string, unknown> = {}, slots: Record<string, string> = {}) {
     return mount(GrupoDocumentos, {
-      global: { plugins: [pinia], provide: { toast } },
+      global: {
+        plugins: [pinia],
+        provide: { toast },
+        config: { globalProperties: { $router: enrutador } as any },
+        stubs: { Teleport: true },
+      },
       props: {
         documents: {},
         year: '2025',
@@ -158,6 +177,15 @@ describe('GrupoDocumentos', () => {
     setActivePinia(pinia);
     listasArrastrables.length = 0;
     toast = { open: vi.fn() };
+    const retirada = vi.fn();
+    enrutador = {
+      guardia: null,
+      retirada,
+      beforeEach: vi.fn((guardia: () => Promise<boolean>) => {
+        enrutador.guardia = guardia;
+        return retirada;
+      }),
+    };
     configurar();
   });
 
@@ -513,6 +541,8 @@ describe('GrupoDocumentos', () => {
       await boton(wrapper, 'Organizar')!.trigger('click');
       await filaDe(wrapper, 'aptitud-1').find('button[title="Bajar"]').trigger('click');
       await boton(wrapper, 'Cancelar')!.trigger('click');
+      await boton(wrapper, 'Descartar cambios')!.trigger('click');
+      await flushPromises();
       expect(idsMostrados(wrapper)).toEqual(POR_DEFECTO);
       expect(guardarOrdenApi).not.toHaveBeenCalled();
     });
@@ -753,8 +783,6 @@ describe('GrupoDocumentos', () => {
       expect(encabezados(wrapper)[0].text()).toContain('Notas médicas');
       expect(encabezados(wrapper)[0].text()).toContain('Automático');
       expect(enSubgrupo(wrapper)).toEqual(['notaMedica-a', 'notaMedica-b']);
-      // El último documento cierra visualmente el subgrupo
-      expect(wrapper.findAll('.grupo-documentos__fila--ultima-del-subgrupo').map((f) => f.attributes('data-documento'))).toEqual(['notaMedica-b']);
       expect(wrapper.text()).not.toContain('orden personalizado');
     });
 
@@ -1029,6 +1057,121 @@ describe('GrupoDocumentos', () => {
       expect(opciones.preventOnFilter).toBe(false);
       expect(opciones.delayOnTouchOnly).toBe(true);
       expect(opciones.draggable).toBe('.organizador__item');
+    });
+  });
+
+  describe('modo organizar: cambios sin guardar', () => {
+    const delAnio = () => ({
+      aptitudes: [documento('aptitud', 'fechaAptitudPuesto')],
+      recetas: [documento('receta', 'fechaReceta', 'a'), documento('receta', 'fechaReceta', 'b')],
+    });
+    const POR_DEFECTO = ['aptitud-1', 'receta-a', 'receta-b'];
+    const boton = (wrapper: ReturnType<typeof montar>, texto: string) =>
+      wrapper.findAll('button').find((b) => b.text().includes(texto));
+    const fila = (wrapper: ReturnType<typeof montar>, id: string) =>
+      wrapper.find(`.grupo-documentos__fila[data-documento="${id}"]`);
+    const hayPregunta = (wrapper: ReturnType<typeof montar>) => wrapper.text().includes('¿Descartar cambios?');
+    const alCerrarPestana = () => {
+      const evento = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(evento);
+      return evento.defaultPrevented;
+    };
+
+    const organizarYMover = async () => {
+      const wrapper = montar({ documents: delAnio() });
+      await boton(wrapper, 'Organizar')!.trigger('click');
+      await fila(wrapper, 'aptitud-1').find('button[title="Bajar"]').trigger('click');
+      return wrapper;
+    };
+
+    beforeEach(() => {
+      guardarOrdenApi.mockReset();
+      guardarOrdenApi.mockImplementation((_t: string, _anio: string, organizacion: { orden: unknown[] }) =>
+        Promise.resolve({ data: { organizacion } }),
+      );
+      useTrabajadoresStore().currentTrabajadorId = 'trab-1' as any;
+    });
+
+    it('cancelar sin haber movido nada sale sin preguntar', async () => {
+      const wrapper = montar({ documents: delAnio() });
+      await boton(wrapper, 'Organizar')!.trigger('click');
+      await boton(wrapper, 'Cancelar')!.trigger('click');
+      await flushPromises();
+      expect(hayPregunta(wrapper)).toBe(false);
+      expect(wrapper.text()).not.toContain('Organizando el expediente');
+    });
+
+    it('cancelar con cambios pregunta; «Seguir editando» conserva lo acomodado', async () => {
+      const wrapper = await organizarYMover();
+      await boton(wrapper, 'Cancelar')!.trigger('click');
+      expect(hayPregunta(wrapper)).toBe(true);
+
+      await boton(wrapper, 'Seguir editando')!.trigger('click');
+      await flushPromises();
+      expect(hayPregunta(wrapper)).toBe(false);
+      expect(wrapper.text()).toContain('Organizando el expediente');
+      expect(idsMostrados(wrapper)).toEqual(['receta-a', 'aptitud-1', 'receta-b']);
+    });
+
+    it('cancelar con cambios y «Descartar cambios» vuelve al orden guardado', async () => {
+      const wrapper = await organizarYMover();
+      await boton(wrapper, 'Cancelar')!.trigger('click');
+      await boton(wrapper, 'Descartar cambios')!.trigger('click');
+      await flushPromises();
+      expect(wrapper.text()).not.toContain('Organizando el expediente');
+      expect(idsMostrados(wrapper)).toEqual(POR_DEFECTO);
+    });
+
+    it('al cambiar de pantalla con cambios se pregunta, y la navegación espera la respuesta', async () => {
+      const wrapper = await organizarYMover();
+      expect(enrutador.beforeEach).toHaveBeenCalledTimes(1);
+
+      const seQueda = enrutador.guardia!();
+      await flushPromises();
+      expect(hayPregunta(wrapper)).toBe(true);
+      await boton(wrapper, 'Seguir editando')!.trigger('click');
+      expect(await seQueda).toBe(false);
+      expect(wrapper.text()).toContain('Organizando el expediente');
+
+      const seVa = enrutador.guardia!();
+      await flushPromises();
+      await boton(wrapper, 'Descartar cambios')!.trigger('click');
+      expect(await seVa).toBe(true);
+    });
+
+    it('sin cambios no se vigila la salida, y deja de vigilarse al deshacerlos', async () => {
+      const wrapper = montar({ documents: delAnio() });
+      await boton(wrapper, 'Organizar')!.trigger('click');
+      expect(enrutador.beforeEach).not.toHaveBeenCalled();
+      expect(alCerrarPestana()).toBe(false);
+
+      await fila(wrapper, 'aptitud-1').find('button[title="Bajar"]').trigger('click');
+      expect(alCerrarPestana()).toBe(true);
+
+      // Regresarlo a su lugar deja el año como estaba
+      await fila(wrapper, 'aptitud-1').find('button[title="Subir"]').trigger('click');
+      expect(enrutador.retirada).toHaveBeenCalledTimes(1);
+      expect(alCerrarPestana()).toBe(false);
+    });
+
+    it('después de guardar ya no se avisa al salir', async () => {
+      const wrapper = await organizarYMover();
+      expect(alCerrarPestana()).toBe(true);
+      await boton(wrapper, 'Guardar orden')!.trigger('click');
+      await flushPromises();
+      expect(enrutador.retirada).toHaveBeenCalledTimes(1);
+      expect(alCerrarPestana()).toBe(false);
+    });
+
+    it('al desmontarse deja de vigilar y libera una navegación en espera', async () => {
+      const wrapper = await organizarYMover();
+      const pendiente = enrutador.guardia!();
+      await flushPromises();
+      wrapper.unmount();
+      montados.length = 0;
+      expect(await pendiente).toBe(false);
+      expect(enrutador.retirada).toHaveBeenCalledTimes(1);
+      expect(alCerrarPestana()).toBe(false);
     });
   });
 });
