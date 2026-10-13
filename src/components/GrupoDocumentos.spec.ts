@@ -723,7 +723,7 @@ describe('GrupoDocumentos', () => {
         ref('notaMedica', 'notaMedica-a', 'auto-notas-medicas'),
         ref('notaMedica', 'notaMedica-b', 'auto-notas-medicas'),
       ]);
-      expect(wrapper.text()).not.toContain('automático');
+      expect(wrapper.text()).not.toContain('Automático');
       expect(encabezados(wrapper)[0].text()).toContain('Antidoping');
       expect(wrapper.text()).not.toContain('Organizando el expediente');
     });
@@ -743,7 +743,7 @@ describe('GrupoDocumentos', () => {
       expect(organizacion.subgrupos[0]).toMatchObject({ nombre: 'Por subir', posicion: 0 });
       expect(organizacion.orden).toHaveLength(5);
       expect(encabezados(wrapper)[0].text()).toContain('Por subir');
-      expect(encabezados(wrapper)[0].text()).toContain('0 documentos');
+      expect(encabezados(wrapper)[0].text()).toContain('Sin documentos todavía');
       expect(encabezados(wrapper)[0].find('input[type="checkbox"]').attributes('disabled')).toBeDefined();
     });
 
@@ -751,8 +751,10 @@ describe('GrupoDocumentos', () => {
       const wrapper = montar({ documents: delAnio() });
       expect(encabezados(wrapper)).toHaveLength(1);
       expect(encabezados(wrapper)[0].text()).toContain('Notas médicas');
-      expect(encabezados(wrapper)[0].text()).toContain('automático');
+      expect(encabezados(wrapper)[0].text()).toContain('Automático');
       expect(enSubgrupo(wrapper)).toEqual(['notaMedica-a', 'notaMedica-b']);
+      // El último documento cierra visualmente el subgrupo
+      expect(wrapper.findAll('.grupo-documentos__fila--ultima-del-subgrupo').map((f) => f.attributes('data-documento'))).toEqual(['notaMedica-b']);
       expect(wrapper.text()).not.toContain('orden personalizado');
     });
 
@@ -839,7 +841,7 @@ describe('GrupoDocumentos', () => {
       await flushPromises();
       expect(guardarOrdenApi).toHaveBeenCalledWith('trab-1', '2025', { orden: [], subgrupos: [] });
       expect(encabezados(wrapper)).toHaveLength(1);
-      expect(encabezados(wrapper)[0].text()).toContain('automático');
+      expect(encabezados(wrapper)[0].text()).toContain('Automático');
     });
   });
 

@@ -4309,6 +4309,32 @@ html.dark-mode .grupo-documentos__fila--en-subgrupo {
   border-left-color: #b45309 !important;
 }
 
+/* En la vista normal el encabezado y la banda de sus documentos comparten tono */
+html.dark-mode .grupo-documentos__subgrupo--encabezado {
+  background-color: #3b2a12 !important;
+  border-color: #78350f !important;
+}
+
+html.dark-mode .grupo-documentos__fila--en-subgrupo:not(.organizador__documento),
+html.dark-mode .grupo-documentos__fila--ultima-del-subgrupo {
+  border-left-color: #3b2a12 !important;
+  border-bottom-color: #3b2a12 !important;
+}
+
+html.dark-mode .grupo-documentos__subgrupo-nombre {
+  color: #fef3c7 !important;
+}
+
+html.dark-mode .grupo-documentos__subgrupo-conteo {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .grupo-documentos__subgrupo-automatico {
+  background-color: #1e293b !important;
+  border-color: #b45309 !important;
+  color: #fcd34d !important;
+}
+
 html.dark-mode .grupo-documentos__nombre-subgrupo,
 html.dark-mode .grupo-documentos__selector-subgrupo {
   background-color: #0f172a !important;
