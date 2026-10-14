@@ -465,6 +465,7 @@ import { buildPeSectionSteps } from '@/helpers/buildPeSectionSteps';
 import { isNotaMedicaSectionsV2Enabled } from '@/composables/useNotaMedicaSectionsV2';
 import { buildNotaMedicaSectionSteps } from '@/helpers/buildNotaMedicaSectionSteps';
 import { legacyStepToSectionIndex as nmLegacyStepToSectionIndex } from '@/helpers/notaMedicaSections';
+import { estadoSegmento, nombreDePaso, usarPasosSegmentados } from '@/helpers/pasosFormulario';
 
 export default {
   components: { Step1Antidoping, Step2Antidoping, Step1Aptitud, Step2Aptitud, Step3Aptitud, Step4Aptitud, Step5Aptitud, Step6Aptitud, Step7Aptitud, Step8Aptitud, Step9Aptitud, Step10Aptitud, Step11Aptitud, Step1Audiometria, Step2Audiometria, Step3Audiometria, Step4Audiometria, Step5Audiometria, Step6Audiometria, Step7Audiometria, Step1Certificado, Step2Certificado, Step1CertificadoExpedito, Step2CertificadoExpedito, Step3CertificadoExpedito, Step4CertificadoExpedito, Step5CertificadoExpedito, Step6CertificadoExpedito, Step7CertificadoExpedito, Step8CertificadoExpedito, Step1ExamenVista, Step2ExamenVista, Step3ExamenVista, Step4ExamenVista, Step5ExamenVista, Step6ExamenVista, Step7ExamenVista, Step8ExamenVista, Step9ExamenVista, Step1ExploracionFisica, Step2ExploracionFisica, Step3ExploracionFisica, Step4ExploracionFisica, Step5ExploracionFisica, Step6ExploracionFisica, Step7ExploracionFisica, Step8ExploracionFisica, Step9ExploracionFisica, Step10ExploracionFisica, Step11ExploracionFisica, Step12ExploracionFisica, Step13ExploracionFisica, Step14ExploracionFisica, Step15ExploracionFisica, Step16ExploracionFisica, Step17ExploracionFisica, Step18ExploracionFisica, Step19ExploracionFisica, Step20ExploracionFisica, Step21ExploracionFisica, Step22ExploracionFisica, Step23ExploracionFisica, Step24ExploracionFisica, Step25ExploracionFisica, Step26ExploracionFisica, Step27ExploracionFisica, Step28ExploracionFisica, Step29ExploracionFisica, Step30ExploracionFisica, Step31ExploracionFisica, Step1HistoriaClinica, Step2HistoriaClinica, Step3HistoriaClinica, Step4HistoriaClinica, Step5HistoriaClinica, Step6HistoriaClinica, Step7HistoriaClinica, Step8HistoriaClinica, Step9HistoriaClinica, Step10HistoriaClinica, Step11HistoriaClinica, Step12HistoriaClinica, Step13HistoriaClinica, Step14HistoriaClinica, Step15HistoriaClinica, Step16HistoriaClinica, Step17HistoriaClinica, Step18HistoriaClinica, Step19HistoriaClinica, Step20HistoriaClinica, Step21HistoriaClinica, Step22HistoriaClinica, Step23HistoriaClinica, Step24HistoriaClinica, Step25HistoriaClinica, Step26HistoriaClinica, Step27HistoriaClinica, Step28HistoriaClinica, Step29HistoriaClinica, Step30HistoriaClinica, Step31HistoriaClinica, Step32HistoriaClinica, Step33HistoriaClinica, Step34HistoriaClinica, Step35HistoriaClinica, Step36HistoriaClinica, Step37HistoriaClinica, Step38HistoriaClinica, Step39HistoriaClinica, Step40HistoriaClinica, Step41HistoriaClinica, Step42HistoriaClinica, Step43HistoriaClinica, Step44HistoriaClinica, Step45HistoriaClinica, Step46HistoriaClinica, Step1NotaMedica, Step2NotaMedica, Step3NotaMedica, Step4NotaMedica, Step5NotaMedica, Step6NotaMedica, Step7NotaMedica, Step8NotaMedica, Step9NotaMedica, Step10NotaMedica, Step11NotaMedica, Step12NotaMedica, Step13NotaMedica, Step14NotaMedica, Step1NotaAclaratoria, Step1ControlPrenatal, Step2ControlPrenatal, Step3ControlPrenatal, Step4ControlPrenatal, Step5ControlPrenatal, Step6ControlPrenatal, Step7ControlPrenatal, Step8ControlPrenatal, Step9ControlPrenatal, Step10ControlPrenatal, Step11ControlPrenatal, Step12ControlPrenatal, Step13ControlPrenatal, Step14ControlPrenatal, Step15ControlPrenatal, Step16ControlPrenatal, Step17ControlPrenatal, Step18ControlPrenatal, Step19ControlPrenatal, Step20ControlPrenatal, Step21ControlPrenatal, Step22ControlPrenatal, Step23ControlPrenatal, Step24ControlPrenatal, Step25ControlPrenatal, Step26ControlPrenatal, Step27ControlPrenatal, Step28ControlPrenatal, Step29ControlPrenatal, Step30ControlPrenatal, Step31ControlPrenatal, Step32ControlPrenatal, Step33ControlPrenatal, Step34ControlPrenatal, Step35ControlPrenatal, Step36ControlPrenatal, Step37ControlPrenatal, Step38ControlPrenatal, Step39ControlPrenatal, Step40ControlPrenatal, Step41ControlPrenatal, Step42ControlPrenatal, Step43ControlPrenatal, Step44ControlPrenatal, Step45ControlPrenatal, Step46ControlPrenatal, Step47ControlPrenatal, Step48ControlPrenatal, Step49ControlPrenatal, Step50ControlPrenatal, Step51ControlPrenatal, Step52ControlPrenatal, Step53ControlPrenatal, Step54ControlPrenatal, Step55ControlPrenatal, Step56ControlPrenatal, Step57ControlPrenatal, Step58ControlPrenatal, Step59ControlPrenatal, Step60ControlPrenatal, Step61ControlPrenatal, Step62ControlPrenatal, Step63ControlPrenatal, Step64ControlPrenatal, Step65ControlPrenatal, Step66ControlPrenatal, Step67ControlPrenatal, Step68ControlPrenatal, Step69ControlPrenatal, Step70ControlPrenatal, Step71ControlPrenatal, Step72ControlPrenatal, Step73ControlPrenatal, Step74ControlPrenatal, Step75ControlPrenatal, Step76ControlPrenatal, Step77ControlPrenatal, Step78ControlPrenatal, Step79ControlPrenatal, Step80ControlPrenatal, Step81ControlPrenatal, Step82ControlPrenatal, Step83ControlPrenatal, Step84ControlPrenatal, Step85ControlPrenatal, Step86ControlPrenatal, Step87ControlPrenatal, Step88ControlPrenatal, Step89ControlPrenatal, Step1HistoriaOtologica, Step2HistoriaOtologica, Step3HistoriaOtologica, Step4HistoriaOtologica, Step5HistoriaOtologica, Step6HistoriaOtologica, Step7HistoriaOtologica, Step8HistoriaOtologica, Step9HistoriaOtologica, Step10HistoriaOtologica, Step11HistoriaOtologica, Step12HistoriaOtologica, Step13HistoriaOtologica, Step14HistoriaOtologica, Step15HistoriaOtologica, Step16HistoriaOtologica, Step17HistoriaOtologica, Step18HistoriaOtologica, Step19HistoriaOtologica, Step20HistoriaOtologica, Step21HistoriaOtologica, Step22HistoriaOtologica, Step23HistoriaOtologica, Step24HistoriaOtologica, Step25HistoriaOtologica, Step1PrevioEspirometria, Step2PrevioEspirometria, Step3PrevioEspirometria, Step4PrevioEspirometria, Step5PrevioEspirometria, Step6PrevioEspirometria, Step7PrevioEspirometria, Step8PrevioEspirometria, Step9PrevioEspirometria, Step10PrevioEspirometria, Step11PrevioEspirometria, Step12PrevioEspirometria, Step13PrevioEspirometria, Step14PrevioEspirometria, Step15PrevioEspirometria, Step16PrevioEspirometria, Step17PrevioEspirometria, Step18PrevioEspirometria, Step19PrevioEspirometria, Step20PrevioEspirometria, Step21PrevioEspirometria, Step22PrevioEspirometria, Step23PrevioEspirometria, Step24PrevioEspirometria, Step25PrevioEspirometria, Step26PrevioEspirometria, Step27PrevioEspirometria, Step28PrevioEspirometria, Step1Receta, Step2Receta, Step3Receta, Step4Receta, Step1ConstanciaAptitud, Step1EntrevistaPsicologica, Step2EntrevistaPsicologica, Step3EntrevistaPsicologica, Step4EntrevistaPsicologica, Step5EntrevistaPsicologica, Step6EntrevistaPsicologica, Step7EntrevistaPsicologica, Step8EntrevistaPsicologica, Step9EntrevistaPsicologica, Step10EntrevistaPsicologica, Step11EntrevistaPsicologica, Step12EntrevistaPsicologica, Step13EntrevistaPsicologica, Step14EntrevistaPsicologica, Step15EntrevistaPsicologica, Step16EntrevistaPsicologica, Step17EntrevistaPsicologica, Step18EntrevistaPsicologica, Step19EntrevistaPsicologica, Step20EntrevistaPsicologica, Step21EntrevistaPsicologica, Step22EntrevistaPsicologica, Step1TrastornosEstadoAnimo, Step2TrastornosEstadoAnimo, Step3TrastornosEstadoAnimo, Step4TrastornosEstadoAnimo, Step5TrastornosEstadoAnimo, Step6TrastornosEstadoAnimo, Step7TrastornosEstadoAnimo, Step8TrastornosEstadoAnimo, Step9TrastornosEstadoAnimo, Step10TrastornosEstadoAnimo, Step11TrastornosEstadoAnimo, Step12TrastornosEstadoAnimo, Step13TrastornosEstadoAnimo, Step14TrastornosEstadoAnimo, Step15TrastornosEstadoAnimo, Step16TrastornosEstadoAnimo, Step17TrastornosEstadoAnimo, Step18TrastornosEstadoAnimo, Step1CuestionarioProdromalBreve, Step2CuestionarioProdromalBreve, Step3CuestionarioProdromalBreve, Step4CuestionarioProdromalBreve, Step5CuestionarioProdromalBreve, Step6CuestionarioProdromalBreve, Step7CuestionarioProdromalBreve, Step8CuestionarioProdromalBreve, Step9CuestionarioProdromalBreve, Step10CuestionarioProdromalBreve, Step11CuestionarioProdromalBreve, Step12CuestionarioProdromalBreve, Step13CuestionarioProdromalBreve, Step14CuestionarioProdromalBreve, Step15CuestionarioProdromalBreve, Step16CuestionarioProdromalBreve, Step17CuestionarioProdromalBreve, Step18CuestionarioProdromalBreve, Step19CuestionarioProdromalBreve, Step20CuestionarioProdromalBreve, Step21CuestionarioProdromalBreve, Step22CuestionarioProdromalBreve, Step1TrastornoLimitePersonalidad, Step2TrastornoLimitePersonalidad, Step3TrastornoLimitePersonalidad, Step4TrastornoLimitePersonalidad, Step5TrastornoLimitePersonalidad, Step6TrastornoLimitePersonalidad, Step7TrastornoLimitePersonalidad, Step8TrastornoLimitePersonalidad, Step9TrastornoLimitePersonalidad, Step10TrastornoLimitePersonalidad, Step11TrastornoLimitePersonalidad, Step1CuestionarioNordico, Step2CuestionarioNordico, Step3CuestionarioNordico, Step4CuestionarioNordico, Step5CuestionarioNordico, Step6CuestionarioNordico, Step1EvaluacionSuenoVigilia, Step2EvaluacionSuenoVigilia, Step3EvaluacionSuenoVigilia, Step4EvaluacionSuenoVigilia, Step5EvaluacionSuenoVigilia, Step6EvaluacionSuenoVigilia, Step7EvaluacionSuenoVigilia, Step8EvaluacionSuenoVigilia, Step1EventoSeguimientoCardiometabolico, Step2EventoSeguimientoCardiometabolico, Step3EventoSeguimientoCardiometabolico, Step4EventoSeguimientoCardiometabolico, Step5EventoSeguimientoCardiometabolico, Step6EventoSeguimientoCardiometabolico, Step7EventoSeguimientoCardiometabolico, Step8EventoSeguimientoCardiometabolico, Step9EventoSeguimientoCardiometabolico, Step1InformeLongitudinalCardiometabolico, Step2InformeLongitudinalCardiometabolico, Step3InformeLongitudinalCardiometabolico, Step1InformeLongitudinalAudiometrico, Step2InformeLongitudinalAudiometrico, Step3InformeLongitudinalAudiometrico, Step5DecisionesConclusionIla, Step6RecomendacionesIla, ModalFaltanCampos, ModalCamposFaltantes, TreatmentConsentModal, ModalSuscripcion },
@@ -625,17 +626,40 @@ export default {
       documentImmutabilityEnabled.value && isFinalized.value
     );
 
-    // Computed properties para mejor UX
-    const progressPercentage = computed(() => {
-      const len = stepsStore.steps.length;
-      if (!len) return 0;
-      const pasosCompletados = Math.max(0, stepsStore.currentStep - 1);
-      return Math.round((pasosCompletados / len) * 100);
-    });
-
     const currentStepDisplay = computed(() => {
       return Math.min(stepsStore.currentStep, stepsStore.steps.length);
     });
+
+    // Indicador de pasos: segmentos con clic y nombre de la sección actual
+    const pasosSegmentados = computed(() => usarPasosSegmentados(stepsStore.steps.length));
+
+    const nombrePasoActual = computed(() =>
+      stepsStore.currentStep <= stepsStore.steps.length
+        ? nombreDePaso(stepsStore.steps[stepsStore.currentStep - 1]?.name)
+        : null
+    );
+
+    const etiquetaSegmento = (indice) => {
+      const nombre = nombreDePaso(stepsStore.steps[indice - 1]?.name);
+      return nombre ? `Paso ${indice}: ${nombre}` : `Paso ${indice}`;
+    };
+
+    const claseSegmento = (indice) => {
+      switch (estadoSegmento(indice, stepsStore.currentStep, stepsStore.steps.length)) {
+        case 'actual':
+        case 'completado':
+          return 'bg-emerald-600';
+        case 'previo':
+          return 'bg-emerald-600 opacity-40';
+        default:
+          return 'bg-gray-200';
+      }
+    };
+
+    const irAPaso = (indice) => {
+      if (indice === stepsStore.currentStep) return;
+      stepsStore.goToStep(indice);
+    };
 
     /** Remonta pasos del informe longitudinal tras hidratar `_id` desde el GET (evita refs vacíos). */
     const dynamicStepComponentKey = computed(() => {
@@ -781,13 +805,13 @@ export default {
         }
       } else if (documentos.currentTypeOfDocument === 'audiometria') {
         stepsStore.setSteps([
-          { component: Step1Audiometria, name: 'Paso 1' },
-          { component: Step2Audiometria, name: 'Paso 2' },
-          { component: Step3Audiometria, name: 'Paso 3' },
-          { component: Step4Audiometria, name: 'Paso 4' },
-          { component: Step5Audiometria, name: 'Paso 5' },
-          { component: Step6Audiometria, name: 'Paso 6' },
-          { component: Step7Audiometria, name: 'Paso 7' },
+          { component: Step1Audiometria, name: 'Fecha' },
+          { component: Step2Audiometria, name: 'Oído derecho' },
+          { component: Step3Audiometria, name: 'Oído izquierdo' },
+          { component: Step4Audiometria, name: 'Observaciones' },
+          { component: Step5Audiometria, name: 'Interpretación' },
+          { component: Step6Audiometria, name: 'Diagnóstico' },
+          { component: Step7Audiometria, name: 'Recomendaciones' },
         ]);
       } else if (documentos.currentTypeOfDocument === 'certificado') {
         if (isCertificadoSectionsV2Enabled(route.query)) {
@@ -800,14 +824,14 @@ export default {
         }
       } else if (documentos.currentTypeOfDocument === 'certificadoExpedito') {
         stepsStore.setSteps([
-          { component: Step1CertificadoExpedito, name: 'Paso 1' },
-          { component: Step2CertificadoExpedito, name: 'Paso 2' },
-          { component: Step3CertificadoExpedito, name: 'Paso 3' },
-          { component: Step4CertificadoExpedito, name: 'Paso 4' },
-          { component: Step5CertificadoExpedito, name: 'Paso 5' },
-          { component: Step6CertificadoExpedito, name: 'Paso 6' },
-          { component: Step7CertificadoExpedito, name: 'Paso 7' },
-          { component: Step8CertificadoExpedito, name: 'Paso 8' },
+          { component: Step1CertificadoExpedito, name: 'Fecha' },
+          { component: Step2CertificadoExpedito, name: 'Cuerpo del certificado' },
+          { component: Step3CertificadoExpedito, name: 'Signos vitales' },
+          { component: Step4CertificadoExpedito, name: 'Somatometría' },
+          { component: Step5CertificadoExpedito, name: 'Impedimentos físicos' },
+          { component: Step6CertificadoExpedito, name: 'Grado de salud' },
+          { component: Step7CertificadoExpedito, name: 'Aptitud al puesto' },
+          { component: Step8CertificadoExpedito, name: 'Observaciones' },
         ]);
       } else if (documentos.currentTypeOfDocument === 'examenVista') {
         // Obtener el país del proveedor de salud
@@ -1002,21 +1026,21 @@ export default {
         }
       } else if (documentos.currentTypeOfDocument === 'notaAclaratoria') {
         stepsStore.setSteps([
-          { component: Step1NotaAclaratoria, name: 'Paso 1' },
-          { component: Step2NotaAclaratoria, name: 'Paso 2' },
-          { component: Step3NotaAclaratoria, name: 'Paso 3' },
-          { component: Step4NotaAclaratoria, name: 'Paso 4' },
-          { component: Step5NotaAclaratoria, name: 'Paso 5' },
-          { component: Step6NotaAclaratoria, name: 'Paso 6' },
+          { component: Step1NotaAclaratoria, name: 'Fecha' },
+          { component: Step2NotaAclaratoria, name: 'Documento que se aclara' },
+          { component: Step3NotaAclaratoria, name: 'Alcance' },
+          { component: Step4NotaAclaratoria, name: 'Impacto clínico' },
+          { component: Step5NotaAclaratoria, name: 'Motivo' },
+          { component: Step6NotaAclaratoria, name: 'Descripción' },
         ]);
       } else if (documentos.currentTypeOfDocument === 'notaAclaratoria') {
         stepsStore.setSteps([
-          { component: Step1NotaAclaratoria, name: 'Paso 1' },
-          { component: Step2NotaAclaratoria, name: 'Paso 2' },
-          { component: Step3NotaAclaratoria, name: 'Paso 3' },
-          { component: Step4NotaAclaratoria, name: 'Paso 4' },
-          { component: Step5NotaAclaratoria, name: 'Paso 5' },
-          { component: Step6NotaAclaratoria, name: 'Paso 6' },
+          { component: Step1NotaAclaratoria, name: 'Fecha' },
+          { component: Step2NotaAclaratoria, name: 'Documento que se aclara' },
+          { component: Step3NotaAclaratoria, name: 'Alcance' },
+          { component: Step4NotaAclaratoria, name: 'Impacto clínico' },
+          { component: Step5NotaAclaratoria, name: 'Motivo' },
+          { component: Step6NotaAclaratoria, name: 'Descripción' },
         ]);
       } else if (documentos.currentTypeOfDocument === 'controlPrenatal') {
         stepsStore.setSteps([
@@ -1179,10 +1203,10 @@ export default {
         }
       } else if (documentos.currentTypeOfDocument === 'receta') {
         stepsStore.setSteps([
-          { component: Step1Receta, name: 'Paso 1' },
-          { component: Step2Receta, name: 'Paso 2' },
-          { component: Step3Receta, name: 'Paso 3' },
-          { component: Step4Receta, name: 'Paso 4' },
+          { component: Step1Receta, name: 'Fecha' },
+          { component: Step2Receta, name: 'Tratamiento' },
+          { component: Step3Receta, name: 'Recomendaciones' },
+          { component: Step4Receta, name: 'Indicaciones' },
         ]);
       } else if (documentos.currentTypeOfDocument === 'constanciaAptitud') {
         stepsStore.setSteps([
@@ -1242,17 +1266,17 @@ export default {
         ]);
       } else if (documentos.currentTypeOfDocument === 'trastornoLimitePersonalidad') {
         stepsStore.setSteps([
-          { component: Step1TrastornoLimitePersonalidad, name: 'Paso 1' },
-          { component: Step2TrastornoLimitePersonalidad, name: 'Paso 2' },
-          { component: Step3TrastornoLimitePersonalidad, name: 'Paso 3' },
-          { component: Step4TrastornoLimitePersonalidad, name: 'Paso 4' },
-          { component: Step5TrastornoLimitePersonalidad, name: 'Paso 5' },
-          { component: Step6TrastornoLimitePersonalidad, name: 'Paso 6' },
-          { component: Step7TrastornoLimitePersonalidad, name: 'Paso 7' },
-          { component: Step8TrastornoLimitePersonalidad, name: 'Paso 8' },
-          { component: Step9TrastornoLimitePersonalidad, name: 'Paso 9' },
-          { component: Step10TrastornoLimitePersonalidad, name: 'Paso 10' },
-          { component: Step11TrastornoLimitePersonalidad, name: 'Paso 11' },
+          { component: Step1TrastornoLimitePersonalidad, name: 'Fecha' },
+          { component: Step2TrastornoLimitePersonalidad, name: 'Relaciones cercanas' },
+          { component: Step3TrastornoLimitePersonalidad, name: 'Autolesión' },
+          { component: Step4TrastornoLimitePersonalidad, name: 'Impulsividad' },
+          { component: Step5TrastornoLimitePersonalidad, name: 'Estado de ánimo' },
+          { component: Step6TrastornoLimitePersonalidad, name: 'Enfado' },
+          { component: Step7TrastornoLimitePersonalidad, name: 'Desconfianza' },
+          { component: Step8TrastornoLimitePersonalidad, name: 'Irrealidad' },
+          { component: Step9TrastornoLimitePersonalidad, name: 'Vacío crónico' },
+          { component: Step10TrastornoLimitePersonalidad, name: 'Identidad' },
+          { component: Step11TrastornoLimitePersonalidad, name: 'Evitar abandono' },
         ]);
       } else if (documentos.currentTypeOfDocument === 'cuestionarioNordico') {
         stepsStore.setSteps([
@@ -2098,8 +2122,12 @@ export default {
       handleSubmit,
       isSubmitting,
       isValidating,
-      progressPercentage,
       currentStepDisplay,
+      pasosSegmentados,
+      nombrePasoActual,
+      etiquetaSegmento,
+      claseSegmento,
+      irAPaso,
       showCamposFaltantesModal,
       showLimiteHistoriasModal,
       camposFaltantes,
@@ -2160,21 +2188,37 @@ export default {
   <div
     class="border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg p-7 2xl:p-7 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-md mx-auto">
 
-    <!-- Barra de progreso mejorada -->
-    <div class="relative w-full h-2 mb-4 bg-gray-200 rounded-full overflow-hidden">
+    <!-- Indicador de pasos: paso y sección actual -->
+    <div class="flex justify-between items-baseline gap-3 mb-1 text-xs text-gray-500">
+      <span class="shrink-0">Paso {{ currentStepDisplay }} de {{ stepsStore.steps.length }}</span>
+      <span v-if="nombrePasoActual" class="font-medium text-emerald-600 truncate">{{ nombrePasoActual }}</span>
+    </div>
+
+    <!-- Pocos pasos: un segmento por paso, con clic para ir a él -->
+    <nav v-if="pasosSegmentados" aria-label="Pasos del documento" class="flex gap-1 mb-3">
+      <button
+        v-for="(paso, i) in stepsStore.steps"
+        :key="i"
+        type="button"
+        class="segmento-paso flex-1 py-1.5"
+        :title="etiquetaSegmento(i + 1)"
+        :aria-label="etiquetaSegmento(i + 1)"
+        :aria-current="i + 1 === stepsStore.currentStep ? 'step' : undefined"
+        @click="irAPaso(i + 1)"
+      >
+        <span class="segmento-barra block h-2 rounded-full" :class="claseSegmento(i + 1)"></span>
+      </button>
+    </nav>
+
+    <!-- Muchos pasos: barra continua -->
+    <div v-else class="relative w-full h-2 mt-1.5 mb-4 bg-gray-200 rounded-full overflow-hidden">
       <div class="progress-bar absolute top-0 left-0 h-full bg-emerald-600 transition-all duration-300"
         :style="{
           width:
             (stepsStore.steps.length
-              ? ((stepsStore.currentStep - 1) / stepsStore.steps.length) * 100
+              ? (Math.min(stepsStore.currentStep, stepsStore.steps.length) / stepsStore.steps.length) * 100
               : 0) + '%',
         }"></div>
-    </div>
-
-    <!-- Indicador sutil de progreso -->
-    <div class="flex justify-between items-center mb-4 text-xs text-gray-500">
-      <span>Paso {{ currentStepDisplay }} de {{ stepsStore.steps.length }}</span>
-      <span class="font-medium text-emerald-600">{{ progressPercentage }}% completado</span>
     </div>
 
     <!-- Formulario dinámico -->
@@ -2207,8 +2251,9 @@ export default {
         @click="handleSubmit"
         :disabled="isSubmitting || isValidating"
         :aria-busy="isSubmitting || isValidating"
-        class="text-xs md:text-sm mt-6 text-gray-500 hover:text-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="self-center mt-5 px-2.5 py-1 text-xs font-medium rounded-md border border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
       >
+        <i v-if="!isSubmitting && !isValidating" class="fas fa-save mr-1" aria-hidden="true"></i>
         <span v-if="isSubmitting" class="inline-flex items-center gap-0.5">
           Guardando
           <span class="loading-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
@@ -2329,6 +2374,31 @@ export default {
 
 .progress-bar {
   transition: all 0.3s ease-in-out;
+}
+
+/* Segmentos de pasos: crecen al pasar el cursor; el actual se ve más alto */
+.segmento-barra {
+  transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.3s ease;
+}
+
+.segmento-paso:hover .segmento-barra {
+  transform: scaleY(1.6);
+  opacity: 1;
+}
+
+.segmento-paso[aria-current='step'] .segmento-barra {
+  transform: scaleY(1.4);
+}
+
+.segmento-paso:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+  border-radius: 9999px;
+}
+
+.segmento-barra.bg-emerald-600:active {
+  transform: scaleY(1.6);
+  box-shadow: none;
 }
 
 button {
