@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRouter, RouterLink } from "vue-router";
 import AuthAPI from "@/api/AuthAPI";
 import axios from "axios";
@@ -13,6 +13,22 @@ const password = ref("");
 const errorMessage = ref("");
 const showPassword = ref(false);
 const isLoggingIn = ref(false);
+const emailRef = ref<HTMLInputElement | null>(null);
+// Campos vacíos: se marcan sin consultar al servidor
+const faltaEmail = ref(false);
+const faltaPassword = ref(false);
+const mayusculasActivas = ref(false);
+
+const MENSAJE_SIN_CONEXION =
+  "No se pudo conectar con el servidor. Revisa tu conexión a internet e intenta de nuevo.";
+
+function actualizarMayusculas(evento: KeyboardEvent) {
+  if (typeof evento.getModifierState === "function") {
+    mayusculasActivas.value = evento.getModifierState("CapsLock");
+  }
+}
+
+onMounted(() => emailRef.value?.focus());
 
 const lockoutRetrySeconds = ref(0);
 const lockoutMessage = ref("");
@@ -56,6 +72,13 @@ watch(email, () => {
   }
 });
 
+// Al corregir el correo o la contraseña, el error anterior deja de aplicar
+watch([email, password], ([nuevoEmail, nuevoPassword]) => {
+  errorMessage.value = "";
+  if (nuevoEmail.trim()) faltaEmail.value = false;
+  if (nuevoPassword) faltaPassword.value = false;
+});
+
 onUnmounted(() => {
   if (lockoutIntervalId) {
     clearInterval(lockoutIntervalId);
@@ -65,9 +88,16 @@ onUnmounted(() => {
 
 const handleLogin = async () => {
   if (lockoutRetrySeconds.value > 0 || isLoggingIn.value) return;
+  // El autocompletado del celular suele dejar un espacio al final del correo
+  const correo = email.value.trim();
+  faltaEmail.value = !correo;
+  faltaPassword.value = !password.value;
+  if (faltaEmail.value || faltaPassword.value) return;
+  if (correo !== email.value) email.value = correo;
+
   isLoggingIn.value = true;
   try {
-    const response = await AuthAPI.login(email.value, password.value, {
+    const response = await AuthAPI.login(correo, password.value, {
       loginContext: "PRIMARY_LOGIN",
     });
     if (response.status === 200 || response.status === 201) {
@@ -112,6 +142,9 @@ const handleLogin = async () => {
       } else {
         errorMessage.value = "Credenciales incorrectas";
       }
+    } else if (axios.isAxiosError(error)) {
+      // Sin respuesta: servidor caído o sin internet
+      errorMessage.value = MENSAJE_SIN_CONEXION;
     } else {
       console.error("Error inesperado:", error);
       errorMessage.value = "Ocurrió un error inesperado";
@@ -126,6 +159,7 @@ const handleLogin = async () => {
 <template>
   <div class="login-page flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-slate-900">
     <form
+      novalidate
       @submit.prevent="handleLogin"
       class="login-card bg-white p-8 rounded-2xl shadow-md w-10/12 md:w-1/2 lg:w-1/3 lg:max-w-lg dark:bg-slate-800 dark:border dark:border-slate-700"
     >
@@ -135,11 +169,20 @@ const handleLogin = async () => {
           >Email</label
         >
         <input
+          ref="emailRef"
           v-model="email"
           id="email"
-          type="text"
-          class="w-full mt-1 p-2 border border-gray-300 bg-white text-gray-800 placeholder-gray-500 rounded focus:outline-none focus:border-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-300"
+          type="email"
+          inputmode="email"
+          autocomplete="username"
+          autocapitalize="none"
+          spellcheck="false"
+          :aria-invalid="faltaEmail"
+          :aria-describedby="faltaEmail ? 'email-falta' : undefined"
+          class="w-full mt-1 p-2 border bg-white text-gray-800 placeholder-gray-500 rounded focus:outline-none focus:border-emerald-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-300"
+          :class="faltaEmail ? 'border-red-400 dark:border-red-400' : 'border-gray-300 dark:border-slate-600'"
         />
+        <p v-if="faltaEmail" id="email-falta" class="mt-1 text-sm text-red-600 dark:text-red-400">Escribe tu correo</p>
       </div>
       <div class="mb-4 relative">
         <label for="password" class="block text-sm lg:text-base font-medium text-gray-700 dark:text-slate-200"
@@ -150,10 +193,19 @@ const handleLogin = async () => {
             v-model="password"
             id="password"
             :type="showPassword ? 'text' : 'password'"
-            class="w-full mt-1 p-2 pr-10 border border-gray-300 bg-white text-gray-800 placeholder-gray-500 rounded focus:outline-none focus:border-emerald-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-300"
+            autocomplete="current-password"
+            :aria-invalid="faltaPassword"
+            :aria-describedby="faltaPassword ? 'password-falta' : (mayusculasActivas ? 'password-mayusculas' : undefined)"
+            class="w-full mt-1 p-2 pr-10 border bg-white text-gray-800 placeholder-gray-500 rounded focus:outline-none focus:border-emerald-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-300"
+            :class="faltaPassword ? 'border-red-400 dark:border-red-400' : 'border-gray-300 dark:border-slate-600'"
+            @keydown="actualizarMayusculas"
+            @keyup="actualizarMayusculas"
+            @blur="mayusculasActivas = false"
           />
           <button
             type="button"
+            :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            :title="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
             @click="showPassword = !showPassword"
             class="absolute inset-y-0 right-2 top-1 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none dark:text-slate-300 dark:hover:text-slate-100"
           >
@@ -161,6 +213,15 @@ const handleLogin = async () => {
             <span v-else><i class="fa-regular fa-eye"></i></span>
           </button>
         </div>
+        <p v-if="faltaPassword" id="password-falta" class="mt-1 text-sm text-red-600 dark:text-red-400">Escribe tu contraseña</p>
+        <p
+          v-else-if="mayusculasActivas"
+          id="password-mayusculas"
+          class="mt-1 flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400"
+        >
+          <i class="fa-solid fa-arrow-up-from-bracket text-xs" aria-hidden="true"></i>
+          Las mayúsculas están activadas
+        </p>
       </div>
       <button
         type="submit"
