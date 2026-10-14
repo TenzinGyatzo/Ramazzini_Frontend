@@ -3,7 +3,8 @@ import { ref, onMounted, computed, inject, watch } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { useEmpresasStore } from '@/stores/empresas';
 import AssignmentsAPI from '@/api/AssignmentsAPI';
-import { onBeforeRouteLeave } from 'vue-router';
+import { useSalidaConCambios } from '@/composables/useSalidaConCambios';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import MultiSelectEmpresas from '@/components/MultiSelectEmpresas.vue';
 import MultiSelectCentrosAsync from '@/components/MultiSelectCentrosAsync.vue';
 import AssignmentsSummary from '@/components/AssignmentsSummary.vue';
@@ -262,25 +263,19 @@ const descartarCambios = async () => {
   }
 };
 
-// Guard de navegación específico para esta vista
-onBeforeRouteLeave((to, from, next) => {
-  if (hasUnsavedChanges.value) {
-    const answer = window.confirm(
-      'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir? Los cambios se perderán.'
-    );
-    if (answer) {
-      next();
-    } else {
-      next(false);
-    }
-  } else {
-    next();
-  }
-});
+// Al salir con cambios sin guardar: diálogo «¿Descartar cambios?» y aviso al cerrar la pestaña
+const { mostrarConfirmacion: mostrarConfirmacionSalida, responderDescarte } =
+  useSalidaConCambios(hasUnsavedChanges);
 </script>
 
 <template>
   <div class="manage-assignments-view p-4 sm:p-6 max-w-7xl mx-auto">
+    <ModalDiscardConfirmDialog
+      :open="mostrarConfirmacionSalida"
+      @continue-editing="responderDescarte(false)"
+      @discard="responderDescarte(true)"
+    />
+
     <div class="mb-6">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-4">
         <div>

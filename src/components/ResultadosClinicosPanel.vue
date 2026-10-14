@@ -948,6 +948,7 @@ import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import type { EliminacionRequest } from '@/composables/useEliminacion';
+import { mensajeErrorArchivo } from '@/helpers/mensajeErrorArchivo';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -959,6 +960,12 @@ const emit = defineEmits<{
 }>();
 
 const toast: any = inject('toast');
+
+// Errores al abrir archivos de estudios (antes eran alerts del navegador)
+const ESTUDIO_NO_ENCONTRADO = 'El archivo de este estudio ya no está en el servidor. Vuelve a subirlo.';
+function avisarErrorArchivo(mensaje: string) {
+  toast?.open?.({ message: mensaje, type: 'error', duration: 8000 });
+}
 const requestEliminacion = inject<(request: EliminacionRequest) => void>('requestEliminacion');
 const store = useResultadosClinicosStore();
 const documentos = useDocumentosStore();
@@ -1986,11 +1993,13 @@ const abrirPdf = async (ruta: string, nombre: string, updatedAt: number | null) 
         window.focus();
       });
     } else {
-      alert('El archivo PDF no existe o no es válido.');
+      avisarErrorArchivo(ESTUDIO_NO_ENCONTRADO);
     }
   } catch (error) {
     console.error('Error al cargar el PDF:', error);
-    alert('Ocurrió un error al intentar cargar el archivo PDF.');
+    avisarErrorArchivo(
+      mensajeErrorArchivo(error, { accion: 'abrir', objeto: 'el PDF', noEncontrado: ESTUDIO_NO_ENCONTRADO }),
+    );
   }
 };
 
@@ -2039,11 +2048,13 @@ const abrirImagen = async (rutaCompleta: string) => {
         document.addEventListener('mouseup', handleGlobalMouseUp);
       });
     } else {
-      alert('El archivo no es una imagen válida.');
+      avisarErrorArchivo(ESTUDIO_NO_ENCONTRADO);
     }
   } catch (error) {
     console.error('Error al cargar la imagen:', error);
-    alert('Ocurrió un error al intentar cargar la imagen.');
+    avisarErrorArchivo(
+      mensajeErrorArchivo(error, { accion: 'abrir', objeto: 'la imagen', noEncontrado: ESTUDIO_NO_ENCONTRADO }),
+    );
   }
 };
 
@@ -2078,7 +2089,7 @@ const abrirDocumentoExterno = async (documento: any) => {
     const updatedAt = documento.updatedAt ? new Date(documento.updatedAt).getTime() : null;
     abrirPdf(documento.rutaDocumento, `${documento.nombreDocumento} ${convertirFechaISOaDDMMYYYY(documento.fechaDocumento)}.pdf`, updatedAt);
   } else {
-    alert('No se puede abrir el documento: faltan datos de la ruta del archivo.');
+    avisarErrorArchivo('Este estudio no tiene un archivo disponible para abrir.');
   }
 };
 

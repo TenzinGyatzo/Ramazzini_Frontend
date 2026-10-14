@@ -3,7 +3,8 @@ import { ref, onMounted, computed, inject, watch } from 'vue';
 import { useInventarioStore } from '@/stores/inventario';
 import { useUserStore } from '@/stores/user';
 import PermissionsAPI from '@/api/PermissionsAPI';
-import { onBeforeRouteLeave } from 'vue-router';
+import { useSalidaConCambios } from '@/composables/useSalidaConCambios';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import {
   sanitizePermissionsForRole,
   isPermissionEditableForRole,
@@ -236,26 +237,19 @@ const toggleAccountStatus = async (usuario) => {
   }
 };
 
-// Guard de navegación específico para esta vista
-
-onBeforeRouteLeave((to, from, next) => {
-  if (hasUnsavedChanges.value) {
-    const answer = window.confirm(
-      'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir? Los cambios se perderán.'
-    );
-    if (answer) {
-      next();
-    } else {
-      next(false);
-    }
-  } else {
-    next();
-  }
-});
+// Al salir con cambios sin guardar: diálogo «¿Descartar cambios?» y aviso al cerrar la pestaña
+const { mostrarConfirmacion: mostrarConfirmacionSalida, responderDescarte } =
+  useSalidaConCambios(hasUnsavedChanges);
 </script>
 
 <template>
   <div class="p-4 sm:p-6 max-w-7xl mx-auto">
+    <ModalDiscardConfirmDialog
+      :open="mostrarConfirmacionSalida"
+      @continue-editing="responderDescarte(false)"
+      @discard="responderDescarte(true)"
+    />
+
     <div class="mb-6">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-4">
         <div>

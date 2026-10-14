@@ -16,6 +16,7 @@ import { usePdfGenerationTracker } from '@/composables/usePdfGenerationTracker';
 import { generarInformePdf } from '@/composables/useGenerarInformePdf';
 import { usePdfGenerationStore } from '@/stores/pdfGeneration';
 import { getToast } from '@/utils/toast';
+import { mensajeErrorArchivo } from '@/helpers/mensajeErrorArchivo';
 
 const VPdfViewer = defineAsyncComponent(() =>
   import('@vue-pdf-viewer/viewer').then((mod) => mod.VPdfViewer),
@@ -328,7 +329,7 @@ const descargarArchivo = async (documento, tipoDocumento, origen = 'lista') => {
         console.log('Ruta del documento:', ruta);
         if (!ruta) {
             console.warn('El documento no está disponible o no es válido:', { documento, tipoDocumento });
-            alert('El documento no está disponible o no es válido.');
+            avisarErrorArchivo('Este documento no tiene un archivo disponible para descargar.');
             return;
         }
 
@@ -354,9 +355,14 @@ const descargarArchivo = async (documento, tipoDocumento, origen = 'lista') => {
 
     } catch (error) {
         console.error('Error al descargar el archivo:', error);
-        alert('Ocurrió un error al intentar descargar el archivo.');
+        avisarErrorArchivo(mensajeErrorArchivo(error, { accion: 'descargar' }));
     }
 };
+
+/** Aviso de error al abrir o descargar un archivo (antes era un alert del navegador). */
+function avisarErrorArchivo(mensaje) {
+    getToast()?.open?.({ message: mensaje, type: 'error', duration: 8000 });
+}
 
 const descargarYGuardarArchivo = async (ruta, nombreArchivo, nombreArchivoReal, origen = 'lista') => {
     try {
@@ -581,8 +587,11 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
             showPdfViewer.value = true;
             await preparePdfViewerMount();
         } else {
+            // Sin PDF válido en la ruta: mismo trato que cuando el archivo no existe (404)
             console.warn('El archivo no es un PDF o no existe.', { status: response.status, contentType });
-            alert('El archivo PDF no existe o no es válido.');
+            if (!isPdfGenerating.value) {
+                mostrarModalPdfEliminado.value = true;
+            }
         }
     } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -591,7 +600,7 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
             }
         } else {
             console.error('Error al intentar cargar el archivo PDF:', error.message);
-            alert('Ocurrió un error al intentar cargar el archivo PDF.');
+            avisarErrorArchivo(mensajeErrorArchivo(error, { accion: 'abrir', objeto: 'el PDF' }));
         }
     }
 };
@@ -1345,7 +1354,7 @@ const abrirImagen = async (rutaCompleta) => {
             mostrarModalPdfEliminado.value = true;
         } else {
             console.error('Error al cargar la imagen:', error);
-            alert('Ocurrió un error al intentar cargar la imagen.');
+            avisarErrorArchivo(mensajeErrorArchivo(error, { accion: 'abrir', objeto: 'la imagen' }));
         }
     }
 };
@@ -1632,7 +1641,7 @@ const descargarPdfActual = async () => {
             }
         } catch (error) {
             console.error('Error al descargar el PDF:', error);
-            alert('Error al descargar el PDF');
+            avisarErrorArchivo(mensajeErrorArchivo(error, { accion: 'descargar', objeto: 'el PDF' }));
         }
     }
 };
@@ -1684,7 +1693,7 @@ const descargarImagenActual = async () => {
             }
         } catch (error) {
             console.error('Error al descargar la imagen:', error);
-            alert('Error al descargar la imagen');
+            avisarErrorArchivo(mensajeErrorArchivo(error, { accion: 'descargar', objeto: 'la imagen' }));
         }
     }
 };

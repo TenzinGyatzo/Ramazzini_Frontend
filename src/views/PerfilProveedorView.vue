@@ -1,5 +1,6 @@
 <script setup>
 import { ref, inject, computed, watch, onUnmounted } from "vue";
+import axios from "axios";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { useRouter, RouterLink } from "vue-router";
 import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
@@ -10,6 +11,7 @@ import CPAutocomplete from "@/components/selectors/CPAutocomplete.vue";
 import { useNom024Fields } from "@/composables/useNom024Fields";
 import { processProviderLogo } from "@/helpers/processProviderLogo";
 import { toTitleCase } from "@/helpers/toTitleCase";
+import { extractApiErrorMessage } from "@/helpers/apiErrors";
 import {
   PERFILES_PROVEEDOR_SALUD,
   normalizarPerfilProveedorSalud,
@@ -407,9 +409,18 @@ const handleSubmit = async (data) => {
     });
   } catch (error) {
     console.error("Error al crear o actualizar el proveedor:", error);
-    alert(
-      "Hubo un error al crear o actualizar el proveedor, por favor intente nuevamente."
-    );
+    // Mensaje emergente como el de éxito (antes era un alert del navegador)
+    const sinRespuesta = axios.isAxiosError(error) && !error.response;
+    toast.open({
+      message: sinRespuesta
+        ? "No se pudo conectar con el servidor. Revisa tu conexión a internet e intenta de nuevo."
+        : extractApiErrorMessage(
+            error,
+            "No se pudo guardar el perfil del proveedor. Intenta de nuevo.",
+          ),
+      type: "error",
+      duration: 8000,
+    });
   }
 };
 
