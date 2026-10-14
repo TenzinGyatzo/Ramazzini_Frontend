@@ -14,6 +14,7 @@ import { generarInformePdf } from '@/composables/useGenerarInformePdf';
 import { PASOS_NORDICO } from '@/helpers/cuestionarioNordico';
 import { PASOS_SUENO_VIGILIA, normalizarEvaluacionSuenoVigilia } from '@/helpers/evaluacionSuenoVigilia';
 import { usePdfGenerationStore } from '@/stores/pdfGeneration';
+import { permitirSalidaTrasGuardar } from '@/composables/useCapturaSinGuardar';
 
 import Step1Antidoping from '../steps/antidopingSteps/Step1.vue';
 import Step2Antidoping from '../steps/antidopingSteps/Step2.vue';
@@ -2009,6 +2010,7 @@ export default {
         isSubmitting.value = false;
 
         // Navegar YA (no await markPdfGenerating ni PDF). resetForm diferido para no bloquear el paint.
+        permitirSalidaTrasGuardar();
         router.push({
           name: 'expediente-medico',
           params: {
@@ -2225,6 +2227,7 @@ export default {
     <transition name="fade-slide" mode="out-in">
       <div v-if="stepsStore.currentStep <= stepsStore.steps.length && stepsStore.steps.length > 0"
         :key="dynamicStepComponentKey"
+        data-captura-documento
         :class="{ 'pointer-events-none opacity-80 select-none': disableEdit }"
       >
         <component :is="stepsStore.steps[stepsStore.currentStep - 1].component" />

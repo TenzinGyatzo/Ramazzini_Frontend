@@ -12,6 +12,8 @@ import { useUserPermissions } from '@/composables/useUserPermissions';
 import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
+import { useCapturaSinGuardar } from '@/composables/useCapturaSinGuardar';
+import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import FormStepper from '@/components/steps/FormStepper.vue';
 import VisualizadorAntidoping from '@/components/steps/VisualizadorAntidoping.vue';
 import VisualizadorAptitud from '@/components/steps/VisualizadorAptitud.vue';
@@ -133,6 +135,45 @@ const trabajadorId = ref('');
 const documentoId = ref('');
 const tipoDocumento = ref('');
 
+/** Formulario del store para cada tipo de documento. */
+const formularioPorTipo = (tipo) => ({
+  antidoping: formData.formDataAntidoping,
+  aptitud: formData.formDataAptitud,
+  audiometria: formData.formDataAudiometria,
+  certificado: formData.formDataCertificado,
+  certificadoExpedito: formData.formDataCertificadoExpedito,
+  'documento Externo': formData.formDataDocumentoExterno,
+  examenVista: formData.formDataExamenVista,
+  exploracionFisica: formData.formDataExploracionFisica,
+  historiaClinica: formData.formDataHistoriaClinica,
+  notaMedica: formData.formDataNotaMedica,
+  notaAclaratoria: formData.formDataNotaAclaratoria,
+  controlPrenatal: formData.formDataControlPrenatal,
+  historiaOtologica: formData.formDataHistoriaOtologica,
+  previoEspirometria: formData.formDataPrevioEspirometria,
+  receta: formData.formDataReceta,
+  constanciaAptitud: formData.formDataConstanciaAptitud,
+  entrevistaPsicologica: formData.formDataEntrevistaPsicologica,
+  trastornosEstadoAnimo: formData.formDataTrastornosEstadoAnimo,
+  cuestionarioProdromalBreve: formData.formDataCuestionarioProdromalBreve,
+  trastornoLimitePersonalidad: formData.formDataTrastornoLimitePersonalidad,
+  cuestionarioNordico: formData.formDataCuestionarioNordico,
+  evaluacionSuenoVigilia: formData.formDataEvaluacionSuenoVigilia,
+  eventoSeguimientoCardiometabolico: formData.formDataEventoSeguimientoCardiometabolico,
+  informeLongitudinalCardiometabolico: formData.formDataInformeLongitudinalCardiometabolico,
+  informeLongitudinalAudiometrico: formData.formDataInformeLongitudinalAudiometrico,
+})[tipo];
+
+// Aviso al salir con cambios sin guardar (no aplica a documentos de solo lectura)
+const {
+  mostrarConfirmacion: mostrarConfirmacionSalida,
+  responderDescarte,
+  reiniciar: reiniciarVigilanciaDeCaptura,
+} = useCapturaSinGuardar({
+  getEstado: () => formularioPorTipo(String(route.params.tipoDocumento || '')) ?? null,
+  habilitado: () => !disableEdit.value,
+});
+
 const bootstrapNotaAclaratoriaSiCorresponde = () => {
   const tipo = String(tipoDocumento.value || '');
   if (tipo !== 'notaAclaratoria' || documentoId.value) return;
@@ -160,6 +201,7 @@ const bootstrapNotaAclaratoriaSiCorresponde = () => {
 };
 
 const inicializarDesdeRuta = () => {
+  reiniciarVigilanciaDeCaptura();
   empresaId.value = String(route.params.idEmpresa);
   centroTrabajoId.value = String(route.params.idCentroTrabajo);
   trabajadorId.value = String(route.params.idTrabajador);
@@ -339,35 +381,7 @@ watchEffect(async () => {
 
     const rutaBase = `${buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorIdVal)}/`;
 
-    const documentoMap = {
-      antidoping: formData.formDataAntidoping,
-      aptitud: formData.formDataAptitud,
-      audiometria: formData.formDataAudiometria,
-      certificado: formData.formDataCertificado,
-      certificadoExpedito: formData.formDataCertificadoExpedito,
-      'documento Externo': formData.formDataDocumentoExterno,
-      examenVista: formData.formDataExamenVista,
-      exploracionFisica: formData.formDataExploracionFisica,
-      historiaClinica: formData.formDataHistoriaClinica,
-      notaMedica: formData.formDataNotaMedica,
-      notaAclaratoria: formData.formDataNotaAclaratoria,
-      controlPrenatal: formData.formDataControlPrenatal,
-      historiaOtologica: formData.formDataHistoriaOtologica,
-      previoEspirometria: formData.formDataPrevioEspirometria,
-      receta: formData.formDataReceta,
-      constanciaAptitud: formData.formDataConstanciaAptitud,
-      entrevistaPsicologica: formData.formDataEntrevistaPsicologica,
-      trastornosEstadoAnimo: formData.formDataTrastornosEstadoAnimo,
-      cuestionarioProdromalBreve: formData.formDataCuestionarioProdromalBreve,
-      trastornoLimitePersonalidad: formData.formDataTrastornoLimitePersonalidad,
-      cuestionarioNordico: formData.formDataCuestionarioNordico,
-      evaluacionSuenoVigilia: formData.formDataEvaluacionSuenoVigilia,
-      eventoSeguimientoCardiometabolico: formData.formDataEventoSeguimientoCardiometabolico,
-      informeLongitudinalCardiometabolico: formData.formDataInformeLongitudinalCardiometabolico,
-      informeLongitudinalAudiometrico: formData.formDataInformeLongitudinalAudiometrico,
-    };
-
-    const documentoForm = documentoMap[tipoActual];
+    const documentoForm = formularioPorTipo(tipoActual);
 
     if (documentoForm) {
       documentoForm.updatedBy = currentUserId;
@@ -564,6 +578,12 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 <template>
   <Transition appear mode="out-in" name="slide-up">
     <div>
+      <ModalDiscardConfirmDialog
+        :open="mostrarConfirmacionSalida"
+        @continue-editing="responderDescarte(false)"
+        @discard="responderDescarte(true)"
+      />
+
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'antidoping'"
           class="max-w-3xl mx-auto flex flex-wrap lg:flex-nowrap gap-3 md:gap-6 justify-center">
@@ -689,7 +709,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           class="max-w-6xl mx-auto flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/3">
             <FormStepper />
-            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+            <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
               <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
                 <i class="fa-solid fa-calendar-days w-5 h-5"></i>
                 <span>Mes de control</span>
@@ -854,7 +874,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+            <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
               <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -884,7 +904,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+            <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
               <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -914,7 +934,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+            <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
               <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -944,7 +964,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4">
             <FormStepper />
-            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+            <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
               <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -974,7 +994,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-2/5">
             <FormStepper />
-            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+            <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
               <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -1003,7 +1023,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-2/5">
             <FormStepper />
-            <div class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
+            <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
               <p class="text-xl font-bold text-gray-700 flex items-center justify-center space-x-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
