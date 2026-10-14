@@ -1,5 +1,4 @@
 <script setup lang="ts">
-declare const pdfMake: typeof import('pdfmake/build/pdfmake');
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { exportarGraficaAltaResolucion } from '@/helpers/exportChartImage';
 import { 
@@ -9,6 +8,7 @@ import {
   isHtmlContentEmpty
 } from '@/helpers/pdfHtmlParser';
 import { ref, nextTick, watch, computed, onMounted } from 'vue';
+import { cargarPdfMake, precargarPdfMake } from '@/lib/cargarPdfMake';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import InformesAPI from '@/api/InformesAPI';
 import { formatearTituloProfesional } from '@/helpers/nombres';
@@ -103,6 +103,7 @@ const cargarLogoProveedor = async () => {
 
 // Cargar el logo cuando se monte el componente o cambie el proveedor
 onMounted(async () => {
+  precargarPdfMake();
   await cargarLogoProveedor();
 });
 
@@ -2592,6 +2593,7 @@ const generarPDF = async () => {
       }
 
       const docDefinition = generarDocDefinition(false); // Calidad normal
+      const pdfMake = await cargarPdfMake();
       pdfMake.createPdf(docDefinition).open();
       mensajeExito.value = 'El informe se generó correctamente. Puedes revisarlo en la ventana que se abrió.';
     } catch (error) {
@@ -2635,6 +2637,7 @@ const descargarPDF = async () => {
       }
 
       const docDefinition = generarDocDefinition(true); // Alta calidad
+      const pdfMake = await cargarPdfMake();
       pdfMake.createPdf(docDefinition).download(`InformeSaludLaboral_${props.nombreEmpresa?.replace(/\s+/g, '_') || 'Empresa'}_${new Date().toISOString().split('T')[0]}.pdf`);
       mensajeExito.value = 'Informe generado correctamente.';
     } catch (error) {

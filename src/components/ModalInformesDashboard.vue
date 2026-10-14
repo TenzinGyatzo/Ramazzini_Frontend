@@ -1,6 +1,6 @@
 <script setup lang="ts">
-declare const pdfMake: typeof import('pdfmake/build/pdfmake');
-import { computed, inject, nextTick, reactive, ref, watch } from 'vue';
+import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { cargarPdfMake, pdfMakeCargado, precargarPdfMake } from '@/lib/cargarPdfMake';
 import * as xlsx from 'xlsx';
 import InformesAPI from '@/api/InformesAPI';
 import { informePersonalizacionService } from '@/api/informe-personalizacion.service';
@@ -67,6 +67,9 @@ const emit = defineEmits<{
 }>();
 
 const toast = inject<any>('toast', null);
+
+// pdfmake se descarga al abrir la ventana, no al hacer clic (ver cargarPdfMake)
+onMounted(precargarPdfMake);
 const userStore = useUserStore();
 
 const TIPOS: TipoConConclusiones[] = ['completo', 'resumen', 'cardiometabolico', 'auditivo', 'musculoesqueletico'];
@@ -318,6 +321,8 @@ const generar = async (modo: 'ver' | 'descargar') => {
     }
     const tema = esTema(id) ? id : null;
     const informe = conLoGuardado(tema ? props.armarTema(tema) : props.armar(), id);
+    // Ya precargado al abrir la ventana: así `open()` ocurre dentro del clic y no se bloquea
+    const pdfMake = pdfMakeCargado() ?? (await cargarPdfMake());
     const pdf = pdfMake.createPdf(
       definicionResumenEjecutivo(informe, tema ? { titulo: tituloDeTema(tema), todasLasTablas: true } : {}) as any,
     );

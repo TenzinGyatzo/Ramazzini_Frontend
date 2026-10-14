@@ -1,15 +1,4 @@
-declare const pdfMake: typeof import('pdfmake/build/pdfmake') & {
-  vfs?: Record<string, string>;
-  fonts?: Record<
-    string,
-    {
-      normal: string;
-      bold: string;
-      italics: string;
-      bolditalics: string;
-    }
-  >;
-};
+import { cargarPdfMake } from '@/lib/cargarPdfMake';
 
 const KANIT_FONT_FILES = {
   'Kanit-Light.ttf': '/fonts/Kanit-Light.ttf',
@@ -44,6 +33,7 @@ async function fetchFontAsBase64(path: string): Promise<string> {
 export function setupPdfMakeKanitFonts(): Promise<void> {
   if (!kanitFontsReady) {
     kanitFontsReady = (async () => {
+      const pdfMake = await cargarPdfMake();
       if (!pdfMake.vfs) {
         pdfMake.vfs = {};
       }
@@ -65,7 +55,10 @@ export function setupPdfMakeKanitFonts(): Promise<void> {
           bolditalics: 'Kanit-MediumItalic.ttf',
         },
       };
-    })();
+    })().catch((error) => {
+      kanitFontsReady = null;
+      throw error;
+    });
   }
 
   return kanitFontsReady;

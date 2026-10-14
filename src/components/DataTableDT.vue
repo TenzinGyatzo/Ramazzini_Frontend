@@ -4,6 +4,7 @@ import { documentosEnTabla } from '@/helpers/documentosEnTabla';
 import { expresionDeEdad } from '@/helpers/edadEnTabla';
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import DataTablesCore from 'datatables.net-dt';
+import idiomaEspanol from '@/assets/i18n/datatables-es-ES.json';
 import 'datatables.net-select-dt';
 import 'datatables.net-buttons-dt';
 import 'datatables.net-fixedcolumns-dt';
@@ -542,6 +543,11 @@ function inicializarDataTable() {
     // Definir las columnas que se ocultan por defecto
     const columnasOcultas = [2, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47];
 
+    // Los avisos internos de DataTables van a la consola, no a un alert() del navegador
+    (DataTablesCore.ext as { errMode: unknown }).errMode = (_settings: unknown, _techNote: number, mensaje: string) => {
+      console.warn(mensaje);
+    };
+
     dataTableInstance = new DataTablesCore('#customTable', {
       data: props.rows,
       createdRow: function(row, data, dataIndex) {
@@ -1004,8 +1010,9 @@ function inicializarDataTable() {
       order: [[0, 'desc']],
       scrollCollapse: true,
       scrollY: '800px',
+      // Textos en español incluidos en el proyecto (antes se pedían a cdn.datatables.net en cada carga)
       language: {
-        url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json',
+        ...idiomaEspanol,
         // @ts-expect-error: DataTables select extension no está tipado en language
         select: {
           rows: {
@@ -1123,7 +1130,7 @@ function inicializarDataTable() {
       }, 'eliminar trabajadores');
     });
 
-    dataTableInstance.on('init', function () {
+    const alInicializarTabla = function () {
       aplicarTodosLosFiltrosDesdeLocalStorage();
       syncExpedienteButtonBadges();
       
@@ -1137,7 +1144,14 @@ function inicializarDataTable() {
       if (!tieneNumeroEmpleado) {
         dataTableInstance.column(1).visible(false);
       }
-    });
+    };
+    // Con los textos locales la tabla termina de iniciar dentro del constructor y el evento
+    // 'init' ya pasó; antes (idioma por URL) llegaba después.
+    if (dataTableInstance.settings()[0]?._bInitComplete) {
+      alInicializarTabla();
+    } else {
+      dataTableInstance.on('init', alInicializarTabla);
+    }
 
     dataTableInstance.on('draw', function () {
       syncExpedienteButtonBadges();

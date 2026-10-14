@@ -1,4 +1,4 @@
-declare const pdfMake: typeof import('pdfmake/build/pdfmake');
+import { cargarPdfMake } from '@/lib/cargarPdfMake';
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { setupPdfMakeKanitFonts } from '@/helpers/setupPdfMakeKanitFonts';
 import { toTitleCase } from '@/helpers/toTitleCase';
@@ -388,6 +388,7 @@ export async function descargarDeclaracionVeracidadPdf(params: {
   const { trabajador, fecha, proveedorSalud } = params;
   const fechaFormateada = formatFechaYYYYMMDD(fecha);
 
+  const pdfMake = await cargarPdfMake();
   await setupPdfMakeKanitFonts();
 
   const logo = await cargarLogoProveedor(proveedorSalud);
