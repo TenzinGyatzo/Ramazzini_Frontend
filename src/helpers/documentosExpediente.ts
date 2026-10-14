@@ -396,6 +396,67 @@ export function posicionesEnExpediente(
   return posiciones;
 }
 
+/** Con la inmutabilidad activa, un documento finalizado o anulado ya no se puede eliminar. */
+export function esDocumentoInmutable(
+  documento: { estado?: string } | null | undefined,
+  documentImmutabilityEnabled: boolean,
+): boolean {
+  if (!documentImmutabilityEnabled) return false;
+  const estado = documento?.estado?.toLowerCase();
+  return estado === 'finalizado' || estado === 'anulado';
+}
+
+export interface OpcionesEliminacionMasiva {
+  /** Control prenatal solo existe para algunos proveedores. */
+  controlPrenatalEnabled?: boolean;
+  documentImmutabilityEnabled?: boolean;
+}
+
+export interface SeleccionParaEliminar<T> {
+  eliminables: T[];
+  /** Finalizados o anulados con la inmutabilidad activa. */
+  inmutables: T[];
+  /** Ya no están en el expediente (o son de un tipo que el proveedor no usa). */
+  noLocalizados: T[];
+}
+
+/**
+ * Separa una selección en lo que se puede eliminar y lo que no. Cada documento se localiza
+ * por tipo e id, no por la ruta de su archivo, y cuenta una sola vez aunque esté repetido.
+ */
+export function clasificarSeleccionParaEliminar<T extends ReferenciaDocumento>(
+  documentsByYear: Record<string, Record<string, any>> | null | undefined,
+  seleccion: readonly T[],
+  opciones: OpcionesEliminacionMasiva = {},
+): SeleccionParaEliminar<T> {
+  const { controlPrenatalEnabled = true, documentImmutabilityEnabled = false } = opciones;
+
+  const documentos = new Map<string, Record<string, any>>();
+  Object.values(documentsByYear ?? {}).forEach((documentosDelAnio) => {
+    TIPOS_DOCUMENTO_EXPEDIENTE.forEach(({ clave, tipo }) => {
+      if (tipo === 'controlPrenatal' && !controlPrenatalEnabled) return;
+      const delTipo = documentosDelAnio?.[clave];
+      if (!Array.isArray(delTipo)) return;
+      delTipo.forEach((documento) => {
+        if (documento?._id) documentos.set(claveDocumento(tipo, documento._id), documento);
+      });
+    });
+  });
+
+  const resultado: SeleccionParaEliminar<T> = { eliminables: [], inmutables: [], noLocalizados: [] };
+  const vistos = new Set<string>();
+  seleccion.forEach((seleccionado) => {
+    const clave = claveDocumento(seleccionado.documentType, seleccionado.documentId);
+    if (vistos.has(clave)) return;
+    vistos.add(clave);
+    const documento = documentos.get(clave);
+    if (!documento) resultado.noLocalizados.push(seleccionado);
+    else if (esDocumentoInmutable(documento, documentImmutabilityEnabled)) resultado.inmutables.push(seleccionado);
+    else resultado.eliminables.push(seleccionado);
+  });
+  return resultado;
+}
+
 /** Ordena una selección de documentos como aparecen en el expediente; lo no localizado va al final. */
 export function ordenarComoEnExpediente<T extends { documentId: string }>(
   seleccion: readonly T[],

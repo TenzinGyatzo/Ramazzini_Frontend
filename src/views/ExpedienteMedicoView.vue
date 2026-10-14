@@ -15,7 +15,7 @@ import SlidingButtonPanel from '@/components/SlidingButtonPanel.vue';
 import DeletionButtonPanel from '@/components/DeletionButtonPanel.vue';
 import { calcularEdad, calcularAntiguedad } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
-import { obtenerRutaDocumento, obtenerNombreArchivo, obtenerFechaDocumento } from '@/helpers/rutas';
+import { clasificarSeleccionParaEliminar } from '@/helpers/documentosExpediente';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
 import ModalFinalizarDocumento from '@/components/modals/ModalFinalizarDocumento.vue';
@@ -564,48 +564,22 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
 const documentImmutabilityEnabled = computed(() => proveedorSaludStore.documentImmutabilityEnabled);
 const controlPrenatalEnabled = computed(() => proveedorSaludStore.controlPrenatalEnabled);
 
-const isDocumentoInmutable = (doc: { estado?: string }) => {
-    if (!documentImmutabilityEnabled.value) return false;
-    const estado = doc?.estado?.toLowerCase();
-    return estado === 'finalizado' || estado === 'anulado';
-};
+const clasificarSeleccion = () =>
+    clasificarSeleccionParaEliminar(documentos.documentsByYear, selectedDocuments.value, {
+        controlPrenatalEnabled: controlPrenatalEnabled.value,
+        documentImmutabilityEnabled: documentImmutabilityEnabled.value,
+    });
 
 const toggleDeletionMode = () => {
     isDeletionMode.value = !isDeletionMode.value;
-    // Al activar modo eliminación, quitar de selectedRoutes los documentos inmutables
+    // Al activar modo eliminación, quitar de la selección los documentos inmutables
     if (isDeletionMode.value && documentImmutabilityEnabled.value) {
-        const rutasInmutables: string[] = [];
-        Object.values(documentos.documentsByYear).forEach(yearData => {
-            const checkDoc = (doc: { estado?: string }, tipo: string, tipoLabel: string) => {
-                if (isDocumentoInmutable(doc)) {
-                    const rutaBase = obtenerRutaDocumento(doc as any, tipoLabel);
-                    const fecha = obtenerFechaDocumento(doc as any) || 'SinFecha';
-                    const nombreArchivo = obtenerNombreArchivo(doc as any, tipoLabel, fecha, documentos);
-                    rutasInmutables.push(`${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/'));
-                }
-            };
-            yearData.notasAclaratorias?.forEach(d => checkDoc(d, 'notaAclaratoria', 'Nota Aclaratoria'));
-            yearData.constanciasAptitud?.forEach(d => checkDoc(d, 'constanciaAptitud', 'Constancia Aptitud'));
-            yearData.aptitudes?.forEach(d => checkDoc(d, 'aptitud', 'Aptitud'));
-            yearData.historiasClinicas?.forEach(d => checkDoc(d, 'historiaClinica', 'Historia Clinica'));
-            yearData.exploracionesFisicas?.forEach(d => checkDoc(d, 'exploracionFisica', 'Exploracion Fisica'));
-            yearData.examenesVista?.forEach(d => checkDoc(d, 'examenVista', 'Examen Vista'));
-            yearData.audiometrias?.forEach(d => checkDoc(d, 'audiometria', 'Audiometria'));
-            yearData.antidopings?.forEach(d => checkDoc(d, 'antidoping', 'Antidoping'));
-            yearData.certificados?.forEach(d => checkDoc(d, 'certificado', 'Certificado'));
-            yearData.certificadosExpedito?.forEach(d => checkDoc(d, 'certificadoExpedito', 'Certificado Expedito'));
-            yearData.documentosExternos?.forEach(d => checkDoc(d, 'documentoExterno', 'Documento Externo'));
-            yearData.notasMedicas?.forEach(d => checkDoc(d, 'notaMedica', 'Nota Medica'));
-            yearData.recetas?.forEach(d => checkDoc(d, 'receta', 'Receta'));
-            if (controlPrenatalEnabled.value) {
-                yearData.controlPrenatal?.forEach(d => checkDoc(d, 'controlPrenatal', 'Control Prenatal'));
-            }
-            yearData.historiaOtologica?.forEach(d => checkDoc(d, 'historiaOtologica', 'Historia Otologica'));
-            yearData.previoEspirometria?.forEach(d => checkDoc(d, 'previoEspirometria', 'Previo Espirometria'));
-        });
-        if (rutasInmutables.length > 0) {
+        const { inmutables } = clasificarSeleccion();
+        if (inmutables.length > 0) {
             selectedDocuments.value = selectedDocuments.value.filter(
-              (d) => !rutasInmutables.includes(d.filePath),
+              (d) => !inmutables.some(
+                (i) => i.documentId === d.documentId && i.documentType === d.documentType,
+              ),
             );
         }
     }
@@ -644,296 +618,12 @@ const handleDeleteSelected = async () => {
             type: "info" 
         });
         
-        // Mapear rutas a documentos para eliminación (excluyendo FINALIZADO/ANULADO)
-        const documentosAEliminar: Array<{id: string, tipo: string}> = [];
-        
-        // Recorrer todos los documentos por año para encontrar los que coinciden con las rutas seleccionadas
-        Object.values(documentos.documentsByYear).forEach(yearData => {
+        // Localizar cada documento seleccionado por tipo e id (excluyendo FINALIZADO/ANULADO)
+        const { eliminables, inmutables, noLocalizados } = clasificarSeleccion();
+        const documentosAEliminar: Array<{id: string, tipo: string}> =
+            eliminables.map((d) => ({ id: d.documentId, tipo: d.documentType }));
 
-            // Notas Aclaratorias
-            yearData.notasAclaratorias?.forEach(notaAclaratoria => {
-                const rutaBase = obtenerRutaDocumento(notaAclaratoria, 'Nota Aclaratoria');
-                const fecha = obtenerFechaDocumento(notaAclaratoria) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(notaAclaratoria, 'Nota Aclaratoria', fecha, documentos);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(notaAclaratoria)) {
-                    documentosAEliminar.push({ id: notaAclaratoria._id, tipo: 'notaAclaratoria' });
-                }
-            });
-
-            // Constancias de Aptitud
-            yearData.constanciasAptitud?.forEach(constanciaAptitud => {
-                const rutaBase = obtenerRutaDocumento(constanciaAptitud, 'Constancia Aptitud');
-                const fecha = obtenerFechaDocumento(constanciaAptitud) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(constanciaAptitud, 'Constancia Aptitud', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(constanciaAptitud)) {
-                    documentosAEliminar.push({ id: constanciaAptitud._id, tipo: 'constanciaAptitud' });
-                }
-            });
-
-            // Aptitudes
-            yearData.aptitudes?.forEach(aptitud => {
-                const rutaBase = obtenerRutaDocumento(aptitud, 'Aptitud');
-                const fecha = obtenerFechaDocumento(aptitud) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(aptitud, 'Aptitud', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(aptitud)) {
-                    documentosAEliminar.push({ id: aptitud._id, tipo: 'aptitud' });
-                }
-            });
-            
-            // Historias Clínicas
-            yearData.historiasClinicas?.forEach(historiaClinica => {
-                const rutaBase = obtenerRutaDocumento(historiaClinica, 'Historia Clinica');
-                const fecha = obtenerFechaDocumento(historiaClinica) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(historiaClinica, 'Historia Clinica', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(historiaClinica)) {
-                    documentosAEliminar.push({ id: historiaClinica._id, tipo: 'historiaClinica' });
-                }
-            });
-            
-            // Exploraciones Físicas
-            yearData.exploracionesFisicas?.forEach(exploracionFisica => {
-                const rutaBase = obtenerRutaDocumento(exploracionFisica, 'Exploracion Fisica');
-                const fecha = obtenerFechaDocumento(exploracionFisica) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(exploracionFisica, 'Exploracion Fisica', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(exploracionFisica)) {
-                    documentosAEliminar.push({ id: exploracionFisica._id, tipo: 'exploracionFisica' });
-                }
-            });
-            
-            // Exámenes de Vista
-            yearData.examenesVista?.forEach(examenVista => {
-                const rutaBase = obtenerRutaDocumento(examenVista, 'Examen Vista');
-                const fecha = obtenerFechaDocumento(examenVista) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(examenVista, 'Examen Vista', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(examenVista)) {
-                    documentosAEliminar.push({ id: examenVista._id, tipo: 'examenVista' });
-                }
-            });
-
-            // Audiometrías
-            yearData.audiometrias?.forEach(audiometria => {
-                const rutaBase = obtenerRutaDocumento(audiometria, 'Audiometria');
-                const fecha = obtenerFechaDocumento(audiometria) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(audiometria, 'Audiometria', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(audiometria)) {
-                    documentosAEliminar.push({ id: audiometria._id, tipo: 'audiometria' });
-                }
-            });
-
-            // Antidopings
-            yearData.antidopings?.forEach(antidoping => {
-                const rutaBase = obtenerRutaDocumento(antidoping, 'Antidoping');
-                const fecha = obtenerFechaDocumento(antidoping) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(antidoping, 'Antidoping', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(antidoping)) {
-                    documentosAEliminar.push({ id: antidoping._id, tipo: 'antidoping' });
-                }
-            });
-            
-            // Certificados
-            yearData.certificados?.forEach(certificado => {
-                const rutaBase = obtenerRutaDocumento(certificado, 'Certificado');
-                const fecha = obtenerFechaDocumento(certificado) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(certificado, 'Certificado', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(certificado)) {
-                    documentosAEliminar.push({ id: certificado._id, tipo: 'certificado' });
-                }
-            });
-
-            // Certificados Expedito
-            yearData.certificadosExpedito?.forEach(certificado => {
-                const rutaBase = obtenerRutaDocumento(certificado, 'Certificado Expedito');
-                const fecha = obtenerFechaDocumento(certificado) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(certificado, 'Certificado Expedito', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(certificado)) {
-                    documentosAEliminar.push({ id: certificado._id, tipo: 'certificadoExpedito' });
-                }
-            });
-            
-            // Documentos Externos
-            yearData.documentosExternos?.forEach(documentoExterno => {
-                const rutaBase = obtenerRutaDocumento(documentoExterno, 'Documento Externo');
-                const fecha = obtenerFechaDocumento(documentoExterno) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(documentoExterno, 'Documento Externo', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(documentoExterno)) {
-                    documentosAEliminar.push({ id: documentoExterno._id, tipo: 'documentoExterno' });
-                }
-            });
-            
-            // Notas Médicas
-            yearData.notasMedicas?.forEach(notaMedica => {
-                const rutaBase = obtenerRutaDocumento(notaMedica, 'Nota Medica');
-                const fecha = obtenerFechaDocumento(notaMedica) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(notaMedica, 'Nota Medica', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(notaMedica)) {
-                    documentosAEliminar.push({ id: notaMedica._id, tipo: 'notaMedica' });
-                }
-            });
-
-            // Recetas Médicas
-            yearData.recetas?.forEach(receta => {
-                const rutaBase = obtenerRutaDocumento(receta, 'Receta');
-                const fecha = obtenerFechaDocumento(receta) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(receta, 'Receta', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(receta)) {
-                    documentosAEliminar.push({ id: receta._id, tipo: 'receta' });
-                }
-            });
-
-            // Control Prenatal
-            if (controlPrenatalEnabled.value) {
-                yearData.controlPrenatal?.forEach(controlPrenatal => {
-                    const rutaBase = obtenerRutaDocumento(controlPrenatal, 'Control Prenatal');
-                    const fecha = obtenerFechaDocumento(controlPrenatal) || 'SinFecha';
-                    const nombreArchivo = obtenerNombreArchivo(controlPrenatal, 'Control Prenatal', fecha);
-                    const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                    if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(controlPrenatal)) {
-                        documentosAEliminar.push({ id: controlPrenatal._id, tipo: 'controlPrenatal' });
-                    }
-                });
-            }
-
-            // Historia Otologica
-            yearData.historiaOtologica?.forEach(historiaOtologica => {
-                const rutaBase = obtenerRutaDocumento(historiaOtologica, 'Historia Otologica');
-                const fecha = obtenerFechaDocumento(historiaOtologica) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(historiaOtologica, 'Historia Otologica', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(historiaOtologica)) {
-                    documentosAEliminar.push({ id: historiaOtologica._id, tipo: 'historiaOtologica' });
-                }
-            });
-
-            // Previo Espirometria
-            yearData.previoEspirometria?.forEach(previoEspirometria => {
-                const rutaBase = obtenerRutaDocumento(previoEspirometria, 'Previo Espirometria');
-                const fecha = obtenerFechaDocumento(previoEspirometria) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(previoEspirometria, 'Previo Espirometria', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(previoEspirometria)) {
-                    documentosAEliminar.push({ id: previoEspirometria._id, tipo: 'previoEspirometria' });
-                }
-            });
-
-            // Entrevista Psicológica
-            yearData.entrevistasPsicologicas?.forEach(entrevistaPsicologica => {
-                const rutaBase = obtenerRutaDocumento(entrevistaPsicologica, 'Entrevista Psicologica');
-                const fecha = obtenerFechaDocumento(entrevistaPsicologica) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(entrevistaPsicologica, 'Entrevista Psicologica', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(entrevistaPsicologica)) {
-                    documentosAEliminar.push({ id: entrevistaPsicologica._id, tipo: 'entrevistaPsicologica' });
-                }
-            });
-
-            // Trastornos Estado Animo
-            yearData.trastornosEstadoAnimo?.forEach(trastornosEstadoAnimo => {
-                const rutaBase = obtenerRutaDocumento(trastornosEstadoAnimo, 'Trastornos Estado Animo');
-                const fecha = obtenerFechaDocumento(trastornosEstadoAnimo) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(trastornosEstadoAnimo, 'Trastornos Estado Animo', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(trastornosEstadoAnimo)) {
-                    documentosAEliminar.push({ id: trastornosEstadoAnimo._id, tipo: 'trastornosEstadoAnimo' });
-                }
-            });
-
-            // Cuestionario Prodromal Breve
-            yearData.cuestionarioProdromalBreve?.forEach(cuestionarioProdromalBreve => {
-                const rutaBase = obtenerRutaDocumento(cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve');
-                const fecha = obtenerFechaDocumento(cuestionarioProdromalBreve) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(cuestionarioProdromalBreve)) {
-                    documentosAEliminar.push({ id: cuestionarioProdromalBreve._id, tipo: 'cuestionarioProdromalBreve' });
-                }
-            });
-
-            // Trastorno Limite Personalidad
-            yearData.trastornoLimitePersonalidad?.forEach(trastornoLimitePersonalidad => {
-                const rutaBase = obtenerRutaDocumento(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad');
-                const fecha = obtenerFechaDocumento(trastornoLimitePersonalidad) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(trastornoLimitePersonalidad, 'Trastorno Limite Personalidad', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(trastornoLimitePersonalidad)) {
-                    documentosAEliminar.push({ id: trastornoLimitePersonalidad._id, tipo: 'trastornoLimitePersonalidad' });
-                }
-            });
-
-            // Cuestionario Nórdico
-            yearData.cuestionarioNordico?.forEach(cuestionarioNordico => {
-                const rutaBase = obtenerRutaDocumento(cuestionarioNordico, 'Cuestionario Nordico');
-                const fecha = obtenerFechaDocumento(cuestionarioNordico) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(cuestionarioNordico, 'Cuestionario Nordico', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(cuestionarioNordico)) {
-                    documentosAEliminar.push({ id: cuestionarioNordico._id, tipo: 'cuestionarioNordico' });
-                }
-            });
-
-            // Evaluación de sueño y vigilia
-            yearData.evaluacionSuenoVigilia?.forEach(evaluacionSuenoVigilia => {
-                const rutaBase = obtenerRutaDocumento(evaluacionSuenoVigilia, 'Evaluacion Sueno Vigilia');
-                const fecha = obtenerFechaDocumento(evaluacionSuenoVigilia) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(evaluacionSuenoVigilia, 'Evaluacion Sueno Vigilia', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta) && !isDocumentoInmutable(evaluacionSuenoVigilia)) {
-                    documentosAEliminar.push({ id: evaluacionSuenoVigilia._id, tipo: 'evaluacionSuenoVigilia' });
-                }
-            });
-
-            // Evento Seguimiento Cardiometabolico
-            yearData.eventoSeguimientoCardiometabolico?.forEach(eventoSeguimientoCardiometabolico => {
-                const rutaBase = obtenerRutaDocumento(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico');
-                const fecha = obtenerFechaDocumento(eventoSeguimientoCardiometabolico) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (selectedRoutes.value.includes(ruta)) {
-                    documentosAEliminar.push({ id: eventoSeguimientoCardiometabolico._id, tipo: 'eventoSeguimientoCardiometabolico' });
-                }
-            });
-
-            // Informe Longitudinal Cardiometabolico
-            yearData.informeLongitudinalCardiometabolico?.forEach(informeLongitudinalCardiometabolico => {
-                const rutaBase = obtenerRutaDocumento(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico');
-                const fecha = obtenerFechaDocumento(informeLongitudinalCardiometabolico) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (informeLongitudinalCardiometabolico._id && selectedRoutes.value.includes(ruta)) {
-                    documentosAEliminar.push({
-                        id: informeLongitudinalCardiometabolico._id,
-                        tipo: 'informeLongitudinalCardiometabolico',
-                    });
-                }
-            });
-
-            yearData.informeLongitudinalAudiometrico?.forEach(informeLongitudinalAudiometrico => {
-                const rutaBase = obtenerRutaDocumento(informeLongitudinalAudiometrico, 'Informe Longitudinal Audiometrico');
-                const fecha = obtenerFechaDocumento(informeLongitudinalAudiometrico) || 'SinFecha';
-                const nombreArchivo = obtenerNombreArchivo(informeLongitudinalAudiometrico, 'Informe Longitudinal Audiometrico', fecha);
-                const ruta = `${rutaBase}/${nombreArchivo}`.replace(/\/+/g, '/');
-                if (informeLongitudinalAudiometrico._id && selectedRoutes.value.includes(ruta)) {
-                    documentosAEliminar.push({
-                        id: informeLongitudinalAudiometrico._id,
-                        tipo: 'informeLongitudinalAudiometrico',
-                    });
-                }
-            });
-        });
-
-        const excluidosPorInmutables = totalSeleccionados - documentosAEliminar.length;
+        const excluidosPorInmutables = inmutables.length + noLocalizados.length;
         if (excluidosPorInmutables > 0) {
             toast.open({
                 message: `${excluidosPorInmutables} documento${excluidosPorInmutables !== 1 ? 's' : ''} no se pueden eliminar por estar finalizados o anulados.`,

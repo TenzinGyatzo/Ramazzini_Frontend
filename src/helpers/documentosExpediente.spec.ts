@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   TIPOS_DOCUMENTO_EXPEDIENTE,
   anioTieneOrdenManual,
+  clasificarSeleccionParaEliminar,
   documentosDelAnioEnOrden,
   nombreTipoDocumento,
   ordenarComoEnExpediente,
@@ -206,5 +207,79 @@ describe('orden manual de un año', () => {
       'ap-2024',
       'nm-2024',
     ]);
+  });
+});
+
+describe('selección para eliminación masiva', () => {
+  const expediente = {
+    '2025': {
+      constanciasAptitud: [{ _id: 'ca-1', estado: 'borrador' }, { _id: 'ca-2', estado: 'FINALIZADO' }],
+      notasMedicas: [{ _id: 'nm-1', estado: 'Anulado' }],
+      controlPrenatal: [{ _id: 'cp-1' }],
+    },
+    '2024': {
+      informeLongitudinalCardiometabolico: [{ _id: 'ilc-1' }],
+      cuestionarioNordico: [{ _id: 'cn-1', estado: 'finalizado' }],
+    },
+  };
+  // La ruta del archivo no participa: se localiza por tipo e id
+  const sel = (documentType: string, documentId: string, filePath = 'cualquier/ruta.pdf') => ({ documentType, documentId, filePath });
+  const ids = (lista: Array<{ documentId: string }>) => lista.map((d) => d.documentId);
+  const conInmutabilidad = { documentImmutabilityEnabled: true };
+
+  it('localiza cada tipo del catálogo por id, sin depender de la ruta del archivo', () => {
+    const porTipo = Object.fromEntries(TIPOS_DOCUMENTO_EXPEDIENTE.map((d) => [d.clave, [{ _id: `id-${d.tipo}` }]]));
+    const seleccion = TIPOS_DOCUMENTO_EXPEDIENTE.map((d) => sel(d.tipo, `id-${d.tipo}`, `otra etiqueta ${d.tipo}.pdf`));
+    const { eliminables, noLocalizados } = clasificarSeleccionParaEliminar({ '2025': porTipo }, seleccion, conInmutabilidad);
+    expect(eliminables).toEqual(seleccion);
+    expect(noLocalizados).toEqual([]);
+  });
+
+  it('aparta los finalizados y anulados de cualquier tipo cuando la inmutabilidad está activa', () => {
+    const seleccion = [
+      sel('constanciaAptitud', 'ca-1'),
+      sel('constanciaAptitud', 'ca-2'),
+      sel('notaMedica', 'nm-1'),
+      sel('cuestionarioNordico', 'cn-1'),
+      sel('informeLongitudinalCardiometabolico', 'ilc-1'),
+    ];
+    const resultado = clasificarSeleccionParaEliminar(expediente, seleccion, conInmutabilidad);
+    expect(ids(resultado.eliminables)).toEqual(['ca-1', 'ilc-1']);
+    expect(ids(resultado.inmutables)).toEqual(['ca-2', 'nm-1', 'cn-1']);
+  });
+
+  it('sin inmutabilidad todo lo localizado se puede eliminar', () => {
+    const seleccion = [sel('constanciaAptitud', 'ca-2'), sel('notaMedica', 'nm-1')];
+    const resultado = clasificarSeleccionParaEliminar(expediente, seleccion);
+    expect(ids(resultado.eliminables)).toEqual(['ca-2', 'nm-1']);
+    expect(resultado.inmutables).toEqual([]);
+  });
+
+  it('no elimina control prenatal cuando el proveedor no lo usa', () => {
+    const seleccion = [sel('controlPrenatal', 'cp-1')];
+    expect(ids(clasificarSeleccionParaEliminar(expediente, seleccion).eliminables)).toEqual(['cp-1']);
+    const sinPrenatal = clasificarSeleccionParaEliminar(expediente, seleccion, { controlPrenatalEnabled: false });
+    expect(sinPrenatal.eliminables).toEqual([]);
+    expect(ids(sinPrenatal.noLocalizados)).toEqual(['cp-1']);
+  });
+
+  it('lo que ya no está en el expediente o tiene otro tipo no se elimina', () => {
+    const seleccion = [sel('notaMedica', 'ya-eliminada'), sel('aptitud', 'ca-1')];
+    const resultado = clasificarSeleccionParaEliminar(expediente, seleccion, conInmutabilidad);
+    expect(resultado.eliminables).toEqual([]);
+    expect(ids(resultado.noLocalizados)).toEqual(['ya-eliminada', 'ca-1']);
+  });
+
+  it('un documento marcado dos veces con rutas distintas cuenta una sola vez', () => {
+    const seleccion = [
+      sel('informeLongitudinalCardiometabolico', 'ilc-1', 'a/Informe Longitudinal Cardiometabolico.pdf'),
+      sel('informeLongitudinalCardiometabolico', 'ilc-1', 'a/Informe Longitudinal Cardiometabólico.pdf'),
+    ];
+    expect(ids(clasificarSeleccionParaEliminar(expediente, seleccion).eliminables)).toEqual(['ilc-1']);
+  });
+
+  it('tolera un expediente sin cargar', () => {
+    const resultado = clasificarSeleccionParaEliminar(undefined, [sel('aptitud', 'ap-1')]);
+    expect(ids(resultado.noLocalizados)).toEqual(['ap-1']);
   });
 });
