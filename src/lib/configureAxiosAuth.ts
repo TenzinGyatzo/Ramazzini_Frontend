@@ -5,6 +5,7 @@ import axios, {
 } from 'axios';
 import { useSessionLockStore } from '@/stores/sessionLock';
 import { resetPostHogIdentity } from '@/utils/posthogIdentity';
+import { urlLoginConRegreso } from '@/helpers/rutaDeRegreso';
 
 let refreshPromise: Promise<void> | null = null;
 
@@ -129,7 +130,11 @@ export function configureAxiosAuth(instance: AxiosInstance): AxiosInstance {
         }
         resetPostHogIdentity();
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+          // La sesión venció a media tarea: al volver a entrar se regresa a esta pantalla
+          const { pathname, search, hash } = window.location;
+          window.location.href = urlLoginConRegreso(`${pathname}${search ?? ''}${hash ?? ''}`, {
+            sesionVencida: true,
+          });
         }
         return Promise.reject(refreshError);
       }

@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { AxiosError, AxiosHeaders } from 'axios';
 
-const { login, push, fetchUser } = vi.hoisted(() => ({
+const { login, push, fetchUser, ruta } = vi.hoisted(() => ({
   login: vi.fn(),
   push: vi.fn(),
   fetchUser: vi.fn(),
+  ruta: { query: {} as Record<string, unknown> },
 }));
 
 vi.mock('@/api/AuthAPI', () => ({ default: { login } }));
@@ -15,6 +16,7 @@ vi.mock('@/stores/user', () => ({
 vi.mock('@/stores/resetSessionState', () => ({ resetSessionScopedState: vi.fn() }));
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push }),
+  useRoute: () => ruta,
   RouterLink: { template: '<a><slot /></a>' },
 }));
 
@@ -43,6 +45,33 @@ describe('LoginView', () => {
     login.mockReset();
     push.mockReset();
     fetchUser.mockReset();
+    ruta.query = {};
+  });
+
+  it('al entrar regresa a la pantalla que se intentaba abrir', async () => {
+    ruta.query = { redirect: '/expediente/e1/c1/t1' };
+    login.mockResolvedValue({ status: 200, data: {} });
+    const wrapper = mount(LoginView);
+    await enviar(wrapper, 'medico@ejemplo.com', 'secreta');
+
+    expect(push).toHaveBeenCalledWith('/expediente/e1/c1/t1');
+  });
+
+  it('ignora una dirección de regreso externa y va al inicio', async () => {
+    ruta.query = { redirect: 'https://otro.com' };
+    login.mockResolvedValue({ status: 200, data: {} });
+    const wrapper = mount(LoginView);
+    await enviar(wrapper, 'medico@ejemplo.com', 'secreta');
+
+    expect(push).toHaveBeenCalledWith('/');
+  });
+
+  it('avisa cuando la sesión venció y no lo hace en un ingreso normal', () => {
+    expect(mount(LoginView).text()).not.toContain('Tu sesión terminó');
+    ruta.query = { motivo: 'sesion' };
+    expect(mount(LoginView).text().normalize('NFC')).toContain(
+      'Tu sesión terminó. Inicia sesión para continuar donde estabas.',
+    );
   });
 
   it('quita los espacios del correo antes de enviar', async () => {

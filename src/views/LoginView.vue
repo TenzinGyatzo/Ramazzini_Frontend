@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useRouter, RouterLink } from "vue-router";
+import { useRouter, useRoute, RouterLink } from "vue-router";
 import AuthAPI from "@/api/AuthAPI";
 import axios from "axios";
 import { useUserStore } from "@/stores/user";
 import { resetSessionScopedState } from "@/stores/resetSessionState";
+import { MOTIVO_SESION_VENCIDA, rutaDeRegresoSegura } from "@/helpers/rutaDeRegreso";
 
 const router = useRouter();
+const route = useRoute();
+// Pantalla que se intentaba abrir (solo rutas internas); al entrar se regresa a ella
+const rutaDeRegreso = computed(() => rutaDeRegresoSegura(route.query.redirect));
+const sesionVencida = computed(() => route.query.motivo === MOTIVO_SESION_VENCIDA);
 const userStore = useUserStore();
 const email = ref("");
 const password = ref("");
@@ -112,7 +117,7 @@ const handleLogin = async () => {
         }
       }
       await userStore.fetchUser(true);
-      router.push("/");
+      router.push(rutaDeRegreso.value ?? "/");
     }
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
@@ -164,6 +169,13 @@ const handleLogin = async () => {
       class="login-card bg-white p-8 rounded-2xl shadow-md w-10/12 md:w-1/2 lg:w-1/3 lg:max-w-lg dark:bg-slate-800 dark:border dark:border-slate-700"
     >
       <h1 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-slate-100">Iniciar Sesión</h1>
+      <p
+        v-if="sesionVencida"
+        class="mb-4 flex items-start gap-2 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-200"
+      >
+        <i class="fa-solid fa-circle-info mt-0.5" aria-hidden="true"></i>
+        <span>Tu sesión terminó. Inicia sesión para continuar donde estabas.</span>
+      </p>
       <div class="mb-4">
         <label for="email" class="block text-sm lg:text-base font-medium text-gray-700 dark:text-slate-200"
           >Email</label

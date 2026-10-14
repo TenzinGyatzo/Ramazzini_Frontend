@@ -14,12 +14,19 @@ describe('terminación de sesión en el router', () => {
       'import { resetPostHogIdentity } from "@/utils/posthogIdentity"',
     );
     expect(routerSource).toContain('resetSessionScopedState()');
-    expect(routerSource).toMatch(/resetPostHogIdentity\(\);\s*next\("\/login"\)/);
+    // El login recibe la ruta de regreso; PostHog la ve sin consulta (sanitizePosthogEvent)
+    expect(routerSource).toMatch(
+      /resetPostHogIdentity\(\);[\s\S]{0,200}next\(urlLoginConRegreso\(to\.fullPath\)\)/,
+    );
   });
 
   it('no captura fullPath en pageview ni pageleave', () => {
-    expect(routerSource).not.toContain('to.fullPath');
-    expect(routerSource).not.toContain('from.fullPath');
+    // fullPath solo se permite para la ruta de regreso del login, nunca en la analítica
+    const usosDeFullPath = routerSource
+      .split('\n')
+      .filter((linea) => linea.includes('fullPath'));
+    expect(usosDeFullPath.every((linea) => linea.includes('urlLoginConRegreso('))).toBe(true);
+    expect(routerSource).not.toMatch(/posthog\.capture\([^)]*fullPath/);
     expect(routerSource).toContain('buildAnalyticsPageProperties(to)');
     expect(routerSource).toContain('buildAnalyticsPageProperties(from)');
   });

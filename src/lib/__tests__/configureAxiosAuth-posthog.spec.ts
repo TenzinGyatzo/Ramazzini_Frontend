@@ -54,7 +54,8 @@ describe('configureAxiosAuth y PostHog', () => {
 
     await expect(instance.get('/api/recurso')).rejects.toBeTruthy();
     expect(resetPostHogIdentity).toHaveBeenCalledTimes(1);
-    expect(window.location.href).toBe('/login');
+    // El login recuerda la pantalla y avisa que la sesión venció
+    expect(window.location.href).toBe('/login?redirect=%2Fempresas&motivo=sesion');
   });
 
   it('no redirige al login cuando el 401 ocurre en el onboarding', async () => {

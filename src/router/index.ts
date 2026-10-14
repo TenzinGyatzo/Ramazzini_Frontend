@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { urlLoginConRegreso } from "@/helpers/rutaDeRegreso";
 import LayOut from "../views/LayOut.vue";
 import axios from "axios";
 import { useUserStore } from "@/stores/user";
@@ -365,7 +366,8 @@ router.beforeEach((to, from) => {
       resetSessionScopedState();
       userStore.clearUser();
       resetPostHogIdentity();
-      next("/login");
+      // Al entrar, el login regresa a la pantalla que se intentaba abrir
+      next(urlLoginConRegreso(to.fullPath));
     }
   });
 
