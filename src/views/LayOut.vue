@@ -31,6 +31,7 @@ import ModalBorradoresPendientes from "@/components/modals/ModalBorradoresPendie
 import { inicioResumenState } from "@/composables/inicioResumenCache";
 import { resolveInicioLayoutPresentation } from "@/composables/inicioLayoutPresentation";
 import PlatformTenantBanner from "@/components/PlatformTenantBanner.vue";
+import BuscadorTrabajadores from "@/components/BuscadorTrabajadores.vue";
 import { listenPlatformContextChanges } from "@/composables/usePlatformContext";
 import { resolveFirmanteTipo } from "@/constants/rolePermissionPolicy";
 import { useInventarioStore } from "@/stores/inventario";
@@ -1001,6 +1002,10 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       :show-equipo="user.isPrincipal()"
       @closeModal="showModalBorradoresPendientes = false"
     />
+
+    <!-- Búsqueda global de trabajadores (botón junto al engrane y Ctrl+K). En la captura de
+         documentos el logo de la empresa ocupa esa esquina: ahí solo queda el atajo. -->
+    <BuscadorTrabajadores :mostrar-boton="isVisible && route.name !== 'crear-documento'" />
 
     <!-- Botón del engrane mejorado -->
     <Transition name="delayed-appear">

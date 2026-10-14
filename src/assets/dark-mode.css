@@ -4358,3 +4358,8 @@ html.dark-mode .modal-orden-documentos .modal-orden-documentos-fila--arrastrada 
   border-color: #047857 !important;
   background-color: rgba(6, 78, 59, 0.45) !important;
 }
+
+/* Búsqueda global de trabajadores: texto de ayuda legible sobre el fondo oscuro */
+html.dark-mode .buscador-trabajadores input::placeholder {
+  color: #94a3b8 !important;
+}
