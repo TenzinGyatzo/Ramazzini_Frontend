@@ -1,5 +1,5 @@
 <script setup>
-import { inject, ref, watch, computed, provide } from 'vue';
+import { inject, ref, shallowRef, watch, computed, provide } from 'vue';
 import ModalBajaTrabajador from '@/components/ModalBajaTrabajador.vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -36,6 +36,11 @@ import ModalCurpInconvenientWordConfirm from '@/components/ModalCurpInconvenient
 import { useCurpInconvenientWordSubmitGuard } from '@/composables/useCurpInconvenientWordSubmitGuard';
 import CurpInlineFeedback from '@/components/CurpInlineFeedback.vue';
 import CurpRelatedFieldMessages from '@/components/CurpRelatedFieldMessages.vue';
+import {
+  ANCLA_CAMPO_TRABAJADOR,
+  ETIQUETAS_CAMPOS_TRABAJADOR,
+  recolectarCamposInvalidos,
+} from '@/helpers/camposInvalidosTrabajador';
 import FechaNacimientoRegistroFeedback from '@/components/FechaNacimientoRegistroFeedback.vue';
 import { useCurpLiveValidation } from '@/composables/useCurpLiveValidation';
 import { useCurpInputUppercase } from '@/composables/useCurpInputUppercase';
@@ -664,13 +669,53 @@ const formSubmitAttempted = ref(false);
 // Proveer el estado de validación a los componentes hijos
 provide('formSubmitAttempted', formSubmitAttempted);
 
+// Resumen de campos con error: aparece al intentar guardar y se actualiza mientras se corrigen
+// (el estado de validez de cada campo de FormKit es reactivo)
+const formNode = shallowRef(null);
+const formRootEl = ref(null);
+const resumenErroresActivo = ref(false);
+
+const etiquetasCampos = computed(() => ({
+  ...ETIQUETAS_CAMPOS_TRABAJADOR,
+  curp: identificadorPersonalLabel.value,
+}));
+
+const camposConError = computed(() =>
+  resumenErroresActivo.value
+    ? recolectarCamposInvalidos(formNode.value, etiquetasCampos.value)
+    : []
+);
+
+const esCampoVacioEditable = (el) =>
+  !el.disabled && el.type !== 'hidden' && !String(el.value ?? '').trim();
+
+/** Lleva al campo (o al bloque geográfico que lo captura) y pone el cursor ahí. */
+const irACampo = (name) => {
+  const raiz = formRootEl.value;
+  if (!raiz) return;
+  const ancla = ANCLA_CAMPO_TRABAJADOR[name];
+  let destino = null;
+  let foco = null;
+  if (ancla) {
+    destino = raiz.querySelector(`[data-campo="${ancla}"]`);
+    const entradas = destino ? [...destino.querySelectorAll('input, select, textarea')] : [];
+    foco = entradas.find(esCampoVacioEditable) || entradas.find((el) => !el.disabled) || null;
+  } else {
+    foco = raiz.querySelector(`[name="${name}"]:not([type="hidden"])`);
+    destino = foco?.closest('.formkit-outer') || foco;
+  }
+  if (!destino) return;
+  destino.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  foco?.focus({ preventScroll: true });
+};
+
 // Handler para cuando el formulario tiene errores de validación
 const onFormSubmitInvalid = () => {
+  // Los avisos de los selectores geográficos se quedan hasta que el campo se llene
   formSubmitAttempted.value = true;
-  // Resetear después de un tiempo para permitir que se vuelva a intentar
-  setTimeout(() => {
-    formSubmitAttempted.value = false;
-  }, 5000);
+  resumenErroresActivo.value = true;
+  const primero = camposConError.value[0];
+  if (primero) irACampo(primero.name);
 };
 
 const handleSubmit = async (data) => {
@@ -679,10 +724,12 @@ const handleSubmit = async (data) => {
 
   try {
   formSubmitAttempted.value = false; // Resetear cuando el submit es exitoso
+  resumenErroresActivo.value = false;
   if (!proveedorSaludStore.proveedorSalud) return;
 
   if (isMxProveedor.value && curpHasBlockingErrors.value) {
     formSubmitAttempted.value = true;
+    irACampo('curp');
     toast.open({
       message: 'Revisa la CURP: hay errores que debes corregir antes de guardar.',
       type: 'error',
@@ -1130,9 +1177,13 @@ const {
           <p class="text-xs text-gray-500 mt-1 mb-3">Los campos con <span class="text-red-500 font-medium">*</span> son obligatorios</p>
           <hr class="mt-2 mb-3">
 
-          <FormKit type="form" :actions="false" incomplete-message="Por favor complete todos los campos"
+          <div ref="formRootEl">
+          <FormKit type="form" :actions="false" :incomplete-message="false"
+            @node="formNode = $event"
             @submit="handleSubmit" @submit-invalid="onFormSubmitInvalid" @input="formData = $event">
-            <div class="lg:grid gap-3 lg:grid-cols-2">
+            <section>
+              <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3">Identificación</h3>
+              <div class="lg:grid gap-3 lg:grid-cols-2">
               <div>
                 <!-- México: validación RENAPO según régimen -->
                 <FormKit
@@ -1346,47 +1397,47 @@ const {
 
                 />
               </div>
-              <FormKit type="select" name="escolaridad"
-                placeholder="-Seleccione último concluido-" :options="nivelesEscolaridad" validation="required"
-                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                :value="escolaridadDefaultValue">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Escolaridad<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
-              <FormKit type="text" name="puesto" placeholder="Puesto al que aspira o desempeña" validation="required"
-                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                :value="trabajadores.currentTrabajador?.puesto || ''">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Puesto<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
-              <FormKit type="select" name="estadoCivil" placeholder="-Seleccione un estado civil-"
-                :options="estadosCiviles" validation="required"
-                :validation-messages="{ required: 'Este campo es obligatorio' }"
-                :value="trabajadores.currentTrabajador?.estadoCivil || ''">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Estado Civil<span class="text-red-500">*</span></span>
-                </template>
-              </FormKit>
-              <FormKit type="text" label="Teléfono" name="telefono" placeholder="Número de teléfono"
-                validation="optional|phoneValidation" 
-                :validation-messages="{ phoneValidation: 'El número de teléfono debe tener entre 4 y 15 dígitos' }"
-                :value="trabajadores.currentTrabajador?.telefono || ''" />
-              <FormKit type="date" name="fechaIngreso" 
-                :value="convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaIngreso) || ''">
-                <template #label>
-                  <span class="font-medium text-lg text-gray-700">Fecha de Ingreso</span>
-                </template>
-              </FormKit>
-              <FormKit type="text" label="Nombre contacto de emergencia" name="contactoEmergenciaNombre"
-                placeholder="Ej: María López García"
-                :value="trabajadores.currentTrabajador?.contactoEmergenciaNombre || ''" />
-              <FormKit type="text" label="Teléfono contacto de emergencia" name="contactoEmergenciaTelefono"
-                placeholder="Número de teléfono"
-                validation="optional|phoneValidation"
-                :validation-messages="{ phoneValidation: 'El número de teléfono debe tener entre 4 y 15 dígitos' }"
-                :value="trabajadores.currentTrabajador?.contactoEmergenciaTelefono || ''" />
+              </div>
+            </section>
+
+            <section>
+              <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Datos personales</h3>
+              <div class="lg:grid gap-3 lg:grid-cols-2">
+                <FormKit type="select" name="escolaridad"
+                  placeholder="-Seleccione último concluido-" :options="nivelesEscolaridad" validation="required"
+                  :validation-messages="{ required: 'Este campo es obligatorio' }"
+                  :value="escolaridadDefaultValue">
+                  <template #label>
+                    <span class="font-medium text-lg text-gray-700">Escolaridad<span class="text-red-500">*</span></span>
+                  </template>
+                </FormKit>
+                <FormKit type="select" name="estadoCivil" placeholder="-Seleccione un estado civil-"
+                  :options="estadosCiviles" validation="required"
+                  :validation-messages="{ required: 'Este campo es obligatorio' }"
+                  :value="trabajadores.currentTrabajador?.estadoCivil || ''">
+                  <template #label>
+                    <span class="font-medium text-lg text-gray-700">Estado Civil<span class="text-red-500">*</span></span>
+                  </template>
+                </FormKit>
+              </div>
+            </section>
+
+            <section>
+              <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Datos laborales</h3>
+              <div class="lg:grid gap-3 lg:grid-cols-2">
+                <FormKit type="text" name="puesto" placeholder="Puesto al que aspira o desempeña" validation="required"
+                  :validation-messages="{ required: 'Este campo es obligatorio' }"
+                  :value="trabajadores.currentTrabajador?.puesto || ''">
+                  <template #label>
+                    <span class="font-medium text-lg text-gray-700">Puesto<span class="text-red-500">*</span></span>
+                  </template>
+                </FormKit>
+                <FormKit type="date" name="fechaIngreso" 
+                  :value="convertirFechaISOaYYYYMMDD(trabajadores.currentTrabajador?.fechaIngreso) || ''">
+                  <template #label>
+                    <span class="font-medium text-lg text-gray-700">Fecha de Ingreso</span>
+                  </template>
+                </FormKit>
                 <FormKit type="text" label="Número de Empleado" name="numeroEmpleado" placeholder="Sólo números"
                   validation="optional|matches:/^[0-9]*$/"
                   :validation-messages="{
@@ -1399,14 +1450,35 @@ const {
                     nssValidation: 'Debe tener 4-30 caracteres alfanuméricos'
                   }"
                   maxlength="30" :value="trabajadores.currentTrabajador?.nss || ''" />
-              <!-- NOM-024 Identification Fields (solo visible para SIRES_NOM024) -->
-              <div v-if="isSIRES" class="lg:col-span-2 mt-4">
-                
+              </div>
+            </section>
+
+            <section>
+              <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Contacto</h3>
+              <div class="lg:grid gap-3 lg:grid-cols-2">
+                <FormKit type="text" label="Teléfono" name="telefono" placeholder="Número de teléfono"
+                  validation="optional|phoneValidation" 
+                  :validation-messages="{ phoneValidation: 'El número de teléfono debe tener entre 4 y 15 dígitos' }"
+                  :value="trabajadores.currentTrabajador?.telefono || ''" />
+                <div class="hidden lg:block"></div>
+                <FormKit type="text" label="Nombre contacto de emergencia" name="contactoEmergenciaNombre"
+                  placeholder="Ej: María López García"
+                  :value="trabajadores.currentTrabajador?.contactoEmergenciaNombre || ''" />
+                <FormKit type="text" label="Teléfono contacto de emergencia" name="contactoEmergenciaTelefono"
+                  placeholder="Número de teléfono"
+                  validation="optional|phoneValidation"
+                  :validation-messages="{ phoneValidation: 'El número de teléfono debe tener entre 4 y 15 dígitos' }"
+                  :value="trabajadores.currentTrabajador?.contactoEmergenciaTelefono || ''" />
+              </div>
+            </section>
+
+            <!-- NOM-024: nacimiento y residencia (solo SIRES_NOM024) -->
+            <section v-if="isSIRES">
                 <!-- Campos de Nacimiento -->
-                <div class="mb-4">
-                  <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Nacimiento</h4>
+                <div>
+                  <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Nacimiento</h3>
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <div>
+                    <div data-campo="entidadNacimiento">
                       <EstadoAutocomplete
                         v-model="nom024NacimientoFields.entidadNacimiento"
                         label="Entidad de Nacimiento"
@@ -1421,20 +1493,22 @@ const {
                       />
                     </div>
                     
-                    <PaisNacimientoAutocomplete
-                      v-model="nom024NacimientoFields.paisNacimiento"
-                      label="País de nacimiento"
-                      placeholder="Buscar por nombre de país..."
-                      :required="geoFieldsRequired"
-                      :disabled="isPaisNacimientoReadOnly"
-                      geo-context="trabajador"
-                    />
+                    <div data-campo="paisNacimiento">
+                      <PaisNacimientoAutocomplete
+                        v-model="nom024NacimientoFields.paisNacimiento"
+                        label="País de nacimiento"
+                        placeholder="Buscar por nombre de país..."
+                        :required="geoFieldsRequired"
+                        :disabled="isPaisNacimientoReadOnly"
+                        geo-context="trabajador"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <!-- Campos de Residencia -->
-                <div>
-                  <h4 class="text-sm font-semibold text-gray-700 mb-3">Datos de Residencia</h4>
+                <div data-campo="residencia">
+                  <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Residencia</h3>
                   <ResidenciaGeoAutocomplete
                     :estadoResidencia="nom024ResidenciaFields.entidadResidencia"
                     :municipioResidencia="nom024ResidenciaFields.municipioResidencia"
@@ -1457,8 +1531,7 @@ const {
                     </template>
                   </ResidenciaGeoAutocomplete>
                 </div>
-              </div>
-            </div>
+            </section>
 
             <!-- Campos ocultos para NOM-024 (para que FormKit los capture en el submit) -->
             <!-- Solo validar si es SIRES_NOM024, pero siempre enviar valores para compatibilidad -->
@@ -1509,12 +1582,33 @@ const {
             <FormKit type="hidden" name="idCentroTrabajo" :value="centrosTrabajo.currentCentroTrabajoId" />
 
             <hr class="my-3">
+            <div
+              v-if="camposConError.length"
+              role="alert"
+              class="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
+              <p class="font-medium">
+                Revisa {{ camposConError.length === 1 ? 'el campo marcado' : 'los campos marcados' }} en rojo:
+              </p>
+              <p class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                <button
+                  v-for="campo in camposConError"
+                  :key="campo.name"
+                  type="button"
+                  class="text-red-700 underline underline-offset-2 hover:text-red-800"
+                  @click="irACampo(campo.name)"
+                >
+                  {{ campo.etiqueta }}
+                </button>
+              </p>
+            </div>
             <FormKit type="submit" :disabled="isSubmitting">
               <span v-if="isSubmitting">Guardando...</span>
               <span v-else>{{ trabajadores.currentTrabajador._id ? 'Actualizar Trabajador' : 'Guardar Trabajador'
                 }}</span>
             </FormKit>
           </FormKit>
+          </div>
         </div>
 
         <button
