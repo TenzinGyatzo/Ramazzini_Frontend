@@ -41,26 +41,14 @@ const onConfirmHandler = shallowRef<((password?: string) => Promise<void>) | nul
 /** Eliminación que el servidor no permite: se informa sin pedir contraseña ni confirmación. */
 const bloqueo = ref<ResumenEliminacion | null>(null);
 const consultandoResumen = ref(false);
-/**
- * La consulta ya tardó lo suficiente para avisar («Revisando…»). Una respuesta rápida no
- * muestra nada: así la ventana de aviso no parpadea.
- */
+/** Aviso «Revisando…» (fondo y tarjeta) en pantalla: desde el clic hasta la respuesta. */
 const consultaVisible = ref(false);
 /**
- * Antes de esto la respuesta suele llegar: sobre el fondo (puesto desde el clic) aparece
- * directo la ventana, sin tarjeta «Revisando…» intermedia.
- */
-export const ESPERA_AVISO_CONSULTA_MS = 400;
-/** Si el aviso llegó a mostrarse, se queda al menos esto (nunca un destello). */
-export const MINIMO_AVISO_CONSULTA_MS = 500;
-/**
- * La ventana siguiente (confirmación o «no se puede eliminar») llega sobre el fondo de la
- * revisión, que se puso desde el clic: aparece sin animar su fondo y el de la revisión se
- * quita en el mismo instante. El fondo gris queda quieto y solo cambia la tarjeta.
+ * La ventana siguiente (confirmación o «no se puede eliminar») llega sobre el fondo del aviso:
+ * aparece sin animar su fondo y el aviso se quita en el mismo instante. El fondo gris queda
+ * quieto y solo cambia la tarjeta (sin el parpadeo oscuro-claro-oscuro de dos fondos cruzados).
  */
 const pasoDirecto = ref(false);
-
-const esperar = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function resetState() {
   isOpen.value = false;
@@ -112,22 +100,14 @@ async function solicitarEliminacionConResumen(
   if (consultandoResumen.value) return;
   consultandoResumen.value = true;
   pasoDirecto.value = false;
-  let avisoDesde = 0;
-  const aviso = setTimeout(() => {
-    consultaVisible.value = true;
-    avisoDesde = Date.now();
-  }, ESPERA_AVISO_CONSULTA_MS);
+  // Inmediato: respuesta visible desde el clic, aunque la revisión dure muy poco
+  consultaVisible.value = true;
   try {
     let consultado: ResumenEliminacion | null = null;
     try {
       consultado = (await consultar()).data ?? null;
     } catch (error) {
       console.error('No se pudo consultar el resumen de la eliminación:', error);
-    }
-    clearTimeout(aviso);
-    if (consultaVisible.value) {
-      const faltante = MINIMO_AVISO_CONSULTA_MS - (Date.now() - avisoDesde);
-      if (faltante > 0) await esperar(faltante);
     }
     pasoDirecto.value = true;
     if (consultado?.bloqueada) {
@@ -137,7 +117,6 @@ async function solicitarEliminacionConResumen(
     const request = await construir(consultado);
     requestEliminacion({ ...request, resumen: consultado });
   } finally {
-    clearTimeout(aviso);
     consultaVisible.value = false;
     consultandoResumen.value = false;
   }

@@ -10,7 +10,7 @@ import {
   ubicacionesRestantes,
   type ResumenEliminacion,
 } from '@/utils/resumenEliminacion';
-import { ESPERA_AVISO_CONSULTA_MS, MINIMO_AVISO_CONSULTA_MS, useEliminacion } from '@/composables/useEliminacion';
+import { useEliminacion } from '@/composables/useEliminacion';
 import ModalEliminacionRevisando from '@/components/ModalEliminacionRevisando.vue';
 import ModalEliminacionBloqueada from '@/components/ModalEliminacionBloqueada.vue';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
@@ -206,109 +206,46 @@ describe('aviso «Revisando…» mientras se consulta', () => {
     eliminacion.cerrarBloqueo();
   });
 
-  it('una consulta lenta muestra el aviso y lo quita al abrir la confirmación', async () => {
-    vi.useFakeTimers();
-    try {
-      let resolver: (valor: { data: ResumenEliminacion }) => void = () => undefined;
-      const pendiente = new Promise<{ data: ResumenEliminacion }>((r) => (resolver = r));
-      const solicitud = eliminacion.solicitarEliminacionConResumen(() => pendiente, request);
-      expect(eliminacion.consultaVisible.value).toBe(false);
-      vi.advanceTimersByTime(ESPERA_AVISO_CONSULTA_MS);
-      expect(eliminacion.consultaVisible.value).toBe(true);
-      resolver({ data: resumen() });
-      // El aviso se queda su tiempo mínimo antes de dar paso a la confirmación
-      await vi.advanceTimersByTimeAsync(MINIMO_AVISO_CONSULTA_MS);
-      await solicitud;
-      expect(eliminacion.consultaVisible.value).toBe(false);
-      expect(eliminacion.isOpen.value).toBe(true);
-      // Mismo fondo: la confirmación aparece sin animarlo y el aviso se quita sin animación
-      expect(eliminacion.pasoDirecto.value).toBe(true);
-    } finally {
-      vi.useRealTimers();
-    }
+  it('el aviso aparece en el instante del clic y se quita al abrir la confirmación', async () => {
+    let resolver: (valor: { data: ResumenEliminacion }) => void = () => undefined;
+    const pendiente = new Promise<{ data: ResumenEliminacion }>((r) => (resolver = r));
+    const solicitud = eliminacion.solicitarEliminacionConResumen(() => pendiente, request);
+    // Inmediato, sin espera previa
+    expect(eliminacion.consultaVisible.value).toBe(true);
+    resolver({ data: resumen() });
+    await solicitud;
+    expect(eliminacion.consultaVisible.value).toBe(false);
+    expect(eliminacion.isOpen.value).toBe(true);
+    // La confirmación llega sobre el mismo fondo: sin animar el suyo
+    expect(eliminacion.pasoDirecto.value).toBe(true);
   });
 
-  it('si la respuesta llega justo después de mostrar el aviso, el aviso se queda su mínimo', async () => {
-    vi.useFakeTimers();
-    try {
-      let resolver: (valor: { data: ResumenEliminacion }) => void = () => undefined;
-      const pendiente = new Promise<{ data: ResumenEliminacion }>((r) => (resolver = r));
-      const solicitud = eliminacion.solicitarEliminacionConResumen(() => pendiente, request);
-      vi.advanceTimersByTime(ESPERA_AVISO_CONSULTA_MS + 50);
-      resolver({ data: resumen() });
-      await vi.advanceTimersByTimeAsync(MINIMO_AVISO_CONSULTA_MS - 100);
-      expect(eliminacion.consultaVisible.value).toBe(true);
-      expect(eliminacion.isOpen.value).toBe(false);
-      await vi.advanceTimersByTimeAsync(100);
-      await solicitud;
-      expect(eliminacion.consultaVisible.value).toBe(false);
-      expect(eliminacion.isOpen.value).toBe(true);
-    } finally {
-      vi.useRealTimers();
-    }
+  it('una consulta rápida también muestra el aviso y pasa directo, sin tiempo mínimo', async () => {
+    await eliminacion.solicitarEliminacionConResumen(async () => ({ data: resumen() }), request);
+    expect(eliminacion.consultaVisible.value).toBe(false);
+    expect(eliminacion.isOpen.value).toBe(true);
+    expect(eliminacion.pasoDirecto.value).toBe(true);
   });
 
-  it('el fondo se pone desde el clic; una consulta rápida pasa directo a la confirmación sin tarjeta', async () => {
-    vi.useFakeTimers();
-    try {
-      let resolver: (valor: { data: ResumenEliminacion }) => void = () => undefined;
-      const pendiente = new Promise<{ data: ResumenEliminacion }>((r) => (resolver = r));
-      const solicitud = eliminacion.solicitarEliminacionConResumen(() => pendiente, request);
-      // Inmediato: fondo puesto, sin tarjeta todavía
-      expect(eliminacion.consultandoResumen.value).toBe(true);
-      expect(eliminacion.consultaVisible.value).toBe(false);
-      vi.advanceTimersByTime(ESPERA_AVISO_CONSULTA_MS - 50);
-      resolver({ data: resumen() });
-      await solicitud;
-      expect(eliminacion.consultaVisible.value).toBe(false);
-      expect(eliminacion.consultandoResumen.value).toBe(false);
-      expect(eliminacion.isOpen.value).toBe(true);
-      // La confirmación llega sobre el mismo fondo: sin animar el suyo
-      expect(eliminacion.pasoDirecto.value).toBe(true);
-    } finally {
-      vi.useRealTimers();
-    }
+  it('bloqueada: «no se puede eliminar» también llega sobre el mismo fondo', async () => {
+    await eliminacion.solicitarEliminacionConResumen(async () => ({ data: bloqueada() }), request);
+    expect(eliminacion.consultaVisible.value).toBe(false);
+    expect(eliminacion.bloqueo.value).not.toBeNull();
+    expect(eliminacion.pasoDirecto.value).toBe(true);
   });
 
   it('al cerrar, la ventana vuelve a animarse como siempre', async () => {
-    vi.useFakeTimers();
-    try {
-      let resolver: (valor: { data: ResumenEliminacion }) => void = () => undefined;
-      const pendiente = new Promise<{ data: ResumenEliminacion }>((r) => (resolver = r));
-      const solicitud = eliminacion.solicitarEliminacionConResumen(() => pendiente, request);
-      vi.advanceTimersByTime(ESPERA_AVISO_CONSULTA_MS);
-      resolver({ data: resumen() });
-      await vi.advanceTimersByTimeAsync(MINIMO_AVISO_CONSULTA_MS);
-      await solicitud;
-      expect(eliminacion.pasoDirecto.value).toBe(true);
-      eliminacion.cancelarEliminacion();
-      expect(eliminacion.pasoDirecto.value).toBe(false);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('una consulta rápida no lo muestra (sin parpadeo), ni después', async () => {
-    vi.useFakeTimers();
-    try {
-      await eliminacion.solicitarEliminacionConResumen(async () => ({ data: bloqueada() }), request);
-      vi.advanceTimersByTime(ESPERA_AVISO_CONSULTA_MS * 4);
-      expect(eliminacion.consultaVisible.value).toBe(false);
-      expect(eliminacion.bloqueo.value).not.toBeNull();
-    } finally {
-      vi.useRealTimers();
-    }
+    await eliminacion.solicitarEliminacionConResumen(async () => ({ data: resumen() }), request);
+    expect(eliminacion.pasoDirecto.value).toBe(true);
+    eliminacion.cancelarEliminacion();
+    expect(eliminacion.pasoDirecto.value).toBe(false);
   });
 
   it('la ventana de aviso no tiene botones ni campos', () => {
-    const wrapper = mount(ModalEliminacionRevisando, { props: { cubriendo: true, visible: true } });
+    const wrapper = mount(ModalEliminacionRevisando, { props: { visible: true } });
     expect(wrapper.text()).toContain('Revisando qué se va a eliminar');
     expect(wrapper.findAll('button, input')).toHaveLength(0);
-    expect(mount(ModalEliminacionRevisando, { props: { cubriendo: false, visible: false } }).text()).toBe('');
-    // Fondo desde el clic, todavía sin tarjeta
-    const soloFondo = mount(ModalEliminacionRevisando, { props: { cubriendo: true, visible: false } });
-    expect(soloFondo.find('.fixed.inset-0').exists()).toBe(true);
-    expect(soloFondo.text()).toBe('');
+    expect(mount(ModalEliminacionRevisando, { props: { visible: false } }).text()).toBe('');
   });
 });
 

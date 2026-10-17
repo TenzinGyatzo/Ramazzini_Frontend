@@ -49,7 +49,6 @@ const {
   auditResourceId: eliminacionAuditResourceId,
   resumen: eliminacionResumen,
   bloqueo: eliminacionBloqueo,
-  consultandoResumen: eliminacionConsultando,
   consultaVisible: eliminacionRevisando,
   pasoDirecto: eliminacionPasoDirecto,
   cerrarBloqueo: cerrarBloqueoEliminacion,
@@ -1462,8 +1461,8 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       @confirm="confirmarEliminacion"
       @cancel="cancelarEliminacion"
     />
-    <!-- Revisión antes de eliminar: fondo desde el clic; la ventana siguiente llega sobre él sin cruce de fondos -->
-    <ModalEliminacionRevisando :cubriendo="eliminacionConsultando" :visible="eliminacionRevisando" />
+    <!-- Revisión antes de eliminar: aviso desde el clic; la ventana siguiente llega sobre su fondo sin cruce de fondos -->
+    <ModalEliminacionRevisando :visible="eliminacionRevisando" />
     <ModalEliminacionBloqueada
       :resumen="eliminacionBloqueo"
       :sin-transicion="eliminacionPasoDirecto"
