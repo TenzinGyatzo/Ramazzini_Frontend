@@ -15,6 +15,8 @@ import {
  */
 const props = defineProps<{
   resumen: ResumenEliminacion | null;
+  /** Aparece sin animar el fondo: viene justo después del aviso «Revisando…». */
+  sinTransicion?: boolean;
 }>();
 
 const emit = defineEmits<{ close: [] }>();
@@ -29,7 +31,7 @@ useEscapeToClose(cerrar, () => props.resumen != null);
 </script>
 
 <template>
-  <Transition name="fade">
+  <Transition name="fade" :css="!sinTransicion">
     <div v-if="resumen" class="relative z-[70]">
       <div
         class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"
@@ -96,7 +98,7 @@ useEscapeToClose(cerrar, () => props.resumen != null);
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 150ms ease;
 }
 .fade-enter-from,
 .fade-leave-to {

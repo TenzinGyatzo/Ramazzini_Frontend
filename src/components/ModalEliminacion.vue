@@ -270,7 +270,7 @@ const handleConfirm = async () => {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 150ms ease;
 }
 .fade-enter-from,
 .fade-leave-to {

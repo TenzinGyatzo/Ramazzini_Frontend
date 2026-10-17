@@ -49,7 +49,9 @@ const {
   auditResourceId: eliminacionAuditResourceId,
   resumen: eliminacionResumen,
   bloqueo: eliminacionBloqueo,
+  consultandoResumen: eliminacionConsultando,
   consultaVisible: eliminacionRevisando,
+  pasoDirecto: eliminacionPasoDirecto,
   cerrarBloqueo: cerrarBloqueoEliminacion,
   requestEliminacion,
   confirmarEliminacion,
@@ -1445,6 +1447,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
   <Teleport to="body">
     <ModalEliminacion
       v-if="route.name !== 'trabajadores' && route.name !== 'expediente-medico'"
+      :disable-transition="eliminacionPasoDirecto"
       :is-visible="eliminacionOpen"
       :nivel="eliminacionNivel"
       :tipo-registro="eliminacionTipoRegistro"
@@ -1459,9 +1462,11 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       @confirm="confirmarEliminacion"
       @cancel="cancelarEliminacion"
     />
-    <ModalEliminacionRevisando :visible="eliminacionRevisando" />
+    <!-- Revisión antes de eliminar: fondo desde el clic; la ventana siguiente llega sobre él sin cruce de fondos -->
+    <ModalEliminacionRevisando :cubriendo="eliminacionConsultando" :visible="eliminacionRevisando" />
     <ModalEliminacionBloqueada
       :resumen="eliminacionBloqueo"
+      :sin-transicion="eliminacionPasoDirecto"
       @close="cerrarBloqueoEliminacion"
     />
   </Teleport>

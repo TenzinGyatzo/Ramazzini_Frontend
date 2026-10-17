@@ -1,17 +1,24 @@
 <script setup lang="ts">
 /**
- * Aviso mientras el servidor revisa qué se eliminaría (empresa, centro o trabajador).
- * Cubre la pantalla para que un segundo clic no haga nada; al terminar, lo reemplaza la
- * confirmación o la ventana de «no se puede eliminar».
+ * Mientras el servidor revisa qué se eliminaría (empresa, centro o trabajador):
+ * - El fondo cubre la pantalla desde el clic (respuesta inmediata y un segundo clic no hace nada).
+ * - La tarjeta «Revisando…» solo aparece si la revisión tarda (ver useEliminacion).
+ * Al terminar, la ventana siguiente aparece sobre este mismo fondo y este se quita sin animación,
+ * así que el fondo no parpadea.
  */
-defineProps<{ visible: boolean }>();
+defineProps<{
+  /** Hay una revisión en curso: fondo puesto. */
+  cubriendo: boolean;
+  /** La revisión ya tardó: se muestra la tarjeta. */
+  visible: boolean;
+}>();
 </script>
 
 <template>
-  <Transition name="fade">
-    <div v-if="visible" class="relative z-[70]" role="status" aria-live="polite">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm" />
-      <div class="fixed inset-0 z-10 flex items-center justify-center p-8">
+  <div v-if="cubriendo" class="relative z-[70]" role="status" aria-live="polite">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm" />
+    <Transition name="fade">
+      <div v-if="visible" class="fixed inset-0 z-10 flex items-center justify-center p-8">
         <div
           class="modal-eliminacion modal-inner flex items-center gap-3 rounded-lg bg-white px-5 py-4 text-left shadow-xl"
         >
@@ -24,8 +31,8 @@ defineProps<{ visible: boolean }>();
           </div>
         </div>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </div>
 </template>
 
 <style scoped>

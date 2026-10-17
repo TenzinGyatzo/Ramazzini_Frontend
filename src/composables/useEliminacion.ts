@@ -46,10 +46,26 @@ const consultandoResumen = ref(false);
  * muestra nada: así la ventana de aviso no parpadea.
  */
 const consultaVisible = ref(false);
-export const ESPERA_AVISO_CONSULTA_MS = 150;
+/**
+ * Antes de esto la respuesta suele llegar: sobre el fondo (puesto desde el clic) aparece
+ * directo la ventana, sin tarjeta «Revisando…» intermedia.
+ */
+export const ESPERA_AVISO_CONSULTA_MS = 400;
+/** Si el aviso llegó a mostrarse, se queda al menos esto (nunca un destello). */
+export const MINIMO_AVISO_CONSULTA_MS = 500;
+/**
+ * La ventana siguiente (confirmación o «no se puede eliminar») llega sobre el fondo de la
+ * revisión, que se puso desde el clic: aparece sin animar su fondo y el de la revisión se
+ * quita en el mismo instante. El fondo gris queda quieto y solo cambia la tarjeta.
+ */
+const pasoDirecto = ref(false);
+
+const esperar = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function resetState() {
   isOpen.value = false;
+  // Al cerrarse, la ventana vuelve a desvanecerse como siempre
+  pasoDirecto.value = false;
   isConfirming.value = false;
   nivel.value = 'simple';
   tipoRegistro.value = '';
@@ -95,8 +111,11 @@ async function solicitarEliminacionConResumen(
 ): Promise<void> {
   if (consultandoResumen.value) return;
   consultandoResumen.value = true;
+  pasoDirecto.value = false;
+  let avisoDesde = 0;
   const aviso = setTimeout(() => {
     consultaVisible.value = true;
+    avisoDesde = Date.now();
   }, ESPERA_AVISO_CONSULTA_MS);
   try {
     let consultado: ResumenEliminacion | null = null;
@@ -105,6 +124,12 @@ async function solicitarEliminacionConResumen(
     } catch (error) {
       console.error('No se pudo consultar el resumen de la eliminación:', error);
     }
+    clearTimeout(aviso);
+    if (consultaVisible.value) {
+      const faltante = MINIMO_AVISO_CONSULTA_MS - (Date.now() - avisoDesde);
+      if (faltante > 0) await esperar(faltante);
+    }
+    pasoDirecto.value = true;
     if (consultado?.bloqueada) {
       bloqueo.value = consultado;
       return;
@@ -120,6 +145,7 @@ async function solicitarEliminacionConResumen(
 
 function cerrarBloqueo() {
   bloqueo.value = null;
+  pasoDirecto.value = false;
 }
 
 async function confirmarEliminacion(password?: string) {
@@ -153,6 +179,7 @@ export function useEliminacion() {
     bloqueo,
     consultandoResumen,
     consultaVisible,
+    pasoDirecto,
     requestEliminacion,
     solicitarEliminacionConResumen,
     cerrarBloqueo,
