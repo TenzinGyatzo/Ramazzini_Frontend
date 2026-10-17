@@ -78,6 +78,17 @@ import {
   puestosDisponibles,
   textoDeFiltros,
 } from '@/helpers/dashboardFiltros';
+import {
+  CENTRO_TODOS,
+  consultaAEstado,
+  consultaTieneEstado,
+  estadoAConsulta,
+  guardarEstadoDeSesion,
+  guardarVista,
+  leerEstadoDeSesion,
+  leerVistasGuardadas,
+  mismaConsulta,
+} from '@/helpers/estadoTablero';
 
 const toast = inject('toast');
 const router = useRouter()
@@ -221,6 +232,27 @@ const manejarCambioPeriodo = (periodo) => {
   fechaFin.value = fechas.fin.toISOString().split('T')[0]
 }
 
+// ---- Estado en la dirección (centro, periodo, filtros, comparación; ver estadoTablero).
+// Se restaura antes de la primera carga para que entrar o recargar consulte una sola vez.
+// Sin periodo ni filtros en la dirección, se usa lo último de esta empresa en la sesión.
+const estadoInicial = consultaAEstado(
+  consultaTieneEstado(route.query)
+    ? route.query
+    : {
+        ...(leerEstadoDeSesion(String(route.params.idEmpresa ?? '')) ?? {}),
+        ...(route.query.centro ? { centro: route.query.centro } : {}),
+      },
+  Object.keys(etiquetasAgentesRiesgo),
+);
+Object.assign(filtrosPoblacion, estadoInicial.filtros);
+if (estadoInicial.periodo) {
+  periodoPredefinido.value = estadoInicial.periodo;
+  manejarCambioPeriodo(estadoInicial.periodo);
+} else {
+  if (estadoInicial.desde) fechaInicio.value = estadoInicial.desde;
+  if (estadoInicial.hasta) fechaFin.value = estadoInicial.hasta;
+}
+
 const vistaGruposEtarios = ref('grafico');
 const vistaGruposEtariosKey = computed(() => `vista-${vistaGruposEtarios.value}`);
 const vistaIMC = ref('grafico');
@@ -251,6 +283,19 @@ const vistaCintura = ref('grafico');
 const vistaCinturaKey = computed(() => `vista-${vistaCintura.value}`);
 const vistaTamizajeTLP = ref('grafico');
 const vistaTamizajeTLPKey = computed(() => `vista-${vistaTamizajeTLP.value}`);
+
+// Gráfica o tabla en cada sección: se recuerda en este navegador como preferencia
+const VISTAS_DEL_TABLERO = {
+  vistaGruposEtarios, vistaIMC, vistaEnfermedades, vistaAntecedentes, vistaAudiometriaDistribucion,
+  vistaEkgDistribucion, vistaEspirometriaDistribucion, vistaRayosXDistribucion,
+  vistaAnalisisLaboratorioDistribucion, vistaAptitud, vistaAgentes, vistaTensionArterial, vistaSexo,
+  vistaCintura, vistaTamizajeTLP,
+};
+const vistasGuardadas = leerVistasGuardadas();
+Object.entries(VISTAS_DEL_TABLERO).forEach(([seccion, vista]) => {
+  if (vistasGuardadas[seccion]) vista.value = vistasGuardadas[seccion];
+  watch(vista, (valor) => guardarVista(seccion, valor));
+});
 
 // Refs para cada gráfica
 const refIMC = ref();
@@ -318,9 +363,11 @@ const cargarDatos = async (empresaId, inicio, fin) => {
     centrosTrabajo.value = centros;
 
     // Desde la tarjeta de un centro se llega con ese centro ya elegido; aplica una sola vez
-    const centroDeLaRuta = centroDeLaRutaPendiente
-      ? centros.find((c) => String(c._id) === String(route.query.centro))?.nombreCentro
-      : undefined;
+    const centroDeLaRuta = !centroDeLaRutaPendiente || !estadoInicial.centro
+      ? undefined
+      : estadoInicial.centro === CENTRO_TODOS
+        ? 'Todos'
+        : centros.find((c) => String(c._id) === String(estadoInicial.centro))?.nombreCentro;
     centroDeLaRutaPendiente = false;
     if (centroDeLaRuta) guardarCentroSeleccionado(centroDeLaRuta);
 
@@ -2797,7 +2844,7 @@ const seccionConDatos = computed(() => ({
 
 // ---- Comparativo: el periodo elegido contra otro, con el mismo centro y los mismos filtros
 
-const modoComparacion = ref('anterior');
+const modoComparacion = ref(estadoInicial.comparar);
 const comparacion = ref(null); // { desde, hasta, datos }
 const comparando = ref(false);
 const errorComparacion = ref('');
@@ -2815,6 +2862,37 @@ watch(
     comparacion.value = null;
     comparando.value = false;
     errorComparacion.value = '';
+  },
+);
+
+// Cada cambio se refleja en la dirección (sin agregar pasos al historial) y en la sesión
+const fechaIso = (fecha) => fecha.toISOString().split('T')[0];
+watch(
+  [centroSeleccionado, periodoPredefinido, fechaInicio, fechaFin, () => JSON.stringify(filtrosPoblacion), modoComparacion, centrosTrabajo],
+  () => {
+    // Hasta conocer los centros no se sabe el id del elegido
+    if (!centrosTrabajo.value.length) return;
+    const idCentro = centroSeleccionado.value === 'Todos'
+      ? CENTRO_TODOS
+      : centrosTrabajo.value.find((c) => c.nombreCentro === centroSeleccionado.value)?._id;
+    // El periodo con nombre solo vale mientras sus fechas no se hayan editado a mano
+    let periodo = periodoPredefinido.value || undefined;
+    if (periodo) {
+      const fechas = calcularFechasPeriodo(periodo);
+      if (!fechas.inicio || fechaIso(fechas.inicio) !== fechaInicio.value || fechaIso(fechas.fin) !== fechaFin.value) {
+        periodo = undefined;
+      }
+    }
+    const consulta = estadoAConsulta({
+      centro: idCentro ? String(idCentro) : undefined,
+      periodo,
+      desde: fechaInicio.value || undefined,
+      hasta: fechaFin.value || undefined,
+      filtros: { ...filtrosPoblacion },
+      comparar: modoComparacion.value,
+    });
+    guardarEstadoDeSesion(String(route.params.idEmpresa ?? ''), consulta);
+    if (!mismaConsulta(route.query, consulta)) router.replace({ query: consulta });
   },
 );
 
