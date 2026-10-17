@@ -17,7 +17,8 @@ import { initToast } from '@/utils/toast'
 import App from './App.vue'
 import router from './router'
 
-import "vue-toast-notification/dist/theme-bootstrap.css"
+// Estilo propio de los mensajes emergentes (sustituye al tema de Bootstrap de la librería)
+import './assets/avisos.css'
 
 // Initialize global toast instance for interceptors
 const $toast = initToast()

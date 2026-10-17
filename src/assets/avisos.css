@@ -1,0 +1,163 @@
+/*
+ * Mensajes emergentes (vue-toast-notification) con el estilo de Ramazzini.
+ * Sustituye al tema de Bootstrap de la librería. El contenido lo arma utils/toast.ts:
+ * ícono, texto, «×» y barra de tiempo.
+ */
+
+/* Contenedor: arriba a la derecha, por debajo del engrane y la lupa (fijos en esa esquina) */
+.v-toast {
+  position: fixed;
+  display: flex;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  overflow: hidden;
+  z-index: 1090;
+  pointer-events: none;
+}
+.v-toast.v-toast--top {
+  flex-direction: column;
+  padding-top: 6rem;
+}
+.v-toast.v-toast--bottom {
+  flex-direction: column-reverse;
+}
+.v-toast.v-toast--custom-parent {
+  position: absolute;
+}
+
+.v-toast__item {
+  --aviso-acento: #10b981;
+  position: relative;
+  display: inline-flex;
+  align-items: flex-start;
+  overflow: hidden;
+  margin: 0.375rem 0;
+  max-width: min(26rem, calc(100vw - 2rem));
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid var(--aviso-acento);
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  color: #1f2937;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 10px -6px rgba(15, 23, 42, 0.1);
+  pointer-events: auto;
+  cursor: pointer;
+  animation-duration: 150ms;
+}
+.v-toast__item--success { --aviso-acento: #10b981; }
+.v-toast__item--info,
+.v-toast__item--default { --aviso-acento: #0ea5e9; }
+.v-toast__item--warning { --aviso-acento: #f59e0b; }
+.v-toast__item--error { --aviso-acento: #ef4444; }
+
+.v-toast__item.v-toast__item--top,
+.v-toast__item.v-toast__item--bottom { align-self: center; }
+.v-toast__item.v-toast__item--top-right,
+.v-toast__item.v-toast__item--bottom-right { align-self: flex-end; }
+.v-toast__item.v-toast__item--top-left,
+.v-toast__item.v-toast__item--bottom-left { align-self: flex-start; }
+
+/* La librería dibuja su propio ícono; aquí va el nuestro dentro del texto */
+.v-toast__icon { display: none; }
+
+.v-toast__text {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0.75rem 0.875rem 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.aviso__icono {
+  margin-top: 0.1rem;
+  font-size: 1rem;
+  color: var(--aviso-acento);
+  flex-shrink: 0;
+}
+.aviso__texto { flex: 1; min-width: 0; }
+.aviso__cerrar {
+  margin: -0.15rem -0.15rem 0 0.25rem;
+  padding: 0 0.25rem;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #9ca3af;
+  border-radius: 0.375rem;
+  transition: color 120ms ease-out, background-color 120ms ease-out;
+}
+.v-toast__item:hover .aviso__cerrar {
+  color: #374151;
+  background-color: #f3f4f6;
+}
+
+/* Barra de tiempo: se vacía hasta que el mensaje se cierra y se pausa con el cursor encima */
+.aviso__barra {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background-color: var(--aviso-acento);
+  opacity: 0.55;
+  transform-origin: left center;
+  animation-name: aviso-barra;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+.v-toast__item:hover .aviso__barra { animation-play-state: paused; }
+@keyframes aviso-barra {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* Entrada y salida cortas (la librería aplica estas clases) */
+.v-toast--fade-in-down { animation-name: aviso-entra-arriba; }
+.v-toast--fade-in-up { animation-name: aviso-entra-abajo; }
+.v-toast--fade-out { animation-name: aviso-sale; }
+@keyframes aviso-entra-arriba {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes aviso-entra-abajo {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes aviso-sale {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (max-width: 640px) {
+  .v-toast { padding: 0.75rem; }
+  .v-toast.v-toast--top { padding-top: 5.5rem; }
+  .v-toast__item { max-width: 100%; align-self: stretch !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v-toast__item { animation-duration: 1ms; }
+  /* Sin animación de la barra: se queda llena, sin movimiento */
+  .aviso__barra { animation: none; }
+}
+
+/* Modo oscuro */
+html.dark-mode .v-toast__item {
+  background-color: #1e293b;
+  border-color: #334155;
+  border-left-color: var(--aviso-acento);
+  color: #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+html.dark-mode .v-toast__item--success { --aviso-acento: #34d399; }
+html.dark-mode .v-toast__item--info,
+html.dark-mode .v-toast__item--default { --aviso-acento: #38bdf8; }
+html.dark-mode .v-toast__item--warning { --aviso-acento: #fbbf24; }
+html.dark-mode .v-toast__item--error { --aviso-acento: #f87171; }
+html.dark-mode .aviso__cerrar { color: #94a3b8; }
+html.dark-mode .v-toast__item:hover .aviso__cerrar {
+  color: #e2e8f0;
+  background-color: #334155;
+}
