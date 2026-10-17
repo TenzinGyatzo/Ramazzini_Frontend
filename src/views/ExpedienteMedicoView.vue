@@ -1318,17 +1318,37 @@ const crearDocumento = (tipoDocumento: string) =>
                         Filtrar<span class="hidden sm:inline"> por tipo</span><span v-if="hayFiltroDeTipos"> ({{ tiposFiltrados.length }})</span>
                         <i class="expediente-filtro-tipos__flecha fa-solid fa-chevron-down text-[10px]" :class="{ 'expediente-filtro-tipos__flecha--abierta': menuTiposAbierto }" aria-hidden="true"></i>
                       </button>
+                      <!-- En celular: fondo atenuado detrás del panel; tocarlo cierra la lista -->
+                      <Transition name="fondo-tipos">
+                        <div
+                          v-if="menuTiposAbierto"
+                          class="fixed inset-0 z-40 bg-black/30 sm:hidden"
+                          aria-hidden="true"
+                          @click="menuTiposAbierto = false"
+                        ></div>
+                      </Transition>
+                      <!-- En celular es un panel fijo abajo, a lo ancho; desde sm, una lista bajo el botón -->
                       <Transition name="lista-tipos">
                       <div
                         v-if="menuTiposAbierto"
-                        class="expediente-filtro-tipos__lista absolute right-0 z-30 mt-1 w-64 max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+                        class="expediente-filtro-tipos__lista fixed inset-x-3 bottom-3 z-50 max-h-[60vh] overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl sm:absolute sm:inset-auto sm:right-0 sm:z-30 sm:mt-1 sm:w-64 sm:max-h-80 sm:rounded-lg sm:shadow-lg"
                         role="group"
                         aria-label="Mostrar solo estos tipos de documento"
                       >
+                        <div class="flex items-center justify-between border-b border-gray-200 px-4 py-2 sm:hidden">
+                          <span class="text-sm font-semibold text-gray-800">Filtrar por tipo</span>
+                          <button
+                            type="button"
+                            class="rounded-md px-2 py-1 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+                            @click="menuTiposAbierto = false"
+                          >
+                            Listo
+                          </button>
+                        </div>
                         <label
                           v-for="tipo in tiposDelExpediente"
                           :key="tipo.tipo"
-                          class="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                          class="flex cursor-pointer items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 sm:px-3 sm:py-1.5"
                         >
                           <input
                             type="checkbox"
@@ -1492,6 +1512,15 @@ const crearDocumento = (tipoDocumento: string) =>
 .lista-tipos-leave-active { transition: opacity 90ms ease-in, transform 90ms ease-in; }
 .lista-tipos-enter-from,
 .lista-tipos-leave-to { opacity: 0; transform: translateY(-4px); }
+/* En celular el panel sube desde abajo */
+@media (max-width: 639px) {
+  .lista-tipos-enter-from,
+  .lista-tipos-leave-to { transform: translateY(8px); }
+}
+.fondo-tipos-enter-active { transition: opacity 120ms ease-out; }
+.fondo-tipos-leave-active { transition: opacity 90ms ease-in; }
+.fondo-tipos-enter-from,
+.fondo-tipos-leave-to { opacity: 0; }
 
 .expediente-filtro-tipos__flecha { transition: transform 150ms ease-out; }
 .expediente-filtro-tipos__flecha--abierta { transform: rotate(180deg); }
@@ -1516,6 +1545,7 @@ const crearDocumento = (tipoDocumento: string) =>
 
 @media (prefers-reduced-motion: reduce) {
   .lista-tipos-enter-active, .lista-tipos-leave-active,
+  .fondo-tipos-enter-active, .fondo-tipos-leave-active,
   .expediente-filtro-tipos__flecha,
   .tipo-elegido-enter-active, .tipo-elegido-leave-active, .tipo-elegido-move,
   .resumen-filtro-enter-active, .resumen-filtro-leave-active,
