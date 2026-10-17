@@ -598,7 +598,8 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         />
 
         <!-- Documentos del año, en el orden del expediente; los subgrupos son un encabezado y sus documentos -->
-        <div v-else>
+        <!-- Al filtrar o plegar: las filas que salen se desvanecen y las demás se deslizan -->
+        <TransitionGroup v-else tag="div" name="fila-filtro" class="relative">
             <template v-for="fila in filas" :key="fila.clave">
                 <!-- Encabezado de subgrupo -->
                 <div
@@ -661,7 +662,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                     />
                 </div>
             </template>
-        </div>
+        </TransitionGroup>
 
         <div
             v-if="hasExtraSection"
@@ -684,6 +685,30 @@ const hasExtraSection = computed(() => !!slots.extraSection);
 </template>
 
 <style scoped>
+/* Filas del año al filtrar o plegar: rápido y discreto */
+.fila-filtro-enter-active,
+.fila-filtro-leave-active {
+    transition: opacity 120ms ease-out;
+}
+.fila-filtro-enter-from,
+.fila-filtro-leave-to {
+    opacity: 0;
+}
+.fila-filtro-leave-active {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+.fila-filtro-move {
+    transition: transform 160ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+    .fila-filtro-enter-active,
+    .fila-filtro-leave-active,
+    .fila-filtro-move {
+        transition: none;
+    }
+}
 /* Documentos que pertenecen a un subgrupo: van con sangría */
 .grupo-documentos__fila--en-subgrupo {
     margin-left: 0.5rem;

@@ -1284,8 +1284,10 @@ const crearDocumento = (tipoDocumento: string) =>
                     v-if="yearsWithRecords.length && (puedeFiltrarTipos || canConfigurarOrdenDocumentos)"
                     class="expediente-filtro-tipos mb-1 flex flex-wrap items-center justify-end gap-x-3 gap-y-1"
                   >
+                    <Transition name="resumen-filtro">
                     <div v-if="hayFiltroDeTipos" class="mr-auto flex flex-wrap items-center gap-1.5 text-xs text-gray-500" role="status">
                       <span>Mostrando {{ totalDocumentosFiltrados }} de {{ totalDocumentosExpediente }}:</span>
+                      <TransitionGroup name="tipo-elegido">
                       <button
                         v-for="tipo in tiposActivos"
                         :key="tipo.tipo"
@@ -1296,8 +1298,10 @@ const crearDocumento = (tipoDocumento: string) =>
                       >
                         {{ tipo.nombre }} <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                       </button>
+                      </TransitionGroup>
                       <button type="button" class="font-medium text-emerald-700 underline underline-offset-2 hover:text-emerald-800" @click="verTodosLosTipos">Ver todos</button>
                     </div>
+                    </Transition>
 
                     <!-- Los dos botones juntos, a la derecha (en móvil comparten renglón) -->
                     <div class="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1 whitespace-nowrap">
@@ -1312,8 +1316,9 @@ const crearDocumento = (tipoDocumento: string) =>
                       >
                         <i class="fa-solid fa-filter" aria-hidden="true"></i>
                         Filtrar<span class="hidden sm:inline"> por tipo</span><span v-if="hayFiltroDeTipos"> ({{ tiposFiltrados.length }})</span>
-                        <i class="fa-solid fa-chevron-down text-[10px]" aria-hidden="true"></i>
+                        <i class="expediente-filtro-tipos__flecha fa-solid fa-chevron-down text-[10px]" :class="{ 'expediente-filtro-tipos__flecha--abierta': menuTiposAbierto }" aria-hidden="true"></i>
                       </button>
+                      <Transition name="lista-tipos">
                       <div
                         v-if="menuTiposAbierto"
                         class="expediente-filtro-tipos__lista absolute right-0 z-30 mt-1 w-64 max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
@@ -1335,6 +1340,7 @@ const crearDocumento = (tipoDocumento: string) =>
                           <span class="text-xs text-gray-500">{{ tipo.cantidad }}</span>
                         </label>
                       </div>
+                      </Transition>
                     </div>
 
                     <button
@@ -1349,7 +1355,8 @@ const crearDocumento = (tipoDocumento: string) =>
                     </button>
                     </div>
                   </div>
-                  <div v-if="yearsWithRecords.length" class="space-y-6">
+                  <!-- Al filtrar, los años que sobran se desvanecen y los demás se deslizan a su lugar -->
+                  <TransitionGroup v-if="yearsWithRecords.length" tag="div" name="anio-filtro" class="relative space-y-6">
                 <div
                   v-for="(year, yearIndex) in aniosVisibles"
                   :key="`year-${year}-${resultadosPorAnio[year]?.length || 0}`"
@@ -1383,7 +1390,7 @@ const crearDocumento = (tipoDocumento: string) =>
                   </GrupoDocumentos>
                   </LazyMountWhenVisible>
                 </div>
-              </div>
+              </TransitionGroup>
 
               <div v-else class="expediente-empty text-center py-8">
                 <div class="expediente-empty__hero inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
@@ -1480,6 +1487,40 @@ const crearDocumento = (tipoDocumento: string) =>
 </template>
 
 <style scoped>
+/* Transiciones del filtro por tipo: cortas para que se sientan fluidas sin hacer esperar */
+.lista-tipos-enter-active { transition: opacity 120ms ease-out, transform 120ms ease-out; }
+.lista-tipos-leave-active { transition: opacity 90ms ease-in, transform 90ms ease-in; }
+.lista-tipos-enter-from,
+.lista-tipos-leave-to { opacity: 0; transform: translateY(-4px); }
+
+.expediente-filtro-tipos__flecha { transition: transform 150ms ease-out; }
+.expediente-filtro-tipos__flecha--abierta { transform: rotate(180deg); }
+
+.tipo-elegido-enter-active,
+.tipo-elegido-leave-active { transition: opacity 120ms ease-out, transform 120ms ease-out; }
+.tipo-elegido-enter-from,
+.tipo-elegido-leave-to { opacity: 0; transform: scale(0.85); }
+.tipo-elegido-move { transition: transform 150ms ease-out; }
+
+.resumen-filtro-enter-active,
+.resumen-filtro-leave-active { transition: opacity 120ms ease-out; }
+.resumen-filtro-enter-from,
+.resumen-filtro-leave-to { opacity: 0; }
+
+.anio-filtro-enter-active,
+.anio-filtro-leave-active { transition: opacity 140ms ease-out; }
+.anio-filtro-enter-from,
+.anio-filtro-leave-to { opacity: 0; }
+.anio-filtro-leave-active { position: absolute; left: 0; right: 0; }
+.anio-filtro-move { transition: transform 160ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lista-tipos-enter-active, .lista-tipos-leave-active,
+  .expediente-filtro-tipos__flecha,
+  .tipo-elegido-enter-active, .tipo-elegido-leave-active, .tipo-elegido-move,
+  .resumen-filtro-enter-active, .resumen-filtro-leave-active,
+  .anio-filtro-enter-active, .anio-filtro-leave-active, .anio-filtro-move { transition: none; }
+}
 /* Filtro por tipo: tipos elegidos como pastillas pequeñas con × para quitarlos */
 .expediente-filtro-tipos__elegido {
   display: inline-flex;
