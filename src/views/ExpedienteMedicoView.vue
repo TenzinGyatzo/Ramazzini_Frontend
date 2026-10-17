@@ -515,6 +515,28 @@ function alternarTipo(tipo: string) {
 }
 const verTodosLosTipos = () => aplicarFiltroDeTipos([]);
 
+// Lista desplegable del filtro: solo si hay más de un tipo; se cierra con Esc o al hacer clic fuera
+const puedeFiltrarTipos = computed(() => tiposDelExpediente.value.length > 1);
+const tiposActivos = computed(() => tiposDelExpediente.value.filter((t) => tiposFiltrados.value.includes(t.tipo)));
+const menuTiposAbierto = ref(false);
+const filtroTiposRef = ref<HTMLElement | null>(null);
+const cerrarMenuTipos = (evento: Event) => {
+  if (!menuTiposAbierto.value) return;
+  if (evento instanceof KeyboardEvent) {
+    if (evento.key === 'Escape') menuTiposAbierto.value = false;
+    return;
+  }
+  if (!filtroTiposRef.value?.contains(evento.target as Node)) menuTiposAbierto.value = false;
+};
+onMounted(() => {
+  document.addEventListener('pointerdown', cerrarMenuTipos);
+  document.addEventListener('keydown', cerrarMenuTipos);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', cerrarMenuTipos);
+  document.removeEventListener('keydown', cerrarMenuTipos);
+});
+
 // Al volver de capturar un documento (sin parámetros) se recupera el filtro de este trabajador
 watch(
   () => route.params.idTrabajador,
@@ -1257,54 +1279,75 @@ const crearDocumento = (tipoDocumento: string) =>
             <div v-else key="docs-content">
               <Transition appear mode="out-in" name="slide-up">
                 <div>
-                  <!-- Filtro por tipo de documento (varios a la vez) -->
+                  <!-- Una sola línea: filtro por tipo (botón con lista) y orden de los documentos -->
                   <div
-                    v-if="tiposDelExpediente.length > 1"
-                    class="expediente-filtro-tipos mb-3"
-                    role="group"
-                    aria-label="Mostrar solo estos tipos de documento"
+                    v-if="yearsWithRecords.length && (puedeFiltrarTipos || canConfigurarOrdenDocumentos)"
+                    class="expediente-filtro-tipos mb-1 flex flex-wrap items-center justify-end gap-x-3 gap-y-1"
                   >
-                    <div class="flex flex-wrap items-center gap-1.5">
-                      <span class="mr-1 text-xs font-medium text-gray-500">Mostrar:</span>
+                    <div v-if="hayFiltroDeTipos" class="mr-auto flex flex-wrap items-center gap-1.5 text-xs text-gray-500" role="status">
+                      <span>Mostrando {{ totalDocumentosFiltrados }} de {{ totalDocumentosExpediente }}:</span>
                       <button
-                        type="button"
-                        class="expediente-filtro-tipos__opcion"
-                        :class="{ 'expediente-filtro-tipos__opcion--activa': !hayFiltroDeTipos }"
-                        :aria-pressed="!hayFiltroDeTipos"
-                        @click="verTodosLosTipos"
-                      >
-                        Todos <span class="expediente-filtro-tipos__cantidad">{{ totalDocumentosExpediente }}</span>
-                      </button>
-                      <button
-                        v-for="tipo in tiposDelExpediente"
+                        v-for="tipo in tiposActivos"
                         :key="tipo.tipo"
                         type="button"
-                        class="expediente-filtro-tipos__opcion"
-                        :class="{ 'expediente-filtro-tipos__opcion--activa': tiposFiltrados.includes(tipo.tipo) }"
-                        :aria-pressed="tiposFiltrados.includes(tipo.tipo)"
+                        class="expediente-filtro-tipos__elegido"
+                        :title="`Quitar ${tipo.nombre} del filtro`"
                         @click="alternarTipo(tipo.tipo)"
                       >
-                        {{ tipo.nombre }} <span class="expediente-filtro-tipos__cantidad">{{ tipo.cantidad }}</span>
+                        {{ tipo.nombre }} <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                       </button>
-                    </div>
-                    <p v-if="hayFiltroDeTipos" class="mt-1.5 text-xs text-gray-500" role="status">
-                      Mostrando {{ totalDocumentosFiltrados }} de {{ totalDocumentosExpediente }} documentos.
                       <button type="button" class="font-medium text-emerald-700 underline underline-offset-2 hover:text-emerald-800" @click="verTodosLosTipos">Ver todos</button>
-                    </p>
-                  </div>
-                  <div
-                    v-if="yearsWithRecords.length && canConfigurarOrdenDocumentos"
-                    class="flex justify-end mb-1"
-                  >
+                    </div>
+
+                    <!-- Los dos botones juntos, a la derecha (en móvil comparten renglón) -->
+                    <div class="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1 whitespace-nowrap">
+                    <div v-if="puedeFiltrarTipos" ref="filtroTiposRef" class="relative">
+                      <button
+                        type="button"
+                        class="expediente-accion-link"
+                        :aria-expanded="menuTiposAbierto"
+                        aria-haspopup="true"
+                        title="Mostrar solo algunos tipos de documento"
+                        @click="menuTiposAbierto = !menuTiposAbierto"
+                      >
+                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                        Filtrar<span class="hidden sm:inline"> por tipo</span><span v-if="hayFiltroDeTipos"> ({{ tiposFiltrados.length }})</span>
+                        <i class="fa-solid fa-chevron-down text-[10px]" aria-hidden="true"></i>
+                      </button>
+                      <div
+                        v-if="menuTiposAbierto"
+                        class="expediente-filtro-tipos__lista absolute right-0 z-30 mt-1 w-64 max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+                        role="group"
+                        aria-label="Mostrar solo estos tipos de documento"
+                      >
+                        <label
+                          v-for="tipo in tiposDelExpediente"
+                          :key="tipo.tipo"
+                          class="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <input
+                            type="checkbox"
+                            class="h-4 w-4 accent-emerald-600"
+                            :checked="tiposFiltrados.includes(tipo.tipo)"
+                            @change="alternarTipo(tipo.tipo)"
+                          />
+                          <span class="flex-1 truncate">{{ tipo.nombre }}</span>
+                          <span class="text-xs text-gray-500">{{ tipo.cantidad }}</span>
+                        </label>
+                      </div>
+                    </div>
+
                     <button
+                      v-if="canConfigurarOrdenDocumentos"
                       type="button"
                       class="expediente-accion-link"
                       title="Elegir en qué orden aparecen los tipos de documento en todos los expedientes"
                       @click="showOrdenDocumentosModal = true"
                     >
                       <i class="fa-solid fa-arrow-down-short-wide" aria-hidden="true"></i>
-                      Orden de los documentos
+                      Orden<span class="hidden sm:inline"> de los documentos</span>
                     </button>
+                    </div>
                   </div>
                   <div v-if="yearsWithRecords.length" class="space-y-6">
                 <div
@@ -1437,45 +1480,27 @@ const crearDocumento = (tipoDocumento: string) =>
 </template>
 
 <style scoped>
-/* Filtro por tipo de documento: opciones tipo pastilla; la activa en verde */
-.expediente-filtro-tipos__opcion {
+/* Filtro por tipo: tipos elegidos como pastillas pequeñas con × para quitarlos */
+.expediente-filtro-tipos__elegido {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  color: #374151;
+  gap: 0.25rem;
+  border: 1px solid #a7f3d0;
+  background-color: #ecfdf5;
+  color: #047857;
   border-radius: 9999px;
-  padding: 0.25rem 0.75rem;
+  padding: 0 0.5rem;
   font-size: 0.75rem;
   line-height: 1.25rem;
   font-weight: 500;
-  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  transition: transform 0.15s ease;
 }
-.expediente-filtro-tipos__opcion:hover {
-  border-color: #34d399;
-  transform: scale(1.04);
+.expediente-filtro-tipos__elegido:hover {
+  transform: scale(1.05);
 }
-.expediente-filtro-tipos__opcion:focus-visible {
+.expediente-filtro-tipos__elegido:focus-visible {
   outline: 2px solid #10b981;
   outline-offset: 2px;
-}
-.expediente-filtro-tipos__opcion--activa,
-.expediente-filtro-tipos__opcion--activa:hover {
-  border-color: #059669;
-  background-color: #059669;
-  color: #ffffff;
-}
-.expediente-filtro-tipos__cantidad {
-  border-radius: 9999px;
-  background-color: #f3f4f6;
-  color: #4b5563;
-  padding: 0 0.375rem;
-  font-size: 0.6875rem;
-}
-.expediente-filtro-tipos__opcion--activa .expediente-filtro-tipos__cantidad {
-  background-color: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
 }
 /* Animaciones para las transiciones */
 .fade-enter-active,
