@@ -5,6 +5,12 @@ import { expresionDeEdad } from '@/helpers/edadEnTabla';
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import DataTablesCore from 'datatables.net-dt';
 import idiomaEspanol from '@/assets/i18n/datatables-es-ES.json';
+import {
+  guardarEstadoTabla,
+  leerEstadoTabla,
+  recordarUltimoTrabajador,
+  tomarUltimoTrabajador,
+} from '@/helpers/estadoTablaTrabajadores';
 import 'datatables.net-select-dt';
 import 'datatables.net-buttons-dt';
 import 'datatables.net-fixedcolumns-dt';
@@ -70,6 +76,23 @@ const router = useRouter();
 const route = useRoute();
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
+
+// Al volver a la tabla (del expediente, con «Atrás» o tras editar) se resalta al último trabajador
+const DURACION_RESALTADO_MS = 2500;
+function recordarTrabajador(trabajadorId: unknown) {
+  recordarUltimoTrabajador(centrosTrabajo.currentCentroTrabajoId, trabajadorId ? String(trabajadorId) : null);
+}
+function resaltarUltimoTrabajador() {
+  if (!dataTableInstance) return;
+  const trabajadorId = tomarUltimoTrabajador(centrosTrabajo.currentCentroTrabajoId);
+  if (!trabajadorId) return;
+  const fila = dataTableInstance.row((_indice: number, datos: any) => String(datos?._id) === trabajadorId);
+  // Solo si está en la página que se ve (con otra búsqueda u orden puede no estarlo)
+  const nodo = fila.any() ? (fila.node() as HTMLElement | null) : null;
+  if (!nodo) return;
+  nodo.classList.add('fila-reciente');
+  setTimeout(() => nodo.classList.remove('fila-reciente'), DURACION_RESALTADO_MS);
+}
 const { canManageTrabajadores, executeIfCanManageTrabajadores, executeIfCanAccessRiesgosTrabajo } = usePermissionRestrictions();
 const proveedorSaludStore = useProveedorSaludStore();
 /** Las incapacidades son del IMSS: el botón solo existe para proveedores de México. */
@@ -1010,6 +1033,14 @@ function inicializarDataTable() {
       order: [[0, 'desc']],
       scrollCollapse: true,
       scrollY: '800px',
+      // Búsqueda, página, orden y filas por página se recuerdan por centro durante la sesión de
+      // la pestaña (ver estadoTablaTrabajadores). Las columnas no: las maneja el panel de filtros.
+      stateSave: true,
+      stateDuration: 0,
+      stateSaveCallback: (_settings: unknown, estado: Record<string, any>) => {
+        guardarEstadoTabla(centrosTrabajo.currentCentroTrabajoId, estado);
+      },
+      stateLoadCallback: () => leerEstadoTabla(centrosTrabajo.currentCentroTrabajoId),
       // Textos en español incluidos en el proyecto (antes se pedían a cdn.datatables.net en cada carga)
       language: {
         ...idiomaEspanol,
@@ -1060,6 +1091,7 @@ function inicializarDataTable() {
       const idTrabajador = String($(this).data('id') ?? '');
       if (!idTrabajador) return;
 
+      recordarTrabajador(idTrabajador);
       router.push(buildExpedienteRoute(idTrabajador));
     });
 
@@ -1067,6 +1099,7 @@ function inicializarDataTable() {
       event.stopPropagation();
 
       const id = $(this).data('id');
+      recordarTrabajador(id);
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
         executeIfCanAccessRiesgosTrabajo(() => {
@@ -1079,6 +1112,7 @@ function inicializarDataTable() {
       event.stopPropagation();
 
       const id = $(this).data('id');
+      recordarTrabajador(id);
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
         emit('riesgos', trabajador);
@@ -1100,6 +1134,7 @@ function inicializarDataTable() {
       event.stopPropagation();
 
       const id = $(this).data('id');
+      recordarTrabajador(id);
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
         executeIfCanManageTrabajadores(() => {
@@ -1112,6 +1147,7 @@ function inicializarDataTable() {
       event.stopPropagation();
 
       const id = $(this).data('id');
+      recordarTrabajador(id);
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
         executeIfCanManageTrabajadores(() => {
@@ -1131,7 +1167,8 @@ function inicializarDataTable() {
     });
 
     const alInicializarTabla = function () {
-      aplicarTodosLosFiltrosDesdeLocalStorage();
+      // Conserva la página que restauró el estado guardado
+      aplicarTodosLosFiltrosDesdeLocalStorage({ conservarPagina: true });
       syncExpedienteButtonBadges();
       
       // Ocultar columna de número de empleado si no hay datos
@@ -1144,6 +1181,7 @@ function inicializarDataTable() {
       if (!tieneNumeroEmpleado) {
         dataTableInstance.column(1).visible(false);
       }
+      resaltarUltimoTrabajador();
     };
     // Con los textos locales la tabla termina de iniciar dentro del constructor y el evento
     // 'init' ya pasó; antes (idioma por URL) llegaba después.
@@ -1192,7 +1230,8 @@ onBeforeUnmount(() => {
 // Fuera de la función principal
 let filtroPeriodoReferencia: ((settings: any, data: any[]) => boolean) | null = null;
 
-function aplicarTodosLosFiltrosDesdeLocalStorage() {
+/** Al cambiar filtros se vuelve a la página 1; al iniciar o recargar datos se conserva la página. */
+function aplicarTodosLosFiltrosDesdeLocalStorage(opciones: { conservarPagina?: boolean } = {}) {
   const filtros = [
     { id: 'sexo', columna: 8 },
     { id: 'puesto', columna: 10 },
@@ -1343,7 +1382,7 @@ function aplicarTodosLosFiltrosDesdeLocalStorage() {
   // ya que la columna tiene data para filtrado en el render
 
   // 5. Redibujar tabla
-  dataTableInstance.draw();
+  dataTableInstance.draw(opciones.conservarPagina ? false : undefined);
 }
 
 defineExpose({
@@ -1454,9 +1493,9 @@ watch(
   (newRows) => {
     if (!dataTableInstance) return;
     const rows = Array.isArray(newRows) ? newRows : [];
+    // Tras editar, dar de baja o importar, la tabla se queda en la misma página, orden y búsqueda
     dataTableInstance.clear();
     dataTableInstance.rows.add(rows);
-    dataTableInstance.order([[0, 'desc']]);
     const tieneNumeroEmpleado = rows.some(
       (row: any) =>
         row.numeroEmpleado &&
@@ -1464,7 +1503,8 @@ watch(
         String(row.numeroEmpleado).trim() !== ''
     );
     dataTableInstance.column(1).visible(tieneNumeroEmpleado);
-    aplicarTodosLosFiltrosDesdeLocalStorage();
+    aplicarTodosLosFiltrosDesdeLocalStorage({ conservarPagina: true });
+    resaltarUltimoTrabajador();
     // Recalcular anchos tras reinyectar el dataset para evitar columnas mal dimensionadas.
     requestAnimationFrame(() => {
       dataTableInstance?.columns.adjust();
@@ -1656,6 +1696,24 @@ table.dataTable td:last-child {
   white-space: nowrap;
 }
 
+</style>
+
+<style>
+/* Último trabajador abierto o editado: capa verde tenue que se desvanece (sirve en claro y oscuro
+   porque se pinta encima del fondo que ya tenga la fila) */
+@keyframes fila-reciente {
+  from { box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.28); }
+  to { box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0); }
+}
+table.dataTable tbody tr.fila-reciente > td {
+  animation: fila-reciente 2.5s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  table.dataTable tbody tr.fila-reciente > td {
+    animation: none;
+    box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.2);
+  }
+}
 </style>
 
 <style>
