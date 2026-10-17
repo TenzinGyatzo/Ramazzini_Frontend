@@ -4363,3 +4363,27 @@ html.dark-mode .modal-orden-documentos .modal-orden-documentos-fila--arrastrada 
 html.dark-mode .buscador-trabajadores input::placeholder {
   color: #94a3b8 !important;
 }
+
+/* Expediente: filtro por tipo de documento */
+html.dark-mode .expediente-filtro-tipos__opcion {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+html.dark-mode .expediente-filtro-tipos__opcion:hover {
+  border-color: #34d399 !important;
+}
+html.dark-mode .expediente-filtro-tipos__opcion--activa,
+html.dark-mode .expediente-filtro-tipos__opcion--activa:hover {
+  background-color: #047857 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+html.dark-mode .expediente-filtro-tipos__cantidad {
+  background-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html.dark-mode .expediente-filtro-tipos__opcion--activa .expediente-filtro-tipos__cantidad {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}

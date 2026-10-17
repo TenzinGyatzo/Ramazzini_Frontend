@@ -15,7 +15,16 @@ import SlidingButtonPanel from '@/components/SlidingButtonPanel.vue';
 import DeletionButtonPanel from '@/components/DeletionButtonPanel.vue';
 import { calcularEdad, calcularAntiguedad } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
-import { clasificarSeleccionParaEliminar } from '@/helpers/documentosExpediente';
+import { clasificarSeleccionParaEliminar, TIPOS_DOCUMENTO_EXPEDIENTE } from '@/helpers/documentosExpediente';
+import {
+  anioTieneTipos,
+  cantidadDeTipos,
+  guardarFiltroDeSesion,
+  leerFiltroDeSesion,
+  tiposAConsulta,
+  tiposConConteo,
+  tiposDeLaConsulta,
+} from '@/helpers/filtroExpediente';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
 import ModalFinalizarDocumento from '@/components/modals/ModalFinalizarDocumento.vue';
@@ -455,8 +464,9 @@ onBeforeUnmount(() => {
   invalidateExpedienteConteosForCurrentTrabajador();
 });
 
+// Por valor: cambiar solo la consulta (p. ej. el filtro por tipo) no debe recargar el expediente
 watch(
-  () => route.params,
+  () => [route.params.idEmpresa, route.params.idCentroTrabajo, route.params.idTrabajador].join('/'),
   () => {
     fetchData();
     loadFirmanteData();
@@ -474,6 +484,53 @@ const yearsWithRecords = computed(() => {
     Object.keys(resultadosPorAnio.value).forEach((year) => años.add(year));
   }
   return Array.from(años).sort((a, b) => Number(b) - Number(a));
+});
+
+// ---- Filtro por tipo de documento (en la dirección: ?tipos=audiometria,historiaOtologica)
+const TODOS_LOS_TIPOS = TIPOS_DOCUMENTO_EXPEDIENTE.map((t) => t.tipo);
+const tiposDelExpediente = computed(() => tiposConConteo(documentosPorAnio.value as any));
+const tiposFiltrados = computed(() =>
+  tiposDeLaConsulta(route.query.tipos, tiposDelExpediente.value.map((t) => t.tipo)),
+);
+const hayFiltroDeTipos = computed(() => tiposFiltrados.value.length > 0);
+const totalDocumentosExpediente = computed(() =>
+  tiposDelExpediente.value.reduce((total, t) => total + t.cantidad, 0),
+);
+const totalDocumentosFiltrados = computed(() =>
+  cantidadDeTipos(tiposDelExpediente.value, tiposFiltrados.value),
+);
+const aniosVisibles = computed(() =>
+  hayFiltroDeTipos.value
+    ? yearsWithRecords.value.filter((year) => anioTieneTipos((documentosPorAnio.value as any)?.[year], tiposFiltrados.value))
+    : yearsWithRecords.value,
+);
+
+function aplicarFiltroDeTipos(tipos: string[]) {
+  guardarFiltroDeSesion(String(route.params.idTrabajador ?? ''), tipos);
+  router.replace({ query: { ...route.query, tipos: tiposAConsulta(tipos) } });
+}
+function alternarTipo(tipo: string) {
+  const actuales = tiposFiltrados.value;
+  aplicarFiltroDeTipos(actuales.includes(tipo) ? actuales.filter((t) => t !== tipo) : [...actuales, tipo]);
+}
+const verTodosLosTipos = () => aplicarFiltroDeTipos([]);
+
+// Al volver de capturar un documento (sin parámetros) se recupera el filtro de este trabajador
+watch(
+  () => route.params.idTrabajador,
+  (idTrabajador) => {
+    if (route.query.tipos !== undefined) return;
+    const guardado = leerFiltroDeSesion(String(idTrabajador ?? ''));
+    const tipos = tiposDeLaConsulta(guardado, TODOS_LOS_TIPOS);
+    if (tipos.length) router.replace({ query: { ...route.query, tipos: tiposAConsulta(tipos) } });
+  },
+  { immediate: true },
+);
+
+// Lo seleccionado que el filtro oculta deja de estar seleccionado (no se combina ni se elimina a ciegas)
+watch(tiposFiltrados, (tipos) => {
+  if (!tipos.length) return;
+  selectedDocuments.value = selectedDocuments.value.filter((d) => tipos.includes(d.documentType));
 });
 
 // Función para verificar si hay resultados para un año específico
@@ -1200,6 +1257,41 @@ const crearDocumento = (tipoDocumento: string) =>
             <div v-else key="docs-content">
               <Transition appear mode="out-in" name="slide-up">
                 <div>
+                  <!-- Filtro por tipo de documento (varios a la vez) -->
+                  <div
+                    v-if="tiposDelExpediente.length > 1"
+                    class="expediente-filtro-tipos mb-3"
+                    role="group"
+                    aria-label="Mostrar solo estos tipos de documento"
+                  >
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="mr-1 text-xs font-medium text-gray-500">Mostrar:</span>
+                      <button
+                        type="button"
+                        class="expediente-filtro-tipos__opcion"
+                        :class="{ 'expediente-filtro-tipos__opcion--activa': !hayFiltroDeTipos }"
+                        :aria-pressed="!hayFiltroDeTipos"
+                        @click="verTodosLosTipos"
+                      >
+                        Todos <span class="expediente-filtro-tipos__cantidad">{{ totalDocumentosExpediente }}</span>
+                      </button>
+                      <button
+                        v-for="tipo in tiposDelExpediente"
+                        :key="tipo.tipo"
+                        type="button"
+                        class="expediente-filtro-tipos__opcion"
+                        :class="{ 'expediente-filtro-tipos__opcion--activa': tiposFiltrados.includes(tipo.tipo) }"
+                        :aria-pressed="tiposFiltrados.includes(tipo.tipo)"
+                        @click="alternarTipo(tipo.tipo)"
+                      >
+                        {{ tipo.nombre }} <span class="expediente-filtro-tipos__cantidad">{{ tipo.cantidad }}</span>
+                      </button>
+                    </div>
+                    <p v-if="hayFiltroDeTipos" class="mt-1.5 text-xs text-gray-500" role="status">
+                      Mostrando {{ totalDocumentosFiltrados }} de {{ totalDocumentosExpediente }} documentos.
+                      <button type="button" class="font-medium text-emerald-700 underline underline-offset-2 hover:text-emerald-800" @click="verTodosLosTipos">Ver todos</button>
+                    </p>
+                  </div>
                   <div
                     v-if="yearsWithRecords.length && canConfigurarOrdenDocumentos"
                     class="flex justify-end mb-1"
@@ -1216,7 +1308,7 @@ const crearDocumento = (tipoDocumento: string) =>
                   </div>
                   <div v-if="yearsWithRecords.length" class="space-y-6">
                 <div
-                  v-for="(year, yearIndex) in yearsWithRecords"
+                  v-for="(year, yearIndex) in aniosVisibles"
                   :key="`year-${year}-${resultadosPorAnio[year]?.length || 0}`"
                   class="space-y-4"
                 >
@@ -1236,8 +1328,9 @@ const crearDocumento = (tipoDocumento: string) =>
                     :isDeletionMode="isDeletionMode"
                     :toggleDeletionMode="toggleDeletionMode"
                     :onDeleteSelected="handleDeleteSelected"
+                    :tiposVisibles="tiposFiltrados"
                   >
-                    <template #extraSection v-if="resultadosPorAnio[year]?.length > 0">
+                    <template #extraSection v-if="resultadosPorAnio[year]?.length > 0 && !hayFiltroDeTipos">
                       <ResultadosClinicosSubsection
                         :results="resultadosPorAnio[year] || []"
                         :canManage="canManageResultadosClinicos"
@@ -1344,6 +1437,46 @@ const crearDocumento = (tipoDocumento: string) =>
 </template>
 
 <style scoped>
+/* Filtro por tipo de documento: opciones tipo pastilla; la activa en verde */
+.expediente-filtro-tipos__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #374151;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+.expediente-filtro-tipos__opcion:hover {
+  border-color: #34d399;
+  transform: scale(1.04);
+}
+.expediente-filtro-tipos__opcion:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+.expediente-filtro-tipos__opcion--activa,
+.expediente-filtro-tipos__opcion--activa:hover {
+  border-color: #059669;
+  background-color: #059669;
+  color: #ffffff;
+}
+.expediente-filtro-tipos__cantidad {
+  border-radius: 9999px;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+}
+.expediente-filtro-tipos__opcion--activa .expediente-filtro-tipos__cantidad {
+  background-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
 /* Animaciones para las transiciones */
 .fade-enter-active,
 .fade-leave-active {

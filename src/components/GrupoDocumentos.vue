@@ -92,6 +92,11 @@ const props = defineProps({
         type: Function as PropType<() => void>,
         required: true,
     },
+    /** Filtro por tipo del expediente; vacío = todos. No aplica mientras se organiza el año. */
+    tiposVisibles: {
+        type: Array as PropType<string[]>,
+        default: () => [],
+    },
 });
 
 const emit = defineEmits(['abrirModalUpdate', 'eliminarDocumento', 'abrirModalAnular', 'openSubscriptionModal', 'abrirModalFinalizar']);
@@ -136,6 +141,13 @@ const guardandoOrden = ref(false);
 
 const elementosEnPantalla = computed(() => borradorDeOrden.value ?? elementosGuardados.value);
 const documentosEnOrden = computed(() => documentosDe(elementosEnPantalla.value));
+
+// Filtro por tipo (desde el expediente). Organizar siempre trabaja con el año completo.
+const filtrado = computed(() => props.tiposVisibles.length > 0 && !organizando.value);
+const esVisible = (item: DocumentoDelExpediente) =>
+    !filtrado.value || props.tiposVisibles.includes(item.definicion.tipo);
+// Lo que se ve: con el filtro, seleccionar, combinar y eliminar toman solo estos documentos
+const documentosVisibles = computed(() => documentosEnOrden.value.filter(esVisible));
 const subgruposEnPantalla = computed(() =>
     elementosEnPantalla.value.filter((elemento): elemento is SubgrupoDelAnio => elemento.clase === 'subgrupo'),
 );
@@ -173,12 +185,17 @@ const filas = computed(() => {
     });
     elementosGuardados.value.forEach((elemento) => {
         if (elemento.clase === 'documento') {
-            resultado.push(filaDe(elemento.item, null));
+            if (esVisible(elemento.item)) resultado.push(filaDe(elemento.item, null));
             return;
         }
+        // Con el filtro, el subgrupo aparece solo con sus documentos visibles (y si tiene alguno)
+        const subgrupo = filtrado.value
+            ? { ...elemento, documentos: elemento.documentos.filter(esVisible) }
+            : elemento;
+        if (filtrado.value && subgrupo.documentos.length === 0) return;
         const plegado = plegados.value.has(elemento.id);
-        resultado.push({ clase: 'encabezado', clave: `subgrupo-${elemento.id}`, subgrupo: elemento, plegado });
-        if (!plegado) elemento.documentos.forEach((item) => resultado.push(filaDe(item, elemento)));
+        resultado.push({ clase: 'encabezado', clave: `subgrupo-${elemento.id}`, subgrupo, plegado });
+        if (!plegado) subgrupo.documentos.forEach((item) => resultado.push(filaDe(item, subgrupo)));
     });
     return resultado;
 });
@@ -304,7 +321,8 @@ watch(() => props.isDeletionMode, (activo) => {
 });
 
 const slots = useSlots();
-const totalDocumentos = computed(() => documentosEnOrden.value.length);
+const totalDocumentos = computed(() => documentosVisibles.value.length);
+const totalDelAnio = computed(() => documentosEnOrden.value.length);
 
 function construirRutaDocumento(
     doc: { _id: string },
@@ -323,7 +341,7 @@ const documentoRutasInfo = computed(() => {
     const items: Array<{ documentId: string; documentType: string; filePath: string }> = [];
     const itemsDeletables: Array<{ documentId: string; documentType: string; filePath: string }> = [];
 
-    documentosEnOrden.value.forEach(({ definicion, documento }) => {
+    documentosVisibles.value.forEach(({ definicion, documento }) => {
         if (!documento._id) return;
         const filePath = construirRutaDocumento(
             documento as { _id: string },
@@ -425,7 +443,8 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                             Expediente {{ year }}
                         </h2>
                         <p class="text-emerald-100 text-xs sm:text-sm">
-                            {{ totalDocumentos }} documento{{ totalDocumentos !== 1 ? 's' : '' }} en total<span v-if="ordenPersonalizado" title="Alguien acomodó a mano los documentos de este año"> · orden personalizado</span>
+                            <template v-if="filtrado">{{ totalDocumentos }} de {{ totalDelAnio }} documentos</template>
+                            <template v-else>{{ totalDocumentos }} documento{{ totalDocumentos !== 1 ? 's' : '' }} en total</template><span v-if="ordenPersonalizado" title="Alguien acomodó a mano los documentos de este año"> · orden personalizado</span>
                         </p>
                     </div>
                 </div>
@@ -540,7 +559,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
             <!-- Organizar (con algún permiso de documentos) y modo eliminación (con todos) -->
             <div v-if="canDeleteAnyDocument || puedeOrganizar" class="flex items-center w-full sm:w-auto justify-center sm:justify-end gap-2">
                 <button
-                    v-if="puedeOrganizar && !isDeletionMode && totalDocumentos > 0"
+                    v-if="puedeOrganizar && !isDeletionMode && totalDocumentos > 0 && !filtrado"
                     type="button"
                     class="flex items-center justify-center space-x-2 px-3 py-1.5 rounded-lg transition-all duration-200 text-sm font-medium w-full sm:w-auto bg-gray-50 hover:bg-gray-100 text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-700"
                     title="Acomodar a mano los documentos de este año"
