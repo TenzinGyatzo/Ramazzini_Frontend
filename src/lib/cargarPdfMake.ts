@@ -1,8 +1,8 @@
 /**
  * pdfmake bajo demanda. Antes se cargaba desde cdnjs en el <head> de index.html (≈2.2 MB que
  * bloqueaban la primera pantalla en cada visita); ahora sale del paquete instalado y solo se
- * descarga cuando se genera un PDF en el navegador (informes del tablero, declaración de
- * veracidad).
+ * descarga cuando se genera un PDF en el navegador (informes del tablero, formatos para firma
+ * del trabajador: declaración de veracidad y consentimiento antidoping).
  *
  * Abrir el PDF en otra pestaña (`.open()`) debe ocurrir dentro del clic para que el navegador
  * no lo bloquee: las pantallas que lo usan llaman a `precargarPdfMake()` al montarse y en el

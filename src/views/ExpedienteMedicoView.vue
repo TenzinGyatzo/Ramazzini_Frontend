@@ -43,7 +43,9 @@ import {
 } from '@/helpers/incapacidades';
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
 import { useUserPermissions } from '@/composables/useUserPermissions';
-import ModalDeclaracionVeracidad from '@/components/ModalDeclaracionVeracidad.vue';
+import ModalFormatoParaFirma from '@/components/ModalFormatoParaFirma.vue';
+import { descargarDeclaracionVeracidadPdf } from '@/helpers/generarDeclaracionVeracidadPdf';
+import { descargarConsentimientoAntidopingPdf } from '@/helpers/generarConsentimientoAntidopingPdf';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import { useEliminacion } from '@/composables/useEliminacion';
 import { useUserStore } from '@/stores/user';
@@ -115,6 +117,7 @@ const {
 const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);
 const showDeclaracionVeracidadModal = ref(false);
+const showConsentimientoAntidopingModal = ref(false);
 const showRiesgosModal = ref(false);
 
 // Editar los datos del trabajador sin salir de su expediente
@@ -227,6 +230,10 @@ const toggleDocumentoExternoModal = () => {
 
     showDocumentoExternoModal.value = !showDocumentoExternoModal.value;
   }, 'gestionar documentos externos');
+};
+
+const toggleConsentimientoAntidopingModal = () => {
+  showConsentimientoAntidopingModal.value = !showConsentimientoAntidopingModal.value;
 };
 
 const toggleDeclaracionVeracidadModal = () => {
@@ -954,10 +961,33 @@ const crearDocumento = (tipoDocumento: string) =>
         name="modal-work"
         :duration="{ enter: 230, leave: 150 }"
       >
-        <ModalDeclaracionVeracidad
+        <ModalFormatoParaFirma
           v-if="showDeclaracionVeracidadModal"
           :trabajador="trabajadores.currentTrabajador ?? null"
+          titulo="Declaración de Veracidad"
+          nombre-formato="la declaración"
+          etiqueta-fecha="Fecha de la declaración"
+          texto-boton="Descargar declaración"
+          :descargar="descargarDeclaracionVeracidadPdf"
           @closeModal="toggleDeclaracionVeracidadModal"
+        />
+      </Transition>
+
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
+        <ModalFormatoParaFirma
+          v-if="showConsentimientoAntidopingModal"
+          :trabajador="trabajadores.currentTrabajador ?? null"
+          titulo="Consentimiento Informado"
+          descripcion="Prueba de detección de sustancias (antidoping). Genera un formato imprimible para que el trabajador lo firme a puño y letra antes de la toma de muestra. Si necesitas conservarlo en el expediente, súbelo después como Documento Externo."
+          nombre-formato="el consentimiento"
+          etiqueta-fecha="Fecha del consentimiento"
+          texto-boton="Descargar consentimiento"
+          :descargar="descargarConsentimientoAntidopingPdf"
+          @closeModal="toggleConsentimientoAntidopingModal"
         />
       </Transition>
 
@@ -1259,6 +1289,15 @@ const crearDocumento = (tipoDocumento: string) =>
               >
                 <i class="fa-solid fa-download" aria-hidden="true"></i>
                 Declaración de veracidad
+              </button>
+              <button
+                type="button"
+                class="expediente-accion-link"
+                title="Descargar el consentimiento informado para la prueba antidoping, para que lo firme el trabajador; ya firmado se sube como documento externo"
+                @click="toggleConsentimientoAntidopingModal"
+              >
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                Consentimiento antidoping
               </button>
             </div>
           </div>
@@ -1802,6 +1841,11 @@ const crearDocumento = (tipoDocumento: string) =>
   color: #059669;
 }
 
+/* Varios formatos seguidos: solo el primero se va a la derecha */
+.expediente-accion-link + .expediente-accion-link {
+  margin-left: 0.75rem;
+}
+
 @media (max-width: 479px) {
   .expediente-trabajador-header__body {
     padding: 0.75rem;
@@ -1842,7 +1886,8 @@ const crearDocumento = (tipoDocumento: string) =>
     padding-top: 0;
   }
 
-  .expediente-accion-link {
+  .expediente-accion-link,
+  .expediente-accion-link + .expediente-accion-link {
     margin-left: 0;
   }
 

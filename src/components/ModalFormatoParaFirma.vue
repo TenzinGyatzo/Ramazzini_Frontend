@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * Descarga de un formato imprimible que el trabajador firma a puño y letra (declaración de
+ * veracidad, consentimiento informado). No registra nada: ya firmado se sube como
+ * Documento Externo.
+ */
 import { ref, inject, computed } from 'vue';
 import { format } from 'date-fns';
 import GreenButton from '@/components/GreenButton.vue';
@@ -6,13 +11,26 @@ import { useEscapeToClose } from '@/composables/useEscapeToClose';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import {
-  descargarDeclaracionVeracidadPdf,
-  formatNombreDeclaracion,
-  type DeclaracionVeracidadTrabajador,
-} from '@/helpers/generarDeclaracionVeracidadPdf';
+  formatNombreTrabajadorFormato,
+  type ProveedorSaludFormatoFirma,
+  type TrabajadorFormatoFirma,
+} from '@/helpers/formatoParaFirmaPdf';
 
 const props = defineProps<{
-  trabajador: DeclaracionVeracidadTrabajador | null;
+  trabajador: TrabajadorFormatoFirma | null;
+  /** Título del modal, p. ej. «Declaración de Veracidad». */
+  titulo: string;
+  /** Debajo del título; por defecto explica que se firma a mano y se sube como documento externo. */
+  descripcion?: string;
+  /** Con artículo, para los mensajes: «la declaración», «el consentimiento». */
+  nombreFormato: string;
+  etiquetaFecha: string;
+  textoBoton: string;
+  descargar: (params: {
+    trabajador: TrabajadorFormatoFirma;
+    fecha: string;
+    proveedorSalud: ProveedorSaludFormatoFirma | null;
+  }) => Promise<void>;
 }>();
 
 const emit = defineEmits<{
@@ -26,7 +44,8 @@ const fecha = ref(format(new Date(), 'yyyy-MM-dd'));
 const descargando = ref(false);
 
 const nombreTrabajador = computed(() => formatNombreCompleto(props.trabajador));
-const nombreDeclaracion = computed(() => formatNombreDeclaracion(props.trabajador ?? {}));
+const nombreEnFormato = computed(() => formatNombreTrabajadorFormato(props.trabajador ?? {}));
+const idFecha = `fecha-formato-${Math.random().toString(36).slice(2, 8)}`;
 
 const closeModal = () => {
   if (descargando.value) return;
@@ -38,13 +57,13 @@ useEscapeToClose(closeModal, () => !descargando.value);
 const handleDescargar = async () => {
   if (!fecha.value) {
     toast?.open?.({
-      message: 'Selecciona una fecha para generar la declaración.',
+      message: `Selecciona una fecha para generar ${props.nombreFormato}.`,
       type: 'error',
     });
     return;
   }
 
-  if (!nombreDeclaracion.value.trim()) {
+  if (!nombreEnFormato.value.trim()) {
     toast?.open?.({
       message: 'No se encontró el nombre del trabajador.',
       type: 'error',
@@ -57,7 +76,7 @@ const handleDescargar = async () => {
   try {
     const proveedor = proveedorSaludStore.proveedorSalud;
 
-    await descargarDeclaracionVeracidadPdf({
+    await props.descargar({
       trabajador: props.trabajador ?? {},
       fecha: fecha.value,
       proveedorSalud: proveedor
@@ -79,9 +98,9 @@ const handleDescargar = async () => {
     descargando.value = false;
     emit('closeModal');
   } catch (error) {
-    console.error('Error al generar la declaración:', error);
+    console.error(`Error al generar ${props.nombreFormato}:`, error);
     toast?.open?.({
-      message: 'Error al generar la declaración. Inténtalo de nuevo.',
+      message: `Error al generar ${props.nombreFormato}. Inténtalo de nuevo.`,
       type: 'error',
     });
   } finally {
@@ -106,20 +125,22 @@ const handleDescargar = async () => {
           &times;
         </div>
 
-        <h1 class="text-2xl mb-2 pr-8 dark:text-slate-100">Declaración de Veracidad</h1>
+        <h1 class="text-2xl mb-2 pr-8 dark:text-slate-100">{{ titulo }}</h1>
         <p class="text-gray-600 dark:text-slate-300 mb-4">
-          Genera un formato imprimible para que el trabajador lo firme a puño y letra.
-          Si necesitas conservarlo en el expediente, súbelo después como Documento Externo.
+          {{
+            descripcion ??
+            'Genera un formato imprimible para que el trabajador lo firme a puño y letra. Si necesitas conservarlo en el expediente, súbelo después como Documento Externo.'
+          }}
         </p>
         <hr class="mt-2 mb-6 border-gray-200 dark:border-slate-600">
 
         <div class="space-y-4">
           <div>
-            <label for="fecha-declaracion" class="block text-sm font-semibold text-gray-700 dark:text-slate-200 mb-2">
-              Fecha de la declaración
+            <label :for="idFecha" class="block text-sm font-semibold text-gray-700 dark:text-slate-200 mb-2">
+              {{ etiquetaFecha }}
             </label>
             <input
-              id="fecha-declaracion"
+              :id="idFecha"
               v-model="fecha"
               type="date"
               :disabled="descargando"
@@ -136,7 +157,7 @@ const handleDescargar = async () => {
         <div class="mt-8 space-y-3">
           <div class="flex justify-center">
             <GreenButton
-              text="Descargar declaración"
+              :text="textoBoton"
               size="medium"
               :loading="descargando"
               :disabled="descargando"
