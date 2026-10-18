@@ -134,9 +134,14 @@ const handleSubmit = async () => {
     }
 
     const agentes = [...agentesSeleccionados.value];
-    await trabajadores.updateTrabajador(empresaId, centroId, trabajadorId, {
-      agentesRiesgoActuales: agentes
-    });
+    // Sin «Cargando…» en la tabla de trabajadores: el botón ya indica que se guarda
+    await trabajadores.updateTrabajador(
+      empresaId,
+      centroId,
+      trabajadorId,
+      { agentesRiesgoActuales: agentes },
+      { enSegundoPlano: true },
+    );
     // Que el trabajador en pantalla refleje lo guardado al volver a abrir el modal
     if (trabajadores.currentTrabajador?._id === trabajadorId) {
       trabajadores.currentTrabajador.agentesRiesgoActuales = agentes;
@@ -144,6 +149,8 @@ const handleSubmit = async () => {
 
     toast.open({ message: 'Agentes de riesgo actualizados', type: 'success' });
     forceClose();
+    // La columna de agentes de la tabla se actualiza sin desmontarla
+    trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId, { enSegundoPlano: true });
   } catch (error) {
     console.error(error);
     toast.open({ message: 'Error al actualizar los agentes de riesgo.', type: 'error' });

@@ -2084,10 +2084,6 @@ html.dark-mode .modal-trabajadores .registro-exitoso__icono {
   color: #a7f3d0 !important;
 }
 
-html.dark-mode .modal-trabajadores .registro-exitoso__datos {
-  background-color: rgba(15, 23, 42, 0.55) !important;
-}
-
 html.dark-mode .modal-trabajadores .registro-exitoso__otro:hover {
   background-color: rgba(16, 185, 129, 0.14) !important;
 }

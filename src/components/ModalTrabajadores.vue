@@ -204,16 +204,18 @@ const mostrarEnLaTabla = (trabajadorId) => {
   });
 };
 
-/** Datos clave para confirmar de un vistazo que se capturó bien y en el centro correcto. */
+/** Datos clave para confirmar de un vistazo la captura (mismos íconos que el encabezado del expediente). */
 const datosParaConfirmar = (trabajador) => {
   const datos = [];
   const numeroEmpleado = String(trabajador.numeroEmpleado ?? '').trim();
-  if (numeroEmpleado && numeroEmpleado !== '-') datos.push({ etiqueta: 'Número de empleado', valor: numeroEmpleado });
-  if (trabajador.puesto) datos.push({ etiqueta: 'Puesto', valor: trabajador.puesto });
+  if (numeroEmpleado && numeroEmpleado !== '-') {
+    datos.push({ titulo: 'Número de empleado', texto: `No. ${numeroEmpleado}`, icono: 'fas fa-id-badge text-purple-500' });
+  }
+  if (trabajador.puesto) datos.push({ titulo: 'Puesto', texto: trabajador.puesto, icono: 'fas fa-briefcase text-blue-500' });
   const edad = trabajador.fechaNacimiento ? calcularEdad(trabajador.fechaNacimiento) : null;
-  if (Number.isFinite(edad)) datos.push({ etiqueta: 'Edad', valor: `${edad} ${edad === 1 ? 'año' : 'años'}` });
-  const centro = centrosTrabajo.currentCentroTrabajo?.nombreCentro;
-  if (centro) datos.push({ etiqueta: 'Centro de trabajo', valor: centro });
+  if (Number.isFinite(edad)) {
+    datos.push({ titulo: 'Edad', texto: `${edad} ${edad === 1 ? 'año' : 'años'}`, icono: 'fas fa-birthday-cake text-emerald-500' });
+  }
   return datos;
 };
 
@@ -609,12 +611,14 @@ const confirmarBaja = async () => {
 
   confirmandoBaja.value = true;
   try {
-    await trabajadores.updateTrabajador(empresaId, centroId, trabajadorId, { estadoLaboral: 'Inactivo' });
+    await trabajadores.updateTrabajador(
+      empresaId, centroId, trabajadorId, { estadoLaboral: 'Inactivo' }, { enSegundoPlano: true },
+    );
     toast.open({ message: 'Baja de trabajador registrada' });
     mostrarModalBaja.value = false;
     // La baja cierra la edición: lo que no se había guardado del formulario se descarta
     forceClose();
-    trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId);
+    trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId, { enSegundoPlano: true });
   } catch (error) {
     console.error('Error al registrar la baja', error);
     toast.open({ message: 'Error al actualizar el estado laboral', type: 'error' });
@@ -1205,16 +1209,22 @@ const {
           </div>
           <h1 class="text-2xl sm:text-3xl font-semibold">{{ registrado.titulo }}</h1>
           <p class="registro-exitoso__nombre mt-2 text-lg text-gray-700">{{ registrado.nombre }}</p>
-          <dl
+          <p
             v-if="registrado.datos.length"
-            class="registro-exitoso__datos mx-auto mt-4 grid max-w-md grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left text-sm"
+            class="registro-exitoso__datos mt-1.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-gray-600"
           >
-            <template v-for="dato in registrado.datos" :key="dato.etiqueta">
-              <dt class="text-gray-500">{{ dato.etiqueta }}</dt>
-              <dd class="font-medium text-gray-800 break-words">{{ dato.valor }}</dd>
-            </template>
-          </dl>
-          <p class="mt-4 text-sm text-gray-500">¿Qué sigue?</p>
+            <span
+              v-for="dato in registrado.datos"
+              :key="dato.titulo"
+              :title="dato.titulo"
+              class="inline-flex items-center gap-1.5"
+            >
+              <i :class="dato.icono" class="text-xs" aria-hidden="true"></i>
+              <span class="sr-only">{{ dato.titulo }}:</span>
+              {{ dato.texto }}
+            </span>
+          </p>
+          <p class="mt-5 text-sm text-gray-500">¿Qué sigue?</p>
           <div class="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
             <button
               ref="botonAbrirExpedienteEl"

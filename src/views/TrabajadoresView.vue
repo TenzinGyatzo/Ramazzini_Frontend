@@ -761,11 +761,15 @@ const toggleEstadoLaboral = async (trabajador: { _id: string; estadoLaboral: str
     }
 
     const nuevoEstado = trabajador.estadoLaboral === 'Activo' ? 'Inactivo' : 'Activo';
+    // Sin «Cargando…»: la tabla se queda y recibe el cambio al actualizarse la lista
     await trabajadores.updateTrabajador(
-      currentEmpresaId, currentCentroTrabajoId, trabajador._id, { estadoLaboral: nuevoEstado }
+      currentEmpresaId, currentCentroTrabajoId, trabajador._id, { estadoLaboral: nuevoEstado },
+      { enSegundoPlano: true },
     );
 
-    await trabajadores.fetchTrabajadoresConHistoria(currentEmpresaId, currentCentroTrabajoId);
+    await trabajadores.fetchTrabajadoresConHistoria(currentEmpresaId, currentCentroTrabajoId, {
+      enSegundoPlano: true,
+    });
     toast.open({ message: nuevoEstado === 'Activo' ? 'Trabajador reincorporado exitosamente' : 'Baja de trabajador registrada' });
   } catch (error) {
     console.error('Error al actualizar el estado laboral', error);
