@@ -25,6 +25,7 @@ import {
   tiposConConteo,
   tiposDeLaConsulta,
 } from '@/helpers/filtroExpediente';
+import { montarTodosLosAnios, reiniciarNavegacionVisor } from '@/helpers/navegacionVisor';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
 import ModalFinalizarDocumento from '@/components/modals/ModalFinalizarDocumento.vue';
@@ -462,12 +463,14 @@ onMounted(fetchData);
 onBeforeUnmount(() => {
   vistaDesmontada = true;
   invalidateExpedienteConteosForCurrentTrabajador();
+  reiniciarNavegacionVisor();
 });
 
 // Por valor: cambiar solo la consulta (p. ej. el filtro por tipo) no debe recargar el expediente
 watch(
   () => [route.params.idEmpresa, route.params.idCentroTrabajo, route.params.idTrabajador].join('/'),
   () => {
+    reiniciarNavegacionVisor();
     fetchData();
     loadFirmanteData();
   }
@@ -1382,7 +1385,7 @@ const crearDocumento = (tipoDocumento: string) =>
                   :key="`year-${year}-${resultadosPorAnio[year]?.length || 0}`"
                   class="space-y-4"
                 >
-                  <LazyMountWhenVisible :eager="yearIndex === 0">
+                  <LazyMountWhenVisible :eager="yearIndex === 0 || montarTodosLosAnios">
                   <GrupoDocumentos
                     :documents="documentosPorAnio[year] || {}"
                     :year="String(year)"

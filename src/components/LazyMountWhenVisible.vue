@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -15,6 +15,17 @@ const props = withDefaults(
 const rootRef = ref<HTMLElement | null>(null);
 const visible = ref(props.eager);
 let observer: IntersectionObserver | null = null;
+
+// Si después se pide montar de inmediato (p. ej. navegación desde el visor), se monta
+watch(
+  () => props.eager,
+  (eager) => {
+    if (!eager || visible.value) return;
+    visible.value = true;
+    observer?.disconnect();
+    observer = null;
+  },
+);
 
 onMounted(() => {
   if (props.eager || visible.value) return;

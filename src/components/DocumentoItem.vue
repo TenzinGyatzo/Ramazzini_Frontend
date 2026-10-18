@@ -9,6 +9,16 @@ import {
 } from '@/lib/clinicalFiles';
 import { obtenerResultadoBinauralAudiometria } from '@/helpers/audiometriaCalculos';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
+import { TIPOS_DOCUMENTO_EXPEDIENTE, nombreTipoDocumento } from '@/helpers/documentosExpediente';
+import {
+    visorSinAnimacion,
+    registrarVisorAbierto,
+    registrarVisorCerrado,
+    aperturaFallida,
+    navegacionPendiente,
+    posicionEnExpediente,
+    irAlDocumento,
+} from '@/helpers/navegacionVisor';
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref, defineAsyncComponent } from 'vue';
 import { Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
 import { enqueuePdfAvailabilityCheck } from '@/composables/usePdfAvailabilityQueue';
@@ -2249,8 +2259,65 @@ const handleKeyDown = (event) => {
         } else if (showPdfViewer.value) {
             cerrarPdf();
         }
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        if (!showPdfViewer.value && !showImageViewer.value) return;
+        // El visor de imagen también escucha en document: un mismo evento llega dos veces
+        if (teclasAtendidas.has(event)) return;
+        teclasAtendidas.add(event);
+        const destino = event.target;
+        if (destino instanceof HTMLElement &&
+            (destino.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(destino.tagName))) return;
+        event.preventDefault();
+        irAlVecino(event.key === 'ArrowRight' ? 1 : -1);
     }
 };
+
+////////////////////////////////////////////
+// Navegación entre documentos desde el visor (helpers/navegacionVisor.ts)
+const teclasAtendidas = new WeakSet();
+const posicionVisor = ref({ indice: 0, total: 0 });
+const visorAbierto = computed(() => showPdfViewer.value || showImageViewer.value);
+const navegacionDisponible = computed(() => posicionVisor.value.indice > 0 && posicionVisor.value.total > 1);
+
+const tituloVisor = computed(() => {
+    const datos = currentDocumentData.value;
+    const nombre = props.documentoTipo === 'documentoExterno' && datos?.nombreDocumento
+        ? datos.nombreDocumento
+        : nombreTipoDocumento(props.documentoTipo);
+    const campoFecha = TIPOS_DOCUMENTO_EXPEDIENTE.find((t) => t.tipo === props.documentoTipo)?.campoFecha;
+    const fecha = campoFecha && datos?.[campoFecha] ? convertirFechaISOaDDMMYYYY(datos[campoFecha]) : '';
+    return fecha ? `${nombre} · ${fecha}` : nombre;
+});
+
+const actualizarPosicionVisor = () => {
+    posicionVisor.value = posicionEnExpediente(props.documentoId);
+};
+
+const irAlVecino = (direccion) => {
+    actualizarPosicionVisor();
+    irAlDocumento(direccion);
+};
+
+const cerrarVisorPropio = () => {
+    if (showImageViewer.value) cerrarImagen();
+    if (showPdfViewer.value) cerrarPdf();
+};
+
+watch(visorAbierto, (abierto) => {
+    if (abierto) {
+        registrarVisorAbierto(props.documentoId, cerrarVisorPropio);
+        actualizarPosicionVisor();
+        // Al abrir se montan todos los años: el total se completa en los siguientes cuadros
+        nextTick(() => nextTick(actualizarPosicionVisor));
+        setTimeout(actualizarPosicionVisor, 250);
+    } else {
+        registrarVisorCerrado(props.documentoId);
+    }
+});
+
+watch(mostrarModalPdfEliminado, (mostrado) => {
+    if (mostrado && navegacionPendiente() === props.documentoId) aperturaFallida(props.documentoId);
+});
 
 ////////////////////////////////////////////
 // Estado para las dimensiones del viewport
@@ -2948,6 +3015,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
+  if (visorAbierto.value) registrarVisorCerrado(props.documentoId);
   pdfVisibilityObserver?.disconnect();
   pdfVisibilityObserver = null;
 });
@@ -3027,7 +3095,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                     </div>
 
                     <!-- Contenido principal -->
-                    <div class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" @click="abrirNotaAclaratoria(notaAclaratoria)">
+                    <div class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento @click="abrirNotaAclaratoria(notaAclaratoria)">
 
                         <!-- Icono del documento -->
                         <div class="hidden md:flex items-center justify-center w-10 h-10 bg-yellow-100 rounded-lg mr-3 group-hover:bg-yellow-200 transition-colors duration-200 flex-shrink-0">
@@ -3128,7 +3196,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${antidoping.rutaPDF}`,
                             `Antidoping ${convertirFechaISOaDDMMYYYY(antidoping.fechaAntidoping)}.pdf`,
@@ -3213,7 +3281,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${constanciaAptitud.rutaPDF}`,
                             `Constancia de Aptitud ${convertirFechaISOaDDMMYYYY(constanciaAptitud.fechaConstanciaAptitud)}.pdf`,
@@ -3275,7 +3343,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${aptitud.rutaPDF}`,
                             `Aptitud ${convertirFechaISOaDDMMYYYY(aptitud.fechaAptitudPuesto)}.pdf`,
@@ -3367,7 +3435,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${audiometria.rutaPDF}`,
                             `Audiometria ${convertirFechaISOaDDMMYYYY(audiometria.fechaAudiometria)}.pdf`,
@@ -3462,7 +3530,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${certificado.rutaPDF}`,
                             `Certificado ${convertirFechaISOaDDMMYYYY(certificado.fechaCertificado)}.pdf`,
@@ -3547,7 +3615,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${certificadoExpedito.rutaPDF}`,
                             `Certificado Expedito ${convertirFechaISOaDDMMYYYY(certificadoExpedito.fechaCertificadoExpedito)}.pdf`,
@@ -3639,7 +3707,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirDocumentoExterno(documentoExterno)"
                         @mouseenter="scheduleDocumentoExternoHover($event, documentoExterno)"
                         @mouseleave="handleHoverLeave">
@@ -3743,7 +3811,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${examenVista.rutaPDF}`,
                             `Examen Vista ${convertirFechaISOaDDMMYYYY(examenVista.fechaExamenVista)}.pdf`,
@@ -3854,7 +3922,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${exploracionFisica.rutaPDF}`,
                             `Exploracion Fisica ${convertirFechaISOaDDMMYYYY(exploracionFisica.fechaExploracionFisica)}.pdf`,
@@ -3970,7 +4038,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${historiaClinica.rutaPDF}`,
                             `Historia Clinica ${convertirFechaISOaDDMMYYYY(historiaClinica.fechaHistoriaClinica)}.pdf`,
@@ -4070,7 +4138,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${notaMedica.rutaPDF}`,
                             `Nota Medica ${convertirFechaISOaDDMMYYYY(notaMedica.fechaNotaMedica)}.pdf`,
@@ -4166,7 +4234,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${receta.rutaPDF}`,
                             `Receta ${convertirFechaISOaDDMMYYYY(receta.fechaReceta)}.pdf`,
@@ -4249,7 +4317,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${controlPrenatal.rutaPDF}`,
                             `Control Prenatal ${convertirFechaISOaDDMMYYYY(controlPrenatal.fechaInicioControlPrenatal)}.pdf`,
@@ -4418,7 +4486,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${historiaOtologica.rutaPDF}`,
                             `Historia Otologica ${convertirFechaISOaDDMMYYYY(historiaOtologica.fechaHistoriaOtologica)}.pdf`,
@@ -4514,7 +4582,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${previoEspirometria.rutaPDF}`,
                             `Previo Espirometria ${convertirFechaISOaDDMMYYYY(previoEspirometria.fechaPrevioEspirometria)}.pdf`,
@@ -4605,7 +4673,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
                     <!-- Contenido principal -->
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${entrevistaPsicologica.rutaPDF}`,
                             `Entrevista Psicologica ${convertirFechaISOaDDMMYYYY(entrevistaPsicologica.fechaEntrevistaPsicologica)}.pdf`,
@@ -4695,7 +4763,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             @change="(event) => handleCheckboxChange(event, trastornosEstadoAnimo, 'Trastornos Estado Animo')">
                     </div>
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${trastornosEstadoAnimo.rutaPDF}`,
                             `Trastornos Estado Animo ${convertirFechaISOaDDMMYYYY(trastornosEstadoAnimo.fechaTrastornosEstadoAnimo)}.pdf`,
@@ -4758,7 +4826,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             @change="(event) => handleCheckboxChange(event, cuestionarioProdromalBreve, 'Cuestionario Prodromal Breve')">
                     </div>
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${cuestionarioProdromalBreve.rutaPDF}`,
                             `Cuestionario Prodromal Breve ${convertirFechaISOaDDMMYYYY(cuestionarioProdromalBreve.fechaCuestionarioProdromalBreve)}.pdf`,
@@ -4821,7 +4889,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             @change="(event) => handleCheckboxChange(event, trastornoLimitePersonalidad, 'Trastorno Limite Personalidad')">
                     </div>
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${trastornoLimitePersonalidad.rutaPDF}`,
                             `Trastorno Limite Personalidad ${convertirFechaISOaDDMMYYYY(trastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad)}.pdf`,
@@ -4884,7 +4952,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             @change="(event) => handleCheckboxChange(event, cuestionarioNordico, 'Cuestionario Nordico')">
                     </div>
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${cuestionarioNordico.rutaPDF}`,
                             `Cuestionario Nordico ${convertirFechaISOaDDMMYYYY(cuestionarioNordico.fechaCuestionarioNordico)}.pdf`,
@@ -4947,7 +5015,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             @change="(event) => handleCheckboxChange(event, evaluacionSuenoVigilia, 'Evaluacion Sueno Vigilia')">
                     </div>
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${evaluacionSuenoVigilia.rutaPDF}`,
                             `Evaluacion Sueno Vigilia ${convertirFechaISOaDDMMYYYY(evaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia)}.pdf`,
@@ -5010,7 +5078,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             @change="(event) => handleCheckboxChange(event, eventoSeguimientoCardiometabolico, 'Evento Seguimiento Cardiometabolico')">
                     </div>
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${eventoSeguimientoCardiometabolico.rutaPDF}`,
                             `Evento Seguimiento Cardiometabolico ${convertirFechaISOaDDMMYYYY(eventoSeguimientoCardiometabolico.fechaEventoSeguimientoCardiometabolico)}.pdf`,
@@ -5111,7 +5179,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             @change="(event) => handleCheckboxChange(event, informeLongitudinalCardiometabolico, 'Informe Longitudinal Cardiometabolico')">
                     </div>
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${informeLongitudinalCardiometabolico.rutaPDF}`,
                             `Informe Longitudinal Cardiometabolico ${convertirFechaISOaDDMMYYYY(informeLongitudinalCardiometabolico.fechaInformeLongitudinalCardiometabolico)}.pdf`,
@@ -5212,7 +5280,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                             @change="(event) => handleCheckboxChange(event, informeLongitudinalAudiometrico, 'Informe Longitudinal Audiometrico')">
                     </div>
                     <div
-                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3"
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
                         @click="abrirPdf(
                             `${informeLongitudinalAudiometrico.rutaPDF}`,
                             `Informe Longitudinal Audiometrico ${convertirFechaISOaDDMMYYYY(informeLongitudinalAudiometrico.fechaInformeLongitudinalAudiometrico)}.pdf`,
@@ -5416,29 +5484,29 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
     <!-- Visor de PDF -->
     <Teleport to="body">
-        <Transition name="modal-fade" appear>
+        <Transition name="modal-fade" appear :css="!visorSinAnimacion">
             <div v-if="showPdfViewer"
                 class="documento-item-viewer fixed inset-0 z-50 flex flex-col overflow-hidden bg-black bg-opacity-90 backdrop-blur-sm"
                 @click.self="cerrarPdf">
 
             <!-- Header del visor -->
             <div class="absolute top-0 left-0 right-0 bg-white bg-opacity-95 backdrop-blur-sm border-b border-gray-200 z-10">
-                <div class="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4">
+                <div class="flex items-center justify-between gap-2 px-3 sm:px-6 py-3 sm:py-4">
                     <!-- Sección izquierda -->
-                    <div class="flex items-center space-x-2 sm:space-x-4">
+                    <div class="flex min-w-0 items-center space-x-2 sm:space-x-4">
                         <button @click="cerrarPdf"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1 sm:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-times text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Cerrar</span>
                         </button>
-                        <div class="flex items-center space-x-1 sm:space-x-2">
-                            <i class="fas fa-file-pdf text-red-500 text-sm sm:text-lg"></i>
-                            <span class="text-gray-700 font-medium text-xs sm:text-sm">Visor de PDF</span>
+                        <div class="flex min-w-0 items-center space-x-1 sm:space-x-2">
+                            <i class="fas fa-file-pdf text-red-500 text-sm sm:text-lg shrink-0"></i>
+                            <span class="truncate text-gray-700 font-medium text-xs sm:text-sm" :title="tituloVisor">{{ tituloVisor }}</span>
                         </div>
                     </div>
 
                     <!-- Controles adicionales -->
-                    <div class="flex items-center space-x-1 sm:space-x-3">
+                    <div class="flex shrink-0 items-center space-x-1 sm:space-x-3">
                         <button @click="descargarPdfActual"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-download text-xs sm:text-sm"></i>
@@ -5476,8 +5544,21 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 </div>
             </div>
 
+            <!-- Navegación entre documentos del expediente (← →) -->
+            <div v-if="navegacionDisponible" class="visor-navegacion absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black bg-opacity-75 text-white pl-1 pr-1 py-1 rounded-full text-xs sm:text-sm">
+                <button type="button" class="visor-navegacion__boton" :disabled="posicionVisor.indice <= 1"
+                    aria-label="Documento anterior" title="Documento anterior (←)" @click="irAlVecino(-1)">
+                    <i class="fas fa-chevron-left"></i><span class="hidden sm:inline">Anterior</span>
+                </button>
+                <span class="px-1 sm:px-2 tabular-nums whitespace-nowrap" aria-live="polite">{{ posicionVisor.indice }} de {{ posicionVisor.total }}</span>
+                <button type="button" class="visor-navegacion__boton" :disabled="posicionVisor.indice >= posicionVisor.total"
+                    aria-label="Documento siguiente" title="Documento siguiente (→)" @click="irAlVecino(1)">
+                    <span class="hidden sm:inline">Siguiente</span><i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
             <!-- Indicador de ayuda -->
-            <div class="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm">
+            <div v-else class="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm">
                 <i class="fas fa-keyboard mr-1 sm:mr-2"></i>
                 <span class="hidden sm:inline">Presiona</span> <kbd class="px-1 sm:px-2 py-0.5 sm:py-1 bg-gray-700 rounded text-xs">ESC</kbd> <span class="hidden sm:inline">para cerrar</span>
             </div>
@@ -5487,29 +5568,29 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
     <!-- Visor de Imágenes -->
     <Teleport to="body">
-        <Transition name="modal-fade" appear>
+        <Transition name="modal-fade" appear :css="!visorSinAnimacion">
             <div v-if="showImageViewer"
                 class="documento-item-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
                 @click.self="cerrarImagen">
 
             <!-- Header del visor -->
             <div class="absolute top-0 left-0 right-0 bg-white bg-opacity-95 backdrop-blur-sm border-b border-gray-200 z-10">
-                <div class="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4">
+                <div class="flex items-center justify-between gap-2 px-3 sm:px-6 py-3 sm:py-4">
                     <!-- Sección izquierda -->
-                    <div class="flex items-center space-x-2 sm:space-x-4">
+                    <div class="flex min-w-0 items-center space-x-2 sm:space-x-4">
                         <button @click="cerrarImagen"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1 sm:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-times text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Cerrar</span>
                         </button>
-                        <div class="flex items-center space-x-1 sm:space-x-2">
-                            <i class="fas fa-image text-blue-500 text-sm sm:text-lg"></i>
-                            <span class="text-gray-700 font-medium text-xs sm:text-sm">Visor de Imagen</span>
+                        <div class="flex min-w-0 items-center space-x-1 sm:space-x-2">
+                            <i class="fas fa-image text-blue-500 text-sm sm:text-lg shrink-0"></i>
+                            <span class="truncate text-gray-700 font-medium text-xs sm:text-sm" :title="tituloVisor">{{ tituloVisor }}</span>
                         </div>
                     </div>
 
                     <!-- Controles de imagen -->
-                    <div class="flex items-center space-x-1 sm:space-x-3">
+                    <div class="flex shrink-0 items-center space-x-1 sm:space-x-3">
                         <button @click="rotarImagen"
                             class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-redo text-xs sm:text-sm"></i>
@@ -5565,8 +5646,21 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 {{ Math.round(imageZoom * 100) }}%
             </div>
 
+            <!-- Navegación entre documentos del expediente (← →) -->
+            <div v-if="navegacionDisponible" class="visor-navegacion absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black bg-opacity-75 text-white pl-1 pr-1 py-1 rounded-full text-xs sm:text-sm">
+                <button type="button" class="visor-navegacion__boton" :disabled="posicionVisor.indice <= 1"
+                    aria-label="Documento anterior" title="Documento anterior (←)" @click="irAlVecino(-1)">
+                    <i class="fas fa-chevron-left"></i><span class="hidden sm:inline">Anterior</span>
+                </button>
+                <span class="px-1 sm:px-2 tabular-nums whitespace-nowrap" aria-live="polite">{{ posicionVisor.indice }} de {{ posicionVisor.total }}</span>
+                <button type="button" class="visor-navegacion__boton" :disabled="posicionVisor.indice >= posicionVisor.total"
+                    aria-label="Documento siguiente" title="Documento siguiente (→)" @click="irAlVecino(1)">
+                    <span class="hidden sm:inline">Siguiente</span><i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
             <!-- Indicador de ayuda -->
-            <div class="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm">
+            <div v-else class="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm">
                 <i class="fas fa-mouse mr-1 sm:mr-2"></i>
                 <span class="hidden sm:inline">Rueda del mouse para zoom •</span>
                 <span class="hidden sm:inline">Arrastra para mover •</span>
@@ -5613,6 +5707,27 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
     align-items: center;
     justify-content: center;
     line-height: 1;
+}
+
+/* Navegación entre documentos dentro del visor */
+.visor-navegacion__boton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    transition: background-color 120ms ease-out, opacity 120ms ease-out;
+}
+.visor-navegacion__boton:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+.visor-navegacion__boton:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.7);
+    outline-offset: 1px;
+}
+.visor-navegacion__boton:disabled {
+    opacity: 0.35;
+    cursor: default;
 }
 
 /* Animaciones para los modales */
