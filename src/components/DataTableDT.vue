@@ -1956,6 +1956,30 @@ table.dataTable tbody tr.vencido-row:hover {
   background-color: #fecaca !important; /* red-200 */
 }
 
+/* El gris del hover se pinta en las celdas y tapaba los indicadores de la fila: la franja de
+   aptitud se repite en la primera celda y la vigencia conserva su tono (más intenso) */
+table.dataTable tbody tr.por-vencer-row:hover > * {
+  background-color: #fed7aa !important; /* orange-200 */
+}
+table.dataTable tbody tr.vencido-row:hover > * {
+  background-color: #fecaca !important; /* red-200 */
+}
+table.dataTable tbody tr.apto-sin-restricciones-row:hover > :first-child {
+  background-image: linear-gradient(to right, #10b981 0px, #10b981 4px, transparent 4px) !important;
+}
+table.dataTable tbody tr.apto-con-precaucion-row:hover > :first-child {
+  background-image: linear-gradient(to right, #f59e0b 0px, #f59e0b 4px, transparent 4px) !important;
+}
+table.dataTable tbody tr.apto-con-restricciones-row:hover > :first-child {
+  background-image: linear-gradient(to right, #f97316 0px, #f97316 4px, transparent 4px) !important;
+}
+table.dataTable tbody tr.no-apto-row:hover > :first-child {
+  background-image: linear-gradient(to right, #dc2626 0px, #dc2626 4px, transparent 4px) !important;
+}
+table.dataTable tbody tr.evaluacion-no-completada-row:hover > :first-child {
+  background-image: linear-gradient(to right, #4B5563 0px, #4B5563 4px, transparent 4px) !important;
+}
+
 /* Estilos adicionales para forzar el ancho de la columna de acciones */
 .columna-acciones {
   width: 248px !important;
