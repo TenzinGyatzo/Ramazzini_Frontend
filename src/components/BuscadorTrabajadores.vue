@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import axios from 'axios';
 import BusquedaTrabajadoresAPI, {
   BUSQUEDA_MIN_CARACTERES,
+  esNumeroDeEmpleado,
   type ResultadoBusquedaTrabajador,
 } from '@/api/BusquedaTrabajadoresAPI';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
@@ -11,8 +12,8 @@ import { calcularEdad } from '@/helpers/dates';
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
 
 /**
- * Búsqueda global de trabajadores (nombre, CURP o folio) en todas las empresas y centros
- * que el usuario puede ver. Se abre con el botón flotante o con Ctrl+K / ⌘K.
+ * Búsqueda global de trabajadores (nombre, CURP, folio o número de empleado) en todas las
+ * empresas y centros que el usuario puede ver. Se abre con el botón flotante o con Ctrl+K / ⌘K.
  */
 defineProps<{ mostrarBoton: boolean }>();
 
@@ -31,8 +32,11 @@ const listaRef = ref<HTMLElement | null>(null);
 let temporizador: ReturnType<typeof setTimeout> | null = null;
 let controlador: AbortController | null = null;
 
+// Un número de empleado se busca desde 1 dígito; lo demás, desde 3 caracteres
 const consultaSuficiente = computed(
-  () => consulta.value.replace(/\s+/g, '').length >= BUSQUEDA_MIN_CARACTERES,
+  () =>
+    esNumeroDeEmpleado(consulta.value) ||
+    consulta.value.replace(/\s+/g, '').length >= BUSQUEDA_MIN_CARACTERES,
 );
 
 function cancelarBusqueda() {
@@ -177,7 +181,7 @@ function detalle(trabajador: ResultadoBusquedaTrabajador): string {
               type="search"
               autocomplete="off"
               spellcheck="false"
-              placeholder="Buscar trabajador por nombre, CURP o folio…"
+              placeholder="Buscar por nombre, CURP, folio o número de empleado…"
               class="w-full bg-transparent py-3 text-base text-gray-800 placeholder-gray-500 focus:outline-none"
               role="combobox"
               aria-controls="buscador-trabajadores-resultados"
@@ -190,7 +194,8 @@ function detalle(trabajador: ResultadoBusquedaTrabajador): string {
 
           <div class="max-h-[60vh] overflow-y-auto">
             <p v-if="estado === 'inicio'" class="px-4 py-6 text-center text-sm text-gray-500">
-              Escribe al menos {{ BUSQUEDA_MIN_CARACTERES }} letras del nombre, la CURP o el folio.
+              Escribe al menos {{ BUSQUEDA_MIN_CARACTERES }} letras del nombre, la CURP o el folio,
+              o el número de empleado.
             </p>
             <p
               v-else-if="estado === 'buscando' && !resultados.length"
@@ -235,6 +240,13 @@ function detalle(trabajador: ResultadoBusquedaTrabajador): string {
                     <span class="flex flex-wrap items-baseline gap-x-2">
                       <span class="font-medium text-gray-800">{{ formatNombreCompleto(trabajador) || 'Sin nombre' }}</span>
                       <span v-if="trabajador.folio" class="font-mono text-xs text-gray-500">{{ trabajador.folio }}</span>
+                      <span
+                        v-if="trabajador.numeroEmpleado"
+                        class="inline-flex items-center gap-1 text-xs text-gray-500"
+                        title="Número de empleado"
+                      >
+                        <i class="fas fa-id-badge text-purple-500" aria-hidden="true"></i>No. {{ trabajador.numeroEmpleado }}
+                      </span>
                       <span
                         v-if="trabajador.estadoLaboral === 'Inactivo'"
                         class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"
