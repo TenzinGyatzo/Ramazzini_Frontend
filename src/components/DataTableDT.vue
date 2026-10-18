@@ -1209,6 +1209,11 @@ function inicializarDataTable() {
     dataTableInstance.on('draw', function () {
       syncExpedienteButtonBadges();
     });
+
+    // Abrir el expediente desde el nombre (también con Ctrl/clic con rueda) no selecciona la fila
+    dataTableInstance.on('user-select', function (e: any, _dt: any, _tipo: any, _celda: any, eventoOriginal: any) {
+      if ($(eventoOriginal?.target).closest('.nombre-expediente').length) e.preventDefault();
+    });
   }
 }
 
@@ -2053,6 +2058,10 @@ table.dataTable td:nth-child(6) .flex {
 <style>
 .folio-tooltip {
   cursor: default;
+}
+/* Dentro del enlace del nombre, la manita del enlace */
+a.nombre-expediente .folio-tooltip {
+  cursor: pointer;
 }
 
 .folio-tooltip-floating {
