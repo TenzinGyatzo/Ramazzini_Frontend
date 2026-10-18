@@ -198,13 +198,33 @@ const mostrarEnLaTabla = (trabajadorId) => {
   if (!trabajadorId) return;
   recordarTrabajadorNuevo(centrosTrabajo.currentCentroTrabajoId, String(trabajadorId));
   recordarUltimoTrabajador(centrosTrabajo.currentCentroTrabajoId, String(trabajadorId));
-  trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
+  // Una sola actualización, sin «Cargando…»: la tabla se queda y recibe al nuevo
+  trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId, {
+    enSegundoPlano: true,
+  });
+};
+
+/** Datos clave para confirmar de un vistazo que se capturó bien y en el centro correcto. */
+const datosParaConfirmar = (trabajador) => {
+  const datos = [];
+  const numeroEmpleado = String(trabajador.numeroEmpleado ?? '').trim();
+  if (numeroEmpleado && numeroEmpleado !== '-') datos.push({ etiqueta: 'Número de empleado', valor: numeroEmpleado });
+  if (trabajador.puesto) datos.push({ etiqueta: 'Puesto', valor: trabajador.puesto });
+  const edad = trabajador.fechaNacimiento ? calcularEdad(trabajador.fechaNacimiento) : null;
+  if (Number.isFinite(edad)) datos.push({ etiqueta: 'Edad', valor: `${edad} ${edad === 1 ? 'año' : 'años'}` });
+  const centro = centrosTrabajo.currentCentroTrabajo?.nombreCentro;
+  if (centro) datos.push({ etiqueta: 'Centro de trabajo', valor: centro });
+  return datos;
 };
 
 const mostrarRegistrado = async (trabajador) => {
   registrado.value = {
     id: String(trabajador._id),
     nombre: formatNombreCompleto(trabajador),
+    titulo: String(trabajador.sexo ?? '').toLowerCase().startsWith('fem')
+      ? 'Trabajadora registrada'
+      : 'Trabajador registrado',
+    datos: datosParaConfirmar(trabajador),
   };
   await nextTick();
   if (panelEl.value) panelEl.value.scrollTop = 0;
@@ -910,7 +930,14 @@ const handleSubmit = async (data) => {
   try {
     if (trabajadores.currentTrabajador?._id) {
       // Actualizar Trabajador
-      await trabajadores.updateTrabajador(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId, trabajadores.currentTrabajador._id, payloadToSend);
+      // Sin «Cargando…» en la tabla: el botón ya dice «Guardando…»
+      await trabajadores.updateTrabajador(
+        empresas.currentEmpresaId,
+        centrosTrabajo.currentCentroTrabajoId,
+        trabajadores.currentTrabajador._id,
+        payloadToSend,
+        { enSegundoPlano: true },
+      );
       toast.open({ message: 'Trabajador actualizado', type: 'success' });
     } else {
       const response = await trabajadores.createTrabajador(
@@ -932,6 +959,7 @@ const handleSubmit = async (data) => {
         trabajadores.fetchTrabajadoresConHistoria(
           empresas.currentEmpresaId,
           centrosTrabajo.currentCentroTrabajoId,
+          { enSegundoPlano: true },
         );
         return;
       }
@@ -942,7 +970,9 @@ const handleSubmit = async (data) => {
       toast.open({ message: 'Trabajador registrado exitosamente', type: 'success' });
     }
     forceClose();
-    trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
+    trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId, {
+      enSegundoPlano: true,
+    });
   } catch (error) {
     console.error('Error al crear o actualizar al trabajador:', error);
 
@@ -1173,9 +1203,18 @@ const {
           <div class="registro-exitoso__icono mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
             <i class="fa-solid fa-check text-3xl" aria-hidden="true"></i>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-semibold">Trabajador registrado</h1>
+          <h1 class="text-2xl sm:text-3xl font-semibold">{{ registrado.titulo }}</h1>
           <p class="registro-exitoso__nombre mt-2 text-lg text-gray-700">{{ registrado.nombre }}</p>
-          <p class="mt-1 text-sm text-gray-500">¿Qué sigue?</p>
+          <dl
+            v-if="registrado.datos.length"
+            class="registro-exitoso__datos mx-auto mt-4 grid max-w-md grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left text-sm"
+          >
+            <template v-for="dato in registrado.datos" :key="dato.etiqueta">
+              <dt class="text-gray-500">{{ dato.etiqueta }}</dt>
+              <dd class="font-medium text-gray-800 break-words">{{ dato.valor }}</dd>
+            </template>
+          </dl>
+          <p class="mt-4 text-sm text-gray-500">¿Qué sigue?</p>
           <div class="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
             <button
               ref="botonAbrirExpedienteEl"

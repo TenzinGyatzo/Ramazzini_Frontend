@@ -193,7 +193,11 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
   async function fetchTrabajadoresConHistoria(
     empresaId: string,
     centroTrabajoId: string,
-    options?: { skipCache?: boolean },
+    /**
+     * `enSegundoPlano`: actualiza sin vaciar la lista ni mostrar «Cargando…» (la tabla se queda
+     * como está y se reemplazan los datos al llegar), p. ej. tras registrar a un trabajador.
+     */
+    options?: { skipCache?: boolean; enSegundoPlano?: boolean },
   ) {
     const seq = ++listadoSeq;
     const cacheKey = listadoHistoriaCacheKey(empresaId, centroTrabajoId);
@@ -201,6 +205,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     const isFresh =
       cached != null &&
       Date.now() - cached.fetchedAt < LISTADO_HISTORIA_TTL_MS;
+    const enSegundoPlano = !!options?.enSegundoPlano;
 
     if (cached && !options?.skipCache) {
       trabajadores.value = cached.data;
@@ -208,12 +213,12 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
         loading.value = false;
         return cached.data;
       }
-    } else if (!cached) {
+    } else if (!cached && !enSegundoPlano) {
       trabajadores.value = [];
     }
 
     try {
-      loading.value = !cached;
+      loading.value = !cached && !enSegundoPlano;
       const { data } = await TrabajadoresAPI.getTrabajadoresConHistoria(
         empresaId,
         centroTrabajoId,
@@ -339,30 +344,27 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     centroTrabajoId: string,
     trabajadorData: Trabajador
   ) {
-    try {
-      loading.value = true;
-      const { data } = await TrabajadoresAPI.createTrabajador(
-        empresaId,
-        centroTrabajoId,
-        trabajadorData
-      );
-      invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
-      return data;
-    } catch (error) {
-      throw error;
-    } finally {
-      loading.value = false;
-    }
+    // Sin `loading` de la lista: el modal muestra «Guardando…» y la tabla no se desmonta
+    const { data } = await TrabajadoresAPI.createTrabajador(
+      empresaId,
+      centroTrabajoId,
+      trabajadorData
+    );
+    invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
+    return data;
   }
 
   async function updateTrabajador(
     empresaId: string,
     centroTrabajoId: string,
     trabajadorId: string,
-    trabajadorData: Partial<Trabajador>
+    trabajadorData: Partial<Trabajador>,
+    /** `enSegundoPlano`: sin `loading` de la lista (quien guarda muestra su propio «Guardando…»). */
+    options?: { enSegundoPlano?: boolean },
   ) {
+    const enSegundoPlano = !!options?.enSegundoPlano;
     try {
-      loading.value = true;
+      if (!enSegundoPlano) loading.value = true;
       await TrabajadoresAPI.updateTrabajador(
         empresaId,
         centroTrabajoId,
@@ -374,7 +376,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
       // console.log(error);
       throw error;
     } finally {
-      loading.value = false;
+      if (!enSegundoPlano) loading.value = false;
     }
   }
 
