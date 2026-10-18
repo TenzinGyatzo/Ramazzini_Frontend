@@ -23,6 +23,7 @@ import {
   motivoDeError,
   motivoDeRechazo,
   nombreSugerido,
+  procesarConLimite,
   reducirImagen,
   tamanoLegible,
   textoDeRechazo,
@@ -40,7 +41,14 @@ const documentos = useDocumentosStore();
 const { ensureUserLoaded } = useCurrentUser();
 const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
-const emit = defineEmits(['closeDocumentoExternoModal', 'updateData']);
+/**
+ * `documentosSubidos`: los documentos creados, para agregarlos a la lista sin recargar el
+ * expediente; `updateData`: recargar todo (si no se pudieron entregar los creados).
+ */
+const emit = defineEmits(['closeDocumentoExternoModal', 'updateData', 'documentosSubidos']);
+
+/** Archivos que se suben a la vez. */
+const SUBIDAS_SIMULTANEAS = 3;
 
 /**
  * Archivos de la carga. estado: 'reduciendo' | 'pendiente' | 'subiendo' | 'subido' | 'error'.
@@ -215,9 +223,16 @@ const handleSubmit = async () => {
   isUploading.value = true;
   let correctos = 0;
   let fallidos = 0;
+  const creados = [];
   const pendientes = [...porSubir.value];
+  const rutaDocumento = buildClinicalDirectoryPath(
+    currentEmpresa.nombreComercial,
+    currentCentroTrabajo.nombreCentro,
+    currentTrabajador.nombre,
+    currentTrabajador._id,
+  );
 
-  for (const entrada of pendientes) {
+  const subir = async (entrada) => {
     entrada.estado = 'subiendo';
     entrada.motivo = '';
 
@@ -227,12 +242,7 @@ const handleSubmit = async () => {
       fechaDocumento: convertirYYYYMMDDaISO(entrada.fecha),
       notasDocumento: '',
       extension: extensionDe(entrada.archivo.name),
-      rutaDocumento: buildClinicalDirectoryPath(
-        currentEmpresa.nombreComercial,
-        currentCentroTrabajo.nombreCentro,
-        currentTrabajador.nombre,
-        currentTrabajador._id,
-      ),
+      rutaDocumento,
       idTrabajador: currentTrabajador._id,
       createdBy: currentUserId,
       updatedBy: currentUserId,
@@ -241,19 +251,25 @@ const handleSubmit = async () => {
     formData.append('file', entrada.archivo);
 
     try {
-      await documentos.uploadExternalDocument(currentTrabajador._id, formData);
+      const respuesta = await documentos.uploadExternalDocument(currentTrabajador._id, formData);
       entrada.estado = 'subido';
       correctos += 1;
+      creados.push(respuesta?.data ?? null);
     } catch (error) {
       console.error(`Error al subir ${entrada.archivo.name}:`, error);
       entrada.estado = 'error';
       entrada.motivo = motivoDeError(error);
       fallidos += 1;
     }
-  }
+  };
+
+  await procesarConLimite(pendientes, SUBIDAS_SIMULTANEAS, subir);
 
   isUploading.value = false;
-  if (correctos > 0) emit('updateData');
+  if (correctos > 0) {
+    if (creados.every((documento) => documento?._id)) emit('documentosSubidos', creados);
+    else emit('updateData');
+  }
 
   if (fallidos === 0) {
     toast.open({

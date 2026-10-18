@@ -108,6 +108,26 @@ export const useDocumentosStore = defineStore("documentos", () => {
     });
   }
 
+  /**
+   * Agrega al expediente cargado documentos recién creados (p. ej. al subir documentos
+   * externos), sin volver a pedir el expediente completo. Devuelve false si alguno no se pudo
+   * ubicar (sin id o sin fecha), para que quien llama recargue todo.
+   */
+  function agregarDocumentos(tipoDocumento: string, nuevos: any[]): boolean {
+    const validos = (nuevos ?? []).filter((d) => d?._id && obtenerCampoFecha(tipoDocumento, d));
+    if (validos.length !== (nuevos ?? []).length) return false;
+    const yaEstan = new Set(
+      Object.values(documentsByYear.value).flatMap((grupo: any) =>
+        (grupo?.[tipoDocumento] ?? []).map((d: any) => String(d._id)),
+      ),
+    );
+    mergeTipoEnDocumentsByYear(
+      tipoDocumento,
+      validos.filter((d) => !yaEstan.has(String(d._id))),
+    );
+    return true;
+  }
+
   const DOCUMENT_STORE_KEYS = [
     'antidopings',
     'aptitudes',
@@ -399,6 +419,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     isFinalized,
     fetchDocumentById,
     fetchAllDocuments,
+    agregarDocumentos,
     setCurrentDocument,
     setCurrentTypeOfDocument,
     resetCurrentTypeOfDocument,

@@ -3134,11 +3134,26 @@ onUnmounted(() => {
   pdfVisibilityObserver = null;
 });
 
-// Watcher para verificar disponibilidad cuando cambien las props
-watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanciaAptitud, props.certificado, props.certificadoExpedito, props.receta, props.documentoExterno, props.examenVista, props.exploracionFisica, props.historiaClinica, props.notaMedica, props.notaAclaratoria, props.controlPrenatal, props.historiaOtologica, props.previoEspirometria, props.entrevistaPsicologica, props.trastornosEstadoAnimo, props.cuestionarioProdromalBreve, props.trastornoLimitePersonalidad, props.cuestionarioNordico, props.evaluacionSuenoVigilia, props.eventoSeguimientoCardiometabolico, props.informeLongitudinalCardiometabolico, props.informeLongitudinalAudiometrico], () => {
+/**
+ * Lo que decide qué archivo se verifica y si pudo cambiar. Al recargar el expediente llegan
+ * objetos nuevos con los mismos datos: solo se vuelve a verificar si esto cambia, no por cada
+ * recarga (antes, cada subida o edición repetía la verificación de todos los documentos vistos).
+ */
+const firmaDisponibilidadPdf = () => {
+  const doc = currentDocumentData.value;
+  if (!doc) return '';
+  if (props.documentoTipo.toLowerCase().replace(/\s+/g, '') === 'documentoexterno') {
+    return [doc.rutaDocumento, doc.nombreDocumento, doc.fechaDocumento, doc.extension, doc.updatedAt].join('|');
+  }
+  const { ruta, nombre } = construirRutaYNombrePDF();
+  return [ruta, nombre, doc.updatedAt, doc.pdfStatus, doc.estado].join('|');
+};
+
+watch(firmaDisponibilidadPdf, (actual, anterior) => {
+  if (actual === anterior) return;
   pdfCheckScheduled = false;
   schedulePdfCheck();
-}, { deep: true });
+});
 
 </script>
 

@@ -5,6 +5,7 @@ import {
   motivoDeError,
   motivoDeRechazo,
   nombreSugerido,
+  procesarConLimite,
   reducirHastaLimite,
   tamanoLegible,
 } from './subidaDocumentosExternos';
@@ -84,5 +85,29 @@ describe('utilidades', () => {
     expect(extensionDe('.oculto')).toBe('');
     expect(tamanoLegible(300 * 1024)).toBe('300 KB');
     expect(tamanoLegible(3.24 * MB)).toBe('3.2 MB');
+  });
+});
+
+describe('procesarConLimite', () => {
+  it('nunca corre más de las permitidas a la vez y procesa todos', async () => {
+    let activas = 0;
+    let maximo = 0;
+    const hechos: number[] = [];
+    await procesarConLimite([1, 2, 3, 4, 5, 6, 7], 3, async (n) => {
+      activas += 1;
+      maximo = Math.max(maximo, activas);
+      await new Promise((r) => setTimeout(r, n % 3));
+      hechos.push(n);
+      activas -= 1;
+    });
+    expect(maximo).toBe(3);
+    expect([...hechos].sort()).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it('con menos elementos que el límite, o ninguno', async () => {
+    const tarea = vi.fn(async () => {});
+    await procesarConLimite([1], 3, tarea);
+    await procesarConLimite([], 3, tarea);
+    expect(tarea).toHaveBeenCalledTimes(1);
   });
 });

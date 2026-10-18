@@ -458,6 +458,11 @@ const fetchData = async (force = false) => {
   }
 };
 
+/** Documentos externos recién subidos: se agregan a la lista sin recargar el expediente. */
+function agregarDocumentosExternosSubidos(creados: any[]) {
+  if (!documentos.agregarDocumentos('documentosExternos', creados)) fetchData(true);
+}
+
 function invalidateExpedienteConteosForCurrentTrabajador() {
   const id =
     trabajadores.currentTrabajadorId ??
@@ -920,7 +925,8 @@ const crearDocumento = (tipoDocumento: string) =>
         :duration="{ enter: 230, leave: 150 }"
       >
         <ModalCargaDocumentoExterno v-if="showDocumentoExternoModal"
-          @closeDocumentoExternoModal="toggleDocumentoExternoModal" @updateData="() => fetchData(true)" />
+          @closeDocumentoExternoModal="toggleDocumentoExternoModal" @updateData="() => fetchData(true)"
+          @documentosSubidos="agregarDocumentosExternosSubidos" />
       </Transition>
 
       <Transition
