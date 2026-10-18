@@ -129,6 +129,28 @@ describe('estructura de un año con subgrupos', () => {
     expect(resumen(estructura(guardado, notas))).toEqual(['ap', 'Notas médicas[n1,n2]', 'ad', 'ex']);
   });
 
+  it('el primero de su tipo queda suelto tras el subgrupo donde está su tipo anterior', () => {
+    const guardado = [
+      ref('notaMedica', 'n1'),
+      ref('aptitud', 'ap', 'sg'),
+      ref('antidoping', 'ad', 'sg'),
+      ref('notaMedica', 'n2'),
+    ];
+    // ex es nuevo; su tipo anterior (antidoping) está en el subgrupo
+    expect(resumen(estructura(guardado))).toEqual(['n1', 'Antidoping[ap,ad]', 'ex', 'n2']);
+  });
+
+  it('el primero de su tipo queda suelto antes del subgrupo donde está su tipo siguiente', () => {
+    const guardado = [
+      ref('notaMedica', 'n1'),
+      ref('antidoping', 'ad', 'sg'),
+      ref('documentoExterno', 'ex', 'sg'),
+      ref('notaMedica', 'n2'),
+    ];
+    // ap es nuevo y no hay tipo anterior en el año
+    expect(resumen(estructura(guardado))).toEqual(['n1', 'ap', 'Antidoping[ad,ex]', 'n2']);
+  });
+
   it('un documento nuevo queda suelto tras el subgrupo si los de su tipo están repartidos', () => {
     const documentos = { ...anio(), documentosExternos: [{ _id: 'ex' }, { _id: 'ex2' }, { _id: 'ex3' }] };
     const guardado = [

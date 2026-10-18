@@ -142,7 +142,10 @@ interface DocumentoColocado {
  * están en el año se ignoran. Un documento que el orden manual no conoce (creado después):
  *  - entra al subgrupo donde están todos los de su tipo, si es el caso;
  *  - si no, queda suelto tras el último de su tipo (o tras el subgrupo que lo contiene);
- *  - y va al final si no hay otro de su tipo.
+ *  - si es el primero de su tipo en el año, se acomoda según el orden de tipos: suelto tras
+ *    el último del tipo anterior más cercano que haya en el año o, si no hay, antes del primero
+ *    del tipo siguiente más cercano (fuera del subgrupo en que esté ese vecino);
+ *  - y va al final solo si el año no tiene nada con qué compararlo.
  * Devuelve `null` cuando el orden manual no aplica a ningún documento del año.
  */
 function aplicarOrdenManual(
@@ -167,15 +170,40 @@ function aplicarOrdenManual(
   });
   if (resultado.length === 0) return null;
 
+  // Orden de los tipos del año (porTipo ya viene en el orden de tipos del proveedor)
+  const tiposDelAnio = [...new Set(porTipo.map((item) => item.definicion.tipo))];
+  const indicesDelTipo = (tipo: string) =>
+    resultado.flatMap((colocado, indice) => (colocado.item.definicion.tipo === tipo ? [indice] : []));
+  const extremoDelSubgrupo = (subgrupoId: string, ultimo: boolean) => {
+    const indices = resultado.flatMap((colocado, indice) => (colocado.subgrupoId === subgrupoId ? [indice] : []));
+    return ultimo ? indices[indices.length - 1] : indices[0];
+  };
+
+  /** Lugar para el primero de su tipo: junto a su vecino más cercano en el orden de tipos. */
+  const lugarPorOrdenDeTipos = (tipo: string): number => {
+    const posicion = tiposDelAnio.indexOf(tipo);
+    for (let i = posicion - 1; i >= 0; i -= 1) {
+      const delAnterior = indicesDelTipo(tiposDelAnio[i]);
+      if (delAnterior.length === 0) continue;
+      const ultimo = delAnterior[delAnterior.length - 1];
+      const subgrupoId = resultado[ultimo].subgrupoId;
+      return (subgrupoId ? extremoDelSubgrupo(subgrupoId, true) : ultimo) + 1;
+    }
+    for (let i = posicion + 1; i < tiposDelAnio.length; i += 1) {
+      const delSiguiente = indicesDelTipo(tiposDelAnio[i]);
+      if (delSiguiente.length === 0) continue;
+      const subgrupoId = resultado[delSiguiente[0]].subgrupoId;
+      return subgrupoId ? extremoDelSubgrupo(subgrupoId, false) : delSiguiente[0];
+    }
+    return resultado.length;
+  };
+
   porTipo.forEach((item) => {
     if (colocados.has(claveDocumento(item.definicion.tipo, item.documento._id))) return;
 
-    const delTipo: number[] = [];
-    resultado.forEach((colocado, indice) => {
-      if (colocado.item.definicion.tipo === item.definicion.tipo) delTipo.push(indice);
-    });
+    const delTipo = indicesDelTipo(item.definicion.tipo);
     if (delTipo.length === 0) {
-      resultado.push({ item });
+      resultado.splice(lugarPorOrdenDeTipos(item.definicion.tipo), 0, { item });
       return;
     }
 

@@ -161,9 +161,21 @@ describe('orden manual de un año', () => {
     expect(ids(manual)).toEqual(['nm-1', 'nm-2', 'ex-1', 'ex-2', 'ap-1']);
   });
 
-  it('un documento nuevo de un tipo que no estaba en el año va al final', () => {
+  // Orden por defecto de estos tipos: aptitud, documento externo, nota médica
+  it('el primero de su tipo va tras el tipo anterior más cercano que haya en el año', () => {
+    // Los externos se crearon después de organizar: su tipo anterior es aptitud
+    const manual = [ref('notaMedica', 'nm-2'), ref('aptitud', 'ap-1'), ref('notaMedica', 'nm-1')];
+    expect(ids(manual)).toEqual(['nm-2', 'ap-1', 'ex-1', 'ex-2', 'nm-1']);
+  });
+
+  it('si no hay tipo anterior en el año, va antes del tipo siguiente más cercano', () => {
     const manual = [ref('notaMedica', 'nm-2'), ref('notaMedica', 'nm-1'), ref('documentoExterno', 'ex-2'), ref('documentoExterno', 'ex-1')];
-    expect(ids(manual)).toEqual(['nm-2', 'nm-1', 'ex-2', 'ex-1', 'ap-1']);
+    expect(ids(manual)).toEqual(['nm-2', 'nm-1', 'ap-1', 'ex-2', 'ex-1']);
+  });
+
+  it('varios tipos nuevos a la vez quedan en el orden de tipos', () => {
+    const manual = [ref('notaMedica', 'nm-2'), ref('notaMedica', 'nm-1')];
+    expect(ids(manual)).toEqual(['ap-1', 'ex-1', 'ex-2', 'nm-2', 'nm-1']);
   });
 
   it('ignora referencias a documentos eliminados, de otro año o repetidas', () => {
