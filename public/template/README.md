@@ -4,10 +4,10 @@
 
 | Archivo | Régimen | Columnas |
 |---------|---------|----------|
-| `Plantilla para Importar Trabajadores.xlsx` | SIN_REGIMEN | 12 columnas básicas |
-| `Plantilla para Importar Trabajadores (con CURP y residencia).xlsx` | SIRES_NOM024 | 19 columnas (básicas + CURP + geo) |
+| `Plantilla Importar Trabajadores.xlsx` | SIN_REGIMEN | 12 columnas básicas |
+| `Plantilla para Importar Trabajadores.xlsx` | SIRES_NOM024 | 19 columnas (básicas + CURP + geo) |
 
-El nombre de la plantilla SIRES no menciona el régimen (lo ve el usuario al descargarla).
+Los nombres no mencionan el régimen (los ve el usuario al descargarlas; cada proveedor solo ve la suya).
 
 ## Plantilla SIN_REGIMEN (12 columnas)
 

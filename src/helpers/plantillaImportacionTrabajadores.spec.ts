@@ -4,14 +4,14 @@ import { getPlantillaImportacionTrabajadores } from './plantillaImportacionTraba
 describe('plantillaImportacionTrabajadores', () => {
   it('devuelve plantilla SIN_REGIMEN por defecto', () => {
     const plantilla = getPlantillaImportacionTrabajadores('SIN_REGIMEN');
-    expect(plantilla.href).toContain('Plantilla para Importar Trabajadores.xlsx');
-    expect(plantilla.downloadName).toBe('Plantilla para Importar Trabajadores.xlsx');
+    expect(plantilla.href).toBe('/template/Plantilla Importar Trabajadores.xlsx');
+    expect(plantilla.downloadName).toBe('Plantilla Importar Trabajadores.xlsx');
   });
 
   it('devuelve plantilla SIRES_NOM024 con un nombre que no menciona el régimen', () => {
     const plantilla = getPlantillaImportacionTrabajadores('SIRES_NOM024');
-    expect(plantilla.href).toContain('(con CURP y residencia).xlsx');
-    expect(plantilla.downloadName).toBe('Plantilla para Importar Trabajadores (con CURP y residencia).xlsx');
+    expect(plantilla.href).toBe('/template/Plantilla para Importar Trabajadores.xlsx');
+    expect(plantilla.downloadName).toBe('Plantilla para Importar Trabajadores.xlsx');
     expect(plantilla.downloadName).not.toMatch(/SIRES|NOM/i);
   });
 });
