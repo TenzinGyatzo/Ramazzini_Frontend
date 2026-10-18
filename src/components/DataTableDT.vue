@@ -1739,6 +1739,17 @@ table.dataTable tbody a.nombre-expediente:focus-visible {
 html.dark-mode table.dataTable tbody a.nombre-expediente:hover {
   color: #6ee7b7;
 }
+/* En la fila seleccionada (fondo verde), el nombre va en el mismo blanco que el resto de la fila
+   (DataTables pinta los enlaces de la fila seleccionada casi negros) */
+table.dataTable > tbody > tr.selected a.nombre-expediente,
+table.dataTable > tbody > tr.selected a.nombre-expediente:hover,
+html.dark-mode table.dataTable > tbody > tr.selected a.nombre-expediente,
+html.dark-mode table.dataTable > tbody > tr.selected a.nombre-expediente:hover {
+  color: inherit;
+}
+table.dataTable > tbody > tr.selected a.nombre-expediente:focus-visible {
+  outline-color: currentColor;
+}
 
 /* Último trabajador abierto o editado: capa verde tenue que se desvanece (sirve en claro y oscuro
    porque se pinta encima del fondo que ya tenga la fila) */
