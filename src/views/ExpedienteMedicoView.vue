@@ -1280,25 +1280,27 @@ const crearDocumento = (tipoDocumento: string) =>
                 >{{ totalResultadosClinicos }}</span>
               </button>
 
-              <!-- No registra nada: descarga el formato que firma el trabajador -->
-              <button
-                type="button"
-                class="expediente-accion-link"
-                title="Descargar el formato para que lo firme el trabajador; ya firmado se sube como documento externo"
-                @click="toggleDeclaracionVeracidadModal"
-              >
-                <i class="fa-solid fa-download" aria-hidden="true"></i>
-                Declaración de veracidad
-              </button>
-              <button
-                type="button"
-                class="expediente-accion-link"
-                title="Descargar el consentimiento informado para la prueba antidoping, para que lo firme el trabajador; ya firmado se sube como documento externo"
-                @click="toggleConsentimientoAntidopingModal"
-              >
-                <i class="fa-solid fa-download" aria-hidden="true"></i>
-                Consentimiento antidoping
-              </button>
+              <!-- No registran nada: descargan formatos que firma el trabajador. Van juntos, a la derecha -->
+              <div class="expediente-formatos">
+                <button
+                  type="button"
+                  class="expediente-accion-link"
+                  title="Descargar el formato para que lo firme el trabajador; ya firmado se sube como documento externo"
+                  @click="toggleDeclaracionVeracidadModal"
+                >
+                  <i class="fa-solid fa-download" aria-hidden="true"></i>
+                  Declaración de veracidad
+                </button>
+                <button
+                  type="button"
+                  class="expediente-accion-link"
+                  title="Descargar el consentimiento informado para la prueba antidoping, para que lo firme el trabajador; ya firmado se sube como documento externo"
+                  @click="toggleConsentimientoAntidopingModal"
+                >
+                  <i class="fa-solid fa-download" aria-hidden="true"></i>
+                  Consentimiento antidoping
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1841,9 +1843,20 @@ const crearDocumento = (tipoDocumento: string) =>
   color: #059669;
 }
 
-/* Varios formatos seguidos: solo el primero se va a la derecha */
-.expediente-accion-link + .expediente-accion-link {
-  margin-left: 0.75rem;
+/* Formatos para firma: un solo bloque a la derecha; si no caben en un renglón, uno sobre otro */
+.expediente-formatos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  column-gap: 1rem;
+  margin-left: auto;
+}
+
+.expediente-formatos .expediente-accion-link {
+  margin-left: 0;
+  /* Mismo ancho: apilados, los íconos y textos quedan alineados */
+  min-width: 13rem;
 }
 
 @media (max-width: 479px) {
@@ -1886,9 +1899,9 @@ const crearDocumento = (tipoDocumento: string) =>
     padding-top: 0;
   }
 
-  .expediente-accion-link,
-  .expediente-accion-link + .expediente-accion-link {
+  .expediente-formatos {
     margin-left: 0;
+    justify-content: flex-start;
   }
 
   .expediente-crear-btn,
