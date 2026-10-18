@@ -647,19 +647,18 @@ function inicializarDataTable() {
               return texto;
             }
 
-            if (type === 'display' && folio) {
-              let html = `<span class="folio-tooltip" data-folio="${escapeHtml(folio)}">${escapeHtml(texto)}</span>`;
-              if (row.tieneDuplicadoPendiente) {
-                html += ` <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 ml-1" title="Posible duplicado">Dup.</span>`;
-              }
-              return html;
-            }
+            if (type !== 'display') return escapeHtml(texto);
 
-            if (type === 'display' && row.tieneDuplicadoPendiente) {
-              return `${escapeHtml(texto)} <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 ml-1">Dup.</span>`;
+            // El nombre abre el expediente (la acción más común); Ctrl/clic con rueda, en otra pestaña
+            const url = router.resolve(buildExpedienteRoute(String(row._id))).href;
+            const nombreHtml = folio
+              ? `<span class="folio-tooltip" data-folio="${escapeHtml(folio)}">${escapeHtml(texto)}</span>`
+              : escapeHtml(texto);
+            let html = `<a href="${url}" class="nombre-expediente" data-id="${escapeHtml(row._id)}" title="Abrir expediente">${nombreHtml}</a>`;
+            if (row.tieneDuplicadoPendiente) {
+              html += ` <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 ml-1" title="Posible duplicado">Dup.</span>`;
             }
-
-            return escapeHtml(texto);
+            return html;
           }
         }, // 3
         { data: 'aptitudResumen.aptitudPuesto', title: 'Aptitud', defaultContent: '-' }, // 4 (antes era 32)
@@ -1078,6 +1077,22 @@ function inicializarDataTable() {
       ]
     });
 
+    // Clic en el nombre: mismo destino que el botón «Expediente»
+    $(document).on('click', '.nombre-expediente', function (event) {
+      event.stopPropagation();
+      if (isModifiedNavigationClick(event)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const idTrabajador = String($(this).data('id') ?? '');
+      if (!idTrabajador) return;
+
+      recordarTrabajador(idTrabajador);
+      router.push(buildExpedienteRoute(idTrabajador));
+    });
+
     $(document).on('click', '.btn-expediente', function (event) {
       event.stopPropagation();
       cancelExpedienteTooltipForInteraction();
@@ -1219,6 +1234,7 @@ onBeforeUnmount(() => {
   }
 
   $(document).off('click', '.btn-expediente');
+  $(document).off('click', '.nombre-expediente');
   $(document).off('click', '.btn-incapacidades');
   $(document).off('click', '.btn-riesgos');
   $(document).off('click', '.btn-fusionar');
@@ -1699,6 +1715,26 @@ table.dataTable td:last-child {
 </style>
 
 <style>
+/* El nombre del trabajador abre su expediente: se ve como texto, subrayado al pasar el cursor */
+table.dataTable tbody a.nombre-expediente {
+  color: inherit;
+  text-decoration: none;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+table.dataTable tbody a.nombre-expediente:hover {
+  color: #047857;
+  text-decoration: underline;
+}
+table.dataTable tbody a.nombre-expediente:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+html.dark-mode table.dataTable tbody a.nombre-expediente:hover {
+  color: #6ee7b7;
+}
+
 /* Último trabajador abierto o editado: capa verde tenue que se desvanece (sirve en claro y oscuro
    porque se pinta encima del fondo que ya tenga la fila) */
 @keyframes fila-reciente {
