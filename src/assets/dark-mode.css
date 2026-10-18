@@ -1865,6 +1865,23 @@ html.dark-mode table.dataTable .btn-riesgos span {
   color: inherit !important;
 }
 
+html.dark-mode table.dataTable .btn-incapacidades {
+  background-color: #4c1d95 !important;
+  color: #ede9fe !important;
+  border-color: #8b5cf6 !important;
+}
+
+html.dark-mode table.dataTable .btn-incapacidades:hover {
+  background-color: #5b21b6 !important;
+  color: #f5f3ff !important;
+  border-color: #a78bfa !important;
+}
+
+html.dark-mode table.dataTable .btn-incapacidades i,
+html.dark-mode table.dataTable .btn-incapacidades span {
+  color: inherit !important;
+}
+
 /* Alta (verde) — bg-* puede no estar en el CSS si Tailwind no escanea el string del render */
 html.dark-mode table.dataTable .btn-alta-baja.text-green-600,
 html.dark-mode table.dataTable .btn-alta-baja.bg-green-100 {
