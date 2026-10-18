@@ -267,7 +267,7 @@
             </button>
           </div>
 
-            <form ref="formularioRef" @submit.prevent="handleSubmit" class="space-y-4">
+            <form @submit.prevent="handleSubmit" class="space-y-4">
               <!-- Fecha del estudio -->
               <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -742,17 +742,6 @@
                   </span>
                 </button>
               </div>
-              <!-- Varios estudios seguidos sin cerrar el panel -->
-              <button
-                v-if="!isEditing"
-                type="button"
-                :disabled="store.loading"
-                class="resultados-tanda__otro w-full rounded-lg border border-emerald-600 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                @click="guardarYRegistrarOtro"
-              >
-                <i class="fas fa-plus mr-1.5" aria-hidden="true"></i>
-                Guardar y registrar otro estudio
-              </button>
             </form>
           </div>
         </div>
@@ -1325,41 +1314,61 @@ const toggleTipoAlteracionAnalisisLaboratorio = (value: string) => {
 };
 
 /**
- * Registrar varios estudios seguidos («Guardar y registrar otro»): los tipos registrados en esta
- * tanda se marcan en la lista y el siguiente estudio empieza con la fecha del anterior. Se olvida
- * al cerrar el panel.
+ * Varios estudios seguidos: «Guardar» regresa a la lista de tipos sin cerrar el panel. Cada tipo
+ * muestra «✓ Registrado hoy» si tiene un resultado capturado hoy (por su fecha de captura, aunque se
+ * haya cerrado el panel) o «Último: dd-mm-aaaa» con la fecha de estudio más reciente. Un estudio
+ * nuevo empieza con la fecha del último resultado capturado hoy (suelen ser del mismo día).
  */
-const registradosEnTanda = ref<string[]>([]);
-const fechaDeTanda = ref('');
-const registrarOtroTrasGuardar = ref(false);
-const formularioRef = ref<HTMLFormElement | null>(null);
-
-/** Fecha del resultado más reciente del trabajador por tipo de estudio. */
-const ultimoPorTipo = computed(() => {
-  const ultimos: Record<string, number> = {};
-  Object.values(store.resultsByYear || {}).forEach((resultados: any[]) => {
-    (resultados || []).forEach((resultado) => {
-      const tiempo = resultado?.fechaEstudio ? new Date(resultado.fechaEstudio).getTime() : NaN;
-      if (!resultado?.tipoEstudio || Number.isNaN(tiempo)) return;
-      if (!(resultado.tipoEstudio in ultimos) || tiempo > ultimos[resultado.tipoEstudio]) {
-        ultimos[resultado.tipoEstudio] = tiempo;
-      }
-    });
-  });
-  return ultimos;
-});
-
-/** Lo que muestra cada tipo en la lista: registrado en esta tanda o fecha de su último resultado. */
-const estadoTipo = (tipo: string): { texto: string; enTanda: boolean } | null => {
-  if (registradosEnTanda.value.includes(tipo)) return { texto: 'Registrado ahora', enTanda: true };
-  const ultimo = ultimoPorTipo.value[tipo];
-  return ultimo ? { texto: `Último: ${formatDate(new Date(ultimo).toISOString())}`, enTanda: false } : null;
+const esDeHoy = (fecha: unknown) => {
+  if (!fecha) return false;
+  const dia = new Date(fecha as string);
+  const hoy = new Date();
+  return (
+    !Number.isNaN(dia.getTime()) &&
+    dia.getFullYear() === hoy.getFullYear() &&
+    dia.getMonth() === hoy.getMonth() &&
+    dia.getDate() === hoy.getDate()
+  );
 };
 
-/** Guarda con la validación del formulario y vuelve a la lista de tipos sin cerrar el panel. */
-const guardarYRegistrarOtro = () => {
-  registrarOtroTrasGuardar.value = true;
-  formularioRef.value?.requestSubmit();
+const todosLosResultados = computed<any[]>(() =>
+  Object.values(store.resultsByYear || {}).flatMap((resultados: any) => resultados || []),
+);
+
+/** Por tipo: si tiene algo capturado hoy y la fecha de estudio más reciente. */
+const resumenPorTipo = computed(() => {
+  const resumen: Record<string, { capturadoHoy: boolean; ultimo: number | null }> = {};
+  todosLosResultados.value.forEach((resultado) => {
+    const tipo = resultado?.tipoEstudio;
+    if (!tipo) return;
+    const actual = (resumen[tipo] ??= { capturadoHoy: false, ultimo: null });
+    if (esDeHoy(resultado.createdAt)) actual.capturadoHoy = true;
+    const tiempo = resultado.fechaEstudio ? new Date(resultado.fechaEstudio).getTime() : NaN;
+    if (!Number.isNaN(tiempo) && (actual.ultimo === null || tiempo > actual.ultimo)) actual.ultimo = tiempo;
+  });
+  return resumen;
+});
+
+/** Fecha de estudio (yyyy-mm-dd) del último resultado capturado hoy, o '' si no hay. */
+const fechaDelUltimoCapturadoHoy = computed(() => {
+  let masReciente: any = null;
+  todosLosResultados.value.forEach((resultado) => {
+    if (!esDeHoy(resultado?.createdAt) || !resultado?.fechaEstudio) return;
+    if (!masReciente || new Date(resultado.createdAt) > new Date(masReciente.createdAt)) masReciente = resultado;
+  });
+  if (!masReciente) return '';
+  const fecha = masReciente.fechaEstudio;
+  return typeof fecha === 'string' ? fecha.split('T')[0] : new Date(fecha).toISOString().split('T')[0];
+});
+
+/** Lo que muestra cada tipo en la lista. */
+const estadoTipo = (tipo: string): { texto: string; enTanda: boolean } | null => {
+  const resumen = resumenPorTipo.value[tipo];
+  if (!resumen) return null;
+  if (resumen.capturadoHoy) return { texto: 'Registrado hoy', enTanda: true };
+  return resumen.ultimo !== null
+    ? { texto: `Último: ${formatDate(new Date(resumen.ultimo).toISOString())}`, enTanda: false }
+    : null;
 };
 
 const selectTipo = (
@@ -1374,8 +1383,8 @@ const selectTipo = (
   resetForm();
   formData.value.tipoEstudio = tipo;
   formData.value.resultadoGlobal = undefined;
-  // En una tanda, el siguiente estudio suele ser del mismo día
-  if (fechaDeTanda.value) formData.value.fechaEstudio = fechaDeTanda.value;
+  // Si hoy ya se capturó otro estudio, este suele ser del mismo día
+  if (fechaDelUltimoCapturadoHoy.value) formData.value.fechaEstudio = fechaDelUltimoCapturadoHoy.value;
   
   // Ir al formulario
   currentStep.value = 'form';
@@ -1566,9 +1575,6 @@ const handleDeleteFromEdit = async () => {
 };
 
 const handleSubmit = async () => {
-  // Se toma el indicador al empezar; cualquier salida temprana lo deja limpio
-  const registrarOtro = registrarOtroTrasGuardar.value && !isEditing.value;
-  registrarOtroTrasGuardar.value = false;
   try {
     const validacionFecha = validarFechaDocumentoNoFutura(
       formData.value.fechaEstudio,
@@ -1740,21 +1746,14 @@ const handleSubmit = async () => {
     pendingDesvincularDocumento.value = false;
     pendingVincularDocumento.value = false;
 
-    if (registrarOtro) {
-      // Vuelve a la lista de tipos con el avance marcado y la fecha recordada
-      const tipoGuardado = formData.value.tipoEstudio;
-      if (tipoGuardado && !registradosEnTanda.value.includes(tipoGuardado)) {
-        registradosEnTanda.value = [...registradosEnTanda.value, tipoGuardado];
-      }
-      const fechaGuardada = formData.value.fechaEstudio;
-      fechaDeTanda.value = typeof fechaGuardada === 'string' ? fechaGuardada : '';
-      resetForm();
-      currentStep.value = 'select';
-      await nextTick();
-      resetSnapshot();
-      return;
-    }
-    forceClose();
+    // Regresa a la lista de tipos (sin cerrar) para registrar el siguiente estudio
+    resetForm();
+    isEditing.value = false;
+    editingId.value = null;
+    store.setCurrent(null);
+    currentStep.value = 'select';
+    await nextTick();
+    resetSnapshot();
   } catch (error: any) {
     toast.open({
       message: error.response?.data?.message || 'Error al guardar el resultado',
@@ -1764,8 +1763,6 @@ const handleSubmit = async () => {
 };
 
 const handleClose = () => {
-  registradosEnTanda.value = [];
-  fechaDeTanda.value = '';
   resetForm();
   currentStep.value = 'select';
   isEditing.value = false;
