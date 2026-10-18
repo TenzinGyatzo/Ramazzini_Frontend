@@ -4200,6 +4200,52 @@ html.dark-mode .modal-riesgos__agente--activo i {
   color: #fbbf24 !important;
 }
 
+/* SessionLockScreen: bloqueo por inactividad (campo de contraseña y avisos) */
+html.dark-mode .session-lock .session-lock__campo {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .session-lock .session-lock__campo::placeholder {
+  color: #64748b !important;
+}
+
+html.dark-mode .session-lock .session-lock__campo:focus {
+  border-color: #10b981 !important;
+}
+
+html.dark-mode .session-lock .session-lock__campo:-webkit-autofill {
+  -webkit-text-fill-color: #f1f5f9 !important;
+  -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+}
+
+html.dark-mode .session-lock .session-lock__ver {
+  color: #94a3b8 !important;
+}
+
+html.dark-mode .session-lock .session-lock__ver:hover {
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .session-lock .session-lock__espera {
+  background-color: rgba(180, 83, 9, 0.18) !important;
+  border-color: #b45309 !important;
+}
+
+html.dark-mode .session-lock .session-lock__espera p {
+  color: #fde68a !important;
+}
+
+html.dark-mode .session-lock .session-lock__error {
+  background-color: rgba(185, 28, 28, 0.2) !important;
+  border-color: #b91c1c !important;
+}
+
+html.dark-mode .session-lock .session-lock__error p {
+  color: #fecaca !important;
+}
+
 /* ModalRiesgos: sugerencia de los compañeros del mismo puesto */
 html.dark-mode .modal-riesgos__sugerencia {
   background-color: rgba(14, 165, 233, 0.12) !important;

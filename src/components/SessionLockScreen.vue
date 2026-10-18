@@ -118,7 +118,7 @@ const handleUnlock = async () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm">
+  <div class="session-lock fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm">
     <div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/2 lg:w-1/3 max-w-md border border-gray-200">
       <div class="flex flex-col items-center mb-6">
         <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
@@ -139,21 +139,22 @@ const handleUnlock = async () => {
               id="password-lock"
               :type="showPassword ? 'text' : 'password'"
               required
-              class="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              class="session-lock__campo w-full p-3 pr-10 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               placeholder="Tu contraseña"
               :disabled="isSubmitting"
             />
             <button
               type="button"
               @click="showPassword = !showPassword"
-              class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+              class="session-lock__ver absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+              :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
             >
               <i :class="showPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'"></i>
             </button>
           </div>
         </div>
 
-        <div v-if="lockoutRetrySeconds > 0 || lockoutMessage" class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div v-if="lockoutRetrySeconds > 0 || lockoutMessage" class="session-lock__espera p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div class="flex items-center space-x-2">
             <i class="fas fa-clock text-amber-500 text-lg"></i>
             <div>
@@ -164,7 +165,7 @@ const handleUnlock = async () => {
           </div>
         </div>
 
-        <div v-if="errorMessage && lockoutRetrySeconds <= 0" class="p-3 bg-red-50 border border-red-100 rounded-lg">
+        <div v-if="errorMessage && lockoutRetrySeconds <= 0" class="session-lock__error p-3 bg-red-50 border border-red-100 rounded-lg">
           <p class="text-red-600 text-sm text-center font-medium">{{ errorMessage }}</p>
         </div>
 
