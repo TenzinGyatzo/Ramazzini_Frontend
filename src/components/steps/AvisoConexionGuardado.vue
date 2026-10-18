@@ -4,11 +4,15 @@
  * (con «Reintentar»), si el navegador perdió la conexión mientras se captura, o si ya regresó.
  */
 defineProps<{
-  /** El último intento de guardar no tuvo respuesta del servidor. */
+  /** El último intento de guardar falló por la conexión o el servidor. */
   errorConexion: boolean;
   enLinea: boolean;
   restablecida: boolean;
   ocupado: boolean;
+  /** Tras el fallo: el servidor ya responde (verificado), se puede reintentar. */
+  servidorDisponible?: boolean | null;
+  /** Guardar está tardando más de lo normal. */
+  lento?: boolean;
 }>();
 
 defineEmits<{ reintentar: [] }>();
@@ -23,9 +27,14 @@ defineEmits<{ reintentar: [] }>();
     >
       <i class="fa-solid fa-wifi aviso-conexion__icono" aria-hidden="true"></i>
       <p class="min-w-0 flex-1">
-        <span class="font-semibold">No se pudo guardar: no hay conexión con el servidor.</span>
+        <span class="font-semibold">No se pudo guardar: hay un problema de conexión con el servidor.</span>
         Tu captura sigue aquí; no cierres esta pestaña.
-        <span v-if="enLinea && restablecida" class="font-medium"> La conexión ya regresó.</span>
+        <span v-if="servidorDisponible" class="aviso-conexion__regreso mt-1 block font-semibold">
+          <i class="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>La conexión regresó. Ya puedes reintentar.
+        </span>
+        <span v-else class="mt-1 block text-xs opacity-80">
+          <i class="fa-solid fa-spinner fa-spin mr-1" aria-hidden="true"></i>Revisando la conexión cada pocos segundos…
+        </span>
       </p>
       <button
         type="button"
@@ -37,6 +46,14 @@ defineEmits<{ reintentar: [] }>();
         Reintentar
       </button>
     </div>
+    <p
+      v-else-if="lento"
+      class="aviso-conexion aviso-conexion--sin mt-4 self-center rounded-full border px-3 py-1 text-xs font-medium"
+      role="status"
+    >
+      <i class="fa-solid fa-hourglass-half mr-1" aria-hidden="true"></i>
+      Está tardando más de lo normal; revisa tu conexión
+    </p>
     <p
       v-else-if="!enLinea"
       class="aviso-conexion aviso-conexion--sin mt-4 self-center rounded-full border px-3 py-1 text-xs font-medium"
@@ -64,6 +81,9 @@ defineEmits<{ reintentar: [] }>();
 }
 .aviso-conexion__icono {
   color: #dc2626;
+}
+.aviso-conexion__regreso {
+  color: #047857;
 }
 .aviso-conexion__reintentar {
   background-color: #dc2626;
@@ -103,6 +123,9 @@ html.dark-mode .aviso-conexion--error {
   border-color: #7f1d1d;
   background-color: rgba(127, 29, 29, 0.3);
   color: #fecaca;
+}
+html.dark-mode .aviso-conexion__regreso {
+  color: #6ee7b7;
 }
 html.dark-mode .aviso-conexion--sin {
   border-color: #78350f;

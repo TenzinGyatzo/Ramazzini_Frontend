@@ -468,7 +468,12 @@ import { buildNotaMedicaSectionSteps } from '@/helpers/buildNotaMedicaSectionSte
 import { legacyStepToSectionIndex as nmLegacyStepToSectionIndex } from '@/helpers/notaMedicaSections';
 import { estadoSegmento, nombreDePaso, usarPasosSegmentados } from '@/helpers/pasosFormulario';
 import { anotarDocumentoGuardado } from '@/helpers/retornoExpediente';
-import { esErrorSinRespuesta, useEstadoConexion } from '@/composables/useEstadoConexion';
+import {
+  esFalloDeConexionOServidor,
+  useEstadoConexion,
+  useVerificacionServidor,
+} from '@/composables/useEstadoConexion';
+import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 import AvisoConexionGuardado from '@/components/steps/AvisoConexionGuardado.vue';
 
 export default {
@@ -1533,11 +1538,24 @@ export default {
     // Guardar sin conexión: aviso en el formulario con «Reintentar» (AvisoConexionGuardado)
     const { enLinea, restablecida: conexionRestablecida } = useEstadoConexion();
     const errorConexion = ref(false);
+    // Tras un fallo se comprueba con una consulta ligera que pasa por la base de datos
+    const { disponible: servidorDisponible, iniciar: vigilarServidor, reiniciar: dejarDeVigilar } =
+      useVerificacionServidor(() =>
+        TrabajadoresAPI.getTrabajadorById(
+          empresas.currentEmpresaId,
+          centrosTrabajo.currentCentroTrabajoId,
+          trabajadores.currentTrabajadorId,
+        ),
+      );
+    /** Guardar está tardando: se avisa a los 4 s. */
+    const guardadoLento = ref(false);
+    let temporizadorLento = null;
 
     const handleSubmit = async () => {
       if (isSubmitting.value || isValidating.value) return;
 
       errorConexion.value = false;
+      dejarDeVigilar();
       isValidating.value = true;
       try {
       let datosLimpios;
@@ -1868,6 +1886,11 @@ export default {
       }
 
       isSubmitting.value = true;
+      guardadoLento.value = false;
+      clearTimeout(temporizadorLento);
+      temporizadorLento = setTimeout(() => {
+        guardadoLento.value = true;
+      }, 4000);
       isValidating.value = false;
       try {
         // VALIDACIÓN ESPECÍFICA PARA CONSTANCIA DE APTITUD: Verificar que exista una Aptitud al Puesto con una de las 3 opciones de "si aptitud"
@@ -2016,6 +2039,8 @@ export default {
         // Optimista: el expediente puede mostrar "Generando…" sin esperar al PATCH
         pdfGenerationStore.markLocalGenerating(documentId);
         isSubmitting.value = false;
+        clearTimeout(temporizadorLento);
+        guardadoLento.value = false;
 
         // Navegar YA (no await markPdfGenerating ni PDF). resetForm diferido para no bloquear el paint.
         permitirSalidaTrasGuardar();
@@ -2060,7 +2085,17 @@ export default {
           return;
         }
 
-        if (error.response) {
+        if (esFalloDeConexionOServidor(error)) {
+          // Sin internet, servidor caído o sin base de datos: aviso con «Reintentar» y se vigila
+          // al servidor para avisar cuando ya responda (antes solo un mensaje, o nada)
+          console.error('No se pudo guardar por la conexión o el servidor:', error?.response?.status ?? error?.code);
+          errorConexion.value = true;
+          vigilarServidor();
+          toast.open({
+            message: 'No se pudo guardar: hay un problema de conexión con el servidor. Tu captura sigue aquí.',
+            type: 'error',
+          });
+        } else if (error.response) {
           console.error('=== Detalles del error (respuesta del backend) ===');
           console.error('Status:', error.response.status);
           console.error('Status Text:', error.response.statusText);
@@ -2116,18 +2151,13 @@ export default {
 
             toast.open({ message: mensajeError, type: 'error' });
           }
-        } else if (esErrorSinRespuesta(error)) {
-          // Sin internet, servidor caído o tiempo agotado: antes no se avisaba nada
-          errorConexion.value = true;
-          toast.open({
-            message: 'No se pudo guardar: no hay conexión con el servidor. Tu captura sigue aquí.',
-            type: 'error',
-          });
         } else {
           toast.open({ message: mensajeError, type: 'error' });
         }
       } finally {
         isSubmitting.value = false;
+        clearTimeout(temporizadorLento);
+        guardadoLento.value = false;
       }
       } finally {
         isValidating.value = false;
@@ -2141,6 +2171,8 @@ export default {
       errorConexion,
       enLinea,
       conexionRestablecida,
+      servidorDisponible,
+      guardadoLento,
       isValidating,
       currentStepDisplay,
       pasosSegmentados,
@@ -2273,6 +2305,8 @@ export default {
         :en-linea="enLinea"
         :restablecida="conexionRestablecida"
         :ocupado="isSubmitting || isValidating"
+        :servidor-disponible="servidorDisponible"
+        :lento="guardadoLento"
         @reintentar="handleSubmit"
       />
       <button
@@ -2338,12 +2372,14 @@ export default {
               Última actualización: <span class="font-medium text-gray-500">{{ formatUsername(documentAuditInfo.updatedByUsername, documentAuditInfo.updatedById) }}</span>
             </p>
           </div>
-          <div v-if="!disableEdit && (errorConexion || !enLinea || conexionRestablecida)" class="mb-4 flex flex-col">
+          <div v-if="!disableEdit && (errorConexion || guardadoLento || !enLinea || conexionRestablecida)" class="mb-4 flex flex-col">
             <AvisoConexionGuardado
               :error-conexion="errorConexion"
               :en-linea="enLinea"
               :restablecida="conexionRestablecida"
               :ocupado="isSubmitting || isValidating"
+              :servidor-disponible="servidorDisponible"
+              :lento="guardadoLento"
               @reintentar="handleSubmit"
             />
           </div>

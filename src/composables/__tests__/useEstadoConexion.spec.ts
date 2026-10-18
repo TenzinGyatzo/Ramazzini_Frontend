@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
-import { esErrorSinRespuesta, useEstadoConexion } from '../useEstadoConexion';
+import {
+  esErrorSinRespuesta,
+  esFalloDeConexionOServidor,
+  useEstadoConexion,
+  useVerificacionServidor,
+} from '../useEstadoConexion';
 
 describe('esErrorSinRespuesta', () => {
   it('reconoce los errores de axios sin respuesta del servidor', () => {
@@ -44,6 +49,56 @@ describe('useEstadoConexion', () => {
 
     vi.advanceTimersByTime(5000);
     expect(estado.restablecida.value).toBe(false);
+    envoltura.unmount();
+  });
+});
+
+describe('esFalloDeConexionOServidor', () => {
+  it('cubre sin respuesta, puerta de enlace caída y el 500 sin explicación', () => {
+    expect(esFalloDeConexionOServidor({ isAxiosError: true, code: 'ERR_NETWORK' })).toBe(true);
+    expect(esFalloDeConexionOServidor({ response: { status: 502 } })).toBe(true);
+    expect(esFalloDeConexionOServidor({ response: { status: 504, data: {} } })).toBe(true);
+    // Lo que respondió el servidor local sin acceso a su base de datos
+    expect(esFalloDeConexionOServidor({ response: { status: 500, data: { statusCode: 500, message: 'Internal server error' } } })).toBe(true);
+    expect(esFalloDeConexionOServidor({ response: { status: 500 } })).toBe(true);
+  });
+
+  it('deja como estaban los errores de datos y los 500 con un mensaje propio', () => {
+    expect(esFalloDeConexionOServidor({ response: { status: 400, data: { message: 'Falta la fecha' } } })).toBe(false);
+    expect(esFalloDeConexionOServidor({ response: { status: 409 } })).toBe(false);
+    expect(esFalloDeConexionOServidor({ response: { status: 500, data: { message: 'Error al crear el receta' } } })).toBe(false);
+  });
+});
+
+describe('useVerificacionServidor', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('consulta cada 5 s hasta que el servidor responde y entonces se detiene', async () => {
+    vi.useFakeTimers();
+    let falla = true;
+    const consultar = vi.fn(async () => {
+      if (falla) throw new Error('sin servidor');
+    });
+    let estado!: ReturnType<typeof useVerificacionServidor>;
+    const envoltura = mount(defineComponent({ setup() { estado = useVerificacionServidor(consultar); return () => h('div'); } }));
+
+    expect(estado.disponible.value).toBeNull();
+    estado.iniciar();
+    expect(estado.disponible.value).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(consultar).toHaveBeenCalledTimes(1);
+    expect(estado.disponible.value).toBe(false);
+
+    falla = false;
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(estado.disponible.value).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(consultar).toHaveBeenCalledTimes(2);
+
+    estado.reiniciar();
+    expect(estado.disponible.value).toBeNull();
     envoltura.unmount();
   });
 });
