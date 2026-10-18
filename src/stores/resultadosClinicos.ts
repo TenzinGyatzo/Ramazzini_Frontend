@@ -49,6 +49,9 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
   const loadingGrouped = ref(false);
   const items = ref<ResultadoClinico[]>([]);
   const resultsByYear = ref<ResultsByYear>({});
+  /** Trabajador al que pertenece `resultsByYear` (la vista no muestra los de otro). */
+  const resultadosDeTrabajadorId = ref<string | null>(null);
+  let fetchResultadosAgrupadosGeneracion = 0;
   const current = ref<ResultadoClinico | null>(null);
   const drawerOpen = ref(false);
 
@@ -213,9 +216,17 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
   }
 
   async function fetchResultadosAgrupados(trabajadorId: string) {
+    const generacion = ++fetchResultadosAgrupadosGeneracion;
     try {
       loadingGrouped.value = true;
+      // De otro trabajador: no se dejan a la vista los resultados del anterior
+      if (resultadosDeTrabajadorId.value !== String(trabajadorId)) {
+        resultsByYear.value = {};
+        resultadosDeTrabajadorId.value = null;
+      }
       const response = await ResultadosClinicosAPI.getByTrabajadorGrouped(trabajadorId);
+      // Una respuesta lenta de otro trabajador (o de una carga anterior) no reemplaza a la vigente
+      if (generacion !== fetchResultadosAgrupadosGeneracion) return;
       // El backend devuelve Record<number, ResultadoClinico[]>
       // Convertir las claves numéricas a strings para consistencia con el frontend
       const grouped: ResultsByYear = {};
@@ -226,12 +237,15 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
         });
       }
       resultsByYear.value = grouped;
+      resultadosDeTrabajadorId.value = String(trabajadorId);
     } catch (error) {
+      if (generacion !== fetchResultadosAgrupadosGeneracion) return;
       console.error('Error al obtener resultados clínicos agrupados:', error);
       resultsByYear.value = {};
+      resultadosDeTrabajadorId.value = String(trabajadorId);
       throw error;
     } finally {
-      loadingGrouped.value = false;
+      if (generacion === fetchResultadosAgrupadosGeneracion) loadingGrouped.value = false;
     }
   }
 
@@ -371,6 +385,7 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
   function reset() {
     items.value = [];
     resultsByYear.value = {};
+    resultadosDeTrabajadorId.value = null;
     current.value = null;
     drawerOpen.value = false;
   }
@@ -380,6 +395,7 @@ export const useResultadosClinicosStore = defineStore("resultadosClinicos", () =
     loadingGrouped,
     items,
     resultsByYear,
+    resultadosDeTrabajadorId,
     current,
     drawerOpen,
     tipoEstudioOptions,

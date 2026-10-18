@@ -67,6 +67,11 @@ export const useDocumentosStore = defineStore("documentos", () => {
   /** Orden manual y subgrupos por año; un año sin entrada usa el orden por defecto. */
   const organizacionPorAnio = ref<OrganizacionPorAnio>({});
   const loading = ref(true);
+  /**
+   * Trabajador al que pertenecen `documentsByYear` y `organizacionPorAnio`. Al cambiar de
+   * trabajador, la vista no debe mostrar los del anterior mientras llegan los nuevos.
+   */
+  const documentosDeTrabajadorId = ref<string | null>(null);
   const currentTypeOfDocument = ref<string | null>(null);
   const currentDocumentId = ref<string | null>(null);
   const currentDocument = ref<any | null>(null);
@@ -210,6 +215,12 @@ export const useDocumentosStore = defineStore("documentos", () => {
     const generation = ++fetchAllDocumentsGeneration;
     try {
       loading.value = true;
+      // De otro trabajador: nadie debe leer los documentos del anterior mientras llegan
+      if (documentosDeTrabajadorId.value !== String(trabajadorId)) {
+        documentsByYear.value = {};
+        organizacionPorAnio.value = {};
+        documentosDeTrabajadorId.value = null;
+      }
 
       let lastError: unknown;
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -228,6 +239,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
             const data = Array.isArray(raw) ? raw : [];
             mergeTipoEnDocumentsByYear(tipo, data);
           });
+          documentosDeTrabajadorId.value = String(trabajadorId);
           return;
         } catch (error) {
           lastError = error;
@@ -314,6 +326,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
   function clear() {
     documentsByYear.value = {};
     organizacionPorAnio.value = {};
+    documentosDeTrabajadorId.value = null;
     currentTypeOfDocument.value = null;
     currentDocumentId.value = null;
     currentDocument.value = null;
@@ -431,6 +444,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
   return {
     loading,
     documentsByYear,
+    documentosDeTrabajadorId,
     organizacionPorAnio,
     guardarOrdenDelAnio,
     currentTypeOfDocument,

@@ -563,8 +563,16 @@ watch(
   }
 );
 
-const documentosPorAnio = computed(() => documentos.documentsByYear);
-const resultadosPorAnio = computed(() => resultadosClinicos.resultsByYear);
+// Solo lo del trabajador de la dirección: al cambiar de expediente no se muestran, ni por un
+// momento, los documentos o resultados del anterior mientras llegan los nuevos
+const idTrabajadorEnRuta = computed(() => String(route.params.idTrabajador ?? ''));
+const documentosSonDelTrabajador = computed(
+  () => documentos.documentosDeTrabajadorId === idTrabajadorEnRuta.value,
+);
+const documentosPorAnio = computed(() => (documentosSonDelTrabajador.value ? documentos.documentsByYear : {}));
+const resultadosPorAnio = computed(() =>
+  resultadosClinicos.resultadosDeTrabajadorId === idTrabajadorEnRuta.value ? resultadosClinicos.resultsByYear : {},
+);
 const yearsWithRecords = computed(() => {
   const años = new Set<string>();
   if (documentosPorAnio.value) {
@@ -894,8 +902,8 @@ const logotipoPendiente = computed(() => proveedorSaludStore.logotipoPendiente);
 
 // Computed para el total de documentos creados (sin documentos externos)
 const totalDocumentosCreados = computed(() => {
-  if (!documentos.documentsByYear) return 0;
-  return Object.values(documentos.documentsByYear).reduce((total, yearData) => {
+  if (!documentosPorAnio.value) return 0;
+  return Object.values(documentosPorAnio.value).reduce((total, yearData) => {
     return total + (
       (yearData.notasAclaratorias?.length || 0) +
       (yearData.constanciasAptitud?.length || 0) +
@@ -926,8 +934,8 @@ const totalDocumentosCreados = computed(() => {
 
 // Computed para el total de documentos externos
 const totalDocumentosExternos = computed(() => {
-  if (!documentos.documentsByYear) return 0;
-  return Object.values(documentos.documentsByYear).reduce((total, yearData) => {
+  if (!documentosPorAnio.value) return 0;
+  return Object.values(documentosPorAnio.value).reduce((total, yearData) => {
     return total + (yearData.documentosExternos?.length || 0);
   }, 0);
 });
@@ -993,7 +1001,7 @@ const totalAgentesRiesgo = computed(
 );
 
 const totalResultadosClinicos = computed(() =>
-  Object.values(resultadosClinicos.resultsByYear || {}).reduce(
+  Object.values(resultadosPorAnio.value || {}).reduce(
     (total, resultados) => total + (Array.isArray(resultados) ? resultados.length : 0),
     0,
   ),
@@ -1413,7 +1421,7 @@ const crearDocumento = (tipoDocumento: string) =>
         <div>
           <Transition appear mode="out-in" name="expediente-swap">
             <div
-              v-if="documentos.loading && !yearsWithRecords.length"
+              v-if="documentos.loading && (!documentosSonDelTrabajador || !yearsWithRecords.length)"
               key="docs-loading"
               class="text-center py-20"
             >
