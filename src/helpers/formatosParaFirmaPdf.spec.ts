@@ -34,7 +34,27 @@ describe('consentimiento informado antidoping', () => {
 
     const { def, nombre } = descargas[0];
     expect(nombre).toBe('Consentimiento_Antidoping_P_REZ_2026-10-17.pdf');
-    expect(texto(def.header.columns[1])).toBe('CONSENTIMIENTO INFORMADO PARA\nPRUEBA DE DETECCIÓN DE SUSTANCIAS');
+    // Un solo renglón, como la declaración (los espacios iniciales alargan la línea roja)
+    expect(texto(def.header.columns[1])).toBe('  CONSENTIMIENTO INFORMADO PARA PRUEBA DE DETECCIÓN DE SUSTANCIAS\n');
+    expect(def.styles.header.fontSize).toBe(13);
+
+    // Lo que se enfatiza va en negritas
+    const negritas = def.content
+      .flatMap((p: any) => (Array.isArray(p.text) ? p.text : []))
+      .filter((t: any) => typeof t === 'object' && t.bold === true)
+      .map(texto);
+    expect(negritas).toEqual([
+      'JUAN PÉREZ LÓPEZ',
+      'prueba para la detección de sustancias ',
+      'y/o',
+      ' sus metabolitos (antidoping)',
+      'el resultado puede formar parte de mi evaluación médica laboral.',
+      'este tipo de pruebas tiene alcances y limitaciones',
+      'un resultado positivo en una prueba de tamizaje no necesariamente constituye, por sí solo, una confirmación definitiva del consumo de una sustancia.',
+      'informar sobre medicamentos, tratamientos o productos que pudieran ser relevantes para la interpretación de los resultados',
+      'otorgo mi consentimiento libre y voluntario',
+      '17-10-2026',
+    ]);
 
     const parrafos = def.content.map(texto);
     expect(parrafos[0]).toBe(
