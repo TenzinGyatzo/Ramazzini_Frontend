@@ -8,9 +8,12 @@ import idiomaEspanol from '@/assets/i18n/datatables-es-ES.json';
 import {
   guardarEstadoTabla,
   leerEstadoTabla,
+  recordarTrabajadorNuevo,
   recordarUltimoTrabajador,
+  tomarTrabajadorNuevo,
   tomarUltimoTrabajador,
 } from '@/helpers/estadoTablaTrabajadores';
+import { getToast } from '@/utils/toast';
 import 'datatables.net-select-dt';
 import 'datatables.net-buttons-dt';
 import 'datatables.net-fixedcolumns-dt';
@@ -82,8 +85,44 @@ const DURACION_RESALTADO_MS = 2500;
 function recordarTrabajador(trabajadorId: unknown) {
   recordarUltimoTrabajador(centrosTrabajo.currentCentroTrabajoId, trabajadorId ? String(trabajadorId) : null);
 }
+/**
+ * Un trabajador recién registrado se pone a la vista: si la búsqueda que se recuerda lo deja
+ * fuera se quita, y se va a la página donde quedó. Si lo ocultan los filtros del panel, se avisa.
+ */
+function mostrarTrabajadorNuevo(trabajadorId: string): boolean {
+  const esElNuevo = (_indice: number, datos: any) => String(datos?._id) === trabajadorId;
+  const fila = dataTableInstance.row(esElNuevo);
+  if (!fila.any()) return false;
+  const posicionVisible = () =>
+    dataTableInstance.rows({ search: 'applied', order: 'applied' }).indexes().toArray().indexOf(fila.index());
+
+  let posicion = posicionVisible();
+  if (posicion < 0 && dataTableInstance.search()) {
+    dataTableInstance.search('').draw(false);
+    posicion = posicionVisible();
+  }
+  if (posicion < 0) {
+    getToast().open({
+      message: 'El trabajador se registró, pero los filtros activos lo ocultan de la tabla.',
+      type: 'info',
+    });
+    return true;
+  }
+  const { length, page } = dataTableInstance.page.info();
+  const paginaDelNuevo = length > 0 ? Math.floor(posicion / length) : 0;
+  if (paginaDelNuevo !== page) dataTableInstance.page(paginaDelNuevo).draw(false);
+  return true;
+}
+
 function resaltarUltimoTrabajador() {
   if (!dataTableInstance) return;
+  const centroId = centrosTrabajo.currentCentroTrabajoId;
+  const trabajadorNuevo = tomarTrabajadorNuevo(centroId);
+  if (trabajadorNuevo && !mostrarTrabajadorNuevo(trabajadorNuevo)) {
+    // La lista se está recargando y aún no lo trae: se intenta con la siguiente carga
+    recordarTrabajadorNuevo(centroId, trabajadorNuevo);
+    return;
+  }
   const trabajadorId = tomarUltimoTrabajador(centrosTrabajo.currentCentroTrabajoId);
   if (!trabajadorId) return;
   const fila = dataTableInstance.row((_indice: number, datos: any) => String(datos?._id) === trabajadorId);

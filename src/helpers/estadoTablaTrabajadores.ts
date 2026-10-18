@@ -9,6 +9,7 @@
 
 const PREFIJO_ESTADO = 'ramazzini:tabla-trabajadores:';
 const PREFIJO_ULTIMO = 'ramazzini:tabla-trabajadores:ultimo:';
+const PREFIJO_NUEVO = 'ramazzini:tabla-trabajadores:nuevo:';
 
 export interface EstadoTabla {
   time: number;
@@ -98,9 +99,37 @@ export function tomarUltimoTrabajador(
   centroId: string | null | undefined,
   almacen: Almacen | null = almacenDeSesion(),
 ): string | null {
+  return tomar(`${PREFIJO_ULTIMO}${centroId}`, centroId, almacen);
+}
+
+/**
+ * Trabajador recién registrado: además de resaltarlo, la tabla lo pone a la vista aunque la
+ * búsqueda o la página que se recuerdan lo dejaran fuera.
+ */
+export function recordarTrabajadorNuevo(
+  centroId: string | null | undefined,
+  trabajadorId: string | null | undefined,
+  almacen: Almacen | null = almacenDeSesion(),
+): void {
+  if (!centroId || !trabajadorId || !almacen) return;
+  try {
+    almacen.setItem(`${PREFIJO_NUEVO}${centroId}`, String(trabajadorId));
+  } catch {
+    // ignorar
+  }
+}
+
+/** Devuelve el trabajador recién registrado y lo olvida. */
+export function tomarTrabajadorNuevo(
+  centroId: string | null | undefined,
+  almacen: Almacen | null = almacenDeSesion(),
+): string | null {
+  return tomar(`${PREFIJO_NUEVO}${centroId}`, centroId, almacen);
+}
+
+function tomar(clave: string, centroId: string | null | undefined, almacen: Almacen | null): string | null {
   if (!centroId || !almacen) return null;
   try {
-    const clave = `${PREFIJO_ULTIMO}${centroId}`;
     const id = almacen.getItem(clave);
     almacen.removeItem(clave);
     return id || null;

@@ -2079,6 +2079,15 @@ html.dark-mode .form-green-submit .formkit-input[type='submit']:hover {
   border-color: #064e3b !important;
 }
 
+/* modal-trabajadores: confirmación de trabajador registrado */
+html.dark-mode .modal-trabajadores .registro-exitoso__icono {
+  color: #a7f3d0 !important;
+}
+
+html.dark-mode .modal-trabajadores .registro-exitoso__otro:hover {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
 /*
  * form-green-submit / modal-trabajadores: campos bloqueados (identificación inmutable tras CURP validada).
  * Tinte ámbar + borde para distinguirlos de inputs editables en oscuro.

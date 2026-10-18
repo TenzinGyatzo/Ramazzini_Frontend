@@ -623,6 +623,13 @@ const openModalInternal = async (empresa: Empresa | null = null, centroTrabajo: 
 
 const closeModal = () => showModal.value = false;
 
+// «Registrar otro» tras dar de alta: el modal se vuelve a abrir vacío
+const registrarOtroTrabajador = async () => {
+  showModal.value = false;
+  await nextTick();
+  openModalInternal();
+};
+
 const TIPO_A_ENTIDAD: Record<string, EntidadEliminable> = {
   Trabajador: 'trabajador',
   'Riesgo de Trabajo': 'riesgoTrabajo',
@@ -999,7 +1006,7 @@ const toggleVigencias = () => {
           name="modal-work"
           :duration="{ enter: 230, leave: 150 }"
         >
-          <ModalTrabajadores v-if="showModal" @closeModal="closeModal" @openSubscriptionModal="showSubscriptionModal = true" />
+          <ModalTrabajadores v-if="showModal" @closeModal="closeModal" @registrarOtro="registrarOtroTrabajador" @openSubscriptionModal="showSubscriptionModal = true" />
         </Transition>
       </Teleport>
 

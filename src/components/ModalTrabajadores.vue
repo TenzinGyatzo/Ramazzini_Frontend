@@ -1,5 +1,7 @@
 <script setup>
-import { inject, ref, shallowRef, watch, computed, provide } from 'vue';
+import { inject, ref, shallowRef, watch, computed, provide, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
+import { recordarTrabajadorNuevo, recordarUltimoTrabajador } from '@/helpers/estadoTablaTrabajadores';
 import ModalBajaTrabajador from '@/components/ModalBajaTrabajador.vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -180,7 +182,55 @@ function omitImmutableIdentificationFields(payload) {
   return result;
 }
 
-const emit = defineEmits(['closeModal', 'openSubscriptionModal'])
+const emit = defineEmits(['closeModal', 'openSubscriptionModal', 'registrarOtro'])
+
+/**
+ * Tras registrar a un trabajador, el modal ofrece el siguiente paso (abrir su expediente o
+ * registrar otro) en lugar de cerrarse; la tabla lo pondrá a la vista y lo resaltará.
+ */
+const router = useRouter();
+const registrado = ref(null);
+const panelEl = ref(null);
+const botonAbrirExpedienteEl = ref(null);
+
+/** Al volver a la tabla, el nuevo se pone a la vista y se resalta (al recargarse la lista). */
+const mostrarEnLaTabla = (trabajadorId) => {
+  if (!trabajadorId) return;
+  recordarTrabajadorNuevo(centrosTrabajo.currentCentroTrabajoId, String(trabajadorId));
+  recordarUltimoTrabajador(centrosTrabajo.currentCentroTrabajoId, String(trabajadorId));
+  trabajadores.fetchTrabajadoresConHistoria(empresas.currentEmpresaId, centrosTrabajo.currentCentroTrabajoId);
+};
+
+const mostrarRegistrado = async (trabajador) => {
+  registrado.value = {
+    id: String(trabajador._id),
+    nombre: formatNombreCompleto(trabajador),
+  };
+  await nextTick();
+  if (panelEl.value) panelEl.value.scrollTop = 0;
+  botonAbrirExpedienteEl.value?.focus();
+};
+
+const abrirExpedienteRegistrado = () => {
+  const id = registrado.value?.id;
+  const idEmpresa = empresas.currentEmpresaId;
+  const idCentroTrabajo = centrosTrabajo.currentCentroTrabajoId;
+  if (!id || !idEmpresa || !idCentroTrabajo) {
+    forceClose();
+    return;
+  }
+  // Al regresar del expediente, su fila se resalta como con cualquier trabajador abierto
+  recordarUltimoTrabajador(idCentroTrabajo, id);
+  registrado.value = null;
+  forceClose();
+  router.push({ name: 'expediente-medico', params: { idEmpresa, idCentroTrabajo, idTrabajador: id } });
+};
+
+const registrarOtro = () => {
+  mostrarEnLaTabla(registrado.value?.id);
+  registrado.value = null;
+  emit('registrarOtro');
+};
 
 
 const nivelesEscolaridadBase = [
@@ -492,11 +542,17 @@ const buildFormState = () => ({
   residencia: { ...nom024ResidenciaFields.value },
 });
 
-const { isDirty } = useDirtySnapshot(buildFormState, {
+const { isDirty: formularioModificado } = useDirtySnapshot(buildFormState, {
   resetTrigger: () => !trabajadores.loadingModal,
 });
+// Ya registrado, no hay nada que descartar al cerrar
+const isDirty = computed(() => !registrado.value && formularioModificado.value);
 
 const closeModal = () => {
+  if (registrado.value) {
+    mostrarEnLaTabla(registrado.value.id);
+    registrado.value = null;
+  }
   posibleDuplicadoRegistro.value = null;
   showFusionModal.value = false;
   emit('closeModal');
@@ -863,6 +919,10 @@ const handleSubmit = async (data) => {
         trabajadorData,
       );
       if (response?.posibleDuplicado) {
+        if (response.data?._id) {
+          recordarTrabajadorNuevo(centrosTrabajo.currentCentroTrabajoId, String(response.data._id));
+          recordarUltimoTrabajador(centrosTrabajo.currentCentroTrabajoId, String(response.data._id));
+        }
         posibleDuplicadoRegistro.value = response.posibleDuplicado;
         nuevoTrabajadorId.value = response.data?._id;
         toast.open({
@@ -873,6 +933,10 @@ const handleSubmit = async (data) => {
           empresas.currentEmpresaId,
           centrosTrabajo.currentCentroTrabajoId,
         );
+        return;
+      }
+      if (response?.data?._id) {
+        await mostrarRegistrado(response.data);
         return;
       }
       toast.open({ message: 'Trabajador registrado exitosamente', type: 'success' });
@@ -1090,6 +1154,7 @@ const {
     </div>
     <!-- Modal centrado con desplazamiento interno -->
     <div
+      ref="panelEl"
       class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full sm:w-[92%] md:w-4/5 lg:w-3/4 xl:w-2/3 2xl:max-w-5xl 2xl:w-4/5 p-6 sm:p-8 md:p-10 rounded-lg shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
       :class="{ 'modal-dismiss-pulse': dismissPulse }"
       style="overflow-x: visible;">
@@ -1102,6 +1167,41 @@ const {
 
         <div v-if="trabajadores.loadingModal">
           <h1 class="text-3xl text-center">Cargando trabajador...</h1>
+        </div>
+        <!-- Registrado: siguiente paso -->
+        <div v-else-if="registrado" class="registro-exitoso py-6 sm:py-10 text-center" role="status">
+          <div class="registro-exitoso__icono mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <i class="fa-solid fa-check text-3xl" aria-hidden="true"></i>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-semibold">Trabajador registrado</h1>
+          <p class="registro-exitoso__nombre mt-2 text-lg text-gray-700">{{ registrado.nombre }}</p>
+          <p class="mt-1 text-sm text-gray-500">¿Qué sigue?</p>
+          <div class="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+            <button
+              ref="botonAbrirExpedienteEl"
+              type="button"
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+              @click="abrirExpedienteRegistrado"
+            >
+              <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+              Abrir expediente
+            </button>
+            <button
+              type="button"
+              class="registro-exitoso__otro inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-300 px-5 py-3 text-base font-medium text-emerald-700 transition-colors hover:border-emerald-400 hover:bg-emerald-50"
+              @click="registrarOtro"
+            >
+              <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+              Registrar otro
+            </button>
+          </div>
+          <button
+            type="button"
+            class="mt-5 text-sm text-gray-500 underline-offset-2 hover:text-gray-700 hover:underline"
+            @click="forceClose"
+          >
+            Volver a la lista de trabajadores
+          </button>
         </div>
         <!-- Contenido del modal -->
         <div v-else>
@@ -1150,11 +1250,7 @@ const {
             </p>
             <p class="mt-1 text-amber-900/90 dark:text-amber-100/90">
               Coincide con:
-              {{ formatNombreCompleto(
-                posibleDuplicadoRegistro.trabajador?.primerApellido,
-                posibleDuplicadoRegistro.trabajador?.segundoApellido,
-                posibleDuplicadoRegistro.trabajador?.nombre,
-              ) }}
+              {{ formatNombreCompleto(posibleDuplicadoRegistro.trabajador) }}
               — Folio {{ posibleDuplicadoRegistro.trabajador?.folio || 'N/D' }}
             </p>
             <div class="flex flex-wrap gap-2 mt-3">
@@ -1612,6 +1708,7 @@ const {
         </div>
 
         <button
+          v-if="!registrado"
           class="text-xl mt-2 w-full rounded-lg bg-white font-semibold text-gray-800 shadow-sm ring-2 ring-inset ring-gray-300 hover:bg-gray-100 p-3 transition-transform duration-300 transform hover:scale-105 hover:shadow-lg flex-1"
           @click="requestDismiss">
           Cerrar

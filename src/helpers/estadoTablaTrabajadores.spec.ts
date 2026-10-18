@@ -4,7 +4,9 @@ import {
   estadoParaGuardar,
   guardarEstadoTabla,
   leerEstadoTabla,
+  recordarTrabajadorNuevo,
   recordarUltimoTrabajador,
+  tomarTrabajadorNuevo,
   tomarUltimoTrabajador,
 } from './estadoTablaTrabajadores';
 
@@ -81,5 +83,17 @@ describe('estadoTablaTrabajadores', () => {
     expect(tomarUltimoTrabajador('c2', almacen)).toBeNull();
     expect(tomarUltimoTrabajador('c1', almacen)).toBe('t9');
     expect(tomarUltimoTrabajador('c1', almacen)).toBeNull();
+  });
+
+  it('el trabajador recién registrado se recuerda aparte y también se toma una sola vez', () => {
+    const almacen = almacenEnMemoria();
+    recordarTrabajadorNuevo('c1', 't10', almacen);
+    recordarUltimoTrabajador('c1', 't10', almacen);
+    expect(tomarTrabajadorNuevo('c2', almacen)).toBeNull();
+    expect(tomarTrabajadorNuevo('c1', almacen)).toBe('t10');
+    expect(tomarTrabajadorNuevo('c1', almacen)).toBeNull();
+    expect(tomarUltimoTrabajador('c1', almacen)).toBe('t10');
+    recordarTrabajadorNuevo(null, 't11', almacen);
+    expect(almacen.datos.size).toBe(0);
   });
 });
