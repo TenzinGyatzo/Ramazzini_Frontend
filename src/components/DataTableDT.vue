@@ -132,6 +132,23 @@ function resaltarUltimoTrabajador() {
   nodo.classList.add('fila-reciente');
   setTimeout(() => nodo.classList.remove('fila-reciente'), DURACION_RESALTADO_MS);
 }
+/** Trabajadores cuya reincorporación («Alta») se está guardando. */
+const reincorporando = new Set<string>();
+function botonReincorporando(trabajadorId: unknown) {
+  return `<button type="button" disabled aria-busy="true" class="btn-alta-baja btn-alta-baja--reincorporando absolute right-12 z-40 px-2.5 py-1 rounded-full shadow-md border-2 whitespace-nowrap flex items-center overflow-hidden bg-green-100 text-green-700 border-green-100 cursor-wait"
+      data-id="${escapeHtml(String(trabajadorId))}" title="Reincorporando al trabajador…">
+      <span class="mr-2 text-sm">Reincorporando…</span>
+      <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+    </button>`;
+}
+/** La vista avisa al terminar; si falló, el botón vuelve a «Alta» para reintentar. */
+function terminarReincorporacion(trabajadorId: string) {
+  const id = String(trabajadorId);
+  if (!reincorporando.delete(id) || !dataTableInstance) return;
+  const fila = dataTableInstance.row((_indice: number, datos: any) => String(datos?._id) === id);
+  // Si se reincorporó, la lista ya llegó con su nuevo estado y la fila ya se redibujó
+  if (fila.any() && (fila.data() as any)?.estadoLaboral === 'Inactivo') fila.invalidate().draw(false);
+}
 const { canManageTrabajadores, executeIfCanManageTrabajadores, executeIfCanAccessRiesgosTrabajo } = usePermissionRestrictions();
 const proveedorSaludStore = useProveedorSaludStore();
 /** Las incapacidades son del IMSS: el botón solo existe para proveedores de México. */
@@ -1015,7 +1032,9 @@ function inicializarDataTable() {
 
               <!-- Alta o Baja -->
                 ${
-                  esInactivo
+                  esInactivo && reincorporando.has(String(row._id))
+                    ? botonReincorporando(row._id)
+                    : esInactivo
                     ? `<button type="button" ${canManageTrabajadores ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
                         canManageTrabajadores 
                           ? 'bg-green-100 hover:bg-green-200 text-green-600 hover:scale-105 border-green-100' 
@@ -1201,10 +1220,18 @@ function inicializarDataTable() {
       event.stopPropagation();
 
       const id = $(this).data('id');
+      // Reincorporación en curso: los clics repetidos no vuelven a enviarla
+      if (reincorporando.has(String(id))) return;
       recordarTrabajador(id);
       const trabajador = props.rows.find(t => t._id === id);
       if (trabajador) {
+        const boton = this as HTMLElement;
         executeIfCanManageTrabajadores(() => {
+          // El alta se hace sin confirmación: el botón responde al instante mientras se guarda
+          if (trabajador.estadoLaboral === 'Inactivo') {
+            reincorporando.add(String(id));
+            boton.outerHTML = botonReincorporando(id);
+          }
           emit('toggle-estado-laboral', trabajador);
         }, 'cambiar estado laboral de trabajadores');
       }
@@ -1447,6 +1474,7 @@ function aplicarTodosLosFiltrosDesdeLocalStorage(opciones: { conservarPagina?: b
 
 defineExpose({
   aplicarTodosLosFiltrosDesdeLocalStorage,
+  terminarReincorporacion,
   mostrarVigenciasLocal,
   toggleVigencias: () => {
     if (dataTableInstance) {

@@ -775,6 +775,9 @@ const toggleEstadoLaboral = async (trabajador: { _id: string; estadoLaboral: str
   } catch (error) {
     console.error('Error al actualizar el estado laboral', error);
     toast.open({ message: 'Error al actualizar el estado laboral', type: 'error' });
+  } finally {
+    // El botón «Reincorporando…» de la tabla se libera (si falló, vuelve a «Alta»)
+    if (trabajador?._id) dataTableRef.value?.terminarReincorporacion(trabajador._id);
   }
 };
 
