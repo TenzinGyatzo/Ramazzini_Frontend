@@ -52,6 +52,12 @@ export function calcularPerdidaAuditivaBilateralAMA(
   return Math.round(((5 * menor) + mayor) / 6 * 100) / 100;
 }
 
+/** HBC registrada: un 0 % es un resultado (audición normal), no un dato faltante. */
+export function tieneHipoacusiaBilateralCombinada(audiometria: AudiometriaCalculosInput | null | undefined): boolean {
+  const valor = audiometria?.hipoacusiaBilateralCombinada as unknown;
+  return valor !== null && valor !== undefined && valor !== '' && Number.isFinite(Number(valor));
+}
+
 /** PAB (AMA) o HBC (LFT) calculados desde frecuencias, alineados con visualizador/PDF. */
 export function obtenerResultadoBinauralAudiometria(
   audiometria: AudiometriaCalculosInput,

@@ -7,7 +7,7 @@ import {
     headClinicalFile,
     registrarDescargaArchivoClinico,
 } from '@/lib/clinicalFiles';
-import { obtenerResultadoBinauralAudiometria } from '@/helpers/audiometriaCalculos';
+import { obtenerResultadoBinauralAudiometria, tieneHipoacusiaBilateralCombinada } from '@/helpers/audiometriaCalculos';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import { TIPOS_DOCUMENTO_EXPEDIENTE, nombreTipoDocumento } from '@/helpers/documentosExpediente';
 import {
@@ -144,6 +144,9 @@ const obtenerPABAudiometria = (audiometriaDoc) => {
   if (!audiometriaDoc || typeof audiometriaDoc !== 'object') return null;
   return obtenerResultadoBinauralAudiometria(audiometriaDoc);
 };
+
+// Un 0 % de HBC es audición normal, no un dato faltante («Incompleta»)
+const tieneHBC = (audiometriaDoc) => tieneHipoacusiaBilateralCombinada(audiometriaDoc);
 
 // Función para obtener el nombre legible del tipo de documento
 const obtenerNombreTipoDocumento = (tipo) => {
@@ -3655,10 +3658,10 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                                     <span v-if="audiometria.metodoAudiometria === 'AMA' && obtenerPABAudiometria(audiometria) !== null" class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
                                         PAB: {{ obtenerPABAudiometria(audiometria) }}%
                                     </span>
-                                    <span v-else-if="audiometria.metodoAudiometria === 'LFT' && audiometria.hipoacusiaBilateralCombinada" class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                    <span v-else-if="audiometria.metodoAudiometria === 'LFT' && tieneHBC(audiometria)" class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
                                         HBC: {{ audiometria.hipoacusiaBilateralCombinada }}%
                                     </span>
-                                    <span v-else-if="!audiometria.metodoAudiometria && audiometria.hipoacusiaBilateralCombinada" class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                                    <span v-else-if="!audiometria.metodoAudiometria && tieneHBC(audiometria)" class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
                                         HBC: {{ audiometria.hipoacusiaBilateralCombinada }}%
                                     </span>
                                     <span v-else class="hidden sm:flex ml-2 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
