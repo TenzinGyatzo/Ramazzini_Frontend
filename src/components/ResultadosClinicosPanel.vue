@@ -53,6 +53,7 @@
                     <button
                       @click="selectTipo('AUDIOMETRIA')"
                       class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                      :class="{ 'resultados-tanda__tipo--hecho border-emerald-400 bg-emerald-50/60': estadoTipo('AUDIOMETRIA')?.enTanda }"
                     >
                       <div
                         class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
@@ -67,11 +68,19 @@
                       <div>
                         <div class="font-medium text-gray-800">Audiometría</div>
                         <div class="text-sm text-gray-500">Estudio externo de audición</div>
+                        <div
+                          v-if="estadoTipo('AUDIOMETRIA')"
+                          class="mt-0.5 text-xs"
+                          :class="estadoTipo('AUDIOMETRIA')?.enTanda ? 'font-medium text-emerald-700' : 'text-gray-400'"
+                        >
+                          <i v-if="estadoTipo('AUDIOMETRIA')?.enTanda" class="fas fa-check mr-1" aria-hidden="true"></i>{{ estadoTipo('AUDIOMETRIA')?.texto }}
+                        </div>
                       </div>
                     </button>
                     <button
                       @click="selectTipo('ESPIROMETRIA')"
                       class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                      :class="{ 'resultados-tanda__tipo--hecho border-emerald-400 bg-emerald-50/60': estadoTipo('ESPIROMETRIA')?.enTanda }"
                     >
                       <div
                         class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
@@ -86,11 +95,19 @@
                       <div>
                         <div class="font-medium text-gray-800">Espirometría</div>
                         <div class="text-sm text-gray-500">Función pulmonar</div>
+                        <div
+                          v-if="estadoTipo('ESPIROMETRIA')"
+                          class="mt-0.5 text-xs"
+                          :class="estadoTipo('ESPIROMETRIA')?.enTanda ? 'font-medium text-emerald-700' : 'text-gray-400'"
+                        >
+                          <i v-if="estadoTipo('ESPIROMETRIA')?.enTanda" class="fas fa-check mr-1" aria-hidden="true"></i>{{ estadoTipo('ESPIROMETRIA')?.texto }}
+                        </div>
                       </div>
                     </button>
                     <button
                       @click="selectTipo('EKG')"
                       class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                      :class="{ 'resultados-tanda__tipo--hecho border-emerald-400 bg-emerald-50/60': estadoTipo('EKG')?.enTanda }"
                     >
                       <div
                         class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
@@ -105,11 +122,19 @@
                       <div>
                         <div class="font-medium text-gray-800">EKG</div>
                         <div class="text-sm text-gray-500">Electrocardiograma</div>
+                        <div
+                          v-if="estadoTipo('EKG')"
+                          class="mt-0.5 text-xs"
+                          :class="estadoTipo('EKG')?.enTanda ? 'font-medium text-emerald-700' : 'text-gray-400'"
+                        >
+                          <i v-if="estadoTipo('EKG')?.enTanda" class="fas fa-check mr-1" aria-hidden="true"></i>{{ estadoTipo('EKG')?.texto }}
+                        </div>
                       </div>
                     </button>
                     <button
                       @click="selectTipo('RAYOS_X')"
                       class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                      :class="{ 'resultados-tanda__tipo--hecho border-emerald-400 bg-emerald-50/60': estadoTipo('RAYOS_X')?.enTanda }"
                     >
                       <div
                         class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
@@ -124,6 +149,13 @@
                       <div>
                         <div class="font-medium text-gray-800">Rayos X</div>
                         <div class="text-sm text-gray-500">Estudio de imagen</div>
+                        <div
+                          v-if="estadoTipo('RAYOS_X')"
+                          class="mt-0.5 text-xs"
+                          :class="estadoTipo('RAYOS_X')?.enTanda ? 'font-medium text-emerald-700' : 'text-gray-400'"
+                        >
+                          <i v-if="estadoTipo('RAYOS_X')?.enTanda" class="fas fa-check mr-1" aria-hidden="true"></i>{{ estadoTipo('RAYOS_X')?.texto }}
+                        </div>
                       </div>
                     </button>
                   </div>
@@ -139,6 +171,7 @@
                     <button
                       @click="selectTipo('TIPO_SANGRE')"
                       class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                      :class="{ 'resultados-tanda__tipo--hecho border-emerald-400 bg-emerald-50/60': estadoTipo('TIPO_SANGRE')?.enTanda }"
                     >
                       <div
                         class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
@@ -153,11 +186,19 @@
                       <div>
                         <div class="font-medium text-gray-800">Tipo de Sangre</div>
                         <div class="text-sm text-gray-500">Grupo sanguíneo</div>
+                        <div
+                          v-if="estadoTipo('TIPO_SANGRE')"
+                          class="mt-0.5 text-xs"
+                          :class="estadoTipo('TIPO_SANGRE')?.enTanda ? 'font-medium text-emerald-700' : 'text-gray-400'"
+                        >
+                          <i v-if="estadoTipo('TIPO_SANGRE')?.enTanda" class="fas fa-check mr-1" aria-hidden="true"></i>{{ estadoTipo('TIPO_SANGRE')?.texto }}
+                        </div>
                       </div>
                     </button>
                     <button
                       @click="selectTipo('ANALISIS_LABORATORIO')"
                       class="p-3 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left flex items-center gap-3"
+                      :class="{ 'resultados-tanda__tipo--hecho border-emerald-400 bg-emerald-50/60': estadoTipo('ANALISIS_LABORATORIO')?.enTanda }"
                     >
                       <div
                         class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
@@ -172,6 +213,13 @@
                       <div>
                         <div class="font-medium text-gray-800">Análisis de laboratorio</div>
                         <div class="text-sm text-gray-500">Resultados de laboratorio</div>
+                        <div
+                          v-if="estadoTipo('ANALISIS_LABORATORIO')"
+                          class="mt-0.5 text-xs"
+                          :class="estadoTipo('ANALISIS_LABORATORIO')?.enTanda ? 'font-medium text-emerald-700' : 'text-gray-400'"
+                        >
+                          <i v-if="estadoTipo('ANALISIS_LABORATORIO')?.enTanda" class="fas fa-check mr-1" aria-hidden="true"></i>{{ estadoTipo('ANALISIS_LABORATORIO')?.texto }}
+                        </div>
                       </div>
                     </button>
                   </div>
@@ -219,7 +267,7 @@
             </button>
           </div>
 
-            <form @submit.prevent="handleSubmit" class="space-y-4">
+            <form ref="formularioRef" @submit.prevent="handleSubmit" class="space-y-4">
               <!-- Fecha del estudio -->
               <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -694,6 +742,17 @@
                   </span>
                 </button>
               </div>
+              <!-- Varios estudios seguidos sin cerrar el panel -->
+              <button
+                v-if="!isEditing"
+                type="button"
+                :disabled="store.loading"
+                class="resultados-tanda__otro w-full rounded-lg border border-emerald-600 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                @click="guardarYRegistrarOtro"
+              >
+                <i class="fas fa-plus mr-1.5" aria-hidden="true"></i>
+                Guardar y registrar otro estudio
+              </button>
             </form>
           </div>
         </div>
@@ -1265,6 +1324,44 @@ const toggleTipoAlteracionAnalisisLaboratorio = (value: string) => {
   formData.value.tipoAlteracionAnalisisLaboratorio = Array.from(set);
 };
 
+/**
+ * Registrar varios estudios seguidos («Guardar y registrar otro»): los tipos registrados en esta
+ * tanda se marcan en la lista y el siguiente estudio empieza con la fecha del anterior. Se olvida
+ * al cerrar el panel.
+ */
+const registradosEnTanda = ref<string[]>([]);
+const fechaDeTanda = ref('');
+const registrarOtroTrasGuardar = ref(false);
+const formularioRef = ref<HTMLFormElement | null>(null);
+
+/** Fecha del resultado más reciente del trabajador por tipo de estudio. */
+const ultimoPorTipo = computed(() => {
+  const ultimos: Record<string, number> = {};
+  Object.values(store.resultsByYear || {}).forEach((resultados: any[]) => {
+    (resultados || []).forEach((resultado) => {
+      const tiempo = resultado?.fechaEstudio ? new Date(resultado.fechaEstudio).getTime() : NaN;
+      if (!resultado?.tipoEstudio || Number.isNaN(tiempo)) return;
+      if (!(resultado.tipoEstudio in ultimos) || tiempo > ultimos[resultado.tipoEstudio]) {
+        ultimos[resultado.tipoEstudio] = tiempo;
+      }
+    });
+  });
+  return ultimos;
+});
+
+/** Lo que muestra cada tipo en la lista: registrado en esta tanda o fecha de su último resultado. */
+const estadoTipo = (tipo: string): { texto: string; enTanda: boolean } | null => {
+  if (registradosEnTanda.value.includes(tipo)) return { texto: 'Registrado ahora', enTanda: true };
+  const ultimo = ultimoPorTipo.value[tipo];
+  return ultimo ? { texto: `Último: ${formatDate(new Date(ultimo).toISOString())}`, enTanda: false } : null;
+};
+
+/** Guarda con la validación del formulario y vuelve a la lista de tipos sin cerrar el panel. */
+const guardarYRegistrarOtro = () => {
+  registrarOtroTrasGuardar.value = true;
+  formularioRef.value?.requestSubmit();
+};
+
 const selectTipo = (
   tipo: 'AUDIOMETRIA' | 'ESPIROMETRIA' | 'EKG' | 'TIPO_SANGRE' | 'RAYOS_X' | 'ANALISIS_LABORATORIO',
 ) => {
@@ -1277,6 +1374,8 @@ const selectTipo = (
   resetForm();
   formData.value.tipoEstudio = tipo;
   formData.value.resultadoGlobal = undefined;
+  // En una tanda, el siguiente estudio suele ser del mismo día
+  if (fechaDeTanda.value) formData.value.fechaEstudio = fechaDeTanda.value;
   
   // Ir al formulario
   currentStep.value = 'form';
@@ -1467,6 +1566,9 @@ const handleDeleteFromEdit = async () => {
 };
 
 const handleSubmit = async () => {
+  // Se toma el indicador al empezar; cualquier salida temprana lo deja limpio
+  const registrarOtro = registrarOtroTrasGuardar.value && !isEditing.value;
+  registrarOtroTrasGuardar.value = false;
   try {
     const validacionFecha = validarFechaDocumentoNoFutura(
       formData.value.fechaEstudio,
@@ -1637,6 +1739,21 @@ const handleSubmit = async () => {
     
     pendingDesvincularDocumento.value = false;
     pendingVincularDocumento.value = false;
+
+    if (registrarOtro) {
+      // Vuelve a la lista de tipos con el avance marcado y la fecha recordada
+      const tipoGuardado = formData.value.tipoEstudio;
+      if (tipoGuardado && !registradosEnTanda.value.includes(tipoGuardado)) {
+        registradosEnTanda.value = [...registradosEnTanda.value, tipoGuardado];
+      }
+      const fechaGuardada = formData.value.fechaEstudio;
+      fechaDeTanda.value = typeof fechaGuardada === 'string' ? fechaGuardada : '';
+      resetForm();
+      currentStep.value = 'select';
+      await nextTick();
+      resetSnapshot();
+      return;
+    }
     forceClose();
   } catch (error: any) {
     toast.open({
@@ -1647,6 +1764,8 @@ const handleSubmit = async () => {
 };
 
 const handleClose = () => {
+  registradosEnTanda.value = [];
+  fechaDeTanda.value = '';
   resetForm();
   currentStep.value = 'select';
   isEditing.value = false;
@@ -1663,7 +1782,7 @@ const buildFormState = () => ({
   pendingVincular: pendingVincularDocumento.value,
 });
 
-const { isDirty } = useDirtySnapshot(buildFormState, {
+const { isDirty, resetSnapshot } = useDirtySnapshot(buildFormState, {
   resetTrigger: () => props.isOpen,
 });
 
