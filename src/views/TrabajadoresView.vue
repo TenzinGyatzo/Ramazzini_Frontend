@@ -363,7 +363,8 @@ const chipsFiltrosActivos = computed(() => {
   filtrosAplicados.forEach((id) => {
     const cfg = filtrosConfigPorId.value[id];
     if (!cfg) return;
-    out.push({ id, label: cfg.label, valor: filtros[id] ?? '' });
+    // «Todos» se guarda vacío (solo cuenta como filtro en Estado laboral, cuyo valor por defecto es «Activo»)
+    out.push({ id, label: cfg.label, valor: filtros[id] || 'Todos' });
   });
   return out;
 });
@@ -1341,8 +1342,8 @@ const toggleVigencias = () => {
             </button>
 
             <!-- Indicador de filtros activos -->
-            <div v-if="hayFiltrosActivos" 
-                 class="inline-flex items-center gap-1.5 px-2 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg"
+            <div v-if="hayFiltrosActivos"
+                 class="filtros-activos-contador inline-flex items-center gap-1.5 px-2 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg"
                  title="Filtros aplicados actualmente">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span class="text-xs font-medium text-emerald-700">{{ filtrosAplicados.size }} filtro{{ filtrosAplicados.size > 1 ? 's' : '' }} activo{{ filtrosAplicados.size > 1 ? 's' : '' }}</span>
@@ -1366,17 +1367,17 @@ const toggleVigencias = () => {
           v-if="hayFiltrosActivos"
           class="flex flex-wrap items-center gap-2 mb-3"
         >
-          <span class="text-xs font-medium text-gray-500 shrink-0">Filtros aplicados</span>
+          <span class="filtros-aplicados-titulo text-xs font-medium text-gray-500 shrink-0">Filtros aplicados</span>
           <button
             v-for="chip in chipsFiltrosActivos"
             :key="chip.id"
             type="button"
-            class="inline-flex items-center gap-1.5 max-w-full pl-2.5 pr-2 py-1 rounded-full text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-900 hover:bg-emerald-100 transition-colors"
+            class="filtro-chip inline-flex items-center gap-1.5 max-w-full pl-2.5 pr-2 py-1 rounded-full text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-900 hover:bg-emerald-100 transition-colors"
             :title="'Quitar: ' + chip.label"
             @click="quitarFiltroChip(chip.id)"
           >
-            <span class="truncate"><span class="text-emerald-700/90">{{ chip.label }}:</span> {{ chip.valor }}</span>
-            <i class="fa-solid fa-xmark text-[10px] text-emerald-700/70 shrink-0" aria-hidden="true"></i>
+            <span class="truncate"><span class="filtro-chip__etiqueta text-emerald-700/90">{{ chip.label }}:</span> {{ chip.valor }}</span>
+            <i class="filtro-chip__quitar fa-solid fa-xmark text-[10px] text-emerald-700/70 shrink-0" aria-hidden="true"></i>
           </button>
         </div>
 

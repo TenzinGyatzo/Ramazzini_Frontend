@@ -988,6 +988,35 @@ html.dark-mode .bg-gradient-to-br.from-orange-50.to-red-50 {
   ) !important;
 }
 
+/* TrabajadoresView: contador de filtros activos y etiquetas de filtros aplicados, con texto claro */
+html.dark-mode .filtros-activos-contador {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+  border-color: #10b981 !important;
+}
+
+html.dark-mode .filtros-activos-contador .text-emerald-700 {
+  color: #a7f3d0 !important;
+}
+
+html.dark-mode .filtros-aplicados-titulo {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .filtro-chip {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+  border-color: #10b981 !important;
+  color: #ecfdf5 !important;
+}
+
+html.dark-mode .filtro-chip:hover {
+  background-color: rgba(16, 185, 129, 0.28) !important;
+}
+
+html.dark-mode .filtro-chip .filtro-chip__etiqueta,
+html.dark-mode .filtro-chip .filtro-chip__quitar {
+  color: #6ee7b7 !important;
+}
+
 /* Botones deshabilitados tipo TrabajadoresView (bg-gray-300 + text-gray-500) */
 html.dark-mode button.bg-gray-300.text-gray-500 {
   background-color: #475569 !important;
