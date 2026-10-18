@@ -30,6 +30,7 @@ import {
     tomarPrecarga,
     avisoDeDestinoRebasado,
 } from '@/helpers/navegacionVisor';
+import { anotarDocumentoAbierto } from '@/helpers/retornoExpediente';
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref, defineAsyncComponent } from 'vue';
 import { Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
 import { enqueuePdfAvailabilityCheck } from '@/composables/usePdfAvailabilityQueue';
@@ -306,6 +307,8 @@ const editarDocumento = (documentoId, documentoTipo) => {
     }
 
     documentos.setCurrentTypeOfDocument(documentoTipo);
+    // Al volver sin guardar, el expediente regresa a donde estaba y marca este documento
+    anotarDocumentoAbierto(trabajadores.currentTrabajadorId, documentoId);
     router.push({
         name: 'crear-documento',
         params: {

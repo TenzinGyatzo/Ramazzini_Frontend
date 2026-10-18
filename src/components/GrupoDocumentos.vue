@@ -30,6 +30,7 @@ import OrganizadorDocumentos from './organizador/OrganizadorDocumentos.vue';
 import ModalDiscardConfirmDialog from './ModalDiscardConfirmDialog.vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
+import { documentoResaltado } from '@/helpers/retornoExpediente';
 
 const documentosStore = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -653,6 +654,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                         'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo,
                         'grupo-documentos__fila--eliminando': estadoEliminacion[fila.item.documento._id] === 'eliminando',
                         'grupo-documentos__fila--error-eliminar': estadoEliminacion[fila.item.documento._id] === 'error',
+                        'grupo-documentos__fila--reciente': documentoResaltado === fila.item.documento._id,
                     }"
                     :data-documento="fila.item.documento._id"
                     :aria-busy="estadoEliminacion[fila.item.documento._id] === 'eliminando' ? 'true' : undefined"
@@ -731,6 +733,22 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         transition: none;
     }
 }
+/* Documento recién guardado (o el que se abrió) al volver al expediente: capa verde que se
+   desvanece, como el último trabajador en la tabla */
+@keyframes documento-reciente {
+    from { box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.28); }
+    to { box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0); }
+}
+.grupo-documentos__fila--reciente {
+    animation: documento-reciente 2.5s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+    .grupo-documentos__fila--reciente {
+        animation: none;
+        box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.2);
+    }
+}
+
 /* Modo eliminación: el documento que se está borrando se atenúa y no se puede tocar */
 .grupo-documentos__fila {
     position: relative;

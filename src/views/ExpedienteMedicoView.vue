@@ -27,6 +27,11 @@ import {
 } from '@/helpers/filtroExpediente';
 import { montarTodosLosAnios, reiniciarNavegacionVisor } from '@/helpers/navegacionVisor';
 import { procesarConLimite } from '@/helpers/procesarConLimite';
+import {
+  anotarPosicionExpediente,
+  resaltarDocumento,
+  tomarRetornoExpediente,
+} from '@/helpers/retornoExpediente';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
 import ModalFinalizarDocumento from '@/components/modals/ModalFinalizarDocumento.vue';
@@ -471,9 +476,56 @@ function invalidateExpedienteConteosForCurrentTrabajador() {
   if (id) invalidateExpedienteConteosCache(id);
 }
 
-onMounted(fetchData);
+const reducirMovimiento = () =>
+  typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Espera (unos cuadros, hasta ~1.5 s) a que algo esté en pantalla. */
+async function esperarA<T>(buscar: () => T | null | undefined, intentos = 30): Promise<T | null> {
+  for (let i = 0; i < intentos; i += 1) {
+    await nextTick();
+    const encontrado = buscar();
+    if (encontrado) return encontrado;
+    await new Promise((resolver) => setTimeout(resolver, 50));
+  }
+  return null;
+}
+
+/** Lleva la vista a un documento (montando los años si hace falta) y lo ilumina. */
+async function irAlDocumentoGuardado(documentId: string): Promise<boolean> {
+  const selector = `[data-documento="${CSS.escape(documentId)}"]`;
+  if (!document.querySelector(selector)) montarTodosLosAnios.value = true;
+  const fila = await esperarA(() => document.querySelector<HTMLElement>(selector));
+  if (!fila) return false;
+  fila.scrollIntoView({ block: 'center', behavior: reducirMovimiento() ? 'auto' : 'smooth' });
+  resaltarDocumento(documentId);
+  return true;
+}
+
+/**
+ * Al volver al expediente del mismo trabajador (helpers/retornoExpediente.ts): si se guardó un
+ * documento, se va a él; si no, se regresa a la posición anterior y se marca el que se abrió.
+ */
+async function aplicarRetorno(trabajadorId: string) {
+  const retorno = tomarRetornoExpediente(trabajadorId);
+  if (!retorno) return;
+  if (retorno.documentoGuardado && (await irAlDocumentoGuardado(retorno.documentoGuardado))) return;
+  if (retorno.scrollY) {
+    const y = retorno.scrollY;
+    await esperarA(() => document.documentElement.scrollHeight >= y + window.innerHeight || null);
+    window.scrollTo({ top: y, behavior: 'auto' });
+  }
+  if (retorno.documentoAbierto) resaltarDocumento(retorno.documentoAbierto);
+}
+
+onMounted(async () => {
+  await fetchData();
+  const trabajadorId = String(route.params.idTrabajador ?? '');
+  if (trabajadorId && !vistaDesmontada) aplicarRetorno(trabajadorId);
+});
 
 onBeforeUnmount(() => {
+  // La dirección ya es la de la pantalla siguiente: se usa el trabajador que se tenía cargado
+  anotarPosicionExpediente(lastFetchedTrabajadorId.value, window.scrollY);
   vistaDesmontada = true;
   invalidateExpedienteConteosForCurrentTrabajador();
   reiniciarNavegacionVisor();
