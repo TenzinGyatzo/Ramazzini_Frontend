@@ -9,9 +9,6 @@ export const LIMITE_BYTES_DOCUMENTO_EXTERNO = 1024 * 1024;
 export const MAXIMO_ARCHIVOS_POR_CARGA = 10;
 export const EXTENSIONES_PERMITIDAS = ['.pdf', '.jpg', '.jpeg', '.png'] as const;
 
-/** Nombres frecuentes que se ofrecen con un clic (los formatos que se descargan para firma). */
-export const NOMBRES_RAPIDOS = ['Declaración de veracidad', 'Consentimiento antidoping'] as const;
-
 export function extensionDe(nombreArchivo: string): string {
   const punto = nombreArchivo.lastIndexOf('.');
   return punto > 0 ? nombreArchivo.slice(punto).toLowerCase() : '';

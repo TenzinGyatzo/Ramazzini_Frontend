@@ -18,7 +18,6 @@ import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
 import {
   LIMITE_BYTES_DOCUMENTO_EXTERNO,
   MAXIMO_ARCHIVOS_POR_CARGA,
-  NOMBRES_RAPIDOS,
   esImagen,
   extensionDe,
   motivoDeError,
@@ -190,10 +189,6 @@ const removeFile = (entrada) => {
 
 const clearFiles = () => {
   archivos.value = archivos.value.filter((a) => !editable(a) && a.estado !== 'reduciendo');
-};
-
-const usarNombreRapido = (entrada, nombre) => {
-  entrada.nombre = nombre;
 };
 
 async function enfocarPrimerFaltante() {
@@ -464,21 +459,6 @@ const handleSubmit = async () => {
                     :disabled="!editable(entrada) || isUploading"
                   />
                 </div>
-              </div>
-
-              <!-- Nombres frecuentes -->
-              <div v-if="editable(entrada)" class="mt-2 flex flex-wrap gap-1.5">
-                <button
-                  v-for="nombre in NOMBRES_RAPIDOS"
-                  :key="nombre"
-                  type="button"
-                  class="carga-externo__rapido rounded-full border px-2.5 py-0.5 text-xs transition-colors disabled:opacity-50"
-                  :class="entrada.nombre === nombre ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-300 text-gray-600 hover:border-emerald-400 hover:text-emerald-700'"
-                  :disabled="isUploading"
-                  @click="usarNombreRapido(entrada, nombre)"
-                >
-                  {{ nombre }}
-                </button>
               </div>
 
               <p v-if="entrada.estado === 'error'" class="carga-externo__motivo mt-2 text-xs text-red-600">
