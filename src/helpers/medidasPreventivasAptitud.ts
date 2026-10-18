@@ -70,7 +70,7 @@ export const MEDIDAS_PREVENTIVAS: MedidaPreventiva[] = [
     clave: 'presionElevada',
     hallazgo: 'Presión arterial elevada en la medición',
     texto:
-      'Registrar la presión arterial en mediciones posteriores y acudir a valoración médica para confirmar o descartar hipertensión.',
+      'Registrar la presión arterial en por lo menos 4 días consecutivos y acudir a valoración médica para confirmar o descartar hipertensión.',
   },
   {
     clave: 'hipertension',
@@ -118,7 +118,7 @@ export const MEDIDAS_PREVENTIVAS: MedidaPreventiva[] = [
     clave: 'vista',
     hallazgo: 'Agudeza visual sin corregir',
     texto:
-      'Acudir a optometría para valoración y adaptación de lentes, si corresponde; utilizar la corrección indicada en las tareas que la requieran.',
+      'Acudir a optometría para valoración y adaptación de lentes, utilizar la corrección indicada en las actividades del puesto.',
   },
   {
     clave: 'visionCromatica',
