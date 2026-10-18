@@ -4200,6 +4200,27 @@ html.dark-mode .modal-riesgos__agente--activo i {
   color: #fbbf24 !important;
 }
 
+/* ModalRiesgos: sugerencia de los compañeros del mismo puesto */
+html.dark-mode .modal-riesgos__sugerencia {
+  background-color: rgba(14, 165, 233, 0.12) !important;
+  border-color: #0369a1 !important;
+  color: #e0f2fe !important;
+}
+
+html.dark-mode .modal-riesgos__sugerencia .fa-lightbulb {
+  color: #7dd3fc !important;
+}
+
+html.dark-mode .modal-riesgos__usar-sugerencia {
+  background-color: #0c4a6e !important;
+  border-color: #0ea5e9 !important;
+  color: #e0f2fe !important;
+}
+
+html.dark-mode .modal-riesgos__usar-sugerencia:hover {
+  background-color: #075985 !important;
+}
+
 /* Botón "Editar" junto al nombre del trabajador, el centro o la empresa */
 html.dark-mode .btn-editar-entidad:hover:not(:disabled) {
   background-color: rgba(6, 78, 59, 0.55) !important;

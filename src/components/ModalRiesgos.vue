@@ -8,6 +8,11 @@ import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
+import {
+  mismosAgentes,
+  sugerirAgentesPorPuesto,
+  textoSugerenciaAgentes,
+} from '@/helpers/sugerenciaAgentesPorPuesto';
 
 const toast = inject('toast');
 const emit = defineEmits(['closeModal']);
@@ -58,6 +63,22 @@ const alternarAgente = (agente) => {
 
 const quitarTodos = () => {
   agentesSeleccionados.value = [];
+};
+
+// Sugerencia de los compañeros del mismo puesto (la lista cargada del centro; si la lista
+// es de otro centro, p. ej. al abrir desde un expediente sin pasar por la tabla, no hay sugerencia)
+const ORDEN_AGENTES = gruposAgentes.flatMap((grupo) => grupo.agentes.map((agente) => agente.valor));
+const sugerencia = computed(() => {
+  const trabajador = trabajadores.currentTrabajador;
+  const lista = Array.isArray(trabajadores.trabajadores) ? trabajadores.trabajadores : [];
+  if (!trabajador?._id || !lista.some((t) => String(t?._id) === String(trabajador._id))) return null;
+  const propuesta = sugerirAgentesPorPuesto(trabajador, lista, ORDEN_AGENTES);
+  if (!propuesta || mismosAgentes(propuesta.agentes, agentesSeleccionados.value)) return null;
+  return { ...propuesta, texto: textoSugerenciaAgentes(propuesta, String(trabajador.puesto).trim()) };
+});
+
+const usarSugerencia = () => {
+  if (sugerencia.value) agentesSeleccionados.value = [...sugerencia.value.agentes];
 };
 
 // Puesto, empresa y antigüedad en una línea, omitiendo lo que no esté capturado
@@ -197,6 +218,25 @@ const handleSubmit = async () => {
 
       <!-- Agentes agrupados -->
       <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <!-- Sugerencia: lo que tienen sus compañeros de puesto -->
+        <div
+          v-if="sugerencia"
+          class="modal-riesgos__sugerencia mb-4 flex flex-col gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm text-sky-900 sm:flex-row sm:items-center"
+        >
+          <i class="fa-solid fa-lightbulb hidden text-sky-500 sm:block" aria-hidden="true"></i>
+          <p class="min-w-0 flex-1">
+            {{ sugerencia.texto }}
+            <span class="font-medium">{{ sugerencia.agentes.join(' · ') }}</span>
+          </p>
+          <button
+            type="button"
+            class="modal-riesgos__usar-sugerencia shrink-0 rounded-md border border-sky-300 bg-white px-2.5 py-1 text-xs font-semibold text-sky-700 transition-colors duration-150 hover:bg-sky-100"
+            @click="usarSugerencia"
+          >
+            Usar los mismos
+          </button>
+        </div>
+
         <div class="mb-3 flex items-center justify-between gap-3">
           <p class="text-sm text-gray-600">Marca los agentes a los que se expone el trabajador</p>
           <span
