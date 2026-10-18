@@ -733,29 +733,21 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         transition: none;
     }
 }
-/* Documento recién guardado (o el que se abrió) al volver al expediente: un contorno verde con
-   halo suave que se desvanece. Va por encima de la tarjeta sin rellenarla (no oscurece nada) y se
-   distingue del hover, que sí rellena la fila; no recibe clics. */
+/* Documento recién guardado (o el que se abrió) al volver al expediente: la tarjeta se tiñe de
+   verde claro y se desvanece, como el último trabajador en la tabla. El verde va en el fondo de la
+   tarjeta (sombra interior), por debajo del texto, los íconos y su marco, así que no los oscurece;
+   es más intenso que el hover y se va solo. */
 @keyframes documento-reciente {
-    0%, 40% { opacity: 1; }
-    100% { opacity: 0; }
+    0%, 35% { box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.16); }
+    100% { box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0); }
 }
-.grupo-documentos__fila--reciente::after {
-    content: '';
-    position: absolute;
-    inset: 2px 4px;
-    z-index: 2;
-    border-radius: 0.5rem;
-    background-color: rgba(16, 185, 129, 0.05);
-    box-shadow:
-        inset 0 0 0 2px rgba(16, 185, 129, 0.85),
-        0 0 0 4px rgba(16, 185, 129, 0.18);
-    pointer-events: none;
-    animation: documento-reciente 2.5s ease-out forwards;
+.grupo-documentos__fila--reciente :deep(.documento-item) {
+    animation: documento-reciente 2.5s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
-    .grupo-documentos__fila--reciente::after {
+    .grupo-documentos__fila--reciente :deep(.documento-item) {
         animation: none;
+        box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.12);
     }
 }
 
