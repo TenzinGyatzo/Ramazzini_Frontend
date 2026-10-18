@@ -75,13 +75,17 @@ button:focus {
             <i class="fa-solid fa-file-pdf text-2xl text-emerald-600"></i>
           </div>
           <h2 class="text-2xl font-bold text-gray-800 mb-2">
-            Documento No Disponible
+            {{ pdfStatus === 'failed' ? 'No se pudo generar el PDF' : 'Documento No Disponible' }}
           </h2>
           <div class="w-16 h-1 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full mx-auto"></div>
         </div>
 
         <div class="text-center mb-8">
-          <p class="text-gray-600 text-lg leading-relaxed mb-4">
+          <!-- La generación falló: no es la limpieza automática -->
+          <p v-if="pdfStatus === 'failed'" class="text-gray-600 text-lg leading-relaxed mb-4">
+            Hubo un problema al generar el PDF de este documento. Tu información está guardada; solo falta volver a generar el archivo.
+          </p>
+          <p v-else class="text-gray-600 text-lg leading-relaxed mb-4">
             El documento fue <span class="font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">eliminado automáticamente</span> tras 
             <span class="font-medium text-emerald-600">1 mes</span> como parte de nuestro sistema de limpieza y optimización.
           </p>

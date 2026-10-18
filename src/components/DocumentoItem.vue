@@ -336,10 +336,7 @@ const extractRelativeClinicalPath = (urlOrPath) => {
 const descargarArchivo = async (documento, tipoDocumento, origen = 'lista') => {
     try {
         if (isPdfGenerating.value) {
-            getToast()?.open?.({
-                message: 'El PDF se está generando. Espere un momento.',
-                type: 'warning',
-            });
+            apartarHastaQueEsteListo('descargar', () => descargarArchivo(documento, tipoDocumento, origen));
             return;
         }
 
@@ -585,10 +582,15 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
     }
 
     if (isPdfGenerating.value) {
-        getToast()?.open?.({
-            message: 'El PDF se está generando. Espere un momento.',
-            type: 'warning',
-        });
+        // Desde el visor (navegación) no se aparta: se avisa como siempre
+        if (navegacionPendiente() === props.documentoId) {
+            getToast()?.open?.({
+                message: 'El PDF se está generando. Espere un momento.',
+                type: 'warning',
+            });
+            return;
+        }
+        apartarHastaQueEsteListo('abrir', () => abrirPdf(ruta, nombrePDF, updatedAt));
         return;
     }
 
@@ -1915,7 +1917,7 @@ const pdfStatusEffective = computed(() => {
 const isPdfGenerating = computed(() => pdfStatusEffective.value === 'generating');
 const isPdfFailed = computed(() => pdfStatusEffective.value === 'failed');
 
-const ensurePdfGenerationTracker = () => {
+const ensurePdfGenerationTracker = ({ rapido = false } = {}) => {
     if (!isPdfGenerating.value) return;
     const tipo = props.documentoTipo?.toLowerCase?.().replace(/\s+/g, '') || props.documentoTipo;
     if (tipo === 'documentoexterno' || tipo === 'documentoExterno') return;
@@ -1924,6 +1926,8 @@ const ensurePdfGenerationTracker = () => {
         documentType: props.documentoTipo,
         trabajadorId: trabajadores.currentTrabajadorId,
         documentId: props.documentoId,
+        // Con una apertura apartada se consulta cada segundo, para abrir en cuanto termine
+        ...(rapido ? { intervalMs: 1000, maxIntervalMs: 1000 } : {}),
         relativePdfPath: () => {
             try {
                 const { ruta, nombre } = construirRutaYNombrePDF();
@@ -1975,6 +1979,50 @@ watch(
     },
     { immediate: true },
 );
+
+////////////////////////////////////////////
+// «Se abre al terminar»: un clic mientras el PDF se genera queda apartado y se cumple solo
+// cuando el PDF está listo. Otro clic o Esc lo cancela; si falla, aparece el aviso de siempre.
+/** 'abrir' | 'descargar' | null */
+const aperturaPendiente = ref(null);
+let accionPendiente = null;
+
+const cancelarApartado = () => {
+    aperturaPendiente.value = null;
+    accionPendiente = null;
+};
+
+const apartarHastaQueEsteListo = (accion, ejecutar) => {
+    // Un segundo clic sobre lo mismo lo cancela
+    if (aperturaPendiente.value === accion) {
+        cancelarApartado();
+        return;
+    }
+    aperturaPendiente.value = accion;
+    accionPendiente = ejecutar;
+    ensurePdfGenerationTracker({ rapido: true });
+};
+
+/** No se abre nada encima de otro visor o de una ventana abierta. */
+const hayAlgoEncima = () =>
+    [...document.querySelectorAll('.documento-item-viewer, .modal-work-panel, .modal-inner, [role="dialog"]')]
+        .some((elemento) => elemento.getClientRects().length > 0);
+
+watch(pdfStatusEffective, (estado) => {
+    if (!aperturaPendiente.value || estado === 'generating') return;
+    const accion = aperturaPendiente.value;
+    const ejecutar = accionPendiente;
+    cancelarApartado();
+    if (estado === 'failed') {
+        mostrarModalPdfEliminado.value = true;
+        return;
+    }
+    if (estado !== 'ready' || !ejecutar) return;
+    if (accion === 'abrir' && hayAlgoEncima()) return;
+    ejecutar();
+});
+
+onUnmounted(cancelarApartado);
 
 // Mapeo de campos de fecha para buscar documentos origen
 const fechaCamposOrigen = {
@@ -2348,6 +2396,8 @@ const handleKeyDown = (event) => {
             cerrarImagen();
         } else if (showPdfViewer.value) {
             cerrarPdf();
+        } else if (aperturaPendiente.value) {
+            cancelarApartado();
         }
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         if (!showPdfViewer.value && !showImageViewer.value) return;
@@ -3193,7 +3243,10 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
             class="absolute top-2 right-2 z-10 inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 border border-amber-200"
         >
             <i class="fas fa-spinner fa-spin text-amber-500"></i>
-            Generando PDF…
+            <span v-if="aperturaPendiente" :title="'Haz clic otra vez o pulsa Esc para cancelar'">
+                {{ aperturaPendiente === 'descargar' ? 'Se descargará al terminar' : 'Se abrirá al terminar' }}
+            </span>
+            <template v-else>Generando PDF…</template>
         </div>
         <div
             v-else-if="isPdfFailed"
