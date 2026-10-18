@@ -559,8 +559,9 @@ onMounted(() => {
     const valorGuardado = localStorage.getItem(`filtro-${id}`) ?? valorPorDefecto;
     filtros[id] = valorGuardado;
     
-    // Si es la primera vez que se carga y es estadoLaboral, guardar el valor por defecto
-    if (id === 'estadoLaboral' && !localStorage.getItem(`filtro-${id}`)) {
+    // Si es la primera vez que se carga y es estadoLaboral, guardar el valor por defecto.
+    // «Todos» se guarda como cadena vacía: solo cuenta como primera vez si no hay nada guardado
+    if (id === 'estadoLaboral' && localStorage.getItem(`filtro-${id}`) === null) {
       localStorage.setItem(`filtro-${id}`, 'Activo');
     }
     
