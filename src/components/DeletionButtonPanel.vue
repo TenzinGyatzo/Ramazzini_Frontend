@@ -6,13 +6,18 @@ import { resolverNivel } from "@/config/eliminacion";
 const props = defineProps<{
   selectedRoutes: string[];
   isDeletionMode: boolean;
+  /** Avance del borrado en curso (lo lleva la vista); null si no hay uno. */
+  progreso?: { hechos: number; total: number } | null;
 }>();
 
 const emit = defineEmits(['deleteSelected']);
 
 const isVisible = ref(false);
-const loading = ref(false);
 const showConfirmModal = ref(false);
+const loading = computed(() => !!props.progreso);
+const porcentaje = computed(() =>
+  props.progreso && props.progreso.total > 0 ? Math.round((props.progreso.hechos / props.progreso.total) * 100) : 0,
+);
 
 const nivelEliminacion = computed<'simple' | 'moderado'>(() => {
   const nivel = resolverNivel('documentosMasivos', { cantidad: props.selectedRoutes.length });
@@ -21,9 +26,10 @@ const nivelEliminacion = computed<'simple' | 'moderado'>(() => {
 
 // Watch para mostrar/ocultar el panel
 watch(
-  () => [props.selectedRoutes.length, props.isDeletionMode] as const,
-  ([routesLength, deletionMode]) => {
-    if (routesLength > 0 && deletionMode) {
+  () => [props.selectedRoutes.length, props.isDeletionMode, !!props.progreso] as const,
+  ([routesLength, deletionMode, enCurso]) => {
+    // Mientras se borra, el panel se queda aunque la selección se vaya vaciando
+    if ((routesLength > 0 || enCurso) && deletionMode) {
       isVisible.value = true;
     } else {
       isVisible.value = false;
@@ -37,14 +43,10 @@ const handleDeleteClick = async () => {
   showConfirmModal.value = true;
 };
 
-const handleConfirmDelete = async () => {
-  loading.value = true;
-  try {
-    await emit('deleteSelected');
-    showConfirmModal.value = false;
-  } finally {
-    loading.value = false;
-  }
+// El borrado lo lleva la vista (emit no espera al que escucha); el avance llega en `progreso`
+const handleConfirmDelete = () => {
+  showConfirmModal.value = false;
+  emit('deleteSelected');
 };
 
 const handleCancelDelete = () => {
@@ -93,16 +95,53 @@ const handleCancelDelete = () => {
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
           </svg>
-          <span class="text-sm sm:text-base md:text-lg lg:text-lg">
-            {{ loading ? 'Eliminando...' : `Eliminar ${selectedRoutes.length} documento${selectedRoutes.length !== 1 ? 's' : ''}` }}
+          <span class="text-sm sm:text-base md:text-lg lg:text-lg tabular-nums">
+            {{
+              progreso
+                ? `Eliminando ${progreso.hechos} de ${progreso.total}`
+                : `Eliminar ${selectedRoutes.length} documento${selectedRoutes.length !== 1 ? 's' : ''}`
+            }}
           </span>
         </span>
       </button>
+      <div
+        v-if="progreso"
+        class="deletion-button-panel__avance"
+        role="progressbar"
+        :aria-valuenow="progreso.hechos"
+        aria-valuemin="0"
+        :aria-valuemax="progreso.total"
+        aria-label="Avance de la eliminación"
+      >
+        <div class="deletion-button-panel__avance-barra" :style="{ width: `${porcentaje}%` }"></div>
+      </div>
     </div>
   </Transition>
 </template>
 
 <style scoped>
+.deletion-button-panel__avance {
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  bottom: 0.6rem;
+  height: 4px;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+.deletion-button-panel__avance-barra {
+  height: 100%;
+  border-radius: inherit;
+  background-color: #ffffff;
+  transition: width 200ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .deletion-button-panel__avance-barra {
+    transition: none;
+  }
+}
+
 .slide-down-enter-active {
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 }

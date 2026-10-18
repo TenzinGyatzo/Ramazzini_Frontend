@@ -26,6 +26,7 @@ import {
   tiposDeLaConsulta,
 } from '@/helpers/filtroExpediente';
 import { montarTodosLosAnios, reiniciarNavegacionVisor } from '@/helpers/navegacionVisor';
+import { procesarConLimite } from '@/helpers/procesarConLimite';
 import ModalSuscripcion from '@/components/suscripciones/ModalSuscripcion.vue';
 import ModalCuestionarios from '@/components/ModalCuestionarios.vue';
 import ModalFinalizarDocumento from '@/components/modals/ModalFinalizarDocumento.vue';
@@ -702,16 +703,27 @@ const handleCloseResultadosPanel = async () => {
   }
 };
 
+/** Documentos que se eliminan a la vez. */
+const ELIMINACIONES_SIMULTANEAS = 3;
+/** Por documento: 'eliminando' mientras se borra, 'error' si no se pudo (sigue en la lista). */
+const estadoEliminacion = ref<Record<string, 'eliminando' | 'error'>>({});
+/** Avance del borrado en curso, para el panel de eliminación; null si no hay uno. */
+const progresoEliminacion = ref<{ hechos: number; total: number } | null>(null);
+
+watch(isDeletionMode, (activo) => {
+    if (!activo && !progresoEliminacion.value) estadoEliminacion.value = {};
+});
+
+/**
+ * Elimina lo seleccionado de 3 en 3. Cada documento sale de la lista en cuanto se borra; los que
+ * fallan se quedan marcados y seleccionados para reintentar. La recarga del expediente es solo
+ * una confirmación en segundo plano.
+ */
 const handleDeleteSelected = async () => {
-    if (selectedDocuments.value.length === 0) return;
-        
+    if (selectedDocuments.value.length === 0 || progresoEliminacion.value) return;
+    const trabajadorId = trabajadores.currentTrabajadorId!;
+
     try {
-        const totalSeleccionados = selectedDocuments.value.length;
-        toast.open({ 
-            message: `Eliminando ${totalSeleccionados} documento${totalSeleccionados !== 1 ? 's' : ''}...`, 
-            type: "info" 
-        });
-        
         // Localizar cada documento seleccionado por tipo e id (excluyendo FINALIZADO/ANULADO)
         const { eliminables, inmutables, noLocalizados } = clasificarSeleccion();
         const documentosAEliminar: Array<{id: string, tipo: string}> =
@@ -726,24 +738,28 @@ const handleDeleteSelected = async () => {
         }
 
         if (documentosAEliminar.length === 0) return;
-                
-        // Eliminar documentos uno por uno
+
         const eliminacionesExitosas: Array<{id: string, tipo: string}> = [];
         const eliminacionesFallidas: Array<{id: string, tipo: string}> = [];
-        
-        for (const documento of documentosAEliminar) {
+        progresoEliminacion.value = { hechos: 0, total: documentosAEliminar.length };
+        estadoEliminacion.value = Object.fromEntries(documentosAEliminar.map((d) => [d.id, 'eliminando' as const]));
+
+        await procesarConLimite(documentosAEliminar, ELIMINACIONES_SIMULTANEAS, async (documento) => {
             try {
-                await documentos.deleteDocumentById(
-                    documento.tipo,
-                    trabajadores.currentTrabajadorId!,
-                    documento.id
-                );
+                await documentos.deleteDocumentById(documento.tipo, trabajadorId, documento.id);
                 eliminacionesExitosas.push(documento);
+                // Sale de la lista y de la selección en cuanto se borra
+                delete estadoEliminacion.value[documento.id];
+                documentos.quitarDocumento(documento.id);
+                selectedDocuments.value = selectedDocuments.value.filter((d) => d.documentId !== documento.id);
             } catch (error) {
                 console.error(`❌ Error al eliminar documento ${documento.id}:`, error);
                 eliminacionesFallidas.push(documento);
+                estadoEliminacion.value[documento.id] = 'error';
+            } finally {
+                if (progresoEliminacion.value) progresoEliminacion.value.hechos += 1;
             }
-        }
+        });
         
         // Mostrar resultados
         if (eliminacionesExitosas.length > 0) {
@@ -760,23 +776,31 @@ const handleDeleteSelected = async () => {
             });
         }
         
-        // Limpiar selección después de eliminar
-        selectedDocuments.value = [];
-        isDeletionMode.value = false;
-        
-        // Recargar documentos y resultados
-        await Promise.all([
-          documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
-          resultadosClinicos.fetchResultadosAgrupados(trabajadores.currentTrabajadorId!)
-        ]);
-        invalidateExpedienteConteosForCurrentTrabajador();
-        
+        // Si todo salió bien se cierra el modo eliminación; si no, quedan los que fallaron para reintentar
+        if (eliminacionesFallidas.length === 0) {
+            selectedDocuments.value = [];
+            isDeletionMode.value = false;
+        }
+
+        // La lista ya está al día; la recarga solo confirma (y actualiza resultados clínicos)
+        if (eliminacionesExitosas.length > 0) {
+            Promise.all([
+              documentos.fetchAllDocuments(trabajadorId),
+              resultadosClinicos.fetchResultadosAgrupados(trabajadorId)
+            ])
+              .then(() => invalidateExpedienteConteosForCurrentTrabajador())
+              .catch((error) => console.error('Error al recargar tras eliminar:', error));
+        }
+
     } catch (error) {
         console.error('Error al eliminar documentos:', error);
         toast.open({ 
             message: "Error al eliminar los documentos. Por favor, inténtalo de nuevo.", 
             type: "error" 
         });
+    } finally {
+        progresoEliminacion.value = null;
+        if (!isDeletionMode.value) estadoEliminacion.value = {};
     }
 };
 
@@ -1449,6 +1473,7 @@ const crearDocumento = (tipoDocumento: string) =>
                     :toggleDeletionMode="toggleDeletionMode"
                     :onDeleteSelected="handleDeleteSelected"
                     :tiposVisibles="tiposFiltrados"
+                    :estadoEliminacion="estadoEliminacion"
                   >
                     <template #extraSection v-if="resultadosPorAnio[year]?.length > 0 && !hayFiltroDeTipos">
                       <ResultadosClinicosSubsection
@@ -1547,6 +1572,7 @@ const crearDocumento = (tipoDocumento: string) =>
             v-if="isDeletionMode" 
             :selectedRoutes="selectedRoutes" 
             :isDeletionMode="isDeletionMode"
+            :progreso="progresoEliminacion"
             @deleteSelected="handleDeleteSelected"
           />
         </div>

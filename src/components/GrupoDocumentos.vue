@@ -97,6 +97,11 @@ const props = defineProps({
         type: Array as PropType<string[]>,
         default: () => [],
     },
+    /** Por id: 'eliminando' mientras se borra en el modo eliminación, 'error' si no se pudo. */
+    estadoEliminacion: {
+        type: Object as PropType<Record<string, 'eliminando' | 'error'>>,
+        default: () => ({}),
+    },
 });
 
 const emit = defineEmits(['abrirModalUpdate', 'eliminarDocumento', 'abrirModalAnular', 'openSubscriptionModal', 'abrirModalFinalizar']);
@@ -644,9 +649,26 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                 <div
                     v-else
                     class="grupo-documentos__fila transition-all duration-200 hover:bg-gray-50"
-                    :class="{ 'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo }"
+                    :class="{
+                        'grupo-documentos__fila--en-subgrupo': !!fila.subgrupo,
+                        'grupo-documentos__fila--eliminando': estadoEliminacion[fila.item.documento._id] === 'eliminando',
+                        'grupo-documentos__fila--error-eliminar': estadoEliminacion[fila.item.documento._id] === 'error',
+                    }"
                     :data-documento="fila.item.documento._id"
+                    :aria-busy="estadoEliminacion[fila.item.documento._id] === 'eliminando' ? 'true' : undefined"
                 >
+                    <span
+                        v-if="estadoEliminacion[fila.item.documento._id]"
+                        class="grupo-documentos__estado-eliminar"
+                        role="status"
+                    >
+                        <template v-if="estadoEliminacion[fila.item.documento._id] === 'eliminando'">
+                            <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Eliminando…
+                        </template>
+                        <template v-else>
+                            <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> No se pudo eliminar
+                        </template>
+                    </span>
                     <DocumentoItem
                         v-bind="{ [fila.item.definicion.tipo]: fila.item.documento }"
                         :documentoId="fila.item.documento._id"
@@ -709,6 +731,43 @@ const hasExtraSection = computed(() => !!slots.extraSection);
         transition: none;
     }
 }
+/* Modo eliminación: el documento que se está borrando se atenúa y no se puede tocar */
+.grupo-documentos__fila {
+    position: relative;
+}
+.grupo-documentos__fila--eliminando {
+    opacity: 0.45;
+    pointer-events: none;
+    transition: opacity 120ms ease-out;
+}
+.grupo-documentos__fila--error-eliminar {
+    box-shadow: inset 3px 0 0 #ef4444;
+    background-color: #fef2f2;
+}
+.grupo-documentos__estado-eliminar {
+    position: absolute;
+    top: 0.35rem;
+    right: 0.75rem;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background-color: #fee2e2;
+    color: #b91c1c;
+    pointer-events: none;
+}
+html.dark-mode .grupo-documentos__fila--error-eliminar {
+    background-color: rgba(127, 29, 29, 0.25);
+}
+html.dark-mode .grupo-documentos__estado-eliminar {
+    background-color: rgba(127, 29, 29, 0.6);
+    color: #fecaca;
+}
+
 /* Documentos que pertenecen a un subgrupo: van con sangría */
 .grupo-documentos__fila--en-subgrupo {
     margin-left: 0.5rem;

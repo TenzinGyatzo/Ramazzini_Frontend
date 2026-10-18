@@ -128,6 +128,26 @@ export const useDocumentosStore = defineStore("documentos", () => {
     return true;
   }
 
+  /**
+   * Quita un documento del expediente cargado en cuanto se elimina, sin esperar a recargar.
+   * Un año que se queda sin documentos deja de mostrarse.
+   */
+  function quitarDocumento(documentId: string) {
+    const id = String(documentId);
+    Object.entries(documentsByYear.value).forEach(([anio, grupo]: [string, any]) => {
+      let quedan = 0;
+      Object.keys(grupo ?? {}).forEach((tipo) => {
+        const lista = grupo[tipo];
+        if (!Array.isArray(lista)) return;
+        if (lista.some((d: any) => String(d?._id) === id)) {
+          grupo[tipo] = lista.filter((d: any) => String(d?._id) !== id);
+        }
+        quedan += grupo[tipo].length;
+      });
+      if (quedan === 0) delete documentsByYear.value[anio as any];
+    });
+  }
+
   const DOCUMENT_STORE_KEYS = [
     'antidopings',
     'aptitudes',
@@ -420,6 +440,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     fetchDocumentById,
     fetchAllDocuments,
     agregarDocumentos,
+    quitarDocumento,
     setCurrentDocument,
     setCurrentTypeOfDocument,
     resetCurrentTypeOfDocument,
