@@ -18,6 +18,17 @@ import {
     navegacionPendiente,
     posicionEnExpediente,
     irAlDocumento,
+    navegandoHacia,
+    visorEntrante,
+    direccionNavegacion,
+    visorListo,
+    escalaParaAbrir,
+    atenderTeclaUnaVez,
+    enModoPrecarga,
+    hayPrecarga,
+    guardarPrecarga,
+    tomarPrecarga,
+    avisoDeDestinoRebasado,
 } from '@/helpers/navegacionVisor';
 import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref, defineAsyncComponent } from 'vue';
 import { Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
@@ -563,6 +574,16 @@ const buildPdfUrl = (ruta, nombrePDF, updatedAt = null, options = {}) => {
 };
 
 const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
+    // Precarga desde el visor de otro documento: solo descargar y guardar (helpers/navegacionVisor)
+    if (enModoPrecarga()) {
+        if (isPdfGenerating.value) return;
+        const url = buildClinicalFileUrl(joinClinicalPath(ruta, nombrePDF));
+        if (!hayPrecarga(url)) {
+            guardarPrecarga(url, axios.get(url, { responseType: 'blob', ...authRequestConfig() }));
+        }
+        return;
+    }
+
     if (isPdfGenerating.value) {
         getToast()?.open?.({
             message: 'El PDF se está generando. Espere un momento.',
@@ -575,10 +596,11 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
     const relativePath = joinClinicalPath(ruta, nombrePDF);
 
     try {
-        const response = await axios.get(buildClinicalFileUrl(relativePath), {
+        const url = buildClinicalFileUrl(relativePath);
+        const response = await (tomarPrecarga(url) ?? axios.get(url, {
             responseType: 'blob',
             ...authRequestConfig(),
-        });
+        }));
 
         const contentType = response.headers['content-type'];
 
@@ -594,6 +616,8 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
             pdfScaleCorrectionPending = false;
             pdfViewerMountKey.value = 0;
             pdfViewerReady.value = false;
+            // Al pasar desde otro documento con zoom elegido a mano, se conserva ese zoom
+            pdfEscalaFijada = escalaParaAbrir(props.documentoId, 'pdf');
             showPdfViewer.value = true;
             await preparePdfViewerMount();
         } else {
@@ -630,6 +654,8 @@ let pdfViewerLastObservedWidth = 0;
 let pdfViewerClampGeneration = 0;
 
 const PDF_VIEWER_RESIZE_DEBOUNCE_MS = 175;
+/** Zoom heredado del documento anterior al navegar desde el visor (sin ajuste automático). */
+let pdfEscalaFijada = null;
 const PDF_VIEWER_RESIZE_MIN_DELTA_PX = 8;
 const PDF_VIEWER_MIN_SCALE_MOBILE = 0.85;
 
@@ -864,6 +890,13 @@ async function preparePdfViewerMount(attempt = 0) {
 
     await nextTick();
 
+    if (pdfEscalaFijada != null) {
+        pdfInitialScale.value = pdfEscalaFijada;
+        pdfScaleCorrectionAttempted = true;
+        pdfViewerReady.value = true;
+        return;
+    }
+
     const scale = computeTargetPdfScale();
     if (scale == null) {
         if (attempt < 24) {
@@ -880,6 +913,9 @@ async function preparePdfViewerMount(attempt = 0) {
 
 function handlePdfCanvasLoaded() {
     applyInitialScaleCorrection();
+    avisarVisorListoSiEstable();
+    // Con zoom heredado se respeta el que eligió el usuario (sin ajuste ni tope automático)
+    if (pdfEscalaFijada != null) return;
     waitForPdfZoomControl((zoomCtrl) => {
         const generation = pdfViewerClampGeneration;
         if (!applyNumericFitZoom(zoomCtrl)) {
@@ -887,6 +923,46 @@ function handlePdfCanvasLoaded() {
         }
         schedulePdfZoomClamp(zoomCtrl, generation, 0);
     });
+}
+
+/**
+ * Al llegar desde otro documento, el visor se muestra cuando la primera página ya está dibujada
+ * y no queda pendiente la corrección de escala (que vuelve a montar el visor).
+ */
+const ESPERA_ESCALA_ESTABLE_MS = 120;
+function avisarVisorListoSiEstable() {
+    if (visorEntrante.value !== props.documentoId) return;
+    const montaje = pdfViewerMountKey.value;
+    setTimeout(() => {
+        if (pdfViewerMountKey.value === montaje && !pdfScaleCorrectionPending) visorListo(props.documentoId);
+    }, ESPERA_ESCALA_ESTABLE_MS);
+}
+
+/**
+ * Escala que muestra el visor. La librería (1.7) no expone su control de zoom: se lee la que
+ * recibe su barra de herramientas; si no se encuentra, se usa el control expuesto (si existe).
+ */
+function leerEscalaMostradaPdf() {
+    const pendientes = pdfViewerRef.value?.$ ? [pdfViewerRef.value.$.subTree] : [];
+    while (pendientes.length) {
+        const vnode = pendientes.pop();
+        if (!vnode || typeof vnode !== 'object') continue;
+        const escala = vnode.component?.props?.scale;
+        if (typeof escala === 'number' && escala > 0) return escala;
+        if (vnode.component) pendientes.push(vnode.component.subTree);
+        if (vnode.suspense) pendientes.push(vnode.suspense.activeBranch);
+        if (Array.isArray(vnode.children)) pendientes.push(...vnode.children);
+    }
+    return readPdfZoomScale(getPdfZoomControl());
+}
+
+/** Zoom elegido a mano (null si sigue ajustado al ancho), para heredarlo al pasar de documento. */
+function escalaManualPdf() {
+    const scale = leerEscalaMostradaPdf();
+    if (scale == null) return null;
+    // Sin tocar el zoom, el visor sigue en la escala con la que se abrió (ajustada al ancho)
+    if (pdfEscalaFijada == null && Math.abs(scale - pdfInitialScale.value) <= PDF_VIEWER_SCALE_CORRECTION_THRESHOLD) return null;
+    return { tipo: 'pdf', valor: scale };
 }
 
 const pdfAfterCanvasLoaded = { 1: handlePdfCanvasLoaded };
@@ -921,8 +997,10 @@ function handlePdfViewerLoaded() {
     nextTick(() => {
         waitForPdfZoomControl((zoomCtrl) => {
             const generation = pdfViewerClampGeneration;
-            applyNumericFitZoom(zoomCtrl);
-            schedulePdfZoomClamp(zoomCtrl, generation, 0);
+            if (pdfEscalaFijada == null) {
+                applyNumericFitZoom(zoomCtrl);
+                schedulePdfZoomClamp(zoomCtrl, generation, 0);
+            }
             connectPdfViewerResizeObserver();
         });
     });
@@ -931,6 +1009,7 @@ function handlePdfViewerLoaded() {
 // Función para cerrar el visor
 const cerrarPdf = () => {
     disconnectPdfViewerResizeObserver();
+    pdfEscalaFijada = null;
     pdfViewerReady.value = false;
     pdfScaleCorrectionAttempted = false;
     pdfScaleCorrectionPending = false;
@@ -1337,15 +1416,26 @@ const lastImagePosition = ref({ x: 0, y: 0 });
 
 // Función para abrir el visor de imágenes
 const abrirImagen = async (rutaCompleta) => {
+    // Precarga desde el visor de otro documento: solo descargar y guardar (helpers/navegacionVisor)
+    if (enModoPrecarga()) {
+        const relativa = extractRelativeClinicalPath(rutaCompleta);
+        const url = buildClinicalFileUrl(relativa);
+        if (!hayPrecarga(url)) guardarPrecarga(url, fetchClinicalFileBlob(relativa));
+        return;
+    }
+
     try {
         const relativePath = extractRelativeClinicalPath(rutaCompleta);
-        const blob = await fetchClinicalFileBlob(relativePath);
+        const blob = await (tomarPrecarga(buildClinicalFileUrl(relativePath)) ?? fetchClinicalFileBlob(relativePath));
 
         if (blob.type.startsWith('image/')) {
             revokeImageBlobUrl();
             imageBlobUrl = URL.createObjectURL(blob);
             imageUrl.value = imageBlobUrl;
             currentImageUrl.value = relativePath;
+            // Al pasar desde otra imagen con zoom elegido a mano, se conserva ese zoom
+            const zoomHeredado = escalaParaAbrir(props.documentoId, 'imagen');
+            if (zoomHeredado != null) imageZoom.value = zoomHeredado;
             showImageViewer.value = true;
 
             // Agregar event listeners globales para el arrastre
@@ -2261,9 +2351,8 @@ const handleKeyDown = (event) => {
         }
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         if (!showPdfViewer.value && !showImageViewer.value) return;
-        // El visor de imagen también escucha en document: un mismo evento llega dos veces
-        if (teclasAtendidas.has(event)) return;
-        teclasAtendidas.add(event);
+        // Escuchan todos los visores abiertos (y el de imagen también en document): una sola vez
+        if (!atenderTeclaUnaVez(event)) return;
         const destino = event.target;
         if (destino instanceof HTMLElement &&
             (destino.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(destino.tagName))) return;
@@ -2274,7 +2363,6 @@ const handleKeyDown = (event) => {
 
 ////////////////////////////////////////////
 // Navegación entre documentos desde el visor (helpers/navegacionVisor.ts)
-const teclasAtendidas = new WeakSet();
 const posicionVisor = ref({ indice: 0, total: 0 });
 const visorAbierto = computed(() => showPdfViewer.value || showImageViewer.value);
 const navegacionDisponible = computed(() => posicionVisor.value.indice > 0 && posicionVisor.value.total > 1);
@@ -2298,6 +2386,29 @@ const irAlVecino = (direccion) => {
     irAlDocumento(direccion);
 };
 
+const escalaVisorPropio = () => {
+    if (showPdfViewer.value) return escalaManualPdf();
+    if (showImageViewer.value && imageZoom.value !== 0.8) return { tipo: 'imagen', valor: imageZoom.value };
+    return null;
+};
+
+/** Este visor ya está a la vista y se está yendo a otro documento: muestra a dónde. */
+const navegandoDesdeAqui = computed(() =>
+    !!navegandoHacia.value && navegandoHacia.value !== props.documentoId && visorEntrante.value !== props.documentoId);
+const posicionMostrada = computed(() =>
+    navegandoDesdeAqui.value ? posicionEnExpediente(navegandoHacia.value) : posicionVisor.value);
+/** Este visor se está preparando oculto, detrás del actual. */
+const visorPreparando = computed(() => visorEntrante.value === props.documentoId);
+/** Deslizamiento de entrada al aparecer por navegación: 'siguiente' | 'anterior' | null. */
+const entradaVisor = ref(null);
+let limpiarEntrada = null;
+watch(visorPreparando, (preparando, antes) => {
+    if (preparando || !antes || !visorAbierto.value) return;
+    entradaVisor.value = direccionNavegacion.value === 1 ? 'siguiente' : 'anterior';
+    clearTimeout(limpiarEntrada);
+    limpiarEntrada = setTimeout(() => { entradaVisor.value = null; }, 260);
+});
+
 const cerrarVisorPropio = () => {
     if (showImageViewer.value) cerrarImagen();
     if (showPdfViewer.value) cerrarPdf();
@@ -2305,7 +2416,7 @@ const cerrarVisorPropio = () => {
 
 watch(visorAbierto, (abierto) => {
     if (abierto) {
-        registrarVisorAbierto(props.documentoId, cerrarVisorPropio);
+        registrarVisorAbierto(props.documentoId, cerrarVisorPropio, escalaVisorPropio);
         actualizarPosicionVisor();
         // Al abrir se montan todos los años: el total se completa en los siguientes cuadros
         nextTick(() => nextTick(actualizarPosicionVisor));
@@ -2316,7 +2427,10 @@ watch(visorAbierto, (abierto) => {
 });
 
 watch(mostrarModalPdfEliminado, (mostrado) => {
-    if (mostrado && navegacionPendiente() === props.documentoId) aperturaFallida(props.documentoId);
+    if (!mostrado) return;
+    // Se pasó de largo este documento antes de que respondiera: su aviso ya no corresponde
+    if (avisoDeDestinoRebasado(props.documentoId)) mostrarModalPdfEliminado.value = false;
+    else if (navegacionPendiente() === props.documentoId) aperturaFallida(props.documentoId);
 });
 
 ////////////////////////////////////////////
@@ -5487,6 +5601,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
         <Transition name="modal-fade" appear :css="!visorSinAnimacion">
             <div v-if="showPdfViewer"
                 class="documento-item-viewer fixed inset-0 z-50 flex flex-col overflow-hidden bg-black bg-opacity-90 backdrop-blur-sm"
+                :class="{ 'visor-preparando': visorPreparando, 'visor-navegando': navegandoDesdeAqui, [`visor-entra-${entradaVisor}`]: entradaVisor }"
+                :aria-hidden="visorPreparando ? 'true' : undefined"
                 @click.self="cerrarPdf">
 
             <!-- Header del visor -->
@@ -5526,7 +5642,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                 <!-- Contenedor del visor de PDF -->
                 <div
                     ref="pdfViewerContainerRef"
-                    class="pdf-viewer-host mt-16 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl bg-white shadow-2xl sm:mt-20"
+                    class="pdf-viewer-host visor-contenido mt-16 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl bg-white shadow-2xl sm:mt-20"
                 >
                     <VPdfViewer
                         v-if="pdfViewerReady"
@@ -5545,12 +5661,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
             </div>
 
             <!-- Navegación entre documentos del expediente (← →) -->
-            <div v-if="navegacionDisponible" class="visor-navegacion absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black bg-opacity-75 text-white pl-1 pr-1 py-1 rounded-full text-xs sm:text-sm">
+            <div v-if="navegacionDisponible" class="visor-navegacion z-30 absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black bg-opacity-75 text-white pl-1 pr-1 py-1 rounded-full text-xs sm:text-sm">
                 <button type="button" class="visor-navegacion__boton" :disabled="posicionVisor.indice <= 1"
                     aria-label="Documento anterior" title="Documento anterior (←)" @click="irAlVecino(-1)">
                     <i class="fas fa-chevron-left"></i><span class="hidden sm:inline">Anterior</span>
                 </button>
-                <span class="px-1 sm:px-2 tabular-nums whitespace-nowrap" aria-live="polite">{{ posicionVisor.indice }} de {{ posicionVisor.total }}</span>
+                <span class="visor-navegacion__posicion px-1 sm:px-2 tabular-nums whitespace-nowrap" aria-live="polite">{{ posicionMostrada.indice }} de {{ posicionMostrada.total }}</span>
                 <button type="button" class="visor-navegacion__boton" :disabled="posicionVisor.indice >= posicionVisor.total"
                     aria-label="Documento siguiente" title="Documento siguiente (→)" @click="irAlVecino(1)">
                     <span class="hidden sm:inline">Siguiente</span><i class="fas fa-chevron-right"></i>
@@ -5571,6 +5687,8 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
         <Transition name="modal-fade" appear :css="!visorSinAnimacion">
             <div v-if="showImageViewer"
                 class="documento-item-viewer fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 backdrop-blur-sm flex justify-center items-center z-50"
+                :class="{ 'visor-preparando': visorPreparando, 'visor-navegando': navegandoDesdeAqui, [`visor-entra-${entradaVisor}`]: entradaVisor }"
+                :aria-hidden="visorPreparando ? 'true' : undefined"
                 @click.self="cerrarImagen">
 
             <!-- Header del visor -->
@@ -5622,7 +5740,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 
             <!-- Contenedor principal de la imagen -->
             <div class="relative w-full h-full flex flex-col image-viewer">
-                <div class="flex-1 mt-16 sm:mt-20 mx-2 sm:mx-4 mb-4 bg-white rounded-xl shadow-2xl overflow-hidden flex items-center justify-center">
+                <div class="visor-contenido flex-1 mt-16 sm:mt-20 mx-2 sm:mx-4 mb-4 bg-white rounded-xl shadow-2xl overflow-hidden flex items-center justify-center">
                     <img
                         :src="imageUrl"
                         :style="{
@@ -5636,6 +5754,7 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
                         @mousedown="startDrag"
                         @mouseenter="$event.target.style.cursor = isDragging ? 'grabbing' : 'grab'"
                         @mouseleave="handleMouseLeave"
+                        @load="visorPreparando && visorListo(documentoId)"
                     />
                 </div>
             </div>
@@ -5647,12 +5766,12 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
             </div>
 
             <!-- Navegación entre documentos del expediente (← →) -->
-            <div v-if="navegacionDisponible" class="visor-navegacion absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black bg-opacity-75 text-white pl-1 pr-1 py-1 rounded-full text-xs sm:text-sm">
+            <div v-if="navegacionDisponible" class="visor-navegacion z-30 absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black bg-opacity-75 text-white pl-1 pr-1 py-1 rounded-full text-xs sm:text-sm">
                 <button type="button" class="visor-navegacion__boton" :disabled="posicionVisor.indice <= 1"
                     aria-label="Documento anterior" title="Documento anterior (←)" @click="irAlVecino(-1)">
                     <i class="fas fa-chevron-left"></i><span class="hidden sm:inline">Anterior</span>
                 </button>
-                <span class="px-1 sm:px-2 tabular-nums whitespace-nowrap" aria-live="polite">{{ posicionVisor.indice }} de {{ posicionVisor.total }}</span>
+                <span class="visor-navegacion__posicion px-1 sm:px-2 tabular-nums whitespace-nowrap" aria-live="polite">{{ posicionMostrada.indice }} de {{ posicionMostrada.total }}</span>
                 <button type="button" class="visor-navegacion__boton" :disabled="posicionVisor.indice >= posicionVisor.total"
                     aria-label="Documento siguiente" title="Documento siguiente (→)" @click="irAlVecino(1)">
                     <span class="hidden sm:inline">Siguiente</span><i class="fas fa-chevron-right"></i>
@@ -5728,6 +5847,43 @@ watch(() => [props.antidoping, props.aptitud, props.audiometria, props.constanci
 .visor-navegacion__boton:disabled {
     opacity: 0.35;
     cursor: default;
+}
+
+/* Visor que se prepara detrás del actual: invisible hasta tener su contenido dibujado */
+.documento-item-viewer.visor-preparando {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Visor que se está yendo a otro documento: si tarda, se oscurece el contenido (sin transparencia) */
+.visor-contenido {
+    transition: filter 150ms ease-out;
+}
+.visor-navegando .visor-contenido {
+    filter: brightness(0.8);
+    transition-delay: 120ms;
+}
+
+/* Entrada del documento nuevo: deslizamiento corto en el sentido del paso */
+.visor-entra-siguiente .visor-contenido {
+    animation: visor-entra-siguiente 180ms ease-out;
+}
+.visor-entra-anterior .visor-contenido {
+    animation: visor-entra-anterior 180ms ease-out;
+}
+@keyframes visor-entra-siguiente {
+    from { filter: brightness(0.8); transform: translateX(24px); }
+    to { filter: none; transform: none; }
+}
+@keyframes visor-entra-anterior {
+    from { filter: brightness(0.8); transform: translateX(-24px); }
+    to { filter: none; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .visor-entra-siguiente .visor-contenido,
+    .visor-entra-anterior .visor-contenido {
+        animation: none;
+    }
 }
 
 /* Animaciones para los modales */

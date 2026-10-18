@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   aperturaFallida,
+  atenderTeclaUnaVez,
+  avisoDeDestinoRebasado,
+  enModoPrecarga,
+  escalaParaAbrir,
+  guardarPrecarga,
+  hayPrecarga,
+  navegandoHacia,
+  precargarVecinos,
+  tomarPrecarga,
+  visorEntrante,
+  visorListo,
   idVecino,
   irAlDocumento,
   montarTodosLosAnios,
@@ -56,20 +67,120 @@ describe('posición y vecinos', () => {
   });
 });
 
+describe('teclado', () => {
+  it('un mismo evento se atiende una sola vez', () => {
+    const evento = new KeyboardEvent('keydown', { key: 'ArrowRight' });
+    expect(atenderTeclaUnaVez(evento)).toBe(true);
+    expect(atenderTeclaUnaVez(evento)).toBe(false);
+  });
+});
+
+describe('precarga', () => {
+  it('hace clic en los vecinos en modo precarga, sin abrirlos', () => {
+    const vistos: Array<[string, boolean]> = [];
+    const raiz = expediente(['a', 'b', 'c'], (id) => vistos.push([id, enModoPrecarga()]));
+    precargarVecinos('b', raiz);
+    expect(vistos).toEqual([['c', true], ['a', true]]);
+    expect(enModoPrecarga()).toBe(false);
+  });
+
+  it('se precarga al abrir un visor y se entrega una sola vez', () => {
+    const vistos: string[] = [];
+    const raiz = expediente(['a', 'b'], (id) => vistos.push(id));
+    document.body.appendChild(raiz);
+    registrarVisorAbierto('a', vi.fn());
+    vi.advanceTimersByTime(300);
+    expect(vistos).toEqual(['b']);
+    raiz.remove();
+
+    const descarga = Promise.resolve('pdf');
+    guardarPrecarga('/x.pdf', descarga);
+    expect(hayPrecarga('/x.pdf')).toBe(true);
+    expect(tomarPrecarga('/x.pdf')).toBe(descarga);
+    expect(tomarPrecarga('/x.pdf')).toBeNull();
+  });
+
+  it('al cerrar el visor por completo se descartan las precargas', () => {
+    guardarPrecarga('/x.pdf', Promise.resolve('pdf'));
+    registrarVisorAbierto('a', vi.fn());
+    registrarVisorCerrado('a');
+    expect(hayPrecarga('/x.pdf')).toBe(false);
+  });
+});
+
 describe('irAlDocumento', () => {
-  it('abre el vecino como si se le hiciera clic, sin animación, y cierra el anterior al abrirse', () => {
+  it('abre el vecino como clic, lo prepara oculto y cambia cuando está listo', () => {
     const cerrarA = vi.fn();
     const raiz = expediente(['a', 'b', 'c'], (id) => registrarVisorAbierto(id, vi.fn()));
     registrarVisorAbierto('a', cerrarA);
     expect(montarTodosLosAnios.value).toBe(true);
 
     expect(irAlDocumento(1, raiz)).toBe(true);
-    expect(cerrarA).toHaveBeenCalledTimes(1);
+    expect(navegandoHacia.value).toBe('b');
+    expect(visorEntrante.value).toBe('b');
+    expect(cerrarA).not.toHaveBeenCalled();
     expect(visorSinAnimacion.value).toBe(true);
+
+    visorListo('b');
+    expect(cerrarA).toHaveBeenCalledTimes(1);
+    expect(visorEntrante.value).toBeNull();
+    expect(navegandoHacia.value).toBeNull();
     expect(navegacionPendiente()).toBeNull();
 
-    vi.runOnlyPendingTimers();
+    vi.advanceTimersByTime(0);
     expect(visorSinAnimacion.value).toBe(false);
+  });
+
+  it('si el visor nuevo no avisa, se muestra de todos modos', () => {
+    const cerrarA = vi.fn();
+    const raiz = expediente(['a', 'b'], (id) => registrarVisorAbierto(id, vi.fn()));
+    registrarVisorAbierto('a', cerrarA);
+    irAlDocumento(1, raiz);
+    vi.advanceTimersByTime(1500);
+    expect(cerrarA).toHaveBeenCalledTimes(1);
+    expect(visorEntrante.value).toBeNull();
+  });
+
+  it('si se avanza otra vez mientras uno se prepara, ese se descarta', () => {
+    const cerrar: Record<string, ReturnType<typeof vi.fn>> = { a: vi.fn(), b: vi.fn(), c: vi.fn() };
+    const raiz = expediente(['a', 'b', 'c'], (id) => registrarVisorAbierto(id, cerrar[id]));
+    registrarVisorAbierto('a', cerrar.a);
+    irAlDocumento(1, raiz);
+    irAlDocumento(1, raiz);
+    expect(cerrar.b).toHaveBeenCalledTimes(1);
+    expect(visorEntrante.value).toBe('c');
+    visorListo('c');
+    expect(cerrar.a).toHaveBeenCalledTimes(1);
+    expect(cerrar.c).not.toHaveBeenCalled();
+  });
+
+  it('si el destino rebasado abre tarde, se cierra solo y no corta el paso siguiente', () => {
+    const abrir: Record<string, () => void> = {};
+    const cerrar: Record<string, ReturnType<typeof vi.fn>> = { a: vi.fn(), b: vi.fn(), c: vi.fn() };
+    const raiz = expediente(['a', 'b', 'c'], (id) => { abrir[id] = () => registrarVisorAbierto(id, cerrar[id]); });
+    registrarVisorAbierto('a', cerrar.a, () => ({ tipo: 'pdf', valor: 1.25 }));
+    irAlDocumento(1, raiz);
+    irAlDocumento(1, raiz);
+    abrir.b(); // llega tarde
+    expect(cerrar.b).toHaveBeenCalledTimes(1);
+    expect(cerrar.a).not.toHaveBeenCalled();
+    expect(navegacionPendiente()).toBe('c');
+    expect(escalaParaAbrir('c', 'pdf')).toBe(1.25);
+    expect(avisoDeDestinoRebasado('b')).toBe(false);
+  });
+
+  it('el zoom elegido a mano pasa al documento siguiente, solo del mismo tipo de visor', () => {
+    const raiz = expediente(['a', 'b', 'c'], (id) => {
+      escalas.push([id, escalaParaAbrir(id, 'pdf'), escalaParaAbrir(id, 'imagen')]);
+      registrarVisorAbierto(id, vi.fn());
+    });
+    const escalas: unknown[] = [];
+    registrarVisorAbierto('a', vi.fn(), () => ({ tipo: 'pdf', valor: 1.6 }));
+    irAlDocumento(1, raiz);
+    expect(escalas).toEqual([['b', 1.6, null]]);
+    // Fuera de la navegación no hay zoom heredado
+    visorListo('b');
+    expect(escalaParaAbrir('b', 'pdf')).toBeNull();
   });
 
   it('no hace nada en los extremos', () => {
