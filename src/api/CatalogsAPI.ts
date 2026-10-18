@@ -17,6 +17,24 @@ export default {
     },
 
     /**
+     * Buscador de diagnósticos de la nota médica: sin acentos, por relevancia y, con el
+     * trabajador, solo diagnósticos válidos para su sexo y edad a la fecha de la consulta.
+     * Responde { resultados, ocultosPorSexoEdad }.
+     */
+    buscarDiagnosticosCIE10(
+        query: string,
+        opciones: { limit?: number; sexoTrabajador?: string; fechaNacimiento?: string; fecha?: string } = {},
+        signal?: AbortSignal,
+    ) {
+        const params: Record<string, string | number> = { q: query, detalle: '1' };
+        if (opciones.limit !== undefined) params.limit = opciones.limit;
+        if (opciones.sexoTrabajador) params.sexoTrabajador = opciones.sexoTrabajador;
+        if (opciones.fechaNacimiento) params.fechaNacimiento = opciones.fechaNacimiento;
+        if (opciones.fecha) params.fecha = opciones.fecha;
+        return api.get(`/catalogs/cie10/search`, { params, signal });
+    },
+
+    /**
      * Get a single CIE-10 entry by its code
      * @param code The CIE-10 code (e.g., 'J00')
      */

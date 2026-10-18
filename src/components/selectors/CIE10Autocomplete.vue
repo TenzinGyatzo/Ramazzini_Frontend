@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
+import { useTrabajadoresStore } from '@/stores/trabajadores';
+import { tramosResaltados } from '@/helpers/resaltarCoincidencia';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
 
 const { catalogSearchInputAttrs } = useCatalogSearchInput();
@@ -36,30 +38,93 @@ const containerRef = ref<HTMLElement | null>(null);
 
 // Debounce timer
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+/** Solo cuenta la respuesta de la última búsqueda (una lenta no reemplaza a la nueva). */
+let busquedaActual = 0;
+let controlador: AbortController | null = null;
+/** Coincidencias ocultas por no aplicar al sexo o la edad del trabajador. */
+const ocultosPorSexoEdad = ref(0);
+/** Lo que se buscó en la última respuesta (para resaltar). */
+const consultaMostrada = ref('');
+
+const trabajadores = useTrabajadoresStore();
+const aFechaISO = (valor: unknown): string | undefined => {
+  if (!valor) return undefined;
+  const fecha = new Date(valor as string);
+  return Number.isNaN(fecha.getTime()) ? undefined : fecha.toISOString().slice(0, 10);
+};
+
+/**
+ * Sexo y edad del trabajador para ofrecer solo diagnósticos válidos (misma regla que al
+ * guardar la nota). Sin trabajador o sin esos datos, se busca sin filtrar.
+ */
+const filtroTrabajador = computed(() => {
+  const t: any = trabajadores.currentTrabajador;
+  if (!t || (props.trabajadorId && String(t._id) !== String(props.trabajadorId))) return null;
+  if (!t.sexo && !t.fechaNacimiento) return null;
+  return {
+    sexoTrabajador: t.sexo || undefined,
+    fechaNacimiento: aFechaISO(t.fechaNacimiento),
+    fecha: aFechaISO(props.fechaConsulta) ?? aFechaISO(new Date()),
+  };
+});
+
+/** «3 diagnósticos no aplican a hombres de 41 años» (o «… a la edad de 2 años»). */
+const textoOcultos = computed(() => {
+  const n = ocultosPorSexoEdad.value;
+  if (!n) return '';
+  const t: any = trabajadores.currentTrabajador;
+  const filtro = filtroTrabajador.value;
+  let edad: number | null = null;
+  if (filtro?.fechaNacimiento && filtro.fecha) {
+    const nac = new Date(filtro.fechaNacimiento);
+    const ref = new Date(filtro.fecha);
+    edad = ref.getUTCFullYear() - nac.getUTCFullYear();
+    if (ref.getUTCMonth() < nac.getUTCMonth() || (ref.getUTCMonth() === nac.getUTCMonth() && ref.getUTCDate() < nac.getUTCDate())) edad -= 1;
+  }
+  const sexo = String(t?.sexo ?? '').toLowerCase();
+  const grupo = sexo.startsWith('masc') || sexo === 'hombre' ? 'hombres' : sexo.startsWith('fem') || sexo === 'mujer' ? 'mujeres' : '';
+  const quien = grupo
+    ? `${grupo}${edad !== null ? ` de ${edad} ${edad === 1 ? 'año' : 'años'}` : ''}`
+    : edad !== null ? `la edad de ${edad} ${edad === 1 ? 'año' : 'años'}` : 'este trabajador';
+  return `${n} ${n === 1 ? 'diagnóstico no aplica' : 'diagnósticos no aplican'} a ${quien}`;
+});
 
 // Handle search
 const performSearch = async (query: string) => {
+  const numero = ++busquedaActual;
+  controlador?.abort();
   if (query.length < 2) {
     results.value = [];
+    ocultosPorSexoEdad.value = 0;
     showDropdown.value = false;
+    isLoading.value = false;
     return;
   }
 
   isLoading.value = true;
   errorMessage.value = '';
-  
+  controlador = new AbortController();
+
   try {
     const limit = 50;
-    const { data } = await CatalogsAPI.searchCIE10(query, limit);
-    results.value = data || [];
+    const { data } = await CatalogsAPI.buscarDiagnosticosCIE10(
+      query,
+      { limit, ...(filtroTrabajador.value ?? {}) },
+      controlador.signal,
+    );
+    if (numero !== busquedaActual) return;
+    results.value = data?.resultados || [];
+    ocultosPorSexoEdad.value = data?.ocultosPorSexoEdad || 0;
+    consultaMostrada.value = query;
     showDropdown.value = true;
     selectedIndex.value = -1;
-  } catch (error) {
+  } catch (error: any) {
+    if (numero !== busquedaActual || error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
     console.error('Error searching CIE-10:', error);
     errorMessage.value = 'Error en la búsqueda, intente de nuevo';
     results.value = [];
   } finally {
-    isLoading.value = false;
+    if (numero === busquedaActual) isLoading.value = false;
   }
 };
 
@@ -236,8 +301,18 @@ watch(() => props.modelValue, async (newVal) => {
           :aria-selected="selectedIndex === index"
         >
           <div class="flex items-start">
-            <span class="font-bold text-emerald-600 w-12 flex-shrink-0 mt-0.5">{{ item.code }}</span>
-            <span class="leading-snug break-words">{{ item.description }}</span>
+            <span class="font-bold text-emerald-600 w-12 flex-shrink-0 mt-0.5">
+              <template v-for="(tramo, i) in tramosResaltados(item.code, consultaMostrada)" :key="i">
+                <mark v-if="tramo.coincide" class="cie10-coincide">{{ tramo.texto }}</mark>
+                <template v-else>{{ tramo.texto }}</template>
+              </template>
+            </span>
+            <span class="leading-snug break-words">
+              <template v-for="(tramo, i) in tramosResaltados(item.description, consultaMostrada)" :key="i">
+                <mark v-if="tramo.coincide" class="cie10-coincide">{{ tramo.texto }}</mark>
+                <template v-else>{{ tramo.texto }}</template>
+              </template>
+            </span>
           </div>
           
           <span 
@@ -253,11 +328,26 @@ watch(() => props.modelValue, async (newVal) => {
         <i class="fas fa-search mb-1 block text-lg opacity-20"></i>
         No se encontraron códigos para "{{ searchTerm }}"
       </div>
+
+      <!-- Coincidencias que no aplican al sexo o la edad del trabajador -->
+      <p
+        v-if="!errorMessage && textoOcultos"
+        class="cie10-ocultos border-t border-gray-100 px-3 py-1.5 text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400"
+      >
+        <i class="fas fa-filter mr-1" aria-hidden="true"></i>{{ textoOcultos }}
+      </p>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Lo que coincide con la búsqueda, en negritas (sin color de fondo) */
+.cie10-coincide {
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+}
+
 /* Transición para el dropdown si se desea */
 .dropdown-enter-active,
 .dropdown-leave-active {
