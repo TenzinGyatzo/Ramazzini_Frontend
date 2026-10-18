@@ -3,14 +3,15 @@ export type RegimenImportacion = 'SIRES_NOM024' | 'SIN_REGIMEN';
 export const PLANTILLA_SIN_REGIMEN =
   '/template/Plantilla para Importar Trabajadores.xlsx';
 
+// El nombre no menciona el régimen: describe lo que trae además de la plantilla básica
 export const PLANTILLA_SIRES_NOM024 =
-  '/template/Plantilla Importar Trabajadores SIRES NOM024.xlsx';
+  '/template/Plantilla para Importar Trabajadores (con CURP y residencia).xlsx';
 
 export const NOMBRE_DESCARGA_SIN_REGIMEN =
   'Plantilla para Importar Trabajadores.xlsx';
 
 export const NOMBRE_DESCARGA_SIRES_NOM024 =
-  'Plantilla Importar Trabajadores SIRES NOM024.xlsx';
+  'Plantilla para Importar Trabajadores (con CURP y residencia).xlsx';
 
 export function getPlantillaImportacionTrabajadores(regime: RegimenImportacion): {
   href: string;

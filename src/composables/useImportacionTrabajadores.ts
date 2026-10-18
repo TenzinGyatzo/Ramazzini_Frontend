@@ -2,6 +2,22 @@ import { ref } from 'vue'
 import { useModalResumenImportacionStore } from '@/stores/modalResumenImportacion'
 import TrabajadoresAPI from '@/api/TrabajadoresAPI'
 import type { ImportResumen } from '@/stores/modalResumenImportacion'
+import { esErrorSinRespuesta } from '@/composables/useEstadoConexion'
+
+/**
+ * Por qué no se pudo importar: sin respuesta del servidor suele ser la conexión o un archivo
+ * que el navegador no pudo enviar (p. ej. abierto en Excel); si el servidor explica, su mensaje.
+ */
+export function mensajeDeErrorDeImportacion(error: unknown): string {
+  if (esErrorSinRespuesta(error)) {
+    return 'No se pudo enviar el archivo. Revisa tu conexión; si el archivo está abierto en Excel u otro programa, ciérralo y vuelve a intentarlo.'
+  }
+  const mensaje = (error as { response?: { data?: { message?: unknown } } } | null)?.response?.data?.message
+  if (typeof mensaje === 'string' && mensaje.trim() && !/^internal server error$/i.test(mensaje.trim())) {
+    return mensaje
+  }
+  return 'Error inesperado en el sistema. Por favor, inténtalo de nuevo.'
+}
 
 export const useImportacionTrabajadores = () => {
   const modalStore = useModalResumenImportacionStore()
@@ -29,13 +45,14 @@ export const useImportacionTrabajadores = () => {
     createdBy: string,
     onProgress?: (progress: number) => void
   ): Promise<void> => {
+    let progressInterval: ReturnType<typeof setInterval> | null = null
     try {
       isImporting.value = true
       importProgress.value = 0
       modalStore.showLoading()
 
       // Simular progreso de carga
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         if (importProgress.value < 90) {
           importProgress.value += Math.random() * 10
           onProgress?.(importProgress.value)
@@ -67,16 +84,17 @@ export const useImportacionTrabajadores = () => {
       // ✅ SOLUCIÓN: Solo crear resumen de error para errores reales del sistema
       // No para errores de validación que ya vienen en la respuesta
       const errorResumen: ImportResumen = {
-        message: 'Error inesperado en el sistema. Por favor, inténtalo de nuevo.',
+        message: mensajeDeErrorDeImportacion(error),
         data: [],
         totalProcessed: 0,
         successful: 0,
         failed: 1
       }
-      
+
       modalStore.showModal(errorResumen)
-      
+
     } finally {
+      if (progressInterval) clearInterval(progressInterval)
       isImporting.value = false
       modalStore.hideLoading()
     }

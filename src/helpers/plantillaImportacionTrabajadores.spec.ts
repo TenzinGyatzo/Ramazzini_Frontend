@@ -8,9 +8,10 @@ describe('plantillaImportacionTrabajadores', () => {
     expect(plantilla.downloadName).toBe('Plantilla para Importar Trabajadores.xlsx');
   });
 
-  it('devuelve plantilla SIRES_NOM024', () => {
+  it('devuelve plantilla SIRES_NOM024 con un nombre que no menciona el régimen', () => {
     const plantilla = getPlantillaImportacionTrabajadores('SIRES_NOM024');
-    expect(plantilla.href).toContain('SIRES NOM024');
-    expect(plantilla.downloadName).toContain('SIRES NOM024');
+    expect(plantilla.href).toContain('(con CURP y residencia).xlsx');
+    expect(plantilla.downloadName).toBe('Plantilla para Importar Trabajadores (con CURP y residencia).xlsx');
+    expect(plantilla.downloadName).not.toMatch(/SIRES|NOM/i);
   });
 });

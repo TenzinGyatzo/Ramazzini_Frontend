@@ -10,6 +10,7 @@ import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import { useRegulatoryPolicy } from '@/composables/useRegulatoryPolicy';
 import { getPlantillaImportacionTrabajadores } from '@/helpers/plantillaImportacionTrabajadores';
+import { ArchivoNoLegibleError, leerArchivoParaSubir } from '@/helpers/archivoParaSubir';
 import CargaMasivaCodigosSiresPanel from '@/components/CargaMasivaCodigosSiresPanel.vue';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import { useModalResumenImportacionStore } from '@/stores/modalResumenImportacion';
@@ -91,17 +92,33 @@ const validateFile = (file) => {
   return { valid: true };
 };
 
-// Función para manejar la selección de archivo
-const handleFileSelect = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      toast.open({ message: validation.message, type: 'error' });
-      return;
-    }
-    selectedFile.value = file;
+/** Aviso dentro del modal cuando el archivo no se puede leer (p. ej. abierto en Excel). */
+const errorArchivo = ref('');
+
+/** Acepta el archivo solo si se puede leer; si está bloqueado, lo explica. */
+const aceptarArchivo = async (file) => {
+  const validation = validateFile(file);
+  if (!validation.valid) {
+    toast.open({ message: validation.message, type: 'error' });
+    return;
   }
+  try {
+    await leerArchivoParaSubir(file);
+    errorArchivo.value = '';
+    selectedFile.value = file;
+  } catch (error) {
+    if (!(error instanceof ArchivoNoLegibleError)) throw error;
+    selectedFile.value = null;
+    errorArchivo.value = error.message;
+  }
+};
+
+// Función para manejar la selección de archivo
+const handleFileSelect = async (event) => {
+  const file = event.target.files[0];
+  // Permite volver a elegir el mismo archivo (p. ej. después de cerrarlo en Excel)
+  event.target.value = '';
+  if (file) await aceptarArchivo(file);
 };
 
 // Eventos de drag and drop
@@ -125,26 +142,21 @@ const handleDragOver = (event) => {
   event.stopPropagation();
 };
 
-const handleDrop = (event) => {
+const handleDrop = async (event) => {
   event.preventDefault();
   event.stopPropagation();
   isDragOver.value = false;
-  
+
   const files = Array.from(event.dataTransfer.files);
   if (files.length > 0) {
-    const file = files[0]; // Solo tomamos el primer archivo
-    const validation = validateFile(file);
-    if (!validation.valid) {
-      toast.open({ message: validation.message, type: 'error' });
-      return;
-    }
-    selectedFile.value = file;
+    await aceptarArchivo(files[0]); // Solo tomamos el primer archivo
   }
 };
 
 // Función para remover archivo
 const removeFile = () => {
   selectedFile.value = null;
+  errorArchivo.value = '';
 };
 
 // Función para manejar el envío del formulario
@@ -170,15 +182,27 @@ const handleSubmit = async () => {
     return;
   }
 
+  // Se vuelve a leer: pudo abrirse en Excel después de elegirlo. Se envía la copia leída,
+  // así tampoco falla si Excel lo guarda a mitad del envío
+  let archivo;
   try {
-    toast.open({ 
-      message: `Importando trabajadores, por favor espere...`, 
-      type: "info" 
+    archivo = await leerArchivoParaSubir(selectedFile.value);
+  } catch (error) {
+    if (!(error instanceof ArchivoNoLegibleError)) throw error;
+    errorArchivo.value = error.message;
+    return;
+  }
+  errorArchivo.value = '';
+
+  try {
+    toast.open({
+      message: `Importando trabajadores, por favor espere...`,
+      type: "info"
     });
-    
+
     // Usar el composable en lugar del store directo
     await importarTrabajadores(
-      selectedFile.value, 
+      archivo,
       centrosTrabajo.currentCentroTrabajoId,
       empresas.currentEmpresaId,
       currentUserId,
@@ -328,6 +352,16 @@ const testResumenMixto = async () => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- El archivo no se pudo leer (p. ej. abierto en Excel) -->
+        <div
+          v-if="errorArchivo"
+          class="carga-masiva-error-archivo mb-6 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"
+          role="alert"
+        >
+          <i class="fa-solid fa-lock mt-0.5 text-amber-600" aria-hidden="true"></i>
+          <p>{{ errorArchivo }}</p>
         </div>
 
         <!-- Archivo seleccionado -->
