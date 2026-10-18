@@ -9,6 +9,7 @@ const { buscar, push } = vi.hoisted(() => ({
 vi.mock('@/api/BusquedaTrabajadoresAPI', () => ({
   default: { buscar },
   BUSQUEDA_MIN_CARACTERES: 3,
+  esNumeroDeEmpleado: (texto: string) => /^[0-9]{1,7}$/.test(texto.trim()),
 }));
 
 vi.mock('vue-router', () => ({
@@ -107,6 +108,18 @@ describe('BuscadorTrabajadores', () => {
       params: { idEmpresa: 'e1', idCentroTrabajo: 'c1', idTrabajador: '2' },
     });
     expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+    wrapper.unmount();
+  });
+
+  it('un número de empleado busca desde 1 dígito y se muestra en el resultado', async () => {
+    buscar.mockResolvedValue({ data: [trabajador('1', 'JUAN', { numeroEmpleado: '7' })] });
+    const wrapper = montar();
+    await wrapper.find('button[aria-label="Buscar trabajador"]').trigger('click');
+    await escribir('7');
+
+    expect(buscar).toHaveBeenCalledTimes(1);
+    expect(buscar.mock.calls[0][0]).toBe('7');
+    expect(document.body.textContent).toContain('No. 7');
     wrapper.unmount();
   });
 
