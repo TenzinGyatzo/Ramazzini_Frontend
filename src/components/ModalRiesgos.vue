@@ -9,10 +9,12 @@ import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import {
+  companerosDelPuesto,
   mismosAgentes,
   sugerirAgentesPorPuesto,
   textoSugerenciaAgentes,
 } from '@/helpers/sugerenciaAgentesPorPuesto';
+import { procesarConLimite } from '@/helpers/procesarConLimite';
 
 const toast = inject('toast');
 const emit = defineEmits(['closeModal']);
@@ -68,10 +70,16 @@ const quitarTodos = () => {
 // Sugerencia de los compañeros del mismo puesto (la lista cargada del centro; si la lista
 // es de otro centro, p. ej. al abrir desde un expediente sin pasar por la tabla, no hay sugerencia)
 const ORDEN_AGENTES = gruposAgentes.flatMap((grupo) => grupo.agentes.map((agente) => agente.valor));
-const sugerencia = computed(() => {
+/** La lista cargada, solo si es la del centro de este trabajador. */
+const listaDelCentro = computed(() => {
   const trabajador = trabajadores.currentTrabajador;
   const lista = Array.isArray(trabajadores.trabajadores) ? trabajadores.trabajadores : [];
-  if (!trabajador?._id || !lista.some((t) => String(t?._id) === String(trabajador._id))) return null;
+  return trabajador?._id && lista.some((t) => String(t?._id) === String(trabajador._id)) ? lista : null;
+});
+const sugerencia = computed(() => {
+  const trabajador = trabajadores.currentTrabajador;
+  const lista = listaDelCentro.value;
+  if (!lista) return null;
   const propuesta = sugerirAgentesPorPuesto(trabajador, lista, ORDEN_AGENTES);
   if (!propuesta || mismosAgentes(propuesta.agentes, agentesSeleccionados.value)) return null;
   return { ...propuesta, texto: textoSugerenciaAgentes(propuesta, String(trabajador.puesto).trim()) };
@@ -80,6 +88,25 @@ const sugerencia = computed(() => {
 const usarSugerencia = () => {
   if (sugerencia.value) agentesSeleccionados.value = [...sugerencia.value.agentes];
 };
+
+// Aplicar los mismos agentes a los compañeros activos del puesto (cambio de varios a la vez:
+// se confirma antes y solo se tocan los que no los tienen ya)
+const aplicarAlPuesto = ref(false);
+const confirmandoAplicacion = ref(false);
+const progresoAplicacion = ref(null);
+const puestoTrabajador = computed(() => String(trabajadores.currentTrabajador?.puesto ?? '').trim());
+const companeros = computed(() =>
+  listaDelCentro.value
+    ? companerosDelPuesto(trabajadores.currentTrabajador, listaDelCentro.value, agentesSeleccionados.value)
+    : { todos: [], porCambiar: [] },
+);
+const plural = (n, uno, varios) => (n === 1 ? uno : varios);
+watch(aplicarAlPuesto, () => {
+  confirmandoAplicacion.value = false;
+});
+watch(agentesSeleccionados, () => {
+  confirmandoAplicacion.value = false;
+});
 
 // Puesto, empresa y antigüedad en una línea, omitiendo lo que no esté capturado
 const datosTrabajador = computed(() => {
@@ -94,6 +121,7 @@ const datosTrabajador = computed(() => {
 
 const buildFormState = () => ({
   agentes: [...agentesSeleccionados.value].sort(),
+  aplicarAlPuesto: aplicarAlPuesto.value,
 });
 
 const { isDirty, resetSnapshot } = useDirtySnapshot(buildFormState, {
@@ -140,6 +168,12 @@ const isSubmitting = ref(false);
 
 const handleSubmit = async () => {
   if (isSubmitting.value) return;
+  const aplicarAOtros = aplicarAlPuesto.value && companeros.value.porCambiar.length > 0;
+  // Cambiar a varios trabajadores se confirma antes
+  if (aplicarAOtros && !confirmandoAplicacion.value) {
+    confirmandoAplicacion.value = true;
+    return;
+  }
   isSubmitting.value = true;
 
   try {
@@ -168,7 +202,42 @@ const handleSubmit = async () => {
       trabajadores.currentTrabajador.agentesRiesgoActuales = agentes;
     }
 
-    toast.open({ message: 'Agentes de riesgo actualizados', type: 'success' });
+    if (aplicarAOtros) {
+      // Una copia: la lista se actualiza al terminar y no debe cambiar a mitad del recorrido
+      const pendientes = [...companeros.value.porCambiar];
+      const fallidos = [];
+      // El trabajador actual ya se guardó: cuenta como el primero
+      progresoAplicacion.value = { hechos: 1, total: pendientes.length + 1 };
+      await procesarConLimite(pendientes, 3, async (companero) => {
+        try {
+          await trabajadores.updateTrabajador(
+            empresaId,
+            centroId,
+            companero._id,
+            { agentesRiesgoActuales: agentes },
+            { enSegundoPlano: true },
+          );
+        } catch (error) {
+          console.error(error);
+          fallidos.push(companero);
+        } finally {
+          progresoAplicacion.value = { ...progresoAplicacion.value, hechos: progresoAplicacion.value.hechos + 1 };
+        }
+      });
+      const actualizados = 1 + pendientes.length - fallidos.length;
+      if (fallidos.length) {
+        const nombres = fallidos.slice(0, 3).map((f) => formatNombreCompleto(f)).join(', ');
+        const resto = fallidos.length > 3 ? ` y ${fallidos.length - 3} más` : '';
+        toast.open({
+          message: `Agentes actualizados en ${actualizados} trabajadores. No se pudieron actualizar: ${nombres}${resto}.`,
+          type: 'warning',
+        });
+      } else {
+        toast.open({ message: `Agentes de riesgo actualizados en ${actualizados} trabajadores`, type: 'success' });
+      }
+    } else {
+      toast.open({ message: 'Agentes de riesgo actualizados', type: 'success' });
+    }
     forceClose();
     // La columna de agentes de la tabla se actualiza sin desmontarla
     trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId, { enSegundoPlano: true });
@@ -177,6 +246,7 @@ const handleSubmit = async () => {
     toast.open({ message: 'Error al actualizar los agentes de riesgo.', type: 'error' });
   } finally {
     isSubmitting.value = false;
+    progresoAplicacion.value = null;
   }
 };
 </script>
@@ -273,10 +343,75 @@ const handleSubmit = async () => {
             </button>
           </div>
         </div>
+
+        <!-- Aplicar a los compañeros del mismo puesto -->
+        <label
+          v-if="companeros.todos.length"
+          class="modal-riesgos__aplicar-puesto mt-4 flex cursor-pointer items-start gap-2.5 rounded-lg border border-gray-200 px-3 py-2.5"
+        >
+          <input
+            v-model="aplicarAlPuesto"
+            type="checkbox"
+            class="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
+            :disabled="isSubmitting"
+          />
+          <span class="text-sm">
+            <span class="font-medium text-gray-800">
+              Aplicar también a
+              {{ companeros.todos.length === 1 ? 'el otro trabajador' : `los otros ${companeros.todos.length} trabajadores` }}
+              con el puesto {{ puestoTrabajador }}
+            </span>
+            <span class="block text-xs text-gray-500">
+              <template v-if="!companeros.porCambiar.length">
+                {{ plural(companeros.todos.length, 'Ya tiene', 'Ya tienen') }} estos mismos agentes.
+              </template>
+              <template v-else-if="companeros.porCambiar.length < companeros.todos.length">
+                Se {{ plural(companeros.porCambiar.length, 'actualizará', 'actualizarán') }} {{ companeros.porCambiar.length }};
+                {{ companeros.todos.length - companeros.porCambiar.length }}
+                {{ plural(companeros.todos.length - companeros.porCambiar.length, 'ya los tiene', 'ya los tienen') }}.
+              </template>
+              <template v-else>
+                Sus agentes actuales se reemplazarán por los que marques aquí.
+              </template>
+            </span>
+          </span>
+        </label>
+      </div>
+
+      <!-- Confirmación antes de cambiar a varios trabajadores -->
+      <div
+        v-if="confirmandoAplicacion && !isSubmitting"
+        class="modal-riesgos__confirmar-puesto border-t border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900"
+        role="alert"
+      >
+        <p>
+          Se reemplazarán los agentes de
+          <span class="font-semibold">
+            {{ companeros.porCambiar.length }} {{ plural(companeros.porCambiar.length, 'trabajador', 'trabajadores') }} más
+          </span>
+          con el puesto {{ puestoTrabajador }} por:
+          <span class="font-semibold">{{ agentesSeleccionados.length ? agentesSeleccionados.join(' · ') : 'ningún agente' }}</span>.
+        </p>
+        <div class="mt-2 flex justify-end gap-2">
+          <button
+            type="button"
+            class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+            @click="confirmandoAplicacion = false"
+          >
+            Volver
+          </button>
+          <button
+            type="button"
+            class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
+            @click="handleSubmit"
+          >
+            Sí, guardar para {{ companeros.porCambiar.length + 1 }} trabajadores
+          </button>
+        </div>
       </div>
 
       <!-- Acciones -->
-      <div class="flex flex-wrap items-center gap-2 border-t border-gray-200 px-5 py-3">
+      <div v-else class="flex flex-wrap items-center gap-2 border-t border-gray-200 px-5 py-3">
         <button
           v-if="agentesSeleccionados.length"
           type="button"
@@ -299,7 +434,13 @@ const handleSubmit = async () => {
           class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-150 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
           @click="handleSubmit"
         >
-          <span v-if="isSubmitting">Guardando...</span>
+          <span v-if="isSubmitting && progresoAplicacion">
+            Guardando {{ progresoAplicacion.hechos }} de {{ progresoAplicacion.total }}…
+          </span>
+          <span v-else-if="isSubmitting">Guardando...</span>
+          <span v-else-if="aplicarAlPuesto && companeros.porCambiar.length">
+            Guardar para {{ companeros.porCambiar.length + 1 }} trabajadores
+          </span>
           <span v-else>Guardar cambios</span>
         </button>
       </div>

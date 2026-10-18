@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  companerosDelPuesto,
   mismosAgentes,
   normalizarPuesto,
   sugerirAgentesPorPuesto,
@@ -70,6 +71,22 @@ describe('sugerencia de agentes de riesgo por puesto', () => {
     expect(textoSugerenciaAgentes({ agentes: ['Ruido'], coinciden: 8, total: 12 }, 'SOLDADOR')).toBe(
       '8 de los 12 trabajadores con el puesto SOLDADOR tienen:',
     );
+  });
+
+  it('companerosDelPuesto reúne a los activos del puesto y distingue a quienes cambiarían', () => {
+    const yo = t('n', 'Soldador', []);
+    const lista = [
+      yo,
+      t('1', 'SOLDADOR', ['Ruido', 'Polvos']),
+      t('2', 'soldador', ['Polvos', 'Ruido']),
+      t('3', 'Soldador', []),
+      t('4', 'Soldador', ['Ruido'], { estadoLaboral: 'Inactivo' }),
+      t('5', 'Almacenista', []),
+    ];
+    const { todos, porCambiar } = companerosDelPuesto(yo, lista, ['Ruido', 'Polvos']);
+    expect(todos.map((c) => c._id)).toEqual(['1', '2', '3']);
+    expect(porCambiar.map((c) => c._id)).toEqual(['3']);
+    expect(companerosDelPuesto(t('n', '', []), lista, ['Ruido'])).toEqual({ todos: [], porCambiar: [] });
   });
 
   it('mismosAgentes no depende del orden', () => {

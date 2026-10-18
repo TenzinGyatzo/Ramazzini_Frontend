@@ -74,6 +74,27 @@ export function sugerirAgentesPorPuesto(
   return { agentes: masFrecuente.agentes, coinciden: masFrecuente.veces, total };
 }
 
+/**
+ * Compañeros activos del mismo puesto (sin el propio trabajador), para aplicarles los mismos
+ * agentes de una vez. `porCambiar` son los que no tienen ya exactamente esos agentes.
+ */
+export function companerosDelPuesto<T extends TrabajadorConAgentes>(
+  trabajador: TrabajadorConAgentes | null | undefined,
+  lista: T[] | null | undefined,
+  agentes: string[],
+): { todos: T[]; porCambiar: T[] } {
+  const puesto = normalizarPuesto(trabajador?.puesto);
+  if (!puesto || !Array.isArray(lista)) return { todos: [], porCambiar: [] };
+  const todos = lista.filter(
+    (companero) =>
+      !!companero &&
+      String(companero._id) !== String(trabajador?._id) &&
+      companero.estadoLaboral !== 'Inactivo' &&
+      normalizarPuesto(companero.puesto) === puesto,
+  );
+  return { todos, porCambiar: todos.filter((companero) => !mismosAgentes(agentesDe(companero), agentes)) };
+}
+
 /** «Los otros 12 trabajadores…», «8 de los 12…», «El otro trabajador…». */
 export function textoSugerenciaAgentes(sugerencia: SugerenciaAgentes, puesto: string): string {
   const { coinciden, total } = sugerencia;

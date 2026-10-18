@@ -4221,6 +4221,27 @@ html.dark-mode .modal-riesgos__usar-sugerencia:hover {
   background-color: #075985 !important;
 }
 
+/* ModalRiesgos: aplicar a los compañeros del puesto y su confirmación */
+html.dark-mode .modal-riesgos__aplicar-puesto {
+  border-color: #334155 !important;
+}
+
+html.dark-mode .modal-riesgos__aplicar-puesto .font-medium {
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .modal-riesgos__confirmar-puesto {
+  background-color: rgba(180, 83, 9, 0.18) !important;
+  border-color: #b45309 !important;
+  color: #fde68a !important;
+}
+
+html.dark-mode .modal-riesgos__confirmar-puesto button.bg-white {
+  background-color: #451a03 !important;
+  border-color: #b45309 !important;
+  color: #fde68a !important;
+}
+
 /* Botón "Editar" junto al nombre del trabajador, el centro o la empresa */
 html.dark-mode .btn-editar-entidad:hover:not(:disabled) {
   background-color: rgba(6, 78, 59, 0.55) !important;
