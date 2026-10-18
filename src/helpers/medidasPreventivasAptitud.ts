@@ -58,110 +58,110 @@ export const MEDIDAS_PREVENTIVAS: MedidaPreventiva[] = [
     clave: 'obesidad',
     hallazgo: 'Obesidad',
     texto:
-      'Se recomienda adoptar una dieta balanceada y realizar ejercicio físico regularmente para mejorar la salud en general. Estas prácticas ayudan a controlar el peso, disminuir los niveles de grasa corporal, fortalecer los músculos y mejorar la función cardiovascular. Además, reducen el riesgo de desarrollar enfermedades crónicas como la diabetes tipo 2, enfermedades cardíacas y ciertos tipos de cáncer.',
+      'Acudir a orientación nutricional y realizar actividad física acorde con su condición de salud para reducir peso de forma gradual.',
   },
   {
     clave: 'cintura',
-    hallazgo: 'Circunferencia de cintura de riesgo',
+    hallazgo: 'Circunferencia de cintura con riesgo',
     texto:
-      'Se recomienda reducir la circunferencia abdominal mediante una alimentación balanceada y actividad física regular, ya que su aumento se asocia a un mayor riesgo de enfermedades cardiometabólicas.',
+      'Mejorar la alimentación y realizar actividad física regular para reducir la circunferencia abdominal y el riesgo cardiometabólico.',
   },
   {
     clave: 'presionElevada',
     hallazgo: 'Presión arterial elevada en la medición',
     texto:
-      'Se recomienda vigilar periódicamente la presión arterial, moderar el consumo de sal y acudir con su médico familiar para confirmar o descartar hipertensión arterial.',
+      'Registrar la presión arterial en mediciones posteriores y acudir a valoración médica para confirmar o descartar hipertensión.',
   },
   {
     clave: 'hipertension',
     hallazgo: 'Antecedente de hipertensión',
     texto:
-      'Es recomendable mantener una dieta baja en sodio, realizar actividad física regularmente, controlar la presión arterial periódicamente y adherirse estrictamente al tratamiento recetado para gestionar la hipertensión de manera efectiva.',
+      'Mantener seguimiento médico, vigilar la presión arterial y cumplir el tratamiento indicado.',
   },
   {
     clave: 'diabetes',
     hallazgo: 'Antecedente de diabetes',
     texto:
-      'Es importante mantener una dieta equilibrada, controlar regularmente los niveles de azúcar en la sangre y visitar al médico familiar para un seguimiento y una correcta gestión de la diabetes.',
+      'Mantener seguimiento médico, cumplir el tratamiento y vigilar la glucosa con la frecuencia indicada.',
   },
   {
     clave: 'cardiopatia',
     hallazgo: 'Antecedente de cardiopatía',
     texto:
-      'Se recomienda mantener seguimiento con su médico tratante, apegarse al tratamiento indicado, evitar esfuerzos físicos no autorizados y acudir a valoración ante dolor torácico, palpitaciones o dificultad para respirar.',
+      'Mantener seguimiento con su médico tratante y ajustar los esfuerzos físicos a las indicaciones recibidas.',
   },
   {
     clave: 'lumbalgia',
     hallazgo: 'Lumbalgia',
     texto:
-      'Es esencial mantener una postura correcta durante las actividades laborales, realizar ejercicios de fortalecimiento de la musculatura lumbar y abdominal, evitar movimientos bruscos o levantamiento de peso excesivo, y considerar el uso de soportes ergonómicos cuando sea necesario.',
+      'Mantener actividad según tolerancia, ajustar la ergonomía del puesto y acudir a valoración si el dolor persiste o limita sus actividades.',
   },
   {
     clave: 'musculoesqueletico',
     hallazgo: 'Molestias musculoesqueléticas',
     texto:
-      'Se recomienda realizar pausas activas y ejercicios de estiramiento durante la jornada, cuidar la postura y la ergonomía del puesto de trabajo, y acudir a valoración médica si las molestias musculoesqueléticas persisten o limitan sus actividades.',
+      'Alternar posturas, realizar pausas de movilidad y ajustar la ergonomía del puesto. Acudir a valoración si las molestias persisten o limitan sus actividades.',
   },
   {
     clave: 'respiratorios',
     hallazgo: 'Antecedente respiratorio',
     texto:
-      'Se recomienda evitar la exposición a agentes irritantes respiratorios, mantener una buena ventilación en los espacios de trabajo, realizar ejercicios de respiración profunda regularmente, evitar el tabaquismo y consultar al médico ante síntomas persistentes como tos, dificultad para respirar o sibilancias.',
+      'Mantener el seguimiento médico indicado y aplicar las medidas de control de exposición a polvos, humos o vapores que correspondan al puesto.',
   },
   {
     clave: 'hipoacusia',
     hallazgo: 'Audiometría anormal',
     texto:
-      'Es fundamental proteger la audición mediante el uso adecuado de protección auditiva en ambientes ruidosos, evitar la exposición prolongada a sonidos de alta intensidad, realizar evaluaciones auditivas periódicas y consultar al especialista ante cualquier cambio en la capacidad auditiva.',
+      'Acudir a valoración audiológica u otorrinolaringológica y utilizar protección auditiva adecuada cuando exista exposición a ruido.',
   },
   {
     clave: 'vista',
     hallazgo: 'Agudeza visual sin corregir',
     texto:
-      'Se recomienda acudir a valoración por optometría u oftalmología y utilizar la corrección visual indicada durante la jornada laboral, así como realizar revisiones visuales periódicas.',
+      'Acudir a optometría para valoración y adaptación de lentes, si corresponde; utilizar la corrección indicada en las tareas que la requieran.',
   },
   {
     clave: 'visionCromatica',
     hallazgo: 'Alteración en la visión cromática',
     texto:
-      'Se sugiere considerar la alteración en la visión cromática en las tareas que requieran identificar colores, como señalización, cableado o indicadores luminosos, y apoyarse en referencias no cromáticas cuando sea posible.',
+      'Complementar los códigos de color con etiquetas, símbolos u otras referencias en las tareas que requieran distinguir colores.',
   },
   {
     clave: 'sueno',
     hallazgo: 'Alteraciones de sueño o vigilia',
     texto:
-      'Se recomienda mantener horarios regulares de sueño, procurar al menos 7 horas de descanso, evitar cafeína, alcohol y pantallas antes de dormir, y acudir a valoración médica si persisten la somnolencia diurna, la fatiga o los problemas para dormir.',
+      'Mantener horarios regulares y tiempo suficiente de sueño. Acudir a valoración médica por somnolencia diurna o problemas persistentes para dormir.',
   },
   {
     clave: 'saludMental',
     hallazgo: 'Tamizaje psicológico con hallazgos',
     texto:
-      'Se recomienda acudir a valoración con un profesional de salud mental para una evaluación más detallada, y mantener hábitos que favorezcan el bienestar emocional, como descanso adecuado, actividad física y redes de apoyo.',
+      'Acudir a valoración con un profesional de salud mental para determinar si requiere atención o seguimiento.',
   },
   {
     clave: 'tabaquismo',
     hallazgo: 'Tabaquismo',
     texto:
-      'Se recomienda suspender el consumo de tabaco y, de ser necesario, solicitar apoyo profesional para lograrlo, ya que aumenta el riesgo de enfermedades respiratorias, cardiovasculares y de cáncer.',
+      'Suspender el consumo de tabaco y solicitar apoyo profesional para facilitar el abandono.',
   },
   {
     clave: 'alcohol',
     hallazgo: 'Consumo de alcohol',
     texto:
-      'Se recomienda moderar o evitar el consumo de alcohol y no presentarse a laborar bajo sus efectos, por su repercusión en la salud y en la seguridad en el trabajo.',
+      'Reducir o evitar el consumo de alcohol y no realizar actividades laborales bajo sus efectos.',
   },
   {
     // Sin dato estructurado que la dispare: solo se agrega a mano
     clave: 'hernia',
     hallazgo: 'Hernia abdominal',
     texto:
-      'Es crucial priorizar la prevención y el cuidado de la pared abdominal mediante el fortalecimiento de los músculos centrales, la mejora de la postura y el uso de técnicas adecuadas de levantamiento de objetos.',
+      'Acudir a valoración por cirugía general para definir el manejo y las recomendaciones sobre esfuerzos físicos.',
   },
   {
     clave: 'generico',
     hallazgo: 'Recomendación general',
     texto:
-      'Es importante usar adecuadamente el EPP, mantener hábitos saludables como una alimentación balanceada, ejercicio regular y descanso adecuado, así como efectuar vigilancia médica con periodicidad anual, incluyendo exámenes generales de laboratorio y gabinete para una vigilancia integral de la salud.',
+      'Utilizar el EPP indicado para el puesto, mantener hábitos saludables y acudir a las evaluaciones médicas que correspondan según sus riesgos y condición de salud.',
   },
 ];
 
@@ -210,19 +210,16 @@ export function detectarHallazgosAptitud(docs: DocumentosCercanosAptitud): Clave
   const ef = docs.exploracionFisica;
   const claves = new Set<ClaveMedidaPreventiva>();
 
-  const obesidad = String(ef?.categoriaIMC ?? '').startsWith('Obesidad');
-  if (obesidad) claves.add('obesidad');
+  // Se detectan todos los hallazgos; las combinaciones se resuelven al escribir las medidas
+  if (String(ef?.categoriaIMC ?? '').startsWith('Obesidad')) claves.add('obesidad');
 
-  // Con obesidad la recomendación de peso ya cubre la cintura
   const cintura = ef?.categoriaCircunferenciaCintura;
-  if (!obesidad && (cintura === 'Riesgo Aumentado' || cintura === 'Alto Riesgo')) claves.add('cintura');
+  if (cintura === 'Riesgo Aumentado' || cintura === 'Alto Riesgo') claves.add('cintura');
 
-  const hipertenso = esSi(hc?.hipertensivosPP);
-  if (hipertenso) claves.add('hipertension');
+  if (esSi(hc?.hipertensivosPP)) claves.add('hipertension');
 
-  // Una medición alta sin antecedente no es hipertensión: solo se pide vigilarla
   const tension = String(ef?.categoriaTensionArterial ?? '');
-  if (!hipertenso && (tension === 'Alta' || tension.startsWith('Hipertensión'))) claves.add('presionElevada');
+  if (tension === 'Alta' || tension.startsWith('Hipertensión')) claves.add('presionElevada');
 
   if (esSi(hc?.diabeticosPP)) claves.add('diabetes');
   if (esSi(hc?.cardiopaticosPP)) claves.add('cardiopatia');
@@ -248,15 +245,62 @@ export function detectarHallazgosAptitud(docs: DocumentosCercanosAptitud): Clave
   return MEDIDAS_PREVENTIVAS.map((medida) => medida.clave).filter((clave) => claves.has(clave));
 }
 
-/** Con más hallazgos que esto, las medidas específicas bastan y la general se omite. */
-export const MAX_HALLAZGOS_CON_RECOMENDACION_GENERAL = 1;
+/**
+ * Combinaciones que evitan textos duplicados o inadecuados. La medida combinada ocupa el
+ * lugar de la primera del par (en el orden del catálogo) y nombra ambos hallazgos.
+ */
+const COMBINACIONES: Array<{ claves: [ClaveMedidaPreventiva, ClaveMedidaPreventiva]; medida: MedidaPreventiva }> = [
+  {
+    // La recomendación de peso ya cubre la de cintura
+    claves: ['obesidad', 'cintura'],
+    medida: {
+      clave: 'obesidad',
+      hallazgo: 'Obesidad y circunferencia de cintura con riesgo',
+      texto: MEDIDAS_PREVENTIVAS.find((medida) => medida.clave === 'obesidad')!.texto,
+    },
+  },
+  {
+    // Con el diagnóstico establecido no se pide confirmarlo: se revisa su control
+    claves: ['presionElevada', 'hipertension'],
+    medida: {
+      clave: 'hipertension',
+      hallazgo: 'Antecedente de hipertensión con presión arterial elevada',
+      texto:
+        'Acudir a valoración médica para revisar el control de la presión arterial; mantener registro de las mediciones y cumplir el tratamiento indicado.',
+    },
+  },
+  {
+    // Si las molestias son solo lumbares, el Nórdico ya no dispara la medida musculoesquelética
+    claves: ['lumbalgia', 'musculoesqueletico'],
+    medida: {
+      clave: 'lumbalgia',
+      hallazgo: 'Lumbalgia y molestias musculoesqueléticas',
+      texto:
+        'Alternar posturas, realizar pausas de movilidad y ajustar la ergonomía del puesto. Acudir a valoración para el manejo del dolor lumbar y de las demás molestias.',
+    },
+  },
+];
 
-/** Medidas que corresponden a los hallazgos, en el orden del catálogo; la general cierra si hay pocos. */
+/** Con más hallazgos que esto, la general se omite: una sola medida precisa puede bastar. */
+export const MAX_HALLAZGOS_CON_RECOMENDACION_GENERAL = 0;
+
+/** Medidas que corresponden a los hallazgos, en el orden del catálogo; la general solo sin hallazgos. */
 export function medidasPreventivasParaAptitud(docs: DocumentosCercanosAptitud): MedidaPreventiva[] {
   const hallazgos = detectarHallazgosAptitud(docs);
   const claves = new Set<ClaveMedidaPreventiva>(hallazgos);
   if (hallazgos.length <= MAX_HALLAZGOS_CON_RECOMENDACION_GENERAL) claves.add('generico');
-  return MEDIDAS_PREVENTIVAS.filter((medida) => claves.has(medida.clave));
+
+  const sustitutas = new Map<ClaveMedidaPreventiva, MedidaPreventiva>();
+  const omitidas = new Set<ClaveMedidaPreventiva>();
+  for (const { claves: [primera, segunda], medida } of COMBINACIONES) {
+    if (!claves.has(primera) || !claves.has(segunda)) continue;
+    sustitutas.set(primera, medida);
+    omitidas.add(segunda);
+  }
+
+  return MEDIDAS_PREVENTIVAS.filter((medida) => claves.has(medida.clave) && !omitidas.has(medida.clave)).map(
+    (medida) => sustitutas.get(medida.clave) ?? medida,
+  );
 }
 
 export function textoMedidasPreventivasAptitud(docs: DocumentosCercanosAptitud): string {

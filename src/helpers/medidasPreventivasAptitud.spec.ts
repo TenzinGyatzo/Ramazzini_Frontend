@@ -39,7 +39,7 @@ describe('medidas preventivas de la aptitud', () => {
     expect(detectarHallazgosAptitud(conObesidad)).toContain('obesidad');
   });
 
-  it('con obesidad no repite la recomendación de cintura', () => {
+  it('con obesidad y cintura de riesgo registra ambos hallazgos y escribe solo la de obesidad', () => {
     const docs = {
       ...sano,
       exploracionFisica: {
@@ -48,32 +48,71 @@ describe('medidas preventivas de la aptitud', () => {
         categoriaCircunferenciaCintura: 'Alto Riesgo',
       },
     };
-    expect(detectarHallazgosAptitud(docs)).toEqual(['obesidad']);
+    expect(detectarHallazgosAptitud(docs)).toEqual(['obesidad', 'cintura']);
+    const medidas = medidasPreventivasParaAptitud(docs);
+    expect(medidas.map((m) => m.texto)).toEqual([textoDe('obesidad')]);
+    expect(medidas[0].hallazgo).toBe('Obesidad y circunferencia de cintura con riesgo');
   });
 
-  it('la presión alta sin antecedente no dispara la medida de hipertensión', () => {
+  it('la presión alta sin antecedente pide confirmar o descartar hipertensión', () => {
     const docs = {
       ...sano,
       exploracionFisica: { ...sano.exploracionFisica, categoriaTensionArterial: 'Hipertensión grado 1' },
     };
     expect(detectarHallazgosAptitud(docs)).toEqual(['presionElevada']);
+    expect(textoMedidasPreventivasAptitud(docs)).toBe(textoDe('presionElevada'));
   });
 
-  it('el antecedente de hipertensión dispara su medida y no la de presión elevada', () => {
+  it('con hipertensión conocida y presión elevada no pide confirmar el diagnóstico: revisa su control', () => {
     const docs = {
       historiaClinica: { ...sano.historiaClinica, hipertensivosPP: 'Si' },
       exploracionFisica: { ...sano.exploracionFisica, categoriaTensionArterial: 'Alta' },
     };
-    expect(detectarHallazgosAptitud(docs)).toEqual(['hipertension']);
+    expect(detectarHallazgosAptitud(docs)).toEqual(['presionElevada', 'hipertension']);
+    const texto = textoMedidasPreventivasAptitud(docs);
+    expect(texto).toMatch(/^Acudir a valoración médica para revisar el control de la presión arterial/);
+    expect(texto).not.toContain('confirmar o descartar');
+
+    // Con la presión controlada en la medición, la medida de hipertensión de siempre
+    const controlada = { ...docs, exploracionFisica: sano.exploracionFisica };
+    expect(textoMedidasPreventivasAptitud(controlada)).toBe(textoDe('hipertension'));
   });
 
-  it('la lumbalgia sale una sola vez aunque la reporten la historia clínica y el Nórdico', () => {
+  it('lumbalgia con molestias solo lumbares escribe solo la de lumbalgia', () => {
+    const docs = {
+      ...sano,
+      historiaClinica: { ...sano.historiaClinica, lumbalgias: 'Si' },
+      cuestionarioNordico: { resultado: { regionesMolestia12Meses: ['espaldaBaja'] } },
+    };
+    expect(detectarHallazgosAptitud(docs)).toEqual(['lumbalgia']);
+    expect(textoMedidasPreventivasAptitud(docs)).toBe(textoDe('lumbalgia'));
+  });
+
+  it('lumbalgia con molestias en otras regiones se unifica en una sola medida', () => {
     const docs = {
       ...sano,
       historiaClinica: { ...sano.historiaClinica, lumbalgias: 'Si' },
       cuestionarioNordico: { resultado: { regionesMolestia12Meses: ['espaldaBaja', 'cuello'] } },
     };
     expect(detectarHallazgosAptitud(docs)).toEqual(['lumbalgia', 'musculoesqueletico']);
+    const medidas = medidasPreventivasParaAptitud(docs);
+    expect(medidas).toHaveLength(1);
+    expect(medidas[0].texto).toBe(
+      'Alternar posturas, realizar pausas de movilidad y ajustar la ergonomía del puesto. Acudir a valoración para el manejo del dolor lumbar y de las demás molestias.',
+    );
+  });
+
+  it('no omite diabetes ni tabaquismo por coexistir con obesidad o con antecedente respiratorio', () => {
+    const docs = {
+      historiaClinica: { ...sano.historiaClinica, diabeticosPP: 'Si', respiratorios: 'Si', tabaquismo: 'Si' },
+      exploracionFisica: { ...sano.exploracionFisica, categoriaIMC: 'Obesidad clase I' },
+    };
+    expect(medidasPreventivasParaAptitud(docs).map((m) => m.clave)).toEqual([
+      'obesidad',
+      'diabetes',
+      'respiratorios',
+      'tabaquismo',
+    ]);
   });
 
   it('clasifica la audiometría con el umbral de su método', () => {
@@ -114,9 +153,18 @@ describe('medidas preventivas de la aptitud', () => {
     ).toEqual(['vista']);
   });
 
-  it('con un solo hallazgo cierra con la recomendación general', () => {
+  it('con un solo hallazgo escribe solo su medida, sin la recomendación general', () => {
     const docs = { ...sano, historiaClinica: { ...sano.historiaClinica, diabeticosPP: 'Si' } };
-    expect(medidasPreventivasParaAptitud(docs).map((m) => m.clave)).toEqual(['diabetes', 'generico']);
+    expect(medidasPreventivasParaAptitud(docs).map((m) => m.clave)).toEqual(['diabetes']);
+  });
+
+  it('los textos son indicaciones breves: sin «se recomienda» ni laboratorios anuales para todos', () => {
+    for (const medida of MEDIDAS_PREVENTIVAS) {
+      expect(medida.texto).not.toMatch(/se recomienda|es recomendable|es importante|es esencial|es crucial/i);
+    }
+    expect(textoDe('generico')).not.toMatch(/laboratorio|gabinete|anual/i);
+    expect(textoDe('hernia')).not.toMatch(/fortalec/i);
+    expect(textoDe('lumbalgia')).not.toMatch(/soporte/i);
   });
 
   it('con dos o más hallazgos escribe solo las específicas, en el orden del catálogo', () => {
