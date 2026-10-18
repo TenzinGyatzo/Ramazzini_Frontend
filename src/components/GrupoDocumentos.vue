@@ -734,18 +734,27 @@ const hasExtraSection = computed(() => !!slots.extraSection);
     }
 }
 /* Documento recién guardado (o el que se abrió) al volver al expediente: capa verde que se
-   desvanece, como el último trabajador en la tabla */
+   desvanece, como el último trabajador en la tabla. Va por encima de la tarjeta del documento
+   (su fondo es opaco y taparía un color de la fila) y no recibe clics. */
 @keyframes documento-reciente {
-    from { box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.28); }
-    to { box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0); }
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
-.grupo-documentos__fila--reciente {
-    animation: documento-reciente 2.5s ease-out;
+.grupo-documentos__fila--reciente::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: 0.5rem;
+    background-color: rgba(16, 185, 129, 0.25);
+    box-shadow: inset 0 0 0 2px rgba(16, 185, 129, 0.55);
+    pointer-events: none;
+    animation: documento-reciente 2.5s ease-in forwards;
 }
 @media (prefers-reduced-motion: reduce) {
-    .grupo-documentos__fila--reciente {
+    .grupo-documentos__fila--reciente::after {
         animation: none;
-        box-shadow: inset 0 0 0 9999px rgba(16, 185, 129, 0.2);
+        opacity: 0.8;
     }
 }
 

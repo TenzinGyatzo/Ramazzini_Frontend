@@ -490,13 +490,35 @@ async function esperarA<T>(buscar: () => T | null | undefined, intentos = 30): P
   return null;
 }
 
+/** Espera a que termine el desplazamiento suave (o a lo más ~0.9 s si el navegador no avisa). */
+function terminarDesplazamiento(): Promise<void> {
+  return new Promise((resolver) => {
+    let listo = false;
+    const terminar = () => {
+      if (listo) return;
+      listo = true;
+      window.removeEventListener('scrollend', terminar);
+      resolver();
+    };
+    window.addEventListener('scrollend', terminar, { once: true });
+    setTimeout(terminar, 900);
+  });
+}
+
 /** Lleva la vista a un documento (montando los años si hace falta) y lo ilumina. */
 async function irAlDocumentoGuardado(documentId: string): Promise<boolean> {
   const selector = `[data-documento="${CSS.escape(documentId)}"]`;
   if (!document.querySelector(selector)) montarTodosLosAnios.value = true;
   const fila = await esperarA(() => document.querySelector<HTMLElement>(selector));
   if (!fila) return false;
-  fila.scrollIntoView({ block: 'center', behavior: reducirMovimiento() ? 'auto' : 'smooth' });
+  const caja = fila.getBoundingClientRect();
+  const yaSeVe = caja.top >= 0 && caja.bottom <= window.innerHeight;
+  if (!yaSeVe) {
+    const suave = !reducirMovimiento();
+    fila.scrollIntoView({ block: 'center', behavior: suave ? 'smooth' : 'auto' });
+    // Se ilumina al terminar de bajar, para que no se gaste mientras la pantalla se mueve
+    if (suave) await terminarDesplazamiento();
+  }
   resaltarDocumento(documentId);
   return true;
 }
