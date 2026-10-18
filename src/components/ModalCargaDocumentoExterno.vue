@@ -1,13 +1,33 @@
 <script setup>
-import { ref, inject } from 'vue';
+/**
+ * Subida de documentos externos en un solo paso: cada archivo con su nombre y su fecha antes de
+ * subir. Las fotos que pasan del límite se reducen solas; cada archivo muestra su estado y, si
+ * falla, el motivo, y «Reintentar» sube solo los que faltan. Reglas en
+ * helpers/subidaDocumentosExternos.ts.
+ */
+import { ref, computed, inject, nextTick } from 'vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useCurrentUser } from '@/composables/useCurrentUser';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { format } from 'date-fns';
 import { convertirYYYYMMDDaISO } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
+import {
+  LIMITE_BYTES_DOCUMENTO_EXTERNO,
+  MAXIMO_ARCHIVOS_POR_CARGA,
+  NOMBRES_RAPIDOS,
+  esImagen,
+  extensionDe,
+  motivoDeError,
+  motivoDeRechazo,
+  nombreSugerido,
+  reducirImagen,
+  tamanoLegible,
+  textoDeRechazo,
+} from '@/helpers/subidaDocumentosExternos';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
@@ -19,14 +39,44 @@ const { currentCentroTrabajo } = useCentrosTrabajoStore();
 const { currentTrabajador } = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const { ensureUserLoaded } = useCurrentUser();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
-const selectedFiles = ref([]);
-const isUploading = ref(false);
-const uploadProgress = ref(0);
+const emit = defineEmits(['closeDocumentoExternoModal', 'updateData']);
+
+/**
+ * Archivos de la carga. estado: 'reduciendo' | 'pendiente' | 'subiendo' | 'subido' | 'error'.
+ * `reducidoDe` guarda el tamaño original de una foto que se redujo.
+ */
+const archivos = ref([]);
 const isDragOver = ref(false);
+const isUploading = ref(false);
+const intentoDeSubida = ref(false);
+let siguienteId = 1;
+
+const hoy = () => format(new Date(), 'yyyy-MM-dd');
+
+/** En celular y tableta se ofrece abrir la cámara directamente. */
+const puedeTomarFoto =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+
+const porSubir = computed(() => archivos.value.filter((a) => a.estado === 'pendiente' || a.estado === 'error'));
+const subidos = computed(() => archivos.value.filter((a) => a.estado === 'subido').length);
+const reduciendo = computed(() => archivos.value.some((a) => a.estado === 'reduciendo'));
+const hayErrores = computed(() => archivos.value.some((a) => a.estado === 'error'));
+const textoBoton = computed(() => {
+  const n = porSubir.value.length;
+  if (hayErrores.value && n === archivos.value.filter((a) => a.estado === 'error').length) {
+    return n === 1 ? 'Reintentar 1 documento' : `Reintentar ${n} documentos`;
+  }
+  return n === 1 ? 'Subir 1 documento' : `Subir ${n} documentos`;
+});
+
+const faltaNombre = (archivo) => !archivo.nombre.trim();
+const faltaFecha = (archivo) => !archivo.fecha;
+const editable = (archivo) => archivo.estado === 'pendiente' || archivo.estado === 'error';
 
 const buildFormState = () => ({
-  files: [...selectedFiles.value].map((file) => file.name).sort(),
+  archivos: archivos.value.filter(editable).map((a) => [a.archivo.name, a.nombre, a.fecha]),
 });
 
 const { isDirty } = useDirtySnapshot(buildFormState, {
@@ -34,7 +84,7 @@ const { isDirty } = useDirtySnapshot(buildFormState, {
 });
 
 const closeModal = () => {
-  selectedFiles.value = [];
+  archivos.value = [];
   isDragOver.value = false;
   emit('closeDocumentoExternoModal');
 };
@@ -52,215 +102,184 @@ const {
   enabled: () => !isUploading.value,
 });
 
-const emit = defineEmits(['closeDocumentoExternoModal', 'updateData']);
+async function reducir(entrada) {
+  try {
+    const reducido = await reducirImagen(entrada.archivo);
+    if (!archivos.value.includes(entrada)) return;
+    if (!reducido) {
+      archivos.value = archivos.value.filter((a) => a !== entrada);
+      toast.open({ message: `${entrada.archivo.name}: no se pudo reducir a menos de 1 MB`, type: 'error' });
+      return;
+    }
+    entrada.reducidoDe = entrada.archivo.size;
+    entrada.archivo = reducido;
+    entrada.estado = 'pendiente';
+  } catch (error) {
+    console.error('No se pudo reducir la imagen:', error);
+    archivos.value = archivos.value.filter((a) => a !== entrada);
+    toast.open({ message: `${entrada.archivo.name}: no se pudo leer la imagen`, type: 'error' });
+  }
+}
 
-// Función para validar archivos
-const validateFiles = (files) => {
-  const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
-  const maxSizeMB = 1;
-  
-  const invalidFiles = [];
-  const oversizedFiles = [];
-  
-  Array.from(files).forEach(file => {
-    const extension = '.' + file.name.split('.').pop().toLowerCase();
-    if (!validExtensions.includes(extension)) {
-      invalidFiles.push(file.name);
+/** Agrega los archivos válidos (los demás se descartan con su motivo) y reduce las fotos grandes. */
+const processFiles = (lista) => {
+  const nuevos = Array.from(lista ?? []);
+  if (nuevos.length === 0) return;
+
+  const rechazos = [];
+  let sinLugar = 0;
+
+  nuevos.forEach((archivo) => {
+    const motivo = motivoDeRechazo(archivo);
+    if (motivo) {
+      rechazos.push(textoDeRechazo(archivo.name, motivo));
+      return;
     }
-    if (file.size > maxSizeMB * 1024 * 1024) {
-      oversizedFiles.push(file.name);
+    if (archivos.value.length >= MAXIMO_ARCHIVOS_POR_CARGA) {
+      sinLugar += 1;
+      return;
     }
+    const grande = archivo.size > LIMITE_BYTES_DOCUMENTO_EXTERNO && esImagen(archivo.name);
+    const entrada = {
+      id: siguienteId++,
+      archivo,
+      nombre: nombreSugerido(archivo.name),
+      fecha: hoy(),
+      estado: grande ? 'reduciendo' : 'pendiente',
+      motivo: '',
+      reducidoDe: null,
+    };
+    archivos.value.push(entrada);
+    if (grande) reducir(archivos.value[archivos.value.length - 1]);
   });
 
-  return { invalidFiles, oversizedFiles };
+  if (rechazos.length) toast.open({ message: rechazos.join('. '), type: 'error' });
+  if (sinLugar) {
+    toast.open({
+      message: `Se pueden subir hasta ${MAXIMO_ARCHIVOS_POR_CARGA} archivos a la vez; ${sinLugar === 1 ? 'quedó fuera 1' : `quedaron fuera ${sinLugar}`}.`,
+      type: 'warning',
+    });
+  }
 };
 
-// Función para manejar la selección de archivos
 const handleFileSelect = (event) => {
-  const files = Array.from(event.target.files);
-  processFiles(files);
+  processFiles(event.target.files);
+  event.target.value = '';
 };
 
-// Función para procesar archivos (común para drag y select)
-const processFiles = (files) => {
-  if (files.length === 0) return;
-
-  // Verificar límite de archivos
-  const maxFiles = 10;
-  const currentCount = selectedFiles.value.length;
-  const newFilesCount = files.length;
-  
-  if (currentCount + newFilesCount > maxFiles) {
-    toast.open({
-      message: `Máximo ${maxFiles} archivos permitidos. Ya tienes ${currentCount} seleccionados.`,
-      type: 'error'
-    });
-    return;
-  }
-
-  const { invalidFiles, oversizedFiles } = validateFiles(files);
-
-  if (invalidFiles.length > 0) {
-    toast.open({
-      message: `Archivos no válidos: ${invalidFiles.join(', ')}. Solo se permiten: PDF, JPG, JPEG, PNG`,
-      type: 'error'
-    });
-    return;
-  }
-
-  if (oversizedFiles.length > 0) {
-    toast.open({
-      message: `Archivos muy grandes: ${oversizedFiles.join(', ')}. Límite: 1MB por archivo`,
-      type: 'error'
-    });
-    return;
-  }
-
-  // Agregar archivos a la lista
-  selectedFiles.value = [...selectedFiles.value, ...files];
-};
-
-// Eventos de drag and drop
 const handleDragEnter = (event) => {
   event.preventDefault();
-  event.stopPropagation();
   isDragOver.value = true;
 };
 
 const handleDragLeave = (event) => {
   event.preventDefault();
-  event.stopPropagation();
-  // Solo cambiar a false si salimos del área de drop
-  if (!event.currentTarget.contains(event.relatedTarget)) {
-    isDragOver.value = false;
-  }
-};
-
-const handleDragOver = (event) => {
-  event.preventDefault();
-  event.stopPropagation();
+  if (!event.currentTarget.contains(event.relatedTarget)) isDragOver.value = false;
 };
 
 const handleDrop = (event) => {
   event.preventDefault();
-  event.stopPropagation();
   isDragOver.value = false;
-  
-  const files = Array.from(event.dataTransfer.files);
-  processFiles(files);
+  if (isUploading.value) return;
+  processFiles(event.dataTransfer.files);
 };
 
-// Función para remover archivo de la lista
-const removeFile = (index) => {
-  selectedFiles.value.splice(index, 1);
+const removeFile = (entrada) => {
+  archivos.value = archivos.value.filter((a) => a !== entrada);
 };
 
-// Función para limpiar la lista
 const clearFiles = () => {
-  selectedFiles.value = [];
+  archivos.value = archivos.value.filter((a) => !editable(a) && a.estado !== 'reduciendo');
 };
 
-// Función para manejar el envío de múltiples archivos
+const usarNombreRapido = (entrada, nombre) => {
+  entrada.nombre = nombre;
+};
+
+async function enfocarPrimerFaltante() {
+  await nextTick();
+  document.querySelector('.carga-externo__archivo--incompleto input')?.focus();
+}
+
 const handleSubmit = async () => {
-  if (selectedFiles.value.length === 0) {
-    toast.open({
-      message: 'Por favor seleccione al menos un archivo',
-      type: 'error'
-    });
+  if (isUploading.value || reduciendo.value || porSubir.value.length === 0) return;
+
+  intentoDeSubida.value = true;
+  if (porSubir.value.some((a) => faltaNombre(a) || faltaFecha(a))) {
+    toast.open({ message: 'Escribe el nombre y la fecha de cada documento.', type: 'error' });
+    enfocarPrimerFaltante();
     return;
   }
 
-  // Obtener el ID del usuario actual
   const currentUserId = await ensureUserLoaded();
-  
   if (!currentUserId) {
     toast.open({ message: 'No se pudo identificar al usuario. Por favor, inicie sesión nuevamente.', type: 'error' });
     return;
   }
 
   isUploading.value = true;
-  uploadProgress.value = 0;
+  let correctos = 0;
+  let fallidos = 0;
+  const pendientes = [...porSubir.value];
 
-  try {
-    const totalFiles = selectedFiles.value.length;
-    let successCount = 0;
-    let errorCount = 0;
+  for (const entrada of pendientes) {
+    entrada.estado = 'subiendo';
+    entrada.motivo = '';
 
-    for (let i = 0; i < selectedFiles.value.length; i++) {
-      const file = selectedFiles.value[i];
-      
-      // Crear FormData para cada archivo
-      const formData = new FormData();
-      
-      // Obtener extensión del archivo
-      const extension = '.' + file.name.split('.').pop().toLowerCase();
-      
-      // Preparar datos del documento
-      const documentData = {
-        nombreDocumento: file.name.replace(extension, ''), // Nombre sin extensión
-        fechaDocumento: convertirYYYYMMDDaISO(format(new Date(), 'yyyy-MM-dd')),
-        notasDocumento: '', // Vacío por defecto
-        extension: extension,
-        rutaDocumento: buildClinicalDirectoryPath(
-          currentEmpresa.nombreComercial,
-          currentCentroTrabajo.nombreCentro,
-          currentTrabajador.nombre,
-          currentTrabajador._id,
-        ),
-        idTrabajador: currentTrabajador._id,
-        createdBy: currentUserId,
-        updatedBy: currentUserId
-      };
+    const formData = new FormData();
+    const datos = {
+      nombreDocumento: entrada.nombre.trim(),
+      fechaDocumento: convertirYYYYMMDDaISO(entrada.fecha),
+      notasDocumento: '',
+      extension: extensionDe(entrada.archivo.name),
+      rutaDocumento: buildClinicalDirectoryPath(
+        currentEmpresa.nombreComercial,
+        currentCentroTrabajo.nombreCentro,
+        currentTrabajador.nombre,
+        currentTrabajador._id,
+      ),
+      idTrabajador: currentTrabajador._id,
+      createdBy: currentUserId,
+      updatedBy: currentUserId,
+    };
+    Object.entries(datos).forEach(([clave, valor]) => formData.append(clave, valor));
+    formData.append('file', entrada.archivo);
 
-      // Agregar datos al FormData
-      Object.keys(documentData).forEach((key) => {
-        formData.append(key, documentData[key]);
-      });
-
-      // Agregar archivo
-      formData.append('file', file);
-
-      try {
-        await documentos.uploadExternalDocument(currentTrabajador._id, formData);
-        successCount++;
-      } catch (error) {
-        console.error(`Error al subir ${file.name}:`, error);
-        errorCount++;
-      }
-
-      // Actualizar progreso
-      uploadProgress.value = ((i + 1) / totalFiles) * 100;
+    try {
+      await documentos.uploadExternalDocument(currentTrabajador._id, formData);
+      entrada.estado = 'subido';
+      correctos += 1;
+    } catch (error) {
+      console.error(`Error al subir ${entrada.archivo.name}:`, error);
+      entrada.estado = 'error';
+      entrada.motivo = motivoDeError(error);
+      fallidos += 1;
     }
-
-    // Mostrar resultado
-    if (successCount > 0) {
-      toast.open({ 
-        message: `${successCount} documento(s) subido(s) con éxito${errorCount > 0 ? `. ${errorCount} error(es)` : ''}`,
-        type: errorCount > 0 ? 'warning' : 'success'
-      });
-    }
-
-    if (errorCount === 0) {
-      emit('updateData');
-      forceClose();
-    }
-
-  } catch (error) {
-    console.error('Error general al subir documentos:', error);
-    toast.open({ 
-      message: 'Error al subir los documentos, por favor intente nuevamente.', 
-      type: 'error' 
-    });
-  } finally {
-    isUploading.value = false;
-    uploadProgress.value = 0;
   }
-};
 
+  isUploading.value = false;
+  if (correctos > 0) emit('updateData');
+
+  if (fallidos === 0) {
+    toast.open({
+      message: correctos === 1 ? 'Documento subido con éxito' : `${correctos} documentos subidos con éxito`,
+      type: 'success',
+    });
+    forceClose();
+    return;
+  }
+
+  toast.open({
+    message:
+      (correctos > 0 ? `${correctos} subido(s). ` : '') +
+      (fallidos === 1 ? 'Uno no se pudo subir: revisa el motivo.' : `${fallidos} no se pudieron subir: revisa el motivo.`),
+    type: correctos > 0 ? 'warning' : 'error',
+  });
+};
 </script>
 
 <template>
-  <div class="modal modal-documento-externo modal-carga-documento-externo fixed top-0 left-0 z-10 p-8 h-screen w-full grid place-items-center">
+  <div class="modal modal-documento-externo modal-carga-documento-externo fixed top-0 left-0 z-10 p-4 sm:p-8 h-screen w-full grid place-items-center">
     <!-- Fondo oscuro transparente -->
     <div
       class="modal-work-overlay absolute top-0 left-0 w-full h-full bg-emerald-900 bg-opacity-50 backdrop-blur-sm"
@@ -270,7 +289,7 @@ const handleSubmit = async () => {
     </div>
     <!-- Modal centrado con desplazamiento interno -->
     <div
-      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full max-w-xl p-5 sm:p-6 rounded-xl shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
+      class="modal-work-panel modal-inner relative bg-white text-gray-900 w-full max-w-2xl p-5 sm:p-6 rounded-xl shadow-md shadow-slate-900 max-h-[90vh] overflow-y-auto"
       :class="{ 'modal-dismiss-pulse': dismissPulse }"
     >
         <!-- Botón para cerrar el modal -->
@@ -279,6 +298,7 @@ const handleSubmit = async () => {
           class="modal-close absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-600"
           title="Cerrar"
           aria-label="Cerrar"
+          :disabled="isUploading"
           @click="requestDismiss">
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
@@ -287,185 +307,208 @@ const handleSubmit = async () => {
         <hr class="mt-3 mb-4">
 
         <!-- Área de arrastrar y soltar -->
-        <div class="mb-6">
-          <div 
-            class="modal-documento-externo-dropzone border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer"
-            :class="[
-              isDragOver 
-                ? 'border-emerald-500 bg-emerald-50 scale-105' 
-                : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
-            ]"
-            @dragenter="handleDragEnter"
-            @dragleave="handleDragLeave"
-            @dragover="handleDragOver"
-            @drop="handleDrop"
-            @click="$refs.fileInput.click()"
-          >
-            <input
-              ref="fileInput"
-              type="file"
-              multiple
-              accept=".pdf,.jpg,.jpeg,.png"
-              @change="handleFileSelect"
-              class="hidden"
-              :disabled="isUploading"
-            />
-            
-            <div class="text-gray-600">
-              <!-- Icono dinámico -->
-              <div class="mx-auto h-12 w-24 mb-4 transition-all duration-200" :class="isDragOver ? 'scale-110' : ''">
-                <div v-if="!isDragOver" class="flex items-center justify-center">
-                  <!-- Icono de PDF -->
-                  <svg class="h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path d="M8 10a4 4 0 014-4h14l8 8v24a4 4 0 01-4 4H12a4 4 0 01-4-4V10z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M26 6v8h8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M14 30v-6h2.5a1.5 1.5 0 010 3H14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M20 24v6h1.5a2 2 0 000-6H20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M26 30v-6h2.5M26 27h2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M36 12h6m-3-3v6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <p>&nbsp;</p>
-                  <!-- Icono de Imagen -->
-                  <svg class="h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-
-                <div v-else class="flex items-center justify-center">
-                  <!-- Icono de PDF -->
-                  <svg class="h-12 w-12 text-emerald-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path d="M8 10a4 4 0 014-4h14l8 8v24a4 4 0 01-4 4H12a4 4 0 01-4-4V10z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M26 6v8h8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M14 30v-6h2.5a1.5 1.5 0 010 3H14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M20 24v6h1.5a2 2 0 000-6H20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M26 30v-6h2.5M26 27h2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M36 12h6m-3-3v6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <p>&nbsp;</p>
-                  <!-- Icono de Imagen -->
-                  <svg class="h-12 w-12 text-emerald-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-              </div>
-              
-              <!-- Texto dinámico -->
-              <p class="text-lg font-medium transition-colors duration-200" :class="isDragOver ? 'text-emerald-700' : ''">
-                {{ isDragOver ? '¡Suelta los archivos aquí!' : 'Arrastra archivos aquí o haz clic para seleccionar' }}
-              </p>
-              <p class="text-sm text-gray-500 mt-2">PDF, JPG, JPEG, PNG (máximo 1MB por archivo)</p>
-              <p class="text-xs text-gray-400 mt-1">Puedes seleccionar hasta 10 archivos por carga.</p>
-              
-              <!-- Indicador visual cuando se arrastra -->
-              <div v-if="isDragOver" class="mt-3">
-                <div class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm">
-                  <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Listo para soltar
-                </div>
-              </div>
-            </div>
-          </div>
+        <div
+          class="modal-documento-externo-dropzone border-2 border-dashed rounded-lg text-center transition-all duration-200 cursor-pointer"
+          :class="[
+            isDragOver ? 'border-emerald-500 bg-emerald-50' : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50',
+            archivos.length ? 'px-4 py-4' : 'px-6 py-8',
+          ]"
+          role="button"
+          tabindex="0"
+          @dragenter="handleDragEnter"
+          @dragleave="handleDragLeave"
+          @dragover.prevent
+          @drop="handleDrop"
+          @click="!isUploading && $refs.fileInput.click()"
+          @keydown.enter.prevent="!isUploading && $refs.fileInput.click()"
+          @keydown.space.prevent="!isUploading && $refs.fileInput.click()"
+        >
+          <input
+            ref="fileInput"
+            type="file"
+            multiple
+            accept=".pdf,.jpg,.jpeg,.png"
+            class="hidden"
+            :disabled="isUploading"
+            @change="handleFileSelect"
+          />
+          <i
+            class="fa-solid fa-cloud-arrow-up text-3xl transition-colors duration-150"
+            :class="isDragOver ? 'text-emerald-500' : 'text-gray-400'"
+            aria-hidden="true"
+          ></i>
+          <p class="mt-2 font-medium text-gray-700" :class="{ 'text-emerald-700': isDragOver }">
+            {{
+              isDragOver
+                ? 'Suelta los archivos aquí'
+                : archivos.length
+                  ? 'Agregar más archivos'
+                  : puedeTomarFoto
+                    ? 'Toca para elegir archivos'
+                    : 'Arrastra archivos aquí o haz clic para elegirlos'
+            }}
+          </p>
+          <p class="mt-1 text-xs text-gray-500">
+            PDF, JPG o PNG · hasta 1 MB por archivo (las fotos más grandes se reducen solas) · hasta {{ MAXIMO_ARCHIVOS_POR_CARGA }} a la vez
+          </p>
         </div>
 
-        <!-- Lista de archivos seleccionados -->
-        <div v-if="selectedFiles.length > 0" class="mb-6">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-medium">Archivos seleccionados ({{ selectedFiles.length }})</h3>
+        <!-- Cámara (celular y tableta) -->
+        <div v-if="puedeTomarFoto" class="mt-3">
+          <input
+            ref="cameraInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            class="hidden"
+            :disabled="isUploading"
+            @change="handleFileSelect"
+          />
+          <button
+            type="button"
+            class="carga-externo__camara w-full rounded-lg border border-emerald-600 py-2.5 font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50"
+            :disabled="isUploading || archivos.length >= MAXIMO_ARCHIVOS_POR_CARGA"
+            @click="$refs.cameraInput.click()"
+          >
+            <i class="fa-solid fa-camera mr-2" aria-hidden="true"></i>
+            Tomar foto
+          </button>
+        </div>
+
+        <!-- Archivos: nombre y fecha de cada uno -->
+        <div v-if="archivos.length" class="mt-5">
+          <div class="mb-2 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700">
+              {{ archivos.length === 1 ? '1 archivo' : `${archivos.length} archivos` }}
+              <span v-if="subidos" class="font-normal text-gray-500">· {{ subidos }} subido(s)</span>
+            </h3>
             <button
-              @click="clearFiles"
-              class="text-sm text-red-600 hover:text-red-800 transition-colors"
+              v-if="porSubir.length > 1"
+              type="button"
+              class="text-sm text-red-600 transition-colors hover:text-red-800 disabled:opacity-50"
               :disabled="isUploading"
+              @click="clearFiles"
             >
-              Limpiar todos
+              Quitar todos
             </button>
           </div>
-          
-          <div class="modal-documento-externo-files space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2">
-            <div 
-              v-for="(file, index) in selectedFiles" 
-              :key="index"
-              class="modal-documento-externo-file-item flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+
+          <TransitionGroup tag="ul" name="carga-externo-fila" class="space-y-2">
+            <li
+              v-for="entrada in archivos"
+              :key="entrada.id"
+              class="carga-externo__archivo modal-documento-externo-file-item rounded-lg border border-gray-200 bg-gray-50 p-3"
+              :class="{
+                'carga-externo__archivo--incompleto': intentoDeSubida && editable(entrada) && (faltaNombre(entrada) || faltaFecha(entrada)),
+                'carga-externo__archivo--error': entrada.estado === 'error',
+                'carga-externo__archivo--subido': entrada.estado === 'subido',
+              }"
             >
-              <div class="flex items-center space-x-3">
-                <!-- Icono según tipo de archivo -->
-                <div class="flex-shrink-0">
-                  <svg v-if="file.name.toLowerCase().endsWith('.pdf')" class="h-6 w-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
-                  </svg>
-                  <svg v-else class="h-6 w-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                  </svg>
+              <!-- Archivo y estado -->
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <i
+                  :class="extensionDe(entrada.archivo.name) === '.pdf' ? 'fa-solid fa-file-pdf text-red-500' : 'fa-solid fa-image text-sky-500'"
+                  aria-hidden="true"
+                ></i>
+                <span class="min-w-0 flex-1 truncate" :title="entrada.archivo.name">
+                  {{ entrada.archivo.name }} · {{ tamanoLegible(entrada.archivo.size) }}
+                  <span v-if="entrada.reducidoDe" class="text-emerald-700">(reducida de {{ tamanoLegible(entrada.reducidoDe) }})</span>
+                </span>
+                <span v-if="entrada.estado === 'reduciendo'" class="carga-externo__estado text-gray-500">
+                  <i class="fa-solid fa-spinner fa-spin mr-1" aria-hidden="true"></i>Reduciendo foto…
+                </span>
+                <span v-else-if="entrada.estado === 'subiendo'" class="carga-externo__estado text-emerald-700">
+                  <i class="fa-solid fa-spinner fa-spin mr-1" aria-hidden="true"></i>Subiendo…
+                </span>
+                <span v-else-if="entrada.estado === 'subido'" class="carga-externo__estado font-medium text-emerald-700">
+                  <i class="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>Subido
+                </span>
+                <button
+                  v-if="editable(entrada) || entrada.estado === 'reduciendo'"
+                  type="button"
+                  class="carga-externo__quitar -my-1 rounded p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-red-600 disabled:opacity-50"
+                  :title="`Quitar ${entrada.archivo.name}`"
+                  :aria-label="`Quitar ${entrada.archivo.name}`"
+                  :disabled="isUploading"
+                  @click="removeFile(entrada)"
+                >
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+              </div>
+
+              <!-- Nombre y fecha del documento -->
+              <div class="mt-2 grid gap-2 sm:grid-cols-[1fr_10.5rem]">
+                <div>
+                  <label :for="`nombre-${entrada.id}`" class="sr-only">Nombre del documento</label>
+                  <input
+                    :id="`nombre-${entrada.id}`"
+                    v-model="entrada.nombre"
+                    type="text"
+                    maxlength="120"
+                    placeholder="Nombre del documento"
+                    class="carga-externo__campo w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    :class="intentoDeSubida && editable(entrada) && faltaNombre(entrada) ? 'border-red-400' : 'border-gray-300'"
+                    :disabled="!editable(entrada) || isUploading"
+                  />
                 </div>
-                
-                <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-gray-900 truncate">{{ file.name }}</p>
-                  <p class="text-xs text-gray-500">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</p>
+                <div>
+                  <label :for="`fecha-${entrada.id}`" class="sr-only">Fecha del documento</label>
+                  <input
+                    :id="`fecha-${entrada.id}`"
+                    v-model="entrada.fecha"
+                    type="date"
+                    :min="fechaDocumentoMin"
+                    :max="fechaDocumentoMax"
+                    class="carga-externo__campo w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    :class="intentoDeSubida && editable(entrada) && faltaFecha(entrada) ? 'border-red-400' : 'border-gray-300'"
+                    :disabled="!editable(entrada) || isUploading"
+                  />
                 </div>
               </div>
-              
-              <button
-                @click="removeFile(index)"
-                class="flex-shrink-0 text-red-500 hover:text-red-700 transition-colors p-1 rounded"
-                :disabled="isUploading"
-              >
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
 
-        <!-- Barra de progreso -->
-        <div v-if="isUploading" class="mb-6">
-          <div class="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Subiendo archivos...</span>
-            <span>{{ Math.round(uploadProgress) }}%</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-            <div 
-              class="bg-emerald-600 h-2 rounded-full transition-all duration-300 ease-out"
-              :style="{ width: uploadProgress + '%' }"
-            ></div>
-          </div>
-        </div>
+              <!-- Nombres frecuentes -->
+              <div v-if="editable(entrada)" class="mt-2 flex flex-wrap gap-1.5">
+                <button
+                  v-for="nombre in NOMBRES_RAPIDOS"
+                  :key="nombre"
+                  type="button"
+                  class="carga-externo__rapido rounded-full border px-2.5 py-0.5 text-xs transition-colors disabled:opacity-50"
+                  :class="entrada.nombre === nombre ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-300 text-gray-600 hover:border-emerald-400 hover:text-emerald-700'"
+                  :disabled="isUploading"
+                  @click="usarNombreRapido(entrada, nombre)"
+                >
+                  {{ nombre }}
+                </button>
+              </div>
 
-        <!-- Información adicional -->
-        <div class="modal-documento-externo-info mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 class="font-medium text-blue-900 mb-2 flex items-center">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-            </svg>
-            Consejos útiles:
-          </h4>
-          <ul class="text-sm text-blue-800 space-y-1">
-            <li>• Podrás modificar el nombre y fecha después de la carga</li>
-            <li>• Podrás agregar notas después de la carga</li>
-          </ul>
+              <p v-if="entrada.estado === 'error'" class="carga-externo__motivo mt-2 text-xs text-red-600">
+                <i class="fa-solid fa-circle-exclamation mr-1" aria-hidden="true"></i>{{ entrada.motivo }}
+              </p>
+            </li>
+          </TransitionGroup>
         </div>
 
         <!-- Botones de acción -->
-        <div class="flex space-x-3">
+        <div class="mt-6 flex gap-3">
           <button
+            type="button"
+            :disabled="porSubir.length === 0 || isUploading || reduciendo"
+            class="flex flex-1 items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             @click="handleSubmit"
-            :disabled="selectedFiles.length === 0 || isUploading"
-            class="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
           >
-            <svg v-if="isUploading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span v-if="!isUploading">Subir {{ selectedFiles.length }} documento(s)</span>
-            <span v-else>Subiendo...</span>
+            <i v-if="isUploading || reduciendo" class="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true"></i>
+            <span v-if="isUploading">Subiendo…</span>
+            <span v-else-if="reduciendo">Reduciendo fotos…</span>
+            <span v-else-if="porSubir.length">{{ textoBoton }}</span>
+            <span v-else>Subir documentos</span>
           </button>
           <button
-            @click="requestDismiss"
+            type="button"
             :disabled="isUploading"
-            class="modal-documento-externo-btn-secondary flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="modal-documento-externo-btn-secondary flex-1 rounded-lg bg-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+            @click="requestDismiss"
           >
-            Cancelar
+            {{ subidos ? 'Cerrar' : 'Cancelar' }}
           </button>
         </div>
       </div>
@@ -479,36 +522,32 @@ const handleSubmit = async () => {
 </template>
 
 <style scoped>
-.fade-slow-enter-from,
-.fade-slow-leave-to {
+.carga-externo__archivo {
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.carga-externo__archivo--incompleto,
+.carga-externo__archivo--error {
+  border-color: #fca5a5;
+  background-color: #fef2f2;
+}
+.carga-externo__archivo--subido {
+  border-color: #a7f3d0;
+  background-color: #ecfdf5;
+}
+
+.carga-externo-fila-enter-active,
+.carga-externo-fila-leave-active {
+  transition: opacity 150ms ease-out, transform 150ms ease-out;
+}
+.carga-externo-fila-enter-from,
+.carga-externo-fila-leave-to {
   opacity: 0;
+  transform: translateY(-4px);
 }
-
-.fade-slow-enter-active,
-.fade-slow-leave-active {
-  transition: all 500ms ease-out;
-}
-
-.fade-slow-leave-active {
-  transition-delay: 250ms;
-}
-
-/* Estilos para el scrollbar personalizado */
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+@media (prefers-reduced-motion: reduce) {
+  .carga-externo-fila-enter-active,
+  .carga-externo-fila-leave-active {
+    transition: none;
+  }
 }
 </style>

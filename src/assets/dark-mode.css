@@ -3319,19 +3319,6 @@ html.dark-mode .modal-carga-documento-externo .modal-documento-externo-file-item
   background-color: #1e293b !important;
 }
 
-html.dark-mode .modal-carga-documento-externo .modal-documento-externo-info {
-  background-color: rgba(30, 58, 138, 0.35) !important;
-  border-color: #3b82f6 !important;
-}
-
-html.dark-mode .modal-carga-documento-externo .modal-documento-externo-info .text-blue-900 {
-  color: #dbeafe !important;
-}
-
-html.dark-mode .modal-carga-documento-externo .modal-documento-externo-info .text-blue-800 {
-  color: #93c5fd !important;
-}
-
 html.dark-mode .modal-carga-documento-externo .text-red-600 {
   color: #f87171 !important;
 }
@@ -3342,6 +3329,59 @@ html.dark-mode .modal-carga-documento-externo .hover\:text-red-800:hover {
 
 html.dark-mode .modal-carga-documento-externo button.bg-emerald-600 {
   background-color: #047857 !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__campo {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+  color-scheme: dark;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__campo.border-red-400 {
+  border-color: #f87171 !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__campo:disabled {
+  opacity: 0.7;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__rapido {
+  border-color: #475569 !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__rapido.bg-emerald-50 {
+  background-color: rgba(6, 95, 70, 0.4) !important;
+  border-color: #10b981 !important;
+  color: #a7f3d0 !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__archivo {
+  border-color: #334155 !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__archivo--incompleto,
+html.dark-mode .modal-carga-documento-externo .carga-externo__archivo--error {
+  border-color: #b91c1c !important;
+  background-color: rgba(127, 29, 29, 0.25) !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__archivo--subido {
+  border-color: #047857 !important;
+  background-color: rgba(6, 78, 59, 0.3) !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__camara {
+  border-color: #10b981 !important;
+}
+
+html.dark-mode .modal-carga-documento-externo .carga-externo__camara:hover {
+  background-color: rgba(6, 78, 59, 0.3) !important;
 }
 
 html.dark-mode .modal-carga-documento-externo button.bg-emerald-600:hover {
