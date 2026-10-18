@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, inject, computed, nextTick } from 'vue';
 import { useRoute, useRouter, type RouteParamsRaw } from 'vue-router';
+import { useTituloPagina } from '@/composables/useTituloPagina';
+import { inicialesTrabajador } from '@/helpers/tituloPagina';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -897,6 +899,12 @@ const expedienteHeaderLoading = computed(() => {
 
   return !trabajador || trabajadorId !== idTrabajador;
 });
+
+// Pestaña: «J.P.G. · Expediente». Solo iniciales (el título queda en el historial del navegador)
+useTituloPagina(() => [
+  expedienteHeaderLoading.value ? null : inicialesTrabajador(trabajadores.currentTrabajador),
+  'Expediente',
+]);
 
 const logotipoPendiente = computed(() => proveedorSaludStore.logotipoPendiente);
 

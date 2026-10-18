@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watchEffect, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useTituloPagina } from '@/composables/useTituloPagina';
+import { inicialesTrabajador } from '@/helpers/tituloPagina';
+import { nombreTipoDocumento } from '@/helpers/documentosExpediente';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -67,6 +70,16 @@ const { canCreateDocument, getRestrictionMessage } = useUserPermissions();
 const { documentImmutabilityEnabled, controlPrenatalEnabled } = useRegulatoryPolicy();
 const isFinalized = computed(() => documentos.isFinalized);
 const disableEdit = computed(() => documentImmutabilityEnabled.value && isFinalized.value);
+
+// Pestaña: «Historia clínica · J.P.G.» (solo iniciales: el título queda en el historial del navegador)
+useTituloPagina(() => {
+  const tipo = String(route.params.tipoDocumento ?? '');
+  const esElTrabajador = String(trabajadores.currentTrabajadorId ?? '') === String(route.params.idTrabajador ?? '');
+  return [
+    tipo ? nombreTipoDocumento(tipo) : 'Documento',
+    esElTrabajador ? inicialesTrabajador(trabajadores.currentTrabajador) : null,
+  ];
+});
 
 // Alinear el store con la ruta antes de montar hijos (p. ej. edición desde DocumentoItem sin navigateTo).
 // Si no, el v-if puede montar primero el FormStepper de otro tipo y corromper pasos / pantalla «Completado».

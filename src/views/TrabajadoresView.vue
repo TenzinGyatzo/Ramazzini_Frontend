@@ -6,6 +6,7 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useModalResumenImportacionStore } from '@/stores/modalResumenImportacion';
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router';
+import { useTituloPagina } from '@/composables/useTituloPagina';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { exportarTrabajadoresDesdeFrontend } from '@/helpers/exportarExcel';
@@ -128,6 +129,12 @@ const duplicadosPendientes = ref<any[]>([]);
 // la tabla o el banner de duplicados, evitando parpadeos y estados intermedios.
 const cargandoVista = ref(true);
 const headerContextoLoading = ref(true);
+
+// Pestaña: «Trabajadores · Planta Norte»
+useTituloPagina(() => [
+  'Trabajadores',
+  headerContextoLoading.value ? null : centrosTrabajo.currentCentroTrabajo?.nombreCentro,
+]);
 
 const conteoDuplicados = computed(() => {
   const list = Array.isArray(trabajadores.trabajadores) ? trabajadores.trabajadores : [];

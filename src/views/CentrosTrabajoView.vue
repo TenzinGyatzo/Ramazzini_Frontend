@@ -5,6 +5,7 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { ref, inject, computed, watch } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
+import { useTituloPagina } from '@/composables/useTituloPagina';
 import GreenButton from '@/components/GreenButton.vue';
 import ModalCentros from '@/components/ModalCentros.vue';
 import ModalEmpresas from '@/components/ModalEmpresas.vue';
@@ -29,6 +30,14 @@ const proveedorSaludStore = useProveedorSaludStore();
 const userStore = useUserStore();
 const route = useRoute();
 const router = useRouter();
+
+// Pestaña: «Centros de trabajo · Empresa Demo» (solo si la empresa cargada es la de la dirección)
+useTituloPagina(() => [
+  'Centros de trabajo',
+  String(empresas.currentEmpresa?._id ?? '') === String(route.params.idEmpresa ?? '')
+    ? empresas.currentEmpresa?.nombreComercial
+    : null,
+]);
 const { canManageCentrosTrabajo, canManageEmpresas, canAccessDashboardSalud, canAccessRiesgosTrabajo } = useUserPermissions();
 const { executeIfCanManageCentrosTrabajo, executeIfCanManageEmpresas } = usePermissionRestrictions();
 

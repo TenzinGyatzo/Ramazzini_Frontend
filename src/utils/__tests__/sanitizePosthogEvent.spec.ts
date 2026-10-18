@@ -179,6 +179,16 @@ describe('sanitizePosthogEvent', () => {
   });
 
   describe('eventos', () => {
+    it('no envía el título de la pestaña (puede llevar iniciales de un trabajador)', () => {
+      const event = sanitizePosthogCapture({
+        event: '$pageview',
+        properties: { title: 'J.P.G. · Expediente — Ramazzini', $title: 'J.P.G. · Expediente — Ramazzini', role: 'Médico' },
+      });
+      expect(event?.properties).not.toHaveProperty('title');
+      expect(event?.properties).not.toHaveProperty('$title');
+      expect(event?.properties?.role).toBe('Médico');
+    });
+
     it('sanitiza $pageview, $pageleave, $identify/$set y autocapture', () => {
       const events = ['$pageview', '$pageleave', '$identify', '$set', '$autocapture', '$rageclick'];
 

@@ -16,6 +16,7 @@ import {
 } from "@/composables/useNavigationProgress";
 import { refreshConfidentialityAgreementStatus } from "@/composables/useConfidentialityAgreement";
 import { shouldRedirectToPlatformConsole } from "@/composables/usePlatformContext";
+import { tituloDeRuta } from "@/helpers/tituloPagina";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -240,6 +241,8 @@ const { posthog, identifyUser } = usePostHog(); // Inicializamos PostHog
 
 router.afterEach((to) => {
   finishNavigationProgress();
+  // Título de la sección; las vistas con más detalle lo completan (useTituloPagina)
+  document.title = tituloDeRuta(to.name);
   posthog.capture('$pageview', buildAnalyticsPageProperties(to));
 });
 

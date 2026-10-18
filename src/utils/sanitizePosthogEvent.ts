@@ -24,6 +24,9 @@ const REFERRER_KEYS = new Set([
   '$session_entry_referrer',
 ]);
 
+// El título de la pestaña puede llevar iniciales de un trabajador: no se envía a la analítica
+const TITLE_KEYS = new Set(['title', '$title']);
+
 type MutableBag = Record<string, unknown>;
 
 export type PosthogCaptureLike = {
@@ -116,6 +119,10 @@ function sanitizePropertyBag(bag: MutableBag | undefined): void {
   if (!bag) return;
 
   for (const key of Object.keys(bag)) {
+    if (TITLE_KEYS.has(key)) {
+      delete bag[key];
+      continue;
+    }
     if (PATH_KEYS.has(key)) {
       bag[key] = sanitizeRawPathname(bag[key]);
       continue;

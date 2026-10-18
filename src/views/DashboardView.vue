@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, watch, computed, inject, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useTituloPagina } from '@/composables/useTituloPagina';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -94,6 +95,14 @@ const toast = inject('toast');
 const router = useRouter()
 const route = useRoute();
 const empresasStore = useEmpresasStore();
+
+// Pestaña: «Tablero de salud · Empresa Demo» (solo si la empresa cargada es la de la dirección)
+useTituloPagina(() => [
+  'Tablero de salud',
+  String(empresasStore.currentEmpresa?._id ?? '') === String(route.params.idEmpresa ?? '')
+    ? empresasStore.currentEmpresa?.nombreComercial
+    : null,
+]);
 const centrosTrabajoStore = useCentrosTrabajoStore();
 const trabajadoresStore = useTrabajadoresStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
