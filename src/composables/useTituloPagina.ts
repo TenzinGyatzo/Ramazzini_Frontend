@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router';
 import { formarTitulo } from '@/helpers/tituloPagina';
 
 /**
- * La vista pone un título propio en la pestaña (p. ej. «J.P.G. · Expediente»). El router pone
+ * La vista pone un título propio en la pestaña (p. ej. «P.G.J. · Expediente»). El router pone
  * el de la sección en cada navegación; aquí se vuelve a aplicar después, para que también valga
  * cuando la misma vista cambia de trabajador o de centro. Al salir de la vista deja de aplicarse,
  * para no tapar el título de la siguiente.

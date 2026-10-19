@@ -71,7 +71,7 @@ const { documentImmutabilityEnabled, controlPrenatalEnabled } = useRegulatoryPol
 const isFinalized = computed(() => documentos.isFinalized);
 const disableEdit = computed(() => documentImmutabilityEnabled.value && isFinalized.value);
 
-// Pestaña: «Historia clínica · J.P.G.» (solo iniciales: el título queda en el historial del navegador)
+// Pestaña: «Historia clínica · P.G.J.» (solo iniciales: el título queda en el historial del navegador)
 useTituloPagina(() => {
   const tipo = String(route.params.tipoDocumento ?? '');
   const esElTrabajador = String(trabajadores.currentTrabajadorId ?? '') === String(route.params.idTrabajador ?? '');

@@ -40,13 +40,13 @@ describe('useTituloPagina', () => {
     await router.push('/exp/a');
     await flushPromises();
     await nextTick();
-    expect(document.title).toBe('J.P. · Expediente — Ramazzini');
+    expect(document.title).toBe('P.J. · Expediente — Ramazzini');
 
     // Misma vista, otro trabajador
     await router.push('/exp/b');
     await flushPromises();
     await nextTick();
-    expect(document.title).toBe('A.L. · Expediente — Ramazzini');
+    expect(document.title).toBe('L.A. · Expediente — Ramazzini');
 
     await router.push('/');
     await flushPromises();

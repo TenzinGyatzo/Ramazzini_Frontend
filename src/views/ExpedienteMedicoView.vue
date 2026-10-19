@@ -900,7 +900,7 @@ const expedienteHeaderLoading = computed(() => {
   return !trabajador || trabajadorId !== idTrabajador;
 });
 
-// Pestaña: «J.P.G. · Expediente». Solo iniciales (el título queda en el historial del navegador)
+// Pestaña: «P.G.J. · Expediente». Solo iniciales (el título queda en el historial del navegador)
 useTituloPagina(() => [
   expedienteHeaderLoading.value ? null : inicialesTrabajador(trabajadores.currentTrabajador),
   'Expediente',

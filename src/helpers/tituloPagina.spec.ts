@@ -8,13 +8,13 @@ describe('título de la pestaña', () => {
     expect(formarTitulo([])).toBe('Ramazzini');
   });
 
-  it('las iniciales usan nombre(s) y apellidos, sin acentos ni partículas', () => {
-    expect(inicialesTrabajador({ nombre: 'JUAN', primerApellido: 'PÉREZ', segundoApellido: 'GARCÍA' })).toBe('J.P.G.');
-    expect(inicialesTrabajador({ nombre: 'Juan Carlos', primerApellido: 'Pérez' })).toBe('J.C.P.');
+  it('las iniciales van apellido, apellido, nombre(s), sin acentos ni partículas', () => {
+    expect(inicialesTrabajador({ nombre: 'JUAN', primerApellido: 'PÉREZ', segundoApellido: 'GARCÍA' })).toBe('P.G.J.');
+    expect(inicialesTrabajador({ nombre: 'Juan Carlos', primerApellido: 'Pérez' })).toBe('P.J.C.');
     expect(
       inicialesTrabajador({ nombre: 'MARIA DE LOS ANGELES', primerApellido: 'DEL RIO', segundoApellido: 'MANZANO' }),
-    ).toBe('M.A.R.M.');
-    expect(inicialesTrabajador({ nombre: 'Ángela', primerApellido: 'Núñez' })).toBe('A.N.');
+    ).toBe('R.M.M.A.');
+    expect(inicialesTrabajador({ nombre: 'Ángela', primerApellido: 'Núñez' })).toBe('N.A.');
   });
 
   it('nunca incluye el nombre completo', () => {

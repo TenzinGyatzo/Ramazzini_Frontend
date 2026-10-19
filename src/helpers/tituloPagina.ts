@@ -16,12 +16,15 @@ export function formarTitulo(partes: Array<string | null | undefined | false>): 
 /** Palabras que no aportan inicial: «DEL RÍO», «DE LOS ÁNGELES». */
 const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e', 'da', 'das', 'do', 'dos', 'van', 'von']);
 
-/** «JUAN CARLOS» «PÉREZ» «GARCÍA» → «J.C.P.G.» (nombre(s) y apellidos, sin partículas ni acentos). */
+/**
+ * «PÉREZ» «GARCÍA» «JUAN CARLOS» → «P.G.J.C.»: apellidos y luego nombre(s), como se muestra el
+ * nombre en Ramazzini; sin partículas ni acentos.
+ */
 export function inicialesTrabajador(
   trabajador: { nombre?: unknown; primerApellido?: unknown; segundoApellido?: unknown } | null | undefined,
 ): string {
   if (!trabajador) return '';
-  const palabras = [trabajador.nombre, trabajador.primerApellido, trabajador.segundoApellido]
+  const palabras = [trabajador.primerApellido, trabajador.segundoApellido, trabajador.nombre]
     .map((parte) => String(parte ?? ''))
     .join(' ')
     .normalize('NFD')
