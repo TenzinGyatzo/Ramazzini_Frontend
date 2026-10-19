@@ -235,7 +235,7 @@ describe('InicioView', () => {
     expect(wrapper.text()).not.toContain(
       'La aplicación para la creación y gestión',
     );
-    expect(wrapper.text()).not.toContain('VER MIS CLIENTES');
+    expect(wrapper.text()).not.toContain('VER EMPRESAS');
     expect(fetchResumen).toHaveBeenCalled();
   });
 
@@ -243,7 +243,7 @@ describe('InicioView', () => {
     const { wrapper } = await mountInicio();
     expect(wrapper.find('[data-testid="inicio-welcome"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('Ramazzini');
-    expect(wrapper.text()).toContain('VER MIS CLIENTES');
+    expect(wrapper.text()).toContain('VER EMPRESAS');
     expect(wrapper.text()).not.toContain('Cerrar sesión');
     expect(fetchResumen).toHaveBeenCalled();
   });
@@ -277,7 +277,7 @@ describe('InicioView', () => {
     expect(wrapper.text()).toContain('Consejo');
     expect(wrapper.text()).toContain('Consejo sin actividad');
     expect(wrapper.find('[data-testid="inicio-welcome"]').exists()).toBe(false);
-    expect(wrapper.text()).not.toContain('VER MIS CLIENTES');
+    expect(wrapper.text()).not.toContain('VER EMPRESAS');
   });
 
   it('muestra el hub cuando hay actividad', async () => {
@@ -304,7 +304,7 @@ describe('InicioView', () => {
     showWelcome.value = false;
     showError.value = true;
     const { wrapper } = await mountInicio();
-    expect(wrapper.text()).toContain('VER MIS CLIENTES');
+    expect(wrapper.text()).toContain('VER EMPRESAS');
     expect(wrapper.text()).toContain('No se pudo cargar el resumen');
     expect(wrapper.text()).not.toContain('sin actividad');
   });

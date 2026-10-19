@@ -598,14 +598,14 @@ function irAConsejo() {
         {{ saludo }}
       </p>
       <p v-if="showError" class="mb-2 text-sm text-gray-400">
-        No se pudo cargar el resumen. Puede continuar con sus clientes.
+        No se pudo cargar el resumen. Puede continuar con sus empresas.
       </p>
       <div class="home-actions mt-2 grid w-full max-w-md gap-4">
         <RouterLink
           :to="{ name: 'empresas' }"
           class="home-cta-btn layout-nav-link button-transition block w-full transform rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-3 text-center text-lg font-medium uppercase tracking-wide text-white shadow-lg transition-all duration-300 ease hover:scale-105 hover:from-emerald-700 hover:to-emerald-800 hover:shadow-xl sm:text-xl md:text-2xl"
         >
-          VER MIS CLIENTES
+          VER EMPRESAS
         </RouterLink>
       </div>
     </div>
