@@ -423,8 +423,17 @@ function getRegistrationBirthDateInputBounds(
   };
 }
 
+/**
+ * Hoy en la hora del usuario, «AAAA-MM-DD». No usar `new Date().toISOString().slice(0, 10)`:
+ * eso es la fecha en UTC, que por la noche en México ya es el día siguiente.
+ */
+function fechaLocalHoy(ahora: Date = new Date()): string {
+  const dosDigitos = (n: number) => String(n).padStart(2, '0');
+  return `${ahora.getFullYear()}-${dosDigitos(ahora.getMonth() + 1)}-${dosDigitos(ahora.getDate())}`;
+}
 
 export {
+  fechaLocalHoy,
   convertirFechaISOaDDMMYYYY,
   convertirFechaISOaYYYYMMDD,
   convertirFechaISOaDDMesYYYY,

@@ -974,6 +974,7 @@
 </template>
 
 <script setup lang="ts">
+import { fechaLocalHoy } from '@/helpers/dates';
 import { ref, watch, computed, inject, nextTick, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import { authRequestConfig } from '@/lib/attachAuthToken';
@@ -1403,7 +1404,7 @@ const handleBackToSelect = () => {
 };
 
 const setFechaHoy = () => {
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = fechaLocalHoy();
   formData.value.fechaEstudio = hoy;
 };
 

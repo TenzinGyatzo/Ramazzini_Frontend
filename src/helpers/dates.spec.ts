@@ -6,7 +6,16 @@ import {
   isBirthDateInRegistrationRange,
   getRegistrationBirthDateInputBounds,
   buildRegistrationAgeRangeMessage,
+  fechaLocalHoy,
 } from './dates';
+
+describe('fechaLocalHoy', () => {
+  it('usa la fecha de la hora del usuario, no la de UTC', () => {
+    // 18 de octubre a las 23:30 en la hora local: en UTC (México) ya sería 19
+    expect(fechaLocalHoy(new Date(2026, 9, 18, 23, 30))).toBe('2026-10-18');
+    expect(fechaLocalHoy(new Date(2026, 0, 5, 0, 5))).toBe('2026-01-05');
+  });
+});
 import {
   FIRMANTE_EDAD_MINIMA,
   FIRMANTE_EDAD_MAXIMA,

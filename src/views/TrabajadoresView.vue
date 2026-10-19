@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { fechaLocalHoy } from '@/helpers/dates';
 // 1. Imports
 import { ref, reactive, nextTick, onMounted, inject, watch, computed, provide } from 'vue';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -825,7 +826,7 @@ function generarNombreArchivoExcel(): string {
     }
   });
 
-  const fechaActual = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+  const fechaActual = fechaLocalHoy(); // yyyy-mm-dd, en la hora del usuario
   partes.push(fechaActual);
 
   return partes.join('_') + '.xlsx';

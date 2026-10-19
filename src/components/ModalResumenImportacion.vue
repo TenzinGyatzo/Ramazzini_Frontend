@@ -473,6 +473,7 @@
 </template>
 
 <script setup lang="ts">
+import { fechaLocalHoy } from '@/helpers/dates';
 import { ref, computed } from 'vue'
 import * as XLSX from 'xlsx'
 
@@ -674,7 +675,7 @@ const downloadErrorReport = () => {
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
   link.setAttribute('href', url)
-  link.setAttribute('download', `errores_importacion_${new Date().toISOString().split('T')[0]}.xlsx`)
+  link.setAttribute('download', `errores_importacion_${fechaLocalHoy()}.xlsx`)
   link.style.visibility = 'hidden'
   document.body.appendChild(link)
   link.click()
@@ -748,7 +749,7 @@ const downloadNormalizationReport = () => {
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
   link.setAttribute('href', url)
-  link.setAttribute('download', `normalizaciones_importacion_${new Date().toISOString().split('T')[0]}.xlsx`)
+  link.setAttribute('download', `normalizaciones_importacion_${fechaLocalHoy()}.xlsx`)
   link.style.visibility = 'hidden'
   document.body.appendChild(link)
   link.click()

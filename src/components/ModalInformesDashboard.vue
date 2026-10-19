@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { fechaLocalHoy } from '@/helpers/dates';
 import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { cargarPdfMake, pdfMakeCargado, precargarPdfMake } from '@/lib/cargarPdfMake';
 import * as xlsx from 'xlsx';
@@ -270,7 +271,7 @@ const guardar = async () => {
 // ---- Generar
 
 const generando = ref<'' | 'ver' | 'descargar'>('');
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = () => fechaLocalHoy();
 
 /** Queda en la bitácora igual que el informe completo. */
 const registrar = (informe: InformeDeTablero, modo: 'view' | 'download') =>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { fechaLocalHoy } from '@/helpers/dates';
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { exportarGraficaAltaResolucion } from '@/helpers/exportChartImage';
 import { 
@@ -2638,7 +2639,7 @@ const descargarPDF = async () => {
 
       const docDefinition = generarDocDefinition(true); // Alta calidad
       const pdfMake = await cargarPdfMake();
-      pdfMake.createPdf(docDefinition).download(`InformeSaludLaboral_${props.nombreEmpresa?.replace(/\s+/g, '_') || 'Empresa'}_${new Date().toISOString().split('T')[0]}.pdf`);
+      pdfMake.createPdf(docDefinition).download(`InformeSaludLaboral_${props.nombreEmpresa?.replace(/\s+/g, '_') || 'Empresa'}_${fechaLocalHoy()}.pdf`);
       mensajeExito.value = 'Informe generado correctamente.';
     } catch (error) {
       console.error('Error al descargar PDF:', error);

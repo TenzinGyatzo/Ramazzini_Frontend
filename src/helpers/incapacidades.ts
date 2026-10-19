@@ -4,6 +4,8 @@
  * (backend/src/modules/incapacidades/incapacidades.catalogos.ts); no cambiarlos aquí solos.
  */
 
+import { fechaLocalHoy } from '@/helpers/dates';
+
 /**
  * Interruptor de vista previa: en `true` el módulo solo se muestra al
  * Administrador de plataforma. Liberado a los proveedores el 2026-10-09.
@@ -293,10 +295,9 @@ export function fechaTermino(fechaInicio: string, dias: number): string {
   return fechaInicio && dias >= 1 ? sumarDias(fechaInicio, dias - 1) : '';
 }
 
+/** Hoy en la hora del usuario (misma regla para toda la app: `fechaLocalHoy`). */
 export function hoyISO(): string {
-  const hoy = new Date();
-  const dosDigitos = (n: number) => String(n).padStart(2, '0');
-  return `${hoy.getFullYear()}-${dosDigitos(hoy.getMonth() + 1)}-${dosDigitos(hoy.getDate())}`;
+  return fechaLocalHoy();
 }
 
 export const textoDias = (dias: number) => `${dias} ${dias === 1 ? 'día' : 'días'}`;
