@@ -81,7 +81,6 @@ const {
   dismissBanner: dismissBorradoresBanner,
 } = useBorradoresNotaMedica();
 const datosCargados = ref(false);
-const empresasCargadas = ref(false); 
 
 // Dark mode state
 const isDarkMode = ref(false);
@@ -185,14 +184,14 @@ watch(datosCargados, async () => {
 const isGuideMenuOpen = ref(false);
 const guideMenuRef = ref<HTMLElement | null>(null);
 const isNotificationVisible = ref(false);
-const isNotificationEmpresasVisible = ref(false);
 const isNotificationBorradoresVisible = ref(false);
 const showModalBorradoresPendientes = ref(false);
 const configNotificationSuppressed = ref(false);
-const empresasNotificationSuppressed = ref(false);
 
+// Las guías de Scribe están desactualizadas: se ocultan el botón de guías y los
+// enlaces de las notificaciones hasta que se rehagan. Cambiar a true para reactivarlas.
+const GUIAS_DE_USO_DISPONIBLES = false;
 const guiaConfiguracionInicialURL = "https://scribehow.com/shared/Configuracion_de_Informes__qSuHpPxtSnKc8JTaObgY7Q?referrer=workspace"
-const guiaRegistrarClientesURL = "https://scribehow.com/shared/Agregar_Clientes_y_Centros_de_Trabajo__32Haet8BQy6oFUDacWcbWg?referrer=documents"
 
 const LOGO_ASSETS = [
   '/img/logosRamazzini/RamazziniBrand.png',
@@ -216,12 +215,6 @@ const closeNotification = () => {
   configNotificationSuppressed.value = true;
 };
 
-// Función para cerrar notificación de empresas
-const closeNotificationEmpresas = () => {
-  isNotificationEmpresasVisible.value = false;
-  empresasNotificationSuppressed.value = true;
-};
-
 const closeNotificationBorradores = () => {
   isNotificationBorradoresVisible.value = false;
   if (user.user?._id) {
@@ -241,14 +234,6 @@ const mensajeBannerBorradores = computed(() =>
 const borradoresBannerBottom = computed(() => {
   let offsetRem = 1.5;
   if (datosCargados.value && mostrarMensajePendiente.value && isNotificationVisible.value) {
-    offsetRem += 6.5;
-  }
-  if (
-    datosCargados.value &&
-    empresasCargadas.value &&
-    empresas.empresas.length === 0 &&
-    isNotificationEmpresasVisible.value
-  ) {
     offsetRem += 6.5;
   }
   return `${offsetRem}rem`;
@@ -300,9 +285,7 @@ onMounted(() => {
     datosCargados.value = false;
     if (user.user.idProveedorSalud) {
       await proveedorSaludStore.loadProveedorSalud(user.user.idProveedorSalud);
-      empresas.fetchEmpresas(user.user.idProveedorSalud).then(() => {
-        empresasCargadas.value = true;
-      });
+      empresas.fetchEmpresas(user.user.idProveedorSalud);
     }
     if (user.user._id && !esAdministradorEnConsola(user.user)) {
       await medicoFirmanteStore.loadMedicoFirmante(user.user._id);
@@ -319,18 +302,9 @@ onMounted(() => {
   document.addEventListener("click", handleClickOutside);
 });
 
-watch(
-  () => empresas.empresas.length,
-  () => {
-    empresasCargadas.value = true;
-  }
-);
-
 onMounted(() => {
   if (user.user?.idProveedorSalud && !isConfidentialityAgreementPending()) {
-    empresas.fetchEmpresas(user.user.idProveedorSalud).then(() => {
-      empresasCargadas.value = true;
-    });
+    empresas.fetchEmpresas(user.user.idProveedorSalud);
   }
 });
 
@@ -706,22 +680,10 @@ function tryShowConfigNotification() {
   }, 1000);
 }
 
-function tryShowEmpresasNotification() {
-  if (empresasNotificationSuppressed.value) return;
-  if (!empresasCargadas.value || empresas.empresas.length !== 0) return;
-  setTimeout(() => {
-    if (!empresasNotificationSuppressed.value) {
-      isNotificationEmpresasVisible.value = true;
-    }
-  }, 1000);
-}
-
 watch(() => user.user?._id, (newId, oldId) => {
   if (newId !== oldId) {
     configNotificationSuppressed.value = false;
-    empresasNotificationSuppressed.value = false;
     isNotificationVisible.value = false;
-    isNotificationEmpresasVisible.value = false;
     isNotificationBorradoresVisible.value = false;
   }
 });
@@ -753,9 +715,6 @@ watch(
   },
 );
 
-watch([empresasCargadas, () => empresas.empresas.length], () => {
-  tryShowEmpresasNotification();
-});
 
 // Watchers para las animaciones de tooltips
 watch(mostrarTooltipProveedor, (nuevoValor) => {
@@ -918,10 +877,11 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
         <div class="flex items-start gap-3">
           <i :class="[iconoNotificacion, colorNotificacion, 'text-xl mt-1']"></i>
           <div class="flex-1">
-            <p class="text-sm font-medium text-gray-800 mb-2">
+            <p class="text-sm font-medium text-gray-800" :class="{ 'mb-2': GUIAS_DE_USO_DISPONIBLES }">
               {{ mensajeConfiguracion }}
             </p>
-            <a :href="guiaConfiguracionInicialURL" 
+            <a v-if="GUIAS_DE_USO_DISPONIBLES"
+                :href="guiaConfiguracionInicialURL"
                 target="_blank" 
                 rel="noopener noreferrer" 
                 class="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition-colors duration-200">
@@ -936,34 +896,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       </div>
     </Transition>
     
-    <!-- Segunda notificación: no hay empresas -->
-    <Transition name="slide-up">
-      <div v-if="datosCargados && empresasCargadas && empresas.empresas.length === 0 && isNotificationEmpresasVisible" 
-            class="hidden sm:block fixed bottom-6 right-6 z-50 bg-white text-gray-700 border-l-4 border-blue-500 rounded-xl shadow-lg p-4 max-w-sm transform hover:scale-105 transition-transform duration-500 ease-in-out"
-            :class="((camposPendientesProveedor.length === 4) && (camposPendientesMedico.length === 4)) ? 'mb-3' : '-mb-2'"
-            :style="{ bottom: datosCargados && mostrarMensajePendiente && isNotificationVisible ? '8rem' : '1.5rem' }">
-        <div class="flex items-start gap-3">
-          <i class="fa-regular fa-lightbulb text-blue-500 text-xl mt-1"></i>
-          <div class="flex-1">
-            <p class="text-sm font-medium text-gray-800 mb-2">
-              Aún no tienes clientes registrados
-            </p>
-            <a :href="guiaRegistrarClientesURL" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                class="text-blue-600 hover:text-blue-800 underline text-sm font-medium transition-colors duration-200">
-              Guía para registrar a tu primer cliente
-            </a>
-          </div>
-          <button @click="closeNotificationEmpresas" 
-                  class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
-            <i class="fa-solid fa-times"></i>
-          </button>
-        </div>
-      </div>
-    </Transition>
-
-    <!-- Tercera notificación: borradores de notas médicas -->
+    <!-- Segunda notificación: borradores de notas médicas -->
     <Transition name="slide-up">
       <div
         v-if="datosCargados && proveedorSaludStore.isSIRES && mostrarBannerBorradores && isNotificationBorradoresVisible && inicioLayout.showNmBanner"
@@ -1373,7 +1306,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
     <!-- Icono de guía de uso mejorado -->
     <Transition name="delayed-appear">
       <button 
-        v-if="isVisible && ['inicio', 'add-user', 'remove-users', 'perfil-proveedor', 'medico-firmante', 'subscription', 'suscripcion-activa', 'subscription-success', 'panel-administrador'].includes(route.name as string)"
+        v-if="GUIAS_DE_USO_DISPONIBLES && isVisible && ['inicio', 'add-user', 'remove-users', 'perfil-proveedor', 'medico-firmante', 'subscription', 'suscripcion-activa', 'subscription-success', 'panel-administrador'].includes(route.name as string)"
         @click="toggleGuideMenu($event)"
         class="fixed top-24 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300 z-30 flex items-center justify-center group"
         :aria-label="isGuideMenuOpen ? 'Cerrar guías de uso' : 'Abrir guías de uso'">
