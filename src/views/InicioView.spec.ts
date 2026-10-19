@@ -272,7 +272,7 @@ describe('InicioView', () => {
     expect(wrapper.find('[data-testid="inicio-hub"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('No hay expedientes recientes.');
     expect(wrapper.text()).toContain('No hay actividad reciente.');
-    expect(wrapper.text()).toContain('Ir a clientes');
+    expect(wrapper.text()).toContain('Ir a empresas');
     expect(wrapper.text()).not.toContain('Ver todos');
     expect(wrapper.text()).toContain('Consejo');
     expect(wrapper.text()).toContain('Consejo sin actividad');

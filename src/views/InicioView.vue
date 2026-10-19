@@ -323,7 +323,7 @@ function irAConsejo() {
           <InicioSkeletonCard />
         </div>
         <div class="mt-6 grid gap-4 lg:grid-cols-2">
-          <InicioSkeletonCard variant="list" label="Cargando clientes" />
+          <InicioSkeletonCard variant="list" label="Cargando empresas" />
           <InicioSkeletonCard variant="list" label="Cargando expedientes" />
         </div>
       </template>
@@ -460,7 +460,7 @@ function irAConsejo() {
           >
             <div class="mb-4 flex min-w-0 items-center justify-between gap-2 max-[479px]:mb-3">
               <h2 class="min-w-0 text-lg font-semibold text-gray-900 max-[479px]:text-base dark:text-slate-100">
-                Clientes recientes
+                Empresas recientes
               </h2>
               <RouterLink
                 v-if="resumen.clientesRecientes.length"
@@ -511,7 +511,7 @@ function irAConsejo() {
                 :to="{ name: 'empresas' }"
                 class="font-medium text-emerald-600 hover:text-emerald-700"
               >
-                Ir a clientes
+                Ir a empresas
               </RouterLink>
             </p>
           </section>
