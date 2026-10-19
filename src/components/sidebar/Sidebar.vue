@@ -204,11 +204,11 @@ const footerEditionText = computed(() => {
           <SidebarLink v-if="route.path !== '/login'" 
             to="/empresas" 
             icon="fas fa-industry" 
-            tooltip="Clientes"
+            tooltip="Empresas"
             :class="{ 'fade-in': isMounted }"
             @click.stop>
-            <p>Clientes</p>
-            <p class="font-light text-xs">Explorar Clientes</p>
+            <p>Empresas</p>
+            <p class="font-light text-xs">Explorar empresas</p>
           </SidebarLink>
         </Transition>
       </div>
