@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import type { Empresa } from '@/interfaces/empresa.interface';
 import type { CentroTrabajo } from '@/interfaces/centro-trabajo.interface';
@@ -45,6 +46,55 @@ const handleEliminarCentro = (id: string, nombreCentro: string) => {
         emit('eliminarCentro', id, nombreCentro, props.numeroTrabajadores);
     }, 'eliminar centros de trabajo');
 };
+
+// Los botones de acción muestran su texto solo si caben en una fila dentro del
+// ancho de la tarjeta (no del ancho de la pantalla); si no, quedan solo los iconos.
+const accionesFila = ref<HTMLElement | null>(null);
+const accionesEtiqueta = ref<HTMLElement | null>(null);
+const accionesBotones = ref<HTMLElement | null>(null);
+const accionesCompactas = ref(false);
+let anchoConTexto = 0;
+let observador: ResizeObserver | null = null;
+
+const evaluarAcciones = () => {
+    const fila = accionesFila.value;
+    const etiqueta = accionesEtiqueta.value;
+    const botones = accionesBotones.value;
+    if (!fila || !etiqueta || !botones) return;
+
+    const disponible = fila.clientWidth;
+    if (!accionesCompactas.value) {
+        const separacion = parseFloat(getComputedStyle(fila).columnGap) || 0;
+        anchoConTexto = etiqueta.offsetWidth + separacion + botones.scrollWidth;
+        accionesCompactas.value = anchoConTexto > disponible;
+    } else if (disponible >= anchoConTexto) {
+        accionesCompactas.value = false;
+        // Volver a medir con el texto visible, por si el ancho cambió mientras estaban compactas.
+        nextTick(evaluarAcciones);
+    }
+};
+
+// Si cambian los botones visibles, el ancho necesario cambia: medir de nuevo con texto.
+watch(
+    () => [inventario.habilitado, canAccessDashboardSalud.value, props.numeroTrabajadores > 0],
+    () => {
+        accionesCompactas.value = false;
+        nextTick(evaluarAcciones);
+    },
+);
+
+onMounted(() => {
+    nextTick(evaluarAcciones);
+    if (typeof ResizeObserver !== 'undefined' && accionesFila.value) {
+        observador = new ResizeObserver(() => evaluarAcciones());
+        observador.observe(accionesFila.value);
+    }
+});
+
+onBeforeUnmount(() => {
+    observador?.disconnect();
+    observador = null;
+});
 
 const formatDireccion = (centro: CentroTrabajo) => {
     const parts: string[] = [];
@@ -120,11 +170,17 @@ const formatDireccion = (centro: CentroTrabajo) => {
 
             <!-- Barra de acciones -->
             <div class="centro-item__actions border-t border-gray-100 bg-gray-50 px-6 py-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
+                <div
+                    ref="accionesFila"
+                    class="flex items-center justify-between gap-x-3 gap-y-2"
+                >
+                    <div ref="accionesEtiqueta" class="flex shrink-0 items-center gap-2">
                         <span class="centro-item__actions-label text-xs font-medium text-gray-500">Acciones</span>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div
+                        ref="accionesBotones"
+                        :class="['flex items-center justify-end gap-2', accionesCompactas ? 'min-w-0 flex-wrap' : 'shrink-0']"
+                    >
                         <!-- Estadísticas de salud, con este centro ya elegido -->
                         <RouterLink
                             v-if="canAccessDashboardSalud && numeroTrabajadores > 0"
@@ -134,7 +190,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
                             data-test="estadisticas-centro"
                         >
                             <i class="fas fa-chart-line text-xs"></i>
-                            <span class="hidden sm:inline">Estadísticas</span>
+                            <span v-if="!accionesCompactas" class="whitespace-nowrap">Estadísticas</span>
                         </RouterLink>
                         <RouterLink
                             v-if="inventario.habilitado"
@@ -143,7 +199,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
                             title="Inventario del centro de trabajo"
                         >
                             <i class="fas fa-boxes-stacked text-xs"></i>
-                            <span class="hidden sm:inline">Inventario</span>
+                            <span v-if="!accionesCompactas" class="whitespace-nowrap">Inventario</span>
                         </RouterLink>
                         <button
                             type="button" 
@@ -158,7 +214,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
                             :title="canManageCentrosTrabajo ? 'Editar centro de trabajo' : 'No tienes permisos para editar centros de trabajo'"
                         >
                             <i class="fas fa-edit text-xs"></i>
-                            <span class="hidden sm:inline">Editar</span>
+                            <span v-if="!accionesCompactas" class="whitespace-nowrap">Editar</span>
                         </button>
                         <button 
                             type="button" 
@@ -173,7 +229,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
                             :title="canManageCentrosTrabajo ? 'Eliminar centro de trabajo' : 'No tienes permisos para eliminar centros de trabajo'"
                         >
                             <i class="fas fa-trash text-xs"></i>
-                            <span class="hidden sm:inline">Eliminar</span>
+                            <span v-if="!accionesCompactas" class="whitespace-nowrap">Eliminar</span>
                         </button>
                     </div>
                 </div>
