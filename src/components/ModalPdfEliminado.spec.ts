@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ModalPdfEliminado from './ModalPdfEliminado.vue';
 
-const montar = (props: Record<string, unknown>) =>
+const montar = (props: { tipo: string; pdfStatus?: string | null }) =>
   mount(ModalPdfEliminado, {
     props,
     global: { provide: { toast: { open: vi.fn() } } },

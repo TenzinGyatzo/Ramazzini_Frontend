@@ -578,6 +578,9 @@ const buildPdfUrl = (ruta, nombrePDF, updatedAt = null, options = {}) => {
     return fullPath.href;
 };
 
+/** Cada apertura de PDF tiene su número; cerrar el visor o abrir otro deja viejas las anteriores. */
+let aperturaPdfActual = 0;
+
 const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
     // Precarga desde el visor de otro documento: solo descargar y guardar (helpers/navegacionVisor)
     if (enModoPrecarga()) {
@@ -611,17 +614,37 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
         return;
     }
 
+    const apertura = ++aperturaPdfActual;
+    // Clic directo: el visor aparece de inmediato y muestra la carga; al navegar desde otro
+    // visor, el documento se sigue preparando oculto como siempre
+    const abiertoDeInmediato = !showPdfViewer.value
+        && !visorPreparando.value
+        && navegacionPendiente() !== props.documentoId;
+    if (abiertoDeInmediato) showPdfViewer.value = true;
+    // Se cerró (o se abrió otro archivo) mientras se descargaba: no reabrir
+    const aperturaVigente = () => apertura === aperturaPdfActual;
+    const descartarVisorDeCarga = () => {
+        if (abiertoDeInmediato && !pdfUrl.value) cerrarPdf();
+    };
+
     try {
         const url = buildClinicalFileUrl(relativePath);
-        const response = await (tomarPrecarga(url) ?? axios.get(url, {
+        const descargarPdf = () => axios.get(url, {
             responseType: 'blob',
             ...authRequestConfig(),
-        }));
+        });
+        const desdeVistaPrevia = descargaDeVistaPrevia(relativePath)?.then((blob) =>
+            blob.type === 'application/pdf'
+                ? { status: 200, headers: { 'content-type': blob.type }, data: blob }
+                : descargarPdf());
+        const response = await (tomarPrecarga(url) ?? desdeVistaPrevia ?? descargarPdf());
+        if (!aperturaVigente()) return;
 
         const contentType = response.headers['content-type'];
 
         if (response.status === 200 && contentType === 'application/pdf') {
             const metadata = await fetchPdfMetadata(response.data);
+            if (!aperturaVigente()) return;
             pdfTotalPages.value = metadata.numPages;
             pdfFirstPageWidth.value = metadata.pageWidth;
             revokePdfBlobUrl();
@@ -639,11 +662,14 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
         } else {
             // Sin PDF válido en la ruta: mismo trato que cuando el archivo no existe (404)
             console.warn('El archivo no es un PDF o no existe.', { status: response.status, contentType });
+            descartarVisorDeCarga();
             if (!isPdfGenerating.value) {
                 mostrarModalPdfEliminado.value = true;
             }
         }
     } catch (error) {
+        if (!aperturaVigente()) return;
+        descartarVisorDeCarga();
         if (error.response && error.response.status === 404) {
             if (!isPdfGenerating.value) {
                 mostrarModalPdfEliminado.value = true;
@@ -1024,6 +1050,7 @@ function handlePdfViewerLoaded() {
 
 // Función para cerrar el visor
 const cerrarPdf = () => {
+    aperturaPdfActual += 1;
     disconnectPdfViewerResizeObserver();
     pdfEscalaFijada = null;
     pdfViewerReady.value = false;
@@ -1104,6 +1131,37 @@ let hoverMediaQuery = null;
 const HOVER_DELAY = 600;
 const HIDE_DELAY = 160;
 const PREVIEW_MARGIN = 120;
+
+/**
+ * Descarga hecha para la vista previa: si enseguida se abre el mismo archivo, el visor
+ * la reutiliza en lugar de volver a pedirlo al servidor.
+ */
+const VIGENCIA_VISTA_PREVIA_MS = 60_000;
+let ultimaVistaPrevia = null;
+
+const descargarParaVistaPrevia = (relativePath) => {
+    const descarga = fetchClinicalFileBlob(relativePath);
+    ultimaVistaPrevia = { ruta: relativePath, descarga, momento: Date.now() };
+    descarga.catch(() => {
+        if (ultimaVistaPrevia?.descarga === descarga) ultimaVistaPrevia = null;
+    });
+    return descarga;
+};
+
+const olvidarVistaPrevia = () => {
+    ultimaVistaPrevia = null;
+};
+
+/** Blob de la vista previa de ese archivo (si falla, se pide de nuevo), o null si no hay. */
+const descargaDeVistaPrevia = (relativePath) => {
+    const previa = ultimaVistaPrevia;
+    if (!previa || previa.ruta !== relativePath) return null;
+    if (Date.now() - previa.momento > VIGENCIA_VISTA_PREVIA_MS) {
+        ultimaVistaPrevia = null;
+        return null;
+    }
+    return previa.descarga.catch(() => fetchClinicalFileBlob(relativePath));
+};
 
 const updateHoverSupport = () => {
     canHover.value = true;
@@ -1294,7 +1352,7 @@ const schedulePdfHover = (event, ruta, nombrePDF, updatedAt, title) => {
         }
 
         try {
-            const blob = await fetchClinicalFileBlob(relativePath);
+            const blob = await descargarParaVistaPrevia(relativePath);
             revokeHoverBlobUrl();
             hoverBlobUrl = URL.createObjectURL(blob);
             openHoverPreview(target || event, {
@@ -1341,7 +1399,7 @@ const scheduleDocumentoExternoHover = (event, documento) => {
             if (!rutaCompleta) return;
             try {
                 const relativePath = extractRelativeClinicalPath(rutaCompleta);
-                const blob = await fetchClinicalFileBlob(relativePath);
+                const blob = await descargarParaVistaPrevia(relativePath);
                 revokeHoverBlobUrl();
                 hoverBlobUrl = URL.createObjectURL(blob);
                 openHoverPreview(target || event, {
@@ -1359,7 +1417,7 @@ const scheduleDocumentoExternoHover = (event, documento) => {
             const nombrePDF = `${documento.nombreDocumento} ${convertirFechaISOaDDMMYYYY(documento.fechaDocumento)}.pdf`;
             const relativePath = joinClinicalPath(documento.rutaDocumento, nombrePDF);
             try {
-                const blob = await fetchClinicalFileBlob(relativePath);
+                const blob = await descargarParaVistaPrevia(relativePath);
                 revokeHoverBlobUrl();
                 hoverBlobUrl = URL.createObjectURL(blob);
                 openHoverPreview(target || event, {
@@ -1442,7 +1500,9 @@ const abrirImagen = async (rutaCompleta) => {
 
     try {
         const relativePath = extractRelativeClinicalPath(rutaCompleta);
-        const blob = await (tomarPrecarga(buildClinicalFileUrl(relativePath)) ?? fetchClinicalFileBlob(relativePath));
+        const blob = await (tomarPrecarga(buildClinicalFileUrl(relativePath))
+            ?? descargaDeVistaPrevia(relativePath)
+            ?? fetchClinicalFileBlob(relativePath));
 
         if (blob.type.startsWith('image/')) {
             revokeImageBlobUrl();
@@ -3038,6 +3098,7 @@ const iniciarRegeneracionPdf = () => {
   }
 
   mostrarModalPdfEliminado.value = false;
+  olvidarVistaPrevia();
   pdfGenerationStore.markLocalGenerating(props.documentoId);
 
   const doc = currentDocumentData.value;
@@ -3224,6 +3285,7 @@ const firmaDisponibilidadPdf = () => {
 
 watch(firmaDisponibilidadPdf, (actual, anterior) => {
   if (actual === anterior) return;
+  olvidarVistaPrevia();
   pdfCheckScheduled = false;
   schedulePdfCheck();
 });
@@ -5714,13 +5776,13 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
 
                     <!-- Controles adicionales -->
                     <div class="flex shrink-0 items-center space-x-1 sm:space-x-3">
-                        <button @click="descargarPdfActual"
-                            class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
+                        <button @click="descargarPdfActual" :disabled="!pdfUrl"
+                            class="disabled:opacity-50 disabled:pointer-events-none flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-download text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Descargar</span>
                         </button>
-                        <button @click="imprimirPdfActual"
-                            class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
+                        <button @click="imprimirPdfActual" :disabled="!pdfUrl"
+                            class="disabled:opacity-50 disabled:pointer-events-none flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 sm:py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all duration-200 hover:scale-105 text-xs sm:text-sm">
                             <i class="fas fa-print text-xs sm:text-sm"></i>
                             <span class="font-medium hidden sm:inline">Imprimir</span>
                         </button>
@@ -5735,8 +5797,11 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                     ref="pdfViewerContainerRef"
                     class="pdf-viewer-host visor-contenido mt-16 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl bg-white shadow-2xl sm:mt-20"
                 >
+                    <div v-if="!pdfViewerReady" class="visor-cargando flex h-full w-full items-center justify-center" role="status" aria-label="Cargando PDF">
+                        <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
+                    </div>
                     <VPdfViewer
-                        v-if="pdfViewerReady"
+                        v-else
                         :key="pdfViewerMountKey"
                         ref="pdfViewerRef"
                         class="h-full w-full max-w-full"
