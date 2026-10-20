@@ -2443,8 +2443,13 @@ html.dark-mode .border-shadow input.text-red-950 {
   color: #fecaca !important;
 }
 
+/*
+ * Especificidad 0 con :where(): solo da transición de color a lo que no declara la suya.
+ * Con `html.dark-mode *` le ganaba a las transiciones de Vue (.modal-fade-enter-active…)
+ * y en modo oscuro los visores y modales aparecían de golpe.
+ */
 @media (prefers-reduced-motion: no-preference) {
-  html.dark-mode * {
+  :where(html.dark-mode) * {
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease,
       box-shadow 0.2s ease;
   }
