@@ -75,7 +75,7 @@ button:focus {
             <i class="fa-solid fa-file-pdf text-2xl text-emerald-600"></i>
           </div>
           <h2 class="text-2xl font-bold text-gray-800 mb-2">
-            {{ pdfStatus === 'failed' ? 'No se pudo generar el PDF' : 'Documento No Disponible' }}
+            {{ pdfStatus === 'failed' ? 'No se pudo generar el PDF' : 'Hay que volver a generar el PDF' }}
           </h2>
           <div class="w-16 h-1 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full mx-auto"></div>
         </div>
@@ -86,12 +86,13 @@ button:focus {
             Hubo un problema al generar el PDF de este documento. Tu información está guardada; solo falta volver a generar el archivo.
           </p>
           <p v-else class="text-gray-600 text-lg leading-relaxed mb-4">
-            El documento fue <span class="font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">eliminado automáticamente</span> tras 
-            <span class="font-medium text-emerald-600">1 mes</span> como parte de nuestro sistema de limpieza y optimización.
+            <span class="font-medium text-gray-800">Tu información está a salvo.</span>
+            Para ahorrar espacio, Ramazzini borra el archivo PDF 30 días después de generarlo,
+            pero los datos del documento siguen guardados.
           </p>
           <div class="flex items-center justify-center gap-2 text-sm text-gray-500 mb-6">
             <i class="fa-solid fa-info-circle text-blue-500"></i>
-            <span>Puedes <span class="font-medium text-emerald-600">regenerarlo</span> haciendo clic en el botón de abajo.</span>
+            <span>Genera el PDF de nuevo con la misma información.</span>
           </div>
         </div>
 
@@ -112,7 +113,7 @@ button:focus {
           >
             <span class="flex items-center justify-center gap-2">
               <i class="fa-solid fa-sync-alt"></i>
-              Regenerar
+              Generar PDF
             </span>
           </button>
         </div>

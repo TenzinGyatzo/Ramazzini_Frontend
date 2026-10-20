@@ -4,7 +4,7 @@ import { authRequestConfig } from '@/lib/attachAuthToken';
 import {
     buildClinicalFileUrl,
     fetchClinicalFileBlob,
-    headClinicalFile,
+    consultarArchivoClinico,
     registrarDescargaArchivoClinico,
 } from '@/lib/clinicalFiles';
 import { obtenerResultadoBinauralAudiometria, tieneHipoacusiaBilateralCombinada } from '@/helpers/audiometriaCalculos';
@@ -228,6 +228,8 @@ const mostrarModalPdfEliminado = ref(false);
 // Estado para verificar disponibilidad del PDF
 const pdfDisponible = ref(true);
 const verificandoPDF = ref(false);
+/** Ruta que la última verificación encontró sin archivo: al abrirla se avisa sin esperar al servidor. */
+let rutaVerificadaSinPdf = null;
 
 // Estados para tooltips
 const showTooltip = ref(false);
@@ -602,6 +604,12 @@ const abrirPdf = async (ruta, nombrePDF, updatedAt = null) => {
 
     const fullPath = buildPdfUrl(ruta, nombrePDF, updatedAt, { useCacheBuster: true, fallbackToNow: true });
     const relativePath = joinClinicalPath(ruta, nombrePDF);
+
+    // Ya se sabe que este archivo no está: el aviso aparece al instante, sin pedirlo al servidor
+    if (!pdfDisponible.value && !verificandoPDF.value && rutaVerificadaSinPdf === relativePath) {
+        mostrarModalPdfEliminado.value = true;
+        return;
+    }
 
     try {
         const url = buildClinicalFileUrl(relativePath);
@@ -3107,18 +3115,22 @@ const verificarDisponibilidadPDF = async () => {
       return;
     }
 
+    let relativePath = null;
+    let estado = 'sin-verificar';
     try {
       verificandoPDF.value = true;
       const nombreArchivo = `${props.documentoExterno.nombreDocumento} ${convertirFechaISOaDDMMYYYY(props.documentoExterno.fechaDocumento)}${props.documentoExterno.extension}`;
-      const relativePath = props.documentoExterno.rutaDocumento.endsWith(nombreArchivo)
+      relativePath = props.documentoExterno.rutaDocumento.endsWith(nombreArchivo)
         ? props.documentoExterno.rutaDocumento
         : joinClinicalPath(props.documentoExterno.rutaDocumento, nombreArchivo);
-      pdfDisponible.value = await headClinicalFile(relativePath, {
+      estado = await consultarArchivoClinico(relativePath, {
         probe: 'external',
       });
     } catch (error) {
-      pdfDisponible.value = false;
+      estado = 'sin-verificar';
     } finally {
+      pdfDisponible.value = estado === 'disponible';
+      rutaVerificadaSinPdf = estado === 'ausente' ? relativePath : null;
       verificandoPDF.value = false;
     }
     return;
@@ -3131,16 +3143,21 @@ const verificarDisponibilidadPDF = async () => {
     return;
   }
 
+  let rutaVerificada = null;
+  let estado = 'sin-verificar';
   try {
     verificandoPDF.value = true;
     const rutaCompleta = joinClinicalPath(ruta, nombre);
-    pdfDisponible.value = await headClinicalFile(rutaCompleta, {
+    rutaVerificada = rutaCompleta;
+    estado = await consultarArchivoClinico(rutaCompleta, {
       contentType: 'application/pdf',
       probe: 'regenerable',
     });
   } catch (error) {
-    pdfDisponible.value = false;
+    estado = 'sin-verificar';
   } finally {
+    pdfDisponible.value = estado === 'disponible';
+    rutaVerificadaSinPdf = estado === 'ausente' ? rutaVerificada : null;
     verificandoPDF.value = false;
   }
 };

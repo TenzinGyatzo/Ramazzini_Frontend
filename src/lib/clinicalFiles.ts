@@ -42,10 +42,17 @@ export async function registrarDescargaArchivoClinico(
   }
 }
 
-export async function headClinicalFile(
+/**
+ * - `disponible`: el archivo existe (y es del tipo pedido, si se indicó).
+ * - `ausente`: el servidor confirmó que no está (404) o no es del tipo pedido.
+ * - `sin-verificar`: no se pudo saber (sin conexión, sesión vencida, sin permiso, error del servidor).
+ */
+export type EstadoArchivoClinico = 'disponible' | 'ausente' | 'sin-verificar';
+
+export async function consultarArchivoClinico(
   relativePath: string,
   options?: { contentType?: string; probe?: 'regenerable' | 'external' },
-): Promise<boolean> {
+): Promise<EstadoArchivoClinico> {
   try {
     const url = buildClinicalFileUrl(relativePath);
     const headers = options?.probe
@@ -53,14 +60,23 @@ export async function headClinicalFile(
       : undefined;
     const res = await axios.head(url, { ...authRequestConfig(), headers });
     if (res.status !== 200) {
-      return false;
+      return 'sin-verificar';
     }
     if (options?.contentType) {
       const contentType = res.headers['content-type'] as string | undefined;
-      return contentType?.includes(options.contentType) ?? false;
+      return contentType?.includes(options.contentType) ? 'disponible' : 'ausente';
     }
-    return true;
-  } catch {
-    return false;
+    return 'disponible';
+  } catch (error) {
+    return axios.isAxiosError(error) && error.response?.status === 404
+      ? 'ausente'
+      : 'sin-verificar';
   }
+}
+
+export async function headClinicalFile(
+  relativePath: string,
+  options?: { contentType?: string; probe?: 'regenerable' | 'external' },
+): Promise<boolean> {
+  return (await consultarArchivoClinico(relativePath, options)) === 'disponible';
 }
