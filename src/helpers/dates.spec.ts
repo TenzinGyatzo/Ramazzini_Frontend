@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  formatearFechaDDMMAAAA,
   calcularEdad,
   calcularEdadPrecisa,
   calcularAntiguedad,
@@ -211,5 +212,20 @@ describe('calcularEdad / calcularAntiguedad con fechaReferencia', () => {
     const fechaIngreso = '2020-01-10';
     expect(calcularAntiguedad(fechaIngreso, '2020-01-12')).toBe('Nuevo Ingreso');
     expect(calcularAntiguedad(fechaIngreso, '2020-01-20')).toMatch(/semana/);
+  });
+});
+
+describe('formatearFechaDDMMAAAA', () => {
+  it('formatea fechas guardadas a medianoche UTC sin correr el día', () => {
+    expect(formatearFechaDDMMAAAA('1990-05-01T00:00:00.000Z')).toBe('01/05/1990');
+    expect(formatearFechaDDMMAAAA('2024-12-31')).toBe('31/12/2024');
+    expect(formatearFechaDDMMAAAA(new Date(Date.UTC(2001, 0, 9)))).toBe('09/01/2001');
+  });
+
+  it('devuelve vacío si no hay fecha válida', () => {
+    expect(formatearFechaDDMMAAAA(undefined)).toBe('');
+    expect(formatearFechaDDMMAAAA(null)).toBe('');
+    expect(formatearFechaDDMMAAAA('')).toBe('');
+    expect(formatearFechaDDMMAAAA('no es fecha')).toBe('');
   });
 });

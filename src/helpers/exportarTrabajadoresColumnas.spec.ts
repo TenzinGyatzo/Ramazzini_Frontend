@@ -6,6 +6,7 @@ import {
   getDefaultColumnKeys,
   getPresetColumnKeys,
   isEmptyExportCell,
+  ordenarColumnasParaArchivo,
 } from '@/helpers/exportarTrabajadoresColumnas';
 
 describe('exportarTrabajadoresColumnas', () => {
@@ -81,11 +82,72 @@ describe('exportarTrabajadoresColumnas', () => {
     expect(keys).not.toContain('paisResidencia');
   });
 
-  it('preset Identificación incluye folio solo en SIRES', () => {
-    expect(getPresetColumnKeys('identificacion', true)).toContain('folio');
-    expect(getPresetColumnKeys('identificacion', false)).not.toContain('folio');
-    expect(getPresetColumnKeys('identificacion', false)).toContain('curp');
-    expect(getPresetColumnKeys('identificacion', false)).toContain('nss');
+  const PLANTILLA_SIN_REGIMEN = [
+    'numeroEmpleado',
+    'nss',
+    'primerApellido',
+    'segundoApellido',
+    'nombre',
+    'fechaNacimiento',
+    'sexo',
+    'escolaridad',
+    'puesto',
+    'fechaIngreso',
+    'telefono',
+    'estadoCivil',
+  ];
+
+  it('preset Identificación en SIN_REGIMEN: columnas de la plantilla de importación', () => {
+    const keys = getPresetColumnKeys('identificacion', false);
+    expect(ordenarColumnasParaArchivo(keys, false)).toEqual(PLANTILLA_SIN_REGIMEN);
+  });
+
+  it('preset Identificación en SIRES suma CURP, folio y geo después de la plantilla', () => {
+    const keys = getPresetColumnKeys('identificacion', true);
+    expect(ordenarColumnasParaArchivo(keys, true)).toEqual([
+      ...PLANTILLA_SIN_REGIMEN,
+      'curp',
+      'folio',
+      'entidadNacimiento',
+      'paisNacimiento',
+      'entidadResidencia',
+      'municipioResidencia',
+      'localidadResidencia',
+      'paisResidencia',
+    ]);
+  });
+
+  it('el archivo usa el orden de la plantilla aunque se seleccionen en otro orden', () => {
+    expect(
+      ordenarColumnasParaArchivo(
+        ['estadoCivil', 'nombre', 'fechaIngreso', 'nss', 'fechaNacimiento', 'numeroEmpleado'],
+        false,
+      ),
+    ).toEqual(['numeroEmpleado', 'nss', 'nombre', 'fechaNacimiento', 'fechaIngreso', 'estadoCivil']);
+  });
+
+  it('el preset Básico conserva su orden en el archivo', () => {
+    expect(ordenarColumnasParaArchivo(getDefaultColumnKeys(false), false)).toEqual([
+      'primerApellido',
+      'segundoApellido',
+      'nombre',
+      'edad',
+      'sexo',
+      'puesto',
+      'antiguedad',
+      'estadoLaboral',
+      'consultas',
+      'aptitud',
+    ]);
+  });
+
+  it('edad y antigüedad van junto a su fecha; el resto, en orden del catálogo', () => {
+    expect(
+      ordenarColumnasParaArchivo(
+        ['aptitud', 'antiguedad', 'fechaIngreso', 'edad', 'fechaNacimiento', 'imc', 'nombre'],
+        false,
+      ),
+    ).toEqual(['nombre', 'fechaNacimiento', 'edad', 'fechaIngreso', 'antiguedad', 'imc', 'aptitud']);
   });
 
   it('isEmptyExportCell reconoce vacíos y guion', () => {

@@ -1,8 +1,8 @@
 import * as xlsx from 'xlsx';
 import {
   cellValueForColumn,
-  filterColumnKeysForRegime,
   headerForKey,
+  ordenarColumnasParaArchivo,
 } from '@/helpers/exportarTrabajadoresColumnas';
 
 export type ExportarTrabajadoresResult =
@@ -38,8 +38,8 @@ function calcularAnchosColumnas(
 }
 
 /**
- * Exporta trabajadores a Excel con las columnas indicadas (orden del catálogo).
- * `columnKeys` debe venir ya filtrado por régimen; se reordena por catálogo.
+ * Exporta trabajadores a Excel con las columnas indicadas.
+ * Se filtran por régimen y se ordenan como la plantilla de importación (ver `ordenarColumnasParaArchivo`).
  */
 export function exportarTrabajadoresDesdeFrontend(
   trabajadoresFiltrados: any[],
@@ -47,7 +47,7 @@ export function exportarTrabajadoresDesdeFrontend(
   columnKeys: string[] = [],
   isSIRES = false,
 ): ExportarTrabajadoresResult {
-  const orderedKeys = filterColumnKeysForRegime(columnKeys, isSIRES);
+  const orderedKeys = ordenarColumnasParaArchivo(columnKeys, isSIRES);
   if (orderedKeys.length === 0) return { ok: false, reason: 'no_columns' };
 
   const tieneNumerosEmpleadoValidos = trabajadoresFiltrados.some((t) =>

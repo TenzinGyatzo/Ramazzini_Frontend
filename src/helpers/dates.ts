@@ -427,6 +427,19 @@ function getRegistrationBirthDateInputBounds(
  * Hoy en la hora del usuario, «AAAA-MM-DD». No usar `new Date().toISOString().slice(0, 10)`:
  * eso es la fecha en UTC, que por la noche en México ya es el día siguiente.
  */
+/** Fecha sin hora en dd/mm/aaaa, sin corrimiento por zona horaria; '' si no es válida. */
+function formatearFechaDDMMAAAA(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  try {
+    const d = parseDateOnlyValue(date);
+    const dia = String(d.getDate()).padStart(2, '0');
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    return `${dia}/${mes}/${d.getFullYear()}`;
+  } catch {
+    return '';
+  }
+}
+
 function fechaLocalHoy(ahora: Date = new Date()): string {
   const dosDigitos = (n: number) => String(n).padStart(2, '0');
   return `${ahora.getFullYear()}-${dosDigitos(ahora.getMonth() + 1)}-${dosDigitos(ahora.getDate())}`;
@@ -434,6 +447,7 @@ function fechaLocalHoy(ahora: Date = new Date()): string {
 
 export {
   fechaLocalHoy,
+  formatearFechaDDMMAAAA,
   convertirFechaISOaDDMMYYYY,
   convertirFechaISOaYYYYMMDD,
   convertirFechaISOaDDMesYYYY,

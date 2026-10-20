@@ -1,5 +1,10 @@
 import { categoriaDeAudiometriaExterna, resultadoDeAudiometriaExterna } from './audiometriaExternaEnTabla';
-import { calcularEdad, calcularAntiguedad, determinarVistaCorregida } from '@/helpers/dates';
+import {
+  calcularEdad,
+  calcularAntiguedad,
+  determinarVistaCorregida,
+  formatearFechaDDMMAAAA,
+} from '@/helpers/dates';
 
 function mapAudiometria(row: any): string {
   const resumen = row.audiometriaResumen || null;
@@ -82,10 +87,12 @@ export function mapTrabajadorParaExportExcel(
     nombre: row.nombre,
     nss: row.nss || '',
     curp: row.curp || '',
+    fechaNacimiento: formatearFechaDDMMAAAA(row.fechaNacimiento),
     edad: calcularEdad(row.fechaNacimiento),
     sexo: row.sexo,
     escolaridad: row.escolaridad,
     puesto: row.puesto,
+    fechaIngreso: formatearFechaDDMMAAAA(row.fechaIngreso),
     antiguedad: calcularAntiguedad(row.fechaIngreso),
     telefono: row.telefono,
     estadoCivil: row.estadoCivil,

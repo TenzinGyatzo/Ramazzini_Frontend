@@ -74,16 +74,34 @@ const PRESET_KEYS: Record<ExportPresetId, string[]> = {
     'rayosXRc',
     'laboratorioRc',
   ],
+  // Mismas columnas y orden que la plantilla de importación de SIN_REGIMEN
   identificacion: [
-    'curp',
     'numeroEmpleado',
+    'nss',
     'primerApellido',
     'segundoApellido',
     'nombre',
-    'nss',
-    'folio',
+    'fechaNacimiento',
+    'sexo',
+    'escolaridad',
     'puesto',
-    'estadoLaboral',
+    'fechaIngreso',
+    'telefono',
+    'estadoCivil',
+  ],
+};
+
+/** Columnas que el preset suma en SIRES (las de la plantilla SIRES, más el folio) */
+const PRESET_KEYS_SIRES_EXTRA: Partial<Record<ExportPresetId, string[]>> = {
+  identificacion: [
+    'curp',
+    'folio',
+    'entidadNacimiento',
+    'paisNacimiento',
+    'entidadResidencia',
+    'municipioResidencia',
+    'localidadResidencia',
+    'paisResidencia',
   ],
 };
 
@@ -105,6 +123,7 @@ export const EXPORT_COLUMNAS_CATALOGO: ExportColumnDef[] = [
   { key: 'nss', header: 'NSS', group: 'Identificación' },
   { key: 'folio', header: 'Folio', group: 'Identificación', siresOnly: true },
   // Demográficos
+  { key: 'fechaNacimiento', header: 'Fecha de Nacimiento', group: 'Demográficos' },
   { key: 'edad', header: 'Edad', group: 'Demográficos', defaultSelected: true },
   { key: 'sexo', header: 'Sexo', group: 'Demográficos', defaultSelected: true },
   { key: 'escolaridad', header: 'Escolaridad', group: 'Demográficos' },
@@ -119,6 +138,7 @@ export const EXPORT_COLUMNAS_CATALOGO: ExportColumnDef[] = [
   { key: 'paisResidencia', header: 'País de Residencia', group: 'Nacimiento / Residencia', siresOnly: true },
   // Laboral
   { key: 'puesto', header: 'Puesto', group: 'Laboral', defaultSelected: true },
+  { key: 'fechaIngreso', header: 'Fecha de Ingreso', group: 'Laboral' },
   { key: 'antiguedad', header: 'Antigüedad', group: 'Laboral', defaultSelected: true },
   { key: 'agentesRiesgo', header: 'Agentes de Riesgo', group: 'Laboral' },
   { key: 'estadoLaboral', header: 'Estado Laboral', group: 'Laboral', defaultSelected: true },
@@ -173,7 +193,48 @@ export function getDefaultColumnKeys(isSIRES: boolean): string[] {
 }
 
 export function getPresetColumnKeys(presetId: ExportPresetId, isSIRES: boolean): string[] {
-  return filterColumnKeysForRegime(PRESET_KEYS[presetId] ?? [], isSIRES);
+  const extra = isSIRES ? (PRESET_KEYS_SIRES_EXTRA[presetId] ?? []) : [];
+  return filterColumnKeysForRegime([...(PRESET_KEYS[presetId] ?? []), ...extra], isSIRES);
+}
+
+/**
+ * Orden de las columnas en el archivo: primero las de la plantilla de importación
+ * (SIN_REGIMEN y luego las que agrega SIRES), con edad y antigüedad junto a su fecha;
+ * el resto, en el orden del catálogo. El modal conserva el orden del catálogo.
+ */
+const ORDEN_PLANTILLA_ARCHIVO = [
+  'numeroEmpleado',
+  'nss',
+  'primerApellido',
+  'segundoApellido',
+  'nombre',
+  'fechaNacimiento',
+  'edad',
+  'sexo',
+  'escolaridad',
+  'puesto',
+  'fechaIngreso',
+  'antiguedad',
+  'telefono',
+  'estadoCivil',
+  'curp',
+  'folio',
+  'entidadNacimiento',
+  'paisNacimiento',
+  'entidadResidencia',
+  'municipioResidencia',
+  'localidadResidencia',
+  'paisResidencia',
+];
+
+export function ordenarColumnasParaArchivo(keys: string[], isSIRES: boolean): string[] {
+  const seleccion = new Set(filterColumnKeysForRegime(keys, isSIRES));
+  const plantilla = ORDEN_PLANTILLA_ARCHIVO.filter((k) => seleccion.has(k));
+  const enPlantilla = new Set(ORDEN_PLANTILLA_ARCHIVO);
+  const resto = getColumnasDisponibles(isSIRES)
+    .map((c) => c.key)
+    .filter((k) => seleccion.has(k) && !enPlantilla.has(k));
+  return [...plantilla, ...resto];
 }
 
 export function filterColumnKeysForRegime(keys: string[], isSIRES: boolean): string[] {
