@@ -23,6 +23,7 @@ export interface OpcionesProveedor {
   /** Incapacidades solo existen para proveedores de México. */
   esMexico: boolean;
   controlPrenatalHabilitado: boolean;
+  /** Con el inventario apagado el permiso se sigue mostrando: aplica en cuanto se active. */
   inventarioHabilitado: boolean;
 }
 
@@ -33,7 +34,6 @@ export function permisosGeneralesVisibles(opciones: OpcionesProveedor): Permissi
   return PERMISSION_KEYS.filter((key) => {
     if (key.startsWith('gestionarDocumentos') || key === 'gestionarOtrosDocumentos') return false;
     if (key === 'accesoRiesgosTrabajo') return opciones.esMexico;
-    if (key === 'gestionarInventario') return opciones.inventarioHabilitado;
     return true;
   });
 }

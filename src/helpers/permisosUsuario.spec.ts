@@ -21,6 +21,7 @@ import {
   gruposVisibles,
   motivoBloqueoDocumento,
   permisosEditablesDe,
+  permisosGeneralesVisibles,
   predeterminadosDelRol,
 } from './permisosUsuario';
 
@@ -39,6 +40,14 @@ describe('grupos de permisos por documento', () => {
     const sinPrenatal = gruposVisibles({ ...opciones, controlPrenatalHabilitado: false });
     expect(sinPrenatal.flatMap((g) => g.tipos)).not.toContain('controlPrenatal');
     expect(sinPrenatal.map((g) => g.id)).not.toContain('materna');
+  });
+});
+
+describe('permisos generales visibles', () => {
+  it('el inventario se muestra aunque el proveedor lo tenga apagado; incapacidades solo en México', () => {
+    const apagado = permisosGeneralesVisibles({ ...opciones, inventarioHabilitado: false, esMexico: false });
+    expect(apagado).toContain('gestionarInventario');
+    expect(apagado).not.toContain('accesoRiesgosTrabajo');
   });
 });
 

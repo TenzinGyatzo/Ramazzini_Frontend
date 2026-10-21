@@ -713,13 +713,21 @@ const { mostrarConfirmacion: mostrarConfirmacionSalida, responderDescarte } =
                   descripcion="Registrar y consultar las incapacidades de los trabajadores, con sus diagnósticos."
                   :bloqueo="motivoBloqueoGeneral(seleccionado.role, 'accesoRiesgosTrabajo')"
                 />
-                <FilaPermiso
-                  v-if="opciones.inventarioHabilitado"
-                  v-model="seleccionado.editables.generales.gestionarInventario"
-                  icono="fas fa-boxes-stacked"
-                  titulo="Inventario clínico"
-                  descripcion="Registrar entradas, ajustes y bajas, y editar el catálogo."
-                />
+                <div>
+                  <FilaPermiso
+                    v-model="seleccionado.editables.generales.gestionarInventario"
+                    icono="fas fa-boxes-stacked"
+                    titulo="Inventario clínico"
+                    descripcion="Registrar entradas, ajustes y bajas, y editar el catálogo."
+                  />
+                  <!-- El permiso se guarda aunque el módulo esté apagado; aplica en cuanto se active -->
+                  <p v-if="!opciones.inventarioHabilitado" class="permisos-inventario-apagado ml-10 mb-2 text-xs text-gray-500">
+                    El inventario está desactivado en tu cuenta; este permiso aplicará cuando lo actives.
+                    <router-link :to="{ name: 'inventario-catalogo' }" class="font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                      Activar inventario
+                    </router-link>
+                  </p>
+                </div>
               </div>
             </div>
 
