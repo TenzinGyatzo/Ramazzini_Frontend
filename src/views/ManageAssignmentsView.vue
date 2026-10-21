@@ -459,8 +459,8 @@ const { mostrarConfirmacion: mostrarConfirmacionSalida, responderDescarte } =
                       <span class="text-xs sm:text-sm font-medium text-amber-800">Para asignación granular</span>
                     </div>
                     <p class="text-[11px] sm:text-xs text-amber-700 leading-snug">
-                      Si deseas asignar empresas y centros específicos, primero debes deshabilitar el permiso 
-                      <strong>"Acceso Completo a Empresas y Centros"</strong> en la gestión de permisos.
+                      Si deseas asignar empresas y centros específicos, primero elige
+                      <strong>«Solo las que le asignes»</strong> en sus permisos.
                     </p>
                   </div>
                 </div>

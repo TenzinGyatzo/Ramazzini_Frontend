@@ -21,6 +21,10 @@ export function usePermissionRestrictions() {
     canManageDocumentosExternos,
     canManageOtrosDocumentos,
     canAccessRiesgosTrabajo,
+    canAnularEliminarDocumentos,
+    canEliminarFusionarTrabajadores,
+    canManageAnyDocumentType,
+    canManageAllDocumentTypes,
     canCreateDocument,
     isDocumentRestricted,
     getRestrictionMessage,
@@ -76,8 +80,11 @@ export function usePermissionRestrictions() {
     return true;
   };
 
-  const validateDocumentCreation = (documentType: string): boolean => {
-    if (!canCreateDocument(documentType)) {
+  const validateDocumentCreation = (
+    documentType: string,
+    documentoOrigenTipo?: string | null,
+  ): boolean => {
+    if (!canCreateDocument(documentType, documentoOrigenTipo)) {
       toast?.open({
         message: getRestrictionMessage(documentType),
         type: 'error',
@@ -128,8 +135,30 @@ export function usePermissionRestrictions() {
     if (validateRiesgosTrabajo(action)) callback();
   };
 
-  const executeIfCanCreateDocument = (documentType: string, callback: () => void) => {
-    if (validateDocumentCreation(documentType)) callback();
+  const executeIfCanCreateDocument = (
+    documentType: string,
+    callback: () => void,
+    documentoOrigenTipo?: string | null,
+  ) => {
+    if (validateDocumentCreation(documentType, documentoOrigenTipo)) callback();
+  };
+
+  /** Anular o eliminar: el permiso del documento y, además, el de anular y eliminar. */
+  const executeIfCanAnularEliminarDocument = (
+    documentType: string,
+    callback: () => void,
+    documentoOrigenTipo?: string | null,
+  ) => {
+    if (!validateDocumentCreation(documentType, documentoOrigenTipo)) return;
+    if (!canAnularEliminarDocumentos.value) {
+      toast?.open({
+        message: 'No tienes permiso para anular ni eliminar documentos.',
+        type: 'warning',
+        position: 'top-right',
+      });
+      return;
+    }
+    callback();
   };
 
   const executeIfCanManageDocumentosExternos = (callback: () => void, action: string = 'gestionar documentos externos') => {
@@ -173,6 +202,10 @@ export function usePermissionRestrictions() {
     canManageDocumentosEvaluacion,
     canManageDocumentosExternos,
     canManageOtrosDocumentos,
+    canAnularEliminarDocumentos,
+    canEliminarFusionarTrabajadores,
+    canManageAnyDocumentType,
+    canManageAllDocumentTypes,
     canCreateDocument,
     isDocumentRestricted,
     getRestrictionMessage,
@@ -190,6 +223,7 @@ export function usePermissionRestrictions() {
     executeIfCanManageTrabajadores,
     executeIfCanAccessRiesgosTrabajo,
     executeIfCanCreateDocument,
+    executeIfCanAnularEliminarDocument,
     executeIfCanManageDocumentosExternos,
     executeIfCanManageOtrosDocumentos,
     executeIfCanManageDocumentosDiagnostico,

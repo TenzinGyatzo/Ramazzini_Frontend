@@ -219,8 +219,10 @@ const user = computed(() => userStore.user ?? {});
 // Composables de permisos — misma matriz que backend assertCanManageDocument
 const {
   canCreateDocument,
+  canAnularEliminarDocumentos,
   getRestrictionMessage,
   executeIfCanCreateDocument,
+  executeIfCanAnularEliminarDocument,
 } = usePermissionRestrictions();
 
 const mostrarModalPdfEliminado = ref(false);
@@ -254,7 +256,16 @@ const hideTooltip = () => {
 const emit = defineEmits(['eliminarDocumento', 'abrirModalAnular', 'abrirModalUpdate', 'closeModalUpdate', 'openSubscriptionModal', 'abrirModalFinalizar']);
 
 /** Permiso canónico por tipo (gestionar = editar / finalizar / anular / eliminar). */
-const canManageThisDocument = computed(() => canCreateDocument(props.documentoTipo));
+// La nota aclaratoria se rige por el documento que aclara
+const documentoOrigenTipo = computed(() =>
+  typeof props.notaAclaratoria === 'object' ? props.notaAclaratoria?.documentoOrigenTipo ?? null : null,
+);
+const canManageThisDocument = computed(() =>
+  canCreateDocument(props.documentoTipo, documentoOrigenTipo.value),
+);
+const canAnularEliminarThisDocument = computed(
+  () => canManageThisDocument.value && canAnularEliminarDocumentos.value,
+);
 
 const handleEditDocument = (documentoId, documentoTipo) => {
   // Consulta (Ver) en documentos inmutables: sin exigir permiso de gestionar
@@ -264,7 +275,7 @@ const handleEditDocument = (documentoId, documentoTipo) => {
   }
   executeIfCanCreateDocument(documentoTipo, () => {
     editarDocumento(documentoId, documentoTipo);
-  });
+  }, documentoOrigenTipo.value);
 };
 
 const handleEditDocumentoExterno = async () => {
@@ -291,15 +302,15 @@ const getResultadoTipoLabel = (tipoEstudio) => {
 };
 
 const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
-  executeIfCanCreateDocument(documentoTipo, () => {
+  executeIfCanAnularEliminarDocument(documentoTipo, () => {
     emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
-  });
+  }, documentoOrigenTipo.value);
 };
 
 const handleAnularDocument = (documentoId, documentoNombre, documentoTipo) => {
-  executeIfCanCreateDocument(documentoTipo, () => {
+  executeIfCanAnularEliminarDocument(documentoTipo, () => {
     emit('abrirModalAnular', documentoId, documentoNombre, documentoTipo);
-  });
+  }, documentoOrigenTipo.value);
 };
 
 const editarDocumento = (documentoId, documentoTipo) => {
@@ -2358,6 +2369,9 @@ const deleteAnularActionTooltip = computed(() => {
   }
   if (!canManageThisDocument.value) {
     return getRestrictionMessage(props.documentoTipo);
+  }
+  if (!canAnularEliminarThisDocument.value) {
+    return 'No tienes permiso para anular ni eliminar documentos';
   }
   return isAnulacion.value ? 'Anular documento' : 'Eliminar documento';
 });
@@ -5720,11 +5734,11 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                 <button type="button"
                     :class="[
                         'documento-item-action inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canManageThisDocument && !isAnulado && !adminNoPuedeEliminar
+                        canAnularEliminarThisDocument && !isAnulado && !adminNoPuedeEliminar
                             ? 'documento-item-action--delete bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110'
                             : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
-                    :disabled="!canManageThisDocument || isAnulado || adminNoPuedeEliminar"
+                    :disabled="!canAnularEliminarThisDocument || isAnulado || adminNoPuedeEliminar"
                     @click="isAnulacion ? handleAnularDocument(documentoId, documentoNombre, documentoTipo) : handleDeleteDocument(documentoId, documentoNombre, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, deleteAnularActionTooltip)"
                     @mouseleave="hideTooltip">

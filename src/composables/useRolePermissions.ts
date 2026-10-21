@@ -2,7 +2,10 @@ import { computed } from 'vue';
 import { useUserStore } from '@/stores/user';
 import {
   type PermissionKey,
+  DOCUMENT_PERMISSION_KEYS,
+  RESULTADO_CLINICO_PERMISSION,
   canCreateDocumentType,
+  canManageDocumentPermission,
   getDocumentRestrictionMessage,
   getPermissionBlockReason,
   hasBypassRole,
@@ -30,11 +33,25 @@ export function useRolePermissions() {
     );
   }
 
-  function canCreateDocument(documentType: string): boolean {
+  /** La nota aclaratoria se revisa contra el documento que aclara (documentoOrigenTipo). */
+  function canCreateDocument(
+    documentType: string,
+    documentoOrigenTipo?: string | null,
+  ): boolean {
     return canCreateDocumentType(
       userRole.value,
       userPermisos.value,
       documentType,
+      userPerfilProfesional.value,
+      documentoOrigenTipo,
+    );
+  }
+
+  function canManageDocumentKey(key: string): boolean {
+    return canManageDocumentPermission(
+      userRole.value,
+      userPermisos.value,
+      key,
       userPerfilProfesional.value,
     );
   }
@@ -107,6 +124,23 @@ export function useRolePermissions() {
     ),
     canConfigurarOrdenDocumentos: computed(() =>
       canManagePermission('configurarOrdenDocumentos'),
+    ),
+    canAnularEliminarDocumentos: computed(() =>
+      canManagePermission('anularEliminarDocumentos'),
+    ),
+    canEliminarFusionarTrabajadores: computed(
+      () =>
+        canManagePermission('gestionarTrabajadores') &&
+        canManagePermission('eliminarFusionarTrabajadores'),
+    ),
+    canManageResultadosClinicos: computed(() =>
+      canManageDocumentKey(RESULTADO_CLINICO_PERMISSION),
+    ),
+    canManageAnyDocumentType: computed(() =>
+      DOCUMENT_PERMISSION_KEYS.some(canManageDocumentKey),
+    ),
+    canManageAllDocumentTypes: computed(() =>
+      DOCUMENT_PERMISSION_KEYS.every(canManageDocumentKey),
     ),
     canCreateDocument,
     isDocumentRestricted,

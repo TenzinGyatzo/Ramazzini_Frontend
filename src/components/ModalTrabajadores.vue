@@ -31,6 +31,7 @@ import {
   resolveWorkerPersonNameRegime,
 } from '@/helpers/normalizeWorkerPersonName';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
+import { useRolePermissions } from '@/composables/useRolePermissions';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
@@ -1010,6 +1011,8 @@ function posponerRevisionDuplicado() {
   forceClose();
 }
 
+const { canEliminarFusionarTrabajadores } = useRolePermissions();
+
 function abrirFusionDesdeAlta() {
   showFusionModal.value = true;
 }
@@ -1304,6 +1307,7 @@ const {
             </p>
             <div class="flex flex-wrap gap-2 mt-3">
               <button
+                v-if="canEliminarFusionarTrabajadores"
                 type="button"
                 class="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-xs hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                 @click="abrirFusionDesdeAlta"

@@ -321,7 +321,8 @@ const inicializarDesdeRuta = () => {
     return;
   }
 
-  if (tipoDocumento.value && !canCreateDocument(tipoDocumento.value)) {
+  const documentoOrigenTipo = route.query.documentoOrigenTipo || null;
+  if (tipoDocumento.value && !canCreateDocument(tipoDocumento.value, documentoOrigenTipo)) {
     console.warn(`Acceso no autorizado: ${tipoDocumento.value}`);
     router.push({
       name: 'expediente-medico',

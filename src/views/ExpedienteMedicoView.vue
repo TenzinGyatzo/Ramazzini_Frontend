@@ -102,14 +102,19 @@ const { fetchBorradoresPendientes, invalidateBorradoresNotaMedicaCache } =
 
 const {
   canCreateDocument,
+  canAnularEliminarDocumentos,
   getRestrictionMessage,
   executeIfCanManageDocumentosExternos,
   executeIfCanManageTrabajadores,
 } = usePermissionRestrictions();
+
+// La nota aclaratoria ya la revisó su fila contra el documento que aclara (aquí no se conoce)
+const puedeGestionarTipo = (documentType: string) =>
+  documentType === 'notaAclaratoria' || canCreateDocument(documentType);
 const { canManageTrabajadores, canAccessRiesgosTrabajo } = useUserPermissions();
-// Los resultados clínicos usan el mismo permiso que los documentos de evaluación
+// Los resultados clínicos se otorgan con los estudios (antes, con los documentos de evaluación)
 const {
-  canManageDocumentosEvaluacion: canManageResultadosClinicos,
+  canManageResultadosClinicos,
   canConfigurarOrdenDocumentos,
 } = useRolePermissions();
 const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
@@ -326,7 +331,7 @@ const toggleFinalizeModal = (
     return;
   }
 
-  if (documentType && !canCreateDocument(documentType)) {
+  if (documentType && !puedeGestionarTipo(documentType)) {
     toast.open({
       message: getRestrictionMessage(documentType),
       type: 'error',
@@ -354,9 +359,18 @@ const toggleAnularModal = (
     return;
   }
 
-  if (documentType && !canCreateDocument(documentType)) {
+  if (documentType && !puedeGestionarTipo(documentType)) {
     toast.open({
       message: getRestrictionMessage(documentType),
+      type: 'error',
+      position: 'top-right',
+    });
+    return;
+  }
+
+  if (!canAnularEliminarDocumentos.value) {
+    toast.open({
+      message: 'No tienes permiso para anular ni eliminar documentos.',
       type: 'error',
       position: 'top-right',
     });

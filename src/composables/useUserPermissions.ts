@@ -16,6 +16,9 @@ export function useUserPermissions() {
     canAccessCompletoEmpresasCentros,
     canAccessDashboardSalud,
     canAccessRiesgosTrabajo,
+    canAnularEliminarDocumentos,
+    canEliminarFusionarTrabajadores,
+    canManageResultadosClinicos,
   } = useRolePermissions();
 
   return {
@@ -34,5 +37,8 @@ export function useUserPermissions() {
     canAccessCompletoEmpresasCentros,
     canAccessDashboardSalud,
     canAccessRiesgosTrabajo,
+    canAnularEliminarDocumentos,
+    canEliminarFusionarTrabajadores,
+    canManageResultadosClinicos,
   };
 }

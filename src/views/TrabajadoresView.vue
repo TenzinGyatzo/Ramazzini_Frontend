@@ -79,7 +79,12 @@ const trabajadores = useTrabajadoresStore();
 const modalResumenImportacion = useModalResumenImportacionStore();
 const route = useRoute();
 const router = useRouter();
-const { canManageTrabajadores, canManageCentrosTrabajo, canAccessDashboardSalud } = useUserPermissions();
+const {
+  canManageTrabajadores,
+  canManageCentrosTrabajo,
+  canAccessDashboardSalud,
+  canEliminarFusionarTrabajadores,
+} = useUserPermissions();
 const { executeIfCanManageTrabajadores, executeIfCanManageCentrosTrabajo } = usePermissionRestrictions();
 const { isSIRES } = useRegulatoryPolicy();
 
@@ -175,6 +180,13 @@ function resolverCandidatoDuplicado(trabajadorId: string): string | null {
 }
 
 function abrirFusion(trabajadorId: string, candidatoId?: string) {
+  if (!canEliminarFusionarTrabajadores.value) {
+    toast?.open({
+      message: 'No tienes permiso para fusionar trabajadores.',
+      type: 'warning',
+    });
+    return;
+  }
   executeIfCanManageTrabajadores(() => {
     fusionTrabajadorA.value = trabajadorId;
     fusionTrabajadorB.value = candidatoId ?? '';
@@ -1161,7 +1173,7 @@ const toggleVigencias = () => {
             Solo duplicados
           </label>
           <button
-            v-if="duplicadosPendientes.length"
+            v-if="duplicadosPendientes.length && canEliminarFusionarTrabajadores"
             type="button"
             class="text-sm px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
             @click="abrirFusion(

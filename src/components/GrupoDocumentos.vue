@@ -109,19 +109,15 @@ const emit = defineEmits(['abrirModalUpdate', 'eliminarDocumento', 'abrirModalAn
 
 // Composables de permisos
 const {
-  canManageDocumentosDiagnostico,
-  canManageDocumentosEvaluacion,
-  canManageDocumentosExternos,
-  canManageOtrosDocumentos
+  canManageAnyDocumentType,
+  canManageAllDocumentTypes,
+  canAnularEliminarDocumentos,
 } = usePermissionRestrictions();
 
-// Modo eliminación masiva: exige todos los permisos (incl. otros documentos: control prenatal, nota aclaratoria, cuestionarios psicológicos, etc.)
-const canDeleteAnyDocument = computed(() => {
-  return canManageDocumentosDiagnostico.value &&
-         canManageDocumentosEvaluacion.value &&
-         canManageDocumentosExternos.value &&
-         canManageOtrosDocumentos.value;
-});
+// Modo eliminación masiva: exige poder gestionar todos los tipos de documento y poder eliminar
+const canDeleteAnyDocument = computed(
+  () => canManageAllDocumentTypes.value && canAnularEliminarDocumentos.value,
+);
 
 // Orden por defecto del proveedor y, encima, lo que alguien acomodó a mano en el año (orden y subgrupos)
 const opcionesDeOrden = computed(() => ({ controlPrenatalEnabled: controlPrenatalEnabled.value }));
@@ -207,12 +203,7 @@ const filas = computed(() => {
 });
 
 // Reordenar es presentación: basta con poder gestionar algún tipo de documento
-const puedeOrganizar = computed(() =>
-    canManageDocumentosDiagnostico.value ||
-    canManageDocumentosEvaluacion.value ||
-    canManageDocumentosExternos.value ||
-    canManageOtrosDocumentos.value,
-);
+const puedeOrganizar = computed(() => canManageAnyDocumentType.value);
 
 const hayCambiosDeOrden = computed(() =>
     !!borradorDeOrden.value && huellaDe(borradorDeOrden.value) !== huellaDe(elementosGuardados.value),

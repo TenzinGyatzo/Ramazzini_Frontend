@@ -149,7 +149,12 @@ function terminarReincorporacion(trabajadorId: string) {
   // Si se reincorporó, la lista ya llegó con su nuevo estado y la fila ya se redibujó
   if (fila.any() && (fila.data() as any)?.estadoLaboral === 'Inactivo') fila.invalidate().draw(false);
 }
-const { canManageTrabajadores, executeIfCanManageTrabajadores, executeIfCanAccessRiesgosTrabajo } = usePermissionRestrictions();
+const {
+  canManageTrabajadores,
+  canEliminarFusionarTrabajadores,
+  executeIfCanManageTrabajadores,
+  executeIfCanAccessRiesgosTrabajo,
+} = usePermissionRestrictions();
 const proveedorSaludStore = useProveedorSaludStore();
 /** Las incapacidades son del IMSS: el botón solo existe para proveedores de México. */
 const usaIncapacidades = () => proveedorSaludStore.proveedorSalud?.pais === 'MX';
@@ -987,7 +992,7 @@ function inicializarDataTable() {
                 ` : ''}
 
               <!-- Riesgos / Fusionar (mutuamente excluyentes) -->
-                ${canManageTrabajadores && row.tieneDuplicadoPendiente ? `
+                ${canEliminarFusionarTrabajadores.value && row.tieneDuplicadoPendiente ? `
                 <button
                   type="button"
                   class="btn-fusionar group absolute left-12 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-amber-200 whitespace-nowrap flex items-center overflow-hidden text-sm"
@@ -1015,14 +1020,14 @@ function inicializarDataTable() {
               <!-- Editar -->
                 <button
                   type="button"
-                  ${canManageTrabajadores ? '' : 'disabled'}
+                  ${canManageTrabajadores.value ? '' : 'disabled'}
                   class="btn-editar group absolute left-0 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
-                    canManageTrabajadores 
+                    canManageTrabajadores.value 
                       ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-105 border-sky-100' 
                       : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                   }"
                   data-id="${escapeHtml(row._id)}"
-                  title="${canManageTrabajadores ? 'Editar trabajador' : 'No tienes permisos para editar trabajadores'}"
+                  title="${canManageTrabajadores.value ? 'Editar trabajador' : 'No tienes permisos para editar trabajadores'}"
                 >
                   <i class="fa-regular fa-pen-to-square"></i>
                   <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
@@ -1035,23 +1040,23 @@ function inicializarDataTable() {
                   esInactivo && reincorporando.has(String(row._id))
                     ? botonReincorporando(row._id)
                     : esInactivo
-                    ? `<button type="button" ${canManageTrabajadores ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
-                        canManageTrabajadores 
+                    ? `<button type="button" ${canManageTrabajadores.value ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
+                        canManageTrabajadores.value 
                           ? 'bg-green-100 hover:bg-green-200 text-green-600 hover:scale-105 border-green-100' 
                           : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                       }"
                         data-id="${escapeHtml(row._id)}"
-                        title="${canManageTrabajadores ? 'Dar de alta trabajador' : 'No tienes permisos para cambiar estado laboral de trabajadores'}">
+                        title="${canManageTrabajadores.value ? 'Dar de alta trabajador' : 'No tienes permisos para cambiar estado laboral de trabajadores'}">
                         <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm">Alta</span>
                         <i class="fa-solid fa-person-arrow-up-from-line"></i>
                       </button>`
-                    : `<button type="button" ${canManageTrabajadores ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
-                        canManageTrabajadores 
+                    : `<button type="button" ${canManageTrabajadores.value ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
+                        canManageTrabajadores.value 
                           ? 'bg-orange-100 hover:bg-orange-200 text-orange-600 hover:scale-105 border-orange-100' 
                           : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                       }"
                         data-id="${escapeHtml(row._id)}"
-                        title="${canManageTrabajadores ? 'Dar de baja trabajador' : 'No tienes permisos para cambiar estado laboral de trabajadores'}">
+                        title="${canManageTrabajadores.value ? 'Dar de baja trabajador' : 'No tienes permisos para cambiar estado laboral de trabajadores'}">
                         <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm">Baja</span>
                         <i class="fa-solid fa-person-arrow-down-to-line"></i>
                       </button>`
@@ -1060,15 +1065,15 @@ function inicializarDataTable() {
                 <!-- Eliminar -->
                 <button
                   type="button"
-                  ${canManageTrabajadores ? '' : 'disabled'}
+                  ${canEliminarFusionarTrabajadores.value ? '' : 'disabled'}
                   class="btn-eliminar group absolute right-0 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
-                    canManageTrabajadores 
+                    canEliminarFusionarTrabajadores.value
                       ? 'bg-red-100 hover:bg-red-200 text-red-600 hover:scale-105 border-red-100' 
                       : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                   }"
                   data-id="${escapeHtml(row._id)}"
                   data-nombre="${escapeHtml(row.nombre)}"
-                  title="${canManageTrabajadores ? 'Eliminar trabajador' : 'No tienes permisos para eliminar trabajadores'}"
+                  title="${canEliminarFusionarTrabajadores.value ? 'Eliminar trabajador' : 'No tienes permiso para eliminar trabajadores'}"
                 >
                   <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm order-1">
                     Eliminar
@@ -1197,6 +1202,7 @@ function inicializarDataTable() {
 
       const id = $(this).data('id');
       if (id) {
+        if (!canEliminarFusionarTrabajadores.value) return;
         executeIfCanManageTrabajadores(() => {
           emit('fusionar-duplicado', String(id));
         }, 'fusionar trabajadores');
@@ -1242,6 +1248,7 @@ function inicializarDataTable() {
 
       const id = $(this).data('id');
       const nombre = $(this).data('nombre');
+      if (!canEliminarFusionarTrabajadores.value) return;
       executeIfCanManageTrabajadores(() => {
         emit('eliminar', { id, nombre });
       }, 'eliminar trabajadores');

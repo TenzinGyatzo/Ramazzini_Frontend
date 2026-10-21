@@ -36,6 +36,10 @@ interface User {
     accesoRiesgosTrabajo: boolean;
     gestionarInventario?: boolean;
     configurarOrdenDocumentos?: boolean;
+    anularEliminarDocumentos?: boolean;
+    eliminarFusionarTrabajadores?: boolean;
+    /** Permiso por tipo de documento; sin él rigen las categorías gestionarDocumentos*. */
+    documentos?: Record<string, boolean>;
   };
     cuentaActiva?: boolean;
     empresasAsignadas?: string[];

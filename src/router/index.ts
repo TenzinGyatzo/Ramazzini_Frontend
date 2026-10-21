@@ -348,8 +348,10 @@ router.beforeEach((to, from) => {
       if (to.name === 'crear-documento' && user) {
         const { canCreateDocument } = useUserPermissions();
         const documentType = to.params.tipoDocumento as string;
-        
-        if (!canCreateDocument(documentType)) {
+        // La nota aclaratoria se rige por el documento que aclara
+        const documentoOrigenTipo = (to.query.documentoOrigenTipo as string) || null;
+
+        if (!canCreateDocument(documentType, documentoOrigenTipo)) {
           console.warn(`Acceso denegado: Usuario ${user.username} (${user.role}) no tiene permisos para crear documento ${documentType}`);
           return next({ name: "expediente-medico", params: { 
             idEmpresa: to.params.idEmpresa,
