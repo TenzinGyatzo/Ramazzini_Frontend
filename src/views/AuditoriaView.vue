@@ -185,6 +185,8 @@ async function verifyAudit() {
               <option value="DOC_UPDATE_DRAFT">Doc. borrador actualizado</option>
               <option value="DOC_FINALIZE">Doc. finalizado</option>
               <option value="DOC_ANULATE">Doc. anulado</option>
+              <option value="SIGNED_FORM_CREATED">Formato firmado en pantalla</option>
+              <option value="SIGNED_FORM_CONFIG_UPDATED">Firma en pantalla activada o desactivada</option>
             </optgroup>
             <optgroup label="Accesos">
               <option value="LOGIN_SUCCESS">Login exitoso</option>
