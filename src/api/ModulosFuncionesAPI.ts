@@ -27,7 +27,7 @@ export interface EmpresaIncapacidades {
 
 export default {
   getEstado(): Promise<{ data: EstadoModulosFunciones }> {
-    return api.get('/modulos-funciones');
+    return api.get('/modulos-funciones/estado');
   },
 
   actualizarSemaforizacion(semaforizacionActivada: boolean): Promise<{ data: EstadoModulosFunciones }> {
