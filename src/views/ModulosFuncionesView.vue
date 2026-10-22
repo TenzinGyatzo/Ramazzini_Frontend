@@ -7,11 +7,13 @@
 import { computed, inject, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import FormatosFirmadosAPI from '@/api/FormatosFirmadosAPI';
+import InventarioAPI from '@/api/InventarioAPI';
 import ModulosFuncionesAPI, { type EstadoModulosFunciones } from '@/api/ModulosFuncionesAPI';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { useInventarioStore } from '@/stores/inventario';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
+import type { EmpresaCentrosInventario } from '@/interfaces/inventario.interface';
 
 type Interruptor = 'firma' | 'semaforizacion' | 'inventario';
 
@@ -29,12 +31,89 @@ const puedeConfigurar = computed(
   () => userStore.user?.role === 'Principal' || userStore.user?.role === 'Administrador',
 );
 
+// ---- Inventario por centro de trabajo (docs/modulos-y-funciones-especificacion.md, 3)
+const empresasInventario = ref<EmpresaCentrosInventario[]>([]);
+const panelCentros = ref(false);
+const busquedaCentro = ref('');
+const guardandoCentro = ref<string | null>(null);
+const guardandoAntidoping = ref(false);
+
+const centrosTotales = computed(() => empresasInventario.value.reduce((t, e) => t + e.centros.length, 0));
+const centrosActivos = computed(() =>
+  empresasInventario.value.reduce((t, e) => t + e.centros.filter((c) => c.inventarioHabilitado).length, 0),
+);
+
+/** Sin acentos ni mayúsculas, para que «planta» encuentre «PLANTA Tijuana». */
+const normalizar = (texto: string) =>
+  texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+/** Filas «Empresa · Centro»; la búsqueda mira los dos nombres. */
+const filasCentros = computed(() => {
+  const consulta = normalizar(busquedaCentro.value.trim());
+  return empresasInventario.value.flatMap((empresa) =>
+    empresa.centros
+      .filter(
+        (centro) =>
+          !consulta ||
+          normalizar(`${empresa.nombreEmpresa} ${centro.nombreCentro}`).includes(consulta),
+      )
+      .map((centro) => ({ ...centro, nombreEmpresa: empresa.nombreEmpresa })),
+  );
+});
+
+async function cargarCentrosInventario() {
+  if (!puedeConfigurar.value) return;
+  try {
+    const { data } = await InventarioAPI.getCentros();
+    empresasInventario.value = data;
+  } catch (error) {
+    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudieron cargar los centros de trabajo.'), type: 'error' });
+  }
+}
+
+async function cambiarCentro(idCentroTrabajo: string, inventarioHabilitado: boolean) {
+  if (guardandoCentro.value || !puedeConfigurar.value) return;
+  guardandoCentro.value = idCentroTrabajo;
+  try {
+    const { data } = await InventarioAPI.updateCentros([{ idCentroTrabajo, inventarioHabilitado }]);
+    empresasInventario.value = data;
+    // El resto de la app (centros, nota médica) consulta esta lista
+    await inventarioStore.cargarConfiguracion(true);
+  } catch (error) {
+    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudo guardar el centro.'), type: 'error' });
+  } finally {
+    guardandoCentro.value = null;
+  }
+}
+
+async function cambiarAntidoping() {
+  if (!estado.value || guardandoAntidoping.value || !puedeConfigurar.value) return;
+  const activar = !estado.value.inventarioControlaAntidoping;
+  guardandoAntidoping.value = true;
+  try {
+    await inventarioStore.guardarConfiguracion({ inventarioControlaAntidoping: activar });
+    estado.value.inventarioControlaAntidoping = inventarioStore.controlaAntidoping;
+    toast?.open?.({
+      message: activar ? 'El antidoping ahora descuenta del inventario' : 'El antidoping ya no descuenta del inventario',
+      type: 'success',
+    });
+  } catch (error) {
+    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudo guardar el cambio.'), type: 'error' });
+  } finally {
+    guardandoAntidoping.value = false;
+  }
+}
+
 async function cargar() {
   cargando.value = true;
   errorCarga.value = '';
   try {
     const { data } = await ModulosFuncionesAPI.getEstado();
     estado.value = data;
+    if (data.inventarioHabilitado) await cargarCentrosInventario();
   } catch (error) {
     errorCarga.value = extractApiErrorMessage(error, 'No se pudieron cargar los módulos y funciones.');
   } finally {
@@ -69,6 +148,11 @@ async function cambiar(cual: Interruptor) {
       await inventarioStore.guardarConfiguracion({ inventarioHabilitado: activar });
       estado.value.inventarioHabilitado = inventarioStore.habilitado;
       toast?.open?.({ message: activar ? 'Inventario clínico activado' : 'Inventario clínico desactivado', type: 'success' });
+      if (activar) {
+        await cargarCentrosInventario();
+        // Encendido sin centros no aparece en ningún lado: se abre la lista para elegirlos
+        if (centrosActivos.value === 0) panelCentros.value = true;
+      }
     }
   } catch (error) {
     toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudo guardar el cambio.'), type: 'error' });
@@ -158,8 +242,23 @@ onMounted(cargar);
               Existencias, lotes y caducidades; descuenta lo que se suministra en la nota médica.
             </p>
             <p v-if="estado.inventarioHabilitado" class="modulos-funciones__enlaces">
+              <span
+                v-if="puedeConfigurar"
+                class="modulos-funciones__chip"
+                :class="centrosActivos ? 'modulos-funciones__chip--ok' : 'modulos-funciones__chip--pendiente'"
+              >
+                {{
+                  centrosActivos
+                    ? `En ${centrosActivos} de ${centrosTotales} ${centrosTotales === 1 ? 'centro' : 'centros'} de trabajo`
+                    : 'Elige los centros de trabajo'
+                }}
+              </span>
+              <button v-if="puedeConfigurar" type="button" class="modulos-funciones__enlace" @click="panelCentros = !panelCentros">
+                {{ panelCentros ? 'Ocultar centros' : 'Elegir centros' }}
+              </button>
               <RouterLink :to="{ name: 'inventario-catalogo' }">Catálogo de insumos</RouterLink>
             </p>
+
           </div>
           <button
             type="button"
@@ -171,6 +270,50 @@ onMounted(cargar);
             :disabled="!puedeConfigurar || guardando !== null"
             @click="cambiar('inventario')"
           ></button>
+          <!-- A todo el ancho en celular; bajo el texto en pantallas grandes -->
+          <div v-if="estado.inventarioHabilitado && panelCentros && puedeConfigurar" class="modulos-funciones__panel">
+            <div class="modulos-funciones__panel-cabecera">
+              <span class="font-semibold text-sm">Centros que llevan inventario</span>
+              <input
+                v-model="busquedaCentro"
+                type="search"
+                class="modulos-funciones__buscar"
+                placeholder="Buscar empresa o centro"
+                aria-label="Buscar empresa o centro de trabajo"
+              />
+            </div>
+            <ul class="modulos-funciones__lista">
+              <li v-for="centro in filasCentros" :key="centro.idCentroTrabajo" class="modulos-funciones__fila">
+                <label class="modulos-funciones__fila-etiqueta">
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 accent-emerald-600"
+                    :checked="centro.inventarioHabilitado"
+                    :disabled="guardandoCentro !== null"
+                    :data-centro="centro.idCentroTrabajo"
+                    @change="cambiarCentro(centro.idCentroTrabajo, !centro.inventarioHabilitado)"
+                  />
+                  <span class="min-w-0">{{ centro.nombreEmpresa }} · {{ centro.nombreCentro }}</span>
+                </label>
+                <span class="modulos-funciones__fila-dato">
+                  {{ centro.numeroTrabajadores }} {{ centro.numeroTrabajadores === 1 ? 'trabajador' : 'trabajadores' }}
+                </span>
+              </li>
+              <li v-if="!filasCentros.length" class="modulos-funciones__fila modulos-funciones__fila-dato">
+                {{ busquedaCentro ? 'Ningún centro coincide con la búsqueda.' : 'Todavía no hay centros de trabajo.' }}
+              </li>
+            </ul>
+            <label class="modulos-funciones__antidoping">
+              <input
+                type="checkbox"
+                class="h-4 w-4 accent-emerald-600"
+                :checked="estado.inventarioControlaAntidoping"
+                :disabled="guardandoAntidoping"
+                @change="cambiarAntidoping"
+              />
+              <span>En esos centros, cada antidoping descuenta una prueba (al activarlo se agregan las pruebas al catálogo)</span>
+            </label>
+          </div>
         </article>
       </div>
     </template>
@@ -260,6 +403,121 @@ onMounted(cargar);
 
 .modulos-funciones__switch--on::after {
   transform: translateX(1.25rem);
+}
+
+.modulos-funciones__chip {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.modulos-funciones__chip--ok {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.modulos-funciones__chip--pendiente {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.modulos-funciones__enlace {
+  color: #047857;
+  font-weight: 500;
+}
+
+.modulos-funciones__enlace:hover {
+  text-decoration: underline;
+}
+
+.modulos-funciones__panel {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #f3f4f6;
+}
+
+.modulos-funciones__panel-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+  color: #111827;
+}
+
+.modulos-funciones__buscar {
+  width: 13rem;
+  max-width: 100%;
+  height: 2rem;
+  padding: 0 0.625rem;
+  font-size: 0.8125rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+}
+
+.modulos-funciones__lista {
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+.modulos-funciones__fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.modulos-funciones__fila-etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.modulos-funciones__fila-dato {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.modulos-funciones__antidoping {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.875rem;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .modulos-funciones__panel {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 639px) {
+  .modulos-funciones__fila {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
+  }
+
+  .modulos-funciones__fila-dato {
+    padding-left: 1.5rem;
+  }
 }
 
 .modulos-funciones__switch:disabled {

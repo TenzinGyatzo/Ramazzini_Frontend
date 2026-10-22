@@ -86,7 +86,8 @@ function quitar(indice: number) {
 
 onMounted(async () => {
   await inventario.cargarConfiguracion();
-  if (!inventario.habilitado || !centroId.value) return;
+  // Solo en los centros que llevan inventario
+  if (!inventario.llevaInventario(centroId.value)) return;
 
   const guardados =
     formDataNotaMedica.insumosSuministrados ??
@@ -124,7 +125,7 @@ const campo =
 
 <template>
   <div
-    v-if="inventario.habilitado && cargado"
+    v-if="inventario.llevaInventario(centroId) && cargado"
     class="mt-5 border-t border-gray-200 pt-4 dark:border-slate-700"
     data-testid="insumos-suministrados"
   >

@@ -8,6 +8,7 @@ export const useInventarioStore = defineStore('inventario', () => {
   const habilitado = ref(false);
   const diasAvisoCaducidad = ref(90);
   const controlaAntidoping = ref(false);
+  const centrosConInventario = ref<string[]>([]);
   const cargado = ref(false);
   let cargaEnCurso: Promise<void> | null = null;
 
@@ -15,7 +16,13 @@ export const useInventarioStore = defineStore('inventario', () => {
     habilitado.value = config.inventarioHabilitado === true;
     diasAvisoCaducidad.value = config.inventarioDiasAvisoCaducidad ?? 90;
     controlaAntidoping.value = config.inventarioControlaAntidoping === true;
+    centrosConInventario.value = (config.centrosConInventario ?? []).map(String);
     cargado.value = true;
+  }
+
+  /** El centro lleva inventario: el módulo está encendido y el centro está elegido. */
+  function llevaInventario(centroId: unknown): boolean {
+    return habilitado.value && !!centroId && centrosConInventario.value.includes(String(centroId));
   }
 
   /** Una sola petición por sesión; `forzar` vuelve a consultar. */
@@ -44,6 +51,7 @@ export const useInventarioStore = defineStore('inventario', () => {
     habilitado.value = false;
     diasAvisoCaducidad.value = 90;
     controlaAntidoping.value = false;
+    centrosConInventario.value = [];
     cargado.value = false;
   }
 
@@ -51,6 +59,8 @@ export const useInventarioStore = defineStore('inventario', () => {
     habilitado,
     diasAvisoCaducidad,
     controlaAntidoping,
+    centrosConInventario,
+    llevaInventario,
     cargado,
     cargarConfiguracion,
     guardarConfiguracion,

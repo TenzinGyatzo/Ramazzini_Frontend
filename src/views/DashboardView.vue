@@ -2734,10 +2734,12 @@ let consultaDeInventario = 0;
 
 const cargarInventario = async () => {
   const esta = ++consultaDeInventario;
-  const centros =
+  const centrosElegidos =
     indiceCentroSeleccionado.value === null
       ? centrosTrabajo.value
       : [centrosTrabajo.value[indiceCentroSeleccionado.value]].filter(Boolean);
+  // Solo los centros que llevan inventario
+  const centros = centrosElegidos.filter((c) => inventarioStore.llevaInventario(c._id));
   if (!inventarioStore.habilitado || !centros.length) {
     inventarioDelTablero.value = { consumo: [], existencias: [] };
     return;

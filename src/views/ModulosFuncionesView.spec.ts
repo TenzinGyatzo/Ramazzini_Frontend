@@ -4,15 +4,50 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useUserStore } from '@/stores/user';
 import { useInventarioStore } from '@/stores/inventario';
 
-const { getEstado, actualizarSemaforizacion, actualizarConfiguracionFirma, updateConfiguracionInventario } = vi.hoisted(() => ({
+const {
+  getEstado,
+  actualizarSemaforizacion,
+  actualizarConfiguracionFirma,
+  updateConfiguracionInventario,
+  getConfiguracionInventario,
+  getCentros,
+  updateCentros,
+} = vi.hoisted(() => ({
   getEstado: vi.fn(),
   actualizarSemaforizacion: vi.fn(),
   actualizarConfiguracionFirma: vi.fn(),
   updateConfiguracionInventario: vi.fn(),
+  getConfiguracionInventario: vi.fn(),
+  getCentros: vi.fn(),
+  updateCentros: vi.fn(),
 }));
 vi.mock('@/api/ModulosFuncionesAPI', () => ({ default: { getEstado, actualizarSemaforizacion } }));
 vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { actualizarConfiguracion: actualizarConfiguracionFirma } }));
-vi.mock('@/api/InventarioAPI', () => ({ default: { updateConfiguracion: updateConfiguracionInventario, getConfiguracion: vi.fn() } }));
+vi.mock('@/api/InventarioAPI', () => ({
+  default: {
+    updateConfiguracion: updateConfiguracionInventario,
+    getConfiguracion: getConfiguracionInventario,
+    getCentros,
+    updateCentros,
+  },
+}));
+
+/** Dos empresas y tres centros; solo Planta lleva inventario. */
+const centrosInventario = (plantaActiva = true, oficinasActivas = false) => [
+  {
+    idEmpresa: 'e1',
+    nombreEmpresa: 'Aceros del Norte',
+    centros: [
+      { idCentroTrabajo: 'c1', nombreCentro: 'Planta Tijuana', inventarioHabilitado: plantaActiva, numeroTrabajadores: 312 },
+      { idCentroTrabajo: 'c2', nombreCentro: 'Oficinas', inventarioHabilitado: oficinasActivas, numeroTrabajadores: 48 },
+    ],
+  },
+  {
+    idEmpresa: 'e2',
+    nombreEmpresa: 'Agrícola del Valle',
+    centros: [{ idCentroTrabajo: 'c3', nombreCentro: 'Campo 3', inventarioHabilitado: false, numeroTrabajadores: 1 }],
+  },
+];
 
 import ModulosFuncionesView from './ModulosFuncionesView.vue';
 
@@ -38,6 +73,8 @@ describe('ModulosFuncionesView', () => {
     vi.clearAllMocks();
     useUserStore().user = { _id: 'u1', role: 'Principal' } as any;
     getEstado.mockResolvedValue({ data: { ...ESTADO } });
+    getCentros.mockResolvedValue({ data: centrosInventario() });
+    getConfiguracionInventario.mockResolvedValue({ data: { inventarioHabilitado: true, centrosConInventario: ['c1'] } });
   });
 
   it('muestra primero las funciones y después los módulos, con su estado', async () => {
@@ -94,5 +131,79 @@ describe('ModulosFuncionesView', () => {
     await flushPromises();
     expect(interruptor(w, 'firma').attributes('disabled')).toBeDefined();
     expect(w.text()).toContain('Solo el usuario Principal los cambia');
+  });
+
+  describe('inventario por centro de trabajo', () => {
+    const conInventario = () => getEstado.mockResolvedValue({ data: { ...ESTADO, inventarioHabilitado: true } });
+
+    it('dice en cuántos centros está y deja elegirlos con búsqueda', async () => {
+      conInventario();
+      const w = montar();
+      await flushPromises();
+      const tarjeta = w.find('[data-interruptor="inventario"]');
+      expect(tarjeta.text()).toContain('En 1 de 3 centros de trabajo');
+
+      await tarjeta.findAll('button').find((b) => b.text() === 'Elegir centros')!.trigger('click');
+      const filas = () =>
+        w.findAll('.modulos-funciones__fila').map((f) => [
+          f.find('.modulos-funciones__fila-etiqueta').text(),
+          f.find('.modulos-funciones__fila-dato').text(),
+        ]);
+      expect(filas()).toEqual([
+        ['Aceros del Norte · Planta Tijuana', '312 trabajadores'],
+        ['Aceros del Norte · Oficinas', '48 trabajadores'],
+        ['Agrícola del Valle · Campo 3', '1 trabajador'],
+      ]);
+
+      await w.find('.modulos-funciones__buscar').setValue('agricola');
+      expect(filas()).toEqual([['Agrícola del Valle · Campo 3', '1 trabajador']]);
+    });
+
+    it('marcar un centro lo guarda al instante y actualiza lo que ve el resto de la app', async () => {
+      conInventario();
+      updateCentros.mockResolvedValue({ data: centrosInventario(true, true) });
+      getConfiguracionInventario.mockResolvedValue({ data: { inventarioHabilitado: true, centrosConInventario: ['c1', 'c2'] } });
+      const w = montar();
+      await flushPromises();
+      await w.findAll('button').find((b) => b.text() === 'Elegir centros')!.trigger('click');
+
+      await w.find('[data-centro="c2"]').trigger('change');
+      await flushPromises();
+      expect(updateCentros).toHaveBeenCalledWith([{ idCentroTrabajo: 'c2', inventarioHabilitado: true }]);
+      expect(w.find('[data-interruptor="inventario"]').text()).toContain('En 2 de 3 centros de trabajo');
+      expect(useInventarioStore().llevaInventario('c2')).toBe(true);
+      expect(useInventarioStore().llevaInventario('c3')).toBe(false);
+    });
+
+    it('al encenderlo sin centros elegidos, abre la lista y lo pide', async () => {
+      getCentros.mockResolvedValue({ data: centrosInventario(false) });
+      updateConfiguracionInventario.mockResolvedValue({ data: { inventarioHabilitado: true, centrosConInventario: [] } });
+      const w = montar();
+      await flushPromises();
+      await interruptor(w, 'inventario').trigger('click');
+      await flushPromises();
+      expect(w.find('[data-interruptor="inventario"]').text()).toContain('Elige los centros de trabajo');
+      expect(w.find('.modulos-funciones__panel').exists()).toBe(true);
+    });
+
+    it('el descuento del antidoping se cambia desde la misma tarjeta', async () => {
+      conInventario();
+      updateConfiguracionInventario.mockResolvedValue({ data: { inventarioHabilitado: true, inventarioControlaAntidoping: true, centrosConInventario: ['c1'] } });
+      const w = montar();
+      await flushPromises();
+      await w.findAll('button').find((b) => b.text() === 'Elegir centros')!.trigger('click');
+      await w.find('.modulos-funciones__antidoping input').trigger('change');
+      await flushPromises();
+      expect(updateConfiguracionInventario).toHaveBeenCalledWith({ inventarioControlaAntidoping: true });
+    });
+
+    it('quien no es Principal no consulta la lista de centros', async () => {
+      conInventario();
+      useUserStore().user = { _id: 'u2', role: 'Médico' } as any;
+      const w = montar();
+      await flushPromises();
+      expect(getCentros).not.toHaveBeenCalled();
+      expect(w.find('[data-interruptor="inventario"]').text()).not.toContain('Elegir centros');
+    });
   });
 });

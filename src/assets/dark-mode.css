@@ -4570,3 +4570,39 @@ html.dark-mode .modulos-funciones__texto {
 html.dark-mode .modulos-funciones__enlaces a {
   color: #6ee7b7;
 }
+
+html.dark-mode .modulos-funciones__panel {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+html.dark-mode .modulos-funciones__panel-cabecera,
+html.dark-mode .modulos-funciones__fila,
+html.dark-mode .modulos-funciones__antidoping {
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+html.dark-mode .modulos-funciones__fila-dato {
+  color: #94a3b8;
+}
+
+html.dark-mode .modulos-funciones__buscar {
+  background-color: #1e293b;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+html.dark-mode .modulos-funciones__chip--ok {
+  background-color: rgba(6, 78, 59, 0.6);
+  color: #a7f3d0;
+}
+
+html.dark-mode .modulos-funciones__chip--pendiente {
+  background-color: rgba(120, 53, 15, 0.6);
+  color: #fde68a;
+}
+
+html.dark-mode .modulos-funciones__enlace {
+  color: #6ee7b7;
+}

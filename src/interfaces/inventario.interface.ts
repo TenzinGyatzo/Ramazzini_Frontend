@@ -88,6 +88,20 @@ export interface ConfiguracionInventario {
   inventarioDiasAvisoCaducidad: number;
   /** Cada antidoping descuenta una prueba del inventario. */
   inventarioControlaAntidoping?: boolean;
+  /** Centros que llevan inventario; en los demás el módulo se comporta como apagado. */
+  centrosConInventario?: string[];
+}
+
+/** Para elegir en «Módulos y funciones» qué centros llevan inventario. */
+export interface EmpresaCentrosInventario {
+  idEmpresa: string;
+  nombreEmpresa: string;
+  centros: {
+    idCentroTrabajo: string;
+    nombreCentro: string;
+    inventarioHabilitado: boolean;
+    numeroTrabajadores: number;
+  }[];
 }
 
 export interface PaginaMovimientos {

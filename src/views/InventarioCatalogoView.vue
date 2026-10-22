@@ -60,37 +60,6 @@ onMounted(async () => {
 
 // ------------------------------------------------------------ configuración
 
-async function cambiarHabilitado(habilitado: boolean) {
-  guardando.value = true;
-  try {
-    await inventario.guardarConfiguracion({ inventarioHabilitado: habilitado });
-    avisar(habilitado ? 'Inventario habilitado' : 'Inventario deshabilitado');
-    if (habilitado) await cargarInsumos();
-  } catch (error) {
-    avisar(extractApiErrorMessage(error, 'No se pudo guardar la configuración'), 'error');
-  } finally {
-    guardando.value = false;
-  }
-}
-
-async function cambiarControlAntidoping(activar: boolean) {
-  guardando.value = true;
-  try {
-    await inventario.guardarConfiguracion({ inventarioControlaAntidoping: activar });
-    avisar(
-      activar
-        ? 'El antidoping ahora descuenta del inventario'
-        : 'El antidoping ya no descuenta del inventario',
-    );
-    // Al activarlo se crean en el catálogo las pruebas que falten
-    if (activar) await cargarInsumos();
-  } catch (error) {
-    avisar(extractApiErrorMessage(error, 'No se pudo guardar la configuración'), 'error');
-  } finally {
-    guardando.value = false;
-  }
-}
-
 async function guardarDiasAviso() {
   if (!Number.isInteger(diasAviso.value) || diasAviso.value < 1 || diasAviso.value > 365) {
     return avisar('Los días de aviso deben ser un número entero entre 1 y 365', 'error');
@@ -301,23 +270,18 @@ const tarjeta =
             <p class="text-sm text-gray-600 dark:text-gray-400">
               {{
                 inventario.habilitado
-                  ? 'Entra al inventario de cada centro desde la lista de centros de trabajo.'
+                  ? 'Entra al inventario de cada centro que lo lleva desde la lista de centros de trabajo.'
                   : 'Mientras esté deshabilitado no aparece en ninguna otra pantalla.'
               }}
             </p>
           </div>
-          <button
-            v-if="puedeConfigurar"
-            type="button"
-            :class="inventario.habilitado ? botonSecundario : botonPrimario"
-            :disabled="guardando"
-            @click="cambiarHabilitado(!inventario.habilitado)"
-          >
-            {{ inventario.habilitado ? 'Deshabilitar' : 'Habilitar inventario' }}
-          </button>
+          <!-- Encenderlo, elegir los centros y el descuento del antidoping: en Módulos y funciones -->
+          <RouterLink v-if="puedeConfigurar" :to="{ name: 'modulos-funciones' }" :class="botonSecundario">
+            {{ inventario.habilitado ? 'Centros y antidoping' : 'Activar en Módulos y funciones' }}
+          </RouterLink>
         </div>
         <p v-if="!puedeConfigurar && !inventario.habilitado" class="mt-3 text-sm text-gray-600 dark:text-gray-400">
-          Solo el usuario principal puede habilitarlo.
+          Solo el usuario principal puede activarlo.
         </p>
 
         <form
@@ -331,32 +295,6 @@ const tarjeta =
           </div>
           <button type="submit" :class="botonSecundario" :disabled="guardando">Guardar</button>
         </form>
-
-        <div
-          v-if="inventario.habilitado && puedeConfigurar"
-          class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4 dark:border-gray-700"
-        >
-          <div class="min-w-0 flex-1 basis-64">
-            <p class="text-sm font-medium text-gray-800 dark:text-gray-200">
-              Descontar pruebas antidoping
-              <span class="ml-1 font-normal text-gray-500">
-                ({{ inventario.controlaAntidoping ? 'activado' : 'desactivado' }})
-              </span>
-            </p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              Cada antidoping descuenta una prueba según el número de sustancias capturadas: 2, 3, 5,
-              6, 10 o 12 parámetros. Al activarlo se agregan esas pruebas a tu catálogo.
-            </p>
-          </div>
-          <button
-            type="button"
-            :class="botonSecundario"
-            :disabled="guardando"
-            @click="cambiarControlAntidoping(!inventario.controlaAntidoping)"
-          >
-            {{ inventario.controlaAntidoping ? 'Desactivar' : 'Activar' }}
-          </button>
-        </div>
       </section>
 
       <!-- Catálogo -->

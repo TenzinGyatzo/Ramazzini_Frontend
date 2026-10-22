@@ -2,6 +2,7 @@ import api from '@/lib/axios';
 import type {
   ConfiguracionInventario,
   DetalleInsumo,
+  EmpresaCentrosInventario,
   FilaCargaMasiva,
   FilaExistencia,
   Insumo,
@@ -21,6 +22,15 @@ export default {
 
   updateConfiguracion(data: Partial<ConfiguracionInventario>) {
     return api.patch<ConfiguracionInventario>('/inventario/configuracion', data);
+  },
+
+  /** Empresas y centros del proveedor, con los que llevan inventario (solo el Principal). */
+  getCentros() {
+    return api.get<EmpresaCentrosInventario[]>('/inventario/centros');
+  },
+
+  updateCentros(cambios: { idCentroTrabajo: string; inventarioHabilitado: boolean }[]) {
+    return api.patch<EmpresaCentrosInventario[]>('/inventario/centros', { cambios });
   },
 
   getInsumos() {

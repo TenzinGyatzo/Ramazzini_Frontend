@@ -5,6 +5,7 @@ import InventarioAPI from '@/api/InventarioAPI';
 import InventarioModal from '@/components/inventario/InventarioModal.vue';
 import { useInventarioStore } from '@/stores/inventario';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
+import { useUserStore } from '@/stores/user';
 import { useRolePermissions } from '@/composables/useRolePermissions';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import {
@@ -47,6 +48,11 @@ const route = useRoute();
 const inventario = useInventarioStore();
 const centros = useCentrosTrabajoStore();
 const { canManageInventario } = useRolePermissions();
+const userStore = useUserStore();
+/** Quien puede activar el inventario o este centro en «Módulos y funciones». */
+const puedeActivar = computed(
+  () => userStore.user?.role === 'Principal' || userStore.user?.role === 'Administrador',
+);
 
 const idEmpresa = computed(() => String(route.params.idEmpresa));
 const idCentro = computed(() => String(route.params.idCentroTrabajo));
@@ -91,7 +97,7 @@ async function cargar() {
   cargando.value = true;
   await inventario.cargarConfiguracion();
   centros.fetchCentroTrabajoById(idEmpresa.value, idCentro.value);
-  if (inventario.habilitado) {
+  if (inventario.llevaInventario(idCentro.value)) {
     await cargarExistencias();
   }
   cargando.value = false;
@@ -530,7 +536,7 @@ const botonSecundario =
           Inventario<span v-if="nombreCentro"> — {{ nombreCentro }}</span>
         </h1>
       </div>
-      <div v-if="inventario.habilitado" class="flex flex-wrap gap-2">
+      <div v-if="inventario.llevaInventario(idCentro)" class="flex flex-wrap gap-2">
         <RouterLink :to="{ name: 'inventario-catalogo' }" :class="botonSecundario">
           <i class="fas fa-list"></i> Catálogo de insumos
         </RouterLink>
@@ -558,18 +564,18 @@ const botonSecundario =
     </p>
 
     <div
-      v-else-if="!inventario.habilitado"
+      v-else-if="!inventario.llevaInventario(idCentro)"
       class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800"
     >
       <i class="fas fa-boxes-stacked mb-3 text-4xl text-gray-400"></i>
       <p class="font-medium text-gray-800 dark:text-gray-100">
-        El inventario no está habilitado.
+        {{ inventario.habilitado ? 'Este centro de trabajo no lleva inventario.' : 'El inventario no está habilitado.' }}
       </p>
       <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-        El usuario principal puede encenderlo desde la configuración del inventario.
+        El usuario principal puede activarlo en Módulos y funciones.
       </p>
-      <RouterLink :to="{ name: 'inventario-catalogo' }" :class="[botonSecundario, 'mt-4']">
-        Ir a la configuración
+      <RouterLink v-if="puedeActivar" :to="{ name: 'modulos-funciones' }" :class="[botonSecundario, 'mt-4']">
+        Ir a Módulos y funciones
       </RouterLink>
     </div>
 

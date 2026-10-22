@@ -76,7 +76,7 @@ const evaluarAcciones = () => {
 
 // Si cambian los botones visibles, el ancho necesario cambia: medir de nuevo con texto.
 watch(
-    () => [inventario.habilitado, canAccessDashboardSalud.value, props.numeroTrabajadores > 0],
+    () => [inventario.llevaInventario(props.centro?._id), canAccessDashboardSalud.value, props.numeroTrabajadores > 0],
     () => {
         accionesCompactas.value = false;
         nextTick(evaluarAcciones);
@@ -193,7 +193,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
                             <span v-if="!accionesCompactas" class="whitespace-nowrap">Estadísticas</span>
                         </RouterLink>
                         <RouterLink
-                            v-if="inventario.habilitado"
+                            v-if="inventario.llevaInventario(centro._id)"
                             :to="{ name: 'inventario', params: { idEmpresa: empresa._id, idCentroTrabajo: centro._id } }"
                             class="centro-item__action-btn inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 transition-all duration-300 hover:scale-105 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                             title="Inventario del centro de trabajo"
