@@ -82,11 +82,14 @@ describe('DocumentoItem - formato firmado en pantalla', () => {
       },
     });
 
-  it('finalizado: lleva su etiqueta, no se edita y el botón rojo lo anula con su formato', async () => {
+  it('finalizado: lleva el ícono de firma junto al título, no se edita y el botón rojo lo anula con su formato', async () => {
     const w = montar(externo());
     await flushPromises();
 
-    expect(w.find('.documento-item-firmado-pantalla').text()).toBe('Firmado en pantalla');
+    const icono = w.find('h3 .documento-item-firmado-pantalla');
+    expect(icono.find('.fa-signature').exists()).toBe(true);
+    expect(icono.text()).toBe('');
+    expect(icono.attributes('aria-label')).toBe('Firmado por el trabajador en pantalla');
     const acciones = w.findAll('button.documento-item-action');
     const editar = acciones.find((b) => b.find('.fa-pen-to-square, .fa-eye').exists())!;
     expect(editar.attributes('disabled')).toBeDefined();
@@ -98,14 +101,13 @@ describe('DocumentoItem - formato firmado en pantalla', () => {
     expect(w.emitted('eliminarDocumento')).toBeUndefined();
   });
 
-  it('anulado: la etiqueta lo dice y ya no hay nada que anular', async () => {
+  it('anulado: el ícono en rojo lo dice y ya no hay nada que anular', async () => {
     const w = montar(externo({ estado: 'anulado', razonAnulacion: 'Firmó la persona equivocada' }));
     await flushPromises();
 
-    const etiqueta = w.find('.documento-item-firmado-pantalla');
-    expect(etiqueta.classes()).toContain('documento-item-firmado-pantalla--anulado');
-    expect(etiqueta.text()).toBe('Firmado en pantalla · anulado');
-    expect(etiqueta.attributes('title')).toContain('Firmó la persona equivocada');
+    const icono = w.find('h3 .documento-item-firmado-pantalla');
+    expect(icono.classes()).toContain('documento-item-firmado-pantalla--anulado');
+    expect(icono.attributes('title')).toBe('Firmado en pantalla · anulado: Firmó la persona equivocada');
     const rojo = w.findAll('button.documento-item-action').at(-1)!;
     expect(rojo.attributes('disabled')).toBeDefined();
   });

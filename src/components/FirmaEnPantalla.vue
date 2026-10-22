@@ -181,28 +181,29 @@ onMounted(cargarTexto);
             <p v-if="aviso" class="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert">
               {{ aviso }}
             </p>
+
+            <!-- Junto al recuadro, donde está la mano que firma -->
+            <div class="firma-pantalla__acciones mt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-3">
+              <button
+                type="button"
+                class="px-5 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold disabled:opacity-50"
+                :disabled="enviando || estadoFirma.vacia"
+                @click="limpiarFirma"
+              >
+                Limpiar firma
+              </button>
+              <button
+                type="button"
+                class="px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="enviando || !estadoFirma.valida"
+                @click="firmar"
+              >
+                {{ enviando ? 'Guardando…' : 'Aceptar y firmar' }}
+              </button>
+            </div>
           </article>
         </div>
       </main>
-
-      <footer v-if="texto && !cargando" class="firma-pantalla__acciones flex flex-wrap items-center justify-end gap-3 px-4 sm:px-8 py-3 bg-white border-t border-gray-200">
-        <button
-          type="button"
-          class="px-4 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold disabled:opacity-50"
-          :disabled="enviando || estadoFirma.vacia"
-          @click="limpiarFirma"
-        >
-          Limpiar firma
-        </button>
-        <button
-          type="button"
-          class="px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="enviando || !estadoFirma.valida"
-          @click="firmar"
-        >
-          {{ enviando ? 'Guardando…' : 'Aceptar y firmar' }}
-        </button>
-      </footer>
     </div>
   </Teleport>
 </template>

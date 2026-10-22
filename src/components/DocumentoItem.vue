@@ -2346,6 +2346,11 @@ const isAnulacion = computed(() => {
 const esFormatoFirmado = computed(
     () => props.documentoTipo === 'documentoExterno' && !!props.documentoExterno?.idFormatoFirmado,
 );
+const tituloFormatoFirmado = computed(() =>
+    isAnulado.value
+        ? `Firmado en pantalla · anulado: ${props.documentoExterno?.razonAnulacion || 'sin motivo'}`
+        : 'Firmado por el trabajador en pantalla',
+);
 /** Se anula con motivo en cualquier régimen, mientras siga finalizado. */
 const anulaFormatoFirmado = computed(() => esFormatoFirmado.value && isFinalized.value && !isAnulado.value);
 
@@ -4029,6 +4034,17 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                                         <i v-else-if="!pdfDisponible" class="fas fa-exclamation-triangle mr-0.5 text-rose-500 text-sm" title="Documento externo no disponible"></i>
                                         {{ documentoExterno.nombreDocumento }}
                                     </span>
+                                    <!-- Firmado en pantalla: solo el ícono; fuera de SIRES no se muestra el estado, así que en rojo dice si se anuló -->
+                                    <span
+                                      v-if="esFormatoFirmado"
+                                      class="documento-item-firmado-pantalla ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0"
+                                      :class="isAnulado ? 'documento-item-firmado-pantalla--anulado bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'"
+                                      role="img"
+                                      :aria-label="tituloFormatoFirmado"
+                                      :title="tituloFormatoFirmado"
+                                    >
+                                      <i class="fa-solid fa-signature text-xs" aria-hidden="true"></i>
+                                    </span>
                                     <span
                                       v-if="documentoExterno.idResultadoClinico && documentoExterno.resultadoClinico"
                                       class="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-1 shrink-0"
@@ -4053,14 +4069,6 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                                 <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
                                     :class="obtenerExtensionArchivo(documentoExterno) === 'pdf' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'">
                                     {{ obtenerExtensionArchivo(documentoExterno).toUpperCase() }}
-                                </span>
-                                <!-- Fuera de SIRES no se muestra el estado: la etiqueta dice si el formato se anuló -->
-                                <span v-if="esFormatoFirmado"
-                                    class="documento-item-firmado-pantalla inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full"
-                                    :class="isAnulado ? 'documento-item-firmado-pantalla--anulado bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'"
-                                    :title="isAnulado ? `Formato firmado en pantalla, anulado: ${documentoExterno.razonAnulacion || 'sin motivo'}` : 'Firmado por el trabajador en pantalla'">
-                                    <i class="fa-solid fa-signature" aria-hidden="true"></i>
-                                    <span class="hidden sm:inline">{{ isAnulado ? 'Firmado en pantalla · anulado' : 'Firmado en pantalla' }}</span>
                                 </span>
 
                                 <EstadoDocumentoBadge
