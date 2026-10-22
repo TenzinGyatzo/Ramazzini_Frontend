@@ -4547,3 +4547,26 @@ html.dark-mode .expediente-filtro-tipos__elegido {
   border-color: #047857 !important;
   color: #a7f3d0 !important;
 }
+
+/* Módulos y funciones: tarjetas con estilo propio (scoped), remapeadas aquí */
+html.dark-mode .modulos-funciones__tarjeta {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+html.dark-mode .modulos-funciones__icono {
+  background-color: #0f172a;
+  color: #cbd5e1;
+}
+
+html.dark-mode .modulos-funciones__titulo {
+  color: #f1f5f9;
+}
+
+html.dark-mode .modulos-funciones__texto {
+  color: #cbd5e1;
+}
+
+html.dark-mode .modulos-funciones__enlaces a {
+  color: #6ee7b7;
+}

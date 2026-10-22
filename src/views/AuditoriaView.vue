@@ -189,6 +189,7 @@ async function verifyAudit() {
               <option value="SIGNED_FORM_ANNULLED">Formato firmado en pantalla anulado</option>
               <option value="SIGNED_FORM_TEST_DELETED">Firma de prueba eliminada</option>
               <option value="SIGNED_FORM_CONFIG_UPDATED">Firma en pantalla activada o desactivada</option>
+              <option value="RESULTS_SEMAPHORE_UPDATED">Semaforización de resultados activada o desactivada</option>
             </optgroup>
             <optgroup label="Accesos">
               <option value="LOGIN_SUCCESS">Login exitoso</option>

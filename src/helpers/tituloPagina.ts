@@ -50,6 +50,7 @@ export const TITULOS_POR_RUTA: Record<string, string> = {
   'admin-catalogos': 'Catálogos',
   'user-productivity': 'Productividad',
   'perfil-proveedor': 'Perfil del proveedor',
+  'modulos-funciones': 'Módulos y funciones',
   'medico-firmante': 'Médico firmante',
   'enfermera-firmante': 'Enfermera firmante',
   'tecnico-evaluador-firmante': 'Técnico evaluador',

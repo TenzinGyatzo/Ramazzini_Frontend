@@ -108,6 +108,12 @@ const router = createRouter({
           component: () => import("../views/PerfilProveedorView.vue"),
         },
         {
+          path: "modulos-funciones",
+          name: "modulos-funciones",
+          component: () => import("../views/ModulosFuncionesView.vue"),
+          meta: { requiresAuth: true, requiresPrincipal: true },
+        },
+        {
           path: "medico-firmante",
           name: "medico-firmante",
           component: () => import("../views/MedicoFirmanteView.vue"),
