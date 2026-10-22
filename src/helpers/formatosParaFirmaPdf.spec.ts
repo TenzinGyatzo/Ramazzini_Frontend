@@ -8,6 +8,11 @@ vi.mock('@/lib/cargarPdfMake', () => ({
 }));
 vi.mock('@/helpers/setupPdfMakeKanitFonts', () => ({ setupPdfMakeKanitFonts: async () => {} }));
 
+// Texto v1 tal como lo entrega el backend (copia de formatos-firma-texto.constants.ts)
+const getTexto = vi.fn();
+vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { getTexto: (tipo: string) => getTexto(tipo) } }));
+import textosV1 from './__fixtures__/textosFormatoFirmaV1.json';
+
 const trabajador = { nombre: 'JUAN', primerApellido: 'PÉREZ', segundoApellido: 'LÓPEZ' };
 const proveedorSalud = { direccion: 'Av. 1', municipio: 'TIJUANA', estado: 'BAJA CALIFORNIA', telefono: '6641234567' };
 
@@ -25,6 +30,70 @@ function texto(nodo: any): string {
 beforeEach(() => {
   descargas.length = 0;
   vi.stubGlobal('fetch', async () => ({ ok: false }));
+  getTexto.mockReset();
+  getTexto.mockImplementation(async (tipo: keyof typeof textosV1) => ({ data: textosV1[tipo] }));
+});
+
+describe('texto desde el backend', () => {
+  it('pide el formato que corresponde', async () => {
+    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
+    const { descargarConsentimientoAntidopingPdf } = await import('./generarConsentimientoAntidopingPdf');
+    await descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
+    await descargarConsentimientoAntidopingPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
+    expect(getTexto.mock.calls).toEqual([['DECLARACION_VERACIDAD'], ['CONSENTIMIENTO_ANTIDOPING']]);
+  });
+
+  it('si el backend no responde, no descarga nada y el error llega al modal', async () => {
+    getTexto.mockRejectedValue(new Error('sin red'));
+    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
+    await expect(
+      descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud }),
+    ).rejects.toThrow('sin red');
+    expect(descargas).toHaveLength(0);
+  });
+
+  it('una redacción nueva se refleja sin tocar el frontend', async () => {
+    getTexto.mockResolvedValue({
+      data: {
+        ...textosV1.DECLARACION_VERACIDAD,
+        version: 'v2',
+        titulo: 'DECLARACIÓN DE VERACIDAD',
+        bloques: [
+          { tipo: 'parrafo', fragmentos: [{ texto: 'Yo, ' }, { campo: 'nombreTrabajador', negrita: true }, { texto: ', declaro.' }] },
+        ],
+      },
+    });
+    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
+    await descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
+
+    const { def } = descargas[0];
+    expect(texto(def.header.columns[1]).trim()).toBe('DECLARACIÓN DE VERACIDAD');
+    expect(def.content.map(texto)).toEqual(['Yo, JUAN PÉREZ LÓPEZ, declaro.', 'Fecha: 17-10-2026', 'Firma: ']);
+    // Un solo párrafo: lleva el margen superior del primero y el inferior del último
+    expect(def.content[0].margin).toEqual([0, 24, 0, 30]);
+  });
+});
+
+describe('espaciado de la declaración (igual que antes de mover el texto al backend)', () => {
+  it('lista con sangría, 4 pt dentro de la lista, 6 entre párrafos y 30 al final', async () => {
+    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
+    await descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
+
+    const { def } = descargas[0];
+    expect(def.content.slice(0, 9).map((b: any) => b.margin)).toEqual([
+      [0, 24, 0, 6],
+      [0, 0, 0, 6],
+      [0, 0, 0, 6],
+      [0, 0, 0, 4],
+      [24, 0, 0, 4],
+      [24, 0, 0, 4],
+      [24, 0, 0, 6],
+      [0, 0, 0, 6],
+      [0, 0, 0, 30],
+    ]);
+    // «Reconozco que:» va como texto simple, sin justificar
+    expect(def.content[3]).toEqual({ text: 'Reconozco que:', margin: [0, 0, 0, 4] });
+  });
 });
 
 describe('consentimiento informado antidoping', () => {

@@ -1,0 +1,246 @@
+{
+  "DECLARACION_VERACIDAD": {
+    "tipoFormato": "DECLARACION_VERACIDAD",
+    "version": "v1",
+    "titulo": "DECLARACIÓN DE VERACIDAD DE INFORMACIÓN MÉDICA",
+    "bloques": [
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Yo, "
+          },
+          {
+            "campo": "nombreTrabajador",
+            "negrita": true
+          },
+          {
+            "texto": ", declaro bajo protesta de decir verdad que la información proporcionada por mí durante el presente examen médico laboral, incluyendo antecedentes personales, antecedentes patológicos, antecedentes familiares, hábitos, síntomas actuales, tratamientos médicos y cualquier otro dato relacionado con mi estado de salud, "
+          },
+          {
+            "texto": "es completa, verídica y proporcionada de buena fe.",
+            "negrita": true
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Asimismo, manifiesto que comprendo que la finalidad de este examen es evaluar mi estado de salud en relación con las condiciones del puesto de trabajo, con el objetivo de "
+          },
+          {
+            "texto": "proteger mi seguridad, la de mis compañeros de trabajo y la adecuada ejecución de mis actividades laborales.",
+            "negrita": true
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Declaro que he respondido las preguntas del personal de salud "
+          },
+          {
+            "texto": "de manera honesta y sin omitir información relevante",
+            "negrita": true
+          },
+          {
+            "texto": ", incluyendo enfermedades previas o actuales, cirugías, hospitalizaciones, padecimientos crónicos, consumo de medicamentos, antecedentes neurológicos, cardiovasculares, metabólicos o cualquier otra condición que pudiera tener implicaciones para el desempeño seguro de mis labores."
+          }
+        ]
+      },
+      {
+        "tipo": "encabezadoLista",
+        "fragmentos": [
+          {
+            "texto": "Reconozco que:"
+          }
+        ]
+      },
+      {
+        "tipo": "elementoLista",
+        "fragmentos": [
+          {
+            "texto": "1. "
+          },
+          {
+            "texto": "La omisión intencional o la declaración falsa de información médica relevante",
+            "negrita": true
+          },
+          {
+            "texto": " puede afectar la correcta valoración de mi estado de salud."
+          }
+        ]
+      },
+      {
+        "tipo": "elementoLista",
+        "fragmentos": [
+          {
+            "texto": "2. Proporcionar información incorrecta "
+          },
+          {
+            "texto": "puede generar riesgos para mi propia integridad física, la de otras personas o la operación segura del centro de trabajo.",
+            "negrita": true
+          }
+        ]
+      },
+      {
+        "tipo": "elementoLista",
+        "fragmentos": [
+          {
+            "texto": "3. En caso de detectarse posteriormente que "
+          },
+          {
+            "texto": "he ocultado deliberadamente información relevante o he proporcionado datos falsos",
+            "negrita": true
+          },
+          {
+            "texto": " durante este proceso, dicha conducta "
+          },
+          {
+            "texto": "podría constituir una falta grave de probidad o de buena fe",
+            "negrita": true
+          },
+          {
+            "texto": ", conforme a la legislación laboral aplicable y a las políticas internas de la empresa."
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "En tal caso, el empleador "
+          },
+          {
+            "texto": "podrá tomar las medidas administrativas o laborales que correspondan conforme al marco legal vigente",
+            "negrita": true
+          },
+          {
+            "texto": ", incluyendo la revisión de mi situación laboral."
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Manifiesto que "
+          },
+          {
+            "texto": "he leído la presente declaración, que entiendo su contenido y que firmo la misma de manera libre y voluntaria.",
+            "negrita": true
+          }
+        ]
+      }
+    ]
+  },
+  "CONSENTIMIENTO_ANTIDOPING": {
+    "tipoFormato": "CONSENTIMIENTO_ANTIDOPING",
+    "version": "v1",
+    "titulo": "CONSENTIMIENTO INFORMADO PARA PRUEBA DE DETECCIÓN DE SUSTANCIAS",
+    "bloques": [
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Yo, "
+          },
+          {
+            "campo": "nombreTrabajador",
+            "negrita": true
+          },
+          {
+            "texto": ", manifiesto que he sido informado(a) sobre la realización de una "
+          },
+          {
+            "texto": "prueba para la detección de sustancias ",
+            "negrita": true
+          },
+          {
+            "texto": "y/o",
+            "negrita": true,
+            "sinCorte": true
+          },
+          {
+            "texto": " sus metabolitos (antidoping)",
+            "negrita": true
+          },
+          {
+            "texto": ", mediante la obtención y análisis de una muestra biológica."
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Comprendo que la finalidad de esta prueba es identificar la posible presencia de las sustancias incluidas en el panel de análisis correspondiente y que "
+          },
+          {
+            "texto": "el resultado puede formar parte de mi evaluación médica laboral.",
+            "negrita": true
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Asimismo, comprendo que "
+          },
+          {
+            "texto": "este tipo de pruebas tiene alcances y limitaciones",
+            "negrita": true
+          },
+          {
+            "texto": ", y que el resultado puede verse influido por factores como el tipo de muestra, las sustancias evaluadas, el tiempo transcurrido desde una posible exposición o consumo, medicamentos o tratamientos utilizados y las características del método empleado."
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Reconozco que una prueba inicial o de tamizaje puede requerir estudios adicionales o una prueba confirmatoria cuando el resultado así lo amerite, por lo que "
+          },
+          {
+            "texto": "un resultado positivo en una prueba de tamizaje no necesariamente constituye, por sí solo, una confirmación definitiva del consumo de una sustancia.",
+            "negrita": true
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Declaro que he tenido la oportunidad de "
+          },
+          {
+            "texto": "informar sobre medicamentos, tratamientos o productos que pudieran ser relevantes para la interpretación de los resultados",
+            "negrita": true
+          },
+          {
+            "texto": " y de plantear las dudas que considere necesarias antes de la realización de la prueba."
+          }
+        ]
+      },
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Manifiesto que comprendo la naturaleza y finalidad del procedimiento y "
+          },
+          {
+            "texto": "otorgo mi consentimiento libre y voluntario",
+            "negrita": true
+          },
+          {
+            "texto": " para la obtención de la muestra y la realización de la prueba de detección de sustancias."
+          }
+        ]
+      }
+    ]
+  }
+}

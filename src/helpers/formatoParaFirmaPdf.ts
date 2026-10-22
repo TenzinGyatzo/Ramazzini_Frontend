@@ -1,10 +1,18 @@
 /**
  * Piezas comunes de los formatos imprimibles que firma el trabajador a puño y letra
  * (declaración de veracidad, consentimiento informado): logo y datos del proveedor de salud,
- * encabezado con el título, pie de página, renglón de firma y descarga con pdfmake.
- * No se registran en el sistema: ya firmados, se suben como Documento Externo.
+ * encabezado con el título, cuerpo con el texto del backend, pie de página, renglón de firma y
+ * descarga con pdfmake. No se registran en el sistema: ya firmados, se suben como Documento Externo.
  */
 import { cargarPdfMake } from '@/lib/cargarPdfMake';
+import FormatosFirmadosAPI from '@/api/FormatosFirmadosAPI';
+import type {
+  BloqueFormatoFirma,
+  CampoFormatoFirma,
+  FragmentoFormatoFirma,
+  TextoFormatoFirma,
+  TipoFormatoFirma,
+} from '@/types/formatoFirma';
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { setupPdfMakeKanitFonts } from '@/helpers/setupPdfMakeKanitFonts';
 import { toTitleCase } from '@/helpers/toTitleCase';
@@ -227,6 +235,62 @@ export function buildHeaderFormato(logo: Content, titulo: string): TDocumentDefi
   return {
     columns: [logo, headerText],
   };
+}
+
+/** Texto vigente del formato; vive en el backend, igual para el impreso y el firmado en pantalla. */
+export async function obtenerTextoFormato(tipoFormato: TipoFormatoFirma): Promise<TextoFormatoFirma> {
+  const { data } = await FormatosFirmadosAPI.getTexto(tipoFormato);
+  return data;
+}
+
+function buildFragmentoFormato(
+  fragmento: FragmentoFormatoFirma,
+  datos: Record<CampoFormatoFirma, string>,
+): Content {
+  const text = 'campo' in fragmento ? datos[fragmento.campo] : fragmento.texto;
+  if (!fragmento.negrita) return text;
+  return 'sinCorte' in fragmento && fragmento.sinCorte
+    ? { text, bold: true, noWrap: true }
+    : { text, bold: true };
+}
+
+/** Margen inferior: 4 dentro de la lista y antes de ella, 30 tras el último bloque, 6 entre párrafos. */
+function margenInferiorBloque(bloques: BloqueFormatoFirma[], i: number): number {
+  if (i === bloques.length - 1) return 30;
+  if (bloques[i].tipo === 'encabezadoLista') return 4;
+  if (bloques[i].tipo === 'elementoLista' && bloques[i + 1].tipo === 'elementoLista') return 4;
+  return 6;
+}
+
+/** Cuerpo del formato con los datos del trabajador, seguido de la fecha y el renglón de firma. */
+export function buildCuerpoFormato(
+  bloques: BloqueFormatoFirma[],
+  datos: Record<CampoFormatoFirma, string>,
+  fechaFormateada: string,
+): Content[] {
+  const cuerpo: Content[] = bloques.map((bloque, i) => {
+    const margin: [number, number, number, number] = [
+      bloque.tipo === 'elementoLista' ? 24 : 0,
+      i === 0 ? 24 : 0,
+      0,
+      margenInferiorBloque(bloques, i),
+    ];
+    const partes = bloque.fragmentos.map((f) => buildFragmentoFormato(f, datos));
+    // El encabezado de la lista es un solo renglón: sin justificar
+    if (bloque.tipo === 'encabezadoLista') {
+      return { text: partes.length === 1 ? partes[0] : partes, margin };
+    }
+    return { text: partes, style: 'paragraph', margin };
+  });
+
+  return [
+    ...cuerpo,
+    {
+      text: ['Fecha: ', { text: fechaFormateada, bold: true }],
+      margin: [0, 0, 0, 30],
+    },
+    buildFirmaFormato(),
+  ];
 }
 
 /** Renglón de firma («Firma: ________»). */
