@@ -126,4 +126,20 @@ describe('DocumentoItem - formato firmado en pantalla', () => {
     await rojo.trigger('click');
     expect(w.emitted('eliminarDocumento')?.[0]?.[0]).toBe('d1');
   });
+
+  it('firma de prueba: ícono ámbar y el botón rojo la elimina por su ruta', async () => {
+    const w = montar(externo({ estado: 'borrador', formatoFirmadoPrueba: true, nombreDocumento: 'Declaración de Veracidad (prueba)' }));
+    await flushPromises();
+
+    const icono = w.find('h3 .documento-item-firmado-pantalla');
+    expect(icono.classes()).toContain('documento-item-firmado-pantalla--prueba');
+    expect(icono.attributes('title')).toBe('Firma de prueba, sin validez');
+    const editar = w.findAll('button.documento-item-action').find((b) => b.find('.fa-pen-to-square, .fa-eye').exists())!;
+    expect(editar.attributes('disabled')).toBeDefined();
+    const eliminar = w.findAll('button.documento-item-action').find((b) => b.find('.fa-trash-can').exists())!;
+    expect(eliminar.attributes('disabled')).toBeUndefined();
+    await eliminar.trigger('click');
+    expect(w.emitted('eliminarDocumento')?.[0]).toEqual(['d1', 'Declaración de Veracidad (prueba)', 'documentoExterno', 'f1']);
+    expect(w.emitted('abrirModalAnular')).toBeUndefined();
+  });
 });

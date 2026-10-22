@@ -30,9 +30,10 @@ const RecuadroFalso = defineComponent({
 
 const toast = { open: vi.fn() };
 
-function montar() {
+function montar(extra: Record<string, unknown> = {}) {
   return mount(FirmaEnPantalla, {
     props: {
+      ...extra,
       tipoFormato: 'DECLARACION_VERACIDAD',
       trabajadorId: 't1',
       trabajador: { nombre: 'JUAN', primerApellido: 'PÉREZ', segundoApellido: 'LÓPEZ' },
@@ -131,5 +132,33 @@ describe('FirmaEnPantalla', () => {
     await flushPromises();
     await firmarConPluma(w, 'mouse');
     expect(w.find('.firma-pantalla__aviso-mouse').exists()).toBe(true);
+  });
+
+  it('la casilla de firma de prueba solo aparece si se permite (Principal)', async () => {
+    const w = montar();
+    await flushPromises();
+    expect(w.find('.firma-pantalla__prueba').exists()).toBe(false);
+  });
+
+  it('marcada, la firma se envía como prueba y el aviso lo dice', async () => {
+    crear.mockResolvedValue({ data: { _id: 'f1', documentoExterno: { _id: 'd1' } } });
+    const w = montar({ permitirPrueba: true });
+    await flushPromises();
+    await w.find('.firma-pantalla__prueba input').setValue(true);
+    await firmarConPluma(w);
+    await botonFirmar(w).trigger('click');
+    await flushPromises();
+    expect(crear.mock.calls[0][1]).toMatchObject({ prueba: true });
+    expect(toast.open).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('prueba') }));
+  });
+
+  it('sin marcarla, la firma va sin el campo prueba', async () => {
+    crear.mockResolvedValue({ data: { _id: 'f1', documentoExterno: { _id: 'd1' } } });
+    const w = montar({ permitirPrueba: true });
+    await flushPromises();
+    await firmarConPluma(w);
+    await botonFirmar(w).trigger('click');
+    await flushPromises();
+    expect(crear.mock.calls[0][1]).not.toHaveProperty('prueba');
   });
 });

@@ -187,6 +187,7 @@ async function verifyAudit() {
               <option value="DOC_ANULATE">Doc. anulado</option>
               <option value="SIGNED_FORM_CREATED">Formato firmado en pantalla</option>
               <option value="SIGNED_FORM_ANNULLED">Formato firmado en pantalla anulado</option>
+              <option value="SIGNED_FORM_TEST_DELETED">Firma de prueba eliminada</option>
               <option value="SIGNED_FORM_CONFIG_UPDATED">Firma en pantalla activada o desactivada</option>
             </optgroup>
             <optgroup label="Accesos">

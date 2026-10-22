@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { useUserStore } from '@/stores/user';
 
 const { getConfiguracion } = vi.hoisted(() => ({ getConfiguracion: vi.fn() }));
 vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { getConfiguracion } }));
@@ -11,7 +12,7 @@ import ModalFormatoParaFirma from './ModalFormatoParaFirma.vue';
 // La vista de firma tiene sus propias pruebas: aquí solo importa cuándo se abre y qué devuelve
 const FirmaEnPantallaFalsa = defineComponent({
   name: 'FirmaEnPantalla',
-  props: ['tipoFormato', 'trabajadorId', 'trabajador', 'fecha'],
+  props: ['tipoFormato', 'trabajadorId', 'trabajador', 'fecha', 'permitirPrueba'],
   emits: ['cancelar', 'firmado'],
   setup: () => () => h('div', { class: 'firma-falsa' }),
 });
@@ -109,5 +110,20 @@ describe('ModalFormatoParaFirma', () => {
     await flushPromises();
     expect(w.findComponent(FirmaEnPantallaFalsa).exists()).toBe(false);
     expect(w.emitted('closeModal')).toBeUndefined();
+  });
+
+  it('solo al Principal le ofrece la firma de prueba', async () => {
+    getConfiguracion.mockResolvedValue({ data: { firmaEnPantallaHabilitada: true } });
+    useUserStore().user = { _id: 'u1', role: 'Médico' } as any;
+    const medico = montar({ tipoFormato: 'DECLARACION_VERACIDAD' });
+    await flushPromises();
+    await botonPantalla(medico).trigger('click');
+    expect(medico.findComponent(FirmaEnPantallaFalsa).props('permitirPrueba')).toBe(false);
+
+    useUserStore().user = { _id: 'u2', role: 'Principal' } as any;
+    const principal = montar({ tipoFormato: 'DECLARACION_VERACIDAD' });
+    await flushPromises();
+    await botonPantalla(principal).trigger('click');
+    expect(principal.findComponent(FirmaEnPantallaFalsa).props('permitirPrueba')).toBe(true);
   });
 });

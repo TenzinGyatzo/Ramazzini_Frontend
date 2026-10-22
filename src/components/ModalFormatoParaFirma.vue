@@ -13,6 +13,7 @@ import FormatosFirmadosAPI, { type FormatoFirmadoCreado } from '@/api/FormatosFi
 import type { TipoFormatoFirma } from '@/types/formatoFirma';
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useUserStore } from '@/stores/user';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import {
   formatNombreTrabajadorFormato,
@@ -47,6 +48,9 @@ const emit = defineEmits<{
 
 const toast: any = inject('toast');
 const proveedorSaludStore = useProveedorSaludStore();
+const userStore = useUserStore();
+/** La firma de prueba es para las demostraciones del Principal. */
+const permitirPrueba = computed(() => userStore.user?.role === 'Principal');
 
 const fecha = ref(format(new Date(), 'yyyy-MM-dd'));
 const descargando = ref(false);
@@ -230,6 +234,7 @@ const handleDescargar = async () => {
       :trabajador-id="trabajador._id"
       :trabajador="trabajador"
       :fecha="fecha"
+      :permitir-prueba="permitirPrueba"
       @cancelar="firmando = false"
       @firmado="alFirmar"
     />

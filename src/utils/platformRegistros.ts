@@ -75,6 +75,7 @@ const ETIQUETAS_EVENTO: Record<string, string> = {
     INVENTORY_CONFIG_UPDATED: "Configuración del inventario modificada",
     SIGNED_FORM_CREATED: "Formato firmado en pantalla",
     SIGNED_FORM_ANNULLED: "Formato firmado en pantalla anulado",
+    SIGNED_FORM_TEST_DELETED: "Firma de prueba eliminada",
     SIGNED_FORM_CONFIG_UPDATED: "Firma en pantalla activada o desactivada",
     CONSENT_CREATED: "Consentimiento registrado",
     USER_INVITATION_SENT: "Invitación de usuario enviada",

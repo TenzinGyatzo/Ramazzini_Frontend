@@ -417,8 +417,14 @@ describe('GrupoDocumentos', () => {
       items(wrapper).forEach((item) => item.vm.$emit('eliminarDocumento'));
 
       expect(wrapper.emitted('eliminarDocumento')).toEqual(
-        TIPOS_EN_ORDEN.map(({ tipo }) => [`${tipo}-1`, '15-03-2025', tipo]),
+        TIPOS_EN_ORDEN.map(({ tipo }) => [`${tipo}-1`, '15-03-2025', tipo, null]),
       );
+    });
+
+    it('una firma de prueba lleva además el id de su formato', () => {
+      const wrapper = montar({ documents: unDocumentoDeCadaTipo() });
+      items(wrapper)[0].vm.$emit('eliminarDocumento', 'x', 'y', 'z', 'f1');
+      expect(wrapper.emitted('eliminarDocumento')?.[0]?.[3]).toBe('f1');
     });
 
     it('reenvía anular y finalizar con sus datos, y la ventana de suscripción', () => {

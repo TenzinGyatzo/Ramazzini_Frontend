@@ -290,17 +290,23 @@ const solicitarEliminacionDocumento = (
   documentId: string,
   documentName: string,
   documentType: string,
+  idFormatoPrueba: string | null = null,
 ) => {
   requestEliminacionLocal({
     entidad: 'documentoExpediente',
     identificacion: documentName,
     onConfirm: async () => {
       try {
-        await documentos.deleteDocumentById(
-          documentType,
-          trabajadores.currentTrabajadorId!,
-          documentId,
-        );
+        if (idFormatoPrueba) {
+          // Firma de prueba: se elimina con su registro por la ruta de formatos firmados
+          await FormatosFirmadosAPI.eliminarPrueba(trabajadores.currentTrabajadorId!, idFormatoPrueba);
+        } else {
+          await documentos.deleteDocumentById(
+            documentType,
+            trabajadores.currentTrabajadorId!,
+            documentId,
+          );
+        }
         toast.open({ message: 'Documento eliminado exitosamente.' });
         await Promise.all([
           documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
