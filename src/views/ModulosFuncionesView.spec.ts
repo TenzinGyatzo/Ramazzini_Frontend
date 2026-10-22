@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useUserStore } from '@/stores/user';
 import { useInventarioStore } from '@/stores/inventario';
+import { useIncapacidadesStore } from '@/stores/incapacidades';
 
 const {
   getEstado,
@@ -12,6 +13,10 @@ const {
   getConfiguracionInventario,
   getCentros,
   updateCentros,
+  actualizarIncapacidades,
+  getEmpresasIncapacidades,
+  updateEmpresasIncapacidades,
+  getIncapacidades,
 } = vi.hoisted(() => ({
   getEstado: vi.fn(),
   actualizarSemaforizacion: vi.fn(),
@@ -20,8 +25,21 @@ const {
   getConfiguracionInventario: vi.fn(),
   getCentros: vi.fn(),
   updateCentros: vi.fn(),
+  actualizarIncapacidades: vi.fn(),
+  getEmpresasIncapacidades: vi.fn(),
+  updateEmpresasIncapacidades: vi.fn(),
+  getIncapacidades: vi.fn(),
 }));
-vi.mock('@/api/ModulosFuncionesAPI', () => ({ default: { getEstado, actualizarSemaforizacion } }));
+vi.mock('@/api/ModulosFuncionesAPI', () => ({
+  default: {
+    getEstado,
+    actualizarSemaforizacion,
+    actualizarIncapacidades,
+    getEmpresasIncapacidades,
+    updateEmpresasIncapacidades,
+    getIncapacidades,
+  },
+}));
 vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { actualizarConfiguracion: actualizarConfiguracionFirma } }));
 vi.mock('@/api/InventarioAPI', () => ({
   default: {
@@ -56,7 +74,15 @@ const ESTADO = {
   semaforizacionActivada: false,
   inventarioHabilitado: false,
   inventarioControlaAntidoping: false,
+  incapacidadesDisponible: false,
+  incapacidadesHabilitado: false,
 };
+
+/** Dos empresas; solo Bimbo gestiona incapacidades. */
+const empresasIncapacidades = (acerosActiva = false) => [
+  { idEmpresa: 'e1', nombreEmpresa: 'Aceros del Norte', incapacidadesHabilitado: acerosActiva, numeroTrabajadores: 360 },
+  { idEmpresa: 'e2', nombreEmpresa: 'Bimbo', incapacidadesHabilitado: true, numeroTrabajadores: 1 },
+];
 const toast = { open: vi.fn() };
 
 function montar() {
@@ -204,6 +230,78 @@ describe('ModulosFuncionesView', () => {
       await flushPromises();
       expect(getCentros).not.toHaveBeenCalled();
       expect(w.find('[data-interruptor="inventario"]').text()).not.toContain('Elegir centros');
+    });
+  });
+
+  describe('incapacidades por empresa', () => {
+    const enMexico = (habilitado = true) =>
+      getEstado.mockResolvedValue({
+        data: { ...ESTADO, incapacidadesDisponible: true, incapacidadesHabilitado: habilitado },
+      });
+
+    it('fuera de México la tarjeta no aparece', async () => {
+      const w = montar();
+      await flushPromises();
+      expect(w.find('[data-interruptor="incapacidades"]').exists()).toBe(false);
+    });
+
+    it('dice en cuántas empresas está y deja elegirlas con búsqueda', async () => {
+      enMexico();
+      getEmpresasIncapacidades.mockResolvedValue({ data: empresasIncapacidades() });
+      const w = montar();
+      await flushPromises();
+      const tarjeta = w.find('[data-interruptor="incapacidades"]');
+      expect(tarjeta.text()).toContain('En 1 de 2 empresas');
+
+      await tarjeta.findAll('button').find((b) => b.text() === 'Elegir empresas')!.trigger('click');
+      const filas = () =>
+        w.findAll('[data-interruptor="incapacidades"] .modulos-funciones__fila').map((f) => [
+          f.find('.modulos-funciones__fila-etiqueta').text(),
+          f.find('.modulos-funciones__fila-dato').text(),
+        ]);
+      expect(filas()).toEqual([
+        ['Aceros del Norte', '360 trabajadores'],
+        ['Bimbo', '1 trabajador'],
+      ]);
+      await w.find('[data-interruptor="incapacidades"] .modulos-funciones__buscar').setValue('bimbo');
+      expect(filas()).toEqual([['Bimbo', '1 trabajador']]);
+    });
+
+    it('marcar una empresa la guarda al instante y actualiza lo que ve el resto de la app', async () => {
+      enMexico();
+      getEmpresasIncapacidades.mockResolvedValue({ data: empresasIncapacidades() });
+      updateEmpresasIncapacidades.mockResolvedValue({ data: empresasIncapacidades(true) });
+      getIncapacidades.mockResolvedValue({
+        data: { incapacidadesDisponible: true, incapacidadesHabilitado: true, empresasConIncapacidades: ['e1', 'e2'] },
+      });
+      const w = montar();
+      await flushPromises();
+      await w.findAll('button').find((b) => b.text() === 'Elegir empresas')!.trigger('click');
+      await w.find('[data-empresa="e1"]').trigger('change');
+      await flushPromises();
+      expect(updateEmpresasIncapacidades).toHaveBeenCalledWith([{ idEmpresa: 'e1', incapacidadesHabilitado: true }]);
+      expect(w.find('[data-interruptor="incapacidades"]').text()).toContain('En 2 de 2 empresas');
+      expect(useIncapacidadesStore().gestionaEnEmpresa('e1')).toBe(true);
+      expect(useIncapacidadesStore().gestionaEnEmpresa('e3')).toBe(false);
+    });
+
+    it('al encenderlo sin empresas elegidas, abre la lista y lo pide', async () => {
+      enMexico(false);
+      actualizarIncapacidades.mockResolvedValue({
+        data: { incapacidadesDisponible: true, incapacidadesHabilitado: true, empresasConIncapacidades: [] },
+      });
+      getEmpresasIncapacidades.mockResolvedValue({
+        data: empresasIncapacidades().map((e) => ({ ...e, incapacidadesHabilitado: false })),
+      });
+      const w = montar();
+      await flushPromises();
+      await interruptor(w, 'incapacidades').trigger('click');
+      await flushPromises();
+      expect(actualizarIncapacidades).toHaveBeenCalledWith(true);
+      expect(useIncapacidadesStore().habilitado).toBe(true);
+      const tarjeta = w.find('[data-interruptor="incapacidades"]');
+      expect(tarjeta.text()).toContain('Elige las empresas');
+      expect(tarjeta.find('.modulos-funciones__panel').exists()).toBe(true);
     });
   });
 });

@@ -4,6 +4,7 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
+import { useIncapacidadesStore } from '@/stores/incapacidades';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useSidebarStore } from '@/stores/sidebar';
@@ -25,6 +26,7 @@ export function resetSessionScopedState() {
   useEnfermeraFirmanteStore().clear();
   useTecnicoFirmanteStore().clear();
   useProveedorSaludStore().clear();
+  useIncapacidadesStore().reset();
   invalidateInicioResumenCache();
   resetBorradoresNotaMedicaState();
 }

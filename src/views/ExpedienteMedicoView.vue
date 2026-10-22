@@ -57,6 +57,7 @@ import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import { useEliminacion } from '@/composables/useEliminacion';
 import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useIncapacidadesStore } from '@/stores/incapacidades';
 import { verificarLimiteHistoriasDelMes } from '@/helpers/limiteHistoriasDelMes';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useRolePermissions } from '@/composables/useRolePermissions';
@@ -1003,10 +1004,11 @@ const tiposDocumentoCrear = [
 ];
 
 // Contadores de la fila "Registrar": dicen qué hay capturado sin abrir cada ventana
-// Incapacidades: solo en México y con el permiso que antes daba acceso a riesgos de trabajo
+// Incapacidades: módulo encendido, empresa elegida (incluye México) y el permiso de riesgos de trabajo
+const incapacidadesStore = useIncapacidadesStore();
 const incapacidadesDisponibles = computed(
   () =>
-    proveedorSaludStore.proveedorSalud?.pais === 'MX' &&
+    incapacidadesStore.gestionaEnEmpresa(route.params.idEmpresa ?? empresas.currentEmpresaId) &&
     canAccessRiesgosTrabajo.value &&
     (!INCAPACIDADES_SOLO_ADMINISTRADOR || userStore.user?.role === 'Administrador'),
 );

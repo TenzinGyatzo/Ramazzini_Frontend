@@ -24,7 +24,8 @@ import { useRouter, useRoute } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
-import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useIncapacidadesStore } from '@/stores/incapacidades';
+import { useUserPermissions } from '@/composables/useUserPermissions';
 import {
   buildExactExpedienteSummaryHtml,
   buildFailedExpedienteSummaryHtml,
@@ -155,9 +156,12 @@ const {
   executeIfCanManageTrabajadores,
   executeIfCanAccessRiesgosTrabajo,
 } = usePermissionRestrictions();
-const proveedorSaludStore = useProveedorSaludStore();
-/** Las incapacidades son del IMSS: el botón solo existe para proveedores de México. */
-const usaIncapacidades = () => proveedorSaludStore.proveedorSalud?.pais === 'MX';
+const incapacidadesStore = useIncapacidadesStore();
+const { canAccessRiesgosTrabajo } = useUserPermissions();
+/** Misma regla que el resto de la app: módulo encendido, empresa elegida y el permiso. */
+const usaIncapacidades = () =>
+  incapacidadesStore.gestionaEnEmpresa(route.params.idEmpresa ?? empresas.currentEmpresaId) &&
+  canAccessRiesgosTrabajo.value;
 
 function guardarFiltroEnLocalStorage(id: string, valor: string) {
   localStorage.setItem(`filtro-${id}`, valor);
@@ -1478,6 +1482,11 @@ function aplicarTodosLosFiltrosDesdeLocalStorage(opciones: { conservarPagina?: b
   // 5. Redibujar tabla
   dataTableInstance.draw(opciones.conservarPagina ? false : undefined);
 }
+
+// La configuración de incapacidades llega después de la tabla: al cambiar, se redibuja el botón
+watch(usaIncapacidades, () => {
+  dataTableInstance?.rows().invalidate().draw(false);
+});
 
 defineExpose({
   aplicarTodosLosFiltrosDesdeLocalStorage,

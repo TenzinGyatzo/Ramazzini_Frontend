@@ -4587,6 +4587,11 @@ html.dark-mode .modulos-funciones__fila-dato {
   color: #94a3b8;
 }
 
+html.dark-mode .modulos-funciones__nota {
+  color: #94a3b8;
+  border-color: #334155;
+}
+
 html.dark-mode .modulos-funciones__buscar {
   background-color: #1e293b;
   border-color: #475569;

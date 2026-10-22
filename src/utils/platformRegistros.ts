@@ -78,6 +78,7 @@ const ETIQUETAS_EVENTO: Record<string, string> = {
     SIGNED_FORM_TEST_DELETED: "Firma de prueba eliminada",
     SIGNED_FORM_CONFIG_UPDATED: "Firma en pantalla activada o desactivada",
     RESULTS_SEMAPHORE_UPDATED: "Semaforización de resultados activada o desactivada",
+    DISABILITY_CONFIG_UPDATED: "Configuración de incapacidades modificada",
     CONSENT_CREATED: "Consentimiento registrado",
     USER_INVITATION_SENT: "Invitación de usuario enviada",
     USER_ACTIVATED: "Usuario activado",

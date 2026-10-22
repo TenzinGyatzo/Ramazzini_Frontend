@@ -8,18 +8,23 @@ import { computed, inject, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import FormatosFirmadosAPI from '@/api/FormatosFirmadosAPI';
 import InventarioAPI from '@/api/InventarioAPI';
-import ModulosFuncionesAPI, { type EstadoModulosFunciones } from '@/api/ModulosFuncionesAPI';
+import ModulosFuncionesAPI, {
+  type EmpresaIncapacidades,
+  type EstadoModulosFunciones,
+} from '@/api/ModulosFuncionesAPI';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { useInventarioStore } from '@/stores/inventario';
+import { useIncapacidadesStore } from '@/stores/incapacidades';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 import type { EmpresaCentrosInventario } from '@/interfaces/inventario.interface';
 
-type Interruptor = 'firma' | 'semaforizacion' | 'inventario';
+type Interruptor = 'firma' | 'semaforizacion' | 'inventario' | 'incapacidades';
 
 const toast: any = inject('toast');
 const userStore = useUserStore();
 const inventarioStore = useInventarioStore();
+const incapacidadesStore = useIncapacidadesStore();
 const proveedorSaludStore = useProveedorSaludStore();
 
 const estado = ref<EstadoModulosFunciones | null>(null);
@@ -107,6 +112,44 @@ async function cambiarAntidoping() {
   }
 }
 
+// ---- Incapacidades por empresa (docs/modulos-y-funciones-especificacion.md, 4)
+const empresasIncapacidades = ref<EmpresaIncapacidades[]>([]);
+const panelEmpresas = ref(false);
+const busquedaEmpresa = ref('');
+const guardandoEmpresa = ref<string | null>(null);
+
+const empresasActivas = computed(() => empresasIncapacidades.value.filter((e) => e.incapacidadesHabilitado).length);
+
+const filasEmpresas = computed(() => {
+  const consulta = normalizar(busquedaEmpresa.value.trim());
+  return empresasIncapacidades.value.filter((empresa) => !consulta || normalizar(empresa.nombreEmpresa).includes(consulta));
+});
+
+async function cargarEmpresasIncapacidades() {
+  if (!puedeConfigurar.value) return;
+  try {
+    const { data } = await ModulosFuncionesAPI.getEmpresasIncapacidades();
+    empresasIncapacidades.value = data;
+  } catch (error) {
+    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudieron cargar las empresas.'), type: 'error' });
+  }
+}
+
+async function cambiarEmpresa(idEmpresa: string, incapacidadesHabilitado: boolean) {
+  if (guardandoEmpresa.value || !puedeConfigurar.value) return;
+  guardandoEmpresa.value = idEmpresa;
+  try {
+    const { data } = await ModulosFuncionesAPI.updateEmpresasIncapacidades([{ idEmpresa, incapacidadesHabilitado }]);
+    empresasIncapacidades.value = data;
+    // El resto de la app (empresa, trabajadores, expediente, tablero) consulta esta lista
+    await incapacidadesStore.cargarConfiguracion(true);
+  } catch (error) {
+    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudo guardar la empresa.'), type: 'error' });
+  } finally {
+    guardandoEmpresa.value = null;
+  }
+}
+
 async function cargar() {
   cargando.value = true;
   errorCarga.value = '';
@@ -114,6 +157,7 @@ async function cargar() {
     const { data } = await ModulosFuncionesAPI.getEstado();
     estado.value = data;
     if (data.inventarioHabilitado) await cargarCentrosInventario();
+    if (data.incapacidadesHabilitado) await cargarEmpresasIncapacidades();
   } catch (error) {
     errorCarga.value = extractApiErrorMessage(error, 'No se pudieron cargar los módulos y funciones.');
   } finally {
@@ -143,6 +187,17 @@ async function cambiar(cual: Interruptor) {
         message: activar ? 'Semaforización de resultados activada' : 'Semaforización de resultados desactivada',
         type: 'success',
       });
+    } else if (cual === 'incapacidades') {
+      const activar = !estado.value.incapacidadesHabilitado;
+      const { data } = await ModulosFuncionesAPI.actualizarIncapacidades(activar);
+      incapacidadesStore.aplicar(data);
+      estado.value.incapacidadesHabilitado = data.incapacidadesHabilitado;
+      toast?.open?.({ message: activar ? 'Incapacidades activadas' : 'Incapacidades desactivadas', type: 'success' });
+      if (activar) {
+        await cargarEmpresasIncapacidades();
+        // Encendido sin empresas no aparece en ningún lado: se abre la lista para elegirlas
+        if (empresasActivas.value === 0) panelEmpresas.value = true;
+      }
     } else {
       const activar = !estado.value.inventarioHabilitado;
       await inventarioStore.guardarConfiguracion({ inventarioHabilitado: activar });
@@ -313,6 +368,76 @@ onMounted(cargar);
               />
               <span>En esos centros, cada antidoping descuenta una prueba (al activarlo se agregan las pruebas al catálogo)</span>
             </label>
+          </div>
+        </article>
+        <article v-if="estado.incapacidadesDisponible" class="modulos-funciones__tarjeta" data-interruptor="incapacidades">
+          <div class="modulos-funciones__icono"><i class="fa-solid fa-bed" aria-hidden="true"></i></div>
+          <div class="min-w-0">
+            <h3 class="modulos-funciones__titulo">Incapacidades y riesgos de trabajo</h3>
+            <p class="modulos-funciones__texto">
+              Certificados del IMSS y descansos de la empresa, focos rojos, informe y prima de riesgo.
+            </p>
+            <p v-if="estado.incapacidadesHabilitado && puedeConfigurar" class="modulos-funciones__enlaces">
+              <span
+                class="modulos-funciones__chip"
+                :class="empresasActivas ? 'modulos-funciones__chip--ok' : 'modulos-funciones__chip--pendiente'"
+              >
+                {{
+                  empresasActivas
+                    ? `En ${empresasActivas} de ${empresasIncapacidades.length} ${empresasIncapacidades.length === 1 ? 'empresa' : 'empresas'}`
+                    : 'Elige las empresas'
+                }}
+              </span>
+              <button type="button" class="modulos-funciones__enlace" @click="panelEmpresas = !panelEmpresas">
+                {{ panelEmpresas ? 'Ocultar empresas' : 'Elegir empresas' }}
+              </button>
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="modulos-funciones__switch"
+            :class="{ 'modulos-funciones__switch--on': estado.incapacidadesHabilitado }"
+            :aria-checked="estado.incapacidadesHabilitado"
+            aria-label="Incapacidades y riesgos de trabajo"
+            :disabled="!puedeConfigurar || guardando !== null"
+            @click="cambiar('incapacidades')"
+          ></button>
+          <div v-if="estado.incapacidadesHabilitado && panelEmpresas && puedeConfigurar" class="modulos-funciones__panel">
+            <div class="modulos-funciones__panel-cabecera">
+              <span class="font-semibold text-sm">Empresas donde se gestionan</span>
+              <input
+                v-model="busquedaEmpresa"
+                type="search"
+                class="modulos-funciones__buscar"
+                placeholder="Buscar empresa"
+                aria-label="Buscar empresa"
+              />
+            </div>
+            <ul class="modulos-funciones__lista">
+              <li v-for="empresa in filasEmpresas" :key="empresa.idEmpresa" class="modulos-funciones__fila">
+                <label class="modulos-funciones__fila-etiqueta">
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 accent-emerald-600"
+                    :checked="empresa.incapacidadesHabilitado"
+                    :disabled="guardandoEmpresa !== null"
+                    :data-empresa="empresa.idEmpresa"
+                    @change="cambiarEmpresa(empresa.idEmpresa, !empresa.incapacidadesHabilitado)"
+                  />
+                  <span class="min-w-0">{{ empresa.nombreEmpresa }}</span>
+                </label>
+                <span class="modulos-funciones__fila-dato">
+                  {{ empresa.numeroTrabajadores }} {{ empresa.numeroTrabajadores === 1 ? 'trabajador' : 'trabajadores' }}
+                </span>
+              </li>
+              <li v-if="!filasEmpresas.length" class="modulos-funciones__fila modulos-funciones__fila-dato">
+                {{ busquedaEmpresa ? 'Ninguna empresa coincide con la búsqueda.' : 'Todavía no hay empresas.' }}
+              </li>
+            </ul>
+            <p class="modulos-funciones__nota">
+              Lo ve quien tiene el permiso de riesgos de trabajo. Quitar una empresa oculta sus incapacidades, no las borra.
+            </p>
           </div>
         </article>
       </div>
@@ -486,6 +611,14 @@ onMounted(cargar);
 
 .modulos-funciones__fila-dato {
   flex-shrink: 0;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.modulos-funciones__nota {
+  margin-top: 0.5rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid #e5e7eb;
   font-size: 0.8125rem;
   color: #6b7280;
 }

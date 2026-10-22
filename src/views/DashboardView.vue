@@ -54,7 +54,7 @@ import {
   resumirOtologica,
 } from '@/helpers/dashboardSeguimiento';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
-import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useIncapacidadesStore } from '@/stores/incapacidades';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { LEYENDA_SUENO_VIGILIA } from '@/helpers/evaluacionSuenoVigilia';
 import {
@@ -2772,16 +2772,16 @@ watch(
 
 // ---- Incapacidades: resumen del módulo, con el mismo periodo y centro. No responde a los filtros de población.
 
-const proveedorSaludStore = useProveedorSaludStore();
 const { canAccessRiesgosTrabajo } = useUserPermissions();
+const incapacidadesStore = useIncapacidadesStore();
 const informeDeIncapacidades = ref(null);
 let consultaDeIncapacidades = 0;
 
 const cargarIncapacidades = async () => {
   const esta = ++consultaDeIncapacidades;
   const empresaId = empresasStore.currentEmpresa?._id;
-  // El módulo solo existe para proveedores de México y requiere su permiso
-  if (!empresaId || proveedorSaludStore.proveedorSalud?.pais !== 'MX' || !canAccessRiesgosTrabajo.value) {
+  // Módulo encendido, empresa elegida (incluye México) y el permiso de riesgos de trabajo
+  if (!incapacidadesStore.gestionaEnEmpresa(empresaId) || !canAccessRiesgosTrabajo.value) {
     informeDeIncapacidades.value = null;
     return;
   }
@@ -2797,7 +2797,7 @@ const cargarIncapacidades = async () => {
 watch(
   [
     () => empresasStore.currentEmpresa?._id,
-    () => proveedorSaludStore.proveedorSalud?.pais,
+    () => incapacidadesStore.gestionaEnEmpresa(empresasStore.currentEmpresa?._id),
     () => canAccessRiesgosTrabajo.value,
     () => centrosTrabajo.value.map((c) => c._id).join(','),
     indiceCentroSeleccionado,

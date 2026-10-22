@@ -9,6 +9,7 @@ import { resetPostHogIdentity } from "@/utils/posthogIdentity";
 import { registerAnalyticsRouter } from "@/utils/sanitizePosthogEvent";
 import { useUserPermissions } from "@/composables/useUserPermissions";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
+import { useIncapacidadesStore } from "@/stores/incapacidades";
 import { resetSessionScopedState } from "@/stores/resetSessionState";
 import {
   startNavigationProgress,
@@ -347,6 +348,14 @@ router.beforeEach((to, from) => {
         if (!canAccessRiesgosTrabajo.value) {
           console.warn("Acceso denegado: no tienes permisos para acceder a riesgos de trabajo");
           return next({ name: "inicio" });
+        }
+        // Incapacidades por empresa: si la empresa no las gestiona, regresa a la empresa
+        if (String(to.name ?? "").startsWith("incapacidades-") && to.params.idEmpresa) {
+          const incapacidades = useIncapacidadesStore();
+          await incapacidades.cargarConfiguracion();
+          if (!incapacidades.gestionaEnEmpresa(to.params.idEmpresa)) {
+            return next({ name: "centros-trabajo", params: { idEmpresa: to.params.idEmpresa } });
+          }
         }
       }
 

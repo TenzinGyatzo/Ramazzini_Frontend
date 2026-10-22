@@ -19,6 +19,7 @@ import { useUserPermissions } from '@/composables/useUserPermissions';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { INCAPACIDADES_SOLO_ADMINISTRADOR } from '@/helpers/incapacidades';
+import { useIncapacidadesStore } from '@/stores/incapacidades';
 
 const toast: any = inject('toast');
 const { solicitarEliminacionConResumen } = useEliminacion();
@@ -70,15 +71,11 @@ const loadingTrabajadores = ref(false);
 const conteosTrabajadoresPorCentro = ref<Record<string, number>>({});
 const cargandoVista = ref(true);
 
-// Computed para verificar si el proveedor de salud es de México
-const esProveedorMexicano = computed(() => {
-  return proveedorSaludStore.proveedorSalud?.pais === 'MX';
-});
-
-// Incapacidades (sustituye a la vista de riesgos de trabajo): solo en México y con ese mismo permiso
+// Incapacidades: módulo encendido, empresa elegida (incluye México) y el permiso de riesgos de trabajo
+const incapacidadesStore = useIncapacidadesStore();
 const incapacidadesDisponibles = computed(
   () =>
-    esProveedorMexicano.value &&
+    incapacidadesStore.gestionaEnEmpresa(empresas.currentEmpresa?._id) &&
     canAccessRiesgosTrabajo.value &&
     (!INCAPACIDADES_SOLO_ADMINISTRADOR || userStore.user?.role === 'Administrador'),
 );
