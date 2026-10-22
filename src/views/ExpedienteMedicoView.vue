@@ -52,6 +52,7 @@ import {
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import ModalFormatoParaFirma from '@/components/ModalFormatoParaFirma.vue';
+import FormatosFirmadosAPI from '@/api/FormatosFirmadosAPI';
 import { descargarDeclaracionVeracidadPdf } from '@/helpers/generarDeclaracionVeracidadPdf';
 import { descargarConsentimientoAntidopingPdf } from '@/helpers/generarConsentimientoAntidopingPdf';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
@@ -176,6 +177,8 @@ const showResultadosClinicosPanel = ref(false);
 const selectedDocumentId = ref<string | null>(null);
 const selectedDocumentName = ref<string>('');
 const selectedDocumentType = ref<string | null>(null);
+/** Si el documento a anular es el PDF de un formato firmado en pantalla, su formato. */
+const selectedFormatoFirmadoId = ref<string | null>(null);
 
 type SelectedClinicalDocument = {
   documentId: string;
@@ -349,13 +352,15 @@ const toggleFinalizeModal = (
 const toggleAnularModal = (
   documentId: string | null = null,
   documentName: string = 'Sin nombre',
-  documentType: string | null = null
+  documentType: string | null = null,
+  idFormatoFirmado: string | null = null
 ) => {
   if (showAnularModal.value) {
     showAnularModal.value = false;
     selectedDocumentId.value = null;
     selectedDocumentName.value = '';
     selectedDocumentType.value = null;
+    selectedFormatoFirmadoId.value = null;
     return;
   }
 
@@ -381,18 +386,28 @@ const toggleAnularModal = (
   selectedDocumentId.value = documentId;
   selectedDocumentName.value = documentName;
   selectedDocumentType.value = documentType;
+  selectedFormatoFirmadoId.value = idFormatoFirmado;
 };
 
 const handleAnularDocument = async (razonAnulacion: string) => {
   if (!selectedDocumentId.value || !selectedDocumentType.value || !razonAnulacion) return;
 
   try {
-    await documentos.deleteDocumentById(
-      selectedDocumentType.value,
-      trabajadores.currentTrabajadorId!,
-      selectedDocumentId.value,
-      razonAnulacion
-    );
+    // Un formato firmado en pantalla se anula junto con su PDF por su propia ruta
+    if (selectedFormatoFirmadoId.value) {
+      await FormatosFirmadosAPI.anular(
+        trabajadores.currentTrabajadorId!,
+        selectedFormatoFirmadoId.value,
+        razonAnulacion
+      );
+    } else {
+      await documentos.deleteDocumentById(
+        selectedDocumentType.value,
+        trabajadores.currentTrabajadorId!,
+        selectedDocumentId.value,
+        razonAnulacion
+      );
+    }
 
     toast.open({ message: "Documento anulado exitosamente." });
 

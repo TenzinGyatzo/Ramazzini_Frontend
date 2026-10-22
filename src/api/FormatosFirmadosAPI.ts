@@ -44,4 +44,13 @@ export default {
   ): Promise<{ data: FormatoFirmadoCreado }> {
     return api.post(`/formatos-firmados/${trabajadorId}`, datos);
   },
+
+  /** Anula el formato y su PDF; los dos quedan en el expediente como anulados. */
+  anular(
+    trabajadorId: string,
+    idFormato: string,
+    razonAnulacion: string,
+  ): Promise<{ data: { _id: string; estado: 'ANULADO'; documentoExterno: any } }> {
+    return api.post(`/formatos-firmados/${trabajadorId}/${idFormato}/anular`, { razonAnulacion });
+  },
 };
