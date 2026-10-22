@@ -1103,7 +1103,9 @@ const crearDocumento = (tipoDocumento: string) =>
           etiqueta-fecha="Fecha de la declaración"
           texto-boton="Descargar declaración"
           :descargar="descargarDeclaracionVeracidadPdf"
+          tipo-formato="DECLARACION_VERACIDAD"
           @closeModal="toggleDeclaracionVeracidadModal"
+          @firmado="(doc) => agregarDocumentosExternosSubidos([doc])"
         />
       </Transition>
 
@@ -1121,7 +1123,9 @@ const crearDocumento = (tipoDocumento: string) =>
           etiqueta-fecha="Fecha del consentimiento"
           texto-boton="Descargar consentimiento"
           :descargar="descargarConsentimientoAntidopingPdf"
+          tipo-formato="CONSENTIMIENTO_ANTIDOPING"
           @closeModal="toggleConsentimientoAntidopingModal"
+          @firmado="(doc) => agregarDocumentosExternosSubidos([doc])"
         />
       </Transition>
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, inject, computed, watch, onUnmounted } from "vue";
+import { ref, inject, computed, watch, onMounted, onUnmounted } from "vue";
 import axios from "axios";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { useRouter, RouterLink } from "vue-router";
@@ -12,6 +12,7 @@ import { useNom024Fields } from "@/composables/useNom024Fields";
 import { processProviderLogo } from "@/helpers/processProviderLogo";
 import { toTitleCase } from "@/helpers/toTitleCase";
 import { extractApiErrorMessage } from "@/helpers/apiErrors";
+import FormatosFirmadosAPI from "@/api/FormatosFirmadosAPI";
 import {
   PERFILES_PROVEEDOR_SALUD,
   normalizarPerfilProveedorSalud,
@@ -25,6 +26,40 @@ const logotipoArchivo = ref(null);
 const procesandoLogotipo = ref(false);
 const isDragOver = ref(false);  // Para el estado de drag and drop
 const toast = inject("toast");
+
+// Firma en pantalla: se guarda en cuanto se cambia, por su propia ruta (no con el formulario)
+const firmaEnPantallaHabilitada = ref(false);
+const guardandoFirmaEnPantalla = ref(false);
+
+onMounted(async () => {
+  try {
+    const { data } = await FormatosFirmadosAPI.getConfiguracion();
+    firmaEnPantallaHabilitada.value = data.firmaEnPantallaHabilitada === true;
+  } catch {
+    firmaEnPantallaHabilitada.value = false;
+  }
+});
+
+const cambiarFirmaEnPantalla = async () => {
+  if (guardandoFirmaEnPantalla.value) return;
+  const activar = !firmaEnPantallaHabilitada.value;
+  guardandoFirmaEnPantalla.value = true;
+  try {
+    const { data } = await FormatosFirmadosAPI.actualizarConfiguracion({ firmaEnPantallaHabilitada: activar });
+    firmaEnPantallaHabilitada.value = data.firmaEnPantallaHabilitada === true;
+    toast.open({
+      message: activar ? "Firma en pantalla activada" : "Firma en pantalla desactivada",
+      type: "success",
+    });
+  } catch (error) {
+    toast.open({
+      message: extractApiErrorMessage(error, "No se pudo cambiar la firma en pantalla."),
+      type: "error",
+    });
+  } finally {
+    guardandoFirmaEnPantalla.value = false;
+  }
+};
 
 // URL de objeto de la vista previa, para liberarla al reemplazar o desmontar
 let previewObjectUrl = null;
@@ -621,6 +656,28 @@ const logoSrc = computed(() => {
                   </span>
                 </button>
                 <p class="mt-2 text-sm text-gray-600 hidden sm:block">La semaforización permite el uso de colores en los resultados de los informes (<span class="text-emerald-700">Apto sin restricciones</span>, <span class="text-amber-700">Apto con restricciones</span>, <span class="text-red-700">No apto</span>) haciéndolo más claro y fácil de entender.</p>
+              </div>
+
+              <!-- Switch para la firma en pantalla (se guarda al instante) -->
+              <div class="perfil-firma-en-pantalla">
+                <label class="block mt-4 font-medium text-lg text-gray-700">Firma en pantalla</label>
+
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="firmaEnPantallaHabilitada"
+                  aria-label="Firma en pantalla"
+                  :disabled="guardandoFirmaEnPantalla"
+                  @click="cambiarFirmaEnPantalla"
+                  :class="firmaEnPantallaHabilitada ? 'bg-emerald-500' : 'bg-gray-300'"
+                  class="relative w-14 h-7 rounded-full transition-colors disabled:opacity-60"
+                >
+                  <span
+                    class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform"
+                    :class="firmaEnPantallaHabilitada ? 'translate-x-7' : ''">
+                  </span>
+                </button>
+                <p class="mt-2 text-sm text-gray-600">El trabajador puede firmar la declaración de veracidad y el consentimiento antidoping en una tableta, pantalla táctil, celular o con el mouse, y el formato queda guardado en su expediente. Imprimirlos para firmarlos a mano sigue disponible. Este cambio se guarda al instante.</p>
               </div>
 
               <!-- Campo CLUES (NOM-024): solo México -->

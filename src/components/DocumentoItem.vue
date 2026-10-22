@@ -2341,9 +2341,15 @@ const isAnulacion = computed(() => {
     return documentImmutabilityEnabled.value && isFinalized.value && !isAnulado.value;
 });
 
+/** PDF de un formato firmado en pantalla: es evidencia, no se edita ni se elimina desde aquí. */
+const esFormatoFirmado = computed(
+    () => props.documentoTipo === 'documentoExterno' && !!props.documentoExterno?.idFormatoFirmado,
+);
+
 // En modo eliminación masiva: documentos FINALIZADO/ANULADO no son seleccionables
 const isDeletableInBulkMode = computed(() => {
     if (!props.isDeletionMode) return true;
+    if (esFormatoFirmado.value) return false;
     if (adminNoPuedeEliminar.value) return false;
     if (!documentImmutabilityEnabled.value) return true;
     return !isFinalized.value && !isAnulado.value;
@@ -2355,6 +2361,7 @@ const canOpenDocument = computed(
 );
 
 const editActionTooltip = computed(() => {
+  if (esFormatoFirmado.value) return 'Firmado en pantalla: no se edita';
   if (isReadOnly.value) return 'Ver documento';
   if (!canManageThisDocument.value) {
     return getRestrictionMessage(props.documentoTipo);
@@ -2364,6 +2371,7 @@ const editActionTooltip = computed(() => {
 
 const deleteAnularActionTooltip = computed(() => {
   if (isAnulado.value) return 'Documento anulado';
+  if (esFormatoFirmado.value) return 'Firmado en pantalla: no se elimina';
   if (adminNoPuedeEliminar.value) {
     return 'El Administrador de plataforma solo puede eliminar borradores';
   }
@@ -4042,6 +4050,12 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                                     :class="obtenerExtensionArchivo(documentoExterno) === 'pdf' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'">
                                     {{ obtenerExtensionArchivo(documentoExterno).toUpperCase() }}
                                 </span>
+                                <span v-if="esFormatoFirmado"
+                                    class="documento-item-firmado-pantalla inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800"
+                                    title="Firmado por el trabajador en pantalla">
+                                    <i class="fa-solid fa-signature" aria-hidden="true"></i>
+                                    <span class="hidden sm:inline">Firmado en pantalla</span>
+                                </span>
 
                                 <EstadoDocumentoBadge
                                     v-if="isMX && documentImmutabilityEnabled"
@@ -5699,11 +5713,11 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                 <button v-if="documentoTipo === 'documentoExterno'" type="button"
                     :class="[
                         'documento-item-action inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canOpenDocument
+                        canOpenDocument && !esFormatoFirmado
                             ? 'documento-item-action--edit bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-110'
                             : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
-                    :disabled="!canOpenDocument"
+                    :disabled="!canOpenDocument || esFormatoFirmado"
                     @click="handleEditDocumentoExterno"
                     @mouseenter="(e) => updateTooltipPosition(e, editActionTooltip)"
                     @mouseleave="hideTooltip">
@@ -5734,11 +5748,11 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                 <button type="button"
                     :class="[
                         'documento-item-action inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canAnularEliminarThisDocument && !isAnulado && !adminNoPuedeEliminar
+                        canAnularEliminarThisDocument && !isAnulado && !adminNoPuedeEliminar && !esFormatoFirmado
                             ? 'documento-item-action--delete bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110'
                             : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
-                    :disabled="!canAnularEliminarThisDocument || isAnulado || adminNoPuedeEliminar"
+                    :disabled="!canAnularEliminarThisDocument || isAnulado || adminNoPuedeEliminar || esFormatoFirmado"
                     @click="isAnulacion ? handleAnularDocument(documentoId, documentoNombre, documentoTipo) : handleDeleteDocument(documentoId, documentoNombre, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, deleteAnularActionTooltip)"
                     @mouseleave="hideTooltip">
