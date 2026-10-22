@@ -1,8 +1,32 @@
 {
+  "CONSENTIMIENTO_EVALUACION_MEDICA": {
+    "tipoFormato": "CONSENTIMIENTO_EVALUACION_MEDICA",
+    "version": "v0",
+    "titulo": "CONSENTIMIENTO INFORMADO PARA EVALUACIÓN MÉDICA LABORAL",
+    "disponible": false,
+    "bloques": [
+      {
+        "tipo": "parrafo",
+        "fragmentos": [
+          {
+            "texto": "Yo, "
+          },
+          {
+            "campo": "nombreTrabajador",
+            "negrita": true
+          },
+          {
+            "texto": ", [texto del consentimiento para evaluación médica laboral en preparación]."
+          }
+        ]
+      }
+    ]
+  },
   "DECLARACION_VERACIDAD": {
     "tipoFormato": "DECLARACION_VERACIDAD",
     "version": "v1",
     "titulo": "DECLARACIÓN DE VERACIDAD DE INFORMACIÓN MÉDICA",
+    "disponible": true,
     "bloques": [
       {
         "tipo": "parrafo",
@@ -139,6 +163,7 @@
   "CONSENTIMIENTO_ANTIDOPING": {
     "tipoFormato": "CONSENTIMIENTO_ANTIDOPING",
     "version": "v1",
+    "disponible": true,
     "titulo": "CONSENTIMIENTO INFORMADO PARA PRUEBA DE DETECCIÓN DE SUSTANCIAS",
     "bloques": [
       {

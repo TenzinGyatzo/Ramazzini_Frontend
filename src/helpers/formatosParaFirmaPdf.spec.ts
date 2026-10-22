@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TipoFormatoFirma } from '@/types/formatoFirma';
 
 const descargas: Array<{ def: any; nombre: string }> = [];
 vi.mock('@/lib/cargarPdfMake', () => ({
@@ -12,6 +13,12 @@ vi.mock('@/helpers/setupPdfMakeKanitFonts', () => ({ setupPdfMakeKanitFonts: asy
 const getTexto = vi.fn();
 vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { getTexto: (tipo: string) => getTexto(tipo) } }));
 import textosV1 from './__fixtures__/textosFormatoFirmaV1.json';
+
+/** El formato impreso de un tipo, con la función única del helper. */
+async function descargarDe(tipo: TipoFormatoFirma) {
+  const { descargarFormatoParaFirmaPdf } = await import('./formatoParaFirmaPdf');
+  return (params: Parameters<typeof descargarFormatoParaFirmaPdf>[1]) => descargarFormatoParaFirmaPdf(tipo, params);
+}
 
 const trabajador = { nombre: 'JUAN', primerApellido: 'PÉREZ', segundoApellido: 'LÓPEZ' };
 const proveedorSalud = { direccion: 'Av. 1', municipio: 'TIJUANA', estado: 'BAJA CALIFORNIA', telefono: '6641234567' };
@@ -36,8 +43,8 @@ beforeEach(() => {
 
 describe('texto desde el backend', () => {
   it('pide el formato que corresponde', async () => {
-    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
-    const { descargarConsentimientoAntidopingPdf } = await import('./generarConsentimientoAntidopingPdf');
+    const descargarDeclaracionVeracidadPdf = await descargarDe('DECLARACION_VERACIDAD');
+    const descargarConsentimientoAntidopingPdf = await descargarDe('CONSENTIMIENTO_ANTIDOPING');
     await descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
     await descargarConsentimientoAntidopingPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
     expect(getTexto.mock.calls).toEqual([['DECLARACION_VERACIDAD'], ['CONSENTIMIENTO_ANTIDOPING']]);
@@ -45,7 +52,7 @@ describe('texto desde el backend', () => {
 
   it('si el backend no responde, no descarga nada y el error llega al modal', async () => {
     getTexto.mockRejectedValue(new Error('sin red'));
-    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
+    const descargarDeclaracionVeracidadPdf = await descargarDe('DECLARACION_VERACIDAD');
     await expect(
       descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud }),
     ).rejects.toThrow('sin red');
@@ -63,7 +70,7 @@ describe('texto desde el backend', () => {
         ],
       },
     });
-    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
+    const descargarDeclaracionVeracidadPdf = await descargarDe('DECLARACION_VERACIDAD');
     await descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
 
     const { def } = descargas[0];
@@ -76,7 +83,7 @@ describe('texto desde el backend', () => {
 
 describe('espaciado de la declaración (igual que antes de mover el texto al backend)', () => {
   it('lista con sangría, 4 pt dentro de la lista, 6 entre párrafos y 30 al final', async () => {
-    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
+    const descargarDeclaracionVeracidadPdf = await descargarDe('DECLARACION_VERACIDAD');
     await descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
 
     const { def } = descargas[0];
@@ -98,7 +105,7 @@ describe('espaciado de la declaración (igual que antes de mover el texto al bac
 
 describe('consentimiento informado antidoping', () => {
   it('lleva el texto acordado con el nombre del trabajador y la fecha', async () => {
-    const { descargarConsentimientoAntidopingPdf } = await import('./generarConsentimientoAntidopingPdf');
+    const descargarConsentimientoAntidopingPdf = await descargarDe('CONSENTIMIENTO_ANTIDOPING');
     await descargarConsentimientoAntidopingPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
 
     const { def, nombre } = descargas[0];
@@ -142,7 +149,7 @@ describe('consentimiento informado antidoping', () => {
 
 describe('declaración de veracidad (sobre las piezas comunes)', () => {
   it('conserva título, nombre de archivo, contenido y pie', async () => {
-    const { descargarDeclaracionVeracidadPdf } = await import('./generarDeclaracionVeracidadPdf');
+    const descargarDeclaracionVeracidadPdf = await descargarDe('DECLARACION_VERACIDAD');
     await descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
 
     const { def, nombre } = descargas[0];
@@ -152,5 +159,13 @@ describe('declaración de veracidad (sobre las piezas comunes)', () => {
     expect(texto(def.content.at(-2))).toBe('Fecha: 17-10-2026');
     expect(texto(def.footer)).toContain('Av. 1, Tijuana, Baja California. Tel. (+52) 6641234567');
     expect(def.styles.header.fontSize).toBe(15);
+  });
+});
+
+describe('consentimiento para evaluación médica (texto en preparación)', () => {
+  it('no se descarga mientras no tenga su texto definitivo', async () => {
+    const descargar = await descargarDe('CONSENTIMIENTO_EVALUACION_MEDICA');
+    await expect(descargar({ trabajador, fecha: '2026-10-22', proveedorSalud })).rejects.toThrow(/texto definitivo/);
+    expect(descargas).toHaveLength(0);
   });
 });

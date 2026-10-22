@@ -51,10 +51,8 @@ import {
 } from '@/helpers/incapacidades';
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
 import { useUserPermissions } from '@/composables/useUserPermissions';
-import ModalFormatoParaFirma from '@/components/ModalFormatoParaFirma.vue';
+import ModalFormatosParaFirma from '@/components/ModalFormatosParaFirma.vue';
 import FormatosFirmadosAPI from '@/api/FormatosFirmadosAPI';
-import { descargarDeclaracionVeracidadPdf } from '@/helpers/generarDeclaracionVeracidadPdf';
-import { descargarConsentimientoAntidopingPdf } from '@/helpers/generarConsentimientoAntidopingPdf';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import { useEliminacion } from '@/composables/useEliminacion';
 import { useUserStore } from '@/stores/user';
@@ -130,8 +128,7 @@ const {
 
 const showDocumentoExternoModal = ref(false);
 const showDocumentoExternoUpdateModal = ref(false);
-const showDeclaracionVeracidadModal = ref(false);
-const showConsentimientoAntidopingModal = ref(false);
+const showFormatosFirmaModal = ref(false);
 const showRiesgosModal = ref(false);
 
 // Editar los datos del trabajador sin salir de su expediente
@@ -248,12 +245,8 @@ const toggleDocumentoExternoModal = () => {
   }, 'gestionar documentos externos');
 };
 
-const toggleConsentimientoAntidopingModal = () => {
-  showConsentimientoAntidopingModal.value = !showConsentimientoAntidopingModal.value;
-};
-
-const toggleDeclaracionVeracidadModal = () => {
-  showDeclaracionVeracidadModal.value = !showDeclaracionVeracidadModal.value;
+const toggleFormatosFirmaModal = () => {
+  showFormatosFirmaModal.value = !showFormatosFirmaModal.value;
 };
 
 const toggleDocumentoExternoUpdateModal = () => {
@@ -1116,36 +1109,10 @@ const crearDocumento = (tipoDocumento: string) =>
         name="modal-work"
         :duration="{ enter: 230, leave: 150 }"
       >
-        <ModalFormatoParaFirma
-          v-if="showDeclaracionVeracidadModal"
+        <ModalFormatosParaFirma
+          v-if="showFormatosFirmaModal"
           :trabajador="trabajadores.currentTrabajador ?? null"
-          titulo="Declaración de Veracidad"
-          nombre-formato="la declaración"
-          etiqueta-fecha="Fecha de la declaración"
-          texto-boton="Descargar declaración"
-          :descargar="descargarDeclaracionVeracidadPdf"
-          tipo-formato="DECLARACION_VERACIDAD"
-          @closeModal="toggleDeclaracionVeracidadModal"
-          @firmado="(doc) => agregarDocumentosExternosSubidos([doc])"
-        />
-      </Transition>
-
-      <Transition
-        appear
-        name="modal-work"
-        :duration="{ enter: 230, leave: 150 }"
-      >
-        <ModalFormatoParaFirma
-          v-if="showConsentimientoAntidopingModal"
-          :trabajador="trabajadores.currentTrabajador ?? null"
-          titulo="Consentimiento Informado"
-          descripcion="Prueba de detección de sustancias (antidoping). Genera un formato imprimible para que el trabajador lo firme a puño y letra antes de la toma de muestra. Si necesitas conservarlo en el expediente, súbelo después como Documento Externo."
-          nombre-formato="el consentimiento"
-          etiqueta-fecha="Fecha del consentimiento"
-          texto-boton="Descargar consentimiento"
-          :descargar="descargarConsentimientoAntidopingPdf"
-          tipo-formato="CONSENTIMIENTO_ANTIDOPING"
-          @closeModal="toggleConsentimientoAntidopingModal"
+          @closeModal="toggleFormatosFirmaModal"
           @firmado="(doc) => agregarDocumentosExternosSubidos([doc])"
         />
       </Transition>
@@ -1439,25 +1406,16 @@ const crearDocumento = (tipoDocumento: string) =>
                 >{{ totalResultadosClinicos }}</span>
               </button>
 
-              <!-- No registran nada: descargan formatos que firma el trabajador. Van juntos, a la derecha -->
+              <!-- Formatos que firma el trabajador: en papel o en pantalla. A la derecha -->
               <div class="expediente-formatos">
                 <button
                   type="button"
                   class="expediente-accion-link"
-                  title="Descargar el formato para que lo firme el trabajador; ya firmado se sube como documento externo"
-                  @click="toggleDeclaracionVeracidadModal"
+                  title="Consentimiento, declaración de veracidad y consentimiento antidoping: descárgalos para firmar a mano o pide la firma en pantalla"
+                  @click="toggleFormatosFirmaModal"
                 >
-                  <i class="fa-solid fa-download" aria-hidden="true"></i>
-                  Declaración de veracidad
-                </button>
-                <button
-                  type="button"
-                  class="expediente-accion-link"
-                  title="Descargar el consentimiento informado para la prueba antidoping, para que lo firme el trabajador; ya firmado se sube como documento externo"
-                  @click="toggleConsentimientoAntidopingModal"
-                >
-                  <i class="fa-solid fa-download" aria-hidden="true"></i>
-                  Consentimiento antidoping
+                  <i class="fa-solid fa-signature" aria-hidden="true"></i>
+                  Formatos para firma
                 </button>
               </div>
             </div>

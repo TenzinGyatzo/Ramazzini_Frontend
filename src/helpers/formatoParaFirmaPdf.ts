@@ -293,6 +293,57 @@ export function buildCuerpoFormato(
   ];
 }
 
+/**
+ * Lo que cambia entre formatos al imprimir: nombre del archivo y el título. Los espacios al inicio
+ * hacen que la línea roja del título empiece a la misma altura en todos; el tamaño se ajusta para
+ * que el título quepa junto al logo (medido con Kanit). Si cambia un título, hay que reajustarlos.
+ */
+const DISENO_FORMATO: Record<TipoFormatoFirma, { archivo: string; sangria: string; tamanoTitulo: number }> = {
+  // Provisional: medir de nuevo cuando exista el texto definitivo
+  CONSENTIMIENTO_EVALUACION_MEDICA: { archivo: 'Consentimiento_Evaluacion_Medica', sangria: '  ', tamanoTitulo: 14 },
+  DECLARACION_VERACIDAD: { archivo: 'Declaracion_Veracidad', sangria: ' '.repeat(23), tamanoTitulo: 15 },
+  CONSENTIMIENTO_ANTIDOPING: { archivo: 'Consentimiento_Antidoping', sangria: '  ', tamanoTitulo: 13 },
+};
+
+/** Descarga el formato impreso de cualquier tipo, con el texto vigente del backend. */
+export async function descargarFormatoParaFirmaPdf(
+  tipoFormato: TipoFormatoFirma,
+  params: {
+    trabajador: TrabajadorFormatoFirma;
+    fecha: string;
+    proveedorSalud: ProveedorSaludFormatoFirma | null;
+  },
+): Promise<void> {
+  const { trabajador, fecha, proveedorSalud } = params;
+  const texto = await obtenerTextoFormato(tipoFormato);
+  if (!texto.disponible) {
+    throw new Error('Este formato todavía no tiene su texto definitivo');
+  }
+  const diseno = DISENO_FORMATO[tipoFormato];
+  const fechaFormateada = formatFechaYYYYMMDD(fecha);
+
+  await descargarFormatoPdf({
+    nombreArchivo: buildNombreArchivoFormato(diseno.archivo, trabajador, fecha),
+    proveedorSalud,
+    construir: (logo) => {
+      const definicion = buildDocDefinitionFormato({
+        header: buildHeaderFormato(logo, `${diseno.sangria}${texto.titulo}\n`),
+        footer: buildFooterFormato(proveedorSalud),
+        content: buildCuerpoFormato(
+          texto.bloques,
+          { nombreTrabajador: formatNombreTrabajadorFormato(trabajador) },
+          fechaFormateada,
+        ),
+      });
+      if (diseno.tamanoTitulo === 15) return definicion;
+      return {
+        ...definicion,
+        styles: { ...definicion.styles, header: { ...definicion.styles?.header, fontSize: diseno.tamanoTitulo } },
+      };
+    },
+  });
+}
+
 /** Renglón de firma («Firma: ________»). */
 export function buildFirmaFormato(): Content {
   return {
