@@ -38,8 +38,6 @@ const revokePreviewUrl = () => {
 
 onUnmounted(revokePreviewUrl);
 
-const colorInforme = ref("#343A40");
-
 const isMX = computed(() => formulario.value.pais === 'MX');
 const { cluesFieldVisible } = useNom024Fields();
 
@@ -81,8 +79,6 @@ watch(
       codigoPostal: typeof codigoPostalValue === 'string' ? (codigoPostalValue || "") : (codigoPostalValue ? String(codigoPostalValue) : ""),
       clues: proveedor.clues ?? ""
     });
-
-    colorInforme.value = proveedor.colorInforme || "#343A40";
   },
   { immediate: true },
 );
@@ -193,25 +189,6 @@ function formatearTelefono(telefono) {
   // Si no coincide con ningún formato conocido, devolver tal como está
   return telefono;
 }
-
-// Lista de opciones de colores predefinidos
-const colorOptions = [
-  { name: "Gris Oscuro", hex: "#343A40" },
-  { name: "Gris", hex: "#6C757D" },
-  // { name: "Gris Claro", hex: "#F8F9FA" },
-  { name: "Azul Oscuro", hex: "#004085" },
-  { name: "Azul Profesional", hex: "#007BFF" },
-  { name: "Turquesa Oscuro", hex: "#138496" },
-  { name: "Turquesa", hex: "#17A2B8" },
-  { name: "Azul Claro", hex: "#2BB9D9" },
-  { name: "Verde Teal", hex: "#006763" },
-  { name: "Verde Oscuro", hex: "#1E7E34" },
-  { name: "Verde Médico", hex: "#28A745" },
-  { name: "Rojo Oscuro", hex: "#C82333" },
-  { name: "Rojo Médico", hex: "#DC3545" },
-  { name: "Naranja", hex: "#E67E22" },
-  { name: "Oro", hex: "#E0A800" },
-];
 
 // Valida y procesa el logotipo (fondo, recorte, padding, 500x500 PNG) antes de usarlo
 const handleLogoSelection = async (file) => {
@@ -326,9 +303,6 @@ const handleSubmit = async (data) => {
     }
   });
 
-  // Agregar personalización de informes
-  formData.append("colorInforme", colorInforme.value);
-  
   // Agregar teléfono del formulario (CountryPhoneInput no es FormKit)
   if (formulario.value.telefono) {
     formData.append("telefono", formulario.value.telefono);
@@ -581,30 +555,9 @@ const logoSrc = computed(() => {
                   urlValidation: 'El sitio web ingresado no es válido.',
                 }" />
 
-              <!-- Selector de Color -->
-              <div>
-                <label class="block mt-4 font-medium text-lg text-gray-700">Color del informe</label>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                  v-for="color in colorOptions"
-                  :key="color.hex"
-                  :style="{ backgroundColor: color.hex }"
-                  class="w-10 h-10 rounded-full border-2 transition-all duration-200"
-                  :class="colorInforme === color.hex ? 'border-black scale-110 shadow-lg' : 'border-gray-300'"
-                  @click.prevent="colorInforme = color.hex"
-                  :title="color.name"
-                  >
-                  <span v-if="colorInforme === color.hex" class="absolute text-white top-0.5 right-2.5 text-2xl">
-                    ✓
-                  </span>
-                  </button>
-                </div>
-                <p class="mt-2 text-sm text-gray-600">Color seleccionado: <span class="font-semibold">{{ colorOptions.find(c => c.hex === colorInforme)?.name }}</span></p>
-              </div>
-
-              <!-- Funciones y módulos (semaforización, firma en pantalla, inventario) tienen su página -->
+              <!-- Color de los informes, orden de documentos, funciones y módulos tienen su página -->
               <p class="perfil-modulos-funciones mt-4 text-sm text-gray-600">
-                La semaforización de resultados, la firma en pantalla y los módulos se configuran en
+                El color de los informes, el orden de los documentos, la semaforización, la firma en pantalla y los módulos se configuran en
                 <RouterLink :to="{ name: 'modulos-funciones' }" class="font-semibold text-emerald-700 hover:underline">Módulos y funciones</RouterLink>.
               </p>
 

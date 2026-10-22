@@ -9,6 +9,8 @@ export interface EstadoModulosFunciones {
   /** Solo proveedores de México. */
   incapacidadesDisponible: boolean;
   incapacidadesHabilitado: boolean;
+  /** Color de encabezados y tablas de los informes en PDF. */
+  colorInforme: string;
 }
 
 /** Si el módulo de incapacidades está encendido y en qué empresas (cualquier usuario). */
@@ -32,6 +34,10 @@ export default {
 
   actualizarSemaforizacion(semaforizacionActivada: boolean): Promise<{ data: EstadoModulosFunciones }> {
     return api.patch('/modulos-funciones/semaforizacion', { semaforizacionActivada });
+  },
+
+  actualizarColorInforme(colorInforme: string): Promise<{ data: EstadoModulosFunciones }> {
+    return api.patch('/modulos-funciones/color-informe', { colorInforme });
   },
 
   getIncapacidades(): Promise<{ data: ConfiguracionIncapacidades }> {

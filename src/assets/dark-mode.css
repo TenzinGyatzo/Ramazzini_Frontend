@@ -4611,3 +4611,26 @@ html.dark-mode .modulos-funciones__chip--pendiente {
 html.dark-mode .modulos-funciones__enlace {
   color: #6ee7b7;
 }
+
+/* Módulos y funciones: color de los informes y orden de los documentos */
+html.dark-mode .modulos-funciones__color--elegido {
+  border-color: #f1f5f9;
+}
+
+html.dark-mode .modulos-funciones__vista-previa {
+  border-color: #334155;
+}
+
+html.dark-mode .modulos-funciones__vista-previa-fila {
+  background-color: #0f172a;
+  color: #94a3b8;
+}
+
+html.dark-mode .modulos-funciones__orden {
+  color: #e2e8f0;
+}
+
+html.dark-mode .modulos-funciones__chip--neutro {
+  background-color: #1e293b;
+  color: #cbd5e1;
+}

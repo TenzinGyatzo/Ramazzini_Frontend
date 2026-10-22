@@ -13,6 +13,10 @@ import ModulosFuncionesAPI, {
   type EstadoModulosFunciones,
 } from '@/api/ModulosFuncionesAPI';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
+import { COLORES_INFORME, nombreColorInforme } from '@/helpers/coloresInforme';
+import { nombreTipoDocumento } from '@/helpers/documentosExpediente';
+import { useRolePermissions } from '@/composables/useRolePermissions';
+import ModalOrdenDocumentos from '@/components/ModalOrdenDocumentos.vue';
 import { useInventarioStore } from '@/stores/inventario';
 import { useIncapacidadesStore } from '@/stores/incapacidades';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
@@ -25,6 +29,7 @@ const toast: any = inject('toast');
 const userStore = useUserStore();
 const inventarioStore = useInventarioStore();
 const incapacidadesStore = useIncapacidadesStore();
+const { canConfigurarOrdenDocumentos } = useRolePermissions();
 const proveedorSaludStore = useProveedorSaludStore();
 
 const estado = ref<EstadoModulosFunciones | null>(null);
@@ -111,6 +116,39 @@ async function cambiarAntidoping() {
     guardandoAntidoping.value = false;
   }
 }
+
+// ---- Informes y expediente: color de los informes y orden de los documentos
+const guardandoColor = ref<string | null>(null);
+
+async function cambiarColor(hex: string) {
+  if (!estado.value || guardandoColor.value || !puedeConfigurar.value || hex === estado.value.colorInforme) return;
+  guardandoColor.value = hex;
+  try {
+    const { data } = await ModulosFuncionesAPI.actualizarColorInforme(hex);
+    estado.value.colorInforme = data.colorInforme;
+    // Para que el perfil y lo que se genere en esta sesión usen el color nuevo sin recargar
+    if (proveedorSaludStore.proveedorSalud) {
+      (proveedorSaludStore.proveedorSalud as any).colorInforme = data.colorInforme;
+    }
+    toast?.open?.({ message: `Color de los informes: ${nombreColorInforme(data.colorInforme)}`, type: 'success' });
+  } catch (error) {
+    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudo guardar el color.'), type: 'error' });
+  } finally {
+    guardandoColor.value = null;
+  }
+}
+
+/** Mientras se guarda, la vista previa ya muestra el color elegido. */
+const colorMostrado = computed(() => guardandoColor.value ?? estado.value?.colorInforme ?? COLORES_INFORME[0].hex);
+
+const modalOrden = ref(false);
+/** Los tipos que el proveedor no usa (control prenatal) no se cuentan. */
+const ordenVisible = computed(() =>
+  proveedorSaludStore.ordenTiposDocumento.filter(
+    (tipo) => tipo !== 'controlPrenatal' || proveedorSaludStore.controlPrenatalEnabled,
+  ),
+);
+const primerosTipos = computed(() => ordenVisible.value.slice(0, 3));
 
 // ---- Incapacidades por empresa (docs/modulos-y-funciones-especificacion.md, 4)
 const empresasIncapacidades = ref<EmpresaIncapacidades[]>([]);
@@ -286,6 +324,84 @@ onMounted(cargar);
       </div>
 
       <h2 class="modulos-funciones__seccion text-sm font-semibold text-gray-600 mt-8 mb-3">
+        Informes y expediente · cómo se ven en toda la organización
+      </h2>
+      <div class="flex flex-col gap-3">
+        <article class="modulos-funciones__tarjeta modulos-funciones__tarjeta--sin-switch" data-ajuste="color">
+          <div class="modulos-funciones__icono"><i class="fa-solid fa-palette" aria-hidden="true"></i></div>
+          <div class="min-w-0">
+            <h3 class="modulos-funciones__titulo">Color de los informes</h3>
+            <p class="modulos-funciones__texto">Encabezados y tablas de los informes en PDF.</p>
+            <div class="modulos-funciones__colores" role="radiogroup" aria-label="Color de los informes">
+              <button
+                v-for="color in COLORES_INFORME"
+                :key="color.hex"
+                type="button"
+                role="radio"
+                class="modulos-funciones__color"
+                :class="{ 'modulos-funciones__color--elegido': colorMostrado.toLowerCase() === color.hex.toLowerCase() }"
+                :style="{ backgroundColor: color.hex }"
+                :title="color.name"
+                :aria-label="color.name"
+                :aria-checked="colorMostrado.toLowerCase() === color.hex.toLowerCase()"
+                :disabled="!puedeConfigurar || guardandoColor !== null"
+                :data-color="color.hex"
+                @click="cambiarColor(color.hex)"
+              >
+                <i
+                  v-if="colorMostrado.toLowerCase() === color.hex.toLowerCase()"
+                  class="fa-solid fa-check"
+                  aria-hidden="true"
+                ></i>
+              </button>
+            </div>
+            <div class="modulos-funciones__vista-previa" aria-hidden="true">
+              <div class="modulos-funciones__vista-previa-titulo" :style="{ backgroundColor: colorMostrado }">
+                Historia clínica laboral
+              </div>
+              <div class="modulos-funciones__vista-previa-fila">
+                <span :style="{ backgroundColor: colorMostrado }">Nombre</span>
+                <span>Vista previa</span>
+              </div>
+            </div>
+            <p class="modulos-funciones__fila-dato mt-2" data-nombre-color>{{ nombreColorInforme(colorMostrado) }}</p>
+          </div>
+        </article>
+
+        <article class="modulos-funciones__tarjeta modulos-funciones__tarjeta--sin-switch" data-ajuste="orden">
+          <div class="modulos-funciones__icono"><i class="fa-solid fa-arrow-down-short-wide" aria-hidden="true"></i></div>
+          <div class="min-w-0">
+            <h3 class="modulos-funciones__titulo">Orden de los documentos</h3>
+            <p class="modulos-funciones__texto">Cómo aparecen en todos los expedientes y en el PDF combinado.</p>
+            <p class="modulos-funciones__orden" data-orden-resumen>
+              <template v-for="(tipo, i) in primerosTipos" :key="tipo">
+                <span v-if="i > 0" aria-hidden="true"> · </span>{{ i + 1 }}. {{ nombreTipoDocumento(tipo) }}
+              </template>
+              <span v-if="ordenVisible.length > primerosTipos.length" class="text-gray-500">
+                · y {{ ordenVisible.length - primerosTipos.length }} más
+              </span>
+            </p>
+            <p class="modulos-funciones__enlaces">
+              <span
+                class="modulos-funciones__chip"
+                :class="proveedorSaludStore.ordenDocumentosPersonalizado ? 'modulos-funciones__chip--pendiente' : 'modulos-funciones__chip--neutro'"
+              >
+                {{ proveedorSaludStore.ordenDocumentosPersonalizado ? 'Personalizado' : 'Orden de fábrica' }}
+              </span>
+              <button
+                v-if="canConfigurarOrdenDocumentos"
+                type="button"
+                class="modulos-funciones__enlace"
+                @click="modalOrden = true"
+              >
+                Cambiar orden
+              </button>
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <h2 class="modulos-funciones__seccion text-sm font-semibold text-gray-600 mt-8 mb-3">
         Módulos · se activan y luego eliges dónde se usan
       </h2>
       <div class="flex flex-col gap-3">
@@ -442,6 +558,8 @@ onMounted(cargar);
         </article>
       </div>
     </template>
+
+    <ModalOrdenDocumentos :visible="modalOrden" @close="modalOrden = false" />
   </div>
 </template>
 
@@ -613,6 +731,83 @@ onMounted(cargar);
   flex-shrink: 0;
   font-size: 0.8125rem;
   color: #6b7280;
+}
+
+.modulos-funciones__tarjeta--sin-switch {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.modulos-funciones__colores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
+}
+
+.modulos-funciones__color {
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  color: #ffffff;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 150ms;
+}
+
+.modulos-funciones__color--elegido {
+  border-color: #111827;
+  transform: scale(1.1);
+}
+
+.modulos-funciones__color:disabled {
+  cursor: default;
+}
+
+.modulos-funciones__vista-previa {
+  margin-top: 0.75rem;
+  max-width: 22rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  font-size: 0.75rem;
+}
+
+.modulos-funciones__vista-previa-titulo {
+  padding: 0.375rem 0.625rem;
+  color: #ffffff;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: background-color 150ms;
+}
+
+.modulos-funciones__vista-previa-fila {
+  display: flex;
+  background-color: #f9fafb;
+  color: #6b7280;
+}
+
+.modulos-funciones__vista-previa-fila span {
+  padding: 0.3125rem 0.625rem;
+}
+
+.modulos-funciones__vista-previa-fila span:first-child {
+  width: 40%;
+  color: #ffffff;
+  transition: background-color 150ms;
+}
+
+.modulos-funciones__orden {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.modulos-funciones__chip--neutro {
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 .modulos-funciones__nota {

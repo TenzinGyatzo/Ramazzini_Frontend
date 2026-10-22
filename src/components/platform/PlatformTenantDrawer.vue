@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { COLOR_INFORME_POR_DEFECTO, nombreColorInforme } from "@/helpers/coloresInforme";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import AuthAPI from "@/api/AuthAPI";
@@ -86,24 +87,13 @@ const meses = computed(() => {
   return hc.map((m, i) => ({ mes: m.mes, historias: m.count, notas: notas[i]?.count ?? 0 }));
 });
 
-const COLORES_INFORME: Record<string, string> = {
-  "#343a40": "Gris oscuro (predeterminado)",
-  "#6c757d": "Gris",
-  "#004085": "Azul oscuro",
-  "#007bff": "Azul profesional",
-  "#138496": "Turquesa oscuro",
-  "#17a2b8": "Turquesa",
-  "#2bb9d9": "Azul claro",
-  "#1e7e34": "Verde oscuro",
-  "#28a745": "Verde médico",
-  "#c82333": "Rojo oscuro",
-  "#dc3545": "Rojo médico",
-  "#e67e22": "Naranja",
-  "#e0a800": "Oro",
-};
 const colorInforme = computed(() => {
-  const hex = props.proveedor.colorInforme?.toLowerCase();
-  return hex ? COLORES_INFORME[hex] ?? hex : "—";
+  const hex = props.proveedor.colorInforme;
+  if (!hex) return "—";
+  // En este panel, solo la primera letra en mayúscula («Azul profesional»)
+  const completo = nombreColorInforme(hex);
+  const nombre = completo.charAt(0) + completo.slice(1).toLowerCase();
+  return hex.toLowerCase() === COLOR_INFORME_POR_DEFECTO.toLowerCase() ? `${nombre} (predeterminado)` : nombre;
 });
 
 const baseURL = import.meta.env.VITE_API_URL || "https://ramazzini.app";

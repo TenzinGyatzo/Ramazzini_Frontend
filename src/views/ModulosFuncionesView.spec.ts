@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useUserStore } from '@/stores/user';
 import { useInventarioStore } from '@/stores/inventario';
 import { useIncapacidadesStore } from '@/stores/incapacidades';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 const {
   getEstado,
@@ -17,6 +18,7 @@ const {
   getEmpresasIncapacidades,
   updateEmpresasIncapacidades,
   getIncapacidades,
+  actualizarColorInforme,
 } = vi.hoisted(() => ({
   getEstado: vi.fn(),
   actualizarSemaforizacion: vi.fn(),
@@ -29,6 +31,7 @@ const {
   getEmpresasIncapacidades: vi.fn(),
   updateEmpresasIncapacidades: vi.fn(),
   getIncapacidades: vi.fn(),
+  actualizarColorInforme: vi.fn(),
 }));
 vi.mock('@/api/ModulosFuncionesAPI', () => ({
   default: {
@@ -38,6 +41,7 @@ vi.mock('@/api/ModulosFuncionesAPI', () => ({
     getEmpresasIncapacidades,
     updateEmpresasIncapacidades,
     getIncapacidades,
+    actualizarColorInforme,
   },
 }));
 vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { actualizarConfiguracion: actualizarConfiguracionFirma } }));
@@ -76,6 +80,7 @@ const ESTADO = {
   inventarioControlaAntidoping: false,
   incapacidadesDisponible: false,
   incapacidadesHabilitado: false,
+  colorInforme: '#343A40',
 };
 
 /** Dos empresas; solo Bimbo gestiona incapacidades. */
@@ -87,7 +92,13 @@ const toast = { open: vi.fn() };
 
 function montar() {
   return mount(ModulosFuncionesView, {
-    global: { provide: { toast }, stubs: { RouterLink: { template: '<a><slot /></a>' } } },
+    global: {
+      provide: { toast },
+      stubs: {
+        RouterLink: { template: '<a><slot /></a>' },
+        ModalOrdenDocumentos: { props: ['visible'], template: '<div data-modal-orden :data-visible="visible"></div>' },
+      },
+    },
   });
 }
 
@@ -108,7 +119,7 @@ describe('ModulosFuncionesView', () => {
     await flushPromises();
     const secciones = w.findAll('h2').map((h) => h.text());
     expect(secciones[0]).toMatch(/^Funciones/);
-    expect(secciones[1]).toMatch(/^Módulos/);
+    expect(secciones[2]).toMatch(/^Módulos/);
     expect(w.findAll('[data-interruptor]').map((t) => t.attributes('data-interruptor'))).toEqual([
       'firma',
       'semaforizacion',
@@ -302,6 +313,64 @@ describe('ModulosFuncionesView', () => {
       const tarjeta = w.find('[data-interruptor="incapacidades"]');
       expect(tarjeta.text()).toContain('Elige las empresas');
       expect(tarjeta.find('.modulos-funciones__panel').exists()).toBe(true);
+    });
+  });
+
+  describe('informes y expediente', () => {
+    it('va entre las funciones y los módulos', async () => {
+      const w = montar();
+      await flushPromises();
+      expect(w.findAll('h2').map((h) => h.text().split(' ·')[0])).toEqual([
+        'Funciones',
+        'Informes y expediente',
+        'Módulos',
+      ]);
+    });
+
+    it('el color se guarda al instante, cambia la vista previa y el resto de la sesión', async () => {
+      useProveedorSaludStore().proveedorSalud = { _id: 'p1', colorInforme: '#343A40' } as any;
+      actualizarColorInforme.mockResolvedValue({ data: { ...ESTADO, colorInforme: '#1E7E34' } });
+      const w = montar();
+      await flushPromises();
+      expect(w.find('[data-nombre-color]').text()).toBe('Gris Oscuro');
+
+      await w.find('[data-color="#1E7E34"]').trigger('click');
+      await flushPromises();
+      expect(actualizarColorInforme).toHaveBeenCalledWith('#1E7E34');
+      expect(w.find('[data-color="#1E7E34"]').attributes('aria-checked')).toBe('true');
+      expect(w.find('[data-nombre-color]').text()).toBe('Verde Oscuro');
+      expect(w.find('.modulos-funciones__vista-previa-titulo').attributes('style')).toContain('rgb(30, 126, 52)');
+      expect((useProveedorSaludStore().proveedorSalud as any).colorInforme).toBe('#1E7E34');
+    });
+
+    it('si falla, se queda el color anterior', async () => {
+      actualizarColorInforme.mockRejectedValue({ response: { data: { message: 'Sin permiso' } } });
+      const w = montar();
+      await flushPromises();
+      await w.find('[data-color="#1E7E34"]').trigger('click');
+      await flushPromises();
+      expect(w.find('[data-nombre-color]').text()).toBe('Gris Oscuro');
+      expect(toast.open).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+    });
+
+    it('quien no es Principal ve el color, pero no lo cambia', async () => {
+      useUserStore().user = { _id: 'u2', role: 'Médico' } as any;
+      const w = montar();
+      await flushPromises();
+      expect(w.find('[data-color="#1E7E34"]').attributes('disabled')).toBeDefined();
+    });
+
+    it('resume el orden de los documentos y abre el mismo modal del expediente', async () => {
+      useProveedorSaludStore().proveedorSalud = { _id: 'p1' } as any;
+      const w = montar();
+      await flushPromises();
+      const tarjeta = w.find('[data-ajuste="orden"]');
+      expect(tarjeta.find('[data-orden-resumen]').text()).toMatch(/^1\. .+ · 2\. .+ · 3\. .+ · y \d+ más$/);
+      expect(tarjeta.text()).toContain('Orden de fábrica');
+
+      expect(w.find('[data-modal-orden]').attributes('data-visible')).toBe('false');
+      await tarjeta.findAll('button').find((b) => b.text() === 'Cambiar orden')!.trigger('click');
+      expect(w.find('[data-modal-orden]').attributes('data-visible')).toBe('true');
     });
   });
 });
