@@ -23,7 +23,14 @@
             "negrita": true
           },
           {
-            "texto": ", cuyo propósito es valorar mi estado de salud en relación con las actividades, condiciones y riesgos asociados a mi puesto de trabajo, así como contribuir a la prevención de accidentes y enfermedades laborales."
+            "texto": ", cuyo propósito es "
+          },
+          {
+            "texto": "valorar mi estado de salud en relación con las actividades, condiciones y riesgos asociados a mi puesto de trabajo",
+            "negrita": true
+          },
+          {
+            "texto": ", así como contribuir a la prevención de accidentes y enfermedades laborales."
           }
         ]
       },
@@ -31,7 +38,14 @@
         "tipo": "parrafo",
         "fragmentos": [
           {
-            "texto": "Comprendo que la evaluación podrá incluir interrogatorio médico, revisión de antecedentes de salud, exploración física, mediciones clínicas y estudios complementarios que resulten pertinentes conforme a los riesgos identificados, las características del puesto y el criterio del personal de salud responsable."
+            "texto": "Comprendo que la evaluación podrá incluir "
+          },
+          {
+            "texto": "interrogatorio médico, revisión de antecedentes de salud, exploración física, mediciones clínicas y estudios complementarios",
+            "negrita": true
+          },
+          {
+            "texto": " que resulten pertinentes conforme a los riesgos identificados, las características del puesto y el criterio del personal de salud responsable."
           }
         ]
       },
@@ -39,7 +53,14 @@
         "tipo": "parrafo",
         "fragmentos": [
           {
-            "texto": "Reconozco que el artículo 123, apartado A, fracción XV, de la Constitución Política de los Estados Unidos Mexicanos establece obligaciones patronales en materia de seguridad y prevención de riesgos laborales. Asimismo, el artículo 134, fracción X, de la Ley Federal del Trabajo establece la obligación de los trabajadores de someterse a los reconocimientos médicos previstos en el reglamento interior y demás normas vigentes de la empresa o establecimiento."
+            "texto": "Reconozco que el artículo 123, apartado A, fracción XV, de la Constitución Política de los Estados Unidos Mexicanos establece obligaciones patronales en materia de seguridad y prevención de riesgos laborales. Asimismo, el artículo 134, fracción X, de la Ley Federal del Trabajo establece "
+          },
+          {
+            "texto": "la obligación de los trabajadores de someterse a los reconocimientos médicos",
+            "negrita": true
+          },
+          {
+            "texto": " previstos en el reglamento interior y demás normas vigentes de la empresa o establecimiento."
           }
         ]
       },
@@ -47,7 +68,14 @@
         "tipo": "parrafo",
         "fragmentos": [
           {
-            "texto": "Comprendo que los resultados de la evaluación podrán utilizarse para identificar condiciones de salud que requieran atención o seguimiento, establecer recomendaciones preventivas y determinar mi aptitud médica en relación con las actividades laborales correspondientes."
+            "texto": "Comprendo que los resultados de la evaluación podrán utilizarse para identificar condiciones de salud que requieran atención o seguimiento, establecer recomendaciones preventivas y "
+          },
+          {
+            "texto": "determinar mi aptitud médica",
+            "negrita": true
+          },
+          {
+            "texto": " en relación con las actividades laborales correspondientes."
           }
         ]
       },
@@ -55,7 +83,14 @@
         "tipo": "parrafo",
         "fragmentos": [
           {
-            "texto": "Reconozco que la información proporcionada durante la evaluación, así como los resultados y documentos derivados de ella, tendrán carácter confidencial y deberán ser tratados conforme a la legislación aplicable en materia de protección de datos personales y al aviso de privacidad correspondiente."
+            "texto": "Reconozco que la información proporcionada durante la evaluación, así como los resultados y documentos derivados de ella, "
+          },
+          {
+            "texto": "tendrán carácter confidencial",
+            "negrita": true
+          },
+          {
+            "texto": " y deberán ser tratados conforme a la legislación aplicable en materia de protección de datos personales y al aviso de privacidad correspondiente."
           }
         ]
       },
@@ -63,7 +98,21 @@
         "tipo": "parrafo",
         "fragmentos": [
           {
-            "texto": "Entiendo que algunos procedimientos o estudios complementarios pueden ocasionar molestias o riesgos, tales como dolor leve, sangrado, hematomas u otras complicaciones relacionadas con la obtención de muestras biológicas. Asimismo, comprendo que determinados procedimientos pueden requerir información adicional y un consentimiento específico antes de su realización."
+            "texto": "Entiendo que algunos procedimientos o estudios complementarios "
+          },
+          {
+            "texto": "pueden ocasionar molestias o riesgos",
+            "negrita": true
+          },
+          {
+            "texto": ", tales como dolor leve, sangrado, hematomas u otras complicaciones relacionadas con la obtención de muestras biológicas. Asimismo, comprendo que determinados procedimientos "
+          },
+          {
+            "texto": "pueden requerir información adicional y un consentimiento específico",
+            "negrita": true
+          },
+          {
+            "texto": " antes de su realización."
           }
         ]
       },
@@ -71,7 +120,11 @@
         "tipo": "parrafo",
         "fragmentos": [
           {
-            "texto": "Manifiesto que he tenido oportunidad de conocer la finalidad, el alcance, los posibles beneficios y riesgos de la evaluación médica laboral, así como de plantear y aclarar mis dudas antes de su realización."
+            "texto": "Manifiesto que he tenido oportunidad de conocer la finalidad, el alcance, los posibles beneficios y riesgos de la evaluación médica laboral, así como de "
+          },
+          {
+            "texto": "plantear y aclarar mis dudas antes de su realización.",
+            "negrita": true
           }
         ]
       },
@@ -79,7 +132,14 @@
         "tipo": "parrafo",
         "fragmentos": [
           {
-            "texto": "Por lo anterior, otorgo mi consentimiento libre e informado para la realización de la evaluación médica laboral y los procedimientos que me hayan sido previamente explicados, conforme a su naturaleza, finalidad y alcance."
+            "texto": "Por lo anterior, "
+          },
+          {
+            "texto": "otorgo mi consentimiento libre e informado",
+            "negrita": true
+          },
+          {
+            "texto": " para la realización de la evaluación médica laboral y los procedimientos que me hayan sido previamente explicados, conforme a su naturaleza, finalidad y alcance."
           }
         ]
       }
