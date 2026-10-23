@@ -4,6 +4,7 @@
     <Transition appear name="panel-overlay">
       <div
         v-if="isOpen"
+        data-pantalla-completa
         class="fixed inset-0 bg-black bg-opacity-50 z-[60]"
         :class="{ 'modal-backdrop-pulse': dismissPulse }"
         @click="handleDismiss"

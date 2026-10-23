@@ -622,7 +622,7 @@ const porcentajeHistorias = computed(() => {
   <Teleport to="body">
     <transition name="fade">
       <div v-if="mostrarModalPago" class="subscription-pago-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300 ease-in-out" @click.self="mostrarModalPago = false">
-        <div class="subscription-pago-modal bg-white rounded-xl shadow-2xl max-w-lg lg:max-w-xl w-full m-4 transform transition-all duration-300 ease-in-out scale-95 opacity-0 animate-fadeInScale">
+        <div class="subscription-pago-modal bg-white rounded-xl shadow-2xl max-w-lg lg:max-w-xl w-full m-4 max-h-[calc(100dvh-2rem)] overflow-y-auto transform transition-all duration-300 ease-in-out scale-95 opacity-0 animate-fadeInScale">
           <div class="absolute top-4 right-4">
             <button @click="mostrarModalPago = false" class="subscription-pago-modal__close text-gray-400 hover:text-gray-600 transition-colors">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>

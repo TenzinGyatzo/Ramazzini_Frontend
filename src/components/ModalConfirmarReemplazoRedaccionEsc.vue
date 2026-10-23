@@ -48,7 +48,7 @@ function onConfirmar() {
       @click.self="emit('close')"
     >
       <div
-        class="bg-white rounded-2xl p-6 sm:p-8 shadow-2xl max-w-md w-full mx-auto transform transition-all duration-300 scale-100 border border-gray-100"
+        class="bg-white rounded-2xl p-6 sm:p-8 shadow-2xl max-w-md w-full mx-auto max-h-[calc(100dvh-2rem)] overflow-y-auto transform transition-all duration-300 scale-100 border border-gray-100"
         @click.stop
       >
         <div class="text-center mb-6">

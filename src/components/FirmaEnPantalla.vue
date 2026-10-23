@@ -136,7 +136,7 @@ onMounted(cargarTexto);
 
 <template>
   <Teleport to="body">
-    <div class="firma-pantalla fixed inset-0 z-50 flex flex-col bg-gray-100" role="dialog" aria-modal="true" :aria-label="texto?.titulo ?? 'Firma en pantalla'">
+    <div data-pantalla-completa class="firma-pantalla fixed inset-0 z-50 flex flex-col bg-gray-100" role="dialog" aria-modal="true" :aria-label="texto?.titulo ?? 'Firma en pantalla'">
       <header class="firma-pantalla__barra flex items-center justify-between gap-3 px-4 sm:px-8 py-3 bg-white border-b border-gray-200">
         <p class="text-sm text-gray-600 truncate">
           Firma en pantalla · <span class="font-semibold text-gray-800">{{ nombreTrabajador }}</span>

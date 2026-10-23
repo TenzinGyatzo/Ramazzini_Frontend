@@ -538,7 +538,7 @@ onMounted(async () => {
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       @mousedown.self="closeDeleteModal"
     >
-      <div class="catalogos-admin-modal bg-white rounded-xl shadow-xl max-w-lg w-full p-6" @mousedown.stop>
+      <div class="catalogos-admin-modal bg-white rounded-xl shadow-xl max-w-lg w-full p-6 max-h-[calc(100dvh-2rem)] overflow-y-auto" @mousedown.stop>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirmar eliminación</h3>
         <p class="text-sm text-gray-600 mb-6">
           ¿Eliminar {{ deleteTipoRegistro }} identificado como

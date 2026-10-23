@@ -40,7 +40,7 @@ useEscapeToClose(handleClose, () => props.open);
           role="alertdialog"
           aria-labelledby="curp-inconvenient-title"
           aria-describedby="curp-inconvenient-description"
-          class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+          class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto"
         >
           <h2 id="curp-inconvenient-title" class="text-xl font-semibold text-gray-900">
             Palabra inconveniente en la CURP

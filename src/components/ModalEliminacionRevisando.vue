@@ -13,7 +13,7 @@ defineProps<{ visible: boolean }>();
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm" />
     <div class="fixed inset-0 z-10 flex items-center justify-center p-8">
       <div
-        class="modal-eliminacion modal-inner flex items-center gap-3 rounded-lg bg-white px-5 py-4 text-left shadow-xl"
+        class="modal-eliminacion modal-inner flex items-center gap-3 rounded-lg bg-white px-5 py-4 text-left shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto"
       >
         <i class="fas fa-spinner fa-spin text-xl text-gray-500" />
         <div>

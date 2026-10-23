@@ -2771,7 +2771,7 @@ const crearTablaPDF = (datos: any[], columnas: string[], titulo: string, tipoTab
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
         @click="!generandoPDF && mensajeExito ? cerrarModal() : null"
       >
-        <div class="bg-white rounded-xl p-6 shadow-xl max-w-md w-full mx-4" @click.stop>
+        <div class="bg-white rounded-xl p-6 shadow-xl max-w-md w-full mx-4 max-h-[calc(100dvh-2rem)] overflow-y-auto" @click.stop>
           <div class="flex flex-col items-center justify-center space-y-4 py-10">
             <!-- Spinner durante la generación -->
             <svg v-if="generandoPDF" class="animate-spin h-8 w-8 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

@@ -66,7 +66,7 @@ const missingFieldsLabels = computed(() => {
     
     <Transition appear name="fade-scale">
       <!-- Modal centrado -->
-      <div class="modal-inner relative bg-white text-gray-900 w-full max-w-lg p-6 sm:p-10 rounded-2xl shadow-2xl overflow-hidden">
+      <div class="modal-inner relative bg-white text-gray-900 w-full max-w-lg p-6 sm:p-10 rounded-2xl shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <!-- Botón para cerrar el modal -->
         <button
           class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"

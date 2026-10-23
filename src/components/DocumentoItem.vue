@@ -5794,6 +5794,7 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
     <Teleport to="body">
         <Transition name="modal-fade" appear :css="!visorSinAnimacion">
             <div v-if="showPdfViewer"
+                data-pantalla-completa
                 class="documento-item-viewer fixed inset-0 z-50 flex flex-col overflow-hidden bg-black bg-opacity-90 backdrop-blur-sm"
                 :class="{ 'visor-preparando': visorPreparando, 'visor-navegando': navegandoDesdeAqui, [`visor-entra-${entradaVisor}`]: entradaVisor }"
                 :aria-hidden="visorPreparando ? 'true' : undefined"

@@ -79,7 +79,7 @@ const getColorTipo = (tipo: string) => {
 
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm" @click="emit('close')">
-    <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-lg w-full mx-4 transform transition-all duration-300 scale-100" @click.stop>
+    <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-lg w-full mx-4 max-h-[calc(100dvh-2rem)] overflow-y-auto transform transition-all duration-300 scale-100" @click.stop>
       <!-- Header con icono animado -->
       <div class="text-center mb-6">
         <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4 animate-pulse">

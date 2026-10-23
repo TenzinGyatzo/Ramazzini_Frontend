@@ -182,7 +182,7 @@ const tonos: Record<string, string> = {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-[60] flex justify-end" data-testid="platform-tenant-drawer">
+  <div data-pantalla-completa class="fixed inset-0 z-[60] flex justify-end" data-testid="platform-tenant-drawer">
     <div class="absolute inset-0 bg-slate-900/30 dark:bg-black/50" aria-hidden="true" @click="emit('close')"></div>
     <aside
       role="dialog"

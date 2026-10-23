@@ -362,7 +362,7 @@ const { mostrarConfirmacion: mostrarConfirmacionSalida, responderDescarte } =
             role="alertdialog"
             aria-labelledby="suspender-titulo"
             aria-describedby="suspender-descripcion"
-            class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+            class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto"
           >
             <h2 id="suspender-titulo" class="text-xl font-semibold text-gray-900">
               ¿Suspender la cuenta de {{ usuarioPorSuspender.username }}?

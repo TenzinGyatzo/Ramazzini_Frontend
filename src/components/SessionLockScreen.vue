@@ -119,7 +119,7 @@ const handleUnlock = async () => {
 
 <template>
   <div class="session-lock fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm">
-    <div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/2 lg:w-1/3 max-w-md border border-gray-200">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-11/12 md:w-1/2 lg:w-1/3 max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto border border-gray-200">
       <div class="flex flex-col items-center mb-6">
         <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
           <i class="fas fa-lock text-emerald-600 text-3xl"></i>

@@ -240,10 +240,11 @@ const handleConfirm = async () => {
     aria-modal="true"
     aria-labelledby="modal-title"
   >
-    <div class="modal-anular-documento bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden transform transition-all">
-      <div class="p-6">
+    <div class="modal-anular-documento bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden transform transition-all flex flex-col max-h-[calc(100dvh-2rem)]">
+      <!-- En pantallas bajas solo se desplaza el contenido: encabezado y botones siempre a la vista -->
+      <div class="p-6 flex min-h-0 flex-1 flex-col">
         <!-- Header -->
-        <div class="flex items-center gap-4 mb-6">
+        <div class="flex shrink-0 items-center gap-4 mb-6">
           <div class="modal-anular-doc-rose-icon w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
             <i class="fas fa-file-circle-xmark text-rose-600 text-xl" aria-hidden="true"></i>
           </div>
@@ -254,7 +255,7 @@ const handleConfirm = async () => {
         </div>
 
         <!-- Content -->
-        <div class="space-y-4 mb-6">
+        <div class="modal-cuerpo-desplazable space-y-4 mb-6 min-h-0 flex-1 overflow-y-auto -mx-1 px-1">
           <!-- Información del Documento -->
           <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div class="flex items-center gap-2 mb-3">
@@ -459,7 +460,7 @@ const handleConfirm = async () => {
         </div>
 
         <!-- Actions -->
-        <div class="flex flex-col sm:flex-row gap-3">
+        <div class="flex shrink-0 flex-col sm:flex-row gap-3">
           <button 
             type="button" 
             class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200"

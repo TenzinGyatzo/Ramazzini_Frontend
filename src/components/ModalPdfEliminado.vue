@@ -66,7 +66,7 @@ button:focus {
 
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm" @click="emit('close')">
-    <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100" @click.stop>
+    <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4 max-h-[calc(100dvh-2rem)] overflow-y-auto transform transition-all duration-300 scale-100" @click.stop>
       
       <!-- Modal para documento normal -->
       <template v-if="props.tipo != 'documentoexterno'">
