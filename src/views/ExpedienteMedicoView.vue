@@ -51,6 +51,7 @@ import {
 } from '@/helpers/incapacidades';
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
 import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
+import FusionesTrabajador from '@/components/FusionesTrabajador.vue';
 import type { ResultadoFusion } from '@/interfaces/trabajador.interface';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import ModalFormatosParaFirma from '@/components/ModalFormatosParaFirma.vue';
@@ -168,6 +169,8 @@ const cerrarEdicionTrabajador = () => {
 
 // Fusionar este trabajador con otro registro de la misma empresa
 const showFusionModal = ref(false);
+// Cambia al fusionar para volver a cargar la línea «Fusionado con…» del encabezado
+const fusionesVersion = ref(0);
 
 const abrirFusionTrabajador = () => {
   executeIfCanManageTrabajadores(async () => {
@@ -184,6 +187,7 @@ const abrirFusionTrabajador = () => {
 /** Tras fusionar se muestra el expediente del registro que se conservó, en su centro. */
 const onFusionCompletada = async (resultado: ResultadoFusion) => {
   showFusionModal.value = false;
+  fusionesVersion.value += 1;
   const { empresaId, centroId, trabajadorId } = contextoTrabajador();
   const centroFinal = resultado.idCentroTrabajo || centroId;
   if (resultado.conservadoId !== trabajadorId || centroFinal !== centroId) {
@@ -1335,6 +1339,12 @@ const crearDocumento = (tipoDocumento: string) =>
                     {{ dato.texto }}
                   </span>
                 </p>
+                <FusionesTrabajador
+                  :key="fusionesVersion"
+                  :empresa-id="contextoTrabajador().empresaId"
+                  :centro-id="contextoTrabajador().centroId"
+                  :trabajador-id="String(trabajadores.currentTrabajador._id)"
+                />
               </div>
 
               <!-- Conteo de documentos -->

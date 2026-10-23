@@ -146,3 +146,33 @@ export interface ResultadoFusion {
   /** Centro de trabajo en el que queda el trabajador conservado. */
   idCentroTrabajo: string;
 }
+
+/** Una fusión en la que el trabajador conservó otro registro (consulta en el expediente). */
+export interface FusionConsultada {
+  _id: string;
+  fecha: string | null;
+  destinoId: string;
+  fuenteId: string;
+  /** El registro se fusionó con otro que después se fusionó con este. */
+  indirecta: boolean;
+  folioDestino: string | null;
+  folioFuente: string | null;
+  /** null en fusiones anteriores a la trazabilidad completa. */
+  nombreFuente: string | null;
+  curpFuente: string | null;
+  actor: { nombre: string; email: string | null } | null;
+  criterio: string | null;
+  motivos: MotivoFusion[];
+  motivoOtro: string | null;
+  comentario: string | null;
+  camposCambiados: {
+    clave: string;
+    etiqueta: string;
+    origen: OrigenCampoFusion;
+    anterior: Record<string, string | number | null>;
+    nuevo: Record<string, string | number | null>;
+  }[];
+  documentosMigradosPorColeccion: Record<string, number>;
+  trasladados: Record<string, { id: string; tipo?: string; fecha?: string | null; nombre?: string }[]>;
+  centrosNombre: Record<string, string>;
+}

@@ -118,6 +118,11 @@ export default {
         });
     },
 
+    /** Fusiones en las que este trabajador conservó otro registro. */
+    getFusionesDeTrabajador(empresaId: string, centroTrabajoId: string, trabajadorId: string) {
+        return api.get(`/${empresaId}/${centroTrabajoId}/trabajadores/${trabajadorId}/fusiones`);
+    },
+
     descartarDuplicado(empresaId: string, centroTrabajoId: string, alertId: string) {
         return api.patch(`/${empresaId}/${centroTrabajoId}/duplicados/${alertId}/descartar`, {});
     },
