@@ -24,6 +24,8 @@ export interface TrabajadorFormatoFirma {
 }
 
 export interface ProveedorSaludFormatoFirma {
+  /** Institución responsable que se imprime en el formato. */
+  nombre?: string;
   direccion?: string;
   municipio?: string;
   estado?: string;
@@ -254,19 +256,23 @@ function buildFragmentoFormato(
     : { text, bold: true };
 }
 
-/** Margen inferior: 4 dentro de la lista y antes de ella, 30 tras el último bloque, 6 entre párrafos. */
+/** Margen inferior: 4 dentro de la lista y antes de ella, 20 tras el último bloque, 6 entre párrafos. */
 function margenInferiorBloque(bloques: BloqueFormatoFirma[], i: number): number {
-  if (i === bloques.length - 1) return 30;
+  if (i === bloques.length - 1) return 20;
   if (bloques[i].tipo === 'encabezadoLista') return 4;
   if (bloques[i].tipo === 'elementoLista' && bloques[i + 1].tipo === 'elementoLista') return 4;
   return 6;
 }
 
-/** Cuerpo del formato con los datos del trabajador, seguido de la fecha y el renglón de firma. */
+/**
+ * Cuerpo del formato con los datos del trabajador, seguido de la institución responsable, la fecha
+ * y el renglón de firma.
+ */
 export function buildCuerpoFormato(
   bloques: BloqueFormatoFirma[],
   datos: Record<CampoFormatoFirma, string>,
   fechaFormateada: string,
+  etiquetaFirma = 'Firma:',
 ): Content[] {
   const cuerpo: Content[] = bloques.map((bloque, i) => {
     const margin: [number, number, number, number] = [
@@ -286,10 +292,14 @@ export function buildCuerpoFormato(
   return [
     ...cuerpo,
     {
-      text: ['Fecha: ', { text: fechaFormateada, bold: true }],
-      margin: [0, 0, 0, 30],
+      text: ['Institución responsable: ', { text: datos.institucionResponsable, bold: true }],
+      margin: [0, 0, 0, 6],
     },
-    buildFirmaFormato(),
+    {
+      text: ['Fecha: ', { text: fechaFormateada, bold: true }],
+      margin: [0, 0, 0, 20],
+    },
+    buildFirmaFormato(etiquetaFirma),
   ];
 }
 
@@ -297,12 +307,34 @@ export function buildCuerpoFormato(
  * Lo que cambia entre formatos al imprimir: nombre del archivo y el título. Los espacios al inicio
  * hacen que la línea roja del título empiece a la misma altura en todos; el tamaño se ajusta para
  * que el título quepa junto al logo (medido con Kanit). Si cambia un título, hay que reajustarlos.
+ * El consentimiento para evaluación es largo: a 10.5 la firma cabe en la misma hoja.
+ * Mismos valores que el PDF firmado (backend/src/modules/formatos-firmados/formato-firmado-pdf.ts).
  */
-const DISENO_FORMATO: Record<TipoFormatoFirma, { archivo: string; sangria: string; tamanoTitulo: number }> = {
-  // Provisional: medir de nuevo cuando exista el texto definitivo
-  CONSENTIMIENTO_EVALUACION_MEDICA: { archivo: 'Consentimiento_Evaluacion_Medica', sangria: '  ', tamanoTitulo: 14 },
-  DECLARACION_VERACIDAD: { archivo: 'Declaracion_Veracidad', sangria: ' '.repeat(23), tamanoTitulo: 15 },
-  CONSENTIMIENTO_ANTIDOPING: { archivo: 'Consentimiento_Antidoping', sangria: '  ', tamanoTitulo: 13 },
+const DISENO_FORMATO: Record<
+  TipoFormatoFirma,
+  { archivo: string; sangria: string; tamanoTitulo: number; tamanoTexto: number; etiquetaFirma: string }
+> = {
+  CONSENTIMIENTO_EVALUACION_MEDICA: {
+    archivo: 'Consentimiento_Evaluacion_Medica',
+    sangria: '  ',
+    tamanoTitulo: 14,
+    tamanoTexto: 10.5,
+    etiquetaFirma: 'Firma del trabajador:',
+  },
+  DECLARACION_VERACIDAD: {
+    archivo: 'Declaracion_Veracidad',
+    sangria: ' '.repeat(23),
+    tamanoTitulo: 15,
+    tamanoTexto: 11,
+    etiquetaFirma: 'Firma:',
+  },
+  CONSENTIMIENTO_ANTIDOPING: {
+    archivo: 'Consentimiento_Antidoping',
+    sangria: '  ',
+    tamanoTitulo: 13,
+    tamanoTexto: 11,
+    etiquetaFirma: 'Firma:',
+  },
 };
 
 /** Descarga el formato impreso de cualquier tipo, con el texto vigente del backend. */
@@ -331,25 +363,34 @@ export async function descargarFormatoParaFirmaPdf(
         footer: buildFooterFormato(proveedorSalud),
         content: buildCuerpoFormato(
           texto.bloques,
-          { nombreTrabajador: formatNombreTrabajadorFormato(trabajador) },
+          {
+            nombreTrabajador: formatNombreTrabajadorFormato(trabajador),
+            institucionResponsable: (proveedorSalud?.nombre ?? '').trim(),
+          },
           fechaFormateada,
+          diseno.etiquetaFirma,
         ),
       });
-      if (diseno.tamanoTitulo === 15) return definicion;
+      if (diseno.tamanoTitulo === 15 && diseno.tamanoTexto === 11) return definicion;
       return {
         ...definicion,
-        styles: { ...definicion.styles, header: { ...definicion.styles?.header, fontSize: diseno.tamanoTitulo } },
+        defaultStyle: { ...definicion.defaultStyle, fontSize: diseno.tamanoTexto },
+        styles: {
+          ...definicion.styles,
+          header: { ...definicion.styles?.header, fontSize: diseno.tamanoTitulo },
+          paragraph: { ...definicion.styles?.paragraph, fontSize: diseno.tamanoTexto },
+        },
       };
     },
   });
 }
 
 /** Renglón de firma («Firma: ________»). */
-export function buildFirmaFormato(): Content {
+export function buildFirmaFormato(etiqueta = 'Firma:'): Content {
   return {
     columns: [
       {
-        text: 'Firma:',
+        text: etiqueta,
         width: 'auto',
         margin: [0, 48, 8, 0],
       },

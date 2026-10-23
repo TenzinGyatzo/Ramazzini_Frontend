@@ -15,7 +15,8 @@ import {
   obtenerTextoFormato,
   type TrabajadorFormatoFirma,
 } from '@/helpers/formatoParaFirmaPdf';
-import type { TextoFormatoFirma, TipoFormatoFirma } from '@/types/formatoFirma';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import type { CampoFormatoFirma, TextoFormatoFirma, TipoFormatoFirma } from '@/types/formatoFirma';
 
 const props = defineProps<{
   tipoFormato: TipoFormatoFirma;
@@ -44,15 +45,22 @@ const estadoFirma = ref<EstadoRecuadroFirma>({ vacia: true, valida: false, point
 const recuadro = ref<InstanceType<typeof RecuadroFirma> | null>(null);
 const contenido = ref<HTMLElement | null>(null);
 
+const proveedorSaludStore = useProveedorSaludStore();
 const nombreTrabajador = computed(() => formatNombreTrabajadorFormato(props.trabajador));
+/** La institución responsable es el proveedor de salud (el PDF la toma del servidor). */
+const institucionResponsable = computed(() => String(proveedorSaludStore.proveedorSalud?.nombre ?? '').trim());
 const fechaFormateada = computed(() => formatFechaYYYYMMDD(props.fecha));
+const datos = computed<Record<CampoFormatoFirma, string>>(() => ({
+  nombreTrabajador: nombreTrabajador.value,
+  institucionResponsable: institucionResponsable.value,
+}));
 
 /** Párrafos con sus tramos en negrita, igual que en el PDF. */
 const bloques = computed(() =>
   (texto.value?.bloques ?? []).map((bloque) => ({
     tipo: bloque.tipo,
     fragmentos: bloque.fragmentos.map((f) => ({
-      texto: 'campo' in f ? nombreTrabajador.value : f.texto,
+      texto: 'campo' in f ? datos.value[f.campo] : f.texto,
       negrita: !!f.negrita,
       sinCorte: 'sinCorte' in f && !!f.sinCorte,
     })),
@@ -180,7 +188,10 @@ onMounted(cargarTexto);
               </template>
             </p>
 
-            <p class="mt-6 mb-4 text-gray-800">Fecha: <strong>{{ fechaFormateada }}</strong></p>
+            <p class="mt-6 text-gray-800" data-institucion>
+              Institución responsable: <strong>{{ institucionResponsable }}</strong>
+            </p>
+            <p class="mt-1 mb-4 text-gray-800">Fecha: <strong>{{ fechaFormateada }}</strong></p>
 
             <RecuadroFirma ref="recuadro" :deshabilitado="enviando" @cambio="(e) => (estadoFirma = e)" />
 

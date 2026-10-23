@@ -9,7 +9,8 @@ export type TipoFormatoFirma =
   | 'DECLARACION_VERACIDAD'
   | 'CONSENTIMIENTO_ANTIDOPING';
 
-export type CampoFormatoFirma = 'nombreTrabajador';
+/** El nombre del trabajador y la institución responsable (el nombre del proveedor de salud). */
+export type CampoFormatoFirma = 'nombreTrabajador' | 'institucionResponsable';
 
 export type FragmentoFormatoFirma =
   | { texto: string; negrita?: boolean; sinCorte?: boolean }

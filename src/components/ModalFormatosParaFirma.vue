@@ -140,6 +140,7 @@ async function descargar(tipo: TipoFormatoFirma) {
       fecha: fecha.value,
       proveedorSalud: proveedor
         ? {
+            nombre: proveedor.nombre,
             direccion: proveedor.direccion,
             municipio: proveedor.municipio,
             estado: proveedor.estado,

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import textosV1 from '@/helpers/__fixtures__/textosFormatoFirmaV1.json';
 
 const { getTexto, crear } = vi.hoisted(() => ({ getTexto: vi.fn(), crear: vi.fn() }));
@@ -33,11 +35,11 @@ const toast = { open: vi.fn() };
 function montar(extra: Record<string, unknown> = {}) {
   return mount(FirmaEnPantalla, {
     props: {
-      ...extra,
       tipoFormato: 'DECLARACION_VERACIDAD',
       trabajadorId: 't1',
       trabajador: { nombre: 'JUAN', primerApellido: 'PÉREZ', segundoApellido: 'LÓPEZ' },
       fecha: '2026-10-21',
+      ...extra,
     },
     global: { provide: { toast }, stubs: { RecuadroFirma: RecuadroFalso, Teleport: true } },
   });
@@ -53,6 +55,8 @@ const botonFirmar = (w: ReturnType<typeof montar>) =>
 
 describe('FirmaEnPantalla', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
+    useProveedorSaludStore().proveedorSalud = { _id: 'p1', nombre: 'Clínica Norte' } as any;
     getTexto.mockReset();
     crear.mockReset();
     exportar.mockClear();
@@ -160,5 +164,13 @@ describe('FirmaEnPantalla', () => {
     await botonFirmar(w).trigger('click');
     await flushPromises();
     expect(crear.mock.calls[0][1]).not.toHaveProperty('prueba');
+  });
+
+  it('el consentimiento para evaluación muestra la institución responsable en el texto y antes de la fecha', async () => {
+    getTexto.mockResolvedValue({ data: textosV1.CONSENTIMIENTO_EVALUACION_MEDICA });
+    const w = montar({ tipoFormato: 'CONSENTIMIENTO_EVALUACION_MEDICA' });
+    await flushPromises();
+    expect(w.find('.firma-pantalla__bloque').text()).toMatch(/que realizará Clínica Norte, cuyo propósito/);
+    expect(w.find('[data-institucion]').text()).toBe('Institución responsable: Clínica Norte');
   });
 });

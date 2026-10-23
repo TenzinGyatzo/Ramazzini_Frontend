@@ -21,7 +21,13 @@ async function descargarDe(tipo: TipoFormatoFirma) {
 }
 
 const trabajador = { nombre: 'JUAN', primerApellido: 'PÉREZ', segundoApellido: 'LÓPEZ' };
-const proveedorSalud = { direccion: 'Av. 1', municipio: 'TIJUANA', estado: 'BAJA CALIFORNIA', telefono: '6641234567' };
+const proveedorSalud = {
+  nombre: 'Clínica Norte',
+  direccion: 'Av. 1',
+  municipio: 'TIJUANA',
+  estado: 'BAJA CALIFORNIA',
+  telefono: '6641234567',
+};
 
 /** Texto plano de un contenido de pdfmake. */
 function texto(nodo: any): string {
@@ -75,14 +81,19 @@ describe('texto desde el backend', () => {
 
     const { def } = descargas[0];
     expect(texto(def.header.columns[1]).trim()).toBe('DECLARACIÓN DE VERACIDAD');
-    expect(def.content.map(texto)).toEqual(['Yo, JUAN PÉREZ LÓPEZ, declaro.', 'Fecha: 17-10-2026', 'Firma: ']);
+    expect(def.content.map(texto)).toEqual([
+      'Yo, JUAN PÉREZ LÓPEZ, declaro.',
+      'Institución responsable: Clínica Norte',
+      'Fecha: 17-10-2026',
+      'Firma: ',
+    ]);
     // Un solo párrafo: lleva el margen superior del primero y el inferior del último
-    expect(def.content[0].margin).toEqual([0, 24, 0, 30]);
+    expect(def.content[0].margin).toEqual([0, 24, 0, 20]);
   });
 });
 
 describe('espaciado de la declaración (igual que antes de mover el texto al backend)', () => {
-  it('lista con sangría, 4 pt dentro de la lista, 6 entre párrafos y 30 al final', async () => {
+  it('lista con sangría, 4 pt dentro de la lista, 6 entre párrafos y 20 al final', async () => {
     const descargarDeclaracionVeracidadPdf = await descargarDe('DECLARACION_VERACIDAD');
     await descargarDeclaracionVeracidadPdf({ trabajador, fecha: '2026-10-17', proveedorSalud });
 
@@ -96,7 +107,7 @@ describe('espaciado de la declaración (igual que antes de mover el texto al bac
       [24, 0, 0, 4],
       [24, 0, 0, 6],
       [0, 0, 0, 6],
-      [0, 0, 0, 30],
+      [0, 0, 0, 20],
     ]);
     // «Reconozco que:» va como texto simple, sin justificar
     expect(def.content[3]).toEqual({ text: 'Reconozco que:', margin: [0, 0, 0, 4] });
@@ -129,6 +140,7 @@ describe('consentimiento informado antidoping', () => {
       'un resultado positivo en una prueba de tamizaje no necesariamente constituye, por sí solo, una confirmación definitiva del consumo de una sustancia.',
       'informar sobre medicamentos, tratamientos o productos que pudieran ser relevantes para la interpretación de los resultados',
       'otorgo mi consentimiento libre y voluntario',
+      'Clínica Norte',
       '17-10-2026',
     ]);
 
@@ -141,9 +153,10 @@ describe('consentimiento informado antidoping', () => {
     expect(parrafos[3]).toMatch(/no necesariamente constituye, por sí solo, una confirmación definitiva del consumo de una sustancia\.$/);
     expect(parrafos[4]).toMatch(/^Declaro que he tenido la oportunidad de informar/);
     expect(parrafos[5]).toMatch(/otorgo mi consentimiento libre y voluntario para la obtención de la muestra/);
-    expect(parrafos[6]).toBe('Fecha: 17-10-2026');
-    expect(parrafos[7]).toBe('Firma: ');
-    expect(def.content).toHaveLength(8);
+    expect(parrafos[6]).toBe('Institución responsable: Clínica Norte');
+    expect(parrafos[7]).toBe('Fecha: 17-10-2026');
+    expect(parrafos[8]).toBe('Firma: ');
+    expect(def.content).toHaveLength(9);
   });
 });
 
@@ -162,10 +175,38 @@ describe('declaración de veracidad (sobre las piezas comunes)', () => {
   });
 });
 
-describe('consentimiento para evaluación médica (texto en preparación)', () => {
-  it('no se descarga mientras no tenga su texto definitivo', async () => {
+describe('consentimiento para evaluación médica laboral', () => {
+  it('lleva la institución responsable en el texto y en su renglón, el cuerpo a 10.5 y «Firma del trabajador»', async () => {
+    const descargar = await descargarDe('CONSENTIMIENTO_EVALUACION_MEDICA');
+    await descargar({ trabajador, fecha: '2026-10-22', proveedorSalud });
+    const { def, nombre } = descargas[0];
+    expect(nombre).toBe('Consentimiento_Evaluacion_Medica_P_REZ_2026-10-22.pdf');
+    expect(texto(def.content[0])).toMatch(
+      /^Yo, JUAN PÉREZ LÓPEZ, manifiesto que .* que realizará Clínica Norte, cuyo propósito/,
+    );
+    expect(def.content).toHaveLength(8 + 3);
+    expect(texto(def.content.at(-3))).toBe('Institución responsable: Clínica Norte');
+    expect(texto(def.content.at(-2))).toBe('Fecha: 22-10-2026');
+    expect(texto(def.content.at(-1))).toMatch(/^Firma del trabajador:/);
+    expect(def.styles.paragraph.fontSize).toBe(10.5);
+    expect(def.styles.header.fontSize).toBe(14);
+  });
+
+  it('un formato sin texto definitivo no se descarga', async () => {
+    getTexto.mockResolvedValue({ data: { ...textosV1.CONSENTIMIENTO_EVALUACION_MEDICA, disponible: false } });
     const descargar = await descargarDe('CONSENTIMIENTO_EVALUACION_MEDICA');
     await expect(descargar({ trabajador, fecha: '2026-10-22', proveedorSalud })).rejects.toThrow(/texto definitivo/);
     expect(descargas).toHaveLength(0);
+  });
+});
+
+describe('institución responsable en los otros formatos', () => {
+  it('va antes de la fecha, con el nombre del proveedor', async () => {
+    const descargar = await descargarDe('CONSENTIMIENTO_ANTIDOPING');
+    await descargar({ trabajador, fecha: '2026-10-22', proveedorSalud });
+    const { def } = descargas[0];
+    expect(texto(def.content.at(-3))).toBe('Institución responsable: Clínica Norte');
+    expect(texto(def.content.at(-1))).toMatch(/^Firma:/);
+    expect(def.styles.paragraph.fontSize).toBe(11);
   });
 });
