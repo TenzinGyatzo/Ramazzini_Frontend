@@ -66,6 +66,7 @@ const ETIQUETAS_EVENTO: Record<string, string> = {
     CENTRO_UPDATED: "Centro de trabajo modificado",
     CENTRO_DELETED: "Centro de trabajo eliminado",
     WORKER_FUSION_MANUAL: "Fusión de trabajadores",
+    WORKER_DUPLICATE_DISMISSED: "Duplicado descartado",
     WORKER_TRANSFER: "Transferencia de trabajador",
     WORKER_DELETED: "Trabajador eliminado",
     WORKER_DELETE_DENIED: "Eliminación de trabajador rechazada",

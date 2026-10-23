@@ -1145,6 +1145,7 @@ const crearDocumento = (tipoDocumento: string) =>
           :trabajador-a-id="String(trabajadores.currentTrabajador._id)"
           @close="showFusionModal = false"
           @fused="onFusionCompletada"
+          @descartado="showFusionModal = false"
         />
       </Transition>
 

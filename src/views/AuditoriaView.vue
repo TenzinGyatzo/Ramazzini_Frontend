@@ -209,6 +209,7 @@ async function verifyAudit() {
               <option value="WORKER_DELETE_DENIED">Eliminación de trabajador rechazada</option>
               <option value="WORKER_TRANSFER">Transferencia de trabajador</option>
               <option value="WORKER_FUSION_MANUAL">Fusión de trabajadores</option>
+              <option value="WORKER_DUPLICATE_DISMISSED">Duplicado descartado</option>
             </optgroup>
             <optgroup label="Inventario">
               <option value="INVENTORY_ADJUSTED">Ajuste de inventario</option>

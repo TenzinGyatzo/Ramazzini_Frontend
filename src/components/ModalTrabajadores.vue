@@ -1017,6 +1017,12 @@ function abrirFusionDesdeAlta() {
   showFusionModal.value = true;
 }
 
+// No era la misma persona: el aviso de posible duplicado ya no aplica
+function onDuplicadoDescartado() {
+  posibleDuplicadoRegistro.value = null;
+  showFusionModal.value = false;
+}
+
 function onFusionCompletada() {
   posibleDuplicadoRegistro.value = null;
   showFusionModal.value = false;
@@ -2053,6 +2059,7 @@ const {
       :posible-duplicado="posibleDuplicadoRegistro"
       @close="showFusionModal = false"
       @fused="onFusionCompletada"
+      @descartado="onDuplicadoDescartado"
     />
   </Transition>
     <Transition

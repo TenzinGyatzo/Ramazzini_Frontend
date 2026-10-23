@@ -127,6 +127,15 @@ export default {
         return api.patch(`/${empresaId}/${centroTrabajoId}/duplicados/${alertId}/descartar`, {});
     },
 
+    /** Declara que dos posibles duplicados son personas distintas: dejan de marcarse, sin fusionar. */
+    declararPersonasDistintas(
+        empresaId: string,
+        centroTrabajoId: string,
+        payload: { trabajadorAId: string; trabajadorBId: string; nota?: string },
+    ) {
+        return api.post(`/${empresaId}/${centroTrabajoId}/duplicados/personas-distintas`, payload);
+    },
+
     fusionarTrabajadores(
         empresaId: string,
         centroTrabajoId: string,

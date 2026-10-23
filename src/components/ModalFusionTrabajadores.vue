@@ -14,6 +14,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { getIdentificadorPersonalLabel } from '@/helpers/proveedorPais';
+import { isGenericCurp } from '@/helpers/isGenericCurp';
 import {
   LIMITE_TEXTO_FUSION,
   MOTIVOS_FUSION,
@@ -55,6 +56,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: [];
   fused: [resultado: ResultadoFusion];
+  /** Los dos registros se declararon personas distintas (sin fusionar). */
+  descartado: [];
 }>();
 
 type Paso = 1 | 2 | 3 | 4;
@@ -325,6 +328,58 @@ function esConservado(id: string): boolean {
   return id === destinoId.value;
 }
 
+// ── «No son la misma persona» (solo con una alerta de posible duplicado entre los dos) ─
+
+/** Con la misma CURP real no se permite: dos personas no la comparten. */
+const compartenCurp = computed(() => {
+  const a = preview.value?.destino.curp?.trim().toUpperCase() ?? '';
+  const b = preview.value?.fuente.curp?.trim().toUpperCase() ?? '';
+  return !!a && a === b && !isGenericCurp(a);
+});
+
+const confirmandoDistintos = ref(false);
+const notaDistintos = ref('');
+const enviandoDistintos = ref(false);
+const errorDistintos = ref('');
+
+function abrirPersonasDistintas() {
+  notaDistintos.value = '';
+  errorDistintos.value = '';
+  confirmandoDistintos.value = true;
+}
+
+async function confirmarPersonasDistintas() {
+  if (!preview.value) return;
+  const { empresaId, centroId } = contexto();
+  if (!empresaId || !centroId) return;
+  errorDistintos.value = '';
+  enviandoDistintos.value = true;
+  try {
+    await TrabajadoresAPI.declararPersonasDistintas(empresaId, centroId, {
+      trabajadorAId: preview.value.destino._id,
+      trabajadorBId: preview.value.fuente._id,
+      nota: notaDistintos.value.trim() || undefined,
+    });
+    toast?.open({
+      message: 'Los registros quedaron como personas distintas',
+      type: 'success',
+    });
+    invalidateFusionPreviewCache(preview.value.destino._id, preview.value.fuente._id);
+    invalidateFusionPreviewCache(preview.value.fuente._id, preview.value.destino._id);
+    await trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId);
+    confirmandoDistintos.value = false;
+    emit('descartado');
+    forceClose();
+  } catch (error) {
+    errorDistintos.value = extractApiErrorMessage(
+      error,
+      'No se pudo registrar que son personas distintas',
+    );
+  } finally {
+    enviandoDistintos.value = false;
+  }
+}
+
 function conservarRegistro(id: string) {
   if (id === destinoId.value) return;
   fuenteId.value = destinoId.value;
@@ -403,7 +458,13 @@ const {
 } = useModalDirtyGuard({
   isDirty: isFusionDirty,
   onClose: closeModal,
-  enabled: () => !submitting.value,
+  enabled: () =>
+    !submitting.value && !enviandoDistintos.value && !confirmandoDistintos.value,
+  // Con la confirmación de «No son la misma persona» abierta, Escape solo la cierra
+  escapeActive: () => !submitting.value && !enviandoDistintos.value,
+  onEscapeWhenDisabled: () => {
+    confirmandoDistintos.value = false;
+  },
 });
 
 const puedeSeguir = computed(() => {
@@ -656,6 +717,28 @@ onMounted(async () => {
             >
               <i class="fas fa-exclamation-triangle mt-0.5 text-amber-600 dark:text-amber-400" aria-hidden="true"></i>
               Los datos de identidad no coinciden. Continúa solo si se trata de la misma persona.
+            </div>
+
+            <div
+              v-if="preview.posibleDuplicado"
+              class="fusion-posible-duplicado flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-gray-200 p-3 text-sm text-gray-700 dark:border-slate-600 dark:text-slate-300"
+            >
+              <template v-if="compartenCurp">
+                <p>
+                  Estos registros están marcados como posible duplicado y tienen la misma {{ identificadorPersonalLabel }}.
+                  Dos personas distintas no pueden compartirla: se resuelve fusionándolos o eliminando el que sobra.
+                </p>
+              </template>
+              <template v-else>
+                <p>Estos registros están marcados como posible duplicado. Si no son la misma persona, puedes indicarlo sin fusionar.</p>
+                <button
+                  type="button"
+                  class="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-slate-500 dark:text-slate-200 dark:hover:bg-slate-700"
+                  @click="abrirPersonasDistintas"
+                >
+                  No son la misma persona
+                </button>
+              </template>
             </div>
 
             <p class="text-xs text-gray-500 dark:text-slate-400">
@@ -953,6 +1036,62 @@ onMounted(async () => {
             @click="confirmarFusion"
           >
             {{ submitting ? 'Fusionando…' : 'Fusionar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="confirmandoDistintos && preview"
+      class="fixed inset-0 z-[70] grid grid-cols-1 place-items-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fusion-distintos-titulo"
+    >
+      <div class="absolute inset-0 bg-slate-900/40" aria-hidden="true" @click="!enviandoDistintos && (confirmandoDistintos = false)" />
+      <div class="relative w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800 dark:text-slate-100">
+        <h3 id="fusion-distintos-titulo" class="text-lg font-semibold text-gray-900 dark:text-slate-100">No son la misma persona</h3>
+        <p class="text-sm text-gray-700 dark:text-slate-300">
+          Los registros de <strong>{{ nombreDe(preview.destino) }}</strong> (folio {{ preview.destino.folio || 'N/D' }})
+          y de <strong>{{ nombreDe(preview.fuente) }}</strong> (folio {{ preview.fuente.folio || 'N/D' }})
+          quedarán como personas distintas y dejarán de marcarse como posible duplicado.
+        </p>
+        <div>
+          <label for="fusion-distintos-nota" class="text-sm font-medium text-gray-800 dark:text-slate-200">
+            Nota <span class="font-normal text-gray-500 dark:text-slate-400">(opcional)</span>
+          </label>
+          <textarea
+            id="fusion-distintos-nota"
+            v-model="notaDistintos"
+            rows="2"
+            :maxlength="LIMITE_TEXTO_FUSION"
+            class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+            placeholder="Por ejemplo: son hermanos con el mismo nombre"
+          />
+        </div>
+        <p
+          v-if="errorDistintos"
+          class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+          role="alert"
+        >
+          {{ errorDistintos }}
+        </p>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            :disabled="enviandoDistintos"
+            @click="confirmandoDistintos = false"
+          >
+            Volver
+          </button>
+          <button
+            type="button"
+            class="rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 disabled:opacity-50"
+            :disabled="enviandoDistintos"
+            @click="confirmarPersonasDistintas"
+          >
+            {{ enviandoDistintos ? 'Guardando…' : 'Confirmar' }}
           </button>
         </div>
       </div>

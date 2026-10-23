@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
   buscarParaFusion: vi.fn(),
   getFusionPreview: vi.fn(),
   fusionarTrabajadores: vi.fn(),
+  declararPersonasDistintas: vi.fn(),
 }));
 vi.mock('@/api/TrabajadoresAPI', () => ({ default: api }));
 vi.mock('@/composables/useFusionPreviewCache', () => ({
@@ -225,5 +226,62 @@ describe('ModalFusionTrabajadores', () => {
     expect(w.text()).toContain('La CURP no coincide con el sexo');
     await boton(w, 'Revisar los datos').trigger('click');
     expect(w.find('table.fusion-campos').exists()).toBe(true);
+  });
+
+  describe('no son la misma persona', () => {
+    it('sin alerta de posible duplicado no se ofrece', async () => {
+      const w = montar({ trabajadorAId: 'd1', trabajadorBId: 'f1' });
+      await flushPromises();
+      expect(w.find('.fusion-posible-duplicado').exists()).toBe(false);
+    });
+
+    it('con alerta, se confirma con nota y avisa a la vista', async () => {
+      api.getFusionPreview.mockResolvedValue({ data: { ...vistaPrevia, posibleDuplicado: true } });
+      api.declararPersonasDistintas = vi.fn().mockResolvedValue({ data: {} });
+      const descartado = vi.fn();
+      const w = montar({ trabajadorAId: 'd1', trabajadorBId: 'f1', onDescartado: descartado });
+      await flushPromises();
+
+      await boton(w, 'No son la misma persona').trigger('click');
+      expect(w.text()).toContain('quedarán como personas distintas');
+      await w.find('#fusion-distintos-nota').setValue('  Son hermanos  ');
+      await boton(w, 'Confirmar').trigger('click');
+      await flushPromises();
+
+      expect(api.declararPersonasDistintas).toHaveBeenCalledWith('e1', 'c1', {
+        trabajadorAId: 'd1',
+        trabajadorBId: 'f1',
+        nota: 'Son hermanos',
+      });
+      expect(descartado).toHaveBeenCalled();
+      expect(api.fusionarTrabajadores).not.toHaveBeenCalled();
+    });
+
+    it('con la misma CURP no se ofrece: solo fusionar o eliminar', async () => {
+      api.getFusionPreview.mockResolvedValue({
+        data: {
+          ...vistaPrevia,
+          posibleDuplicado: true,
+          fuente: { ...maria, curp: mario.curp },
+        },
+      });
+      const w = montar({ trabajadorAId: 'd1', trabajadorBId: 'f1' });
+      await flushPromises();
+      expect(w.find('.fusion-posible-duplicado').text()).toContain('fusionándolos o eliminando el que sobra');
+      expect(w.findAll('button').some((b) => b.text() === 'No son la misma persona')).toBe(false);
+    });
+
+    it('un error del servidor se muestra en la confirmación', async () => {
+      api.getFusionPreview.mockResolvedValue({ data: { ...vistaPrevia, posibleDuplicado: true } });
+      api.declararPersonasDistintas = vi.fn().mockRejectedValue({
+        response: { status: 400, data: { message: 'Estos registros no están marcados como posible duplicado' } },
+      });
+      const w = montar({ trabajadorAId: 'd1', trabajadorBId: 'f1' });
+      await flushPromises();
+      await boton(w, 'No son la misma persona').trigger('click');
+      await boton(w, 'Confirmar').trigger('click');
+      await flushPromises();
+      expect(w.text()).toContain('no están marcados como posible duplicado');
+    });
   });
 });

@@ -1129,6 +1129,7 @@ const toggleVigencias = () => {
           :trabajador-b-id="fusionTrabajadorB || undefined"
           @close="showFusionModal = false"
           @fused="onFusionCompletada"
+          @descartado="onFusionCompletada"
         />
       </Transition>
 
