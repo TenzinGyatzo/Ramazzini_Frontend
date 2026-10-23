@@ -382,16 +382,40 @@ onMounted(cargar);
                 ></i>
               </button>
             </div>
-            <div class="modulos-funciones__vista-previa" aria-hidden="true">
-              <div class="modulos-funciones__vista-previa-titulo" :style="{ backgroundColor: colorMostrado }">
-                Historia clínica laboral
-              </div>
-              <div class="modulos-funciones__vista-previa-fila">
-                <span :style="{ backgroundColor: colorMostrado }">Nombre</span>
-                <span>Vista previa</span>
-              </div>
+            <!-- La tabla de signos vitales de la exploración física, tal como sale en el PDF; el nombre
+                 del color va a su lado (debajo solo si no cabe) para no agregar altura a la tarjeta -->
+            <div class="modulos-funciones__vista-previa-contenedor">
+            <table class="modulos-funciones__vista-previa" aria-hidden="true">
+              <thead>
+                <tr>
+                  <th colspan="3" class="modulos-funciones__vista-previa-titulo" :style="{ backgroundColor: colorMostrado }">
+                    Signos vitales
+                  </th>
+                </tr>
+                <tr class="modulos-funciones__vista-previa-columnas" :style="{ backgroundColor: colorMostrado }">
+                  <th>Parámetro</th>
+                  <th>Especifique</th>
+                  <th>Categoría</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>TENSIÓN ARTERIAL</td>
+                  <td>118/76 mmHg</td>
+                  <td>Óptima</td>
+                </tr>
+                <tr>
+                  <td>FRECUENCIA CARDIACA</td>
+                  <td>72 lpm</td>
+                  <td>Buena</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="modulos-funciones__color-elegido">
+              <span class="modulos-funciones__color-elegido-etiqueta">Color elegido</span>
+              <span class="modulos-funciones__color-elegido-nombre" data-nombre-color>{{ nombreColorInforme(colorMostrado) }}</span>
+            </p>
             </div>
-            <p class="modulos-funciones__fila-dato mt-2" data-nombre-color>{{ nombreColorInforme(colorMostrado) }}</p>
           </div>
         </article>
 
@@ -791,37 +815,68 @@ onMounted(cargar);
   cursor: default;
 }
 
-.modulos-funciones__vista-previa {
-  margin-top: 0.75rem;
-  max-width: 22rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  font-size: 0.75rem;
-}
-
-.modulos-funciones__vista-previa-titulo {
-  padding: 0.375rem 0.625rem;
-  color: #ffffff;
-  font-weight: 600;
-  text-transform: uppercase;
-  transition: background-color 150ms;
-}
-
-.modulos-funciones__vista-previa-fila {
+.modulos-funciones__vista-previa-contenedor {
   display: flex;
-  background-color: #f9fafb;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.modulos-funciones__color-elegido {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.modulos-funciones__color-elegido-etiqueta {
+  font-size: 0.8125rem;
   color: #6b7280;
 }
 
-.modulos-funciones__vista-previa-fila span {
-  padding: 0.3125rem 0.625rem;
+.modulos-funciones__color-elegido-nombre {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
 }
 
-.modulos-funciones__vista-previa-fila span:first-child {
-  width: 40%;
+.modulos-funciones__vista-previa {
+  /* Ancho fijo para que el nombre del color quepa a un lado; en celular ocupa todo */
+  width: 24rem;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.6875rem;
+  text-align: center;
+}
+
+.modulos-funciones__vista-previa th,
+.modulos-funciones__vista-previa td {
+  border: 1px solid #d1d5db;
+  padding: 0.25rem 0.375rem;
+}
+
+.modulos-funciones__vista-previa thead th {
   color: #ffffff;
+  font-weight: 700;
   transition: background-color 150ms;
+}
+
+.modulos-funciones__vista-previa-titulo {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.modulos-funciones__vista-previa-columnas {
+  transition: background-color 150ms;
+}
+
+.modulos-funciones__vista-previa tbody td {
+  background-color: #ffffff;
+  color: #1f2937;
+}
+
+.modulos-funciones__vista-previa tbody td:first-child {
+  font-weight: 700;
 }
 
 .modulos-funciones__orden {

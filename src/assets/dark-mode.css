@@ -4617,13 +4617,10 @@ html.dark-mode .modulos-funciones__color--elegido {
   border-color: #f1f5f9;
 }
 
-html.dark-mode .modulos-funciones__vista-previa {
-  border-color: #334155;
-}
-
-html.dark-mode .modulos-funciones__vista-previa-fila {
-  background-color: #0f172a;
-  color: #94a3b8;
+/* La vista previa imita el PDF, que es blanco: en oscuro conserva el papel claro */
+html.dark-mode .modulos-funciones__vista-previa tbody td {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
 }
 
 html.dark-mode .modulos-funciones__orden {
@@ -4633,4 +4630,12 @@ html.dark-mode .modulos-funciones__orden {
 html.dark-mode .modulos-funciones__chip--neutro {
   background-color: #1e293b;
   color: #cbd5e1;
+}
+
+html.dark-mode .modulos-funciones__color-elegido-nombre {
+  color: #e2e8f0;
+}
+
+html.dark-mode .modulos-funciones__color-elegido-etiqueta {
+  color: #94a3b8;
 }
