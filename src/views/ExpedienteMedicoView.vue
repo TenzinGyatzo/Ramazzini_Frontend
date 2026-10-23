@@ -179,6 +179,8 @@ type SelectedClinicalDocument = {
   documentId: string;
   documentType: string;
   filePath: string;
+  /** PDF de un formato firmado en pantalla (es un documento externo). */
+  formatoFirmado?: boolean;
 };
 
 const selectedDocuments = ref<SelectedClinicalDocument[]>([]);
@@ -1641,6 +1643,7 @@ const crearDocumento = (tipoDocumento: string) =>
           <DeletionButtonPanel 
             v-if="isDeletionMode" 
             :selectedRoutes="selectedRoutes" 
+            :selectedDocuments="selectedDocuments"
             :isDeletionMode="isDeletionMode"
             :progreso="progresoEliminacion"
             @deleteSelected="handleDeleteSelected"

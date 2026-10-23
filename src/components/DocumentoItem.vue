@@ -1899,6 +1899,8 @@ const handleCheckboxChange = (event, documento, tipoDocumento) => {
             documentId: documento?._id || props.documentoId,
             documentType: props.documentoTipo,
             filePath: ruta,
+            // El modal de eliminación masiva lo cuenta aparte de los documentos externos
+            ...(esFormatoFirmado.value ? { formatoFirmado: true } : {}),
         };
         // Documentos FINALIZADO/ANULADO no se pueden seleccionar para eliminación
         if (!isDeletableInBulkMode.value && isChecked) {

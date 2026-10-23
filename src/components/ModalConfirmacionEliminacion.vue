@@ -2,6 +2,8 @@
 import { ref, computed, watch } from 'vue';
 import { useVerificacionEliminacion } from '@/composables/useVerificacionEliminacion';
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
+import { TIPOS_DOCUMENTO_EXPEDIENTE, nombreTipoDocumento } from '@/helpers/documentosExpediente';
+import { iconoTipoDocumento } from '@/helpers/iconoTipoDocumento';
 
 const props = defineProps({
   isVisible: {
@@ -15,6 +17,11 @@ const props = defineProps({
   selectedRoutes: {
     type: Array as () => string[],
     required: true,
+  },
+  /** Tipo de cada documento seleccionado; el resumen se arma con esto, no con el nombre del archivo. */
+  selectedDocuments: {
+    type: Array as () => { documentType: string; formatoFirmado?: boolean }[],
+    default: () => [],
   },
   nivel: {
     type: String as () => 'simple' | 'moderado',
@@ -67,95 +74,39 @@ const handleCancel = () => {
 
 useEscapeToClose(handleCancel, () => props.isVisible && !isBusy.value);
 
-// Computed para mostrar información de los documentos seleccionados
-const documentTypes = computed<Record<string, number>>(() => {
-  const types: Record<string, number> = {};
+/** Clave del resumen para los PDF firmados en pantalla (son documentos externos). */
+const FORMATO_FIRMADO = 'formatoFirmado';
+const ICONO_FORMATO_FIRMADO = {
+  icono: 'fa-solid fa-signature',
+  clases: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+};
 
-  props.selectedRoutes.forEach(route => {
-    if (route.includes('Nota Aclaratoria')) {
-      types.notasAclaratorias = (types.notasAclaratorias || 0) + 1;
-    }
-    else if (route.includes('Constancia de Aptitud')) {
-      types.constanciasAptitud = (types.constanciasAptitud || 0) + 1;
-    }
-    else if (route.includes('Aptitud')) {
-      types.aptitudes = (types.aptitudes || 0) + 1;
-    }
-    else if (route.includes('Historia Clinica')) {
-      types.historiasClinicas = (types.historiasClinicas || 0) + 1;
-    }
-    else if (route.includes('Exploracion Fisica')) {
-      types.exploracionesFisicas = (types.exploracionesFisicas || 0) + 1;
-    }
-    else if (route.includes('Examen Vista')) {
-      types.examenesVista = (types.examenesVista || 0) + 1;
-    }
-    else if (route.includes('Historia Otologica')) {
-      types.historiaOtologica = (types.historiaOtologica || 0) + 1;
-    }
-    else if (route.includes('Audiometria')) {
-      types.audiometrias = (types.audiometrias || 0) + 1;
-    }
-    else if (route.includes('Antidoping')) {
-      types.antidopings = (types.antidopings || 0) + 1;
-    }
-    else if (route.includes('Certificado Expedito')) {
-      types.certificadosExpedito = (types.certificadosExpedito || 0) + 1;
-    }
-    else if (route.includes('Certificado')) {
-      types.certificados = (types.certificados || 0) + 1;
-    }
-    else if (route.includes('Receta')) {
-      types.recetas = (types.recetas || 0) + 1;
-    }
-    else if (route.includes('Previo Espirometria')) {
-      types.previoEspirometria = (types.previoEspirometria || 0) + 1;
-    }
-    else if (route.includes('Nota Medica')) {
-      types.notasMedicas = (types.notasMedicas || 0) + 1;
-    }
-    else if (route.includes('Entrevista Psicologica')) {
-      types.entrevistasPsicologicas = (types.entrevistasPsicologicas || 0) + 1;
-    }
-    else if (route.includes('Trastornos Estado Animo')) {
-      types.trastornosEstadoAnimo = (types.trastornosEstadoAnimo || 0) + 1;
-    }
-    else if (route.includes('Cuestionario Prodromal Breve')) {
-      types.cuestionarioProdromalBreve = (types.cuestionarioProdromalBreve || 0) + 1;
-    }
-    else if (route.includes('Trastorno Limite Personalidad')) {
-      types.trastornoLimitePersonalidad = (types.trastornoLimitePersonalidad || 0) + 1;
-    }
-    else if (route.includes('Cuestionario Nordico')) {
-      types.cuestionarioNordico = (types.cuestionarioNordico || 0) + 1;
-    }
-    else if (route.includes('Evaluacion Sueno Vigilia')) {
-      types.evaluacionSuenoVigilia = (types.evaluacionSuenoVigilia || 0) + 1;
-    }
-    else if (route.includes('Control Prenatal')) {
-      types.controlPrenatal = (types.controlPrenatal || 0) + 1;
-    }
-    else if (route.includes('Evento Seguimiento Cardiometabolico')) {
-      types.eventoSeguimientoCardiometabolico = (types.eventoSeguimientoCardiometabolico || 0) + 1;
-    }
-    else if (route.includes('Informe Longitudinal Cardiometabolico')) {
-      types.informeLongitudinalCardiometabolico = (types.informeLongitudinalCardiometabolico || 0) + 1;
-    }
-    else if (route.includes('Documento Externo')) {
-      types.documentosExternos = (types.documentosExternos || 0) + 1;
-    }
-    // Si la ruta no contiene ninguno de los tipos específicos pero tiene extensión, es un documento externo
-    else if (!route.includes('Nota Aclaratoria') && !route.includes('Constancia de Aptitud') && !route.includes('Aptitud') && !route.includes('Historia Clinica')
-            && !route.includes('Exploracion Fisica') && !route.includes('Examen Vista') && !route.includes('Historia Otologica') && !route.includes('Audiometria') && !route.includes('Antidoping')
-            && !route.includes('Certificado') && !route.includes('Certificado Expedito') && !route.includes('Previo Espirometria') && !route.includes('Nota Medica') && !route.includes('Receta')
-            && !route.includes('Entrevista Psicologica') && !route.includes('Trastornos Estado Animo') && !route.includes('Cuestionario Prodromal Breve') && !route.includes('Trastorno Limite Personalidad') && !route.includes('Cuestionario Nordico') && !route.includes('Evaluacion Sueno Vigilia')
-            && !route.includes('Control Prenatal') && !route.includes('Evento Seguimiento Cardiometabolico') && !route.includes('Informe Longitudinal Cardiometabolico')
-            && (route.includes('.pdf') || route.includes('.png') || route.includes('.jpg') || route.includes('.jpeg') || route.includes('.doc') || route.includes('.docx'))) {
-      types.documentosExternos = (types.documentosExternos || 0) + 1;
-    }
-  });
-
-  return types;
+/**
+ * Cuántos documentos de cada tipo se van a eliminar, en el orden del expediente. Se cuenta por el
+ * tipo real de cada documento: antes se adivinaba por el nombre del archivo y un documento externo
+ * llamado «Consentimiento Antidoping» se contaba como antidoping.
+ */
+const resumenPorTipo = computed(() => {
+  const conteos = new Map<string, number>();
+  for (const doc of props.selectedDocuments) {
+    const clave = doc.formatoFirmado ? FORMATO_FIRMADO : doc.documentType;
+    conteos.set(clave, (conteos.get(clave) ?? 0) + 1);
+  }
+  const orden = TIPOS_DOCUMENTO_EXPEDIENTE.map((t) => t.tipo);
+  const posicion = (clave: string) => {
+    // El formato firmado va justo antes de los documentos externos
+    if (clave === FORMATO_FIRMADO) return orden.indexOf('documentoExterno') - 0.5;
+    const i = orden.indexOf(clave);
+    return i === -1 ? orden.length : i;
+  };
+  return [...conteos.entries()]
+    .sort(([a], [b]) => posicion(a) - posicion(b))
+    .map(([clave, cantidad]) => ({
+      clave,
+      cantidad,
+      nombre: clave === FORMATO_FIRMADO ? 'Formato firmado en pantalla' : nombreTipoDocumento(clave),
+      icono: clave === FORMATO_FIRMADO ? ICONO_FORMATO_FIRMADO : iconoTipoDocumento(clave),
+    }));
 });
 </script>
 
@@ -204,107 +155,27 @@ const documentTypes = computed<Record<string, number>>(() => {
                     Estás a punto de eliminar <span class="font-semibold text-red-600">{{ selectedCount }} documento{{ selectedCount !== 1 ? 's' : '' }}</span> de forma permanente.
                   </p>
 
-                  <!-- Detalles de documentos -->
-                  <div v-if="Object.keys(documentTypes).length > 0" class="mt-4 bg-gray-50 rounded-lg p-3">
+                  <!-- Detalles de documentos: por tipo real, con su cantidad -->
+                  <div v-if="resumenPorTipo.length > 0" class="mt-4 bg-gray-50 rounded-lg p-3" data-resumen-eliminacion>
                     <p class="text-xs font-medium text-gray-700 mb-2">Documentos a eliminar:</p>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                      <div v-if="documentTypes.notasAclaratorias" class="flex items-center space-x-2">
-                        <i class="fas fa-exclamation-triangle text-orange-600"></i>
-                        <span>{{ documentTypes.notasAclaratorias }} Nota{{ documentTypes.notasAclaratorias !== 1 ? 's' : '' }} Aclaratoria{{ documentTypes.notasAclaratorias !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.constanciasAptitud" class="flex items-center space-x-2">
-                        <i class="fas fa-user-check text-green-600"></i>
-                        <span>{{ documentTypes.constanciasAptitud }} Constancia{{ documentTypes.constanciasAptitud !== 1 ? 's' : '' }} de Aptitud{{ documentTypes.constanciasAptitud !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.aptitudes" class="flex items-center space-x-2">
-                        <i class="fas fa-user-check text-green-600"></i>
-                        <span>{{ documentTypes.aptitudes }} Aptitud{{ documentTypes.aptitudes !== 1 ? 'es' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.historiasClinicas" class="flex items-center space-x-2">
-                        <i class="fas fa-notes-medical text-teal-600"></i>
-                        <span>{{ documentTypes.historiasClinicas }} Historia{{ documentTypes.historiasClinicas !== 1 ? 's' : '' }} Clínica{{ documentTypes.historiasClinicas !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.exploracionesFisicas" class="flex items-center space-x-2">
-                        <i class="fas fa-person text-indigo-600"></i>
-                        <span>{{ documentTypes.exploracionesFisicas }} Exploración{{ documentTypes.exploracionesFisicas !== 1 ? 'es' : '' }} Física</span>
-                      </div>
-                      <div v-if="documentTypes.examenesVista" class="flex items-center space-x-2">
-                        <i class="fas fa-eye text-yellow-600"></i>
-                        <span>{{ documentTypes.examenesVista }} Examen{{ documentTypes.examenesVista !== 1 ? 'es' : '' }} Vista</span>
-                      </div>
-                      <div v-if="documentTypes.historiaOtologica" class="flex items-center space-x-2">
-                        <i class="fas fa-ear-deaf text-purple-600"></i>
-                        <span>{{ documentTypes.historiaOtologica }} Historia{{ documentTypes.historiaOtologica !== 1 ? 's' : '' }} Otológica{{ documentTypes.historiaOtologica !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.audiometrias" class="flex items-center space-x-2">
-                        <i class="fas fa-volume-up text-purple-600"></i>
-                        <span>{{ documentTypes.audiometrias }} Audiometría{{ documentTypes.audiometrias !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.antidopings" class="flex items-center space-x-2">
-                        <i class="fas fa-flask text-red-600"></i>
-                        <span>{{ documentTypes.antidopings }} Antidoping{{ documentTypes.antidopings !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.certificados" class="flex items-center space-x-2">
-                        <i class="fas fa-certificate text-blue-600"></i>
-                        <span>{{ documentTypes.certificados }} Certificado{{ documentTypes.certificados !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.recetas" class="flex items-center space-x-2">
-                        <i class="fas fa-prescription-bottle-medical text-rose-600"></i>
-                        <span>{{ documentTypes.recetas }} Receta{{ documentTypes.recetas !== 1 ? 's' : '' }} Médica{{ documentTypes.recetas !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.documentosExternos" class="flex items-center space-x-2">
-                        <i class="fas fa-file-alt text-purple-600"></i>
-                        <span>{{ documentTypes.documentosExternos }} Documento{{ documentTypes.documentosExternos !== 1 ? 's' : '' }} Externo{{ documentTypes.documentosExternos !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.notasMedicas" class="flex items-center space-x-2">
-                        <i class="fas fa-stethoscope text-pink-600"></i>
-                        <span>{{ documentTypes.notasMedicas }} Nota{{ documentTypes.notasMedicas !== 1 ? 's' : '' }} Médica{{ documentTypes.notasMedicas !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.previoEspirometria" class="flex items-center space-x-2">
-                        <i class="fas fa-lungs text-sky-600"></i>
-                        <span>{{ documentTypes.previoEspirometria }} Previo{{ documentTypes.previoEspirometria !== 1 ? 's' : '' }} Espirometría{{ documentTypes.previoEspirometria !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.controlPrenatal" class="flex items-center space-x-2">
-                        <i class="fas fa-baby text-pink-600"></i>
-                        <span>{{ documentTypes.controlPrenatal }} Control{{ documentTypes.controlPrenatal !== 1 ? 'es' : '' }} Prenatal</span>
-                      </div>
-                      <div v-if="documentTypes.certificadosExpedito" class="flex items-center space-x-2">
-                        <i class="fas fa-certificate text-indigo-600"></i>
-                        <span>{{ documentTypes.certificadosExpedito }} Certificado{{ documentTypes.certificadosExpedito !== 1 ? 's' : '' }} Expedito</span>
-                      </div>
-                      <div v-if="documentTypes.entrevistasPsicologicas" class="flex items-center space-x-2">
-                        <i class="fa-regular fa-comments text-slate-600"></i>
-                        <span>{{ documentTypes.entrevistasPsicologicas }} Entrevista{{ documentTypes.entrevistasPsicologicas !== 1 ? 's' : '' }} Psicológica{{ documentTypes.entrevistasPsicologicas !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.trastornosEstadoAnimo" class="flex items-center space-x-2">
-                        <i class="fas fa-wave-square text-purple-600"></i>
-                        <span>{{ documentTypes.trastornosEstadoAnimo }} Trastornos{{ documentTypes.trastornosEstadoAnimo !== 1 ? 'es' : '' }} Estado{{ documentTypes.trastornosEstadoAnimo !== 1 ? 'es' : '' }} Animo{{ documentTypes.trastornosEstadoAnimo !== 1 ? 'es' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.cuestionarioProdromalBreve" class="flex items-center space-x-2">
-                        <i class="fas fa-brain text-purple-600"></i>
-                        <span>{{ documentTypes.cuestionarioProdromalBreve }} Cuestionario{{ documentTypes.cuestionarioProdromalBreve !== 1 ? 's' : '' }} Prodromal{{ documentTypes.cuestionarioProdromalBreve !== 1 ? 's' : '' }} Breve{{ documentTypes.cuestionarioProdromalBreve !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.trastornoLimitePersonalidad" class="flex items-center space-x-2">
-                        <i class="fas fa-heart-crack text-purple-600"></i>
-                        <span>{{ documentTypes.trastornoLimitePersonalidad }} Trastorno{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }} Limite{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }} Personalidad{{ documentTypes.trastornoLimitePersonalidad !== 1 ? 'es' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.cuestionarioNordico" class="flex items-center space-x-2">
-                        <i class="fas fa-person text-purple-600"></i>
-                        <span>{{ documentTypes.cuestionarioNordico }} Cuestionario{{ documentTypes.cuestionarioNordico !== 1 ? 's' : '' }} Nórdico{{ documentTypes.cuestionarioNordico !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.evaluacionSuenoVigilia" class="flex items-center space-x-2">
-                        <i class="fas fa-moon text-purple-600"></i>
-                        <span>{{ documentTypes.evaluacionSuenoVigilia }} {{ documentTypes.evaluacionSuenoVigilia !== 1 ? 'Evaluaciones' : 'Evaluación' }} de sueño y vigilia</span>
-                      </div>
-                      <div v-if="documentTypes.eventoSeguimientoCardiometabolico" class="flex items-center space-x-2">
-                        <i class="fas fa-heartbeat text-purple-600"></i>
-                        <span>{{ documentTypes.eventoSeguimientoCardiometabolico }} Evento{{ documentTypes.eventoSeguimientoCardiometabolico !== 1 ? 's' : '' }} Seguimiento{{ documentTypes.eventoSeguimientoCardiometabolico !== 1 ? 's' : '' }} Cardiometabolico{{ documentTypes.eventoSeguimientoCardiometabolico !== 1 ? 's' : '' }}</span>
-                      </div>
-                      <div v-if="documentTypes.informeLongitudinalCardiometabolico" class="flex items-center space-x-2">
-                        <i class="fas fa-file-alt text-purple-600"></i>
-                        <span>{{ documentTypes.informeLongitudinalCardiometabolico }} Informe{{ documentTypes.informeLongitudinalCardiometabolico !== 1 ? 's' : '' }} Longitudinal{{ documentTypes.informeLongitudinalCardiometabolico !== 1 ? 's' : '' }} Cardiometabolico{{ documentTypes.informeLongitudinalCardiometabolico !== 1 ? 's' : '' }}</span>
-                      </div>
-                    </div>
+                    <ul class="grid grid-cols-1 gap-y-1.5 text-xs">
+                      <li
+                        v-for="fila in resumenPorTipo"
+                        :key="fila.clave"
+                        class="flex items-center gap-2 min-w-0"
+                        :data-tipo="fila.clave"
+                      >
+                        <span
+                          class="inline-flex items-center justify-center w-5 h-5 rounded shrink-0"
+                          :class="fila.icono.clases"
+                          aria-hidden="true"
+                        >
+                          <i :class="[fila.icono.icono, 'text-[10px]']"></i>
+                        </span>
+                        <span class="min-w-0 truncate" :title="fila.nombre">{{ fila.nombre }}</span>
+                        <span class="ml-auto shrink-0 font-semibold text-gray-700 tabular-nums">{{ fila.cantidad }}</span>
+                      </li>
+                    </ul>
                   </div>
 
                   <div v-if="requierePassword" class="mt-4 space-y-1">

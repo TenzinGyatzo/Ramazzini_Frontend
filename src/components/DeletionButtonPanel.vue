@@ -5,6 +5,8 @@ import { resolverNivel } from "@/config/eliminacion";
 
 const props = defineProps<{
   selectedRoutes: string[];
+  /** Tipo de cada documento seleccionado, para el resumen del modal. */
+  selectedDocuments?: { documentType: string; formatoFirmado?: boolean }[];
   isDeletionMode: boolean;
   /** Avance del borrado en curso (lo lleva la vista); null si no hay uno. */
   progreso?: { hechos: number; total: number } | null;
@@ -60,6 +62,7 @@ const handleCancelDelete = () => {
     :isVisible="showConfirmModal"
     :selectedCount="selectedRoutes.length"
     :selectedRoutes="selectedRoutes"
+    :selectedDocuments="selectedDocuments ?? []"
     :nivel="nivelEliminacion"
     @confirm="handleConfirmDelete"
     @cancel="handleCancelDelete"
