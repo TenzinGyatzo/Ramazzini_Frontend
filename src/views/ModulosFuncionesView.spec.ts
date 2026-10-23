@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useUserStore } from '@/stores/user';
@@ -171,6 +171,47 @@ describe('ModulosFuncionesView', () => {
   });
 
   describe('inventario por centro de trabajo', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('varios clics salen en una sola petición; si falla, regresan', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      conInventario();
+      updateCentros.mockRejectedValue({ response: { data: { message: 'Sin conexión' } } });
+      const w = montar();
+      await flushPromises();
+      await w.findAll('button').find((b) => b.text() === 'Elegir centros')!.trigger('click');
+      await w.find('[data-centro="c2"]').trigger('change');
+      await w.find('[data-centro="c3"]').trigger('change');
+      await w.find('[data-centro="c1"]').trigger('change');
+      expect(w.find('[data-interruptor="inventario"]').text()).toContain('En 2 de 3 centros de trabajo');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+      expect(updateCentros).toHaveBeenCalledTimes(1);
+      expect(updateCentros).toHaveBeenCalledWith([
+        { idCentroTrabajo: 'c2', inventarioHabilitado: true },
+        { idCentroTrabajo: 'c3', inventarioHabilitado: true },
+        { idCentroTrabajo: 'c1', inventarioHabilitado: false },
+      ]);
+      expect(w.find('[data-interruptor="inventario"]').text()).toContain('En 1 de 3 centros de trabajo');
+      expect((w.find('[data-centro="c1"]').element as HTMLInputElement).checked).toBe(true);
+      expect(toast.open).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+    });
+
+    it('al salir de la página, lo pendiente se manda en ese momento', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      conInventario();
+      updateCentros.mockResolvedValue({ data: centrosInventario(true, true) });
+      const w = montar();
+      await flushPromises();
+      await w.findAll('button').find((b) => b.text() === 'Elegir centros')!.trigger('click');
+      await w.find('[data-centro="c2"]').trigger('change');
+      w.unmount();
+      await flushPromises();
+      expect(updateCentros).toHaveBeenCalledWith([{ idCentroTrabajo: 'c2', inventarioHabilitado: true }]);
+    });
+
     const conInventario = () => getEstado.mockResolvedValue({ data: { ...ESTADO, inventarioHabilitado: true } });
 
     it('dice en cuántos centros está y deja elegirlos con búsqueda', async () => {
@@ -196,7 +237,8 @@ describe('ModulosFuncionesView', () => {
       expect(filas()).toEqual([['Agrícola del Valle · Campo 3', '1 trabajador']]);
     });
 
-    it('marcar un centro lo guarda al instante y actualiza lo que ve el resto de la app', async () => {
+    it('marcar un centro se ve al instante y se manda un segundo después, con lo que ve el resto de la app', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
       conInventario();
       updateCentros.mockResolvedValue({ data: centrosInventario(true, true) });
       getConfiguracionInventario.mockResolvedValue({ data: { inventarioHabilitado: true, centrosConInventario: ['c1', 'c2'] } });
@@ -205,6 +247,9 @@ describe('ModulosFuncionesView', () => {
       await w.findAll('button').find((b) => b.text() === 'Elegir centros')!.trigger('click');
 
       await w.find('[data-centro="c2"]').trigger('change');
+      expect(w.find('[data-interruptor="inventario"]').text()).toContain('En 2 de 3 centros de trabajo');
+      expect(updateCentros).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1000);
       await flushPromises();
       expect(updateCentros).toHaveBeenCalledWith([{ idCentroTrabajo: 'c2', inventarioHabilitado: true }]);
       expect(w.find('[data-interruptor="inventario"]').text()).toContain('En 2 de 3 centros de trabajo');
@@ -245,6 +290,10 @@ describe('ModulosFuncionesView', () => {
   });
 
   describe('incapacidades por empresa', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     const enMexico = (habilitado = true) =>
       getEstado.mockResolvedValue({
         data: { ...ESTADO, incapacidadesDisponible: true, incapacidadesHabilitado: habilitado },
@@ -278,7 +327,8 @@ describe('ModulosFuncionesView', () => {
       expect(filas()).toEqual([['Bimbo', '1 trabajador']]);
     });
 
-    it('marcar una empresa la guarda al instante y actualiza lo que ve el resto de la app', async () => {
+    it('marcar una empresa se ve al instante y se manda un segundo después, con lo que ve el resto de la app', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
       enMexico();
       getEmpresasIncapacidades.mockResolvedValue({ data: empresasIncapacidades() });
       updateEmpresasIncapacidades.mockResolvedValue({ data: empresasIncapacidades(true) });
@@ -289,6 +339,9 @@ describe('ModulosFuncionesView', () => {
       await flushPromises();
       await w.findAll('button').find((b) => b.text() === 'Elegir empresas')!.trigger('click');
       await w.find('[data-empresa="e1"]').trigger('change');
+      expect(w.find('[data-interruptor="incapacidades"]').text()).toContain('En 2 de 2 empresas');
+      expect(updateEmpresasIncapacidades).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1000);
       await flushPromises();
       expect(updateEmpresasIncapacidades).toHaveBeenCalledWith([{ idEmpresa: 'e1', incapacidadesHabilitado: true }]);
       expect(w.find('[data-interruptor="incapacidades"]').text()).toContain('En 2 de 2 empresas');

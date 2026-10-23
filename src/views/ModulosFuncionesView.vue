@@ -16,6 +16,7 @@ import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { COLORES_INFORME, nombreColorInforme } from '@/helpers/coloresInforme';
 import { nombreTipoDocumento } from '@/helpers/documentosExpediente';
 import { useRolePermissions } from '@/composables/useRolePermissions';
+import { useCambiosAgrupados, type CambioAgrupado } from '@/composables/useCambiosAgrupados';
 import ModalOrdenDocumentos from '@/components/ModalOrdenDocumentos.vue';
 import { useInventarioStore } from '@/stores/inventario';
 import { useIncapacidadesStore } from '@/stores/incapacidades';
@@ -45,7 +46,6 @@ const puedeConfigurar = computed(
 const empresasInventario = ref<EmpresaCentrosInventario[]>([]);
 const panelCentros = ref(false);
 const busquedaCentro = ref('');
-const guardandoCentro = ref<string | null>(null);
 const guardandoAntidoping = ref(false);
 
 const centrosTotales = computed(() => empresasInventario.value.reduce((t, e) => t + e.centros.length, 0));
@@ -84,19 +84,34 @@ async function cargarCentrosInventario() {
   }
 }
 
-async function cambiarCentro(idCentroTrabajo: string, inventarioHabilitado: boolean) {
-  if (guardandoCentro.value || !puedeConfigurar.value) return;
-  guardandoCentro.value = idCentroTrabajo;
+const centroPorId = (id: string) =>
+  empresasInventario.value.flatMap((e) => e.centros).find((c) => c.idCentroTrabajo === id);
+
+/** Los clics en la lista se ven al instante y se mandan juntos, un segundo después del último. */
+const cambiosCentros = useCambiosAgrupados(async (cambios: CambioAgrupado[]) => {
   try {
-    const { data } = await InventarioAPI.updateCentros([{ idCentroTrabajo, inventarioHabilitado }]);
-    empresasInventario.value = data;
+    const { data } = await InventarioAPI.updateCentros(
+      cambios.map(({ id, valor }) => ({ idCentroTrabajo: id, inventarioHabilitado: valor })),
+    );
+    // Si mientras tanto marcaron otros, se conserva lo que se ve; el siguiente envío lo confirma
+    if (!cambiosCentros.hayPendientes.value) empresasInventario.value = data;
     // El resto de la app (centros, nota médica) consulta esta lista
     await inventarioStore.cargarConfiguracion(true);
   } catch (error) {
-    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudo guardar el centro.'), type: 'error' });
-  } finally {
-    guardandoCentro.value = null;
+    cambios.forEach(({ id, valor }) => {
+      const centro = centroPorId(id);
+      if (centro) centro.inventarioHabilitado = !valor;
+    });
+    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudieron guardar los centros.'), type: 'error' });
   }
+});
+
+function cambiarCentro(idCentroTrabajo: string) {
+  const centro = centroPorId(idCentroTrabajo);
+  if (!centro || !puedeConfigurar.value) return;
+  const original = centro.inventarioHabilitado;
+  centro.inventarioHabilitado = !original;
+  cambiosCentros.cambiar(idCentroTrabajo, !original, original);
 }
 
 async function cambiarAntidoping() {
@@ -154,7 +169,6 @@ const primerosTipos = computed(() => ordenVisible.value.slice(0, 3));
 const empresasIncapacidades = ref<EmpresaIncapacidades[]>([]);
 const panelEmpresas = ref(false);
 const busquedaEmpresa = ref('');
-const guardandoEmpresa = ref<string | null>(null);
 
 const empresasActivas = computed(() => empresasIncapacidades.value.filter((e) => e.incapacidadesHabilitado).length);
 
@@ -173,19 +187,32 @@ async function cargarEmpresasIncapacidades() {
   }
 }
 
-async function cambiarEmpresa(idEmpresa: string, incapacidadesHabilitado: boolean) {
-  if (guardandoEmpresa.value || !puedeConfigurar.value) return;
-  guardandoEmpresa.value = idEmpresa;
+const empresaPorId = (id: string) => empresasIncapacidades.value.find((e) => e.idEmpresa === id);
+
+/** Igual que los centros: al instante en pantalla, un solo envío un segundo después del último clic. */
+const cambiosEmpresas = useCambiosAgrupados(async (cambios: CambioAgrupado[]) => {
   try {
-    const { data } = await ModulosFuncionesAPI.updateEmpresasIncapacidades([{ idEmpresa, incapacidadesHabilitado }]);
-    empresasIncapacidades.value = data;
+    const { data } = await ModulosFuncionesAPI.updateEmpresasIncapacidades(
+      cambios.map(({ id, valor }) => ({ idEmpresa: id, incapacidadesHabilitado: valor })),
+    );
+    if (!cambiosEmpresas.hayPendientes.value) empresasIncapacidades.value = data;
     // El resto de la app (empresa, trabajadores, expediente, tablero) consulta esta lista
     await incapacidadesStore.cargarConfiguracion(true);
   } catch (error) {
-    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudo guardar la empresa.'), type: 'error' });
-  } finally {
-    guardandoEmpresa.value = null;
+    cambios.forEach(({ id, valor }) => {
+      const empresa = empresaPorId(id);
+      if (empresa) empresa.incapacidadesHabilitado = !valor;
+    });
+    toast?.open?.({ message: extractApiErrorMessage(error, 'No se pudieron guardar las empresas.'), type: 'error' });
   }
+});
+
+function cambiarEmpresa(idEmpresa: string) {
+  const empresa = empresaPorId(idEmpresa);
+  if (!empresa || !puedeConfigurar.value) return;
+  const original = empresa.incapacidadesHabilitado;
+  empresa.incapacidadesHabilitado = !original;
+  cambiosEmpresas.cambiar(idEmpresa, !original, original);
 }
 
 async function cargar() {
@@ -460,9 +487,8 @@ onMounted(cargar);
                     type="checkbox"
                     class="h-4 w-4 accent-emerald-600"
                     :checked="centro.inventarioHabilitado"
-                    :disabled="guardandoCentro !== null"
                     :data-centro="centro.idCentroTrabajo"
-                    @change="cambiarCentro(centro.idCentroTrabajo, !centro.inventarioHabilitado)"
+                    @change="cambiarCentro(centro.idCentroTrabajo)"
                   />
                   <span class="min-w-0">{{ centro.nombreEmpresa }} · {{ centro.nombreCentro }}</span>
                 </label>
@@ -537,9 +563,8 @@ onMounted(cargar);
                     type="checkbox"
                     class="h-4 w-4 accent-emerald-600"
                     :checked="empresa.incapacidadesHabilitado"
-                    :disabled="guardandoEmpresa !== null"
                     :data-empresa="empresa.idEmpresa"
-                    @change="cambiarEmpresa(empresa.idEmpresa, !empresa.incapacidadesHabilitado)"
+                    @change="cambiarEmpresa(empresa.idEmpresa)"
                   />
                   <span class="min-w-0">{{ empresa.nombreEmpresa }}</span>
                 </label>
