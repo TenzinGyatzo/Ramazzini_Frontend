@@ -46,7 +46,6 @@ export const TITULOS_POR_RUTA: Record<string, string> = {
   'add-user': 'Registrar usuario',
   'remove-users': 'Usuarios',
   'manage-permissions': 'Permisos',
-  'manage-assignments': 'Asignaciones',
   'admin-catalogos': 'Catálogos',
   'user-productivity': 'Productividad',
   'perfil-proveedor': 'Perfil del proveedor',

@@ -85,10 +85,9 @@ const router = createRouter({
           meta: { requiresAuth: true, requiresPrincipal: true },
         },
         {
+          // La vista de asignaciones se retiró: empresas y centros se eligen en Permisos y accesos
           path: "/gestionar-asignaciones",
-          name: "manage-assignments",
-          component: () => import("../views/ManageAssignmentsView.vue"),
-          meta: { requiresAuth: true, requiresPrincipal: true }
+          redirect: { name: "manage-permissions" },
         },
         {
           path: "/admin/catalogos",
@@ -306,7 +305,7 @@ router.beforeEach((to, from) => {
         requiresPrincipal &&
         (!user || (user.role !== "Principal" && user.role !== "Administrador"))
       ) {
-        console.warn("Acceso denegado: solo usuarios Principal o Administrador pueden gestionar asignaciones");
+        console.warn("Acceso denegado: esta vista es solo para el usuario Principal o el Administrador");
         return next({ name: "inicio" });
       }
 

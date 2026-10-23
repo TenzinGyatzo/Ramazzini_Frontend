@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch, computed, onBeforeUnmount, provide, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed, onBeforeUnmount, provide } from "vue";
 import { useUserStore } from "@/stores/user";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import { useMedicoFirmanteStore } from "@/stores/medicoFirmante";
@@ -133,56 +133,6 @@ function updateViewportSize() {
 const isVisible = ref(false);
 const isMenuOpen = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
-const menuScrollRef = ref<HTMLElement | null>(null);
-const menuHasScrollbar = ref(false);
-let menuScrollResizeObserver: ResizeObserver | null = null;
-
-function updateMenuScrollbarState() {
-  const el = menuScrollRef.value;
-  if (!el) {
-    menuHasScrollbar.value = false;
-    return;
-  }
-  menuHasScrollbar.value = el.scrollHeight > el.clientHeight;
-}
-
-function setupMenuScrollObserver() {
-  teardownMenuScrollObserver();
-  const el = menuScrollRef.value;
-  if (!el) return;
-
-  const runUpdate = () => updateMenuScrollbarState();
-  runUpdate();
-
-  menuScrollResizeObserver = new ResizeObserver(runUpdate);
-  menuScrollResizeObserver.observe(el);
-  const inner = el.firstElementChild;
-  if (inner instanceof HTMLElement) {
-    menuScrollResizeObserver.observe(inner);
-  }
-}
-
-function teardownMenuScrollObserver() {
-  menuScrollResizeObserver?.disconnect();
-  menuScrollResizeObserver = null;
-}
-
-watch(isMenuOpen, async (open) => {
-  if (open) {
-    await nextTick();
-    setupMenuScrollObserver();
-  } else {
-    teardownMenuScrollObserver();
-    menuHasScrollbar.value = false;
-  }
-});
-
-watch(datosCargados, async () => {
-  if (isMenuOpen.value) {
-    await nextTick();
-    updateMenuScrollbarState();
-  }
-});
 const isGuideMenuOpen = ref(false);
 const guideMenuRef = ref<HTMLElement | null>(null);
 const isNotificationVisible = ref(false);
@@ -318,7 +268,6 @@ const stopPlatformContextSync = listenPlatformContextChanges();
 onUnmounted(() => {
   stopPlatformContextSync();
   document.removeEventListener("click", handleClickOutside);
-  teardownMenuScrollObserver();
   if (debugViewportEnabled) {
     window.removeEventListener("resize", updateViewportSize);
   }
@@ -427,7 +376,7 @@ const firmanteTipo = computed(() =>
   resolveFirmanteTipo(user.user?.role, user.user?.perfilProfesional),
 );
 
-// Roles que también configuran los datos del negocio (logotipo y "Mi Negocio")
+// Roles que también configuran los datos del negocio (logotipo y "Mi negocio")
 const configuraNegocio = computed(() => {
   const userRole = user.user?.role;
   return userRole === 'Principal' || userRole === 'Secundario' || userRole === 'Médico';
@@ -584,12 +533,6 @@ const mostrarMensajePendiente = computed(() => {
   );
 });
 
-const nombreSeccionFirmante = computed(() => {
-  if (firmanteTipo.value === 'enfermera') return 'Enfermera Firmante';
-  if (firmanteTipo.value === 'tecnico') return 'Técnico Firmante';
-  return 'Médico Firmante';
-});
-
 // Definir el mensaje adecuado según el estado y el rol
 const mensajeConfiguracion = computed(() => {
   if (configuraNegocio.value) {
@@ -601,7 +544,7 @@ const mensajeConfiguracion = computed(() => {
       return "Tus informes aún no están configurados correctamente.";
     }
     if (camposPendientesProveedor.value.length > 0) {
-      return 'Hay campos pendientes en "Mi Negocio".';
+      return 'Hay campos pendientes en "Mi negocio".';
     }
     if (logotipoPendiente.value) {
       return "Aún no has subido el logotipo.";
@@ -609,7 +552,8 @@ const mensajeConfiguracion = computed(() => {
   }
 
   if (camposPendientesFirmante.value.length > 0) {
-    return `Hay campos pendientes en "${nombreSeccionFirmante.value}".`;
+    // Mismo nombre que el botón del menú
+    return 'Hay campos pendientes en "Mis datos de firma".';
   }
 
   return "Algunos campos están incompletos en tu configuración.";
@@ -981,7 +925,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
         ref="menuRef"
         class="fixed top-20 right-6 bg-white rounded-2xl shadow-2xl p-6 w-72 z-40 border border-gray-100 backdrop-blur-sm bg-white/95 overflow-visible">
 
-        <div ref="menuScrollRef" class="max-h-[70vh] overflow-y-auto pr-3">
+        <div class="max-h-[70vh] overflow-y-auto pr-3">
           <div class="space-y-4">
 
           <!-- Administrador -->
@@ -994,16 +938,36 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-orange-50 hover:to-orange-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-orange-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-tachometer-alt text-orange-500 group-hover:text-orange-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Panel de Administrador</span>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Panel</span>
+              </div>
+            </RouterLink>
+            <RouterLink
+              v-if="user.user?.role === 'Administrador'"
+              :to="{ name: 'admin-catalogos' }"
+              @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-teal-50 hover:to-teal-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-teal-300 group">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-book text-teal-500 group-hover:text-teal-600 transition-colors duration-200"></i>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Catálogos NOM-024</span>
+              </div>
+            </RouterLink>
+            <RouterLink
+              v-if="user.user?.role === 'Administrador'"
+              :to="{ name: 'registros-administrador' }"
+              @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-amber-50 hover:to-amber-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-amber-300 group">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-clock-rotate-left text-amber-500 group-hover:text-amber-600 transition-colors duration-200"></i>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Registros</span>
               </div>
             </RouterLink>
           </div>
           
-          <!-- Configuración -->
+          <!-- Mi organización: negocio, datos de firma y módulos -->
           <div>
             <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
               <i class="fa-solid fa-cog mr-2 text-blue-500"></i>
-              Configuración
+              Mi organización
             </p>
 
             <!-- Proveedor de Salud -->
@@ -1052,20 +1016,10 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                     : mostrarTooltipProveedor 
                       ? 'text-yellow-700 group-hover:text-yellow-800'
                       : 'text-gray-700 group-hover:text-gray-900'
-                ]">Mi Negocio</span>
+                ]">Mi negocio</span>
               </div>
             </RouterLink>
 
-            <!-- Módulos y funciones: lo que la organización usa -->
-            <RouterLink v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador'"
-               :to="{ name: 'modulos-funciones' }"
-               @click="isMenuOpen = false"
-               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
-              <div class="flex items-center gap-3">
-                <i class="fa-solid fa-toggle-on text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Módulos y funciones</span>
-              </div>
-            </RouterLink>
 
             <!-- Médico Firmante -->
             <RouterLink v-if="firmanteTipo === 'medico' && user.user?.role !== 'Administrador'" :to="{ name: 'medico-firmante' }" @click="isMenuOpen = false" 
@@ -1097,7 +1051,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                   mostrarTooltipMedico 
                     ? 'text-yellow-700 group-hover:text-yellow-800'
                     : 'text-gray-700 group-hover:text-gray-900'
-                ]">Médico Firmante</span>
+                ]">Mis datos de firma</span>
               </div>
             </RouterLink>
 
@@ -1131,7 +1085,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                   mostrarTooltipEnfermera 
                     ? 'text-yellow-700 group-hover:text-yellow-800'
                     : 'text-gray-700 group-hover:text-gray-900'
-                ]">Enfermero/a Firmante</span>
+                ]">Mis datos de firma</span>
               </div>
             </RouterLink>
 
@@ -1165,49 +1119,22 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                   mostrarTooltipTecnicoEvaluador 
                     ? 'text-yellow-700 group-hover:text-yellow-800'
                     : 'text-gray-700 group-hover:text-gray-900'
-                ]">Técnico Firmante</span>
+                ]">Mis datos de firma</span>
               </div>
             </RouterLink>
 
-            <!-- Exportación GIIS (SIRES) -->
-            <a v-if="(user.user?.role === 'Principal' || user.user?.role === 'Administrador') && proveedorSaludStore.giisExportEnabled"
-               @click="router.push({ name: 'exportacion-giis' })"
-               class="block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 border-gray-200 hover:border-blue-300">
-              <div class="flex items-center gap-3">
-                <i class="fa-solid fa-file-export transition-colors duration-200 text-blue-500 group-hover:text-blue-600"></i>
-                <span class="font-medium transition-colors duration-200 text-gray-700 group-hover:text-gray-900">Exportación GIIS</span>
-              </div>
-            </a>
 
-            <!-- Auditoría (NOM-024) -->
-            <a v-if="(user.user?.role === 'Principal' || (user.user?.role === 'Administrador' && user.user?.platformContext?.activeTenant)) && proveedorSaludStore.auditTrailEnabled"
-               @click="router.push({ name: 'auditoria' })"
-               class="block py-3 px-4 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border group bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 border-gray-200 hover:border-blue-300">
-              <div class="flex items-center gap-3">
-                <i class="fa-solid fa-clipboard-list transition-colors duration-200 text-blue-500 group-hover:text-blue-600"></i>
-                <span class="font-medium transition-colors duration-200 text-gray-700 group-hover:text-gray-900">Auditoría</span>
-              </div>
-            </a>
 
-            <RouterLink
-              v-if="user.user?.role === 'Administrador'"
-              :to="{ name: 'admin-catalogos' }"
-              @click="isMenuOpen = false"
-               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-teal-50 hover:to-teal-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-teal-300 group">
-              <div class="flex items-center gap-3">
-                <i class="fa-solid fa-book text-teal-500 group-hover:text-teal-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Catálogos NOM-024</span>
-              </div>
-            </RouterLink>
 
-            <RouterLink
-              v-if="user.user?.role === 'Administrador'"
-              :to="{ name: 'registros-administrador' }"
-              @click="isMenuOpen = false"
-               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-amber-50 hover:to-amber-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-amber-300 group">
+
+            <!-- Módulos y funciones: lo que la organización usa -->
+            <RouterLink v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador'"
+               :to="{ name: 'modulos-funciones' }"
+               @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
               <div class="flex items-center gap-3">
-                <i class="fa-solid fa-clock-rotate-left text-amber-500 group-hover:text-amber-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Registros de Administrador</span>
+                <i class="fa-solid fa-toggle-on text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Módulos y funciones</span>
               </div>
             </RouterLink>
 
@@ -1215,54 +1142,72 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
             <p v-if="user.user?.role === 'Administrativo'" class="text-sm font-medium text-gray-700 text-justify">Tienes el rol de Administrativo. No hay nada que configurar para este rol.</p>
           </div>
 
-          <!-- Gestión de Usuarios -->
+          <!-- Usuarios -->
           <div v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador'">
             <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
               <i class="fa-solid fa-users mr-2 text-purple-500"></i>
-              Gestión de Usuarios
+              Usuarios
             </p>
             <RouterLink :to="{ name: 'add-user' }" @click="isMenuOpen = false"
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-purple-50 hover:to-purple-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-purple-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-user-plus text-purple-500 group-hover:text-purple-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Agregar Usuario</span>
-              </div>
-            </RouterLink>
-            <RouterLink :to="{ name: 'user-productivity' }" @click="isMenuOpen = false"
-               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-blue-300 group">
-              <div class="flex items-center gap-3">
-                <i class="fa-solid fa-chart-line text-blue-500 group-hover:text-blue-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200 whitespace-nowrap">
-                  {{ menuHasScrollbar ? 'Monitoreo Usuarios' : 'Monitoreo de Usuarios' }}
-                </span>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Agregar usuario</span>
               </div>
             </RouterLink>
             <RouterLink :to="{ name: 'manage-permissions' }" @click="isMenuOpen = false"
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-indigo-50 hover:to-indigo-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-indigo-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-shield-halved text-indigo-500 group-hover:text-indigo-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Gestionar Permisos</span>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Permisos y accesos</span>
               </div>
             </RouterLink>
-            <RouterLink :to="{ name: 'manage-assignments' }" @click="isMenuOpen = false"
-               v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador' "
-               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-purple-50 hover:to-purple-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-purple-300 group">
+            <RouterLink :to="{ name: 'user-productivity' }" @click="isMenuOpen = false"
+               class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-blue-300 group">
               <div class="flex items-center gap-3">
-                <i class="fa-solid fa-users-gear text-purple-500 group-hover:text-purple-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Asignar Centros</span>
+                <i class="fa-solid fa-chart-line text-blue-500 group-hover:text-blue-600 transition-colors duration-200"></i>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Productividad</span>
               </div>
             </RouterLink>
             <RouterLink :to="{ name: 'remove-users' }" @click="isMenuOpen = false"
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-red-50 hover:to-red-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-red-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-user-minus text-red-500 group-hover:text-red-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Eliminar Usuarios</span>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Eliminar usuarios</span>
               </div>
             </RouterLink>
           </div>
 
-          <!-- Inventario: quien gobierna el tenant siempre lo ve, para poder habilitarlo -->
-          <div v-if="user.user?.role === 'Principal' || user.user?.role === 'Administrador' || inventarioStore.habilitado">
+          <!-- Cumplimiento -->
+          <div v-if="((user.user?.role === 'Principal' || user.user?.role === 'Administrador') && proveedorSaludStore.giisExportEnabled) || ((user.user?.role === 'Principal' || (user.user?.role === 'Administrador' && user.user?.platformContext?.activeTenant)) && proveedorSaludStore.auditTrailEnabled)">
+            <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+              <i class="fa-solid fa-scale-balanced mr-2 text-blue-500"></i>
+              Cumplimiento
+            </p>
+            <div class="space-y-2">
+            <!-- Exportación GIIS (SIRES) -->
+            <a v-if="(user.user?.role === 'Principal' || user.user?.role === 'Administrador') && proveedorSaludStore.giisExportEnabled"
+               @click="router.push({ name: 'exportacion-giis' })"
+               class="block py-3 px-4 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border group bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 border-gray-200 hover:border-blue-300">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-file-export transition-colors duration-200 text-blue-500 group-hover:text-blue-600"></i>
+                <span class="font-medium transition-colors duration-200 text-gray-700 group-hover:text-gray-900">Exportar a GIIS</span>
+              </div>
+            </a>
+            <!-- Auditoría (NOM-024) -->
+            <a v-if="(user.user?.role === 'Principal' || (user.user?.role === 'Administrador' && user.user?.platformContext?.activeTenant)) && proveedorSaludStore.auditTrailEnabled"
+               @click="router.push({ name: 'auditoria' })"
+               class="block py-3 px-4 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border group bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 border-gray-200 hover:border-blue-300">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-clipboard-list transition-colors duration-200 text-blue-500 group-hover:text-blue-600"></i>
+                <span class="font-medium transition-colors duration-200 text-gray-700 group-hover:text-gray-900">Auditoría</span>
+              </div>
+            </a>
+            </div>
+          </div>
+
+          <!-- Inventario: solo encendido (se activa en Módulos y funciones) -->
+          <div v-if="inventarioStore.habilitado">
             <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
               <i class="fa-solid fa-boxes-stacked mr-2 text-emerald-500"></i>
               Inventario
@@ -1271,7 +1216,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-list text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Catálogo y ajustes</span>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Catálogo de insumos</span>
               </div>
             </RouterLink>
           </div>
@@ -1286,14 +1231,14 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-crown text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Mi Suscripción</span>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Mi suscripción</span>
               </div>
             </RouterLink>
             <RouterLink v-if="proveedorSaludStore.pagoEnLineaHabilitado" :to="{ name: 'subscription' }" @click="isMenuOpen = false"
                class="layout-nav-link block py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-emerald-100 rounded-xl mt-2 transition-all duration-300 ease-in-out cursor-pointer border border-gray-200 hover:border-emerald-300 group">
               <div class="flex items-center gap-3">
                 <i class="fa-solid fa-list text-emerald-500 group-hover:text-emerald-600 transition-colors duration-200"></i>
-                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Ver Planes</span>
+                <span class="font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">Ver planes</span>
               </div>
             </RouterLink>
           </div>
