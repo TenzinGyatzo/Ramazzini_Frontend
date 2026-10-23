@@ -65,7 +65,7 @@ const props = defineProps({
     },
     toggleRouteSelection: {
         type: Function as PropType<(
-            doc: { documentId: string; documentType: string; filePath: string },
+            doc: { documentId: string; documentType: string; filePath: string; formatoFirmado?: boolean },
             isSelected: boolean,
         ) => void>,
         required: true,
@@ -76,7 +76,7 @@ const props = defineProps({
     },
     selectedDocuments: {
         type: Array as PropType<
-            Array<{ documentId: string; documentType: string; filePath: string }>
+            Array<{ documentId: string; documentType: string; filePath: string; formatoFirmado?: boolean }>
         >,
         required: true,
     },
@@ -335,8 +335,8 @@ function construirRutaDocumento(
 }
 
 const documentoRutasInfo = computed(() => {
-    const items: Array<{ documentId: string; documentType: string; filePath: string }> = [];
-    const itemsDeletables: Array<{ documentId: string; documentType: string; filePath: string }> = [];
+    const items: Array<{ documentId: string; documentType: string; filePath: string; formatoFirmado?: boolean }> = [];
+    const itemsDeletables: Array<{ documentId: string; documentType: string; filePath: string; formatoFirmado?: boolean }> = [];
 
     documentosVisibles.value.forEach(({ definicion, documento }) => {
         if (!documento._id) return;
@@ -345,7 +345,15 @@ const documentoRutasInfo = computed(() => {
             definicion.etiquetaRuta,
             definicion.rutaConStore ? documentosStore : undefined,
         );
-        const item = { documentId: documento._id, documentType: definicion.tipo, filePath };
+        const item = {
+            documentId: documento._id,
+            documentType: definicion.tipo,
+            filePath,
+            // Igual que la casilla de cada documento: el modal de eliminación lo cuenta aparte
+            ...(definicion.tipo === 'documentoExterno' && (documento as { idFormatoFirmado?: string }).idFormatoFirmado
+                ? { formatoFirmado: true }
+                : {}),
+        };
         items.push(item);
         if (!isDocumentoInmutable(documento)) {
             itemsDeletables.push(item);

@@ -298,6 +298,21 @@ describe('GrupoDocumentos', () => {
       expect(llamadas).toHaveLength(3);
     });
 
+    it('«Seleccionar todos» marca el PDF firmado en pantalla, para contarlo aparte al eliminar', async () => {
+      const toggleRouteSelection = vi.fn();
+      const firmado = { ...documento('documentoExterno', 'fechaDocumento'), _id: 'firmado-1', idFormatoFirmado: 'f1' };
+      const wrapper = montar({
+        documents: { documentosExternos: [firmado, documento('documentoExterno', 'fechaDocumento')] },
+        toggleRouteSelection,
+      });
+
+      await wrapper.find('input[type="checkbox"]').trigger('change');
+
+      const porId = Object.fromEntries(toggleRouteSelection.mock.calls.map(([doc]) => [doc.documentId, doc]));
+      expect(porId['firmado-1'].formatoFirmado).toBe(true);
+      expect(porId['documentoExterno-1'].formatoFirmado).toBeUndefined();
+    });
+
     it('con todo seleccionado, «Seleccionar todos» desmarca', async () => {
       const toggleRouteSelection = vi.fn();
       const wrapper = montar({
