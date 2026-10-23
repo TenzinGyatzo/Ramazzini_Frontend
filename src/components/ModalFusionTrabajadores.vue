@@ -117,8 +117,8 @@ async function buscar() {
   const excluir = registroA.value?._id;
   const seq = ++busquedaSeq;
   errorBusqueda.value = '';
-  // Sin texto solo se muestran los posibles duplicados del registro A
-  if (!empresaId || !centroId || (!q && !excluir)) {
+  // Sin texto: los posibles duplicados del registro A y después los registros más recientes
+  if (!empresaId || !centroId) {
     resultados.value = [];
     buscando.value = false;
     return;
@@ -592,6 +592,14 @@ onMounted(async () => {
           </div>
 
           <div class="min-h-[8rem]">
+            <p
+              v-if="!busqueda.trim() && resultados.length && !buscando && !errorBusqueda"
+              class="mb-1.5 text-xs font-medium text-gray-500 dark:text-slate-400"
+            >
+              {{ resultados.some((r) => r.posibleDuplicado)
+                ? 'Posibles duplicados y registros más recientes'
+                : 'Registros más recientes de la empresa' }}
+            </p>
             <p v-if="buscando" class="py-6 text-center text-sm text-gray-500 dark:text-slate-400">Buscando…</p>
             <p v-else-if="errorBusqueda" class="py-6 text-center text-sm text-red-600 dark:text-red-400">{{ errorBusqueda }}</p>
             <p
@@ -600,9 +608,7 @@ onMounted(async () => {
             >
               {{ busqueda.trim()
                 ? 'No se encontraron trabajadores con esa búsqueda.'
-                : registroA
-                  ? 'Este registro no tiene posibles duplicados. Escribe para buscar otro.'
-                  : 'Escribe para buscar el primer registro.' }}
+                : 'No hay otros trabajadores en esta empresa.' }}
             </p>
             <ul v-else class="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-slate-700 dark:border-slate-600">
               <li v-for="resultado in resultados" :key="resultado._id">

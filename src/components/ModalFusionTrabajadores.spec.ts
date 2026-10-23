@@ -152,6 +152,18 @@ describe('ModalFusionTrabajadores', () => {
     expect(w.text()).toContain('Los datos de identidad no coinciden');
   });
 
+  it('desde la lista, sin escribir nada, ya muestra los registros más recientes', async () => {
+    api.buscarParaFusion.mockResolvedValue({
+      data: [{ ...maria, posibleDuplicado: false, numeroDocumentos: 3, estadoLaboral: 'Activo' }],
+    });
+    const w = montar();
+    await flushPromises();
+
+    expect(api.buscarParaFusion).toHaveBeenCalledWith('e1', 'c1', '', undefined);
+    expect(w.text()).toContain('Registros más recientes de la empresa');
+    expect(w.text()).toContain('MARIA FERNANDA');
+  });
+
   it('con A y B salta al paso 2 y envía motivos y datos elegidos, aunque se cambie cuál se conserva', async () => {
     const fused = vi.fn();
     const w = montar({ trabajadorAId: 'd1', trabajadorBId: 'f1', onFused: fused });
