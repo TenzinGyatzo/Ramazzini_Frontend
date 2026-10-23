@@ -22,7 +22,7 @@ import ModalFormatosParaFirma from './ModalFormatosParaFirma.vue';
 // La vista de firma tiene sus propias pruebas: aquí solo importa cuándo se abre y qué devuelve
 const FirmaEnPantallaFalsa = defineComponent({
   name: 'FirmaEnPantalla',
-  props: ['tipoFormato', 'trabajadorId', 'trabajador', 'fecha', 'permitirPrueba'],
+  props: ['tipoFormato', 'trabajadorId', 'trabajador', 'fecha'],
   emits: ['cancelar', 'firmado'],
   setup: () => () => h('div', { class: 'firma-falsa' }),
 });
@@ -101,17 +101,14 @@ describe('ModalFormatosParaFirma', () => {
     expect(firmadosPorFecha).toHaveBeenLastCalledWith('t1', '2026-10-20');
   });
 
-  it('marca lo que ya se firmó en pantalla con esa fecha, y distingue la prueba', async () => {
+  it('marca lo que ya se firmó en pantalla con esa fecha (en borrador o finalizado)', async () => {
     firmadosPorFecha.mockResolvedValue({
-      data: [
-        { tipoFormato: 'DECLARACION_VERACIDAD', firmadoEn: '2026-10-22T15:00:00Z', prueba: false },
-        { tipoFormato: 'CONSENTIMIENTO_ANTIDOPING', firmadoEn: '2026-10-22T15:05:00Z', prueba: true },
-      ],
+      data: [{ tipoFormato: 'DECLARACION_VERACIDAD', firmadoEn: '2026-10-22T15:00:00Z' }],
     });
     const w = montar();
     await flushPromises();
     expect(fila(w, 'DECLARACION_VERACIDAD').text()).toContain('Firmado en pantalla hoy');
-    expect(fila(w, 'CONSENTIMIENTO_ANTIDOPING').text()).toContain('Firma de prueba con esta fecha');
+    expect(fila(w, 'CONSENTIMIENTO_ANTIDOPING').text()).not.toContain('Firmado en pantalla');
     // Se puede volver a firmar si hace falta
     expect(boton(w, 'DECLARACION_VERACIDAD', 'Firmar en pantalla')!.attributes('disabled')).toBeUndefined();
   });
@@ -127,11 +124,10 @@ describe('ModalFormatosParaFirma', () => {
       tipoFormato: 'CONSENTIMIENTO_ANTIDOPING',
       trabajadorId: 't1',
       fecha: hoy,
-      permitirPrueba: true,
     });
 
     firmadosPorFecha.mockResolvedValue({
-      data: [{ tipoFormato: 'CONSENTIMIENTO_ANTIDOPING', firmadoEn: '2026-10-22T15:00:00Z', prueba: false }],
+      data: [{ tipoFormato: 'CONSENTIMIENTO_ANTIDOPING', firmadoEn: '2026-10-22T15:00:00Z' }],
     });
     const documentoExterno = { _id: 'd1', fechaDocumento: `${hoy}T00:00:00.000Z` };
     vista.vm.$emit('firmado', { _id: 'f1', documentoExterno });
@@ -143,13 +139,6 @@ describe('ModalFormatosParaFirma', () => {
     expect(fila(w, 'CONSENTIMIENTO_ANTIDOPING').text()).toContain('Firmado en pantalla hoy');
   });
 
-  it('solo al Principal le ofrece la firma de prueba', async () => {
-    useUserStore().user = { _id: 'u1', role: 'Médico' } as any;
-    const w = montar();
-    await flushPromises();
-    await boton(w, 'DECLARACION_VERACIDAD', 'Firmar en pantalla')!.trigger('click');
-    expect(w.findComponent(FirmaEnPantallaFalsa).props('permitirPrueba')).toBe(false);
-  });
 
   it('si no carga la lista, lo dice y permite reintentar', async () => {
     listarFormatos.mockRejectedValueOnce(new Error('sin red'));

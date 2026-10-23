@@ -417,28 +417,22 @@ describe('GrupoDocumentos', () => {
       items(wrapper).forEach((item) => item.vm.$emit('eliminarDocumento'));
 
       expect(wrapper.emitted('eliminarDocumento')).toEqual(
-        TIPOS_EN_ORDEN.map(({ tipo }) => [`${tipo}-1`, '15-03-2025', tipo, null]),
+        TIPOS_EN_ORDEN.map(({ tipo }) => [`${tipo}-1`, '15-03-2025', tipo]),
       );
-    });
-
-    it('una firma de prueba lleva además el id de su formato', () => {
-      const wrapper = montar({ documents: unDocumentoDeCadaTipo() });
-      items(wrapper)[0].vm.$emit('eliminarDocumento', 'x', 'y', 'z', 'f1');
-      expect(wrapper.emitted('eliminarDocumento')?.[0]?.[3]).toBe('f1');
     });
 
     it('reenvía anular y finalizar con sus datos, y la ventana de suscripción', () => {
       const wrapper = montar({ documents: { aptitudes: [documento('aptitud', 'fechaAptitudPuesto')] } });
       const item = items(wrapper)[0];
-      item.vm.$emit('abrirModalAnular', 'aptitud-1', 'Aptitud', 'aptitud', null);
-      // El PDF de un formato firmado en pantalla lleva además el id de su formato
-      item.vm.$emit('abrirModalAnular', 'externo-1', 'Declaración de Veracidad', 'documentoExterno', 'f1');
+      item.vm.$emit('abrirModalAnular', 'aptitud-1', 'Aptitud', 'aptitud');
+      // El PDF de un formato firmado en pantalla se anula igual que los demás
+      item.vm.$emit('abrirModalAnular', 'externo-1', 'Declaración de Veracidad', 'documentoExterno');
       item.vm.$emit('abrirModalFinalizar', 'aptitud-1', 'Aptitud', 'aptitud');
       item.vm.$emit('openSubscriptionModal');
 
       expect(wrapper.emitted('abrirModalAnular')).toEqual([
-        ['aptitud-1', 'Aptitud', 'aptitud', null],
-        ['externo-1', 'Declaración de Veracidad', 'documentoExterno', 'f1'],
+        ['aptitud-1', 'Aptitud', 'aptitud'],
+        ['externo-1', 'Declaración de Veracidad', 'documentoExterno'],
       ]);
       expect(wrapper.emitted('abrirModalFinalizar')).toEqual([['aptitud-1', 'Aptitud', 'aptitud']]);
       expect(wrapper.emitted('openSubscriptionModal')).toHaveLength(1);

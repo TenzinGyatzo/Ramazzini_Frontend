@@ -18,7 +18,6 @@ import {
   type TrabajadorFormatoFirma,
 } from '@/helpers/formatoParaFirmaPdf';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { useUserStore } from '@/stores/user';
 import type { FormatoFirmadoEnFecha, ResumenFormatoFirma, TipoFormatoFirma } from '@/types/formatoFirma';
 
 const props = defineProps<{
@@ -43,7 +42,6 @@ const PRESENTACION: Record<TipoFormatoFirma, { nombre: string; nota?: string }> 
 
 const toast: any = inject('toast');
 const proveedorSaludStore = useProveedorSaludStore();
-const userStore = useUserStore();
 
 const hoy = format(new Date(), 'yyyy-MM-dd');
 const fecha = ref(hoy);
@@ -57,8 +55,6 @@ const firmando = ref<TipoFormatoFirma | null>(null);
 
 const nombreTrabajador = computed(() => formatNombreCompleto(props.trabajador));
 const puedeFirmarEnPantalla = computed(() => firmaEnPantallaHabilitada.value && !!props.trabajador?._id);
-/** La firma de prueba es para las demostraciones del Principal. */
-const permitirPrueba = computed(() => userStore.user?.role === 'Principal');
 
 const filas = computed(() =>
   formatos.value.map((f) => {
@@ -67,8 +63,7 @@ const filas = computed(() =>
   }),
 );
 
-function etiquetaFirmado(firmado: FormatoFirmadoEnFecha): string {
-  if (firmado.prueba) return 'Firma de prueba con esta fecha';
+function etiquetaFirmado(_firmado: FormatoFirmadoEnFecha): string {
   return fecha.value === hoy ? 'Firmado en pantalla hoy' : 'Firmado en pantalla con esta fecha';
 }
 
@@ -263,8 +258,7 @@ async function alFirmar(resultado: FormatoFirmadoCreado) {
             </span>
             <span
               v-else-if="fila.firmado"
-              class="modal-formatos-firma__estado inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs font-medium rounded-full"
-              :class="fila.firmado.prueba ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'"
+              class="modal-formatos-firma__estado inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800"
             >
               <i class="fa-solid fa-check" aria-hidden="true"></i>{{ etiquetaFirmado(fila.firmado) }}
             </span>
@@ -319,7 +313,6 @@ async function alFirmar(resultado: FormatoFirmadoCreado) {
       :trabajador-id="trabajador._id"
       :trabajador="trabajador"
       :fecha="fecha"
-      :permitir-prueba="permitirPrueba"
       @cancelar="firmando = null"
       @firmado="alFirmar"
     />

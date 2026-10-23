@@ -55,24 +55,8 @@ export default {
       /** `yyyy-mm-dd` */
       fechaFormato: string;
       firma: FirmaCapturada;
-      /** Solo el Principal: marca de agua, borrador y eliminable. */
-      prueba?: boolean;
     },
   ): Promise<{ data: FormatoFirmadoCreado }> {
     return api.post(`/formatos-firmados/${trabajadorId}`, datos);
-  },
-
-  /** Anula el formato y su PDF; los dos quedan en el expediente como anulados. */
-  anular(
-    trabajadorId: string,
-    idFormato: string,
-    razonAnulacion: string,
-  ): Promise<{ data: { _id: string; estado: 'ANULADO'; documentoExterno: any } }> {
-    return api.post(`/formatos-firmados/${trabajadorId}/${idFormato}/anular`, { razonAnulacion });
-  },
-
-  /** Elimina una firma de prueba con su PDF (las reales solo se anulan). */
-  eliminarPrueba(trabajadorId: string, idFormato: string): Promise<{ data: { _id: string; eliminado: true } }> {
-    return api.delete(`/formatos-firmados/${trabajadorId}/${idFormato}`);
   },
 };

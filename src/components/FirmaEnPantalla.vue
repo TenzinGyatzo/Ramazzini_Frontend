@@ -24,8 +24,6 @@ const props = defineProps<{
   trabajador: TrabajadorFormatoFirma;
   /** `yyyy-mm-dd` */
   fecha: string;
-  /** Muestra la casilla «Firma de prueba» (solo el Principal, para demostraciones). */
-  permitirPrueba?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -40,7 +38,6 @@ const cargando = ref(true);
 const errorCarga = ref('');
 const enviando = ref(false);
 const aviso = ref('');
-const esPrueba = ref(false);
 const estadoFirma = ref<EstadoRecuadroFirma>({ vacia: true, valida: false, pointerType: null });
 const recuadro = ref<InstanceType<typeof RecuadroFirma> | null>(null);
 const contenido = ref<HTMLElement | null>(null);
@@ -111,13 +108,10 @@ async function firmar() {
       tipoFormato: props.tipoFormato,
       versionTexto: texto.value.version,
       fechaFormato: props.fecha,
-      ...(esPrueba.value ? { prueba: true } : {}),
       firma,
     });
     toast?.open?.({
-      message: esPrueba.value
-        ? 'Firma de prueba guardada (sin validez); puedes eliminarla del expediente'
-        : 'Formato firmado y guardado en el expediente',
+      message: 'Formato firmado y guardado en el expediente',
       type: 'success',
     });
     emit('firmado', data);
@@ -202,17 +196,6 @@ onMounted(cargarTexto);
               {{ aviso }}
             </p>
 
-            <!-- Discreta: solo el Principal la ve, para demostraciones -->
-            <label
-              v-if="permitirPrueba"
-              class="firma-pantalla__prueba mt-4 flex items-start gap-2 text-sm text-gray-600 cursor-pointer select-none"
-            >
-              <input v-model="esPrueba" type="checkbox" class="mt-0.5 h-4 w-4 accent-amber-600" :disabled="enviando" />
-              <span>
-                <span class="font-semibold text-gray-700">Firma de prueba (para demostración).</span>
-                El PDF llevará la marca «PRUEBA – SIN VALIDEZ» y podrás eliminarlo del expediente.
-              </span>
-            </label>
 
             <!-- Junto al recuadro, donde está la mano que firma -->
             <div class="firma-pantalla__acciones mt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-3">

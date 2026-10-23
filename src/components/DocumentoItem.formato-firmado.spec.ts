@@ -82,8 +82,35 @@ describe('DocumentoItem - formato firmado en pantalla', () => {
       },
     });
 
-  it('finalizado: lleva el ícono de firma junto al título, no se edita y el botón rojo lo anula con su formato', async () => {
-    const w = montar(externo());
+  /** SIRES_NOM024: los documentos se finalizan y se anulan. */
+  const conSires = () => {
+    useProveedorSaludStore().proveedorSalud = {
+      _id: 'prov-1',
+      periodoDePruebaFinalizado: false,
+      estadoSuscripcion: 'active',
+      regulatoryPolicy: {
+        regime: 'SIRES_NOM024',
+        features: {
+          sessionTimeoutEnabled: true,
+          enforceDocumentImmutabilityUI: true,
+          documentImmutabilityEnabled: true,
+          showSiresUI: true,
+          giisExportEnabled: true,
+          notaAclaratoriaEnabled: true,
+          cluesFieldVisible: true,
+        },
+        validation: {
+          curpFirmantes: 'required',
+          workerCurp: 'required_strict',
+          cie10Principal: 'required',
+          geoFields: 'required',
+        },
+      },
+    } as any;
+  };
+
+  it('sin régimen: lleva el ícono de firma, no se edita y el botón rojo lo elimina como cualquier documento', async () => {
+    const w = montar(externo({ estado: 'borrador' }));
     await flushPromises();
 
     const icono = w.find('h3 .documento-item-firmado-pantalla');
@@ -94,11 +121,33 @@ describe('DocumentoItem - formato firmado en pantalla', () => {
     const editar = acciones.find((b) => b.find('.fa-pen-to-square, .fa-eye').exists())!;
     expect(editar.attributes('disabled')).toBeDefined();
 
-    const anular = acciones.find((b) => b.find('.fa-file-circle-xmark').exists())!;
+    const eliminar = acciones.find((b) => b.find('.fa-trash-can').exists())!;
+    expect(eliminar.attributes('disabled')).toBeUndefined();
+    await eliminar.trigger('click');
+    expect(w.emitted('eliminarDocumento')).toEqual([['d1', 'Declaración de Veracidad', 'documentoExterno']]);
+    expect(w.emitted('abrirModalAnular')).toBeUndefined();
+  });
+
+  it('SIRES, en borrador: se finaliza a mano o se elimina', async () => {
+    conSires();
+    const w = montar(externo({ estado: 'borrador' }));
+    await flushPromises();
+    const acciones = w.findAll('button.documento-item-action');
+    expect(acciones.some((b) => b.find('.fa-trash-can').exists())).toBe(true);
+    const finalizar = acciones.find((b) => b.find('.fa-file-signature').exists())!;
+    expect(finalizar).toBeDefined();
+    await finalizar.trigger('click');
+    expect(w.emitted('abrirModalFinalizar')?.[0]?.[0]).toBe('d1');
+  });
+
+  it('SIRES, finalizado: el botón rojo lo anula por el flujo normal', async () => {
+    conSires();
+    const w = montar(externo());
+    await flushPromises();
+    const anular = w.findAll('button.documento-item-action').find((b) => b.find('.fa-file-circle-xmark').exists())!;
     expect(anular.attributes('disabled')).toBeUndefined();
     await anular.trigger('click');
-    expect(w.emitted('abrirModalAnular')).toEqual([['d1', 'Declaración de Veracidad', 'documentoExterno', 'f1']]);
-    expect(w.emitted('eliminarDocumento')).toBeUndefined();
+    expect(w.emitted('abrirModalAnular')).toEqual([['d1', 'Declaración de Veracidad', 'documentoExterno']]);
   });
 
   it('anulado: el ícono en rojo lo dice y ya no hay nada que anular', async () => {
@@ -112,10 +161,10 @@ describe('DocumentoItem - formato firmado en pantalla', () => {
     expect(rojo.attributes('disabled')).toBeDefined();
   });
 
-  it('no se puede seleccionar para la eliminación masiva', async () => {
-    const w = montar(externo(), { isDeletionMode: true });
+  it('se puede seleccionar para la eliminación masiva, como cualquier documento', async () => {
+    const w = montar(externo({ estado: 'borrador' }), { isDeletionMode: true });
     await flushPromises();
-    expect(w.find('input[type="checkbox"]').attributes('disabled')).toBeDefined();
+    expect(w.find('input[type="checkbox"]').attributes('disabled')).toBeUndefined();
   });
 
   it('un documento externo normal sigue con su botón de eliminar', async () => {
@@ -125,21 +174,5 @@ describe('DocumentoItem - formato firmado en pantalla', () => {
     const rojo = w.findAll('button.documento-item-action').find((b) => b.find('.fa-trash-can').exists())!;
     await rojo.trigger('click');
     expect(w.emitted('eliminarDocumento')?.[0]?.[0]).toBe('d1');
-  });
-
-  it('firma de prueba: ícono ámbar y el botón rojo la elimina por su ruta', async () => {
-    const w = montar(externo({ estado: 'borrador', formatoFirmadoPrueba: true, nombreDocumento: 'Declaración de Veracidad (prueba)' }));
-    await flushPromises();
-
-    const icono = w.find('h3 .documento-item-firmado-pantalla');
-    expect(icono.classes()).toContain('documento-item-firmado-pantalla--prueba');
-    expect(icono.attributes('title')).toBe('Firma de prueba, sin validez');
-    const editar = w.findAll('button.documento-item-action').find((b) => b.find('.fa-pen-to-square, .fa-eye').exists())!;
-    expect(editar.attributes('disabled')).toBeDefined();
-    const eliminar = w.findAll('button.documento-item-action').find((b) => b.find('.fa-trash-can').exists())!;
-    expect(eliminar.attributes('disabled')).toBeUndefined();
-    await eliminar.trigger('click');
-    expect(w.emitted('eliminarDocumento')?.[0]).toEqual(['d1', 'Declaración de Veracidad (prueba)', 'documentoExterno', 'f1']);
-    expect(w.emitted('abrirModalAnular')).toBeUndefined();
   });
 });

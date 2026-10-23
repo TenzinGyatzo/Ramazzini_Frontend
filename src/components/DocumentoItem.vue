@@ -303,15 +303,13 @@ const getResultadoTipoLabel = (tipoEstudio) => {
 
 const handleDeleteDocument = (documentoId, documentoNombre, documentoTipo) => {
   executeIfCanAnularEliminarDocument(documentoTipo, () => {
-    // Una firma de prueba se elimina por la ruta de formatos firmados: el expediente necesita su id
-    emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo, esFormatoPrueba.value ? props.documentoExterno.idFormatoFirmado : null);
+    emit('eliminarDocumento', documentoId, documentoNombre, documentoTipo);
   }, documentoOrigenTipo.value);
 };
 
 const handleAnularDocument = (documentoId, documentoNombre, documentoTipo) => {
   executeIfCanAnularEliminarDocument(documentoTipo, () => {
-    // Un formato firmado en pantalla se anula por su propia ruta: el expediente necesita su id
-    emit('abrirModalAnular', documentoId, documentoNombre, documentoTipo, props.documentoExterno?.idFormatoFirmado ?? null);
+    emit('abrirModalAnular', documentoId, documentoNombre, documentoTipo);
   }, documentoOrigenTipo.value);
 };
 
@@ -2343,25 +2341,22 @@ const isAnulacion = computed(() => {
     return documentImmutabilityEnabled.value && isFinalized.value && !isAnulado.value;
 });
 
-/** PDF de un formato firmado en pantalla: es evidencia, no se edita ni se elimina; solo se anula. */
+/**
+ * PDF de un formato firmado en pantalla: no se edita (rompería la evidencia de lo que firmó el
+ * trabajador). Se finaliza, anula y elimina como cualquier documento.
+ */
 const esFormatoFirmado = computed(
     () => props.documentoTipo === 'documentoExterno' && !!props.documentoExterno?.idFormatoFirmado,
 );
-/** Firma de prueba para demostraciones: sin validez, en borrador y se puede eliminar. */
-const esFormatoPrueba = computed(() => esFormatoFirmado.value && props.documentoExterno?.formatoFirmadoPrueba === true);
 const tituloFormatoFirmado = computed(() => {
-    if (esFormatoPrueba.value) return 'Firma de prueba, sin validez';
     return isAnulado.value
         ? `Firmado en pantalla · anulado: ${props.documentoExterno?.razonAnulacion || 'sin motivo'}`
         : 'Firmado por el trabajador en pantalla';
 });
-/** Se anula con motivo en cualquier régimen, mientras siga finalizado. */
-const anulaFormatoFirmado = computed(() => esFormatoFirmado.value && isFinalized.value && !isAnulado.value);
 
 // En modo eliminación masiva: documentos FINALIZADO/ANULADO no son seleccionables
 const isDeletableInBulkMode = computed(() => {
     if (!props.isDeletionMode) return true;
-    if (esFormatoFirmado.value) return false;
     if (adminNoPuedeEliminar.value) return false;
     if (!documentImmutabilityEnabled.value) return true;
     return !isFinalized.value && !isAnulado.value;
@@ -2383,8 +2378,6 @@ const editActionTooltip = computed(() => {
 
 const deleteAnularActionTooltip = computed(() => {
   if (isAnulado.value) return 'Documento anulado';
-  if (esFormatoPrueba.value) return 'Eliminar firma de prueba';
-  if (esFormatoFirmado.value && !anulaFormatoFirmado.value) return 'Firmado en pantalla: no se elimina';
   if (adminNoPuedeEliminar.value) {
     return 'El Administrador de plataforma solo puede eliminar borradores';
   }
@@ -2394,7 +2387,6 @@ const deleteAnularActionTooltip = computed(() => {
   if (!canAnularEliminarThisDocument.value) {
     return 'No tienes permiso para anular ni eliminar documentos';
   }
-  if (anulaFormatoFirmado.value) return 'Anular formato firmado';
   return isAnulacion.value ? 'Anular documento' : 'Eliminar documento';
 });
 
@@ -4043,7 +4035,7 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                                     <span
                                       v-if="esFormatoFirmado"
                                       class="documento-item-firmado-pantalla ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0"
-                                      :class="esFormatoPrueba ? 'documento-item-firmado-pantalla--prueba bg-amber-100 text-amber-700' : isAnulado ? 'documento-item-firmado-pantalla--anulado bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'"
+                                      :class="isAnulado ? 'documento-item-firmado-pantalla--anulado bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'"
                                       role="img"
                                       :aria-label="tituloFormatoFirmado"
                                       :title="tituloFormatoFirmado"
@@ -5767,15 +5759,15 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                 <button type="button"
                     :class="[
                         'documento-item-action inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-full transition-transform duration-200 ease-in-out transform shadow-sm z-5',
-                        canAnularEliminarThisDocument && !isAnulado && !adminNoPuedeEliminar && (!esFormatoFirmado || anulaFormatoFirmado || esFormatoPrueba)
+                        canAnularEliminarThisDocument && !isAnulado && !adminNoPuedeEliminar
                             ? 'documento-item-action--delete bg-red-100 hover:bg-red-200 text-red-600 hover:scale-110'
                             : 'documento-item-action--disabled bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                     ]"
-                    :disabled="!canAnularEliminarThisDocument || isAnulado || adminNoPuedeEliminar || (esFormatoFirmado && !anulaFormatoFirmado && !esFormatoPrueba)"
-                    @click="isAnulacion || anulaFormatoFirmado ? handleAnularDocument(documentoId, documentoNombre, documentoTipo) : handleDeleteDocument(documentoId, documentoNombre, documentoTipo)"
+                    :disabled="!canAnularEliminarThisDocument || isAnulado || adminNoPuedeEliminar"
+                    @click="isAnulacion ? handleAnularDocument(documentoId, documentoNombre, documentoTipo) : handleDeleteDocument(documentoId, documentoNombre, documentoTipo)"
                     @mouseenter="(e) => updateTooltipPosition(e, deleteAnularActionTooltip)"
                     @mouseleave="hideTooltip">
-                    <i :class="isAnulacion || anulaFormatoFirmado ? 'fa-solid fa-file-circle-xmark fa-lg' : 'fa-solid fa-trash-can fa-lg'"></i>
+                    <i :class="isAnulacion ? 'fa-solid fa-file-circle-xmark fa-lg' : 'fa-solid fa-trash-can fa-lg'"></i>
                 </button>
             </div>
         </div>

@@ -52,7 +52,6 @@ import {
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import ModalFormatosParaFirma from '@/components/ModalFormatosParaFirma.vue';
-import FormatosFirmadosAPI from '@/api/FormatosFirmadosAPI';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
 import { useEliminacion } from '@/composables/useEliminacion';
 import { useUserStore } from '@/stores/user';
@@ -175,8 +174,6 @@ const showResultadosClinicosPanel = ref(false);
 const selectedDocumentId = ref<string | null>(null);
 const selectedDocumentName = ref<string>('');
 const selectedDocumentType = ref<string | null>(null);
-/** Si el documento a anular es el PDF de un formato firmado en pantalla, su formato. */
-const selectedFormatoFirmadoId = ref<string | null>(null);
 
 type SelectedClinicalDocument = {
   documentId: string;
@@ -284,23 +281,18 @@ const solicitarEliminacionDocumento = (
   documentId: string,
   documentName: string,
   documentType: string,
-  idFormatoPrueba: string | null = null,
 ) => {
   requestEliminacionLocal({
     entidad: 'documentoExpediente',
     identificacion: documentName,
     onConfirm: async () => {
       try {
-        if (idFormatoPrueba) {
-          // Firma de prueba: se elimina con su registro por la ruta de formatos firmados
-          await FormatosFirmadosAPI.eliminarPrueba(trabajadores.currentTrabajadorId!, idFormatoPrueba);
-        } else {
-          await documentos.deleteDocumentById(
-            documentType,
-            trabajadores.currentTrabajadorId!,
-            documentId,
-          );
-        }
+        // Un formato firmado en pantalla se elimina con el registro de su firma (lo hace el servidor)
+        await documentos.deleteDocumentById(
+          documentType,
+          trabajadores.currentTrabajadorId!,
+          documentId,
+        );
         toast.open({ message: 'Documento eliminado exitosamente.' });
         await Promise.all([
           documentos.fetchAllDocuments(trabajadores.currentTrabajadorId!),
@@ -353,14 +345,12 @@ const toggleAnularModal = (
   documentId: string | null = null,
   documentName: string = 'Sin nombre',
   documentType: string | null = null,
-  idFormatoFirmado: string | null = null
 ) => {
   if (showAnularModal.value) {
     showAnularModal.value = false;
     selectedDocumentId.value = null;
     selectedDocumentName.value = '';
     selectedDocumentType.value = null;
-    selectedFormatoFirmadoId.value = null;
     return;
   }
 
@@ -386,28 +376,19 @@ const toggleAnularModal = (
   selectedDocumentId.value = documentId;
   selectedDocumentName.value = documentName;
   selectedDocumentType.value = documentType;
-  selectedFormatoFirmadoId.value = idFormatoFirmado;
 };
 
 const handleAnularDocument = async (razonAnulacion: string) => {
   if (!selectedDocumentId.value || !selectedDocumentType.value || !razonAnulacion) return;
 
   try {
-    // Un formato firmado en pantalla se anula junto con su PDF por su propia ruta
-    if (selectedFormatoFirmadoId.value) {
-      await FormatosFirmadosAPI.anular(
-        trabajadores.currentTrabajadorId!,
-        selectedFormatoFirmadoId.value,
-        razonAnulacion
-      );
-    } else {
-      await documentos.deleteDocumentById(
-        selectedDocumentType.value,
-        trabajadores.currentTrabajadorId!,
-        selectedDocumentId.value,
-        razonAnulacion
-      );
-    }
+    // Un formato firmado en pantalla se anula igual; el servidor anula también el registro de su firma
+    await documentos.deleteDocumentById(
+      selectedDocumentType.value,
+      trabajadores.currentTrabajadorId!,
+      selectedDocumentId.value,
+      razonAnulacion
+    );
 
     toast.open({ message: "Documento anulado exitosamente." });
 
