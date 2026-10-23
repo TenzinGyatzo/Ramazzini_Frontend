@@ -1,4 +1,8 @@
-import type { Trabajador } from '@/interfaces/trabajador.interface';
+import type {
+    MotivoFusion,
+    OrigenCampoFusion,
+    Trabajador,
+} from '@/interfaces/trabajador.interface';
 import api from '@/lib/axios'
 import { deletionPasswordHeaders } from '@/utils/deletionAuth'
 
@@ -107,6 +111,13 @@ export default {
         });
     },
 
+    /** Trabajadores de la empresa (todos sus centros) para elegir con quién fusionar. */
+    buscarParaFusion(empresaId: string, centroTrabajoId: string, q: string, excluir?: string) {
+        return api.get(`/${empresaId}/${centroTrabajoId}/trabajadores/buscar-para-fusion`, {
+            params: { q, excluir: excluir || undefined },
+        });
+    },
+
     descartarDuplicado(empresaId: string, centroTrabajoId: string, alertId: string) {
         return api.patch(`/${empresaId}/${centroTrabajoId}/duplicados/${alertId}/descartar`, {});
     },
@@ -118,6 +129,10 @@ export default {
             trabajadorDestinoId: string;
             trabajadorFuenteId: string;
             confirmacion: boolean;
+            motivos: MotivoFusion[];
+            motivoOtro?: string;
+            comentario?: string;
+            camposElegidos?: Record<string, OrigenCampoFusion>;
             numeroEmpleadoResuelto?: string;
             migrarArchivos?: boolean;
         },

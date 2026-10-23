@@ -104,4 +104,45 @@ export interface FusionPreview {
   };
   criterioMatch: 'CURP' | 'FOLIO' | null;
   destinoRecomendadoId: string;
+  /** Hay una alerta de posible duplicado pendiente entre los dos. */
+  posibleDuplicado?: boolean;
+  /** Datos que difieren entre `destino` y `fuente` (en el orden en que se pidió la vista previa). */
+  camposDiferentes?: CampoFusionDiferente[];
+  /** Nombre, apellidos, CURP, sexo y fecha de nacimiento son iguales. */
+  identidadCoincide?: boolean;
+  /** Nombre de cada centro de trabajo que aparece en los dos registros. */
+  centrosNombre?: Record<string, string>;
+}
+
+export type MotivoFusion =
+  | 'CAMBIO_NOMBRE'
+  | 'CAMBIO_SEXO'
+  | 'CAMBIO_CURP'
+  | 'REGISTRO_DUPLICADO'
+  | 'OTRO';
+
+export type OrigenCampoFusion = 'destino' | 'fuente';
+
+export interface CampoFusionDiferente {
+  clave: string;
+  etiqueta: string;
+  identidad: boolean;
+  valoresDestino: Record<string, string | number | null>;
+  valoresFuente: Record<string, string | number | null>;
+  porDefecto: OrigenCampoFusion;
+}
+
+/** Resultado del buscador del paso 1: trabajadores de la empresa. */
+export interface TrabajadorParaFusion extends DuplicateWorkerSummary {
+  estadoLaboral?: string;
+  numeroDocumentos: number;
+  posibleDuplicado: boolean;
+}
+
+/** Lo que el modal de fusión avisa al terminar. */
+export interface ResultadoFusion {
+  conservadoId: string;
+  eliminadoId: string;
+  /** Centro de trabajo en el que queda el trabajador conservado. */
+  idCentroTrabajo: string;
 }

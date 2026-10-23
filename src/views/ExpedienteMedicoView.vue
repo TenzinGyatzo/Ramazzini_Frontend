@@ -50,6 +50,8 @@ import {
   type CasoConIncapacidades,
 } from '@/helpers/incapacidades';
 import ModalTrabajadores from '@/components/ModalTrabajadores.vue';
+import ModalFusionTrabajadores from '@/components/ModalFusionTrabajadores.vue';
+import type { ResultadoFusion } from '@/interfaces/trabajador.interface';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import ModalFormatosParaFirma from '@/components/ModalFormatosParaFirma.vue';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
@@ -115,6 +117,7 @@ const { canManageTrabajadores, canAccessRiesgosTrabajo } = useUserPermissions();
 const {
   canManageResultadosClinicos,
   canConfigurarOrdenDocumentos,
+  canEliminarFusionarTrabajadores,
 } = useRolePermissions();
 const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
 const {
@@ -161,6 +164,45 @@ const cerrarEdicionTrabajador = () => {
       .fetchTrabajadorById(empresaId, centroId, trabajadorId)
       .catch((error) => console.error('Error al recargar el trabajador:', error));
   }
+};
+
+// Fusionar este trabajador con otro registro de la misma empresa
+const showFusionModal = ref(false);
+
+const abrirFusionTrabajador = () => {
+  executeIfCanManageTrabajadores(async () => {
+    const { empresaId, centroId } = contextoTrabajador();
+    if (!empresaId || !centroId || !trabajadores.currentTrabajador?._id) return;
+    // Las rutas de la fusión van por el centro seleccionado: que sea el de este trabajador
+    if (String(centrosTrabajo.currentCentroTrabajoId ?? '') !== centroId) {
+      await centrosTrabajo.fetchCentroTrabajoById(empresaId, centroId);
+    }
+    showFusionModal.value = true;
+  }, 'fusionar trabajadores');
+};
+
+/** Tras fusionar se muestra el expediente del registro que se conservó, en su centro. */
+const onFusionCompletada = async (resultado: ResultadoFusion) => {
+  showFusionModal.value = false;
+  const { empresaId, centroId, trabajadorId } = contextoTrabajador();
+  const centroFinal = resultado.idCentroTrabajo || centroId;
+  if (resultado.conservadoId !== trabajadorId || centroFinal !== centroId) {
+    await router.replace({
+      name: 'expediente-medico',
+      params: {
+        idEmpresa: empresaId,
+        idCentroTrabajo: centroFinal,
+        idTrabajador: resultado.conservadoId,
+      },
+    });
+    return;
+  }
+  try {
+    await trabajadores.fetchTrabajadorById(empresaId, centroId, trabajadorId);
+  } catch (error) {
+    console.error('Error al recargar el trabajador:', error);
+  }
+  await fetchData(true);
 };
 const showSubscriptionModal = ref(false);
 const showFinalizeModal = ref(false);
@@ -1094,6 +1136,19 @@ const crearDocumento = (tipoDocumento: string) =>
         name="modal-work"
         :duration="{ enter: 230, leave: 150 }"
       >
+        <ModalFusionTrabajadores
+          v-if="showFusionModal && trabajadores.currentTrabajador?._id"
+          :trabajador-a-id="String(trabajadores.currentTrabajador._id)"
+          @close="showFusionModal = false"
+          @fused="onFusionCompletada"
+        />
+      </Transition>
+
+      <Transition
+        appear
+        name="modal-work"
+        :duration="{ enter: 230, leave: 150 }"
+      >
         <ModalFormatosParaFirma
           v-if="showFormatosFirmaModal"
           :trabajador="trabajadores.currentTrabajador ?? null"
@@ -1252,6 +1307,21 @@ const crearDocumento = (tipoDocumento: string) =>
                   >
                     <i class="fas fa-pen text-[10px]" aria-hidden="true"></i>
                     <span class="hidden sm:inline">Editar</span>
+                  </button>
+                  <button
+                    v-if="canEliminarFusionarTrabajadores"
+                    type="button"
+                    class="btn-editar-entidad inline-flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors duration-150"
+                    :class="canManageTrabajadores
+                      ? 'hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700'
+                      : 'cursor-not-allowed opacity-50'"
+                    :disabled="!canManageTrabajadores"
+                    title="Fusionar con otro registro de la misma persona"
+                    aria-label="Fusionar con otro registro"
+                    @click="abrirFusionTrabajador"
+                  >
+                    <i class="fa-solid fa-object-group text-[10px]" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Fusionar con otro registro</span>
                   </button>
                 </div>
                 <p class="expediente-trabajador-meta mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm text-gray-600">

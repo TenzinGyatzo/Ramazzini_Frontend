@@ -194,6 +194,11 @@ function abrirFusion(trabajadorId: string, candidatoId?: string) {
   }, 'fusionar trabajadores');
 }
 
+/** Desde la barra de la tabla: el paso 1 empieza con los dos registros vacíos. */
+function abrirFusionVacia() {
+  abrirFusion('');
+}
+
 function onRevisarDuplicadosImportacion() {
   modalResumenImportacion.hideModal();
   filtroSoloDuplicados.value = true;
@@ -1119,8 +1124,8 @@ const toggleVigencias = () => {
         :duration="{ enter: 230, leave: 150 }"
       >
         <ModalFusionTrabajadores
-          v-if="showFusionModal && fusionTrabajadorA"
-          :trabajador-a-id="fusionTrabajadorA"
+          v-if="showFusionModal"
+          :trabajador-a-id="fusionTrabajadorA || undefined"
           :trabajador-b-id="fusionTrabajadorB || undefined"
           @close="showFusionModal = false"
           @fused="onFusionCompletada"
@@ -1297,6 +1302,21 @@ const toggleVigencias = () => {
             >
               <template #icon>
                 <i class="fas fa-file-excel text-sm group-hover:scale-110 transition-transform duration-200"></i>
+              </template>
+            </GreenButton>
+
+            <GreenButton
+              v-if="canEliminarFusionarTrabajadores"
+              text="Fusionar registros"
+              variant="secondary"
+              size="small"
+              class="group"
+              :disabled="!canManageTrabajadores"
+              @click="abrirFusionVacia"
+              title="Unir dos registros de la misma persona en esta empresa"
+            >
+              <template #icon>
+                <i class="fa-solid fa-object-group text-sm group-hover:scale-110 transition-transform duration-200"></i>
               </template>
             </GreenButton>
           </div>
