@@ -1305,21 +1305,6 @@ const toggleVigencias = () => {
                 <i class="fas fa-file-excel text-sm group-hover:scale-110 transition-transform duration-200"></i>
               </template>
             </GreenButton>
-
-            <GreenButton
-              v-if="canEliminarFusionarTrabajadores"
-              text="Fusionar registros"
-              variant="secondary"
-              size="small"
-              class="group"
-              :disabled="!canManageTrabajadores"
-              @click="abrirFusionVacia"
-              title="Unir dos registros de la misma persona en esta empresa"
-            >
-              <template #icon>
-                <i class="fa-solid fa-object-group text-sm group-hover:scale-110 transition-transform duration-200"></i>
-              </template>
-            </GreenButton>
           </div>
         </div>
       </div>
@@ -1391,16 +1376,31 @@ const toggleVigencias = () => {
             </div>
           </div>
 
-          <!-- Botón reset filtros -->
-          <button
-            v-if="hayFiltrosActivos"
-            @click="resetearFiltros"
-            class="inline-flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg border border-red-200 transition-all duration-200 hover:border-red-300 hover:shadow-sm"
-            title="Eliminar todos los filtros aplicados"
-          >
-            <i class="fa-solid fa-rotate-left text-xs"></i>
-            Limpiar filtros
-          </button>
+          <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+            <!-- Botón reset filtros -->
+            <button
+              v-if="hayFiltrosActivos"
+              @click="resetearFiltros"
+              class="inline-flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg border border-red-200 transition-all duration-200 hover:border-red-300 hover:shadow-sm"
+              title="Eliminar todos los filtros aplicados"
+            >
+              <i class="fa-solid fa-rotate-left text-xs"></i>
+              Limpiar filtros
+            </button>
+
+            <!-- Fusionar registros: acción de corrección poco frecuente, con el peso de un filtro -->
+            <button
+              v-if="canEliminarFusionarTrabajadores"
+              type="button"
+              :disabled="!canManageTrabajadores"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 border bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
+              title="Unir dos registros de la misma persona en esta empresa"
+              @click="abrirFusionVacia"
+            >
+              <i class="fa-solid fa-object-group"></i>
+              Fusionar registros
+            </button>
+          </div>
         </div>
 
         <!-- Chips: filtros aplicados (visible aunque el panel esté colapsado) -->
