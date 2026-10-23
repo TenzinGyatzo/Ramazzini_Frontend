@@ -305,8 +305,9 @@ export function buildCuerpoFormato(
 
 /**
  * Lo que cambia entre formatos al imprimir: nombre del archivo y el título. Los espacios al inicio
- * hacen que la línea roja del título empiece a la misma altura en todos; el tamaño se ajusta para
- * que el título quepa junto al logo (medido con Kanit). Si cambia un título, hay que reajustarlos.
+ * hacen que la línea roja del título empiece a la misma altura en todos (x≈122) y deje un tramo
+ * vacío antes del texto, como en los demás informes; el tamaño se ajusta para que haya ese tramo
+ * (medido con Kanit). Si cambia un título, hay que reajustarlos.
  * El consentimiento para evaluación es largo: a 10.5 la firma cabe en la misma hoja.
  * Mismos valores que el PDF firmado (backend/src/modules/formatos-firmados/formato-firmado-pdf.ts).
  */
@@ -316,8 +317,8 @@ const DISENO_FORMATO: Record<
 > = {
   CONSENTIMIENTO_EVALUACION_MEDICA: {
     archivo: 'Consentimiento_Evaluacion_Medica',
-    sangria: '  ',
-    tamanoTitulo: 14,
+    sangria: ' '.repeat(31),
+    tamanoTitulo: 12,
     tamanoTexto: 10.5,
     etiquetaFirma: 'Firma del trabajador:',
   },
@@ -330,8 +331,8 @@ const DISENO_FORMATO: Record<
   },
   CONSENTIMIENTO_ANTIDOPING: {
     archivo: 'Consentimiento_Antidoping',
-    sangria: '  ',
-    tamanoTitulo: 13,
+    sangria: ' '.repeat(29),
+    tamanoTitulo: 11,
     tamanoTexto: 11,
     etiquetaFirma: 'Firma:',
   },

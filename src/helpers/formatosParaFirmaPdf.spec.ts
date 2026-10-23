@@ -122,8 +122,10 @@ describe('consentimiento informado antidoping', () => {
     const { def, nombre } = descargas[0];
     expect(nombre).toBe('Consentimiento_Antidoping_P_REZ_2026-10-17.pdf');
     // Un solo renglón, como la declaración (los espacios iniciales alargan la línea roja)
-    expect(texto(def.header.columns[1])).toBe('  CONSENTIMIENTO INFORMADO PARA PRUEBA DE DETECCIÓN DE SUSTANCIAS\n');
-    expect(def.styles.header.fontSize).toBe(13);
+    expect(texto(def.header.columns[1])).toBe(
+      `${' '.repeat(29)}CONSENTIMIENTO INFORMADO PARA PRUEBA DE DETECCIÓN DE SUSTANCIAS\n`,
+    );
+    expect(def.styles.header.fontSize).toBe(11);
 
     // Lo que se enfatiza va en negritas
     const negritas = def.content
@@ -189,7 +191,8 @@ describe('consentimiento para evaluación médica laboral', () => {
     expect(texto(def.content.at(-2))).toBe('Fecha: 22-10-2026');
     expect(texto(def.content.at(-1))).toMatch(/^Firma del trabajador:/);
     expect(def.styles.paragraph.fontSize).toBe(10.5);
-    expect(def.styles.header.fontSize).toBe(14);
+    expect(def.styles.header.fontSize).toBe(12);
+    expect(texto(def.header.columns[1])).toBe(`${' '.repeat(31)}CONSENTIMIENTO INFORMADO PARA EVALUACIÓN MÉDICA LABORAL\n`);
   });
 
   it('un formato sin texto definitivo no se descarga', async () => {
