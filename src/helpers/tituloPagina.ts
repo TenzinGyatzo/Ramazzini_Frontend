@@ -59,6 +59,7 @@ export const TITULOS_POR_RUTA: Record<string, string> = {
   'incapacidades-prima': 'Prima de riesgo',
   'informes-salud-ocupacional': 'Informes de salud ocupacional',
   empresas: 'Empresas',
+  vigencias: 'Vigencias de aptitud',
   'centros-trabajo': 'Centros de trabajo',
   inventario: 'Inventario',
   'inventario-catalogo': 'Catálogo de inventario',

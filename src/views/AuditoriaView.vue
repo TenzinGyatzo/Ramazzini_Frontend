@@ -211,6 +211,11 @@ async function verifyAudit() {
               <option value="WORKER_FUSION_MANUAL">Fusión de trabajadores</option>
               <option value="WORKER_DUPLICATE_DISMISSED">Duplicado descartado</option>
             </optgroup>
+            <optgroup label="Empresas">
+              <option value="EMPRESA_SEGUIMIENTO_PAUSADO">Seguimiento de vigencias pausado</option>
+              <option value="EMPRESA_SEGUIMIENTO_REANUDADO">Seguimiento de vigencias reanudado</option>
+              <option value="EMPRESA_SEGUIMIENTO_REACTIVADO">Seguimiento reactivado por nueva aptitud</option>
+            </optgroup>
             <optgroup label="Inventario">
               <option value="INVENTORY_ADJUSTED">Ajuste de inventario</option>
               <option value="INVENTORY_WRITE_OFF">Baja de inventario</option>

@@ -211,6 +211,19 @@ const footerEditionText = computed(() => {
             <p class="font-light text-xs">Explorar empresas</p>
           </SidebarLink>
         </Transition>
+
+        <Transition appear name="slide-fade" :duration="300">
+          <SidebarLink v-if="route.path !== '/login'" 
+            to="/vigencias" 
+            icon="fa-solid fa-calendar-check" 
+            tooltip="Vigencias"
+            :class="{ 'fade-in': isMounted }"
+            data-testid="vigencias-sidebar-link"
+            @click.stop>
+            <p>Vigencias</p>
+            <p class="font-light text-xs">Todas las empresas</p>
+          </SidebarLink>
+        </Transition>
       </div>
 
       <!-- Sección Empresa -->

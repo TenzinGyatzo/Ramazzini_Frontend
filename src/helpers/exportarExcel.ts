@@ -37,6 +37,32 @@ function calcularAnchosColumnas(
   });
 }
 
+/** Descarga filas ya armadas (encabezado → valor) como .xlsx, con filtro y encabezado fijo. */
+export function descargarFilasExcel(
+  filas: Record<string, string | number>[],
+  nombreArchivo: string,
+  nombreHoja: string,
+): void {
+  const headers = filas.length ? Object.keys(filas[0]) : [];
+  const worksheet = xlsx.utils.json_to_sheet(filas, { header: headers });
+  worksheet['!autofilter'] = { ref: worksheet['!ref'] || '' };
+  worksheet['!cols'] = calcularAnchosColumnas(headers, filas);
+  worksheet['!views'] = [
+    { state: 'frozen', ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', workbookViewId: 0 },
+  ];
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, worksheet, nombreHoja);
+  const excelBuffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = nombreArchivo;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 /**
  * Exporta trabajadores a Excel con las columnas indicadas.
  * Se filtran por régimen y se ordenan como la plantilla de importación (ver `ordenarColumnasParaArchivo`).

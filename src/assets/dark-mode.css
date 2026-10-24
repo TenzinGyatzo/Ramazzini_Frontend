@@ -4346,6 +4346,50 @@ html.dark-mode .incapacidades-empresa__enlace:hover {
   color: #6ee7b7 !important;
 }
 
+/* Vigencias de todas las empresas: títulos, tarjetas, y filas cuyo hover de Tailwind pierde ante el remapeo */
+html.dark-mode .vigencias__titulo,
+html.dark-mode .vigencias__seccion {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .vigencias__tarjeta {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html.dark-mode .vigencias__fila:hover {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .vigencias__enlace:hover {
+  background-color: #334155 !important;
+}
+
+/* Totales: .text-2xl fuerza gris claro; los ceros de la lista quedan apagados */
+html.dark-mode .vigencias__numero.text-gray-900 {
+  color: #f1f5f9 !important;
+}
+
+html.dark-mode .vigencias__numero.text-emerald-700 {
+  color: #34d399 !important;
+}
+
+html.dark-mode .vigencias__numero.text-amber-600 {
+  color: #fbbf24 !important;
+}
+
+html.dark-mode .vigencias__numero.text-red-600 {
+  color: #f87171 !important;
+}
+
+html.dark-mode .vigencias__numero.text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .vigencias__cero {
+  color: #475569 !important;
+}
+
 /* Zona para soltar archivos de las incapacidades */
 html.dark-mode .zona-archivos {
   border-color: #475569 !important;

@@ -731,8 +731,9 @@ function inicializarDataTable() {
           data: null, 
           title: 'Estado Vigencia', 
           render: function(data, type, row) {
+            // «Sin aptitud» también es el valor del filtro de vigencia (llega desde la vista de vigencias)
             if (!row.aptitudResumen?.fechaAptitudPuesto) {
-              return '<span class="text-gray-500">Sin fecha</span>';
+              return type === 'filter' ? 'Sin aptitud' : '<span class="text-gray-500">Sin aptitud</span>';
             }
                         
             const { estado, diasRestantes, diasTranscurridos, color } = calcularEstadoVigencia(row.aptitudResumen.fechaAptitudPuesto);
@@ -752,7 +753,7 @@ function inicializarDataTable() {
               </div>
             `;
           },
-          defaultContent: '<span class="text-gray-500">Sin fecha</span>' 
+          defaultContent: '<span class="text-gray-500">Sin aptitud</span>' 
         }, // 5 (antes era 33)
         // { data: 'updatedAt', title: 'Última actualización', render: d => convertirFechaISOaDDMMYYYY(d) },
         { 

@@ -173,6 +173,11 @@ const router = createRouter({
           component: () => import("../views/InventarioView.vue"),
         },
         {
+          path: "/vigencias",
+          name: "vigencias",
+          component: () => import("../views/VigenciasView.vue"),
+        },
+        {
           path: "/inventario",
           name: "inventario-catalogo",
           component: () => import("../views/InventarioCatalogoView.vue"),

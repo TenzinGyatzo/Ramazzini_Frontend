@@ -282,7 +282,7 @@ const filtrosConfig: FiltroConfigItem[] = [
     'Apto Sin Restricciones', 'Apto Con Precaución', 'Apto Con Restricciones',
     'No Apto', 'Evaluación No Completada', '-'
   ]},
-  { id: 'vigencia', groupId: 'rapidos', label: 'Estado de Vigencia', opciones: ['Vigente', 'Por vencer', 'Vencido'] },
+  { id: 'vigencia', groupId: 'rapidos', label: 'Estado de Vigencia', opciones: ['Vigente', 'Por vencer', 'Vencido', 'Sin aptitud'] },
   { id: 'imc', groupId: 'signos', label: 'Categoria IMC', opciones: [
     'Bajo peso', 'Normal', 'Sobrepeso',
     'Obesidad clase I', 'Obesidad clase II', 'Obesidad clase III', '-'
@@ -943,7 +943,7 @@ const filtrosValidos = {
   cintura: ['Bajo Riesgo', 'Riesgo Aumentado', 'Alto Riesgo', '-'],
   tensionArterial: ['Óptima', 'Normal', 'Alta', 'Hipertensión grado 1', 'Hipertensión grado 2', 'Hipertensión grado 3'],
   aptitud: ['Apto Sin Restricciones', 'Apto Con Precaución', 'Apto Con Restricciones', 'No Apto', 'Evaluación No Completada'],
-  vigencia: ['Vigente', 'Por vencer', 'Vencido'],
+  vigencia: ['Vigente', 'Por vencer', 'Vencido', 'Sin aptitud'],
   lentes: ['Requiere lentes', 'No requiere'],
   correccionVisual: ['Corregida', 'Sin corregir', 'No requiere'],
   agudeza: [
