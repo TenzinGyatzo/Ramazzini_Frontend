@@ -19,11 +19,6 @@ export function porcentajeAlDia(conteos: ConteosVigencia): number | null {
   return Math.round(((conteos.vigentes + conteos.porVencer) / conteos.activos) * 100);
 }
 
-/** Lo que pide atención ya: por vencer, vencidas recientes y sin aptitud. */
-export function tienePendientes(conteos: ConteosVigencia): boolean {
-  return conteos.porVencer + conteos.vencidasRecientes + conteos.sinAptitud > 0;
-}
-
 const normalizar = (texto: string) =>
   texto
     .normalize('NFD')
@@ -67,23 +62,15 @@ export function ordenarEmpresas(empresas: EmpresaVigencias[], orden: OrdenVigenc
 
 export interface FiltrosVigencias {
   busqueda: string;
-  soloPendientes: boolean;
   orden: OrdenVigencias;
 }
 
-/** Empresas de la lista: buscador, «solo con pendientes» y orden. */
+/** Empresas de la lista: buscador y orden. Se muestran todas las elegidas, también las que están al día. */
 export function filtrarEmpresas(empresas: EmpresaVigencias[], filtros: FiltrosVigencias): EmpresaVigencias[] {
   return ordenarEmpresas(
-    empresas.filter(
-      (e) => coincideEmpresa(e, filtros.busqueda) && (!filtros.soloPendientes || tienePendientes(e.conteos)),
-    ),
+    empresas.filter((e) => coincideEmpresa(e, filtros.busqueda)),
     filtros.orden,
   );
-}
-
-/** Empresas que el filtro «solo con pendientes» deja fuera. */
-export function ocultasPorPendientes(empresas: EmpresaVigencias[], busqueda: string): number {
-  return empresas.filter((e) => coincideEmpresa(e, busqueda) && !tienePendientes(e.conteos)).length;
 }
 
 // ---- Elegir empresas
@@ -127,13 +114,20 @@ export const COLUMNAS_VIGENCIA: { clave: ColumnaVigencia; titulo: string; color:
   { clave: 'vigentes', titulo: 'Vigentes', color: 'text-emerald-700 dark:text-emerald-400' },
   { clave: 'porVencer', titulo: 'Por vencer', color: 'text-amber-600 dark:text-amber-400' },
   { clave: 'vencidasRecientes', titulo: 'Vencidas', color: 'text-red-600 dark:text-red-400' },
-  { clave: 'vencidasAntiguas', titulo: 'Más de 6 meses', color: 'text-red-400/80 dark:text-red-300/70' },
+  { clave: 'vencidasAntiguas', titulo: 'Vencidas +6 meses', color: 'text-red-400/80 dark:text-red-300/70' },
   { clave: 'sinAptitud', titulo: 'Sin aptitud', color: 'text-gray-600 dark:text-slate-300' },
 ];
 
-/** Rejilla compartida por el encabezado y las filas (empresa, activos, 5 columnas, vencen, al día, acciones). */
+/**
+ * Rejilla compartida por el encabezado y las filas: empresa, activos, las cinco columnas,
+ * vencen, al día y acciones. Anchos medidos con Kanit para que cada título quepa en una línea;
+ * por debajo de 1280 px cada empresa es una tarjeta.
+ */
 export const REJILLA_VIGENCIAS =
-  'lg:grid lg:grid-cols-[minmax(0,1fr)_repeat(6,4.5rem)_7.5rem_4.5rem_5.5rem] lg:items-center lg:gap-x-1';
+  'xl:grid xl:grid-cols-[minmax(10rem,1fr)_4rem_4.5rem_5rem_4.5rem_7.5rem_5rem_9.5rem_3.5rem_2rem] xl:items-center xl:gap-x-1';
+
+/** Título de la columna de próximos vencimientos (encabezado y etiqueta en tarjetas). */
+export const TITULO_VENCEN = 'Vencen en 30/60/90 días';
 
 const ESTADOS_PENDIENTE: Record<EstadoPendiente, string> = {
   POR_VENCER: 'Por vencer',

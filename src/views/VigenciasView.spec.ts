@@ -94,15 +94,15 @@ describe('VigenciasView', () => {
     w.unmount();
   });
 
-  it('por defecto solo lista empresas con pendientes', async () => {
+  it('lista todas las empresas elegidas, la más urgente primero', async () => {
     const w = montar();
     await flushPromises();
-    expect(w.findAll('[data-test="fila-empresa"]')).toHaveLength(1);
-    expect(w.text()).toContain('Empresa urgente');
-    expect(w.find('[data-test="al-dia-ocultas"]').text()).toContain('1 empresa al día oculta');
-
-    await w.find('[data-test="solo-pendientes"]').setValue(false);
-    expect(w.findAll('[data-test="fila-empresa"]')).toHaveLength(2);
+    const filas = w.findAll('[data-test="fila-empresa"]');
+    expect(filas).toHaveLength(2);
+    expect(filas[0].text()).toContain('Empresa urgente');
+    expect(w.find('[data-test="solo-pendientes"]').exists()).toBe(false);
+    await w.find('[data-test="buscar"]').setValue('zzz');
+    expect(w.find('[data-test="sin-empresas"]').text()).toBe('Ninguna empresa coincide con la búsqueda.');
     w.unmount();
   });
 

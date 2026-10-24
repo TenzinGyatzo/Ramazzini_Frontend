@@ -221,7 +221,7 @@ const footerEditionText = computed(() => {
             data-testid="vigencias-sidebar-link"
             @click.stop>
             <p>Vigencias</p>
-            <p class="font-light text-xs">Todas las empresas</p>
+            <p class="font-light text-xs">Empresas en seguimiento</p>
           </SidebarLink>
         </Transition>
       </div>

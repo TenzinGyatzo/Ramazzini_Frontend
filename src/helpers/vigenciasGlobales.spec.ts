@@ -6,7 +6,6 @@ import {
   filtrarEmpresas,
   filtrarParaElegir,
   nombreArchivoPendientes,
-  ocultasPorPendientes,
   ordenarEmpresas,
   porcentajeAlDia,
   textoDias,
@@ -72,24 +71,19 @@ describe('vista de vigencias', () => {
     expect(ordenarEmpresas(lista, 'nombre')[0].nombreEmpresa).toBe('Ábaco');
   });
 
-  it('«solo con pendientes» oculta las empresas al día', () => {
-    const lista = [
-      empresa('Al día', { vigentes: 5 }),
-      empresa('Pendiente', { porVencer: 1 }),
-      empresa('Sin aptitud', { sinAptitud: 1 }),
-      empresa('Vacía', {}),
-    ];
-    expect(
-      filtrarEmpresas(lista, { busqueda: '', soloPendientes: true, orden: 'urgencia' }).map((e) => e.nombreEmpresa),
-    ).toEqual(['Pendiente', 'Sin aptitud']);
-    expect(ocultasPorPendientes(lista, '')).toBe(2);
-    expect(filtrarEmpresas(lista, { busqueda: '', soloPendientes: false, orden: 'nombre' })).toHaveLength(4);
+  it('muestra todas las empresas elegidas, también las que están al día', () => {
+    const lista = [empresa('Al día', { vigentes: 5 }), empresa('Pendiente', { porVencer: 1 }), empresa('Vacía', {})];
+    expect(filtrarEmpresas(lista, { busqueda: '', orden: 'urgencia' }).map((e) => e.nombreEmpresa)).toEqual([
+      'Pendiente',
+      'Al día',
+      'Vacía',
+    ]);
   });
 
   it('busca sin importar acentos ni mayúsculas', () => {
     const lista = [empresa('Construcción Peña', { porVencer: 1 }), empresa('Otra', { porVencer: 1 })];
     expect(
-      filtrarEmpresas(lista, { busqueda: 'PENA', soloPendientes: false, orden: 'urgencia' }).map((e) => e.nombreEmpresa),
+      filtrarEmpresas(lista, { busqueda: 'PENA', orden: 'urgencia' }).map((e) => e.nombreEmpresa),
     ).toEqual(['Construcción Peña']);
   });
 

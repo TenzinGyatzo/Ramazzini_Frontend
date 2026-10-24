@@ -11,6 +11,7 @@ import {
   COLUMNAS_VIGENCIA as COLUMNAS,
   FILTRO_DE_TABLA,
   REJILLA_VIGENCIAS as rejilla,
+  TITULO_VENCEN,
   porcentajeAlDia,
   type ColumnaVigencia,
 } from '@/helpers/vigenciasGlobales';
@@ -67,7 +68,7 @@ const boton =
       data-test="fila-empresa"
       @click="emit('alternar')"
     >
-      <div class="flex min-w-0 items-center gap-2 pr-12 lg:pr-0">
+      <div class="flex min-w-0 items-center gap-2 pr-12 xl:pr-0">
         <button
           type="button"
           class="flex min-w-0 items-center gap-2 text-left"
@@ -85,33 +86,33 @@ const boton =
       </div>
 
       <!-- Números: columnas en pantallas anchas, etiquetas en angostas -->
-      <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-5 text-sm lg:contents">
-        <span class="lg:text-right">
-          <span class="mr-1 text-xs text-gray-500 lg:hidden dark:text-slate-400">Activos</span>
+      <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-5 text-sm xl:contents">
+        <span class="xl:text-right">
+          <span class="mr-1 text-xs text-gray-500 xl:hidden dark:text-slate-400">Activos</span>
           <span class="font-medium tabular-nums text-gray-900 dark:text-slate-100" data-test="activos">{{ empresa.conteos.activos }}</span>
         </span>
-        <span v-for="columna in COLUMNAS" :key="columna.clave" class="lg:text-right">
-          <span class="mr-1 text-xs text-gray-500 lg:hidden dark:text-slate-400">{{ columna.titulo }}</span>
+        <span v-for="columna in COLUMNAS" :key="columna.clave" class="xl:text-right">
+          <span class="mr-1 text-xs text-gray-500 xl:hidden dark:text-slate-400">{{ columna.titulo }}</span>
           <span
             class="font-medium tabular-nums"
             :class="empresa.conteos[columna.clave] ? columna.color : 'vigencias__cero text-gray-300 dark:text-slate-600'"
             :data-test="`empresa-${columna.clave}`"
           >{{ empresa.conteos[columna.clave] }}</span>
         </span>
-        <span class="lg:text-center" :title="tituloVencen(empresa.conteos)">
-          <span class="mr-1 text-xs text-gray-500 lg:hidden dark:text-slate-400">Vencen en 30 · 60 · 90 días</span>
+        <span class="xl:text-center" :title="tituloVencen(empresa.conteos)">
+          <span class="mr-1 text-xs text-gray-500 xl:hidden dark:text-slate-400">{{ TITULO_VENCEN }}</span>
           <span class="tabular-nums text-gray-700 dark:text-slate-300">
             {{ empresa.conteos.vencen30 }} · {{ empresa.conteos.vencen60 }} · {{ empresa.conteos.vencen90 }}
           </span>
         </span>
-        <span class="lg:text-right">
-          <span class="mr-1 text-xs text-gray-500 lg:hidden dark:text-slate-400">Al día</span>
+        <span class="xl:text-right">
+          <span class="mr-1 text-xs text-gray-500 xl:hidden dark:text-slate-400">Al día</span>
           <span class="font-semibold tabular-nums" :class="colorAlDia(empresa.conteos)">{{ textoAlDia(empresa.conteos) }}</span>
         </span>
       </div>
 
       <!-- Acciones: a un clic, sin menús -->
-      <div class="absolute right-3 top-2 flex items-center gap-0.5 lg:static lg:justify-end" @click.stop>
+      <div class="absolute right-3 top-2 flex items-center gap-0.5 xl:static xl:justify-end" @click.stop>
         <button
           v-if="puedeExportar && conPendientes"
           type="button"
@@ -140,13 +141,13 @@ const boton =
           data-test="fila-centro"
         >
           <span class="block truncate text-gray-700 dark:text-slate-300">{{ centro.nombreCentro }}</span>
-          <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 lg:contents">
-            <span class="lg:text-right">
-              <span class="mr-1 text-xs text-gray-500 lg:hidden dark:text-slate-400">Activos</span>
+          <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 xl:contents">
+            <span class="xl:text-right">
+              <span class="mr-1 text-xs text-gray-500 xl:hidden dark:text-slate-400">Activos</span>
               <span class="tabular-nums text-gray-700 dark:text-slate-300">{{ centro.conteos.activos }}</span>
             </span>
-            <span v-for="columna in COLUMNAS" :key="columna.clave" class="lg:text-right">
-              <span class="mr-1 text-xs text-gray-500 lg:hidden dark:text-slate-400">{{ columna.titulo }}</span>
+            <span v-for="columna in COLUMNAS" :key="columna.clave" class="xl:text-right">
+              <span class="mr-1 text-xs text-gray-500 xl:hidden dark:text-slate-400">{{ columna.titulo }}</span>
               <RouterLink
                 v-if="centro.conteos[columna.clave]"
                 :to="enlaceTabla(centro.idCentro, columna.clave)"
@@ -157,12 +158,12 @@ const boton =
               >{{ centro.conteos[columna.clave] }}</RouterLink>
               <span v-else class="tabular-nums vigencias__cero text-gray-300 dark:text-slate-600">0</span>
             </span>
-            <span class="tabular-nums text-gray-600 lg:text-center dark:text-slate-400" :title="tituloVencen(centro.conteos)">
-              <span class="mr-1 text-xs text-gray-500 lg:hidden dark:text-slate-400">Vencen en 30 · 60 · 90 días</span>
+            <span class="tabular-nums text-gray-600 xl:text-center dark:text-slate-400" :title="tituloVencen(centro.conteos)">
+              <span class="mr-1 text-xs text-gray-500 xl:hidden dark:text-slate-400">{{ TITULO_VENCEN }}</span>
               {{ centro.conteos.vencen30 }} · {{ centro.conteos.vencen60 }} · {{ centro.conteos.vencen90 }}
             </span>
-            <span class="lg:text-right">
-              <span class="mr-1 text-xs text-gray-500 lg:hidden dark:text-slate-400">Al día</span>
+            <span class="xl:text-right">
+              <span class="mr-1 text-xs text-gray-500 xl:hidden dark:text-slate-400">Al día</span>
               <span class="tabular-nums" :class="colorAlDia(centro.conteos)">{{ textoAlDia(centro.conteos) }}</span>
             </span>
           </div>

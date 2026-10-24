@@ -14,10 +14,10 @@ import {
   COLUMNAS_VIGENCIA,
   ORDENES,
   REJILLA_VIGENCIAS,
+  TITULO_VENCEN,
   filasExcelPendientes,
   filtrarEmpresas,
   nombreArchivoPendientes,
-  ocultasPorPendientes,
   porcentajeAlDia,
   type OrdenVigencias,
 } from '@/helpers/vigenciasGlobales';
@@ -49,30 +49,19 @@ onMounted(() => cargar());
 // ---- Filtros
 
 const busqueda = ref('');
-const soloPendientes = ref(true);
 const orden = ref<OrdenVigencias>('urgencia');
 
 const empresasFiltradas = computed(() =>
   filtrarEmpresas(resumen.value?.empresas ?? [], {
     busqueda: busqueda.value,
-    soloPendientes: soloPendientes.value,
     orden: orden.value,
   }),
 );
-const alDiaOcultas = computed(() =>
-  soloPendientes.value ? ocultasPorPendientes(resumen.value?.empresas ?? [], busqueda.value) : 0,
-);
-const hayFiltros = computed(() => !!busqueda.value.trim() || !soloPendientes.value || orden.value !== 'urgencia');
-const limpiarFiltros = () => {
-  busqueda.value = '';
-  soloPendientes.value = true;
-  orden.value = 'urgencia';
-};
 
 /** La lista crece por tramos para no pintar cientos de empresas de golpe. */
 const TRAMO = 50;
 const limite = ref(TRAMO);
-watch([busqueda, soloPendientes, orden], () => {
+watch([busqueda, orden], () => {
   limite.value = TRAMO;
 });
 const empresasVisibles = computed(() => empresasFiltradas.value.slice(0, limite.value));
@@ -174,10 +163,6 @@ const TARJETAS_TOTALES = [
           <select v-model="orden" :class="campo" aria-label="Orden" data-test="orden">
             <option v-for="opcion in ORDENES" :key="opcion.valor" :value="opcion.valor">{{ opcion.texto }}</option>
           </select>
-          <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
-            <input v-model="soloPendientes" type="checkbox" class="h-4 w-4 accent-emerald-600" data-test="solo-pendientes" />
-            Solo con pendientes
-          </label>
         </div>
       </div>
 
@@ -249,34 +234,22 @@ const TARJETAS_TOTALES = [
           <div
             :class="[
               REJILLA_VIGENCIAS,
-              'vigencias__encabezados hidden border-b border-gray-200 px-4 py-2 text-xs font-medium text-gray-500 dark:border-slate-700 dark:text-slate-400',
+              'vigencias__encabezados hidden whitespace-nowrap border-b border-gray-200 px-4 py-2 text-xs font-medium text-gray-500 dark:border-slate-700 dark:text-slate-400',
             ]"
           >
             <span class="pl-5">Empresa</span>
             <span class="text-right">Activos</span>
             <span v-for="columna in COLUMNAS_VIGENCIA" :key="columna.clave" class="text-right">{{ columna.titulo }}</span>
             <span class="text-center" title="Aptitudes que vencen en los próximos 30, 31 a 60 y 61 a 90 días">
-              Vencen en 30 · 60 · 90 días
+              {{ TITULO_VENCEN }}
             </span>
             <span class="text-right">Al día</span>
             <span><span class="sr-only">Acciones</span></span>
           </div>
 
-          <div v-if="!empresasFiltradas.length" class="px-4 py-12 text-center">
-            <i class="fas fa-calendar-check mb-2 text-2xl text-gray-300 dark:text-slate-600" aria-hidden="true"></i>
-            <p class="text-sm font-medium text-gray-700 dark:text-slate-300" data-test="sin-empresas">
-              <template v-if="alDiaOcultas && !busqueda.trim()">Todas tus empresas en seguimiento están al día</template>
-              <template v-else>Ninguna empresa coincide con los filtros</template>
-            </p>
-            <button
-              v-if="hayFiltros"
-              type="button"
-              class="mt-2 text-sm font-medium text-emerald-600 hover:text-emerald-700"
-              @click="alDiaOcultas && !busqueda.trim() ? (soloPendientes = false) : limpiarFiltros()"
-            >
-              {{ alDiaOcultas && !busqueda.trim() ? 'Mostrar todas' : 'Quitar filtros' }}
-            </button>
-          </div>
+          <p v-if="!empresasFiltradas.length" class="px-4 py-12 text-center text-sm text-gray-600 dark:text-slate-400" data-test="sin-empresas">
+            Ninguna empresa coincide con la búsqueda.
+          </p>
 
           <div v-else class="divide-y divide-gray-100 dark:divide-slate-700">
             <FilaEmpresaVigencias
@@ -291,25 +264,15 @@ const TARJETAS_TOTALES = [
             />
           </div>
 
-          <div
-            v-if="empresasFiltradas.length > limite || (alDiaOcultas && empresasFiltradas.length)"
-            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-gray-100 px-4 py-3 text-sm dark:border-slate-700"
-          >
+          <div v-if="empresasFiltradas.length > limite" class="border-t border-gray-100 px-4 py-3 text-center dark:border-slate-700">
             <button
-              v-if="empresasFiltradas.length > limite"
               type="button"
-              class="font-medium text-emerald-600 hover:text-emerald-700"
+              class="text-sm font-medium text-emerald-600 hover:text-emerald-700"
               data-test="ver-mas"
               @click="limite += TRAMO"
             >
               Ver más ({{ empresasFiltradas.length - limite }} restantes)
             </button>
-            <span v-if="alDiaOcultas && empresasFiltradas.length" class="text-gray-500 dark:text-slate-400" data-test="al-dia-ocultas">
-              {{ alDiaOcultas }} {{ alDiaOcultas === 1 ? 'empresa al día oculta' : 'empresas al día ocultas' }} ·
-              <button type="button" class="font-medium text-emerald-600 hover:text-emerald-700" @click="soloPendientes = false">
-                Mostrar todas
-              </button>
-            </span>
           </div>
         </section>
       </template>
