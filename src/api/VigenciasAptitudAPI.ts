@@ -1,6 +1,6 @@
 import api from '@/lib/axios';
 
-/** Vigencias de aptitud de todas las empresas (docs/vigencias-globales-especificacion.md). */
+/** Vigencias de aptitud de las empresas en seguimiento (docs/vigencias-globales-especificacion.md). */
 export interface ConteosVigencia {
   activos: number;
   vigentes: number;
@@ -14,10 +14,6 @@ export interface ConteosVigencia {
   vencen90: number;
 }
 
-export type EstadoSeguimiento = 'EN_SEGUIMIENTO' | 'REACTIVADA' | 'SIN_ACTIVIDAD' | 'PAUSADA';
-
-export type MotivoPausa = 'NO_RENOVO' | 'CAMBIO_PROVEEDOR' | 'SERVICIO_MEDICO_PROPIO' | 'OTRO';
-
 export interface CentroVigencias {
   idCentro: string;
   nombreCentro: string;
@@ -27,15 +23,6 @@ export interface CentroVigencias {
 export interface EmpresaVigencias {
   idEmpresa: string;
   nombreEmpresa: string;
-  seguimiento: EstadoSeguimiento;
-  pausa?: {
-    desde: string | null;
-    motivo: MotivoPausa | null;
-    motivoOtro: string | null;
-    nota: string | null;
-    pausadoPor: string | null;
-  };
-  reactivadoEn: string | null;
   ultimaAptitud: string | null;
   conteos: ConteosVigencia;
   centros: CentroVigencias[];
@@ -43,17 +30,27 @@ export interface EmpresaVigencias {
 
 export interface ResumenVigencias {
   generadoEn: string;
-  /** Solo empresas en seguimiento (también las reactivadas). */
+  /** Solo las empresas en seguimiento que ve el usuario. */
   totales: ConteosVigencia;
-  conteosSecundarios: {
-    sinActividad: number;
-    pausadas: number;
-    sinTrabajadoresActivos: number;
-  };
-  puedePausar: boolean;
+  empresasSeleccionadas: number;
+  puedeElegir: boolean;
   puedeExportar: boolean;
   /** Ordenadas por urgencia. */
   empresas: EmpresaVigencias[];
+}
+
+/** Empresa de la ventana «Elegir empresas». */
+export interface EmpresaParaElegir {
+  idEmpresa: string;
+  nombreEmpresa: string;
+  seleccionada: boolean;
+  activos: number;
+  ultimaAptitud: string | null;
+}
+
+export interface CambioSeleccion {
+  idEmpresa: string;
+  seleccionada: boolean;
 }
 
 export type EstadoPendiente = 'POR_VENCER' | 'VENCIDA_RECIENTE' | 'VENCIDA_ANTIGUA';
@@ -74,23 +71,19 @@ export interface PendienteVigencia {
   diasRestantes: number | null;
 }
 
-export interface PausaSeguimiento {
-  motivo: MotivoPausa;
-  motivoOtro?: string;
-  nota?: string;
-}
-
 export default {
   getResumen(): Promise<{ data: ResumenVigencias }> {
     return api.get('/vigencias-aptitud/resumen');
   },
 
-  pausar(idEmpresa: string, pausa: PausaSeguimiento) {
-    return api.patch(`/vigencias-aptitud/empresas/${idEmpresa}/seguimiento`, { pausar: true, ...pausa });
+  /** Empresas que ve el usuario y si están en seguimiento (quien puede elegir). */
+  getEmpresas(): Promise<{ data: EmpresaParaElegir[] }> {
+    return api.get('/vigencias-aptitud/empresas');
   },
 
-  reanudar(idEmpresa: string) {
-    return api.patch(`/vigencias-aptitud/empresas/${idEmpresa}/seguimiento`, { pausar: false });
+  /** Envía solo los cambios; devuelve la lista actualizada. */
+  actualizarEmpresas(cambios: CambioSeleccion[]): Promise<{ data: EmpresaParaElegir[] }> {
+    return api.patch('/vigencias-aptitud/empresas', { cambios });
   },
 
   /** El servidor registra la exportación en la bitácora al entregar las filas. */

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * «Vigencias» (docs/vigencias-globales-especificacion.md): vigencia de las aptitudes de todas
- * las empresas y centros que ve el usuario, para planear con tiempo los exámenes periódicos.
- * Las empresas sin actividad reciente y las pausadas van aparte y no suman a los totales.
+ * «Vigencias» (docs/vigencias-globales-especificacion.md): vigencia de las aptitudes de las
+ * empresas a las que el proveedor da seguimiento, por empresa y centro, para planear con
+ * tiempo los exámenes periódicos. Las empresas se eligen en «Elegir empresas».
  */
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import VigenciasAptitudAPI, { type EmpresaVigencias, type ResumenVigencias } from '@/api/VigenciasAptitudAPI';
 import FilaEmpresaVigencias from '@/components/vigencias/FilaEmpresaVigencias.vue';
-import ModalSeguimientoVigencias from '@/components/vigencias/ModalSeguimientoVigencias.vue';
+import ModalEmpresasVigencias from '@/components/vigencias/ModalEmpresasVigencias.vue';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { descargarFilasExcel } from '@/helpers/exportarExcel';
 import {
@@ -15,10 +15,10 @@ import {
   ORDENES,
   REJILLA_VIGENCIAS,
   filasExcelPendientes,
+  filtrarEmpresas,
   nombreArchivoPendientes,
   ocultasPorPendientes,
   porcentajeAlDia,
-  separarSecciones,
   type OrdenVigencias,
 } from '@/helpers/vigenciasGlobales';
 
@@ -51,11 +51,9 @@ onMounted(() => cargar());
 const busqueda = ref('');
 const soloPendientes = ref(true);
 const orden = ref<OrdenVigencias>('urgencia');
-const verSinActividad = ref(false);
-const verPausadas = ref(false);
 
-const secciones = computed(() =>
-  separarSecciones(resumen.value?.empresas ?? [], {
+const empresasFiltradas = computed(() =>
+  filtrarEmpresas(resumen.value?.empresas ?? [], {
     busqueda: busqueda.value,
     soloPendientes: soloPendientes.value,
     orden: orden.value,
@@ -77,24 +75,11 @@ const limite = ref(TRAMO);
 watch([busqueda, soloPendientes, orden], () => {
   limite.value = TRAMO;
 });
-const principalVisible = computed(() => secciones.value.principal.slice(0, limite.value));
+const empresasVisibles = computed(() => empresasFiltradas.value.slice(0, limite.value));
 
 const totales = computed(() => resumen.value?.totales);
 const alDia = computed(() => (totales.value ? porcentajeAlDia(totales.value) : null));
-const textoSecundario = computed(() => {
-  const c = resumen.value?.conteosSecundarios;
-  if (!c) return '';
-  const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
-  return [
-    c.sinActividad ? plural(c.sinActividad, 'empresa sin actividad reciente', 'empresas sin actividad reciente') : '',
-    c.pausadas ? plural(c.pausadas, 'pausada', 'pausadas') : '',
-    c.sinTrabajadoresActivos
-      ? plural(c.sinTrabajadoresActivos, 'sin trabajadores activos', 'sin trabajadores activos')
-      : '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
-});
+const sinSeleccion = computed(() => !resumen.value?.empresas.length);
 
 // ---- Empresas desplegadas
 
@@ -106,11 +91,11 @@ const alternar = (idEmpresa: string) => {
   expandidas.value = nuevas;
 };
 
-// ---- Pausar y reanudar
+// ---- Elegir empresas
 
-const ventana = ref<{ empresa: EmpresaVigencias; modo: 'pausar' | 'reanudar' } | null>(null);
-const terminarVentana = () => {
-  ventana.value = null;
+const eligiendo = ref(false);
+const terminarEleccion = () => {
+  eligiendo.value = false;
   cargar(true);
 };
 
@@ -137,6 +122,8 @@ const exportar = async (empresa: EmpresaVigencias) => {
 const tarjeta = 'vigencias__tarjeta rounded-xl border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800';
 const campo =
   'rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200';
+const botonElegir =
+  'vigencias__enlace inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition duration-150 hover:scale-105 hover:border-emerald-400 hover:text-emerald-700 motion-reduce:transform-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200';
 const TARJETAS_TOTALES = [
   { clave: 'activos', titulo: 'Trabajadores activos', color: 'text-gray-900 dark:text-slate-100' },
   { clave: 'vigentes', titulo: 'Vigentes', color: 'text-emerald-700 dark:text-emerald-400' },
@@ -151,25 +138,31 @@ const TARJETAS_TOTALES = [
     <div class="vigencias">
       <Teleport to="body">
         <Transition appear name="modal-work" :duration="{ enter: 230, leave: 150 }">
-          <ModalSeguimientoVigencias
-            v-if="ventana"
-            :empresa="ventana.empresa"
-            :modo="ventana.modo"
-            @cerrar="ventana = null"
-            @hecho="terminarVentana"
-          />
+          <ModalEmpresasVigencias v-if="eligiendo" @cerrar="eligiendo = false" @guardado="terminarEleccion" />
         </Transition>
       </Teleport>
 
       <!-- Encabezado y filtros -->
       <div :class="[tarjeta, 'mb-3 flex flex-col gap-3 px-4 py-3 sm:px-5 xl:flex-row xl:items-center']">
-        <div class="min-w-0 flex-1">
-          <h1 class="vigencias__titulo text-lg font-semibold text-gray-900 sm:text-xl dark:text-slate-100">
-            Vigencias de aptitud
-          </h1>
-          <p class="text-sm text-gray-600 dark:text-slate-400">Todas tus empresas, al día de hoy</p>
+        <div class="flex min-w-0 flex-1 items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h1 class="vigencias__titulo text-lg font-semibold text-gray-900 sm:text-xl dark:text-slate-100">
+              Vigencias de aptitud
+            </h1>
+            <p class="text-sm text-gray-600 dark:text-slate-400">Empresas en seguimiento, al día de hoy</p>
+          </div>
+          <button
+            v-if="resumen?.puedeElegir"
+            type="button"
+            :class="botonElegir"
+            data-test="elegir-empresas"
+            @click="eligiendo = true"
+          >
+            <i class="fas fa-list-check text-xs" aria-hidden="true"></i>
+            Elegir empresas ({{ resumen.empresasSeleccionadas }})
+          </button>
         </div>
-        <div v-if="resumen" class="flex flex-wrap items-center gap-2">
+        <div v-if="resumen && !sinSeleccion" class="flex flex-wrap items-center gap-2">
           <input
             v-model="busqueda"
             type="search"
@@ -184,13 +177,6 @@ const TARJETAS_TOTALES = [
           <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
             <input v-model="soloPendientes" type="checkbox" class="h-4 w-4 accent-emerald-600" data-test="solo-pendientes" />
             Solo con pendientes
-          </label>
-          <label
-            v-if="resumen.conteosSecundarios.pausadas"
-            class="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-slate-300"
-          >
-            <input v-model="verPausadas" type="checkbox" class="h-4 w-4 accent-emerald-600" data-test="ver-pausadas" />
-            Ver pausadas ({{ resumen.conteosSecundarios.pausadas }})
           </label>
         </div>
       </div>
@@ -207,9 +193,40 @@ const TARJETAS_TOTALES = [
         </button>
       </div>
 
+      <!-- Sin empresas en seguimiento -->
+      <div v-else-if="resumen && sinSeleccion" :class="[tarjeta, 'px-4 py-14 text-center']" data-test="sin-seleccion">
+        <i class="fas fa-calendar-check mb-3 text-3xl text-gray-300 dark:text-slate-600" aria-hidden="true"></i>
+        <template v-if="resumen.puedeElegir">
+          <p class="vigencias__seccion text-base font-semibold text-gray-900 dark:text-slate-100">
+            Aún no eliges empresas para dar seguimiento
+          </p>
+          <p class="mx-auto mt-1 max-w-md text-sm text-gray-600 dark:text-slate-400">
+            Elige las empresas que atiendes y aquí verás cuántos de sus trabajadores tienen su aptitud vigente,
+            por vencer o vencida, para organizar con tiempo sus exámenes periódicos.
+          </p>
+          <button
+            type="button"
+            class="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition duration-150 hover:scale-105 hover:bg-emerald-700 motion-reduce:transform-none"
+            data-test="elegir-empresas-vacio"
+            @click="eligiendo = true"
+          >
+            <i class="fas fa-list-check text-xs" aria-hidden="true"></i>
+            Elegir empresas
+          </button>
+        </template>
+        <template v-else>
+          <p class="vigencias__seccion text-base font-semibold text-gray-900 dark:text-slate-100">
+            Todavía no hay empresas en seguimiento
+          </p>
+          <p class="mx-auto mt-1 max-w-md text-sm text-gray-600 dark:text-slate-400">
+            El usuario Principal o quien gestiona empresas las elige.
+          </p>
+        </template>
+      </div>
+
       <template v-else-if="resumen && totales">
-        <!-- Totales: solo empresas en seguimiento -->
-        <dl class="mb-1 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <!-- Totales de las empresas en seguimiento -->
+        <dl class="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <div v-for="item in TARJETAS_TOTALES" :key="item.clave" :class="[tarjeta, 'px-4 py-3']">
             <dt class="text-xs font-medium text-gray-500 dark:text-slate-400">{{ item.titulo }}</dt>
             <dd
@@ -225,13 +242,9 @@ const TARJETAS_TOTALES = [
             </dd>
           </div>
         </dl>
-        <p class="mb-3 px-1 text-xs text-gray-500 dark:text-slate-400" data-test="conteos-secundarios">
-          Los totales cuentan solo las empresas en seguimiento.
-          <template v-if="textoSecundario"> Además: {{ textoSecundario }}.</template>
-        </p>
 
-        <!-- Lista principal -->
-        <section :class="[tarjeta, 'mb-3 overflow-hidden']" aria-labelledby="vigencias-empresas-titulo">
+        <!-- Lista de empresas -->
+        <section :class="[tarjeta, 'overflow-hidden']" aria-labelledby="vigencias-empresas-titulo">
           <h2 id="vigencias-empresas-titulo" class="sr-only">Empresas en seguimiento</h2>
           <div
             :class="[
@@ -249,15 +262,14 @@ const TARJETAS_TOTALES = [
             <span><span class="sr-only">Acciones</span></span>
           </div>
 
-          <div v-if="!secciones.principal.length" class="px-4 py-12 text-center">
+          <div v-if="!empresasFiltradas.length" class="px-4 py-12 text-center">
             <i class="fas fa-calendar-check mb-2 text-2xl text-gray-300 dark:text-slate-600" aria-hidden="true"></i>
             <p class="text-sm font-medium text-gray-700 dark:text-slate-300" data-test="sin-empresas">
-              <template v-if="!resumen.empresas.length">Aún no hay trabajadores activos en tus empresas</template>
-              <template v-else-if="alDiaOcultas && !busqueda.trim()">Todas tus empresas en seguimiento están al día</template>
+              <template v-if="alDiaOcultas && !busqueda.trim()">Todas tus empresas en seguimiento están al día</template>
               <template v-else>Ninguna empresa coincide con los filtros</template>
             </p>
             <button
-              v-if="hayFiltros && resumen.empresas.length"
+              v-if="hayFiltros"
               type="button"
               class="mt-2 text-sm font-medium text-emerald-600 hover:text-emerald-700"
               @click="alDiaOcultas && !busqueda.trim() ? (soloPendientes = false) : limpiarFiltros()"
@@ -268,109 +280,36 @@ const TARJETAS_TOTALES = [
 
           <div v-else class="divide-y divide-gray-100 dark:divide-slate-700">
             <FilaEmpresaVigencias
-              v-for="empresa in principalVisible"
+              v-for="empresa in empresasVisibles"
               :key="empresa.idEmpresa"
               :empresa="empresa"
               :expandida="expandidas.has(empresa.idEmpresa)"
-              :puede-pausar="resumen.puedePausar"
               :puede-exportar="resumen.puedeExportar"
               :exportando="exportando === empresa.idEmpresa"
               @alternar="alternar(empresa.idEmpresa)"
-              @pausar="ventana = { empresa, modo: 'pausar' }"
-              @reanudar="ventana = { empresa, modo: 'reanudar' }"
               @exportar="exportar(empresa)"
             />
           </div>
 
           <div
-            v-if="secciones.principal.length > limite || (alDiaOcultas && secciones.principal.length)"
+            v-if="empresasFiltradas.length > limite || (alDiaOcultas && empresasFiltradas.length)"
             class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-gray-100 px-4 py-3 text-sm dark:border-slate-700"
           >
             <button
-              v-if="secciones.principal.length > limite"
+              v-if="empresasFiltradas.length > limite"
               type="button"
               class="font-medium text-emerald-600 hover:text-emerald-700"
               data-test="ver-mas"
               @click="limite += TRAMO"
             >
-              Ver más ({{ secciones.principal.length - limite }} restantes)
+              Ver más ({{ empresasFiltradas.length - limite }} restantes)
             </button>
-            <span v-if="alDiaOcultas && secciones.principal.length" class="text-gray-500 dark:text-slate-400" data-test="al-dia-ocultas">
+            <span v-if="alDiaOcultas && empresasFiltradas.length" class="text-gray-500 dark:text-slate-400" data-test="al-dia-ocultas">
               {{ alDiaOcultas }} {{ alDiaOcultas === 1 ? 'empresa al día oculta' : 'empresas al día ocultas' }} ·
               <button type="button" class="font-medium text-emerald-600 hover:text-emerald-700" @click="soloPendientes = false">
                 Mostrar todas
               </button>
             </span>
-          </div>
-        </section>
-
-        <!-- Sin actividad reciente -->
-        <section v-if="secciones.sinActividad.length" :class="[tarjeta, 'mb-3 overflow-hidden']" data-test="seccion-sin-actividad">
-          <button
-            type="button"
-            class="vigencias__fila flex w-full items-center gap-2 px-4 py-3 text-left transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-slate-700/50"
-            :aria-expanded="verSinActividad"
-            @click="verSinActividad = !verSinActividad"
-          >
-            <i
-              class="fas fa-chevron-right w-3 text-xs text-gray-400 transition-transform duration-150 motion-reduce:transition-none"
-              :class="{ 'rotate-90': verSinActividad }"
-              aria-hidden="true"
-            ></i>
-            <span class="vigencias__seccion text-sm font-semibold text-gray-900 dark:text-slate-100">
-              Sin actividad reciente ({{ secciones.sinActividad.length }})
-            </span>
-            <span class="hidden text-xs text-gray-500 sm:inline dark:text-slate-400">
-              Su aptitud más reciente tiene más de 18 meses. Si ya no son tus clientes, pausa su seguimiento.
-            </span>
-          </button>
-          <div v-if="verSinActividad" class="divide-y divide-gray-100 border-t border-gray-100 dark:divide-slate-700 dark:border-slate-700">
-            <FilaEmpresaVigencias
-              v-for="empresa in secciones.sinActividad"
-              :key="empresa.idEmpresa"
-              :empresa="empresa"
-              :expandida="expandidas.has(empresa.idEmpresa)"
-              :puede-pausar="resumen.puedePausar"
-              :puede-exportar="resumen.puedeExportar"
-              :exportando="exportando === empresa.idEmpresa"
-              @alternar="alternar(empresa.idEmpresa)"
-              @pausar="ventana = { empresa, modo: 'pausar' }"
-              @reanudar="ventana = { empresa, modo: 'reanudar' }"
-              @exportar="exportar(empresa)"
-            />
-          </div>
-        </section>
-
-        <!-- Pausadas -->
-        <section
-          v-if="verPausadas && secciones.pausadas.length"
-          :class="[tarjeta, 'overflow-hidden']"
-          aria-labelledby="vigencias-pausadas-titulo"
-          data-test="seccion-pausadas"
-        >
-          <h2
-            id="vigencias-pausadas-titulo"
-            class="vigencias__seccion border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 dark:border-slate-700 dark:text-slate-100"
-          >
-            Pausadas ({{ secciones.pausadas.length }})
-            <span class="ml-1 font-normal text-gray-500 dark:text-slate-400">
-              No suman a los totales. Vuelven solas si registras una aptitud nueva.
-            </span>
-          </h2>
-          <div class="divide-y divide-gray-100 dark:divide-slate-700">
-            <FilaEmpresaVigencias
-              v-for="empresa in secciones.pausadas"
-              :key="empresa.idEmpresa"
-              :empresa="empresa"
-              :expandida="expandidas.has(empresa.idEmpresa)"
-              :puede-pausar="resumen.puedePausar"
-              :puede-exportar="resumen.puedeExportar"
-              :exportando="exportando === empresa.idEmpresa"
-              @alternar="alternar(empresa.idEmpresa)"
-              @pausar="ventana = { empresa, modo: 'pausar' }"
-              @reanudar="ventana = { empresa, modo: 'reanudar' }"
-              @exportar="exportar(empresa)"
-            />
           </div>
         </section>
       </template>

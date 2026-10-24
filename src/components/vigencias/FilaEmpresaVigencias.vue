@@ -7,33 +7,27 @@
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import type { ConteosVigencia, EmpresaVigencias } from '@/api/VigenciasAptitudAPI';
-import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import {
   COLUMNAS_VIGENCIA as COLUMNAS,
   FILTRO_DE_TABLA,
   REJILLA_VIGENCIAS as rejilla,
   porcentajeAlDia,
-  textoMotivo,
   type ColumnaVigencia,
 } from '@/helpers/vigenciasGlobales';
 
 const props = defineProps<{
   empresa: EmpresaVigencias;
   expandida: boolean;
-  puedePausar: boolean;
   puedeExportar: boolean;
   exportando: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'alternar'): void;
-  (e: 'pausar'): void;
-  (e: 'reanudar'): void;
   (e: 'exportar'): void;
 }>();
 
 
-const pausada = computed(() => props.empresa.seguimiento === 'PAUSADA');
 const conPendientes = computed(() => {
   const c = props.empresa.conteos;
   return c.porVencer + c.vencidasRecientes + c.vencidasAntiguas + c.sinAptitud > 0;
@@ -60,17 +54,6 @@ const enlaceTabla = (idCentro: string, columna: ColumnaVigencia) => ({
 const tituloVencen = (c: ConteosVigencia) =>
   `Vencen en los próximos 30 días: ${c.vencen30} · de 31 a 60 días: ${c.vencen60} · de 61 a 90 días: ${c.vencen90}`;
 
-const detallePausa = computed(() => {
-  const pausa = props.empresa.pausa;
-  if (!pausa) return '';
-  return [
-    textoMotivo(pausa.motivo, pausa.motivoOtro),
-    pausa.pausadoPor ? `por ${pausa.pausadoPor}` : '',
-    pausa.desde ? `el ${convertirFechaISOaDDMMYYYY(pausa.desde)}` : '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
-});
 
 const boton =
   'vigencias__enlace inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition duration-150 hover:scale-110 hover:bg-gray-100 motion-reduce:transform-none dark:text-slate-400 dark:hover:bg-slate-700';
@@ -84,7 +67,7 @@ const boton =
       data-test="fila-empresa"
       @click="emit('alternar')"
     >
-      <div class="flex min-w-0 items-center gap-2 pr-20 lg:pr-0">
+      <div class="flex min-w-0 items-center gap-2 pr-12 lg:pr-0">
         <button
           type="button"
           class="flex min-w-0 items-center gap-2 text-left"
@@ -99,16 +82,7 @@ const boton =
           ></i>
           <span class="truncate text-sm font-medium text-gray-900 dark:text-slate-100" :title="empresa.nombreEmpresa">{{ empresa.nombreEmpresa }}</span>
         </button>
-        <span
-          v-if="empresa.seguimiento === 'REACTIVADA'"
-          class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
-          title="Tenía el seguimiento pausado y volvió con una aptitud nueva"
-          data-test="etiqueta-reactivada"
-        >Reactivada</span>
       </div>
-      <p v-if="pausada && detallePausa" class="mt-0.5 truncate pl-5 text-xs text-gray-500 lg:hidden dark:text-slate-400">
-        {{ detallePausa }}
-      </p>
 
       <!-- Números: columnas en pantallas anchas, etiquetas en angostas -->
       <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-5 text-sm lg:contents">
@@ -150,35 +124,8 @@ const boton =
         >
           <i :class="exportando ? 'fas fa-spinner fa-spin' : 'fas fa-file-excel'" class="text-sm" aria-hidden="true"></i>
         </button>
-        <template v-if="puedePausar">
-          <button
-            v-if="pausada"
-            type="button"
-            :class="[boton, 'hover:text-emerald-600']"
-            title="Reanudar seguimiento"
-            :aria-label="`Reanudar seguimiento de ${empresa.nombreEmpresa}`"
-            data-test="reanudar"
-            @click="emit('reanudar')"
-          >
-            <i class="fas fa-play text-sm" aria-hidden="true"></i>
-          </button>
-          <button
-            v-else
-            type="button"
-            :class="[boton, 'hover:text-amber-600']"
-            title="Pausar seguimiento"
-            :aria-label="`Pausar seguimiento de ${empresa.nombreEmpresa}`"
-            data-test="pausar"
-            @click="emit('pausar')"
-          >
-            <i class="fas fa-pause text-sm" aria-hidden="true"></i>
-          </button>
-        </template>
       </div>
     </div>
-    <p v-if="pausada && detallePausa" class="hidden px-4 pb-2 pl-9 text-xs text-gray-500 lg:block dark:text-slate-400" data-test="detalle-pausa">
-      Pausada: {{ detallePausa }}<template v-if="empresa.pausa?.nota"> — {{ empresa.pausa.nota }}</template>
-    </p>
 
     <!-- Centros de trabajo: sus números llevan a la tabla de trabajadores ya filtrada -->
     <Transition name="vigencias-aparecer">

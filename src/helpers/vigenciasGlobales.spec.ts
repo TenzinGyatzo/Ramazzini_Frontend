@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { ConteosVigencia, EmpresaVigencias } from '@/api/VigenciasAptitudAPI';
+import type { ConteosVigencia, EmpresaParaElegir, EmpresaVigencias } from '@/api/VigenciasAptitudAPI';
 import {
+  cambiosDeSeleccion,
   filasExcelPendientes,
+  filtrarEmpresas,
+  filtrarParaElegir,
   nombreArchivoPendientes,
   ocultasPorPendientes,
   ordenarEmpresas,
   porcentajeAlDia,
-  separarSecciones,
   textoDias,
-  textoMotivo,
 } from './vigenciasGlobales';
 
 const conteos = (parcial: Partial<ConteosVigencia> = {}): ConteosVigencia => {
@@ -29,19 +30,19 @@ const conteos = (parcial: Partial<ConteosVigencia> = {}): ConteosVigencia => {
   };
 };
 
-const empresa = (
-  nombreEmpresa: string,
-  parcial: Partial<ConteosVigencia>,
-  seguimiento: EmpresaVigencias['seguimiento'] = 'EN_SEGUIMIENTO',
-): EmpresaVigencias => ({
+const empresa = (nombreEmpresa: string, parcial: Partial<ConteosVigencia>): EmpresaVigencias => ({
   idEmpresa: nombreEmpresa,
   nombreEmpresa,
-  seguimiento,
-  reactivadoEn: null,
   ultimaAptitud: null,
   conteos: conteos(parcial),
   centros: [],
 });
+
+const paraElegir = (
+  nombreEmpresa: string,
+  seleccionada: boolean,
+  ultimaAptitud: string | null = null,
+): EmpresaParaElegir => ({ idEmpresa: nombreEmpresa, nombreEmpresa, seleccionada, activos: 1, ultimaAptitud });
 
 describe('vista de vigencias', () => {
   it('porcentaje al día: vigentes y por vencer sobre activos', () => {
@@ -71,38 +72,52 @@ describe('vista de vigencias', () => {
     expect(ordenarEmpresas(lista, 'nombre')[0].nombreEmpresa).toBe('Ábaco');
   });
 
-  it('separa las secciones; «solo con pendientes» aplica solo a la principal', () => {
+  it('«solo con pendientes» oculta las empresas al día', () => {
     const lista = [
       empresa('Al día', { vigentes: 5 }),
       empresa('Pendiente', { porVencer: 1 }),
-      empresa('Reactivada', { sinAptitud: 1 }, 'REACTIVADA'),
-      empresa('Vieja', { vencidasAntiguas: 3 }, 'SIN_ACTIVIDAD'),
-      empresa('Pausada', { vencidasAntiguas: 3 }, 'PAUSADA'),
+      empresa('Sin aptitud', { sinAptitud: 1 }),
+      empresa('Vacía', {}),
     ];
-    const secciones = separarSecciones(lista, { busqueda: '', soloPendientes: true, orden: 'urgencia' });
-    expect(secciones.principal.map((e) => e.nombreEmpresa)).toEqual(['Pendiente', 'Reactivada']);
-    expect(secciones.sinActividad.map((e) => e.nombreEmpresa)).toEqual(['Vieja']);
-    expect(secciones.pausadas.map((e) => e.nombreEmpresa)).toEqual(['Pausada']);
-    expect(ocultasPorPendientes(lista, '')).toBe(1);
-
-    const todas = separarSecciones(lista, { busqueda: '', soloPendientes: false, orden: 'nombre' });
-    expect(todas.principal.map((e) => e.nombreEmpresa)).toEqual(['Al día', 'Pendiente', 'Reactivada']);
+    expect(
+      filtrarEmpresas(lista, { busqueda: '', soloPendientes: true, orden: 'urgencia' }).map((e) => e.nombreEmpresa),
+    ).toEqual(['Pendiente', 'Sin aptitud']);
+    expect(ocultasPorPendientes(lista, '')).toBe(2);
+    expect(filtrarEmpresas(lista, { busqueda: '', soloPendientes: false, orden: 'nombre' })).toHaveLength(4);
   });
 
-  it('busca sin importar acentos ni mayúsculas, en todas las secciones', () => {
+  it('busca sin importar acentos ni mayúsculas', () => {
+    const lista = [empresa('Construcción Peña', { porVencer: 1 }), empresa('Otra', { porVencer: 1 })];
+    expect(
+      filtrarEmpresas(lista, { busqueda: 'PENA', soloPendientes: false, orden: 'urgencia' }).map((e) => e.nombreEmpresa),
+    ).toEqual(['Construcción Peña']);
+  });
+
+  it('elegir empresas: busca y ordena por nombre o última aptitud', () => {
     const lista = [
-      empresa('Construcción Peña', { porVencer: 1 }),
-      empresa('Peñoles', { vencidasAntiguas: 1 }, 'PAUSADA'),
-      empresa('Otra', { porVencer: 1 }),
+      paraElegir('Beta', false, '2026-01-10T00:00:00.000Z'),
+      paraElegir('Alfa', true, null),
+      paraElegir('Gamma', false, '2026-09-01T00:00:00.000Z'),
     ];
-    const secciones = separarSecciones(lista, { busqueda: 'PENA', soloPendientes: false, orden: 'urgencia' });
-    expect(secciones.principal.map((e) => e.nombreEmpresa)).toEqual(['Construcción Peña']);
-    expect(separarSecciones(lista, { busqueda: 'penol', soloPendientes: false, orden: 'urgencia' }).pausadas).toHaveLength(1);
+    expect(filtrarParaElegir(lista, '', 'nombre').map((e) => e.nombreEmpresa)).toEqual(['Alfa', 'Beta', 'Gamma']);
+    expect(filtrarParaElegir(lista, '', 'ultimaAptitud').map((e) => e.nombreEmpresa)).toEqual([
+      'Gamma',
+      'Beta',
+      'Alfa',
+    ]);
+    expect(filtrarParaElegir(lista, 'gam', 'nombre').map((e) => e.nombreEmpresa)).toEqual(['Gamma']);
   });
 
-  it('textos de motivo y de días', () => {
-    expect(textoMotivo('CAMBIO_PROVEEDOR')).toBe('Cambió de proveedor');
-    expect(textoMotivo('OTRO', 'Cerró la planta')).toBe('Cerró la planta');
+  it('elegir empresas: solo envía lo que cambió', () => {
+    const lista = [paraElegir('A', true), paraElegir('B', false), paraElegir('C', true)];
+    expect(cambiosDeSeleccion(lista, new Set(['A', 'B']))).toEqual([
+      { idEmpresa: 'B', seleccionada: true },
+      { idEmpresa: 'C', seleccionada: false },
+    ]);
+    expect(cambiosDeSeleccion(lista, new Set(['A', 'C']))).toEqual([]);
+  });
+
+  it('textos de días', () => {
     expect(textoDias(45)).toBe('45 días restantes');
     expect(textoDias(1)).toBe('1 día restante');
     expect(textoDias(0)).toBe('Vence hoy');

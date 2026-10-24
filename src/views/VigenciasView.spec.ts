@@ -2,14 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { ConteosVigencia, EmpresaVigencias, ResumenVigencias } from '@/api/VigenciasAptitudAPI';
 
-const { getResumen, pausar, reanudar, getPendientes, descargarFilasExcel } = vi.hoisted(() => ({
+const { getResumen, getEmpresas, actualizarEmpresas, getPendientes, descargarFilasExcel } = vi.hoisted(() => ({
   getResumen: vi.fn(),
-  pausar: vi.fn(),
-  reanudar: vi.fn(),
+  getEmpresas: vi.fn(),
+  actualizarEmpresas: vi.fn(),
   getPendientes: vi.fn(),
   descargarFilasExcel: vi.fn(),
 }));
-vi.mock('@/api/VigenciasAptitudAPI', () => ({ default: { getResumen, pausar, reanudar, getPendientes } }));
+vi.mock('@/api/VigenciasAptitudAPI', () => ({
+  default: { getResumen, getEmpresas, actualizarEmpresas, getPendientes },
+}));
 vi.mock('@/helpers/exportarExcel', () => ({ descargarFilasExcel }));
 
 import VigenciasView from './VigenciasView.vue';
@@ -32,42 +34,26 @@ const conteos = (parcial: Partial<ConteosVigencia> = {}): ConteosVigencia => {
   };
 };
 
-const empresa = (
-  idEmpresa: string,
-  parcial: Partial<ConteosVigencia>,
-  extra: Partial<EmpresaVigencias> = {},
-): EmpresaVigencias => ({
+const empresa = (idEmpresa: string, parcial: Partial<ConteosVigencia>): EmpresaVigencias => ({
   idEmpresa,
   nombreEmpresa: `Empresa ${idEmpresa}`,
-  seguimiento: 'EN_SEGUIMIENTO',
-  reactivadoEn: null,
   ultimaAptitud: null,
   conteos: conteos(parcial),
   centros: [{ idCentro: `c-${idEmpresa}`, nombreCentro: 'Planta', conteos: conteos(parcial) }],
-  ...extra,
 });
 
 const resumenBase = (parcial: Partial<ResumenVigencias> = {}): ResumenVigencias => ({
   generadoEn: '2026-10-24T12:00:00.000Z',
   totales: conteos({ vigentes: 10, porVencer: 3, vencidasRecientes: 2, sinAptitud: 5 }),
-  conteosSecundarios: { sinActividad: 1, pausadas: 1, sinTrabajadoresActivos: 2 },
-  puedePausar: true,
+  empresasSeleccionadas: 2,
+  puedeElegir: true,
   puedeExportar: true,
-  empresas: [
-    empresa('alDia', { vigentes: 10 }),
-    empresa('urgente', { porVencer: 3, vencidasRecientes: 2 }, { seguimiento: 'REACTIVADA' }),
-    empresa('vieja', { vencidasAntiguas: 4 }, { seguimiento: 'SIN_ACTIVIDAD' }),
-    empresa(
-      'pausada',
-      { vencidasAntiguas: 2 },
-      {
-        seguimiento: 'PAUSADA',
-        pausa: { desde: '2026-09-01T00:00:00.000Z', motivo: 'CAMBIO_PROVEEDOR', motivoOtro: null, nota: null, pausadoPor: 'Dra. Ruiz' },
-      },
-    ),
-  ],
+  empresas: [empresa('alDia', { vigentes: 10 }), empresa('urgente', { porVencer: 3, vencidasRecientes: 2 })],
   ...parcial,
 });
+
+const vacio = (parcial: Partial<ResumenVigencias> = {}) =>
+  resumenBase({ totales: conteos(), empresasSeleccionadas: 0, empresas: [], ...parcial });
 
 const toast = { open: vi.fn() };
 
@@ -86,56 +72,105 @@ const montar = () =>
     },
   });
 
-const filas = (w: ReturnType<typeof montar>) =>
-  w.findAll('[data-test="fila-empresa"]').map((f) => f.text().split('\n')[0].trim());
-
 describe('VigenciasView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getResumen.mockResolvedValue({ data: resumenBase() });
-    pausar.mockResolvedValue({ data: {} });
-    reanudar.mockResolvedValue({ data: {} });
+    getEmpresas.mockResolvedValue({
+      data: [
+        { idEmpresa: 'a', nombreEmpresa: 'Aceros', seleccionada: true, activos: 12, ultimaAptitud: '2026-09-01T00:00:00.000Z' },
+        { idEmpresa: 'b', nombreEmpresa: 'Bodegas', seleccionada: false, activos: 3, ultimaAptitud: null },
+      ],
+    });
+    actualizarEmpresas.mockResolvedValue({ data: [] });
   });
 
-  it('muestra los totales de las empresas en seguimiento y el resto aparte', async () => {
+  it('muestra los totales de las empresas en seguimiento', async () => {
     const w = montar();
     await flushPromises();
     expect(w.find('[data-test="total-activos"]').text()).toBe('20');
     expect(w.find('[data-test="total-al-dia"]').text()).toBe('65%');
-    expect(w.find('[data-test="conteos-secundarios"]').text()).toContain(
-      '1 empresa sin actividad reciente · 1 pausada · 2 sin trabajadores activos',
-    );
+    expect(w.find('[data-test="elegir-empresas"]').text()).toContain('Elegir empresas (2)');
     w.unmount();
   });
 
-  it('por defecto solo lista empresas con pendientes, la más urgente primero', async () => {
+  it('por defecto solo lista empresas con pendientes', async () => {
     const w = montar();
     await flushPromises();
-    const principal = w.findAll('section')[0];
-    expect(principal.findAll('[data-test="fila-empresa"]')).toHaveLength(1);
-    expect(principal.text()).toContain('Empresa urgente');
-    expect(principal.find('[data-test="etiqueta-reactivada"]').exists()).toBe(true);
+    expect(w.findAll('[data-test="fila-empresa"]')).toHaveLength(1);
+    expect(w.text()).toContain('Empresa urgente');
     expect(w.find('[data-test="al-dia-ocultas"]').text()).toContain('1 empresa al día oculta');
 
     await w.find('[data-test="solo-pendientes"]').setValue(false);
-    expect(principal.findAll('[data-test="fila-empresa"]')).toHaveLength(2);
+    expect(w.findAll('[data-test="fila-empresa"]')).toHaveLength(2);
     w.unmount();
   });
 
-  it('sin actividad reciente va colapsada y las pausadas solo con su filtro', async () => {
+  it('sin empresas elegidas invita a elegirlas', async () => {
+    getResumen.mockResolvedValue({ data: vacio() });
     const w = montar();
     await flushPromises();
-    const sinActividad = w.find('[data-test="seccion-sin-actividad"]');
-    expect(sinActividad.text()).toContain('Sin actividad reciente (1)');
-    expect(sinActividad.find('[data-test="fila-empresa"]').exists()).toBe(false);
-    await sinActividad.find('button').trigger('click');
-    expect(sinActividad.find('[data-test="fila-empresa"]').exists()).toBe(true);
+    expect(w.find('[data-test="sin-seleccion"]').text()).toContain('Aún no eliges empresas para dar seguimiento');
+    expect(w.find('[data-test="elegir-empresas-vacio"]').exists()).toBe(true);
+    expect(w.find('[data-test="buscar"]').exists()).toBe(false);
+    w.unmount();
+  });
 
-    expect(w.find('[data-test="seccion-pausadas"]').exists()).toBe(false);
-    await w.find('[data-test="ver-pausadas"]').setValue(true);
-    const pausadas = w.find('[data-test="seccion-pausadas"]');
-    expect(pausadas.text()).toContain('Cambió de proveedor · por Dra. Ruiz');
-    expect(pausadas.find('[data-test="reanudar"]').exists()).toBe(true);
+  it('quien no puede elegir ve un aviso sin botón', async () => {
+    getResumen.mockResolvedValue({ data: vacio({ puedeElegir: false }) });
+    const w = montar();
+    await flushPromises();
+    expect(w.find('[data-test="sin-seleccion"]').text()).toContain('Todavía no hay empresas en seguimiento');
+    expect(w.find('[data-test="elegir-empresas-vacio"]').exists()).toBe(false);
+    expect(w.find('[data-test="elegir-empresas"]').exists()).toBe(false);
+    w.unmount();
+  });
+
+  it('elegir empresas: marca, guarda solo los cambios y recarga', async () => {
+    const w = montar();
+    await flushPromises();
+    await w.find('[data-test="elegir-empresas"]').trigger('click');
+    await flushPromises();
+
+    const modal = w.find('[data-test="modal-elegir-empresas"]');
+    expect(modal.text()).toContain('Última aptitud: 01-09-2026 · 12 trabajadores activos');
+    expect(modal.text()).toContain('Sin aptitudes · 3 trabajadores activos');
+    expect(w.find('[data-test="contador"]').text()).toBe('1 seleccionada');
+
+    await w.find('[data-test="casilla-b"]').trigger('change');
+    expect(w.find('[data-test="contador"]').text()).toBe('2 seleccionadas');
+    await w.find('[data-test="guardar"]').trigger('click');
+    await flushPromises();
+
+    expect(actualizarEmpresas).toHaveBeenCalledWith([{ idEmpresa: 'b', seleccionada: true }]);
+    expect(getResumen).toHaveBeenCalledTimes(2);
+    expect(w.find('[data-test="modal-elegir-empresas"]').exists()).toBe(false);
+    w.unmount();
+  });
+
+  it('elegir empresas: «Desmarcar todas» actúa sobre lo que muestra el buscador', async () => {
+    const w = montar();
+    await flushPromises();
+    await w.find('[data-test="elegir-empresas"]').trigger('click');
+    await flushPromises();
+    await w.find('[data-test="buscar-empresa"]').setValue('bod');
+    expect(w.findAll('[data-test="empresa-para-elegir"]')).toHaveLength(1);
+    await w.find('[data-test="marcar-todas"]').trigger('click');
+    await w.find('[data-test="buscar-empresa"]').setValue('');
+    await w.find('[data-test="desmarcar-todas"]').trigger('click');
+    expect(w.find('[data-test="contador"]').text()).toBe('0 seleccionadas');
+    w.unmount();
+  });
+
+  it('elegir empresas: guardar sin cambios solo cierra', async () => {
+    const w = montar();
+    await flushPromises();
+    await w.find('[data-test="elegir-empresas"]').trigger('click');
+    await flushPromises();
+    await w.find('[data-test="guardar"]').trigger('click');
+    await flushPromises();
+    expect(actualizarEmpresas).not.toHaveBeenCalled();
+    expect(w.find('[data-test="modal-elegir-empresas"]').exists()).toBe(false);
     w.unmount();
   });
 
@@ -151,26 +186,6 @@ describe('VigenciasView', () => {
     });
     // Los ceros no son enlace
     expect(w.find('[data-test="centro-sinAptitud"]').exists()).toBe(false);
-    w.unmount();
-  });
-
-  it('pausar pide motivo, guarda y vuelve a cargar', async () => {
-    const w = montar();
-    await flushPromises();
-    await w.find('[data-test="pausar"]').trigger('click');
-    const confirmar = w.find('[data-test="confirmar"]');
-    expect(confirmar.attributes('disabled')).toBeDefined();
-
-    await w.find('[data-test="motivo-OTRO"]').setValue(true);
-    expect(confirmar.attributes('disabled')).toBeDefined();
-    await w.find('[data-test="motivo-otro"]').setValue('  Cerró la planta ');
-    await w.find('[data-test="nota"]').setValue('Avisó RH');
-    await confirmar.trigger('click');
-    await flushPromises();
-
-    expect(pausar).toHaveBeenCalledWith('urgente', { motivo: 'OTRO', motivoOtro: 'Cerró la planta', nota: 'Avisó RH' });
-    expect(getResumen).toHaveBeenCalledTimes(2);
-    expect(w.find('[data-test="modal-seguimiento"]').exists()).toBe(false);
     w.unmount();
   });
 
@@ -205,12 +220,12 @@ describe('VigenciasView', () => {
     w.unmount();
   });
 
-  it('sin permisos no hay botones de pausar ni exportar', async () => {
-    getResumen.mockResolvedValue({ data: resumenBase({ puedePausar: false, puedeExportar: false }) });
+  it('sin permiso de exportar no hay botón de Excel', async () => {
+    getResumen.mockResolvedValue({ data: resumenBase({ puedeExportar: false, puedeElegir: false }) });
     const w = montar();
     await flushPromises();
-    expect(w.find('[data-test="pausar"]').exists()).toBe(false);
     expect(w.find('[data-test="exportar"]').exists()).toBe(false);
+    expect(w.find('[data-test="elegir-empresas"]').exists()).toBe(false);
     w.unmount();
   });
 
@@ -219,7 +234,6 @@ describe('VigenciasView', () => {
     const w = montar();
     await flushPromises();
     expect(w.text()).toContain('Reintentar');
-    expect(filas(w)).toEqual([]);
     w.unmount();
   });
 });

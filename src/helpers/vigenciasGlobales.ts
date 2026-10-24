@@ -5,26 +5,13 @@
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import type {
+  CambioSeleccion,
   ConteosVigencia,
+  EmpresaParaElegir,
   EmpresaVigencias,
   EstadoPendiente,
-  MotivoPausa,
   PendienteVigencia,
 } from '@/api/VigenciasAptitudAPI';
-
-export const MOTIVOS_PAUSA: { valor: MotivoPausa; texto: string }[] = [
-  { valor: 'NO_RENOVO', texto: 'No renovó' },
-  { valor: 'CAMBIO_PROVEEDOR', texto: 'Cambió de proveedor' },
-  { valor: 'SERVICIO_MEDICO_PROPIO', texto: 'Tiene servicio médico propio' },
-  { valor: 'OTRO', texto: 'Otro' },
-];
-
-export const LIMITE_TEXTO_PAUSA = 500;
-
-export function textoMotivo(motivo: MotivoPausa | null | undefined, motivoOtro?: string | null): string {
-  if (motivo === 'OTRO' && motivoOtro) return motivoOtro;
-  return MOTIVOS_PAUSA.find((m) => m.valor === motivo)?.texto ?? 'Sin motivo';
-}
 
 /** Vigentes + por vencer, sobre activos. null sin activos. */
 export function porcentajeAlDia(conteos: ConteosVigencia): number | null {
@@ -44,7 +31,7 @@ const normalizar = (texto: string) =>
     .toLowerCase()
     .trim();
 
-export function coincideEmpresa(empresa: EmpresaVigencias, busqueda: string): boolean {
+export function coincideEmpresa(empresa: { nombreEmpresa: string }, busqueda: string): boolean {
   const consulta = normalizar(busqueda);
   return !consulta || normalizar(empresa.nombreEmpresa).includes(consulta);
 }
@@ -84,38 +71,43 @@ export interface FiltrosVigencias {
   orden: OrdenVigencias;
 }
 
-export interface SeccionesVigencias {
-  /** En seguimiento y reactivadas. */
-  principal: EmpresaVigencias[];
-  sinActividad: EmpresaVigencias[];
-  pausadas: EmpresaVigencias[];
-}
-
-/** El buscador aplica a todas las secciones; «solo con pendientes», solo a la principal. */
-export function separarSecciones(empresas: EmpresaVigencias[], filtros: FiltrosVigencias): SeccionesVigencias {
-  const buscadas = empresas.filter((e) => coincideEmpresa(e, filtros.busqueda));
-  const ordenar = (lista: EmpresaVigencias[]) => ordenarEmpresas(lista, filtros.orden);
-  return {
-    principal: ordenar(
-      buscadas.filter(
-        (e) =>
-          (e.seguimiento === 'EN_SEGUIMIENTO' || e.seguimiento === 'REACTIVADA') &&
-          (!filtros.soloPendientes || tienePendientes(e.conteos)),
-      ),
+/** Empresas de la lista: buscador, «solo con pendientes» y orden. */
+export function filtrarEmpresas(empresas: EmpresaVigencias[], filtros: FiltrosVigencias): EmpresaVigencias[] {
+  return ordenarEmpresas(
+    empresas.filter(
+      (e) => coincideEmpresa(e, filtros.busqueda) && (!filtros.soloPendientes || tienePendientes(e.conteos)),
     ),
-    sinActividad: ordenar(buscadas.filter((e) => e.seguimiento === 'SIN_ACTIVIDAD')),
-    pausadas: ordenar(buscadas.filter((e) => e.seguimiento === 'PAUSADA')),
-  };
+    filtros.orden,
+  );
 }
 
-/** Empresas en seguimiento que el filtro «solo con pendientes» deja fuera. */
+/** Empresas que el filtro «solo con pendientes» deja fuera. */
 export function ocultasPorPendientes(empresas: EmpresaVigencias[], busqueda: string): number {
-  return empresas.filter(
-    (e) =>
-      (e.seguimiento === 'EN_SEGUIMIENTO' || e.seguimiento === 'REACTIVADA') &&
-      coincideEmpresa(e, busqueda) &&
-      !tienePendientes(e.conteos),
-  ).length;
+  return empresas.filter((e) => coincideEmpresa(e, busqueda) && !tienePendientes(e.conteos)).length;
+}
+
+// ---- Elegir empresas
+
+export type OrdenParaElegir = 'nombre' | 'ultimaAptitud';
+
+/** Lista de la ventana «Elegir empresas»: buscador y orden (por nombre o última aptitud más reciente). */
+export function filtrarParaElegir(
+  empresas: EmpresaParaElegir[],
+  busqueda: string,
+  orden: OrdenParaElegir,
+): EmpresaParaElegir[] {
+  const lista = empresas.filter((e) => coincideEmpresa(e, busqueda));
+  const nombre = (a: EmpresaParaElegir, b: EmpresaParaElegir) => a.nombreEmpresa.localeCompare(b.nombreEmpresa, 'es');
+  if (orden === 'nombre') return lista.sort(nombre);
+  const fecha = (e: EmpresaParaElegir) => (e.ultimaAptitud ? new Date(e.ultimaAptitud).getTime() : -Infinity);
+  return lista.sort((a, b) => fecha(b) - fecha(a) || nombre(a, b));
+}
+
+/** Solo lo que cambió respecto a lo guardado. */
+export function cambiosDeSeleccion(empresas: EmpresaParaElegir[], marcadas: ReadonlySet<string>): CambioSeleccion[] {
+  return empresas
+    .filter((e) => e.seleccionada !== marcadas.has(e.idEmpresa))
+    .map((e) => ({ idEmpresa: e.idEmpresa, seleccionada: marcadas.has(e.idEmpresa) }));
 }
 
 /** Valor del filtro de vigencia de la tabla de trabajadores para cada columna. */
