@@ -51,7 +51,7 @@ const handleSubmit = async (email) => {
             <FormKit 
                 type="email" 
                 label="Email" 
-                name="email" 
+                name="email" normalizar="correo" 
                 placeholder="Email de usuario"
                 validation="required|email"
                 :validation-messages="{

@@ -472,7 +472,7 @@ const logoSrc = computed(() => {
             @submit="handleSubmit">
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4">
-              <FormKit type="text" name="nombre"
+              <FormKit type="text" name="nombre" normalizar="texto"
                 placeholder="¿Cual es tu nombre, denominación o razón social?" validation="required"
                 :validation-messages="{ required: 'Este campo es obligatorio' }"
                 v-model="formulario.nombre">
@@ -507,7 +507,7 @@ const logoSrc = computed(() => {
                 />
               </template>
               <template v-else>
-                <FormKit type="text" label="Código Postal" name="codigoPostal" placeholder="Ej. 44100, 1000, 01000"
+                <FormKit type="text" label="Código Postal" name="codigoPostal" normalizar="codigoPostal" placeholder="Ej. 44100, 1000, 01000"
                   validation="postalCodeValidation" v-model="formulario.codigoPostal"
                   :validation-messages="{
                     postalCodeValidation:
@@ -533,7 +533,7 @@ const logoSrc = computed(() => {
                   v-model="formulario.municipio" />
               </template>
 
-              <FormKit type="text" label="Dirección (Calle, número y colonia)" name="direccion"
+              <FormKit type="text" label="Dirección (Calle, número y colonia)" name="direccion" normalizar="texto"
                 placeholder="Ej. Calle Madero #123, Colonia Centro" v-model="formulario.direccion" />
 
               <CountryPhoneInput
@@ -543,14 +543,14 @@ const logoSrc = computed(() => {
                 :initial-country="formulario.pais"
               />
 
-              <FormKit type="text" label="Correo Electrónico" name="correoElectronico"
+              <FormKit type="text" label="Correo Electrónico" name="correoElectronico" normalizar="correo"
                 placeholder="Correo electrónico del proveedor" validation="mailValidation"
                 v-model="formulario.correoElectronico" :validation-messages="{
                   mailValidation:
                     'El correo electrónico ingresado no es válido.',
                 }" />
 
-              <FormKit type="text" label="Sitio Web" name="sitioWeb" placeholder="Sitio web del proveedor"
+              <FormKit type="text" label="Sitio Web" name="sitioWeb" normalizar="sitioWeb" placeholder="Sitio web del proveedor"
                 validation="urlValidation" v-model="formulario.sitioWeb" :validation-messages="{
                   urlValidation: 'El sitio web ingresado no es válido.',
                 }" />

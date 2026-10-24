@@ -210,7 +210,7 @@ const handleSubmit = async (data) => {
           <FormKit type="form" :actions="false" incomplete-message="Por favor complete todos los campos"
             @submit="handleSubmit" @input="formData = $event">
             <div class="grid gap-3">
-            <FormKit type="text" name="nombreCentro"
+            <FormKit type="text" name="nombreCentro" normalizar="nombreDeCarpeta"
               placeholder="Nombre del centro, área, departamento o proyecto" validation="required"
               :validation-messages="{ required: 'Este campo es obligatorio' }"
               :value="centrosTrabajo.currentCentroTrabajo?.nombreCentro || ''">
@@ -218,7 +218,7 @@ const handleSubmit = async (data) => {
                 <span class="font-medium text-lg text-gray-700">Nombre Centro<span class="text-red-500">*</span></span>
               </template>
             </FormKit>
-            <FormKit type="text" label="Dirección" name="direccionCentro" placeholder="Calle, número y colonia"
+            <FormKit type="text" label="Dirección" name="direccionCentro" normalizar="texto" placeholder="Calle, número y colonia"
               :value="centrosTrabajo.currentCentroTrabajo?.direccionCentro || ''" />
             
             <template v-if="isMX">
@@ -236,7 +236,7 @@ const handleSubmit = async (data) => {
             </template>
 
             <template v-else>
-              <FormKit type="text" label="Código Postal" name="codigoPostal" placeholder="Ej. 81200, 44100, 01500"
+              <FormKit type="text" label="Código Postal" name="codigoPostal" normalizar="codigoPostal" placeholder="Ej. 81200, 44100, 01500"
               validation="postalCodeValidation" :validation-messages="{
                     postalCodeValidation: 'El código postal debe tener entre 4 y 10 dígitos.',
                   }"

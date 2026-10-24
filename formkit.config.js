@@ -1,6 +1,13 @@
 import { generateClasses } from "@formkit/themes";
 import { isBirthDateInRegistrationRange } from "./src/helpers/dates";
 import {
+  normalizacionPlugin,
+  normalizarCodigoPostal,
+  normalizarCorreo,
+  normalizarRfc,
+  normalizarSitioWeb,
+} from "./src/helpers/normalizarCampo";
+import {
   PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE,
   PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE,
   validatePersonNameCharactersRule,
@@ -23,12 +30,12 @@ const rfcValidation = ({ value }) => {
   // Al menos 3 caracteres al inicio (alfabéticos), seguido de números y letras
   // Ejemplos: RFC12345XYZ, REG-123456, PATRONAL123, ABC-123456-DEF, etc.
   const rfcRegex = /^[A-ZÑÁÉÍÓÚ&]{2,8}[\s\-\._]?[A-Z0-9ÑÁÉÍÓÚ\s\-\._]{4,20}$/;
-  return rfcRegex.test(value.trim().toUpperCase());
+  return rfcRegex.test(normalizarRfc(value));
 };
 const postalCodeValidation = ({ value }) => {
   // Validación flexible para códigos postales de 4 a 10 dígitos
   const postalCodeRegex = /^[0-9]{4,10}$/;
-  return postalCodeRegex.test(value.trim());
+  return postalCodeRegex.test(normalizarCodigoPostal(value));
 };
 const phoneValidation = ({ value }) => {
   // Validación flexible para números internacionales (4-15 dígitos)
@@ -37,11 +44,12 @@ const phoneValidation = ({ value }) => {
 };
 const mailValidation = ({ value }) => {
   const mailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
-  return mailRegex.test(value.trim());
+  return mailRegex.test(normalizarCorreo(value));
 };
 const urlValidation = ({ value }) => {
   const urlRegex = /^(?![.-])(?!.*[.-]{2})(?=.*\.)[a-zA-Z0-9.-]+(?<![.-])$/;
-  return urlRegex.test(value.trim());
+  // Sin «https://» ni barra final: así se guarda (normalizarSitioWeb)
+  return urlRegex.test(normalizarSitioWeb(value));
 };
 const cedulaProfesionalValidation = ({ value }) => {
   const registroRegex = /^[A-Za-z0-9\- ]{3,20}$/;
@@ -53,11 +61,12 @@ const cedulaEspecialistaValidation = ({ value }) => {
 };
 const emailValidation = ({ value }) => {
   const emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
-  return emailRegex.test(value.trim());
+  return emailRegex.test(normalizarCorreo(value));
 };
 const passwordValidation = ({ value }) => {
+  // Sin recortar: una contraseña con espacios se rechaza en vez de guardarse con ellos
   const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
-  return passwordRegex.test(value.trim());
+  return passwordRegex.test(value);
 };
 
 const nssValidation = ({ value }) => {
@@ -145,6 +154,8 @@ const personNameOptionalCharactersSinRegimenValidation = ({ value }) => {
 };
 
 const config = {
+  // Campos con `normalizar="…"`: se limpian al salir del campo y al enviar
+  plugins: [normalizacionPlugin],
   config: {
     classes: generateClasses({
       global: {

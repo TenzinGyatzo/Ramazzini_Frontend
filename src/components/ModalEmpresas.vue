@@ -248,18 +248,18 @@ const handleSubmit = async (data) => {
             @submit="handleSubmit" @input="formData = $event">
             <div class="grid gap-3">
             <div class="grid grid-cols-1 md:grid-cols-2 md:gap-x-4 gap-y-3 items-end">
-              <FormKit type="text" label="Nombre Comercial" name="nombreComercial"
+              <FormKit type="text" label="Nombre Comercial" name="nombreComercial" normalizar="nombreDeCarpeta"
                 outer-class="campo-obligatorio"
                 placeholder="Nombre comercial de la empresa" validation="required"
                 :validation-messages="{ required: 'Este campo es obligatorio' }"
                 :value="empresas.currentEmpresa?.nombreComercial || ''" />
-              <FormKit type="text" label="RFC/Registro Patronal" name="RFC" placeholder="RFC o Registro Patronal" validation="rfcValidation" :validation-messages="{
+              <FormKit type="text" label="RFC/Registro Patronal" name="RFC" normalizar="rfc" placeholder="RFC o Registro Patronal" validation="rfcValidation" :validation-messages="{
                     rfcValidation: 'Debe tener entre 6 y 28 caracteres alfanuméricos con separadores (RFC, Registro Patronal, etc.)',
                   }" :value="empresas.currentEmpresa?.RFC || ''" />
             </div>
-            <FormKit type="text" label="Razón Social" name="razonSocial" placeholder="Razón social de la empresa"
+            <FormKit type="text" label="Razón Social" name="razonSocial" normalizar="texto" placeholder="Razón social de la empresa"
               :value="empresas.currentEmpresa?.razonSocial || ''" />
-            <FormKit type="text" label="Giro de la empresa" name="giroDeEmpresa" placeholder="Giro de la Empresa"
+            <FormKit type="text" label="Giro de la empresa" name="giroDeEmpresa" normalizar="texto" placeholder="Giro de la Empresa"
               :value="empresas.currentEmpresa?.giroDeEmpresa || ''" />
 
             <!-- Área de arrastrar y soltar para el logotipo -->

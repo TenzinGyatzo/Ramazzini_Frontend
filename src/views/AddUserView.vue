@@ -93,7 +93,7 @@ const volver = () => {
           <FormKit
             type="text"
             label="Nombre"
-            name="username"
+            name="username" normalizar="texto"
             placeholder="Ej. Jorge González"
             validation="required"
             :validation-messages="{
@@ -105,7 +105,7 @@ const volver = () => {
           <FormKit
             type="email"
             label="Correo de usuario"
-            name="email"
+            name="email" normalizar="correo"
             placeholder="usuario@empresa.com"
             validation="required|emailValidation"
             :validation-messages="{
@@ -153,7 +153,7 @@ const volver = () => {
               validation="required|passwordValidation"
               :validation-messages="{
                 required: 'Este campo es obligatorio',
-                passwordValidation: 'Mín. 8 dígitos, 1 mayúscula y 1 número.',
+                passwordValidation: 'Mín. 8 caracteres, 1 mayúscula y 1 número, sin espacios.',
               }"
               v-model="formDataUser.password"
             />

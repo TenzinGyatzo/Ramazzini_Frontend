@@ -610,7 +610,7 @@ onMounted(() => {
         <FormKit
           type="text"
           label="¿Cuál es tu nombre?"
-          name="username"
+          name="username" normalizar="texto"
           placeholder="Ej. Jorge González"
           validation="required|length:5"
           :validation-messages="{
@@ -636,7 +636,7 @@ onMounted(() => {
         <FormKit
           type="email"
           label="¿Qué correo deseas registrar?"
-          name="email"
+          name="email" normalizar="correo"
           placeholder="usuario@tuempresa.com"
           validation="required|emailValidation"
           :validation-messages="{
@@ -666,7 +666,7 @@ onMounted(() => {
             validation="required|passwordValidation"
             :validation-messages="{
               required: 'Este campo es obligatorio',
-              passwordValidation: 'Mín. 8 dígitos, 1 mayúscula y 1 número.',
+              passwordValidation: 'Mín. 8 caracteres, 1 mayúscula y 1 número, sin espacios.',
             }"
             v-model="formDataUser.password"
           />
@@ -716,7 +716,7 @@ onMounted(() => {
         <FormKit
           type="text"
           label="Razón social"
-          name="nombre"
+          name="nombre" normalizar="texto"
           placeholder="Ej. Ramazzini S.A."
           validation="required"
           :validation-messages="{ required: 'Este campo es obligatorio' }"
