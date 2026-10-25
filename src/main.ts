@@ -4,8 +4,12 @@ import './assets/modal-dirty-guard.css'
 import './assets/modal-transitions.css'
 
 import { applyAppTheme, readInitialDarkPreference } from '@/theme/appTheme'
+import { instalarRecargaPorDespliegue } from '@/helpers/recargaPorDespliegue'
 
 applyAppTheme(readInitialDarkPreference())
+
+// Tras un despliegue, si falta un archivo viejo de una pantalla, recargar para tomar el nuevo
+instalarRecargaPorDespliegue()
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
