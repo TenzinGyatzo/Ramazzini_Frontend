@@ -140,10 +140,15 @@ const isNotificationBorradoresVisible = ref(false);
 const showModalBorradoresPendientes = ref(false);
 const configNotificationSuppressed = ref(false);
 
-// Las guías de Scribe están desactualizadas: se ocultan el botón de guías y los
-// enlaces de las notificaciones hasta que se rehagan. Cambiar a true para reactivarlas.
+// La guía de configuración inicial de Scribe está desactualizada: se oculta su enlace
+// en la notificación de configuración pendiente. Cambiar a true para reactivarlo.
 const GUIAS_DE_USO_DISPONIBLES = false;
 const guiaConfiguracionInicialURL = "https://scribehow.com/shared/Configuracion_de_Informes__qSuHpPxtSnKc8JTaObgY7Q?referrer=workspace"
+
+// Guías de Scribe vigentes que se listan en el botón de guías de uso.
+const GUIAS_DE_USO = [
+  { url: 'https://scribehow.com/o/kpKLZerRRY67ObCYfAdMlw/viewer/Como_corregir_un_dato_de_identificacion__D4BdxHiMTJ-fovuDGmBY-w', text: 'Cómo corregir un dato de identificación', icon: 'fa-solid fa-id-card' },
+];
 
 const LOGO_ASSETS = [
   '/img/logosRamazzini/RamazziniBrand.png',
@@ -1266,7 +1271,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
     <!-- Icono de guía de uso mejorado -->
     <Transition name="delayed-appear">
       <button 
-        v-if="GUIAS_DE_USO_DISPONIBLES && isVisible && ['inicio', 'add-user', 'remove-users', 'perfil-proveedor', 'medico-firmante', 'subscription', 'suscripcion-activa', 'subscription-success', 'panel-administrador'].includes(route.name as string)"
+        v-if="GUIAS_DE_USO.length > 0 && isVisible &&['inicio', 'add-user', 'remove-users', 'perfil-proveedor', 'medico-firmante', 'subscription', 'suscripcion-activa', 'subscription-success', 'panel-administrador'].includes(route.name as string)"
         @click="toggleGuideMenu($event)"
         class="fixed top-24 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300 z-30 flex items-center justify-center group"
         :aria-label="isGuideMenuOpen ? 'Cerrar guías de uso' : 'Abrir guías de uso'">
@@ -1285,17 +1290,10 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
           Guías de Uso
         </h3>
         <ul class="space-y-2">
-          <li v-for="(guia, index) in [
-            { url: 'https://scribehow.com/shared/Configuracion_de_Informes__qSuHpPxtSnKc8JTaObgY7Q?referrer=workspace', text: 'Configuración de Informes', icon: 'fa-solid fa-cog' },
-            { url: 'https://scribehow.com/shared/Agregar_Clientes_y_Centros_de_Trabajo__32Haet8BQy6oFUDacWcbWg?referrer=documents', text: 'Agregar Clientes y Centros de Trabajo', icon: 'fa-solid fa-building' },
-            { url: 'https://scribehow.com/shared/Registrar_Trabajadores__C2clnmBvTT2xGW7QE-YHQQ?referrer=documents', text: 'Registrar Trabajadores', icon: 'fa-solid fa-user-plus' },
-            { url: 'https://scribehow.com/shared/Gestion_de_Trabajadores__bGNGxMbuRXiKD6G8JiDGIQ?referrer=documents', text: 'Gestión de Trabajadores', icon: 'fa-solid fa-users' },
-            { url: 'https://scribehow.com/shared/Creacion_de_Informes_Medicos__BffBrtm4Qze068R96fLL9w?referrer=documents', text: 'Creación de Informes Médicos', icon: 'fa-solid fa-file-medical' },
-            { url: 'https://scribehow.com/shared/Subir_Documentos_Externos__p2VINQjBSYq8RKntzNZHSQ?referrer=workspace', text: 'Subir Documentos Externos', icon: 'fa-solid fa-upload' },
-            { url: 'https://scribehow.com/shared/Resumen_de_Aptitud_al_Puesto__RZbuEGIpTTOiY1wSuxbqKQ?referrer=workspace', text: 'Resumen de Aptitud al Puesto', icon: 'fa-solid fa-clipboard-check' }
-          ]" :key="index">
-            <a :href="guia.url" 
-               target="_blank" 
+          <li v-for="(guia, index) in GUIAS_DE_USO" :key="index">
+            <a :href="guia.url"
+               target="_blank"
+               rel="noopener noreferrer"
                class="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-blue-50 transition-all duration-200 group">
               <span class="text-sm font-medium text-gray-500 group-hover:text-blue-600 transition-colors duration-200">{{ index + 1 }}.</span>
               <i :class="[guia.icon, 'text-blue-500 group-hover:text-blue-600 transition-colors duration-200']"></i>
