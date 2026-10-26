@@ -6,13 +6,13 @@ export interface Trabajador {
   fechaNacimiento: string;
   sexo: string;
   sexoCURP?: number;
-  escolaridad: string;
+  escolaridad?: string | null;
   puesto: string;
   fechaIngreso?: string;
   telefono: string;
   contactoEmergenciaNombre?: string;
   contactoEmergenciaTelefono?: string;
-  estadoCivil: string;
+  estadoCivil?: string | null;
   numeroEmpleado: string;
   nss: string;
   curp?: string;

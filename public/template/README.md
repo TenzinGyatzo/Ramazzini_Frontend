@@ -13,7 +13,7 @@ Los nombres no mencionan el régimen (los ve el usuario al descargarlas; cada pr
 
 `numeroEmpleado`, `nss`, `primerApellido`, `segundoApellido`, `nombre`, `fechaNacimiento`, `sexo`, `escolaridad`, `puesto`, `fechaIngreso`, `telefono`, `estadoCivil`
 
-- `numeroEmpleado`, `nss`, `telefono`, `fechaIngreso`, `segundoApellido`: opcionales
+- `numeroEmpleado`, `nss`, `telefono`, `fechaIngreso`, `segundoApellido`, `escolaridad`, `estadoCivil`: opcionales
 - Resto: obligatorios para importación
 
 ## Plantilla SIRES_NOM024 (19 columnas)

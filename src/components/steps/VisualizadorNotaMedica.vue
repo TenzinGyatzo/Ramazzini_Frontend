@@ -267,10 +267,10 @@ const muestraDiagnostico3 = computed(() =>
         Se trata de <span class="font-medium">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'un trabajador' : 'una trabajadora' }}</span> de 
         <span class="font-medium">{{ edad }} años</span> de edad, que labora en la empresa 
         <span class="font-medium">{{ empresas.currentEmpresa.nombreComercial }}</span>, ocupando el puesto de 
-        <span class="font-medium">{{ trabajadores.currentTrabajador.puesto }}</span>, con escolaridad 
-        <span class="font-medium">{{ trabajadores.currentTrabajador.escolaridad }}</span><template v-if="antiguedad !== '-'"> y una antigüedad de 
-        <span class="font-medium">{{ antiguedad }}</span></template>. Estado civil: 
-        <span class="font-medium">{{ trabajadores.currentTrabajador.estadoCivil }}</span>.
+        <span class="font-medium">{{ trabajadores.currentTrabajador.puesto }}</span><template v-if="trabajadores.currentTrabajador.escolaridad">, con escolaridad 
+        <span class="font-medium">{{ trabajadores.currentTrabajador.escolaridad }}</span></template><template v-if="antiguedad !== '-'"> y una antigüedad de 
+        <span class="font-medium">{{ antiguedad }}</span></template><template v-if="trabajadores.currentTrabajador.estadoCivil">. Estado civil: 
+        <span class="font-medium">{{ trabajadores.currentTrabajador.estadoCivil }}</span></template>.
         <span v-if="trabajadores.currentTrabajador.numeroEmpleado"> Número de empleado: <span class="font-medium">{{ trabajadores.currentTrabajador.numeroEmpleado }}</span></span>.
       </p>
 

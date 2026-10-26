@@ -285,6 +285,11 @@ const estadosCiviles = [
   "Separado/a", "Divorciado/a", "Viudo/a",
 ];
 
+// Escolaridad y estado civil son opcionales: opción vacía para poder dejarlos sin dato o borrarlos
+const opcionSinEspecificar = { label: "-Sin especificar-", value: "" };
+const opcionesEscolaridad = computed(() => [opcionSinEspecificar, ...nivelesEscolaridad.value]);
+const opcionesEstadoCivil = [opcionSinEspecificar, ...estadosCiviles];
+
 // Variables reactivas para el modal de transferencia
 const mostrarModalTransferencia = ref(false);
 const mostrarModalBaja = ref(false);
@@ -1558,20 +1563,16 @@ const {
             <section>
               <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Datos personales</h3>
               <div class="lg:grid gap-3 lg:grid-cols-2">
-                <FormKit type="select" name="escolaridad"
-                  placeholder="-Seleccione último concluido-" :options="nivelesEscolaridad" validation="required"
-                  :validation-messages="{ required: 'Este campo es obligatorio' }"
+                <FormKit type="select" name="escolaridad" :options="opcionesEscolaridad"
                   :value="escolaridadDefaultValue">
                   <template #label>
-                    <span class="font-medium text-lg text-gray-700">Escolaridad<span class="text-red-500">*</span></span>
+                    <span class="font-medium text-lg text-gray-700">Escolaridad</span>
                   </template>
                 </FormKit>
-                <FormKit type="select" name="estadoCivil" placeholder="-Seleccione un estado civil-"
-                  :options="estadosCiviles" validation="required"
-                  :validation-messages="{ required: 'Este campo es obligatorio' }"
+                <FormKit type="select" name="estadoCivil" :options="opcionesEstadoCivil"
                   :value="trabajadores.currentTrabajador?.estadoCivil || ''">
                   <template #label>
-                    <span class="font-medium text-lg text-gray-700">Estado Civil<span class="text-red-500">*</span></span>
+                    <span class="font-medium text-lg text-gray-700">Estado Civil</span>
                   </template>
                 </FormKit>
               </div>
