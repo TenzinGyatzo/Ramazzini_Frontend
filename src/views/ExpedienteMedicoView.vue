@@ -123,9 +123,12 @@ const {
 const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
 const {
   navigateWithTreatmentConsent,
+  precargarConsentimiento,
   showModal: showConsentModal,
   modalTrabajadorId,
   modalTrabajadorNombre,
+  modalConsentText,
+  modalDeclaracionProfesional,
   handleConsentRegistered,
   handleConsentCancel,
 } = useNavigateWithTreatmentConsent();
@@ -629,6 +632,14 @@ const idTrabajadorEnRuta = computed(() => String(route.params.idTrabajador ?? ''
 const documentosSonDelTrabajador = computed(
   () => documentos.documentosDeTrabajadorId === idTrabajadorEnRuta.value,
 );
+
+// Al abrir el expediente: elegir un documento ya no espera al servidor para el consentimiento
+watch(
+  () => [idTrabajadorEnRuta.value, proveedorSaludStore.isSIRES, proveedorSaludStore.dailyConsentEnabled],
+  () => precargarConsentimiento(idTrabajadorEnRuta.value),
+  { immediate: true },
+);
+
 const documentosPorAnio = computed(() => (documentosSonDelTrabajador.value ? documentos.documentsByYear : {}));
 const resultadosPorAnio = computed(() =>
   resultadosClinicos.resultadosDeTrabajadorId === idTrabajadorEnRuta.value ? resultadosClinicos.resultsByYear : {},
@@ -721,6 +732,8 @@ const tieneResultadosParaAnio = (year: string) => {
 
 const navigateTo = async (routeName: string, params: Record<string, unknown>) => {
   if (!proveedorSaludStore.proveedorSalud) return;
+  // Si aún no llegó la precarga, que corra junto con las demás verificaciones
+  if (routeName === 'crear-documento') precargarConsentimiento(trabajadores.currentTrabajadorId);
 
   // Acceso comercial (prueba, suscripción, contrato con Ramazzini o restricción): una sola regla
   if (proveedorSaludStore.bloqueoComercial) {
@@ -1236,6 +1249,8 @@ const crearDocumento = (tipoDocumento: string) =>
           v-if="showConsentModal"
           :trabajadorId="modalTrabajadorId"
           :trabajadorNombre="modalTrabajadorNombre"
+          :consentText="modalConsentText"
+          :declaracionProfesional="modalDeclaracionProfesional"
           :open="showConsentModal"
           @registered="handleConsentRegistered"
           @cancel="handleConsentCancel"

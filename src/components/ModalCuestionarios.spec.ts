@@ -23,9 +23,12 @@ vi.mock('@/composables/useProfessionalDataValidation', () => ({
 vi.mock('@/composables/useNavigateWithTreatmentConsent', () => ({
   useNavigateWithTreatmentConsent: () => ({
     navigateWithTreatmentConsent,
+    precargarConsentimiento: vi.fn(),
     showModal: ref(false),
     modalTrabajadorId: ref(''),
     modalTrabajadorNombre: ref(''),
+    modalConsentText: ref(''),
+    modalDeclaracionProfesional: ref(''),
     handleConsentRegistered: vi.fn(),
     handleConsentCancel: vi.fn(),
   }),

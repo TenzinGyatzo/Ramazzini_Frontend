@@ -24,9 +24,12 @@ const { validateDocumentCreation, executeIfCanManageOtrosDocumentos } = usePermi
 const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
 const {
   navigateWithTreatmentConsent,
+  precargarConsentimiento,
   showModal: showConsentModal,
   modalTrabajadorId,
   modalTrabajadorNombre,
+  modalConsentText,
+  modalDeclaracionProfesional,
   handleConsentRegistered,
   handleConsentCancel,
 } = useNavigateWithTreatmentConsent();
@@ -252,6 +255,8 @@ const abrirInasistencias = () => {
 
 const crearDocumento = async (opcion) => {
   if (!validateDocumentCreation(opcion.tipoDocumento)) return;
+  // Si aún no llegó la precarga del expediente, que corra junto con la validación del firmante
+  precargarConsentimiento(trabajadores.currentTrabajadorId);
 
   const professionalValidation = await ensureProfessionalDataReady();
   if (!professionalValidation.isValid) {
@@ -408,6 +413,8 @@ const seleccionarPrimerResultado = () => {
         v-if="showConsentModal"
         :trabajadorId="modalTrabajadorId"
         :trabajadorNombre="modalTrabajadorNombre"
+        :consentText="modalConsentText"
+        :declaracionProfesional="modalDeclaracionProfesional"
         :open="showConsentModal"
         @registered="handleConsentRegistered"
         @cancel="handleConsentCancel"

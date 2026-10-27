@@ -148,7 +148,26 @@ export function useProfessionalDataValidation() {
     }
   };
 
+  // Con los datos de este usuario ya cargados y completos no se espera al servidor; si faltan
+  // se vuelve a consultar, por si los completó en otra pestaña
+  const firmanteCargadoCompleto = () => {
+    const userId = currentUser.value?._id;
+    if (!userId || !validationResult.value.isValid) return false;
+    const role = currentUser.value?.role;
+    const perfilProfesional = currentUser.value?.perfilProfesional;
+    if (!resolveFirmanteTipo(role, perfilProfesional)) return true;
+    const firmante = getFirmanteForRole(
+      role,
+      perfilProfesional,
+      medicoFirmante.value as FirmanteRecord | null,
+      enfermeraFirmante.value as FirmanteRecord | null,
+      tecnicoFirmante.value as FirmanteRecord | null,
+    );
+    return String(firmante?.idUser ?? '') === String(userId);
+  };
+
   const ensureProfessionalDataReady = async () => {
+    if (firmanteCargadoCompleto()) return validationResult.value;
     await loadFirmanteData();
     return validationResult.value;
   };

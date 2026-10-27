@@ -10,6 +10,45 @@ import type {
   CreateConsentimientoDto,
 } from '@/types/consentimiento';
 
+// Estado del día por trabajador, compartido entre vistas: con él la ventana de consentimiento
+// abre al instante. Si cambió (otro día, otro equipo), el servidor lo vuelve a exigir al guardar.
+const estadoPorTrabajador = new Map<
+  string,
+  { dia: string; estado: Promise<ConsentimientoStatus | null> }
+>();
+const hoy = () => new Date().toDateString();
+
+function guardarEstado(trabajadorId: string, estado: ConsentimientoStatus) {
+  estadoPorTrabajador.set(trabajadorId, {
+    dia: hoy(),
+    estado: Promise.resolve(estado),
+  });
+}
+
+/** Estado del consentimiento ya consultado hoy, o lo consulta (sin repetir la petición en curso). */
+export function precargarEstadoConsentimiento(
+  trabajadorId: string,
+): Promise<ConsentimientoStatus | null> {
+  const guardado = estadoPorTrabajador.get(trabajadorId);
+  if (guardado && guardado.dia === hoy()) return guardado.estado;
+
+  const estado = ConsentimientosAPI.getStatus(trabajadorId)
+    .then((response) => response.data)
+    .catch(() => {
+      // Un fallo no se recuerda: el siguiente intento vuelve a consultar
+      if (estadoPorTrabajador.get(trabajadorId)?.estado === estado) {
+        estadoPorTrabajador.delete(trabajadorId);
+      }
+      return null;
+    });
+  estadoPorTrabajador.set(trabajadorId, { dia: hoy(), estado });
+  return estado;
+}
+
+export function olvidarEstadosConsentimiento() {
+  estadoPorTrabajador.clear();
+}
+
 export function useTreatmentConsent() {
   const { dailyConsentEnabled } = useRegulatoryPolicy();
   const { mapRegulatoryError, extractRegulatoryError } =
@@ -46,6 +85,7 @@ export function useTreatmentConsent() {
 
       const response = await ConsentimientosAPI.getStatus(trabajadorId);
       status.value = response.data;
+      guardarEstado(trabajadorId, response.data);
 
       state.value = 'idle';
       return response.data;
@@ -88,6 +128,7 @@ export function useTreatmentConsent() {
       error.value = null;
 
       const response = await ConsentimientosAPI.create(createDto);
+      guardarEstado(createDto.trabajadorId, { required: true, accepted: true });
 
       state.value = 'idle';
       return response.data;
