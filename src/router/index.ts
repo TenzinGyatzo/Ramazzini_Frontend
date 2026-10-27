@@ -176,6 +176,7 @@ const router = createRouter({
           path: "/vigencias",
           name: "vigencias",
           component: () => import("../views/VigenciasView.vue"),
+          meta: { requiresAuth: true, requiresVigencias: true },
         },
         {
           path: "/inventario",
@@ -341,6 +342,16 @@ router.beforeEach((to, from) => {
         const { canAccessDashboardSalud } = useUserPermissions();
         if (!canAccessDashboardSalud.value) {
           console.warn("Acceso denegado: no tienes permisos para acceder al dashboard de salud");
+          return next({ name: "inicio" });
+        }
+      }
+
+      // Vigencias: solo con el módulo activado en «Módulos y funciones»
+      if (to.meta.requiresVigencias && user) {
+        if (user.idProveedorSalud && !proveedorSaludStore.isProveedorLoaded) {
+          await proveedorSaludStore.loadProveedorSalud(user.idProveedorSalud);
+        }
+        if (proveedorSaludStore.proveedorSalud?.vigenciasHabilitadas !== true) {
           return next({ name: "inicio" });
         }
       }

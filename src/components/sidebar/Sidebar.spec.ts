@@ -327,6 +327,19 @@ describe('Sidebar — Inicio', () => {
     expect(wrapper.text()).toContain('Resumen de trabajo');
   });
 
+  it('«Vigencias» solo aparece con el módulo activado', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useProveedorSaludStore();
+    store.proveedorSalud = { _id: 'p1', vigenciasHabilitadas: false } as any;
+    const wrapper = await mountSidebar(pinia);
+    expect(wrapper.find('[data-testid="vigencias-sidebar-link"]').exists()).toBe(false);
+
+    store.proveedorSalud = { _id: 'p1', vigenciasHabilitadas: true } as any;
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-testid="vigencias-sidebar-link"]').exists()).toBe(true);
+  });
+
   it('expone Cerrar sesión en el footer', async () => {
     const wrapper = await mountSidebar();
     const sidebar = useSidebarStore();

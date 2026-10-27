@@ -24,7 +24,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 import type { EmpresaCentrosInventario } from '@/interfaces/inventario.interface';
 
-type Interruptor = 'firma' | 'semaforizacion' | 'inventario' | 'incapacidades';
+type Interruptor = 'firma' | 'semaforizacion' | 'inventario' | 'incapacidades' | 'vigencias';
 
 const toast: any = inject('toast');
 const userStore = useUserStore();
@@ -252,6 +252,15 @@ async function cambiar(cual: Interruptor) {
         message: activar ? 'Semaforización de resultados activada' : 'Semaforización de resultados desactivada',
         type: 'success',
       });
+    } else if (cual === 'vigencias') {
+      const activar = !estado.value.vigenciasHabilitadas;
+      const { data } = await ModulosFuncionesAPI.actualizarVigencias(activar);
+      estado.value.vigenciasHabilitadas = data.vigenciasHabilitadas;
+      // El menú lee el valor del proveedor: así aparece o desaparece sin recargar
+      if (proveedorSaludStore.proveedorSalud) {
+        proveedorSaludStore.proveedorSalud.vigenciasHabilitadas = data.vigenciasHabilitadas;
+      }
+      toast?.open?.({ message: activar ? 'Vigencias de aptitud activadas' : 'Vigencias de aptitud desactivadas', type: 'success' });
     } else if (cual === 'incapacidades') {
       const activar = !estado.value.incapacidadesHabilitado;
       const { data } = await ModulosFuncionesAPI.actualizarIncapacidades(activar);
@@ -535,6 +544,32 @@ onMounted(cargar);
               <span>En esos centros, cada antidoping descuenta una prueba (al activarlo se agregan las pruebas al catálogo)</span>
             </label>
           </div>
+        </article>
+        <article class="modulos-funciones__tarjeta" data-interruptor="vigencias">
+          <div class="modulos-funciones__icono"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i></div>
+          <div class="min-w-0">
+            <h3 class="modulos-funciones__titulo">Vigencias de aptitud</h3>
+            <p class="modulos-funciones__texto">
+              Aptitudes vigentes, por vencer y vencidas de las empresas a las que das seguimiento, en una sola vista
+              del menú.
+            </p>
+            <p v-if="estado.vigenciasHabilitadas" class="modulos-funciones__enlaces">
+              <RouterLink :to="{ name: 'vigencias' }" class="modulos-funciones__enlace" data-test="ir-a-vigencias">
+                Ir a Vigencias
+              </RouterLink>
+              <span>Ahí eliges las empresas</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="modulos-funciones__switch"
+            :class="{ 'modulos-funciones__switch--on': estado.vigenciasHabilitadas }"
+            :aria-checked="estado.vigenciasHabilitadas"
+            aria-label="Vigencias de aptitud"
+            :disabled="!puedeConfigurar || guardando !== null"
+            @click="cambiar('vigencias')"
+          ></button>
         </article>
         <article v-if="estado.incapacidadesDisponible" class="modulos-funciones__tarjeta" data-interruptor="incapacidades">
           <div class="modulos-funciones__icono"><i class="fa-solid fa-bed" aria-hidden="true"></i></div>

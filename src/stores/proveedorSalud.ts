@@ -91,6 +91,8 @@ interface ProveedorSalud {
     finDeSuscripcion: Date;
     colorInforme?: string;
     semaforizacionActivada?: boolean;
+    /** Vista «Vigencias» en el menú; se activa en «Módulos y funciones». */
+    vigenciasHabilitadas?: boolean;
     regimenRegulatorio?: 'SIRES_NOM024' | 'SIN_REGIMEN';
     regulatoryPolicy?: RegulatoryPolicy;
 }

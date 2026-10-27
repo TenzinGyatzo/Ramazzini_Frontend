@@ -19,6 +19,7 @@ const {
   updateEmpresasIncapacidades,
   getIncapacidades,
   actualizarColorInforme,
+  actualizarVigencias,
 } = vi.hoisted(() => ({
   getEstado: vi.fn(),
   actualizarSemaforizacion: vi.fn(),
@@ -32,6 +33,7 @@ const {
   updateEmpresasIncapacidades: vi.fn(),
   getIncapacidades: vi.fn(),
   actualizarColorInforme: vi.fn(),
+  actualizarVigencias: vi.fn(),
 }));
 vi.mock('@/api/ModulosFuncionesAPI', () => ({
   default: {
@@ -42,6 +44,7 @@ vi.mock('@/api/ModulosFuncionesAPI', () => ({
     updateEmpresasIncapacidades,
     getIncapacidades,
     actualizarColorInforme,
+    actualizarVigencias,
   },
 }));
 vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { actualizarConfiguracion: actualizarConfiguracionFirma } }));
@@ -81,6 +84,7 @@ const ESTADO = {
   incapacidadesDisponible: false,
   incapacidadesHabilitado: false,
   colorInforme: '#343A40',
+  vigenciasHabilitadas: false,
 };
 
 /** Dos empresas; solo Bimbo gestiona incapacidades. */
@@ -124,9 +128,27 @@ describe('ModulosFuncionesView', () => {
       'firma',
       'semaforizacion',
       'inventario',
+      'vigencias',
     ]);
+    // Vigencias viene apagada
+    expect(interruptor(w, 'vigencias').attributes('aria-checked')).toBe('false');
     expect(interruptor(w, 'firma').attributes('aria-checked')).toBe('true');
     expect(interruptor(w, 'semaforizacion').attributes('aria-checked')).toBe('false');
+  });
+
+  it('vigencias: al activarla aparece en el menú sin recargar', async () => {
+    useProveedorSaludStore().proveedorSalud = { _id: 'p1', vigenciasHabilitadas: false } as any;
+    actualizarVigencias.mockResolvedValue({ data: { ...ESTADO, vigenciasHabilitadas: true } });
+    const w = montar();
+    await flushPromises();
+    expect(w.find('[data-test="ir-a-vigencias"]').exists()).toBe(false);
+
+    await interruptor(w, 'vigencias').trigger('click');
+    await flushPromises();
+    expect(actualizarVigencias).toHaveBeenCalledWith(true);
+    expect(interruptor(w, 'vigencias').attributes('aria-checked')).toBe('true');
+    expect(useProveedorSaludStore().proveedorSalud?.vigenciasHabilitadas).toBe(true);
+    expect(w.find('[data-test="ir-a-vigencias"]').exists()).toBe(true);
   });
 
   it('cada interruptor se guarda al instante por su ruta', async () => {

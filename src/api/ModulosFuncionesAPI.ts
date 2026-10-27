@@ -11,6 +11,8 @@ export interface EstadoModulosFunciones {
   incapacidadesHabilitado: boolean;
   /** Color de encabezados y tablas de los informes en PDF. */
   colorInforme: string;
+  /** Vista «Vigencias» (aptitudes de las empresas en seguimiento); apagada por defecto. */
+  vigenciasHabilitadas: boolean;
 }
 
 /** Si el módulo de incapacidades está encendido y en qué empresas (cualquier usuario). */
@@ -42,6 +44,10 @@ export default {
 
   getIncapacidades(): Promise<{ data: ConfiguracionIncapacidades }> {
     return api.get('/modulos-funciones/incapacidades');
+  },
+
+  actualizarVigencias(vigenciasHabilitadas: boolean): Promise<{ data: EstadoModulosFunciones }> {
+    return api.patch('/modulos-funciones/vigencias', { vigenciasHabilitadas });
   },
 
   actualizarIncapacidades(incapacidadesHabilitado: boolean): Promise<{ data: ConfiguracionIncapacidades }> {

@@ -10,6 +10,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { useEditionLabel } from '@/composables/useEditionLabel';
 import { useUserStore } from '@/stores/user';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 const route = useRoute();
 const router = useRouter();
@@ -20,6 +21,9 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const user = useUserStore();
+const proveedorSalud = useProveedorSaludStore();
+/** «Vigencias» solo aparece con el módulo activado en «Módulos y funciones». */
+const vigenciasHabilitadas = computed(() => proveedorSalud.proveedorSalud?.vigenciasHabilitadas === true);
 
 const isMounted = ref(false);
 const hasVisitedDashboard = ref(false);
@@ -213,7 +217,7 @@ const footerEditionText = computed(() => {
         </Transition>
 
         <Transition appear name="slide-fade" :duration="300">
-          <SidebarLink v-if="route.path !== '/login'" 
+          <SidebarLink v-if="route.path !== '/login' && vigenciasHabilitadas" 
             to="/vigencias" 
             icon="fa-solid fa-calendar-check" 
             tooltip="Vigencias"
