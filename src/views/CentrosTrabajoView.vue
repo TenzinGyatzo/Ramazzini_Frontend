@@ -20,6 +20,8 @@ import { usePermissionRestrictions } from '@/composables/usePermissionRestrictio
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { INCAPACIDADES_SOLO_ADMINISTRADOR } from '@/helpers/incapacidades';
 import { useIncapacidadesStore } from '@/stores/incapacidades';
+import { useNavegacionTarjetas } from '@/composables/useNavegacionTarjetas';
+import AvisoTecladoTarjetas from '@/components/AvisoTecladoTarjetas.vue';
 
 const toast: any = inject('toast');
 const { solicitarEliminacionConResumen } = useEliminacion();
@@ -70,6 +72,18 @@ const totalTrabajadores = ref(0);
 const loadingTrabajadores = ref(false);
 const conteosTrabajadoresPorCentro = ref<Record<string, number>>({});
 const cargandoVista = ref(true);
+
+// Flechas entre tarjetas; al crear un centro, la lista lo lleva a la vista y lo resalta
+const rejilla = ref<HTMLElement | null>(null);
+const { alPresionar, resaltar } = useNavegacionTarjetas(rejilla);
+watch(
+  () => [centrosTrabajo.ultimoCreadoId, centrosTrabajo.centrosTrabajo] as const,
+  async ([id, lista]) => {
+    if (!id || !lista.some((centro) => centro._id === id)) return;
+    centrosTrabajo.ultimoCreadoId = null;
+    await resaltar(id);
+  },
+);
 
 // Incapacidades: módulo encendido, empresa elegida (incluye México) y el permiso de riesgos de trabajo
 const incapacidadesStore = useIncapacidadesStore();
@@ -437,9 +451,15 @@ watch(
               <div v-else key="centros-content">
                 <Transition appear mode="out-in" name="slide-up">
                   <div>
+                    <AvisoTecladoTarjetas
+                      v-if="empresas.currentEmpresa && centrosTrabajo.centrosTrabajo.length > 0"
+                      elemento="el centro de trabajo"
+                    />
                     <div
                       v-if="empresas.currentEmpresa && centrosTrabajo.centrosTrabajo.length > 0"
+                      ref="rejilla"
                       class="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2"
+                      @keydown="alPresionar"
                     >
                       <div v-for="centro in centrosTrabajo.centrosTrabajo" :key="centro._id" class="min-w-0">
                         <CentroTrabajoItem

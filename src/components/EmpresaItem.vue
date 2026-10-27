@@ -34,12 +34,13 @@ const handleEliminarEmpresa = (id: string, nombreComercial: string) => {
 
 <template>
     <div class="empresa-item group min-w-0">
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+        <div class="tarjeta-nav overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
             <!-- Contenido principal -->
             <RouterLink
             v-if="empresa?._id"
             :to="{ name: 'centros-trabajo', params: { idEmpresa: empresa._id } }"
-            class="empresa-card-link empresa-item__link block w-full min-w-0 p-6 text-center transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+            :data-tarjeta-nav="empresa._id"
+            class="empresa-card-link empresa-item__link tarjeta-nav__enlace block w-full min-w-0 p-6 text-center transition-all duration-300 hover:bg-gray-50 focus:outline-none">
             
             <img v-if="empresa.logotipoEmpresa?.data"
                 :src="'/uploads/logos/' + empresa.logotipoEmpresa.data + '?t=' + empresa.updatedAt"
@@ -75,7 +76,7 @@ const handleEliminarEmpresa = (id: string, nombreComercial: string) => {
             </RouterLink>
 
             <!-- Barra de acciones -->
-            <div class="empresa-item__actions border-t border-gray-100 bg-gray-50 px-6 py-3">
+            <div class="empresa-item__actions tarjeta-nav__pie border-t border-gray-100 bg-gray-50 px-6 py-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="empresa-item-actions-label text-xs font-medium text-gray-500">Acciones</span>

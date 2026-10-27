@@ -4346,6 +4346,21 @@ html.dark-mode .incapacidades-empresa__enlace:hover {
   color: #6ee7b7 !important;
 }
 
+/* Tarjetas que se recorren con el teclado: la del foco, con borde y fondo verdes */
+html.dark-mode .tarjeta-nav:has(.tarjeta-nav__enlace:focus) {
+  border-color: #34d399 !important;
+  outline-color: #34d399;
+}
+
+html.dark-mode .tarjeta-nav .tarjeta-nav__enlace:focus {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
+/* El marco va en toda la tarjeta; sin esto, el contorno azul de los enlaces queda recortado */
+html.dark-mode .tarjeta-nav .tarjeta-nav__enlace:focus-visible {
+  outline: none !important;
+}
+
 /* Vigencias de todas las empresas: títulos, tarjetas, y filas cuyo hover de Tailwind pierde ante el remapeo */
 html.dark-mode .vigencias__titulo,
 html.dark-mode .vigencias__seccion {

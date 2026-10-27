@@ -108,11 +108,12 @@ const formatDireccion = (centro: CentroTrabajo) => {
 
 <template>
     <div v-if="centro && empresa" class="centro-item group min-w-0">
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+        <div class="tarjeta-nav overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
             <!-- Contenido principal -->
             <RouterLink
                 :to="{ name: 'trabajadores', params: { idEmpresa: empresa._id, idCentroTrabajo: centro._id } }"
-                class="centro-card-link centro-item__link block w-full min-w-0 p-6 text-left transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                :data-tarjeta-nav="centro._id"
+                class="centro-card-link centro-item__link tarjeta-nav__enlace block w-full min-w-0 p-6 text-left transition-all duration-300 hover:bg-gray-50 focus:outline-none">
                 
                 <!-- Header con icono y título -->
                 <div class="centro-item__header mb-4 flex min-w-0 items-start justify-between gap-2">
@@ -169,7 +170,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
             </RouterLink>
 
             <!-- Barra de acciones -->
-            <div class="centro-item__actions border-t border-gray-100 bg-gray-50 px-6 py-3">
+            <div class="centro-item__actions tarjeta-nav__pie border-t border-gray-100 bg-gray-50 px-6 py-3">
                 <div
                     ref="accionesFila"
                     class="flex items-center justify-between gap-x-3 gap-y-2"

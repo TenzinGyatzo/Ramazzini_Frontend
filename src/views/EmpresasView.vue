@@ -15,6 +15,8 @@ import { usePermissionRestrictions } from '@/composables/usePermissionRestrictio
 import CentrosTrabajoAPI from '@/api/CentrosTrabajoAPI';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { abrirWhatsApp } from '@/utils/contactoRamazzini';
+import { useNavegacionTarjetas } from '@/composables/useNavegacionTarjetas';
+import AvisoTecladoTarjetas from '@/components/AvisoTecladoTarjetas.vue';
 
 const toast: any = inject('toast');
 const { solicitarEliminacionConResumen } = useEliminacion();
@@ -29,6 +31,24 @@ const showModal = ref(false);
 const showSubscriptionModal = ref(false);
 
 const busqueda = ref('');
+const buscador = ref<HTMLInputElement | null>(null);
+const rejilla = ref<HTMLElement | null>(null);
+
+// Flechas entre tarjetas; desde la primera fila, arriba regresa al buscador
+const { alPresionar, enfocarPrimera, resaltar } = useNavegacionTarjetas(rejilla, {
+  alSalirArriba: () => buscador.value?.focus(),
+});
+
+// Al crear una empresa, la lista la lleva a la vista, le da el foco y la resalta
+watch(
+  () => [empresas.ultimaCreadaId, empresas.empresas] as const,
+  async ([id, lista]) => {
+    if (!id || !lista.some((empresa) => empresa._id === id)) return;
+    empresas.ultimaCreadaId = null;
+    if (!empresasFiltradas.value.some((empresa) => empresa._id === id)) busqueda.value = '';
+    await resaltar(id);
+  },
+);
 
 const empresasFiltradas = computed(() => {
   const termino = busqueda.value.toLowerCase().trim();
@@ -233,9 +253,13 @@ watchEffect(() => {
               <i class="fa-solid fa-magnifying-glass text-gray-500 dark:text-slate-300"></i>
               </span>
               <input
+              ref="buscador"
               v-model="busqueda"
               type="text"
               placeholder="Buscar empresa..."
+              aria-label="Buscar empresa (flecha abajo para ir a las tarjetas)"
+              data-test="buscar-empresa"
+              @keydown.down.prevent="enfocarPrimera()"
               class="w-full pl-10 pr-4 py-2 border border-gray-300 bg-white text-gray-800 placeholder-gray-500 hover:shadow-md rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 transition dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-300"
               />
             </div>
@@ -376,9 +400,12 @@ watchEffect(() => {
               </div>
             </div>
             <!-- Si hay empresas, mostramos los items -->
-            <div v-else class="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              <EmpresaItem v-for="empresa in empresasFiltradas" :key="empresa._id" :empresa="empresa"
-                @editarEmpresa="openModal" @eliminarEmpresa="solicitarEliminacionEmpresa" />
+            <div v-else>
+              <AvisoTecladoTarjetas elemento="la empresa" />
+              <div ref="rejilla" class="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" @keydown="alPresionar">
+                <EmpresaItem v-for="empresa in empresasFiltradas" :key="empresa._id" :empresa="empresa"
+                  @editarEmpresa="openModal" @eliminarEmpresa="solicitarEliminacionEmpresa" />
+              </div>
             </div>
           </div>
         </Transition>

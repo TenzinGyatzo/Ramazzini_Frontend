@@ -25,6 +25,8 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
   const loadingDetail = ref(false);
   const currentCentroTrabajoId = ref<string>();
   const currentCentroTrabajo = ref<CentroTrabajo>();
+  /** Centro recién creado: la lista lo lleva a la vista y lo resalta, y luego lo limpia. */
+  const ultimoCreadoId = ref<string | null>(null);
 
   // Secuencia para descartar respuestas obsoletas al navegar entre empresas.
   let listadoSeq = 0;
@@ -141,7 +143,8 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
   ) {
     try {
       loading.value = true;
-      await CentrosTrabajoAPI.createCentroTrabajo(empresaId, centroTrabajo);
+      const { data } = await CentrosTrabajoAPI.createCentroTrabajo(empresaId, centroTrabajo);
+      ultimoCreadoId.value = data?.data?._id ? String(data.data._id) : null;
     } catch (error) {
       // console.log(error);
       throw error;
@@ -195,6 +198,7 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
     loadingModal,
     loadingDetail,
     centrosTrabajo,
+    ultimoCreadoId,
     currentCentroTrabajoId,
     currentCentroTrabajo,
     resetCurrentCentroTrabajo,

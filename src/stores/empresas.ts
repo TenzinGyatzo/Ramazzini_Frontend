@@ -27,6 +27,8 @@ export const useEmpresasStore = defineStore("empresas", () => {
   const empresas = ref<Empresa[]>([]);
   const currentEmpresaId = ref<string | null>(null);
   const currentEmpresa = ref<Empresa | null>(null);
+  /** Empresa recién creada: la lista la lleva a la vista y la resalta, y luego la limpia. */
+  const ultimaCreadaId = ref<string | null>(null);
 
   let detailSeq = 0;
 
@@ -100,7 +102,8 @@ export const useEmpresasStore = defineStore("empresas", () => {
   async function createEmpresa(empresa: FormData) {
     try {
       loading.value = true;
-      await EmpresasAPI.createEmpresa(empresa);
+      const { data } = await EmpresasAPI.createEmpresa(empresa);
+      ultimaCreadaId.value = data?.data?._id ? String(data.data._id) : null;
     } catch (error) {
       // console.log(error);
       throw error;
@@ -139,6 +142,7 @@ export const useEmpresasStore = defineStore("empresas", () => {
     empresas,
     currentEmpresaId,
     currentEmpresa,
+    ultimaCreadaId,
     resetCurrentEmpresa,
     clear,
     fetchEmpresas,
