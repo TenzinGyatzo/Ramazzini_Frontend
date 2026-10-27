@@ -3,6 +3,15 @@ import { defineComponent, h, ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import { useNavegacionTarjetas } from '../useNavegacionTarjetas';
 
+const NOMBRES: Record<string, string> = {
+  a: 'Aceros',
+  b: 'Comercial',
+  c: 'Constructora',
+  d: 'Delta',
+  e: 'Distribuidora',
+  f: 'Ébano',
+};
+
 /** Seis tarjetas en dos columnas; jsdom no calcula posiciones, así que se simulan. */
 function montar(alSalirArriba?: () => void) {
   let api!: ReturnType<typeof useNavegacionTarjetas>;
@@ -16,7 +25,7 @@ function montar(alSalirArriba?: () => void) {
           { ref: rejilla, onKeydown: api.alPresionar },
           ['a', 'b', 'c', 'd', 'e', 'f'].map((id) =>
             h('div', { class: 'tarjeta-nav', key: id }, [
-              h('a', { href: `#${id}`, 'data-tarjeta-nav': id, class: 'tarjeta-nav__enlace' }, id),
+              h('a', { href: `#${id}`, 'data-tarjeta-nav': id, 'data-tarjeta-nombre': NOMBRES[id], class: 'tarjeta-nav__enlace' }, id),
               h('button', { type: 'button' }, 'Editar'),
             ]),
           ),
@@ -26,8 +35,12 @@ function montar(alSalirArriba?: () => void) {
   const w = mount(Prueba, { attachTo: document.body });
   w.findAll('[data-tarjeta-nav]').forEach((enlace, i) => {
     const el = enlace.element as HTMLElement;
-    el.getBoundingClientRect = () => ({ top: Math.floor(i / 2) * 300, left: (i % 2) * 400 }) as DOMRect;
-    el.scrollIntoView = vi.fn();
+    const top = Math.floor(i / 2) * 300;
+    const rect = () => ({ top, bottom: top + 250, left: (i % 2) * 400 }) as DOMRect;
+    el.getBoundingClientRect = rect;
+    const tarjeta = el.closest('.tarjeta-nav') as HTMLElement;
+    tarjeta.getBoundingClientRect = rect;
+    tarjeta.scrollIntoView = vi.fn();
   });
   return { w, api: () => api };
 }
@@ -118,6 +131,69 @@ describe('useNavegacionTarjetas', () => {
     w.unmount();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true }));
     expect(enfocado()).toBeUndefined();
+  });
+
+  const tecla = (key: string, opciones: KeyboardEventInit = {}) =>
+    (document.activeElement ?? document.body).dispatchEvent(
+      new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...opciones }),
+    );
+
+  it('una letra salta por nombre; repetirla avanza entre las que empiezan igual', async () => {
+    const { w } = montar();
+    (document.activeElement as HTMLElement | null)?.blur();
+    tecla('d');
+    expect(enfocado()).toBe('d');
+    tecla('d');
+    expect(enfocado()).toBe('e');
+    // Tras una pausa, otra letra empieza una búsqueda nueva (sin acentos ni mayúsculas)
+    const ahora = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 2000);
+    tecla('E');
+    expect(enfocado()).toBe('f');
+    // Escrito seguido, «ex» no coincide con nada: no se mueve
+    tecla('x');
+    expect(enfocado()).toBe('f');
+    ahora.mockRestore();
+    w.unmount();
+  });
+
+  it('varias letras seguidas buscan ese inicio', async () => {
+    const { w } = montar();
+    (document.activeElement as HTMLElement | null)?.blur();
+    tecla('c');
+    expect(enfocado()).toBe('b');
+    tecla('o');
+    tecla('n');
+    tecla('s');
+    expect(enfocado()).toBe('c');
+    w.unmount();
+  });
+
+  it('las letras no se toman al escribir en un campo ni con Ctrl', async () => {
+    const { w } = montar();
+    const campo = document.createElement('input');
+    document.body.appendChild(campo);
+    campo.focus();
+    tecla('d');
+    expect(document.activeElement).toBe(campo);
+    campo.blur();
+    tecla('d', { ctrlKey: true });
+    expect(enfocado()).toBeUndefined();
+    w.unmount();
+  });
+
+  it('si la tarjeta ya se ve con holgura no desplaza; si no, la centra', async () => {
+    // Ventana de 768 px (jsdom): la fila de 300–550 se ve cómoda; la de 600–850 no
+    const { w } = montar();
+    const tarjetaDe = (id: string) =>
+      w.find(`[data-tarjeta-nav="${id}"]`).element.closest('.tarjeta-nav') as HTMLElement;
+    (w.find('[data-tarjeta-nav="a"]').element as HTMLElement).focus();
+    await w.find('[data-tarjeta-nav="a"]').trigger('keydown', { key: 'ArrowDown' });
+    expect(enfocado()).toBe('c');
+    expect(tarjetaDe('c').scrollIntoView).not.toHaveBeenCalled();
+    await w.find('[data-tarjeta-nav="c"]').trigger('keydown', { key: 'ArrowDown' });
+    expect(enfocado()).toBe('e');
+    expect(tarjetaDe('e').scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' }));
+    w.unmount();
   });
 
   it('enfocarPrimera y resaltar llevan el foco y marcan la tarjeta', async () => {

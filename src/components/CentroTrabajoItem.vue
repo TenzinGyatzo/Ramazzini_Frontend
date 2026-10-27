@@ -113,6 +113,7 @@ const formatDireccion = (centro: CentroTrabajo) => {
             <RouterLink
                 :to="{ name: 'trabajadores', params: { idEmpresa: empresa._id, idCentroTrabajo: centro._id } }"
                 :data-tarjeta-nav="centro._id"
+                :data-tarjeta-nombre="centro.nombreCentro"
                 class="centro-card-link centro-item__link tarjeta-nav__enlace block w-full min-w-0 p-6 text-left transition-all duration-300 hover:bg-gray-50 focus:outline-none">
                 
                 <!-- Header con icono y título -->

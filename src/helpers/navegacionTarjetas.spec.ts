@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { vecinoEnRejilla, type PosicionTarjeta } from './navegacionTarjetas';
+import { esTeclaDeSalto, indicePorTexto, vecinoEnRejilla, type PosicionTarjeta } from './navegacionTarjetas';
 
 /** Rejilla de 3 columnas con 7 tarjetas (la última fila incompleta). */
 const rejilla = (columnas: number, total: number): PosicionTarjeta[] =>
@@ -54,5 +54,42 @@ describe('navegación entre tarjetas', () => {
   it('otras teclas no mueven', () => {
     expect(vecinoEnRejilla(tres, 1, 'Enter')).toBeNull();
     expect(vecinoEnRejilla([], 0, 'ArrowRight')).toBeNull();
+  });
+});
+
+describe('salto por letra', () => {
+  const nombres = ['Aceros', 'Comercial Delta', 'Constructora Peña', 'Ébano Muebles', 'Delta', 'Distribuidora'];
+
+  it('una letra va a la primera que empieza con ella', () => {
+    expect(indicePorTexto(nombres, -1, 'd')).toBe(4);
+    expect(indicePorTexto(nombres, -1, 'D')).toBe(4);
+  });
+
+  it('repetir la letra avanza y al final vuelve a la primera', () => {
+    expect(indicePorTexto(nombres, 4, 'd')).toBe(5);
+    expect(indicePorTexto(nombres, 5, 'dd')).toBe(4);
+  });
+
+  it('varias letras buscan ese inicio desde la actual', () => {
+    expect(indicePorTexto(nombres, 1, 'con')).toBe(2);
+    expect(indicePorTexto(nombres, 1, 'co')).toBe(1);
+  });
+
+  it('sin acentos', () => {
+    expect(indicePorTexto(nombres, -1, 'e')).toBe(3);
+  });
+
+  it('sin coincidencias no se mueve', () => {
+    expect(indicePorTexto(nombres, 0, 'z')).toBeNull();
+    expect(indicePorTexto([], -1, 'a')).toBeNull();
+  });
+
+  it('solo letras y números cuentan', () => {
+    expect(esTeclaDeSalto('d')).toBe(true);
+    expect(esTeclaDeSalto('Ñ')).toBe(true);
+    expect(esTeclaDeSalto('7')).toBe(true);
+    expect(esTeclaDeSalto(' ')).toBe(false);
+    expect(esTeclaDeSalto('Enter')).toBe(false);
+    expect(esTeclaDeSalto('/')).toBe(false);
   });
 });

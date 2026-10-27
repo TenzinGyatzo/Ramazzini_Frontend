@@ -65,3 +65,35 @@ export function vecinoEnRejilla(
       return null;
   }
 }
+
+const normalizar = (texto: string) =>
+  texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+/** Tecla que cuenta para el salto por letra: una letra o un número. */
+export function esTeclaDeSalto(tecla: string): boolean {
+  return tecla.length === 1 && /[\p{L}\p{N}]/u.test(tecla);
+}
+
+/**
+ * Salto por letra: índice de la tarjeta cuyo nombre empieza con lo escrito, o null.
+ * - Una misma letra repetida («d», «dd», «ddd») avanza a la siguiente que empieza con ella,
+ *   y al final vuelve a la primera.
+ * - Varias letras distintas escritas seguido («con») buscan ese inicio desde la actual.
+ * Sin acentos ni mayúsculas. `actual` es -1 si ninguna tarjeta tiene el foco.
+ */
+export function indicePorTexto(nombres: string[], actual: number, texto: string): number | null {
+  const buscado = normalizar(texto);
+  if (!buscado || !nombres.length) return null;
+  const repetida = [...buscado].every((letra) => letra === buscado[0]);
+  const prefijo = repetida ? buscado[0] : buscado;
+  const inicio = repetida ? actual + 1 : Math.max(actual, 0);
+  for (let paso = 0; paso < nombres.length; paso++) {
+    const indice = (inicio + paso) % nombres.length;
+    if (normalizar(nombres[indice]).startsWith(prefijo)) return indice;
+  }
+  return null;
+}

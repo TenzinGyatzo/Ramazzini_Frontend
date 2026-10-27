@@ -16,6 +16,9 @@ defineProps<{
     </span>
     <span>para moverte</span>
     <span aria-hidden="true">·</span>
+    <kbd aria-hidden="true">A–Z</kbd>
+    <span>para saltar por nombre</span>
+    <span aria-hidden="true">·</span>
     <kbd aria-hidden="true">Enter</kbd>
     <span>para abrir {{ elemento }}</span>
   </p>

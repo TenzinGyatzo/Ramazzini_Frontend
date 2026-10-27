@@ -40,6 +40,7 @@ const handleEliminarEmpresa = (id: string, nombreComercial: string) => {
             v-if="empresa?._id"
             :to="{ name: 'centros-trabajo', params: { idEmpresa: empresa._id } }"
             :data-tarjeta-nav="empresa._id"
+            :data-tarjeta-nombre="empresa.nombreComercial"
             class="empresa-card-link empresa-item__link tarjeta-nav__enlace block w-full min-w-0 p-6 text-center transition-all duration-300 hover:bg-gray-50 focus:outline-none">
             
             <img v-if="empresa.logotipoEmpresa?.data"
