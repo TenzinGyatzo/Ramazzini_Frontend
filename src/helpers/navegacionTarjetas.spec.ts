@@ -46,6 +46,32 @@ describe('navegación entre tarjetas', () => {
     expect(vecinoEnRejilla(posiciones, 1, 'ArrowDown')).toBe(2);
   });
 
+  it('en una pantalla irregular, abajo prefiere lo que está justo debajo', () => {
+    // Inicio: indicador a la izquierda; «Ver todos» arriba a la derecha; expediente debajo
+    const inicio = [
+      { top: 0, left: 0, width: 380 }, // indicador
+      { top: 200, left: 1100, width: 60 }, // «Ver todos», en el encabezado de la derecha
+      { top: 260, left: 20, width: 500 }, // primer expediente reciente
+      { top: 260, left: 640, width: 500 }, // primera empresa reciente
+    ];
+    expect(vecinoEnRejilla(inicio, 0, 'ArrowDown')).toBe(2);
+    expect(vecinoEnRejilla(inicio, 3, 'ArrowUp')).toBe(1);
+  });
+
+  it('a los lados va a lo que está en la misma franja, no al siguiente de la lista', () => {
+    // Dos columnas de filas (expedientes | empresas), en el orden del documento
+    const listas = [
+      { top: 260, left: 20, width: 500, height: 70 }, // expediente 1
+      { top: 340, left: 20, width: 500, height: 70 }, // expediente 2
+      { top: 262, left: 640, width: 500, height: 70 }, // empresa 1
+      { top: 342, left: 640, width: 500, height: 70 }, // empresa 2
+    ];
+    expect(vecinoEnRejilla(listas, 0, 'ArrowRight')).toBe(2);
+    expect(vecinoEnRejilla(listas, 3, 'ArrowLeft')).toBe(1);
+    // Sin nada a la derecha, sigue el orden de la lista
+    expect(vecinoEnRejilla(listas, 2, 'ArrowRight')).toBe(3);
+  });
+
   it('Inicio y Fin van a la primera y a la última', () => {
     expect(vecinoEnRejilla(tres, 4, 'Home')).toBe(0);
     expect(vecinoEnRejilla(tres, 1, 'End')).toBe(6);

@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import InicioSkeletonCard from '@/components/inicio/InicioSkeletonCard.vue';
+import { useListaEnVentana } from '@/composables/useListaEnVentana';
 
-defineProps<{
+const props = defineProps<{
   open: boolean;
   title: string;
   hint: string;
@@ -19,6 +21,20 @@ const emit = defineEmits<{
   prev: [];
   next: [];
 }>();
+
+// Teclado: ↑ ↓ por la lista, ← → entre páginas, Enter abre, Esc cierra
+const panel = ref<HTMLElement | null>(null);
+useListaEnVentana(panel, {
+  abierta: () => props.open,
+  alCerrar: () => emit('close'),
+  contenido: () => [props.loading, props.page, props.error],
+  alAnterior: () => {
+    if (props.page > 1) emit('prev');
+  },
+  alSiguiente: () => {
+    if (props.page < props.pageCount) emit('next');
+  },
+});
 </script>
 
 <template>
@@ -32,6 +48,10 @@ const emit = defineEmits<{
       @click="emit('close')"
     />
     <div
+      ref="panel"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="title"
       class="modal-inner relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white p-6 text-gray-900 shadow-2xl sm:p-8 dark:bg-slate-800 dark:text-slate-100"
     >
       <button
@@ -56,7 +76,7 @@ const emit = defineEmits<{
         </p>
       </div>
 
-      <div class="inicio-modal-scroll min-h-0 flex-1 overflow-y-auto p-1.5">
+      <div class="inicio-modal-scroll min-h-0 flex-1 overflow-y-auto p-1.5" data-lista-ventana>
         <div v-if="loading" class="space-y-3" data-testid="inicio-hoy-loading">
           <InicioSkeletonCard variant="list" label="Cargando listado" />
         </div>
@@ -80,6 +100,14 @@ const emit = defineEmits<{
         class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-sm text-gray-500 dark:border-slate-700"
       >
         <span data-testid="inicio-hoy-range">{{ rangeLabel }}</span>
+        <span class="aviso-teclado mb-0 ml-auto mr-3 hidden sm:flex" aria-hidden="true">
+          <span class="aviso-teclado__teclas"><kbd>↑</kbd><kbd>↓</kbd></span>
+          <template v-if="pageCount > 1">
+            <span class="aviso-teclado__teclas"><kbd>←</kbd><kbd>→</kbd></span>
+            <span>páginas</span>
+          </template>
+          <span>·</span><kbd>Esc</kbd><span>cerrar</span>
+        </span>
         <div class="flex gap-2">
           <button
             type="button"

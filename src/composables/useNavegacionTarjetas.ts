@@ -48,8 +48,15 @@ const sinMovimiento = () =>
  */
 export function useNavegacionTarjetas(
   contenedor: Ref<HTMLElement | null>,
-  opciones: { alSalirArriba?: () => void } = {},
+  opciones: {
+    alSalirArriba?: () => void;
+    /** Enter cuando nada tiene el foco (Inicio: ir a Empresas). */
+    alEnterSinSeleccion?: () => void;
+    /** Salto por letra; en Inicio no aplica (sus elementos no son una lista de nombres). */
+    saltoPorLetra?: boolean;
+  } = {},
 ) {
+  const conSaltoPorLetra = opciones.saltoPorLetra !== false;
   const enlaces = (): HTMLElement[] =>
     Array.from(contenedor.value?.querySelectorAll<HTMLElement>(SELECTOR_ENLACE) ?? []);
 
@@ -77,8 +84,8 @@ export function useNavegacionTarjetas(
     const indice = lista.indexOf(actual);
     const destino = vecinoEnRejilla(
       lista.map((enlace) => {
-        const { top, left } = enlace.getBoundingClientRect();
-        return { top, left };
+        const { top, left, width, height } = enlace.getBoundingClientRect();
+        return { top, left, width, height };
       }),
       indice,
       evento.key,
@@ -145,7 +152,8 @@ export function useNavegacionTarjetas(
 
   /**
    * Teclado en la página: una letra salta por nombre; la primera flecha, si nada la está usando,
-   * empieza en la primera tarjeta (dentro de la rejilla las flechas las atiende `alPresionar`).
+   * empieza en la primera tarjeta (dentro de la rejilla las flechas las atiende `alPresionar`);
+   * Esc suelta la selección y, sin selección, Enter hace la acción de la vista si la hay.
    */
   function alPresionarEnPagina(evento: KeyboardEvent) {
     if (evento.defaultPrevented) return;
@@ -153,12 +161,26 @@ export function useNavegacionTarjetas(
     const activo = document.activeElement as HTMLElement | null;
     if (activo?.closest?.(CON_USO_DE_FLECHAS)) return;
     if (document.querySelector(VENTANA_ABIERTA)) return;
-    if (esTeclaDeSalto(evento.key)) {
+    const dentro = !!activo && !!contenedor.value?.contains(activo);
+    if (evento.key === 'Escape' && dentro) {
+      evento.preventDefault();
+      activo!.blur();
+      return;
+    }
+    if (evento.key === 'Enter' && opciones.alEnterSinSeleccion && !evento.shiftKey) {
+      const sinSeleccion = !activo || activo === document.body || activo === document.documentElement;
+      if (sinSeleccion) {
+        evento.preventDefault();
+        opciones.alEnterSinSeleccion();
+      }
+      return;
+    }
+    if (conSaltoPorLetra && esTeclaDeSalto(evento.key)) {
       saltarPorLetra(evento, activo);
       return;
     }
     if (!FLECHAS.has(evento.key) || evento.shiftKey) return;
-    if (activo && contenedor.value?.contains(activo)) return;
+    if (dentro) return;
     if (enfocarPrimera()) evento.preventDefault();
   }
 

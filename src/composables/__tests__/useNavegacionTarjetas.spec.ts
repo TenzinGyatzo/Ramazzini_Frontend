@@ -13,12 +13,15 @@ const NOMBRES: Record<string, string> = {
 };
 
 /** Seis tarjetas en dos columnas; jsdom no calcula posiciones, así que se simulan. */
-function montar(alSalirArriba?: () => void) {
+function montar(
+  alSalirArriba?: () => void,
+  extra: Parameters<typeof useNavegacionTarjetas>[1] = {},
+) {
   let api!: ReturnType<typeof useNavegacionTarjetas>;
   const Prueba = defineComponent({
     setup() {
       const rejilla = ref<HTMLElement | null>(null);
-      api = useNavegacionTarjetas(rejilla, { alSalirArriba });
+      api = useNavegacionTarjetas(rejilla, { alSalirArriba, ...extra });
       return () =>
         h(
           'div',
@@ -206,6 +209,44 @@ describe('useNavegacionTarjetas', () => {
     await new Promise((r) => setTimeout(r, 120));
     expect(enfocado()).toBeUndefined();
     otro.w.unmount();
+  });
+
+  it('Esc suelta la selección', async () => {
+    const { w } = montar();
+    (w.find('[data-tarjeta-nav="b"]').element as HTMLElement).focus();
+    tecla('Escape');
+    expect(enfocado()).toBeUndefined();
+    expect(document.activeElement).toBe(document.body);
+    w.unmount();
+  });
+
+  it('Enter sin selección hace la acción de la vista; con selección no', async () => {
+    const alEnterSinSeleccion = vi.fn();
+    const { w } = montar(undefined, { alEnterSinSeleccion });
+    (document.activeElement as HTMLElement | null)?.blur();
+    tecla('Enter');
+    expect(alEnterSinSeleccion).toHaveBeenCalledTimes(1);
+    (w.find('[data-tarjeta-nav="b"]').element as HTMLElement).focus();
+    tecla('Enter');
+    expect(alEnterSinSeleccion).toHaveBeenCalledTimes(1);
+    // Con una ventana abierta tampoco
+    (document.activeElement as HTMLElement).blur();
+    const ventana = document.createElement('div');
+    ventana.className = 'modal-work-overlay';
+    document.body.appendChild(ventana);
+    tecla('Enter');
+    expect(alEnterSinSeleccion).toHaveBeenCalledTimes(1);
+    w.unmount();
+  });
+
+  it('el salto por letra se puede apagar', async () => {
+    const { w } = montar(undefined, { saltoPorLetra: false });
+    (document.activeElement as HTMLElement | null)?.blur();
+    tecla('d');
+    expect(enfocado()).toBeUndefined();
+    tecla('ArrowDown');
+    expect(enfocado()).toBe('a');
+    w.unmount();
   });
 
   it('enfocarPrimera y resaltar llevan el foco y marcan la tarjeta', async () => {

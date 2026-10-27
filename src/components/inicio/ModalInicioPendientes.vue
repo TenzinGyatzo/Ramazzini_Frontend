@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useListaEnVentana } from '@/composables/useListaEnVentana';
 import type { InicioPendienteItem } from '@/interfaces/inicio-resumen.interface';
 
 const props = defineProps<{
@@ -10,6 +12,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>();
 const router = useRouter();
+
+// Teclado: ↑ ↓ por la lista, Enter abre, Esc cierra
+const panel = ref<HTMLElement | null>(null);
+useListaEnVentana(panel, {
+  abierta: () => props.open,
+  alCerrar: () => emit('close'),
+  contenido: () => props.items.length,
+});
 
 async function irAlExpediente(item: InicioPendienteItem) {
   emit('close');
@@ -33,7 +43,12 @@ async function irAlExpediente(item: InicioPendienteItem) {
       class="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-60 backdrop-blur-sm"
       @click="emit('close')"
     />
-    <div class="modal-inner relative bg-white text-gray-900 w-full max-w-2xl p-6 sm:p-8 rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col dark:bg-slate-800 dark:text-slate-100">
+    <div
+      ref="panel"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="title ?? 'Pendientes de finalizar'"
+      class="modal-inner relative bg-white text-gray-900 w-full max-w-2xl p-6 sm:p-8 rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col dark:bg-slate-800 dark:text-slate-100">
       <button
         class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
         type="button"
@@ -49,7 +64,7 @@ async function irAlExpediente(item: InicioPendienteItem) {
           Documentos en borrador que puede abrir desde el expediente para revisarlos o finalizarlos.
         </p>
       </div>
-      <div class="inicio-modal-scroll min-h-0 flex-1 overflow-y-auto space-y-3 p-1.5">
+      <div class="inicio-modal-scroll min-h-0 flex-1 overflow-y-auto space-y-3 p-1.5" data-lista-ventana>
         <p v-if="items.length === 0" class="text-sm text-gray-500">
           No hay pendientes en este momento.
         </p>
@@ -57,7 +72,7 @@ async function irAlExpediente(item: InicioPendienteItem) {
           v-for="item in items"
           :key="item.idDocumento"
           type="button"
-          class="w-full text-left border border-gray-200 rounded-xl p-4 hover:border-emerald-400 transition-colors"
+          class="w-full text-left border border-gray-200 rounded-xl p-4 hover:border-emerald-400 transition-colors focus-visible:border-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
           @click="irAlExpediente(item)"
         >
           <p class="font-medium text-gray-900">{{ item.nombreTrabajador }}</p>

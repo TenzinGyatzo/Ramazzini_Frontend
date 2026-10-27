@@ -7,6 +7,7 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { formatInicioSaludo } from '@/composables/useInicioSaludo';
 import { useInicioResumen } from '@/composables/useInicioResumen';
 import { useInicioHoyList } from '@/composables/useInicioHoyList';
+import { useNavegacionTarjetas } from '@/composables/useNavegacionTarjetas';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { formatInicioRelativeTime } from '@/helpers/formatInicioRelativeTime';
 import InicioMetricCard from '@/components/inicio/InicioMetricCard.vue';
@@ -27,6 +28,14 @@ import type {
 const user = useUserStore();
 const documentos = useDocumentosStore();
 const router = useRouter();
+
+// Teclado: Enter sin selección va a Empresas (también en la bienvenida); las flechas recorren
+// lo que se puede abrir en el minihub, por su posición en pantalla; Esc suelta la selección.
+const minihub = ref<HTMLElement | null>(null);
+const { alPresionar } = useNavegacionTarjetas(minihub, {
+  saltoPorLetra: false,
+  alEnterSinSeleccion: () => router.push({ name: 'empresas' }),
+});
 const { executeIfCanCreateDocument } = usePermissionRestrictions();
 const {
   resumen,
@@ -280,9 +289,11 @@ function irAConsejo() {
   >
     <section
       v-if="isLoading || (showHub && resumen)"
+      ref="minihub"
       class="w-full min-w-0 max-w-[70rem] px-4 sm:px-6 max-[479px]:px-3"
       :data-testid="isLoading ? 'inicio-loading' : 'inicio-hub'"
       :aria-busy="isLoading ? 'true' : undefined"
+      @keydown="alPresionar"
     >
       <header class="mb-6 flex items-center justify-between gap-6 pr-16 lg:pr-0">
         <div class="min-w-0 text-left">
@@ -329,11 +340,24 @@ function irAConsejo() {
       </template>
 
       <template v-else-if="resumen">
+        <p class="aviso-teclado" data-test="aviso-teclado-inicio">
+          <kbd aria-hidden="true">Enter</kbd>
+          <span>para ir a Empresas</span>
+          <span aria-hidden="true">·</span>
+          <span class="aviso-teclado__teclas" aria-hidden="true">
+            <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd>
+          </span>
+          <span>para recorrer</span>
+          <span aria-hidden="true">·</span>
+          <kbd aria-hidden="true">Esc</kbd>
+          <span>para soltar</span>
+        </p>
         <div class="grid gap-4 lg:grid-cols-3">
           <button
             v-if="resumen.hoy.trabajadoresUnicos >= 1"
             type="button"
-            class="group h-full w-full text-left"
+            class="group inicio-nav inicio-nav--indicador h-full w-full text-left"
+            data-tarjeta-nav="indicador-trabajadores"
             data-testid="inicio-metric-trabajadores"
             @click="onHoyMetricClick('trabajadores')"
           >
@@ -356,7 +380,8 @@ function irAConsejo() {
           <button
             v-if="resumen.hoy.documentosCreados >= 1"
             type="button"
-            class="group h-full w-full text-left"
+            class="group inicio-nav inicio-nav--indicador h-full w-full text-left"
+            data-tarjeta-nav="indicador-documentos"
             data-testid="inicio-metric-documentos"
             @click="onHoyMetricClick('documentos')"
           >
@@ -379,7 +404,8 @@ function irAConsejo() {
           <button
             v-if="tercerIndicador?.clickable"
             type="button"
-            class="group h-full w-full text-left"
+            class="group inicio-nav inicio-nav--indicador h-full w-full text-left"
+            data-tarjeta-nav="indicador-tercero"
             :data-testid="resumen.regimen === 'SIRES_NOM024' ? 'inicio-metric-pendientes' : 'inicio-metric-centros'"
             @click="onTercerIndicadorClick"
           >
@@ -418,6 +444,8 @@ function irAConsejo() {
                 class="min-w-0"
               >
                 <InicioActionRow
+                  class="inicio-nav"
+                  :data-tarjeta-nav="`expediente-${exp.idTrabajador}`"
                   icon="fas fa-user"
                   icon-tone="slate"
                   test-id="inicio-expediente-reciente"
@@ -465,7 +493,8 @@ function irAConsejo() {
               <RouterLink
                 v-if="resumen.clientesRecientes.length"
                 :to="{ name: 'empresas' }"
-                class="shrink-0 text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                data-tarjeta-nav="ver-todas-empresas"
+                class="inicio-nav--enlace shrink-0 text-sm font-medium text-emerald-600 hover:text-emerald-700"
               >
                 Ver todos
               </RouterLink>
@@ -477,6 +506,8 @@ function irAConsejo() {
                 class="min-w-0"
               >
                 <InicioActionRow
+                  class="inicio-nav"
+                  :data-tarjeta-nav="esClienteNavegable(cliente) ? `empresa-${cliente.idCentroTrabajo || cliente.idEmpresa}` : undefined"
                   icon="fas fa-industry"
                   :interactive="esClienteNavegable(cliente)"
                   test-id="inicio-cliente-reciente"
@@ -509,7 +540,8 @@ function irAConsejo() {
               No hay actividad reciente.
               <RouterLink
                 :to="{ name: 'empresas' }"
-                class="font-medium text-emerald-600 hover:text-emerald-700"
+                data-tarjeta-nav="ir-a-empresas"
+                class="inicio-nav--enlace font-medium text-emerald-600 hover:text-emerald-700"
               >
                 Ir a empresas
               </RouterLink>
@@ -527,6 +559,8 @@ function irAConsejo() {
           <ul class="space-y-2">
             <li v-for="grupo in resumen.atencion" :key="grupo.tipo">
               <InicioActionRow
+                class="inicio-nav"
+                :data-tarjeta-nav="`atencion-${grupo.tipo}`"
                 icon="fas fa-clock"
                 icon-tone="amber"
                 @click="onAtencionClick(grupo)"
@@ -541,6 +575,8 @@ function irAConsejo() {
             </li>
             <li v-for="aviso in avisosInventario" :key="`inventario-${aviso.idCentroTrabajo}`">
               <InicioActionRow
+                class="inicio-nav"
+                :data-tarjeta-nav="`inventario-${aviso.idCentroTrabajo}`"
                 icon="fas fa-boxes-stacked"
                 icon-tone="amber"
                 test-id="inicio-aviso-inventario"
@@ -574,7 +610,8 @@ function irAConsejo() {
           <button
             v-if="resumen.consejo.enlace"
             type="button"
-            class="shrink-0 text-sm font-medium text-emerald-600 hover:text-emerald-700 max-[479px]:self-start"
+            data-tarjeta-nav="consejo"
+            class="inicio-nav--enlace shrink-0 text-sm font-medium text-emerald-600 hover:text-emerald-700 max-[479px]:self-start"
             @click="irAConsejo"
           >
             Abrir
