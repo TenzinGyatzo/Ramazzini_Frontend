@@ -401,7 +401,7 @@ watchEffect(() => {
             </div>
             <!-- Si hay empresas, mostramos los items -->
             <div v-else>
-              <AvisoTecladoTarjetas elemento="la empresa" />
+              <AvisoTecladoTarjetas elemento="la empresa" regresar-a="Inicio" />
               <div ref="rejilla" class="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" @keydown="alPresionar">
                 <EmpresaItem v-for="empresa in empresasFiltradas" :key="empresa._id" :empresa="empresa"
                   @editarEmpresa="openModal" @eliminarEmpresa="solicitarEliminacionEmpresa" />

@@ -454,6 +454,7 @@ watch(
                     <AvisoTecladoTarjetas
                       v-if="empresas.currentEmpresa && centrosTrabajo.centrosTrabajo.length > 0"
                       elemento="el centro de trabajo"
+                      regresar-a="Empresas"
                     />
                     <div
                       v-if="empresas.currentEmpresa && centrosTrabajo.centrosTrabajo.length > 0"

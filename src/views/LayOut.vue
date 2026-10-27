@@ -36,6 +36,7 @@ import { listenPlatformContextChanges } from "@/composables/usePlatformContext";
 import { resolveFirmanteTipo } from "@/constants/rolePermissionPolicy";
 import { useInventarioStore } from "@/stores/inventario";
 import { useIncapacidadesStore } from "@/stores/incapacidades";
+import { useSubirNivel } from "@/composables/useSubirNivel";
 
 const {
   isOpen: eliminacionOpen,
@@ -70,6 +71,8 @@ const tecnicoFirmanteStore = useTecnicoFirmanteStore();
 const empresas = useEmpresasStore();
 const route = useRoute();
 const router = useRouter();
+// Alt + ⌫ sube un nivel: documento → expediente → trabajadores → centros → empresas → Inicio
+useSubirNivel();
 const {
   propios: borradoresPropios,
   equipo: borradoresEquipo,

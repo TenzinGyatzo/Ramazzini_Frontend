@@ -21,6 +21,15 @@ const PAUSA_ENTRE_LETRAS_MS = 700;
 /** Ventana abierta: las flechas son suyas. */
 const VENTANA_ABIERTA = '[aria-modal="true"], .modal-work-overlay';
 
+/** Tarjeta que debe recibir el foco cuando la vista que la muestra termine de cargar. */
+let focoPendiente: string | null = null;
+const INTENTOS_FOCO_AL_LLEGAR = 60;
+
+/** Al subir un nivel (useSubirNivel): la tarjeta de donde se viene recibe el foco al llegar. */
+export function pedirFocoAlLlegar(id: string) {
+  focoPendiente = id || null;
+}
+
 const sinMovimiento = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -153,7 +162,25 @@ export function useNavegacionTarjetas(
     if (enfocarPrimera()) evento.preventDefault();
   }
 
-  onMounted(() => window.addEventListener('keydown', alPresionarEnPagina));
+  /** La lista llega del servidor: se espera a que la tarjeta pedida exista (hasta 3 s). */
+  async function atenderFocoPendiente() {
+    const id = focoPendiente;
+    focoPendiente = null;
+    if (!id) return;
+    for (let intento = 0; intento < INTENTOS_FOCO_AL_LLEGAR; intento++) {
+      const enlace = enlaces().find((e) => e.dataset.tarjetaNav === id);
+      if (enlace) {
+        enfocar(enlace);
+        return;
+      }
+      await new Promise((resolver) => window.setTimeout(resolver, 50));
+    }
+  }
+
+  onMounted(() => {
+    window.addEventListener('keydown', alPresionarEnPagina);
+    atenderFocoPendiente();
+  });
   onUnmounted(() => window.removeEventListener('keydown', alPresionarEnPagina));
 
   return { alPresionar, enfocarPrimera, resaltar };

@@ -132,6 +132,8 @@ function resaltarUltimoTrabajador() {
   if (!nodo) return;
   nodo.classList.add('fila-reciente');
   setTimeout(() => nodo.classList.remove('fila-reciente'), DURACION_RESALTADO_MS);
+  // El nombre recibe el foco: Enter vuelve a abrir el expediente sin buscarlo
+  nodo.querySelector<HTMLElement>('a.nombre-expediente')?.focus();
 }
 /** Trabajadores cuya reincorporación («Alta») se está guardando. */
 const reincorporando = new Set<string>();

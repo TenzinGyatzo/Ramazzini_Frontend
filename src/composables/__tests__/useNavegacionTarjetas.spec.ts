@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, ref } from 'vue';
 import { mount } from '@vue/test-utils';
-import { useNavegacionTarjetas } from '../useNavegacionTarjetas';
+import { pedirFocoAlLlegar, useNavegacionTarjetas } from '../useNavegacionTarjetas';
 
 const NOMBRES: Record<string, string> = {
   a: 'Aceros',
@@ -194,6 +194,18 @@ describe('useNavegacionTarjetas', () => {
     expect(enfocado()).toBe('e');
     expect(tarjetaDe('e').scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' }));
     w.unmount();
+  });
+
+  it('al subir un nivel, la tarjeta de donde se viene recibe el foco al llegar', async () => {
+    pedirFocoAlLlegar('d');
+    const { w } = montar();
+    await vi.waitFor(() => expect(enfocado()).toBe('d'));
+    w.unmount();
+    // Se atiende una sola vez
+    const otro = montar();
+    await new Promise((r) => setTimeout(r, 120));
+    expect(enfocado()).toBeUndefined();
+    otro.w.unmount();
   });
 
   it('enfocarPrimera y resaltar llevan el foco y marcan la tarjeta', async () => {
