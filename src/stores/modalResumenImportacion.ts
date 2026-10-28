@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export interface ImportResult {
+  /** Renglón del Excel */
+  fila?: number
   success: boolean
   worker?: any
   error?: string
@@ -20,6 +22,11 @@ export interface ImportResumen {
   totalProcessed: number
   successful: number
   failed: number
+  /**
+   * La petición no trajo resumen: 'tiempo-agotado' si se cortó mientras el servidor
+   * seguía registrando, 'error' si el archivo no se procesó.
+   */
+  sinRespuesta?: 'tiempo-agotado' | 'error'
 }
 
 export const useModalResumenImportacionStore = defineStore('modalResumenImportacion', () => {
@@ -107,94 +114,6 @@ export const useModalResumenImportacionStore = defineStore('modalResumenImportac
     }
   }
 
-  // ✅ FUNCIÓN DE PRUEBA: Crear resumen mixto para testing
-  const createTestResumen = (): ImportResumen => {
-    return {
-      message: 'Importación completada con algunos errores',
-      data: [
-        {
-          success: true,
-          worker: {
-            nombre: 'Juan Pérez',
-            fechaNacimiento: '1990-01-01',
-            fechaIngreso: '2020-01-01',
-            sexo: 'Masculino',
-            escolaridad: 'Universidad',
-            puesto: 'Desarrollador',
-            estadoCivil: 'Soltero',
-            numeroEmpleado: '001',
-            telefono: '6681702850'
-          }
-        },
-        {
-          success: true,
-          worker: {
-            nombre: 'María García',
-            fechaNacimiento: '1985-05-15',
-            fechaIngreso: '2019-03-01',
-            sexo: 'Femenino',
-            escolaridad: 'Universidad',
-            puesto: 'Diseñadora',
-            estadoCivil: 'Casada',
-            numeroEmpleado: '002',
-            telefono: '668 170 28 50'
-          }
-        },
-        {
-          success: false,
-          worker: {
-            nombre: 'Carlos López',
-            fechaNacimiento: '2010-12-20', // ✅ PRUEBA: Menor de 15 años
-            fechaIngreso: '2021-06-01',
-            sexo: 'Masculino',
-            escolaridad: 'Primaria',
-            puesto: 'Auxiliar',
-            estadoCivil: 'Soltero',
-            numeroEmpleado: '003',
-            telefono: '668170285'
-          },
-          error: 'La edad mínima para laborar es 15 años. El trabajador tiene 13 años',
-          validationErrors: ['La edad mínima para laborar es 15 años. El trabajador tiene 13 años']
-        },
-        {
-          success: false,
-          worker: {
-            nombre: 'Ana Martínez',
-            fechaNacimiento: '2030-06-15', // ✅ PRUEBA: Fecha futura
-            fechaIngreso: '2021-01-01',
-            sexo: 'Femenino',
-            escolaridad: 'Secundaria',
-            puesto: 'Secretaria',
-            estadoCivil: 'Soltera',
-            numeroEmpleado: '004',
-            telefono: '66817028501' // ✅ PRUEBA: Más de 10 dígitos
-          },
-          error: 'La fecha de nacimiento no puede ser en el futuro',
-          validationErrors: ['La fecha de nacimiento no puede ser en el futuro']
-        },
-        {
-          success: false,
-          worker: {
-            nombre: 'Roberto Silva',
-            fechaNacimiento: '1995-08-10',
-            fechaIngreso: '2020-03-15',
-            sexo: 'Masculino',
-            escolaridad: 'Preparatoria',
-            puesto: 'Vendedor',
-            estadoCivil: 'Soltero',
-            numeroEmpleado: '005',
-            telefono: '668170285' // ✅ PRUEBA: Menos de 10 dígitos
-          },
-          error: 'El teléfono debe tener exactamente 10 dígitos. Recibido: 9 dígitos',
-          validationErrors: ['El teléfono debe tener exactamente 10 dígitos. Recibido: 9 dígitos']
-        }
-      ],
-      totalProcessed: 5,
-      successful: 2,
-      failed: 3
-    }
-  }
-
   return {
     // Estado
     isVisible,
@@ -206,7 +125,6 @@ export const useModalResumenImportacionStore = defineStore('modalResumenImportac
     hideModal,
     showLoading,
     hideLoading,
-    createResumenFromResponse,
-    createTestResumen
+    createResumenFromResponse
   }
 })

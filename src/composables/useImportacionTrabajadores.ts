@@ -19,6 +19,25 @@ export function mensajeDeErrorDeImportacion(error: unknown): string {
   return 'Error inesperado en el sistema. Por favor, inténtalo de nuevo.'
 }
 
+/** Tras este tiempo, una conexión que se corta sin respuesta ya no es el envío del archivo. */
+const MS_SIN_RESPUESTA_POR_TIEMPO = 20_000
+
+/**
+ * La conexión se cortó por tiempo mientras el servidor seguía registrando: nginx responde
+ * 504 (o 408), o el navegador se queda sin respuesta tras esperar un buen rato. El resumen
+ * no sabe cuántos se registraron, pero lo más probable es que sí se hayan registrado.
+ */
+export function esTiempoAgotadoDeImportacion(error: unknown, msEsperando: number): boolean {
+  const estado = (error as { response?: { status?: number } } | null)?.response?.status
+  if (estado === 504 || estado === 408) return true
+  const codigo = (error as { code?: string } | null)?.code
+  if (codigo === 'ECONNABORTED' || codigo === 'ETIMEDOUT') return true
+  return esErrorSinRespuesta(error) && msEsperando >= MS_SIN_RESPUESTA_POR_TIEMPO
+}
+
+export const MENSAJE_TIEMPO_AGOTADO =
+  'La carga tardó más de lo que el servidor espera una respuesta, pero es probable que los trabajadores sí se hayan registrado: el servidor sigue procesando el archivo. Espera unos minutos y revisa la lista antes de volver a subirlo, para no duplicar registros.'
+
 export const useImportacionTrabajadores = () => {
   const modalStore = useModalResumenImportacionStore()
   const isImporting = ref(false)
@@ -46,6 +65,7 @@ export const useImportacionTrabajadores = () => {
     onProgress?: (progress: number) => void
   ): Promise<void> => {
     let progressInterval: ReturnType<typeof setInterval> | null = null
+    const inicio = Date.now()
     try {
       isImporting.value = true
       importProgress.value = 0
@@ -80,81 +100,23 @@ export const useImportacionTrabajadores = () => {
 
     } catch (error: any) {
       console.error('[DEBUG] Error inesperado en la importación:', error)
-      
-      // ✅ SOLUCIÓN: Solo crear resumen de error para errores reales del sistema
-      // No para errores de validación que ya vienen en la respuesta
+
+      // Los renglones con errores vienen en una respuesta 200; aquí solo llegan fallos
+      // de la petición completa
+      const tiempoAgotado = esTiempoAgotadoDeImportacion(error, Date.now() - inicio)
       const errorResumen: ImportResumen = {
-        message: mensajeDeErrorDeImportacion(error),
+        message: tiempoAgotado ? MENSAJE_TIEMPO_AGOTADO : mensajeDeErrorDeImportacion(error),
         data: [],
         totalProcessed: 0,
         successful: 0,
-        failed: 1
+        failed: 0,
+        sinRespuesta: tiempoAgotado ? 'tiempo-agotado' : 'error'
       }
 
       modalStore.showModal(errorResumen)
 
     } finally {
       if (progressInterval) clearInterval(progressInterval)
-      isImporting.value = false
-      modalStore.hideLoading()
-    }
-  }
-
-  // Importar trabajadores desde datos JSON (para testing)
-  const importarTrabajadoresDesdeDatos = async (
-    data: any[],
-    idCentroTrabajo: string,
-    idEmpresa: string,
-    createdBy: string,
-    onProgress?: (progress: number) => void
-  ): Promise<void> => {
-    try {
-      isImporting.value = true
-      importProgress.value = 0
-      modalStore.showLoading()
-
-      // Simular progreso de carga
-      const progressInterval = setInterval(() => {
-        if (importProgress.value < 90) {
-          importProgress.value += Math.random() * 10
-          onProgress?.(importProgress.value)
-        }
-      }, 200)
-
-      // Crear FormData con los datos JSON
-      const formData = new FormData()
-      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
-      formData.append('file', blob, 'data.json')
-      formData.append('idCentroTrabajo', idCentroTrabajo)
-      formData.append('createdBy', createdBy)
-      formData.append('updatedBy', createdBy)
-
-      // Realizar la importación
-      const response = await TrabajadoresAPI.importTrabajadores(idEmpresa, idCentroTrabajo, formData)
-      
-      clearInterval(progressInterval)
-      importProgress.value = 100
-      onProgress?.(100)
-
-      // Crear resumen y mostrar modal
-      const resumen = modalStore.createResumenFromResponse(response.data)
-      modalStore.showModal(resumen)
-
-    } catch (error: any) {
-      console.error('Error en la importación:', error)
-      
-      // Crear resumen de error
-      const errorResumen: ImportResumen = {
-        message: error.response?.data?.message || 'Error en la importación',
-        data: [],
-        totalProcessed: 0,
-        successful: 0,
-        failed: 1
-      }
-      
-      modalStore.showModal(errorResumen)
-      
-    } finally {
       isImporting.value = false
       modalStore.hideLoading()
     }
@@ -174,7 +136,6 @@ export const useImportacionTrabajadores = () => {
     
     // Acciones
     importarTrabajadores,
-    importarTrabajadoresDesdeDatos,
     cerrarModal
   }
 }

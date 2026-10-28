@@ -3919,6 +3919,18 @@ html.dark-mode .modal-resumen-importacion .modal-resumen-importacion-tab.bg-purp
 html.dark-mode .modal-resumen-importacion .border-red-200 {
   border-color: #b91c1c !important;
 }
+html.dark-mode .modal-resumen-importacion .modal-resumen-importacion-aviso.border-amber-300 {
+  border-color: #d97706 !important;
+}
+html.dark-mode .modal-resumen-importacion .text-amber-600 {
+  color: #fbbf24 !important;
+}
+html.dark-mode .modal-resumen-importacion .modal-resumen-importacion-fila {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+}
+html.dark-mode .modal-resumen-importacion .modal-resumen-importacion-curp {
+  color: #e2e8f0 !important;
+}
 
 html.dark-mode .modal-resumen-importacion .border-green-200,
 html.dark-mode .modal-resumen-importacion .border-green-300 {

@@ -24,29 +24,54 @@
             </button>
           </div>
 
+          <!-- La petición no trajo resumen: tiempo agotado o error del archivo -->
+          <div
+            v-if="resumen.sinRespuesta === 'tiempo-agotado'"
+            class="modal-resumen-importacion-aviso flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+            role="status"
+          >
+            <i class="fa-regular fa-clock mt-0.5 text-amber-600" aria-hidden="true"></i>
+            <div>
+              <p class="font-medium">Sin confirmación del servidor</p>
+              <p class="mt-1">{{ resumen.message }}</p>
+            </div>
+          </div>
+          <div
+            v-else-if="resumen.sinRespuesta === 'error'"
+            class="modal-resumen-importacion-aviso flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+            role="alert"
+          >
+            <i class="fa-solid fa-circle-exclamation mt-0.5" aria-hidden="true"></i>
+            <div>
+              <p class="font-medium text-red-800">No se pudo importar el archivo</p>
+              <p class="mt-1">{{ resumen.message }}</p>
+            </div>
+          </div>
+
+          <template v-else>
           <!-- Estadísticas Generales -->
           <div class="modal-resumen-importacion-stats grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="modal-resumen-importacion-stat bg-green-50 border border-green-200 rounded-lg p-4 text-center">
               <div class="text-2xl font-bold text-green-600">{{ resumen.totalProcessed }}</div>
-              <div class="text-sm text-green-700">Total Procesados</div>
+              <div class="text-sm text-green-700">Renglones procesados</div>
             </div>
             <div class="bg-green-100 border border-green-300 rounded-lg p-4 text-center">
               <div class="text-2xl font-bold text-green-700">{{ resumen.successful }}</div>
-              <div class="text-sm text-green-800">Importados Exitosamente</div>
+              <div class="text-sm text-green-800">Registrados</div>
             </div>
             <div class="bg-red-100 border border-red-300 rounded-lg p-4 text-center">
               <div class="text-2xl font-bold text-red-700">{{ resumen.failed }}</div>
-              <div class="text-sm text-red-800">Fallidos</div>
+              <div class="text-sm text-red-800">Con errores</div>
             </div>
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
               <div class="text-2xl font-bold text-blue-600">{{ porcentajeExitoso }}%</div>
-              <div class="text-sm text-blue-700">Tasa de Éxito</div>
+              <div class="text-sm text-blue-700">Tasa de éxito</div>
             </div>
           </div>
 
           <!-- Mensaje Principal -->
           <div class="mb-2">
-            <div v-if="resumen.successful === resumen.totalProcessed" class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div v-if="resumen.failed === 0" class="bg-green-50 border border-green-200 rounded-lg p-4">
               <div class="flex items-center">
                 <svg class="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
@@ -63,10 +88,11 @@
               </div>
             </div>
           </div>
+          </template>
         </div>
 
         <!-- Contenido del Modal -->
-        <div class="modal-resumen-importacion-body bg-gray-50 px-4 py-3 sm:px-6">
+        <div v-if="!resumen.sinRespuesta" class="modal-resumen-importacion-body bg-gray-50 px-4 py-3 sm:px-6">
           <!-- Tabs -->
           <div class="border-b border-gray-200 mb-4">
             <nav class="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-4">
@@ -147,7 +173,9 @@
             <div v-if="resumen.failed > 0" class="bg-red-50 border border-red-200 rounded-lg p-4">
               <h4 class="text-lg font-medium text-red-800 mb-2">⚠️ Atención</h4>
               <p class="text-red-700 text-sm">
-                Se encontraron {{ resumen.failed }} registros con errores. Revisa la pestaña "Errores" para más detalles.
+                {{ resumen.failed === 1 ? '1 renglón no se registró' : `${resumen.failed} renglones no se registraron` }}.
+                En la pestaña «Errores» está el motivo de cada uno, con su número de renglón en el Excel.
+                Corrígelos y sube solo esos renglones, para no duplicar a los que ya se registraron.
               </p>
             </div>
 
@@ -181,19 +209,31 @@
               <h4 class="text-lg font-medium text-red-800 mb-3">Detalle de Errores</h4>
               <div class="space-y-3">
                 <div
-                  v-for="(error, index) in resumen.data.filter(r => !r.success)"
+                  v-for="(error, index) in fallidos"
                   :key="index"
                   class="border border-red-200 rounded-lg p-3 bg-red-50"
                 >
                   <div class="flex items-start justify-between">
-                    <div class="flex-1">
+                    <div class="min-w-0 flex-1">
                       <h5 class="text-sm font-medium text-red-800 mb-1">
-                        {{ error.worker?.primerApellido + ' ' + error.worker?.segundoApellido + ' ' + error.worker?.nombre || 'Sin nombre' }}
-                        <span class="text-xs text-gray-600 font-normal">({{ error.worker.sexo }})</span> 
+                        <span v-if="error.fila" class="modal-resumen-importacion-fila">Renglón {{ error.fila }}</span>
+                        {{ nombreDelRenglon(error.worker) }}
+                        <span v-if="error.worker?.sexo" class="text-xs text-gray-600 font-normal">({{ error.worker.sexo }})</span>
                       </h5>
+                      <p class="mb-2 text-xs text-gray-600">
+                        <span class="font-medium">CURP:</span>
+                        <span v-if="error.worker?.curp" class="modal-resumen-importacion-curp ml-1">{{ error.worker.curp }}</span>
+                        <span v-else class="ml-1">—</span>
+                      </p>
 
-                      <p class="text-sm text-red-700 mb-2">{{ error.error }}</p>
-                      
+                      <!-- Un motivo por problema -->
+                      <ul class="mb-3 space-y-1 text-sm text-red-700">
+                        <li v-for="(motivo, mIndex) in motivosDelRenglon(error)" :key="mIndex" class="flex gap-2">
+                          <i class="fa-solid fa-circle-xmark mt-1 shrink-0 text-xs" aria-hidden="true"></i>
+                          <span class="min-w-0 break-words">{{ motivo }}</span>
+                        </li>
+                      </ul>
+
                       <!-- Datos del trabajador que falló -->
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
                         <div v-if="error.worker?.fechaNacimiento">
@@ -246,19 +286,6 @@
                         </div>
                       </div>
 
-                      <!-- Errores de validación específicos -->
-                      <div v-if="error.validationErrors && error.validationErrors.length > 0" class="mt-2">
-                        <span class="text-xs font-medium text-red-600">Errores de validación:</span>
-                        <ul class="mt-1 space-y-1">
-                          <li
-                            v-for="(validationError, vIndex) in error.validationErrors"
-                            :key="vIndex"
-                            class="text-xs text-red-600 ml-2"
-                          >
-                            • {{ validationError }}
-                          </li>
-                        </ul>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -272,17 +299,23 @@
               <h4 class="text-lg font-medium text-green-800 mb-3">Trabajadores Importados Exitosamente</h4>
               <div class="space-y-3">
                 <div
-                  v-for="(success, index) in resumen.data.filter(r => r.success)"
+                  v-for="(success, index) in registrados"
                   :key="index"
                   class="border border-green-200 rounded-lg p-3 bg-green-50"
                 >
                   <div class="flex items-center justify-between">
-                    <div class="flex-1">
+                    <div class="min-w-0 flex-1">
                       <h5 class="text-sm font-medium text-green-800">
-                        {{ success.worker?.primerApellido + ' ' + success.worker?.segundoApellido + ' ' + success.worker?.nombre || 'Sin nombre' }} 
-                        <span class="text-xs text-gray-600 font-normal">({{ success.worker.sexo }})</span> 
+                        <span v-if="success.fila" class="modal-resumen-importacion-fila">Renglón {{ success.fila }}</span>
+                        {{ nombreDelRenglon(success.worker) }}
+                        <span v-if="success.worker?.sexo" class="text-xs text-gray-600 font-normal">({{ success.worker.sexo }})</span>
                       </h5>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 mt-2">
+                        <div class="sm:col-span-2">
+                          <span class="font-medium">CURP:</span>
+                          <span v-if="success.worker?.curp" class="modal-resumen-importacion-curp ml-1">{{ success.worker.curp }}</span>
+                          <span v-else class="ml-1">—</span>
+                        </div>
                         <div v-if="success.worker?.fechaNacimiento">
                           <span class="font-medium">Fecha Nacimiento:</span> {{ formatDate(success.worker.fechaNacimiento) }}
                         </div>
@@ -338,7 +371,7 @@
           <div v-if="activeTab === 'normalizaciones'" class="space-y-4">
             <div class="modal-resumen-importacion-card bg-white rounded-lg border border-gray-200 p-4">
               <h4 class="text-lg font-medium text-purple-800 mb-3">Datos Normalizados</h4>
-              
+
               <div v-if="trabajadoresConNormalizaciones.length === 0" class="text-center py-8">
                 <svg class="w-16 h-16 text-purple-200 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" clip-rule="evenodd"></path>
@@ -348,12 +381,12 @@
                   Todos los datos fueron importados sin necesidad de normalización.
                 </p>
               </div>
-              
+
               <div v-else class="space-y-3">
                 <p class="text-sm text-gray-600 mb-4">
                   Los siguientes trabajadores tuvieron datos normalizados durante la importación para cumplir con los estándares del sistema.
                 </p>
-                
+
                 <div
                   v-for="(trabajador, index) in trabajadoresConNormalizaciones"
                   :key="index"
@@ -362,9 +395,9 @@
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <h5 class="text-sm font-medium text-purple-800 mb-2">
-                        {{ trabajador.worker?.primerApellido + ' ' + trabajador.worker?.segundoApellido + ' ' + trabajador.worker?.nombre || 'Sin nombre' }}
+                        {{ nombreDelRenglon(trabajador.worker) }}
                       </h5>
-                      
+
                       <!-- Campos normalizados -->
                       <div class="space-y-2">
                         <div v-if="trabajador.worker?.sexoOriginal && trabajador.worker?.sexo && trabajador.worker.sexoOriginal !== trabajador.worker.sexo" class="flex items-center text-xs">
@@ -375,7 +408,7 @@
                           </svg>
                           <span class="text-purple-700 font-medium">{{ trabajador.worker.sexo }}</span>
                         </div>
-                        
+
                         <div v-if="trabajador.worker?.escolaridadOriginal && trabajador.worker?.escolaridad && trabajador.worker.escolaridadOriginal !== trabajador.worker.escolaridad" class="flex items-center text-xs">
                           <span class="font-medium text-purple-700 w-20">Escolaridad:</span>
                           <span class="text-gray-500 line-through mr-2">{{ trabajador.worker.escolaridadOriginal }}</span>
@@ -384,7 +417,7 @@
                           </svg>
                           <span class="text-purple-700 font-medium">{{ trabajador.worker.escolaridad }}</span>
                         </div>
-                        
+
                         <div v-if="trabajador.worker?.estadoCivilOriginal && trabajador.worker?.estadoCivil && trabajador.worker.estadoCivilOriginal !== trabajador.worker.estadoCivil" class="flex items-center text-xs">
                           <span class="font-medium text-purple-700 w-20">Estado Civil:</span>
                           <span class="text-gray-500 line-through mr-2">{{ trabajador.worker.estadoCivilOriginal }}</span>
@@ -393,7 +426,7 @@
                           </svg>
                           <span class="text-purple-700 font-medium">{{ trabajador.worker.estadoCivil }}</span>
                         </div>
-                        
+
                         <div v-if="trabajador.worker?.telefonoOriginal && trabajador.worker?.telefono && trabajador.worker.telefonoOriginal !== trabajador.worker.telefono" class="flex items-center text-xs">
                           <span class="font-medium text-purple-700 w-20">Teléfono:</span>
                           <span class="text-gray-500 line-through mr-2">{{ trabajador.worker.telefonoOriginal }}</span>
@@ -402,7 +435,7 @@
                           </svg>
                           <span class="text-purple-700 font-medium">{{ trabajador.worker.telefono }}</span>
                         </div>
-                        
+
                         <div v-if="trabajador.worker?.numeroEmpleadoOriginal && trabajador.worker?.numeroEmpleado && trabajador.worker.numeroEmpleadoOriginal !== trabajador.worker.numeroEmpleado" class="flex items-center text-xs">
                           <span class="font-medium text-purple-700 w-20">Número Empleado:</span>
                           <span class="text-gray-500 line-through mr-2">{{ trabajador.worker.numeroEmpleadoOriginal }}</span>
@@ -411,7 +444,7 @@
                           </svg>
                           <span class="text-purple-700 font-medium">{{ trabajador.worker.numeroEmpleado }}</span>
                         </div>
-                        
+
                         <div v-if="trabajador.worker?.nssOriginal && trabajador.worker?.nss && trabajador.worker.nssOriginal !== trabajador.worker.nss" class="flex items-center text-xs">
                           <span class="font-medium text-purple-700 w-20">NSS:</span>
                           <span class="text-gray-500 line-through mr-2">{{ trabajador.worker.nssOriginal }}</span>
@@ -421,7 +454,7 @@
                           <span class="text-purple-700 font-medium">{{ trabajador.worker.nss }}</span>
                         </div>
                       </div>
-                      
+
                       <!-- Información adicional del trabajador -->
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 mt-3 pt-2 border-t border-purple-200">
                         <div v-if="trabajador.worker?.numeroEmpleado">
@@ -453,11 +486,11 @@
             Cerrar
           </button>
           <button
-            v-if="resumen.failed > 0"
+            v-if="!resumen.sinRespuesta && resumen.failed > 0"
             @click="downloadErrorReport"
             class="modal-resumen-importacion-btn-secondary mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
-            📊 Descargar Reporte de Errores
+            📊 Descargar reporte de errores
           </button>
           <button
             v-if="trabajadoresConNormalizaciones.length > 0"
@@ -476,8 +509,15 @@
 import { fechaLocalHoy } from '@/helpers/dates';
 import { ref, computed } from 'vue'
 import * as XLSX from 'xlsx'
+import {
+  fechaDelRenglon,
+  filasReporteErrores,
+  motivosDelRenglon,
+  nombreDelRenglon,
+} from '@/helpers/resumenImportacion'
 
 interface ImportResult {
+  fila?: number
   success: boolean
   worker?: any
   error?: string
@@ -495,6 +535,7 @@ interface ImportResumen {
   totalProcessed: number
   successful: number
   failed: number
+  sinRespuesta?: 'tiempo-agotado' | 'error'
 }
 
 interface TrabajadorConNormalizacion {
@@ -535,6 +576,9 @@ const emit = defineEmits<Emits>()
 
 const activeTab = ref<'resumen' | 'errores' | 'exitosos' | 'normalizaciones'>('resumen')
 
+const fallidos = computed(() => props.resumen.data.filter((r) => !r.success))
+const registrados = computed(() => props.resumen.data.filter((r) => r.success))
+
 const porcentajeExitoso = computed(() => {
   if (props.resumen.totalProcessed === 0) return 0
   return Math.round((props.resumen.successful / props.resumen.totalProcessed) * 100)
@@ -544,12 +588,12 @@ const duplicadosEnImportacion = computed(
   () => props.resumen.data.filter((r) => r.success && r.posibleDuplicado).length,
 )
 
-const trabajadoresConNormalizaciones = computed((): TrabajadorConNormalizacion[] => {  
+const trabajadoresConNormalizaciones = computed((): TrabajadorConNormalizacion[] => {
   const trabajadoresExitosos = props.resumen.data.filter(r => r.success);
-  
+
   const trabajadoresConCambios = trabajadoresExitosos.filter(r => {
     const worker = r.worker;
-    
+
     const tieneCambios = (
       (worker?.sexoOriginal && worker?.sexo && worker.sexoOriginal !== worker.sexo) ||
       (worker?.escolaridadOriginal && worker?.escolaridad && worker.escolaridadOriginal !== worker.escolaridad) ||
@@ -559,11 +603,11 @@ const trabajadoresConNormalizaciones = computed((): TrabajadorConNormalizacion[]
       (worker?.numeroEmpleadoOriginal && worker?.numeroEmpleado && worker.numeroEmpleadoOriginal !== worker.numeroEmpleado) ||
       (worker?.nssOriginal && worker?.nss && worker.nssOriginal !== worker.nss)
     );
-    
+
     return tieneCambios;
   });
-        
-  return trabajadoresConCambios.map(r => ({ 
+
+  return trabajadoresConCambios.map(r => ({
     worker: {
       primerApellido: r.worker?.primerApellido,
       segundoApellido: r.worker?.segundoApellido,
@@ -590,86 +634,19 @@ const closeModal = () => {
   emit('close')
 }
 
-const formatDate = (date: string | Date) => {
-  if (!date) return 'N/A'
-  try {
-    return new Date(date).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    })
-  } catch {
-    return String(date)
-  }
-}
+const formatDate = (date: string | Date) => fechaDelRenglon(date) || 'N/A'
 
+/** Un renglón por motivo, con renglón del Excel, CURP y NSS. */
 const downloadErrorReport = () => {
-  const errors = props.resumen.data.filter(r => !r.success)
-  
-  // ✅ SOLUCIÓN: Crear archivo Excel en lugar de CSV
-  // Preparar datos para Excel
-  const excelData = errors.map(error => {
-    const worker = error.worker || {}
-    return {
-      'Error': error.error || '',
-      'Número Empleado': worker.numeroEmpleado || '',
-      'Primer Apellido': worker.primerApellido || '',
-      'Segundo Apellido': worker.segundoApellido || '',
-      'Nombre': worker.nombre || 'Sin nombre',
-      'Fecha Nacimiento': worker.fechaNacimiento ? formatDate(worker.fechaNacimiento) : '',
-      'Sexo': worker.sexo || '',
-      'Escolaridad': worker.escolaridad || '',
-      'Puesto': worker.puesto || '',
-      'Fecha Ingreso': worker.fechaIngreso ? formatDate(worker.fechaIngreso) : '',
-      'Teléfono': worker.telefono || '',
-      'Estado Civil': worker.estadoCivil || '',
-      'NSS': worker.nss || '',
-      'Errores de Validación': error.validationErrors ? error.validationErrors.join('; ') : ''
-    }
-  })
-  
-  // Crear workbook y worksheet
-  const workbook = {
-    SheetNames: ['Errores de Importación'],
-    Sheets: {
-      'Errores de Importación': {
-        '!ref': `A1:N${excelData.length + 1}`, // 14 columnas
-        'A1': { v: 'Error', t: 's' },
-        'B1': { v: 'Número Empleado', t: 's' },
-        'C1': { v: 'Primer Apellido', t: 's' },
-        'D1': { v: 'Segundo Apellido', t: 's' },
-        'E1': { v: 'Nombre', t: 's' },
-        'F1': { v: 'Fecha Nacimiento', t: 's' },
-        'G1': { v: 'Sexo', t: 's' },
-        'H1': { v: 'Escolaridad', t: 's' },
-        'I1': { v: 'Puesto', t: 's' },
-        'J1': { v: 'Fecha Ingreso', t: 's' },
-        'K1': { v: 'Teléfono', t: 's' },
-        'L1': { v: 'Estado Civil', t: 's' },
-        'M1': { v: 'Errores de Validación', t: 's' }
-      }
-    }
-  }
-  
-  // Agregar datos
-  excelData.forEach((row, index) => {
-    const rowNum = index + 2
-    workbook.Sheets['Errores de Importación'][`A${rowNum}`] = { v: row.Error, t: 's' }
-    workbook.Sheets['Errores de Importación'][`B${rowNum}`] = { v: row['Número Empleado'], t: 's' }
-    workbook.Sheets['Errores de Importación'][`C${rowNum}`] = { v: row['Primer Apellido'], t: 's' }
-    workbook.Sheets['Errores de Importación'][`D${rowNum}`] = { v: row['Segundo Apellido'], t: 's' }
-    workbook.Sheets['Errores de Importación'][`E${rowNum}`] = { v: row.Nombre, t: 's' }
-    workbook.Sheets['Errores de Importación'][`F${rowNum}`] = { v: row['Fecha Nacimiento'], t: 's' }
-    workbook.Sheets['Errores de Importación'][`G${rowNum}`] = { v: row.Sexo, t: 's' }
-    workbook.Sheets['Errores de Importación'][`H${rowNum}`] = { v: row.Escolaridad, t: 's' }
-    workbook.Sheets['Errores de Importación'][`I${rowNum}`] = { v: row.Puesto, t: 's' }
-    workbook.Sheets['Errores de Importación'][`J${rowNum}`] = { v: row['Fecha Ingreso'], t: 's' }
-    workbook.Sheets['Errores de Importación'][`K${rowNum}`] = { v: row.Teléfono, t: 's' }
-    workbook.Sheets['Errores de Importación'][`L${rowNum}`] = { v: row['Estado Civil'], t: 's' }
-    workbook.Sheets['Errores de Importación'][`M${rowNum}`] = { v: row['Errores de Validación'], t: 's' }
-  })
-  
-  // Convertir a buffer y descargar
+  const hoja = XLSX.utils.aoa_to_sheet(filasReporteErrores(props.resumen.data))
+  hoja['!cols'] = [
+    { wch: 8 }, { wch: 70 }, { wch: 20 }, { wch: 16 }, { wch: 16 }, { wch: 18 },
+    { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 13 }, { wch: 18 }, { wch: 12 },
+    { wch: 12 }, { wch: 14 }, { wch: 14 },
+  ]
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, hoja, 'Errores de importación')
+
   const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
   const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   const link = document.createElement('a')
@@ -758,5 +735,23 @@ const downloadNormalizationReport = () => {
 </script>
 
 <style scoped>
-/* Estilos adicionales si son necesarios */
+.modal-resumen-importacion-fila {
+  display: inline-block;
+  margin-right: 0.375rem;
+  padding: 0 0.375rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid currentColor;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  vertical-align: 1px;
+}
+
+.modal-resumen-importacion-curp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+  color: #111827;
+}
+
 </style>

@@ -13,7 +13,6 @@ import { getPlantillaImportacionTrabajadores } from '@/helpers/plantillaImportac
 import { ArchivoNoLegibleError, leerArchivoParaSubir } from '@/helpers/archivoParaSubir';
 import CargaMasivaCodigosSiresPanel from '@/components/CargaMasivaCodigosSiresPanel.vue';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
-import { useModalResumenImportacionStore } from '@/stores/modalResumenImportacion';
 
 const toast = inject('toast');
 
@@ -24,7 +23,6 @@ const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded } = useCurrentUser();
 const { isSIRES } = useRegulatoryPolicy();
 const { importarTrabajadores, isImporting, importProgress } = useImportacionTrabajadores();
-const modalStore = useModalResumenImportacionStore();
 const emit = defineEmits(['closeModal', 'openSubscriptionModal']);
 
 const plantillaImportacion = computed(() =>
@@ -221,23 +219,6 @@ const handleSubmit = async () => {
   }
 };
 
-// Función para probar el resumen mixto (opcional, solo para desarrollo)
-const testResumenMixto = async () => {
-  try {
-    toast.open({ message: 'Mostrando resumen mixto de prueba...', type: 'info' });
-    
-    // Usar el store para crear y mostrar un resumen mixto de prueba
-    const testResumen = modalStore.createTestResumen();
-    modalStore.showModal(testResumen);
-    
-    // Cerrar el modal de carga masiva
-    forceClose();
-    
-  } catch (error) {
-    console.error('Error al mostrar resumen de prueba:', error);
-    toast.open({ message: 'Error al mostrar resumen de prueba', type: 'error' });
-  }
-};
 </script>
 
 <template>
