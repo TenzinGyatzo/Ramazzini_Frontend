@@ -83,4 +83,35 @@ describe('secciones adicionales del informe completo', () => {
     expect(siguienteNumero).toBe(4);
     expect(texto(contenido)).toContain('1 consulta');
   });
+
+  it('con quien dibuje, cada sección nueva lleva sus gráficas antes de las tablas', () => {
+    const dibujadas: string[] = [];
+    const dibujar = (config: Record<string, any>, ancho: number, alto: number) => {
+      dibujadas.push(`${config.type} ${ancho}x${alto}`);
+      return 'data:image/png;base64,AAAA';
+    };
+    const antidoping = [
+      { mes: '2026-01', trabajador: 'a', evaluadas: ['marihuana'], positivos: ['marihuana'] },
+      { mes: '2026-01', trabajador: 'b', evaluadas: ['marihuana'], positivos: [] },
+    ];
+    const { contenido } = seccionesAdicionalesDelInforme({ antidoping, diagnosticos: diagnosticos() }, 3, { dibujar });
+    // Dona de positivos, barras por sustancia y barras de grupos de diagnósticos
+    expect(dibujadas).toEqual(['doughnut 120x120', 'bar 460x28', 'bar 460x28']);
+    const todo = texto(contenido);
+    expect(todo).toContain('Pruebas con algún positivo');
+    expect(todo).toContain('Con algún positivo: ');
+    expect(todo.indexOf('Positivos por sustancia')).toBeLessThan(todo.indexOf('Antidoping: positivos por sustancia'));
+  });
+
+  it('sin quien dibuje, o si una gráfica falla, la sección sale igual con sus tablas', () => {
+    const datos = { diagnosticos: diagnosticos() };
+    expect(texto(seccionesAdicionalesDelInforme(datos, 1).contenido)).not.toContain('image');
+    const conError = seccionesAdicionalesDelInforme(datos, 1, {
+      dibujar: () => {
+        throw new Error('sin lienzo');
+      },
+    });
+    expect(texto(conError.contenido)).not.toContain('image');
+    expect(texto(conError.contenido)).toContain('Diagnósticos por grupo de enfermedades');
+  });
 });

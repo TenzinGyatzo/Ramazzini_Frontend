@@ -1,4 +1,31 @@
 import Chart from 'chart.js/auto';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
+/**
+ * Dibuja una gráfica medida en puntos del PDF: cada «píxel» de Chart.js es un punto,
+ * así que los tamaños de letra de la configuración son los que salen impresos.
+ * `pixelesPorPunto` da la nitidez (300 / 72 ≈ 300 dpi). Lleva su propio complemento
+ * de etiquetas, sin depender de que la pantalla lo haya registrado.
+ */
+export function dibujarEnPuntos(config: any, anchoPt: number, altoPt: number, pixelesPorPunto: number): string {
+  const lienzo = document.createElement('canvas');
+  lienzo.width = anchoPt;
+  lienzo.height = altoPt;
+  const grafica = new Chart(lienzo, {
+    ...config,
+    plugins: [...(config.plugins ?? []), ChartDataLabels],
+    options: {
+      ...config.options,
+      responsive: false,
+      maintainAspectRatio: false,
+      animation: false,
+      devicePixelRatio: pixelesPorPunto,
+    },
+  });
+  const imagen = lienzo.toDataURL('image/png');
+  grafica.destroy();
+  return imagen;
+}
 
 /**
  * Copia profunda que conserva las funciones (formateadores de etiquetas, colores

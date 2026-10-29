@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { fechaLocalHoy } from '@/helpers/dates';
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
-import { exportarGraficaAltaResolucion } from '@/helpers/exportChartImage';
+import { dibujarEnPuntos, exportarGraficaAltaResolucion } from '@/helpers/exportChartImage';
 import { 
   conclusionesToPdfMake, 
   recomendacionesTextoToPdfMake, 
@@ -2108,8 +2108,11 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
         numeroSeccion++; // Incrementar para las siguientes secciones
     }
 
-    // Diagnósticos de las consultas e inventario, cuando hay registros
-    const adicionales = seccionesAdicionalesDelInforme(props.seccionesAdicionales ?? {}, numeroSeccion);
+    // Hábitos, seguimiento, cuestionarios, antidoping, diagnósticos e inventario, cuando hay registros.
+    // Sus gráficas se miden en puntos: a 300 dpi al descargar y a 144 en la vista previa.
+    const adicionales = seccionesAdicionalesDelInforme(props.seccionesAdicionales ?? {}, numeroSeccion, {
+        dibujar: (config, ancho, alto) => dibujarEnPuntos(config, ancho, alto, altaCalidad ? 300 / 72 : 2),
+    });
     contenido.push(...(adicionales.contenido as Content[]));
     numeroSeccion = adicionales.siguienteNumero;
 

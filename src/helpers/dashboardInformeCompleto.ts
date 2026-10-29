@@ -1,25 +1,42 @@
 /**
  * Informe completo del tablero de salud: secciones que se agregan al final,
- * antes de las conclusiones (diagnósticos de las consultas e inventario).
+ * antes de las conclusiones (hábitos, seguimiento, cuestionarios, antidoping,
+ * diagnósticos de las consultas e inventario), con las mismas gráficas que la pantalla.
  * Devuelven contenido de pdfmake con los estilos que ya define el informe
  * (components/DescargarInformeDashboard.vue).
  */
 import type { ResumenDeDiagnosticos } from './dashboardDiagnosticos';
+import {
+  configDeGrafica,
+  graficasAntidoping,
+  graficasCardiometabolico,
+  graficasDiagnosticos,
+  graficasHabitos,
+  graficasNordico,
+  graficasOtologica,
+  graficasSueno,
+  medidasDe,
+  type GraficaDeInforme,
+} from './dashboardGraficasInforme';
 import type { InsumoConsumido, TablaDeInforme } from './dashboardInformes';
 import {
   hallazgosNordico,
   hallazgosSueno,
+  resumirNordico,
+  resumirSueno,
   tablasNordico,
   tablasSueno,
   type NordicoDeTablero,
   type SuenoDeTablero,
 } from './dashboardCuestionarios';
 import { LEYENDA_SUENO_VIGILIA } from './evaluacionSuenoVigilia';
-import { hallazgosAntidoping, tablasAntidoping, type AntidopingDeTablero } from './dashboardAntidoping';
-import { tablasHabitos, type HabitosDeTablero } from './dashboardHabitos';
+import { hallazgosAntidoping, resumirAntidoping, tablasAntidoping, type AntidopingDeTablero } from './dashboardAntidoping';
+import { resumirHabitos, tablasHabitos, type HabitosDeTablero } from './dashboardHabitos';
 import {
   hallazgosCardiometabolico,
   hallazgosOtologica,
+  resumirCardiometabolico,
+  resumirOtologica,
   tablasCardiometabolico,
   tablasOtologica,
   type CardiometabolicoDeTablero,
@@ -75,13 +92,119 @@ const tablasDeInforme = (tablas: TablaDeInforme[]): Contenido[] =>
   tablas.flatMap((t) => tabla(t.titulo, t.columnas, t.filas));
 
 /**
+ * Dibuja una configuración de Chart.js medida en puntos del PDF y devuelve la imagen.
+ * Sin ella (pruebas, o si el navegador no puede dibujar), las secciones van solo con tablas.
+ */
+export type DibujarGrafica = (config: Record<string, any>, anchoPt: number, altoPt: number) => string | undefined;
+
+const pctTexto = (parte: number, total: number) => `${total > 0 ? Math.round((parte / total) * 100) : 0} %`;
+
+/** Leyenda: una fila por color, en una tabla sin bordes (el cuadro es una celda con relleno). */
+const leyendaDeColores = (filas: { color: string; texto: Contenido['text'] }[], fontSize: number): Contenido => ({
+  table: {
+    widths: [7, '*'],
+    body: filas.map((fila) => [
+      { text: '', fillColor: fila.color, margin: [0, 1, 0, 1] },
+      { text: fila.texto, fontSize, margin: [4, 0, 0, 0] },
+    ]),
+  },
+  layout: {
+    hLineWidth: () => 0,
+    vLineWidth: () => 0,
+    paddingLeft: () => 0,
+    paddingRight: () => 0,
+    paddingTop: () => 2,
+    paddingBottom: () => 2,
+  },
+});
+
+/** Cada gráfica con su título, como en la pantalla; la dona, con su leyenda a un lado. */
+function contenidoDeGraficas(graficas: GraficaDeInforme[], dibujar?: DibujarGrafica): Contenido[] {
+  if (!dibujar) return [];
+  return graficas.flatMap((grafica): Contenido[] => {
+    const [ancho, alto] = medidasDe(grafica);
+    let imagen: string | undefined;
+    try {
+      imagen = dibujar(configDeGrafica(grafica), ancho, alto);
+    } catch (error) {
+      console.error(`No se pudo dibujar la gráfica «${grafica.titulo}»:`, error);
+    }
+    if (!imagen) return [];
+    const titulo = { text: grafica.titulo, style: 'subtituloTabla', margin: [0, 15, 0, 6] };
+    const nota = grafica.nota
+      ? [{ text: grafica.nota, fontSize: 8, italics: true, color: '#6b7280', margin: [0, 4, 0, 0] }]
+      : [];
+
+    if (grafica.tipo === 'dona') {
+      const leyenda = leyendaDeColores(
+        grafica.segmentos.map((segmento) => ({
+          color: segmento.color,
+          texto: [
+            `${segmento.etiqueta}: `,
+            { text: `${segmento.cantidad} (${pctTexto(segmento.cantidad, grafica.total)})`, bold: true },
+          ],
+        })),
+        9.5,
+      );
+      const filasDeLeyenda = grafica.segmentos.length;
+      return [
+        {
+          unbreakable: true,
+          stack: [
+            titulo,
+            {
+              columns: [
+                { width: ancho, image: imagen, fit: [ancho, alto] },
+                {
+                  width: '*',
+                  stack: [
+                    leyenda,
+                    { text: `Total: ${grafica.total}`, fontSize: 9, color: '#6b7280', margin: [0, 2, 0, 0] },
+                    ...nota,
+                  ],
+                  // Centrada a la altura de la dona
+                  margin: [18, Math.max(0, alto / 2 - (filasDeLeyenda * 16 + 14) / 2), 0, 0],
+                },
+              ],
+            },
+          ],
+        },
+      ];
+    }
+
+    const series =
+      grafica.tipo === 'columnas'
+        ? [
+            {
+              columns: [
+                { width: '*', text: '' },
+                ...grafica.series.map((serie) => ({
+                  width: 'auto',
+                  ...leyendaDeColores([{ color: serie.color, texto: serie.etiqueta }], 8.5),
+                })),
+                { width: '*', text: '' },
+              ],
+              columnGap: 14,
+              margin: [0, 4, 0, 0],
+            },
+          ]
+        : [];
+    return [
+      { unbreakable: true, stack: [titulo, { image: imagen, width: ancho, alignment: 'center' }, ...series, ...nota] },
+    ];
+  });
+}
+
+/**
  * Contenido de las secciones adicionales, numeradas a partir de `numeroSeccion`.
  * Una sección sin registros no se agrega ni consume número.
  */
 export function seccionesAdicionalesDelInforme(
   datos: SeccionesAdicionales,
   numeroSeccion: number,
+  opciones: { dibujar?: DibujarGrafica } = {},
 ): { contenido: Contenido[]; siguienteNumero: number } {
+  const graficas = (lista: GraficaDeInforme[]) => contenidoDeGraficas(lista, opciones.dibujar);
   const contenido: Contenido[] = [];
   let numero = numeroSeccion;
 
@@ -93,6 +216,7 @@ export function seccionesAdicionalesDelInforme(
         text: 'Hábitos que los trabajadores refirieron en su historia clínica más reciente del periodo. Cada porcentaje se calcula sobre quienes contestaron esa pregunta. Son factores que se pueden modificar y sobre los que tienen más efecto las acciones preventivas.',
         style: 'textoNormal',
       },
+      ...graficas(graficasHabitos(resumirHabitos(datos.habitos ?? []))),
       ...tablasDeInforme(habitos),
     );
     numero++;
@@ -107,6 +231,7 @@ export function seccionesAdicionalesDelInforme(
         style: 'textoNormal',
       },
       { ul: hallazgosCardiometabolico(cardiometabolico), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...graficas(graficasCardiometabolico(resumirCardiometabolico(cardiometabolico))),
       ...tablasDeInforme(tablasCardiometabolico(cardiometabolico)),
     );
     numero++;
@@ -122,6 +247,7 @@ export function seccionesAdicionalesDelInforme(
         style: 'textoNormal',
       },
       ...(hallazgos.length ? [{ ul: hallazgos, style: 'textoNormal', margin: [0, 6, 0, 0] }] : []),
+      ...graficas(graficasOtologica(resumirOtologica(datos.otologica ?? []))),
       ...tablasDeInforme(otologica),
     );
     numero++;
@@ -136,6 +262,7 @@ export function seccionesAdicionalesDelInforme(
         style: 'textoNormal',
       },
       { ul: hallazgosNordico(nordico), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...graficas(graficasNordico(resumirNordico(nordico))),
       ...tablasDeInforme(tablasNordico(nordico)),
     );
     numero++;
@@ -150,6 +277,7 @@ export function seccionesAdicionalesDelInforme(
         style: 'textoNormal',
       },
       { ul: hallazgosSueno(sueno), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...graficas(graficasSueno(resumirSueno(sueno))),
       ...tablasDeInforme(tablasSueno(sueno)),
       { text: LEYENDA_SUENO_VIGILIA, style: 'textoNormal', italics: true },
     );
@@ -165,6 +293,7 @@ export function seccionesAdicionalesDelInforme(
         style: 'textoNormal',
       },
       { ul: hallazgosAntidoping(antidoping), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...graficas(graficasAntidoping(resumirAntidoping(antidoping))),
       ...tablasDeInforme(tablasAntidoping(antidoping)),
     );
     numero++;
@@ -185,6 +314,7 @@ export function seccionesAdicionalesDelInforme(
         ],
         style: 'textoNormal',
       },
+      ...graficas(graficasDiagnosticos(diagnosticos)),
       ...tabla(
         diagnosticos.porCodigo.length > FILAS_DE_DIAGNOSTICOS
           ? `Los ${FILAS_DE_DIAGNOSTICOS} diagnósticos más frecuentes`
