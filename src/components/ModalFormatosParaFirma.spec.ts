@@ -4,14 +4,14 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { format } from 'date-fns';
 import { useUserStore } from '@/stores/user';
+import { useFirmaEnPantallaStore } from '@/stores/firmaEnPantalla';
 
-const { listarFormatos, getConfiguracion, firmadosPorFecha, descargarFormatoParaFirmaPdf } = vi.hoisted(() => ({
-  listarFormatos: vi.fn(),
+const { getConfiguracion, firmadosPorFecha, descargarFormatoParaFirmaPdf } = vi.hoisted(() => ({
   getConfiguracion: vi.fn(),
   firmadosPorFecha: vi.fn(),
   descargarFormatoParaFirmaPdf: vi.fn(),
 }));
-vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { listarFormatos, getConfiguracion, firmadosPorFecha } }));
+vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { getConfiguracion, firmadosPorFecha } }));
 vi.mock('@/helpers/formatoParaFirmaPdf', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/helpers/formatoParaFirmaPdf')>()),
   descargarFormatoParaFirmaPdf,
@@ -27,11 +27,6 @@ const FirmaEnPantallaFalsa = defineComponent({
   setup: () => () => h('div', { class: 'firma-falsa' }),
 });
 
-const LISTA = [
-  { tipoFormato: 'CONSENTIMIENTO_EVALUACION_MEDICA', version: 'v0', titulo: 'C', disponible: false },
-  { tipoFormato: 'DECLARACION_VERACIDAD', version: 'v1', titulo: 'D', disponible: true },
-  { tipoFormato: 'CONSENTIMIENTO_ANTIDOPING', version: 'v1', titulo: 'A', disponible: true },
-];
 const trabajador = { _id: 't1', nombre: 'JUAN', primerApellido: 'PÉREZ', segundoApellido: 'LÓPEZ' };
 const toast = { open: vi.fn() };
 const hoy = format(new Date(), 'yyyy-MM-dd');
@@ -51,7 +46,6 @@ describe('ModalFormatosParaFirma', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    listarFormatos.mockResolvedValue({ data: LISTA });
     getConfiguracion.mockResolvedValue({ data: { firmaEnPantallaHabilitada: true } });
     firmadosPorFecha.mockResolvedValue({ data: [] });
     descargarFormatoParaFirmaPdf.mockResolvedValue(undefined);
@@ -71,12 +65,37 @@ describe('ModalFormatosParaFirma', () => {
     expect(firmadosPorFecha).toHaveBeenCalledWith('t1', hoy);
   });
 
-  it('el formato sin texto definitivo aparece en preparación y no se puede usar', async () => {
+  it('con la configuración ya cargada (al iniciar sesión) abre sin esqueleto ni consulta', async () => {
+    useFirmaEnPantallaStore().aplicar({ firmaEnPantallaHabilitada: true });
+    const w = montar();
+    expect(w.find('[data-esqueleto]').exists()).toBe(false);
+    expect(w.findAll('[data-formato]')).toHaveLength(3);
+    expect(w.find('.modal-formatos-firma__metodos').text()).toContain('En pantalla');
+    await flushPromises();
+    expect(getConfiguracion).not.toHaveBeenCalled();
+  });
+
+  it('si se abre antes de que llegue la configuración: nombres y esqueleto solo en los botones', async () => {
+    getConfiguracion.mockReturnValue(new Promise(() => {}));
     const w = montar();
     await flushPromises();
-    expect(fila(w, 'CONSENTIMIENTO_EVALUACION_MEDICA').text()).toContain('Texto en preparación');
-    expect(boton(w, 'CONSENTIMIENTO_EVALUACION_MEDICA', 'Descargar')!.attributes('disabled')).toBeDefined();
-    expect(boton(w, 'CONSENTIMIENTO_EVALUACION_MEDICA', 'Firmar en pantalla')!.attributes('disabled')).toBeDefined();
+    const esqueleto = w.find('ul[data-esqueleto]');
+    expect(esqueleto.attributes('aria-busy')).toBe('true');
+    expect(esqueleto.findAll('li.modal-formatos-firma__fila').map((li) => li.find('p').text())).toEqual([
+      'Consentimiento para evaluación médica laboral',
+      'Declaración de veracidad',
+      'Consentimiento para prueba de detección de sustancias',
+    ]);
+    expect(w.findAll('.modal-formatos-firma__boton')).toHaveLength(0);
+    // Sin barras sobre texto fijo: la tarjeta «En pantalla» aparece solo cuando se sabe que está encendida
+    expect(w.find('.modal-formatos-firma__metodos').text()).not.toContain('En pantalla');
+  });
+
+  it('todos los formatos se pueden usar: ya tienen su texto', async () => {
+    const w = montar();
+    await flushPromises();
+    expect(w.text()).not.toContain('Texto en preparación');
+    expect(w.findAll('.modal-formatos-firma__boton').every((b) => b.attributes('disabled') === undefined)).toBe(true);
   });
 
   it('con la firma en pantalla apagada queda solo el papel, como antes', async () => {
@@ -139,15 +158,11 @@ describe('ModalFormatosParaFirma', () => {
     expect(fila(w, 'CONSENTIMIENTO_ANTIDOPING').text()).toContain('Firmado en pantalla hoy');
   });
 
-
-  it('si no carga la lista, lo dice y permite reintentar', async () => {
-    listarFormatos.mockRejectedValueOnce(new Error('sin red'));
+  it('si no se puede consultar la configuración, queda solo el papel', async () => {
+    getConfiguracion.mockRejectedValue(new Error('sin red'));
     const w = montar();
     await flushPromises();
-    const reintentar = w.findAll('button').find((b) => b.text() === 'Reintentar')!;
-    expect(reintentar.exists()).toBe(true);
-    await reintentar.trigger('click');
-    await flushPromises();
     expect(w.findAll('[data-formato]')).toHaveLength(3);
+    expect(w.find('.modal-formatos-firma__boton-pantalla').exists()).toBe(false);
   });
 });

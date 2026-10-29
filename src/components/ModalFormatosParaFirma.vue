@@ -2,8 +2,9 @@
 /**
  * Formatos que firma el trabajador, en un solo lugar (docs/firma-en-pantalla-especificacion.md):
  * explica los dos caminos con el mismo peso (en papel o en pantalla), pide una fecha para todos y
- * lista los tres formatos con «Descargar» y «Firmar en pantalla». Un formato sin texto definitivo
- * aparece «en preparación» y no se puede usar. Con la firma en pantalla apagada queda solo el papel.
+ * lista los tres formatos con «Descargar» y «Firmar en pantalla». Con la firma en pantalla apagada
+ * queda solo el papel. Los formatos y si hay firma en pantalla ya se saben al abrir: la ventana
+ * aparece con su forma final; solo lo firmado con la fecha elegida se consulta al servidor.
  */
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { format } from 'date-fns';
@@ -17,8 +18,9 @@ import {
   formatNombreTrabajadorFormato,
   type TrabajadorFormatoFirma,
 } from '@/helpers/formatoParaFirmaPdf';
+import { useFirmaEnPantallaStore } from '@/stores/firmaEnPantalla';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import type { FormatoFirmadoEnFecha, ResumenFormatoFirma, TipoFormatoFirma } from '@/types/formatoFirma';
+import type { FormatoFirmadoEnFecha, TipoFormatoFirma } from '@/types/formatoFirma';
 
 const props = defineProps<{
   trabajador: (TrabajadorFormatoFirma & { _id?: string }) | null;
@@ -30,7 +32,7 @@ const emit = defineEmits<{
   firmado: [documentoExterno: any];
 }>();
 
-/** Cómo se llama cada formato en pantalla; el título del PDF viene del backend. */
+/** Los formatos, en el orden del modal; el título del PDF viene del backend. */
 const PRESENTACION: Record<TipoFormatoFirma, { nombre: string; nota?: string }> = {
   CONSENTIMIENTO_EVALUACION_MEDICA: { nombre: 'Consentimiento para evaluación médica laboral' },
   DECLARACION_VERACIDAD: { nombre: 'Declaración de veracidad' },
@@ -42,25 +44,26 @@ const PRESENTACION: Record<TipoFormatoFirma, { nombre: string; nota?: string }> 
 
 const toast: any = inject('toast');
 const proveedorSaludStore = useProveedorSaludStore();
+const firmaEnPantallaStore = useFirmaEnPantallaStore();
 
 const hoy = format(new Date(), 'yyyy-MM-dd');
 const fecha = ref(hoy);
-const formatos = ref<ResumenFormatoFirma[]>([]);
-const cargando = ref(true);
-const errorCarga = ref('');
-const firmaEnPantallaHabilitada = ref(false);
 const firmados = ref<FormatoFirmadoEnFecha[]>([]);
 const descargando = ref<TipoFormatoFirma | null>(null);
 const firmando = ref<TipoFormatoFirma | null>(null);
 
+/** Solo si se abre antes de que llegue la configuración (se pide al iniciar sesión). */
+const cargando = computed(() => !firmaEnPantallaStore.cargado);
+
 const nombreTrabajador = computed(() => formatNombreCompleto(props.trabajador));
-const puedeFirmarEnPantalla = computed(() => firmaEnPantallaHabilitada.value && !!props.trabajador?._id);
+const puedeFirmarEnPantalla = computed(() => firmaEnPantallaStore.habilitada && !!props.trabajador?._id);
 
 const filas = computed(() =>
-  formatos.value.map((f) => {
-    const firmado = firmados.value.find((x) => x.tipoFormato === f.tipoFormato);
-    return { ...f, ...PRESENTACION[f.tipoFormato], firmado };
-  }),
+  (Object.keys(PRESENTACION) as TipoFormatoFirma[]).map((tipoFormato) => ({
+    tipoFormato,
+    ...PRESENTACION[tipoFormato],
+    firmado: firmados.value.find((x) => x.tipoFormato === tipoFormato),
+  })),
 );
 
 function etiquetaFirmado(_firmado: FormatoFirmadoEnFecha): string {
@@ -82,21 +85,8 @@ async function cargarFirmados() {
 }
 
 async function cargar() {
-  cargando.value = true;
-  errorCarga.value = '';
-  try {
-    const [lista, configuracion] = await Promise.all([
-      FormatosFirmadosAPI.listarFormatos(),
-      FormatosFirmadosAPI.getConfiguracion().catch(() => ({ data: { firmaEnPantallaHabilitada: false } })),
-    ]);
-    formatos.value = lista.data;
-    firmaEnPantallaHabilitada.value = configuracion.data.firmaEnPantallaHabilitada === true;
-    await cargarFirmados();
-  } catch (error) {
-    errorCarga.value = extractApiErrorMessage(error, 'No se pudieron cargar los formatos.');
-  } finally {
-    cargando.value = false;
-  }
+  await firmaEnPantallaStore.cargarConfiguracion();
+  await cargarFirmados();
 }
 
 watch(fecha, cargarFirmados);
@@ -210,7 +200,7 @@ async function alFirmar(resultado: FormatoFirmadoCreado) {
             <i class="fa-solid fa-signature mr-2 text-gray-500 dark:text-slate-400" aria-hidden="true"></i>En pantalla
           </p>
           <p class="text-sm text-gray-600 dark:text-slate-300 mt-1 leading-relaxed">
-            El trabajador lee y firma en tableta, celular o mouse. Queda guardado en el expediente.
+            El trabajador lee y firma en tableta, celular o pad de firma.
           </p>
         </div>
       </div>
@@ -228,18 +218,28 @@ async function alFirmar(resultado: FormatoFirmadoCreado) {
         />
       </div>
 
-      <div v-if="cargando" class="py-10 text-center text-gray-500 dark:text-slate-400">Cargando formatos…</div>
-
-      <div v-else-if="errorCarga" class="py-8 text-center">
-        <p class="text-red-700 mb-3">{{ errorCarga }}</p>
-        <button
-          type="button"
-          class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200"
-          @click="cargar"
+      <ul v-if="cargando" class="mt-4" aria-busy="true" data-esqueleto>
+        <li class="sr-only">Cargando formatos…</li>
+        <li
+          v-for="fila in filas"
+          :key="fila.tipoFormato"
+          class="modal-formatos-firma__fila flex flex-col sm:flex-row sm:items-center gap-3 py-3 border-t border-gray-200 dark:border-slate-600"
         >
-          Reintentar
-        </button>
-      </div>
+          <div class="min-w-0 flex-1">
+            <p class="font-semibold text-gray-900 dark:text-slate-100">{{ fila.nombre }}</p>
+            <p v-if="fila.nota" class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{{ fila.nota }}</p>
+          </div>
+          <!-- Los botones reales sin verse dan el ancho exacto; encima, el bloque que pulsa -->
+          <div class="grid grid-cols-2 sm:flex gap-2 shrink-0 animate-pulse" aria-hidden="true">
+            <span v-for="texto in ['Descargar', 'Firmar en pantalla']" :key="texto" class="relative">
+              <span class="invisible inline-flex w-full items-center justify-center gap-2 px-3 py-2 rounded-lg border font-semibold text-sm">
+                <i class="fa-solid fa-signature"></i>{{ texto }}
+              </span>
+              <span class="absolute inset-0 rounded-lg bg-gray-200 dark:bg-slate-700"></span>
+            </span>
+          </div>
+        </li>
+      </ul>
 
       <ul v-else class="mt-4">
         <li
@@ -251,13 +251,7 @@ async function alFirmar(resultado: FormatoFirmadoCreado) {
           <div class="min-w-0 flex-1">
             <p class="font-semibold text-gray-900 dark:text-slate-100">{{ fila.nombre }}</p>
             <span
-              v-if="!fila.disponible"
-              class="modal-formatos-firma__estado inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800"
-            >
-              <i class="fa-regular fa-clock" aria-hidden="true"></i>Texto en preparación
-            </span>
-            <span
-              v-else-if="fila.firmado"
+              v-if="fila.firmado"
               class="modal-formatos-firma__estado inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800"
             >
               <i class="fa-solid fa-check" aria-hidden="true"></i>{{ etiquetaFirmado(fila.firmado) }}
@@ -270,8 +264,8 @@ async function alFirmar(resultado: FormatoFirmadoCreado) {
             <button
               type="button"
               class="modal-formatos-firma__boton inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-emerald-600 text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:border-emerald-400 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
-              :disabled="!fila.disponible || ocupado"
-              :title="fila.disponible ? 'Descargar para firmar a mano' : 'Este formato todavía no tiene su texto definitivo'"
+              :disabled="ocupado"
+              title="Descargar para firmar a mano"
               @click="descargar(fila.tipoFormato)"
             >
               <i
@@ -284,8 +278,8 @@ async function alFirmar(resultado: FormatoFirmadoCreado) {
               v-if="puedeFirmarEnPantalla"
               type="button"
               class="modal-formatos-firma__boton modal-formatos-firma__boton-pantalla inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-emerald-600 text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:border-emerald-400 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
-              :disabled="!fila.disponible || ocupado"
-              :title="fila.disponible ? 'Que el trabajador lo firme en pantalla' : 'Este formato todavía no tiene su texto definitivo'"
+              :disabled="ocupado"
+              title="Que el trabajador lo firme en pantalla"
               @click="firmarEnPantalla(fila.tipoFormato)"
             >
               <i class="fa-solid fa-signature" aria-hidden="true"></i>

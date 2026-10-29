@@ -20,6 +20,7 @@ import { useCambiosAgrupados, type CambioAgrupado } from '@/composables/useCambi
 import ModalOrdenDocumentos from '@/components/ModalOrdenDocumentos.vue';
 import { useInventarioStore } from '@/stores/inventario';
 import { useIncapacidadesStore } from '@/stores/incapacidades';
+import { useFirmaEnPantallaStore } from '@/stores/firmaEnPantalla';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 import type { EmpresaCentrosInventario } from '@/interfaces/inventario.interface';
@@ -30,6 +31,7 @@ const toast: any = inject('toast');
 const userStore = useUserStore();
 const inventarioStore = useInventarioStore();
 const incapacidadesStore = useIncapacidadesStore();
+const firmaEnPantallaStore = useFirmaEnPantallaStore();
 const { canConfigurarOrdenDocumentos } = useRolePermissions();
 const proveedorSaludStore = useProveedorSaludStore();
 
@@ -239,6 +241,7 @@ async function cambiar(cual: Interruptor) {
       const activar = !estado.value.firmaEnPantallaHabilitada;
       const { data } = await FormatosFirmadosAPI.actualizarConfiguracion({ firmaEnPantallaHabilitada: activar });
       estado.value.firmaEnPantallaHabilitada = data.firmaEnPantallaHabilitada;
+      firmaEnPantallaStore.aplicar(data);
       toast?.open?.({ message: activar ? 'Firma en pantalla activada' : 'Firma en pantalla desactivada', type: 'success' });
     } else if (cual === 'semaforizacion') {
       const activar = !estado.value.semaforizacionActivada;

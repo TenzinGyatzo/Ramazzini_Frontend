@@ -30,9 +30,6 @@ export interface TextoFormatoFirma {
   bloques: BloqueFormatoFirma[];
 }
 
-/** Resumen de la lista de formatos (`GET /formatos-firmados/textos`). */
-export type ResumenFormatoFirma = Pick<TextoFormatoFirma, 'tipoFormato' | 'version' | 'titulo' | 'disponible'>;
-
 /** Formato ya firmado en pantalla para una fecha (en borrador o finalizado, no anulado). */
 export interface FormatoFirmadoEnFecha {
   tipoFormato: TipoFormatoFirma;

@@ -35,6 +35,7 @@ import BuscadorTrabajadores from "@/components/BuscadorTrabajadores.vue";
 import { listenPlatformContextChanges } from "@/composables/usePlatformContext";
 import { resolveFirmanteTipo } from "@/constants/rolePermissionPolicy";
 import { useInventarioStore } from "@/stores/inventario";
+import { useFirmaEnPantallaStore } from "@/stores/firmaEnPantalla";
 import { useIncapacidadesStore } from "@/stores/incapacidades";
 import { useSubirNivel } from "@/composables/useSubirNivel";
 
@@ -64,6 +65,7 @@ provide("requestEliminacion", requestEliminacion);
 const user = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const inventarioStore = useInventarioStore();
+const firmaEnPantallaStore = useFirmaEnPantallaStore();
 const incapacidadesStore = useIncapacidadesStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
 const enfermeraFirmanteStore = useEnfermeraFirmanteStore();
@@ -229,6 +231,8 @@ onMounted(() => {
         inventarioStore.cargarConfiguracion(true);
         // Igual para incapacidades: en qué empresas se muestran
         incapacidadesStore.cargarConfiguracion(true);
+        // Y si hay firma en pantalla: la ventana de formatos se abre ya con su forma final
+        firmaEnPantallaStore.cargarConfiguracion(true);
       }
       if (currentUser._id && !esAdministradorEnConsola(currentUser)) {
         await medicoFirmanteStore.loadMedicoFirmante(currentUser._id);

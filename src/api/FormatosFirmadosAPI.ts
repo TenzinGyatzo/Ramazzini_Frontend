@@ -2,7 +2,6 @@ import api from '@/lib/axios';
 import type { FirmaCapturada } from '@/helpers/capturaFirma';
 import type {
   FormatoFirmadoEnFecha,
-  ResumenFormatoFirma,
   TextoFormatoFirma,
   TipoFormatoFirma,
 } from '@/types/formatoFirma';
@@ -23,11 +22,6 @@ export interface FormatoFirmadoCreado {
 }
 
 export default {
-  /** Los formatos para firma, en el orden del modal, y si ya se pueden usar. */
-  listarFormatos(): Promise<{ data: ResumenFormatoFirma[] }> {
-    return api.get('/formatos-firmados/textos');
-  },
-
   /** Formatos ya firmados en pantalla (vigentes) de un trabajador con esa fecha (`yyyy-mm-dd`). */
   firmadosPorFecha(trabajadorId: string, fecha: string): Promise<{ data: FormatoFirmadoEnFecha[] }> {
     return api.get(`/formatos-firmados/trabajador/${trabajadorId}`, { params: { fecha } });
