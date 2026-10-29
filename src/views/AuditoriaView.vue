@@ -5,6 +5,10 @@ import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import auditAPI from "@/api/auditAPI";
 import type { AuditEventItem } from "@/api/auditAPI";
 import { GRUPOS_EVENTOS_AUDITORIA, etiquetaEventoAuditoria } from "@/constants/auditActionTypes";
+import { useRoute, useRouter } from "vue-router";
+import { useTrabajadoresStore } from "@/stores/trabajadores";
+import TrabajadoresAPI from "@/api/TrabajadoresAPI";
+import { formatNombreCompleto } from "@/helpers/formatNombreCompleto";
 
 const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -93,6 +97,49 @@ watch(
   { immediate: true }
 );
 
+// Filtro por expediente: llega desde el botón «Auditoría» del expediente (?trabajador=…&empresa=…&centro=…)
+const route = useRoute();
+const router = useRouter();
+const trabajadoresStore = useTrabajadoresStore();
+const textoDeQuery = (v: unknown) => (typeof v === "string" ? v : "");
+const trabajadorId = computed(() => textoDeQuery(route.query.trabajador));
+const nombreTrabajador = ref("");
+
+async function cargarNombreTrabajador(id: string) {
+  nombreTrabajador.value = "";
+  if (!id) return;
+  if (String(trabajadoresStore.currentTrabajador?._id ?? "") === id) {
+    nombreTrabajador.value = formatNombreCompleto(trabajadoresStore.currentTrabajador);
+    return;
+  }
+  const empresa = textoDeQuery(route.query.empresa);
+  const centro = textoDeQuery(route.query.centro);
+  if (!empresa || !centro) return;
+  try {
+    const { data } = await TrabajadoresAPI.getTrabajadorById(empresa, centro, id);
+    if (trabajadorId.value === id) nombreTrabajador.value = formatNombreCompleto(data);
+  } catch {
+    // Sin nombre, el chip dice «este trabajador»; el filtro funciona igual
+  }
+}
+
+watch(
+  trabajadorId,
+  (id, anterior) => {
+    // Al salir de la vista la ruta cambia antes de desmontarla
+    if (route.name !== "auditoria") return;
+    cargarNombreTrabajador(id);
+    // Al llegar con un expediente o al quitarlo, la tabla se actualiza sola
+    if ((id || anterior) && isPrincipal.value && auditTrailEnabled.value) buscarDesdeInicio();
+  },
+  { immediate: true }
+);
+
+function quitarFiltroTrabajador() {
+  const { trabajador: _t, empresa: _e, centro: _c, ...resto } = route.query;
+  router.replace({ query: resto });
+}
+
 function buscarDesdeInicio() {
   page.value = 1;
   search();
@@ -145,6 +192,7 @@ async function search() {
     if (actorId.value?.trim()) params.actorId = actorId.value.trim();
     if (resourceType.value?.trim()) params.resourceType = resourceType.value.trim();
     if (resourceId.value?.trim()) params.resourceId = resourceId.value.trim();
+    if (trabajadorId.value) params.trabajadorId = trabajadorId.value;
     const data = await auditAPI.getEvents(params);
     items.value = data.items;
     total.value = data.total;
@@ -305,8 +353,20 @@ async function verifyAudit() {
       </div>
 
       <div class="table-wrap card">
-        <div v-if="actorAplicado" class="filtro-activo">
-          <span class="filtro-chip">
+        <div v-if="actorAplicado || trabajadorId" class="filtro-activo">
+          <span v-if="trabajadorId" class="filtro-chip">
+            Expediente: {{ nombreTrabajador || "este trabajador" }}
+            <button
+              type="button"
+              class="filtro-chip-quitar"
+              aria-label="Quitar el filtro de expediente"
+              title="Quitar el filtro de expediente"
+              @click="quitarFiltroTrabajador"
+            >
+              ×
+            </button>
+          </span>
+          <span v-if="actorAplicado" class="filtro-chip">
             Usuario: {{ nombreActorFiltrado }}
             <button
               type="button"
@@ -514,6 +574,9 @@ async function verifyAudit() {
   text-decoration: underline;
 }
 .filtro-activo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 .filtro-chip {

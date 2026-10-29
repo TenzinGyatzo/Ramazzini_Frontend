@@ -147,6 +147,17 @@ const contextoTrabajador = () => ({
   trabajadorId: String(route.params.idTrabajador ?? trabajadores.currentTrabajadorId ?? ''),
 });
 
+// Bitácora de auditoría de este expediente: los mismos usuarios que ven la vista Auditoría
+const puedeVerAuditoria = computed(
+  () =>
+    (userStore.user?.role === 'Principal' || userStore.user?.role === 'Administrador') &&
+    proveedorSaludStore.auditTrailEnabled
+);
+const rutaAuditoriaDelExpediente = computed(() => {
+  const { empresaId, centroId, trabajadorId } = contextoTrabajador();
+  return { name: 'auditoria', query: { trabajador: trabajadorId, empresa: empresaId, centro: centroId } };
+});
+
 const abrirEdicionTrabajador = () => {
   executeIfCanManageTrabajadores(async () => {
     const { empresaId, centroId } = contextoTrabajador();
@@ -1356,6 +1367,16 @@ const crearDocumento = (tipoDocumento: string) =>
                     <i class="fa-solid fa-object-group text-[10px]" aria-hidden="true"></i>
                     <span class="hidden sm:inline">Fusionar con otro registro</span>
                   </button>
+                  <router-link
+                    v-if="puedeVerAuditoria"
+                    :to="rutaAuditoriaDelExpediente"
+                    class="btn-editar-entidad inline-flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors duration-150 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700"
+                    title="Ver en la bitácora de auditoría lo que se hizo con este expediente"
+                    aria-label="Ver en auditoría"
+                  >
+                    <i class="fa-solid fa-clock-rotate-left text-[10px]" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Auditoría</span>
+                  </router-link>
                 </div>
                 <p class="expediente-trabajador-meta mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm text-gray-600">
                   <span
