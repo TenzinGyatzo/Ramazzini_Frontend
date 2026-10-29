@@ -677,7 +677,7 @@ const hasExtraSection = computed(() => !!slots.extraSection);
                         :toggleRouteSelection="toggleRouteSelection"
                         :isDeletionMode="isDeletionMode"
                         :isSelected="isDocumentoSelected(fila.item.documento._id)"
-                        @eliminarDocumento="$emit('eliminarDocumento', fila.item.documento._id, convertirFechaISOaDDMMYYYY(fila.item.documento[fila.item.definicion.campoFecha]), fila.item.definicion.tipo, fila.item.documento.nombreDocumento)"
+                        @eliminarDocumento="$emit('eliminarDocumento', fila.item.documento._id, convertirFechaISOaDDMMYYYY(fila.item.documento[fila.item.definicion.campoFecha]), fila.item.definicion.tipo, fila.item.definicion.tipo === 'documentoExterno' ? fila.item.documento.nombreDocumento : undefined)"
                         @abrirModalAnular="(id, nombre, tipo) => $emit('abrirModalAnular', id, nombre, tipo)"
                         @abrirModalUpdate="$emit('abrirModalUpdate')"
                         @openSubscriptionModal="emit('openSubscriptionModal')"

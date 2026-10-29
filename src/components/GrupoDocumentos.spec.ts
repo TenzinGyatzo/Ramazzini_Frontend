@@ -427,12 +427,17 @@ describe('GrupoDocumentos', () => {
   });
 
   describe('eventos de cada documento', () => {
-    it('al eliminar reenvía identificador, fecha del documento y tipo', () => {
+    it('al eliminar reenvía identificador, fecha del documento, tipo y, si es externo, su nombre', () => {
       const wrapper = montar({ documents: unDocumentoDeCadaTipo() });
       items(wrapper).forEach((item) => item.vm.$emit('eliminarDocumento'));
 
       expect(wrapper.emitted('eliminarDocumento')).toEqual(
-        TIPOS_EN_ORDEN.map(({ tipo }) => [`${tipo}-1`, '15-03-2025', tipo]),
+        TIPOS_EN_ORDEN.map(({ tipo }) => [
+          `${tipo}-1`,
+          '15-03-2025',
+          tipo,
+          tipo === 'documentoExterno' ? 'Estudio' : undefined,
+        ]),
       );
     });
 
