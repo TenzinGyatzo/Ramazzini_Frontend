@@ -14,7 +14,6 @@ import {
   sugerirAgentesPorPuesto,
   textoSugerenciaAgentes,
 } from '@/helpers/sugerenciaAgentesPorPuesto';
-import { procesarConLimite } from '@/helpers/procesarConLimite';
 
 const toast = inject('toast');
 const emit = defineEmits(['closeModal']);
@@ -93,7 +92,6 @@ const usarSugerencia = () => {
 // se confirma antes y solo se tocan los que no los tienen ya)
 const aplicarAlPuesto = ref(false);
 const confirmandoAplicacion = ref(false);
-const progresoAplicacion = ref(null);
 const puestoTrabajador = computed(() => String(trabajadores.currentTrabajador?.puesto ?? '').trim());
 const companeros = computed(() =>
   listaDelCentro.value
@@ -189,41 +187,38 @@ const handleSubmit = async () => {
     }
 
     const agentes = [...agentesSeleccionados.value];
-    // Sin «Cargando…» en la tabla de trabajadores: el botón ya indica que se guarda
-    await trabajadores.updateTrabajador(
-      empresaId,
-      centroId,
-      trabajadorId,
-      { agentesRiesgoActuales: agentes },
-      { enSegundoPlano: true },
-    );
+    // Una copia: la lista se actualiza al terminar
+    const pendientes = aplicarAOtros ? [...companeros.value.porCambiar] : [];
+    let fallidos = [];
+    if (aplicarAOtros) {
+      // El trabajador y sus compañeros en una sola petición
+      const { noEncontrados } = await trabajadores.aplicarAgentesRiesgo(
+        empresaId,
+        centroId,
+        [trabajadorId, ...pendientes.map((companero) => companero._id)],
+        agentes,
+      );
+      const sinActualizar = new Set(noEncontrados.map(String));
+      if (sinActualizar.has(String(trabajadorId))) {
+        throw new Error('El trabajador no pertenece a este centro de trabajo');
+      }
+      fallidos = pendientes.filter((companero) => sinActualizar.has(String(companero._id)));
+    } else {
+      // Sin «Cargando…» en la tabla de trabajadores: el botón ya indica que se guarda
+      await trabajadores.updateTrabajador(
+        empresaId,
+        centroId,
+        trabajadorId,
+        { agentesRiesgoActuales: agentes },
+        { enSegundoPlano: true },
+      );
+    }
     // Que el trabajador en pantalla refleje lo guardado al volver a abrir el modal
     if (trabajadores.currentTrabajador?._id === trabajadorId) {
       trabajadores.currentTrabajador.agentesRiesgoActuales = agentes;
     }
 
     if (aplicarAOtros) {
-      // Una copia: la lista se actualiza al terminar y no debe cambiar a mitad del recorrido
-      const pendientes = [...companeros.value.porCambiar];
-      const fallidos = [];
-      // El trabajador actual ya se guardó: cuenta como el primero
-      progresoAplicacion.value = { hechos: 1, total: pendientes.length + 1 };
-      await procesarConLimite(pendientes, 3, async (companero) => {
-        try {
-          await trabajadores.updateTrabajador(
-            empresaId,
-            centroId,
-            companero._id,
-            { agentesRiesgoActuales: agentes },
-            { enSegundoPlano: true },
-          );
-        } catch (error) {
-          console.error(error);
-          fallidos.push(companero);
-        } finally {
-          progresoAplicacion.value = { ...progresoAplicacion.value, hechos: progresoAplicacion.value.hechos + 1 };
-        }
-      });
       const actualizados = 1 + pendientes.length - fallidos.length;
       if (fallidos.length) {
         const nombres = fallidos.slice(0, 3).map((f) => formatNombreCompleto(f)).join(', ');
@@ -246,7 +241,6 @@ const handleSubmit = async () => {
     toast.open({ message: 'Error al actualizar los agentes de riesgo.', type: 'error' });
   } finally {
     isSubmitting.value = false;
-    progresoAplicacion.value = null;
   }
 };
 </script>
@@ -434,10 +428,7 @@ const handleSubmit = async () => {
           class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors duration-150 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
           @click="handleSubmit"
         >
-          <span v-if="isSubmitting && progresoAplicacion">
-            Guardando {{ progresoAplicacion.hechos }} de {{ progresoAplicacion.total }}…
-          </span>
-          <span v-else-if="isSubmitting">Guardando...</span>
+          <span v-if="isSubmitting">Guardando...</span>
           <span v-else-if="aplicarAlPuesto && companeros.porCambiar.length">
             Guardar para {{ companeros.porCambiar.length + 1 }} trabajadores
           </span>

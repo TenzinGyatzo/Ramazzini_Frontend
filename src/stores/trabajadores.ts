@@ -380,6 +380,23 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     }
   }
 
+  /** Mismos agentes de riesgo para varios trabajadores; devuelve los que no se encontraron. */
+  async function aplicarAgentesRiesgo(
+    empresaId: string,
+    centroTrabajoId: string,
+    trabajadorIds: string[],
+    agentesRiesgoActuales: string[],
+  ) {
+    const { data } = await TrabajadoresAPI.aplicarAgentesRiesgo(
+      empresaId,
+      centroTrabajoId,
+      trabajadorIds,
+      agentesRiesgoActuales,
+    );
+    invalidateListadoHistoriaCache(empresaId, centroTrabajoId);
+    return data;
+  }
+
   async function importTrabajadores(
       empresaId: string,
       centroTrabajoId: string,
@@ -506,6 +523,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     fetchTrabajadorById,
     createTrabajador,
     updateTrabajador,
+    aplicarAgentesRiesgo,
     importTrabajadores,
     deleteTrabajadorById,
     exportTrabajadores,

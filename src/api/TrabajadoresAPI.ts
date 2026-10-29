@@ -50,6 +50,14 @@ export default {
         return api.patch(`/${empresaId}/${centroTrabajoId}/actualizar-trabajador/${trabajadorId}`, trabajadorData)
     },
 
+    /** Los mismos agentes de riesgo para varios trabajadores del centro, en una petición. */
+    aplicarAgentesRiesgo(empresaId: string, centroTrabajoId: string, trabajadorIds: string[], agentesRiesgoActuales: string[]) {
+        return api.patch<{ actualizados: string[]; noEncontrados: string[] }>(
+            `/${empresaId}/${centroTrabajoId}/agentes-riesgo`,
+            { trabajadorIds, agentesRiesgoActuales },
+        )
+    },
+
     importTrabajadores(empresaId: string, centroTrabajoId: string, formData: FormData) {
         return api.post(`/${empresaId}/${centroTrabajoId}/importar-trabajadores`, formData)
     },
