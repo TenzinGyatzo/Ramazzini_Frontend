@@ -2758,6 +2758,20 @@ html.dark-mode .auditoria-view .audit-table tbody tr {
   background-color: #1e293b !important;
 }
 
+html.dark-mode .auditoria-view .actor-enlace {
+  color: #93c5fd !important;
+}
+
+html.dark-mode .auditoria-view .filtro-chip {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  color: #bfdbfe !important;
+}
+
+html.dark-mode .auditoria-view .filtro-chip-quitar:hover,
+html.dark-mode .auditoria-view .filtro-chip-quitar:focus-visible {
+  background-color: rgba(191, 219, 254, 0.15) !important;
+}
+
 html.dark-mode .auditoria-view .pagination {
   color: #cbd5e1 !important;
 }

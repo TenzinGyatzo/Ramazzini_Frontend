@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useUserStore } from "@/stores/user";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import auditAPI from "@/api/auditAPI";
@@ -35,6 +35,80 @@ const exportError = ref<string | null>(null);
 const verifyLoading = ref(false);
 const verifyResult = ref<{ valid: boolean; errors?: { index: number; expectedHash: string; actualHash: string }[] } | null>(null);
 const exportFormat = ref<"json" | "csv">("json");
+
+// Filtro por usuario: lista del proveedor; un usuario ya eliminado se elige desde la tabla
+interface UsuarioFiltro {
+  _id: string;
+  username?: string;
+  email?: string;
+}
+const usuarios = ref<UsuarioFiltro[]>([]);
+// Nombre de quien se eligió desde la tabla, por si ya no está en la lista
+const actorElegidoEnTabla = ref<{ id: string; nombre: string } | null>(null);
+
+function nombreUsuario(u: UsuarioFiltro): string {
+  return u.username?.trim() || u.email || u._id;
+}
+
+const usuariosOrdenados = computed(() =>
+  [...usuarios.value].sort((a, b) => nombreUsuario(a).localeCompare(nombreUsuario(b), "es"))
+);
+
+const actorFueraDeLista = computed(() => {
+  const elegido = actorElegidoEnTabla.value;
+  if (!elegido || elegido.id !== actorId.value) return null;
+  return usuarios.value.some((u) => u._id === elegido.id) ? null : elegido;
+});
+
+// Usuario con el que se hizo la última búsqueda (el chip refleja lo que muestra la tabla)
+const actorAplicado = ref("");
+
+const nombreActorFiltrado = computed(() => {
+  if (!actorAplicado.value) return "";
+  const u = usuarios.value.find((x) => x._id === actorAplicado.value);
+  if (u) return nombreUsuario(u);
+  const elegido = actorElegidoEnTabla.value;
+  return elegido?.id === actorAplicado.value ? elegido.nombre : actorAplicado.value;
+});
+
+function nombreActor(ev: AuditEventItem): string {
+  return ev.actorSnapshot?.email ?? ev.actorId;
+}
+
+async function cargarUsuarios() {
+  const idProveedorSalud = userStore.user?.idProveedorSalud;
+  if (!idProveedorSalud) return;
+  const resultado = await userStore.fetchUsersByProveedorId(String(idProveedorSalud));
+  if (resultado.success && Array.isArray(resultado.data)) {
+    usuarios.value = resultado.data as UsuarioFiltro[];
+  }
+}
+
+// La política del proveedor puede llegar después de montar la vista
+watch(
+  () => isPrincipal.value && auditTrailEnabled.value,
+  (habilitada) => {
+    if (habilitada && usuarios.value.length === 0) cargarUsuarios();
+  },
+  { immediate: true }
+);
+
+function buscarDesdeInicio() {
+  page.value = 1;
+  search();
+}
+
+function filtrarPorActor(ev: AuditEventItem) {
+  if (!ev.actorId) return;
+  actorElegidoEnTabla.value = { id: ev.actorId, nombre: nombreActor(ev) };
+  actorId.value = ev.actorId;
+  buscarDesdeInicio();
+}
+
+function quitarFiltroUsuario() {
+  actorId.value = "";
+  buscarDesdeInicio();
+}
 
 function formatDate(d: string | undefined): string {
   if (!d) return "—";
@@ -74,6 +148,7 @@ async function search() {
     const data = await auditAPI.getEvents(params);
     items.value = data.items;
     total.value = data.total;
+    actorAplicado.value = typeof params.actorId === "string" ? params.actorId : "";
   } catch (e: unknown) {
     const err = e as { response?: { data?: { message?: string } }; message?: string };
     errorMessage.value =
@@ -148,7 +223,7 @@ async function verifyAudit() {
 <template>
   <div class="auditoria-view">
     <h1 class="title">Trail de auditoría</h1>
-    <p class="subtitle">Consulta de eventos por expediente, actor y fecha.</p>
+    <p class="subtitle">Consulta de eventos por fecha, usuario y tipo de evento.</p>
 
     <div
       v-if="!isPrincipal"
@@ -178,6 +253,18 @@ async function verifyAudit() {
           <input v-model="to" type="datetime-local" />
         </div>
         <div class="filter-row">
+          <label>Usuario</label>
+          <select v-model="actorId" class="filter-select">
+            <option value="">Todos</option>
+            <option v-if="actorFueraDeLista" :value="actorFueraDeLista.id">
+              {{ actorFueraDeLista.nombre }}
+            </option>
+            <option v-for="u in usuariosOrdenados" :key="u._id" :value="u._id">
+              {{ nombreUsuario(u) }}{{ u.email && u.username ? ` (${u.email})` : "" }}
+            </option>
+          </select>
+        </div>
+        <div class="filter-row">
           <label>Tipo de evento</label>
           <select v-model="actionType" class="filter-select">
             <option value="">Todos</option>
@@ -187,7 +274,7 @@ async function verifyAudit() {
           </select>
         </div>
         <div class="filter-actions">
-          <button type="button" class="btn primary" :disabled="loading" @click="search">
+          <button type="button" class="btn primary" :disabled="loading" @click="buscarDesdeInicio">
             {{ loading ? "Cargando…" : "Buscar" }}
           </button>
           <select v-model="exportFormat" class="export-format">
@@ -218,6 +305,20 @@ async function verifyAudit() {
       </div>
 
       <div class="table-wrap card">
+        <div v-if="actorAplicado" class="filtro-activo">
+          <span class="filtro-chip">
+            Usuario: {{ nombreActorFiltrado }}
+            <button
+              type="button"
+              class="filtro-chip-quitar"
+              aria-label="Quitar el filtro de usuario"
+              title="Quitar el filtro de usuario"
+              @click="quitarFiltroUsuario"
+            >
+              ×
+            </button>
+          </span>
+        </div>
         <table class="audit-table">
           <thead>
             <tr>
@@ -231,8 +332,17 @@ async function verifyAudit() {
           <tbody>
             <tr v-for="ev in items" :key="ev._id ?? ev.timestamp + ev.actorId">
               <td class="cell-date">{{ formatDate(ev.timestamp) }}</td>
-              <td class="cell-actor" :title="ev.actorSnapshot?.email ?? ev.actorId">
-                {{ ev.actorSnapshot?.email ?? ev.actorId }}
+              <td class="cell-actor">
+                <button
+                  v-if="ev.actorId && ev.actorId !== actorAplicado"
+                  type="button"
+                  class="actor-enlace"
+                  :title="`Ver solo los eventos de ${nombreActor(ev)}`"
+                  @click="filtrarPorActor(ev)"
+                >
+                  {{ nombreActor(ev) }}
+                </button>
+                <span v-else :title="nombreActor(ev)">{{ nombreActor(ev) }}</span>
               </td>
               <td class="cell-long" :title="ev.actionType">{{ etiquetaEventoAuditoria(ev.actionType) }}</td>
               <td class="cell-long" :title="ev.resourceType ?? undefined">
@@ -386,6 +496,50 @@ async function verifyAudit() {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 0;
+}
+.actor-enlace {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #2563eb;
+  text-align: left;
+  cursor: pointer;
+}
+.actor-enlace:hover,
+.actor-enlace:focus-visible {
+  text-decoration: underline;
+}
+.filtro-activo {
+  margin-bottom: 0.75rem;
+}
+.filtro-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.35rem 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-size: 0.875rem;
+}
+.filtro-chip-quitar {
+  width: 1.4rem;
+  height: 1.4rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.filtro-chip-quitar:hover,
+.filtro-chip-quitar:focus-visible {
+  background: rgba(30, 58, 138, 0.12);
 }
 .cell-long {
   overflow-wrap: anywhere;
