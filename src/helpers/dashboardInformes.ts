@@ -43,7 +43,7 @@ import {
   type ResumenIncapacidades,
 } from './dashboardSeguimiento';
 
-type Celda = string | number;
+export type Celda = string | number;
 
 export interface TablaDeInforme {
   seccion: string;
@@ -437,6 +437,16 @@ export function hojasDeExcel(informe: InformeDeTablero): HojaDeInforme[] {
   return hojas;
 }
 
+/**
+ * Celda para SheetJS: los porcentajes («35 %») van como número con formato de
+ * porcentaje, para que en Excel se puedan ordenar, sumar o graficar. Lo demás, igual.
+ */
+export function celdaDeExcel(celda: Celda): Celda | { t: 'n'; v: number; z: string } {
+  const porcentaje = typeof celda === 'string' ? celda.match(/^(-?\d+(?:\.\d+)?) ?%$/) : null;
+  if (!porcentaje) return celda;
+  return { t: 'n', v: Number(porcentaje[1]) / 100, z: porcentaje[1].includes('.') ? '0.0%' : '0%' };
+}
+
 const sinEspacios = (texto: string) =>
   texto
     .normalize('NFD')
@@ -556,9 +566,21 @@ export function definicionResumenEjecutivo(
         ]
       : [];
 
+  // Cada hoja dice de quién es y qué página es: los temáticos suelen pasar de una
+  const deQuien = informe.centro && informe.centro !== 'Todos' ? `${informe.empresa} · ${informe.centro}` : informe.empresa;
+
   return {
     pageSize: 'LETTER',
     pageMargins: [48, 48, 48, 54],
+    footer: (pagina: number, paginas: number) => ({
+      columns: [
+        { text: `${opciones.titulo ?? TITULO_DEL_RESUMEN} · ${deQuien}` },
+        { text: `Página ${pagina} de ${paginas}`, alignment: 'right', width: 'auto' },
+      ],
+      fontSize: 7.5,
+      color: '#6b7280',
+      margin: [48, 20, 48, 0],
+    }),
     content: [
       { text: opciones.titulo ?? TITULO_DEL_RESUMEN, style: 'titulo' },
       { text: informe.empresa, style: 'empresa' },

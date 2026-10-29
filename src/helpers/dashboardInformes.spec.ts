@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import * as xlsx from 'xlsx';
 import {
   armarInforme,
+  celdaDeExcel,
   definicionResumenEjecutivo,
   hallazgosDelTablero,
   hojasDeExcel,
@@ -263,6 +265,31 @@ describe('informes del tablero de salud', () => {
     expect(
       nombreDeArchivo('ResumenEjecutivo', { ...informe, periodo: 'Todos los registros históricos' }, '2026-10-10', 'xlsx'),
     ).toBe('ResumenEjecutivo_Aceros_del_Norte_S_A_2026-10-10.xlsx');
+  });
+
+  it('en el Excel, los porcentajes son números con formato de porcentaje', () => {
+    expect(celdaDeExcel('35 %')).toEqual({ t: 'n', v: 0.35, z: '0%' });
+    expect(celdaDeExcel('12.5 %')).toEqual({ t: 'n', v: 0.125, z: '0.0%' });
+    // Lo demás queda igual: textos, cantidades y diferencias en puntos
+    expect(celdaDeExcel('Sobrepeso')).toBe('Sobrepeso');
+    expect(celdaDeExcel(40)).toBe(40);
+    expect(celdaDeExcel('+20 pp')).toBe('+20 pp');
+
+    const hoja = xlsx.utils.aoa_to_sheet([['Normal', 40, '35 %'].map(celdaDeExcel)]);
+    const libro = xlsx.read(xlsx.write({ SheetNames: ['Hoja'], Sheets: { Hoja: hoja } }, { type: 'array', bookType: 'xlsx' }));
+    expect(libro.Sheets.Hoja.C1).toMatchObject({ t: 'n', v: 0.35 });
+  });
+
+  it('cada página del resumen dice de quién es y su número', () => {
+    const informe = armarInforme({ ...fuentes, conFiltros: false }, { ...contexto, centro: 'Planta Norte' });
+    const pie = definicionResumenEjecutivo(informe).footer(2, 3);
+    expect(JSON.stringify(pie)).toContain('Resumen de salud laboral para dirección · Aceros del Norte, S.A. · Planta Norte');
+    expect(JSON.stringify(pie)).toContain('Página 2 de 3');
+    // Toda la empresa: sin «Todos»
+    const deEmpresa = definicionResumenEjecutivo(armarInforme({ ...fuentes, conFiltros: false }, contexto), {
+      titulo: 'Salud auditiva',
+    }).footer(1, 1);
+    expect(JSON.stringify(deEmpresa)).toContain('Salud auditiva · Aceros del Norte, S.A."');
   });
 
   it('dice cuántas filas quedaron fuera cuando recorta una tabla', () => {

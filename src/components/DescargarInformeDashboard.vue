@@ -380,28 +380,35 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
     // Crear la portada
     const portada = crearPortada();
 
-    // Generación de imágenes con calidad ajustable
-    // Si altaCalidad es true, usa dimensiones altas para mejor calidad
-    // Si es false, usa dimensiones normales para mayor velocidad
+    // Generación de imágenes con calidad ajustable.
+    // Alta calidad: 300 dpi al ancho con que cada gráfica se imprime (puntos × 300 / 72),
+    // con la misma proporción de siempre. Antes eran 2000-3600 px para gráficas de 150-460 pt:
+    // de 3 a 10 veces más píxeles sin ganancia visible, y la descarga tardaba unas cuatro veces más.
+    // Calidad normal (vista previa): dimensiones fijas, más rápidas.
+    const a300dpi = (puntos: number, proporcion: number) => {
+        const ancho = Math.round((puntos * 300) / 72);
+        return [ancho, Math.round(ancho * proporcion)];
+    };
     const dimensiones = altaCalidad ? {
-        imc: [3000, 2000], // Aspect ratio 3:2 para gráficas de barras horizontales
-        aptitud: [3000, 2000], // Aspect ratio 3:2 para gráficas de barras horizontales
-        lentes: [2000, 2000], // Aspect ratio 1:1 para gráficas circulares
-        corregida: [2000, 2000], // Aspect ratio 1:1 para gráficas circulares
-        daltonismo: [2000, 2000], // Aspect ratio 1:1 para gráficas circulares
-        agentes: [3000, 2000], // Aspect ratio 3:2 para gráficas de barras
-        grupos: [3600, 2000], // Aspect ratio 9:5 para gráficas de barras más anchas
-        cintura: [2000, 2700], // Aspect ratio 3:2 para gráficas de barras
-        sexo: [2000, 2000], // Aspect ratio 1:1 para gráficas circulares
-        tensionArterial: [3000, 2000], // Aspect ratio 3:2 para gráficas de barras
-        audiometriaDistribucion: [3000, 2000], // Barras distribución audiometría
-        espirometriaDistribucion: [3000, 2000], // Barras distribución espirometría
-        ekgDistribucion: [3000, 2000], // Barras distribución EKG
-        rayosXDistribucion: [3000, 2000],
-        analisisLaboratorioDistribucion: [3000, 2000],
-        tamizajeBipolarTEA: [2000, 2000],
-        tamizajeProdromal: [2000, 2000],
-        tamizajeTLP: [3000, 2000]
+        imc: a300dpi(400, 2 / 3),
+        aptitud: a300dpi(365, 2 / 3),
+        lentes: a300dpi(150, 1),
+        corregida: a300dpi(150, 1),
+        daltonismo: a300dpi(150, 1),
+        agentes: a300dpi(400, 2 / 3),
+        grupos: a300dpi(460, 5 / 9),
+        cintura: a300dpi(200, 27 / 20),
+        sexo: a300dpi(175, 1),
+        tensionArterial: a300dpi(400, 2 / 3),
+        audiometriaDistribucion: a300dpi(400, 2 / 3),
+        espirometriaDistribucion: a300dpi(400, 2 / 3),
+        ekgDistribucion: a300dpi(400, 2 / 3),
+        rayosXDistribucion: a300dpi(400, 2 / 3),
+        analisisLaboratorioDistribucion: a300dpi(400, 2 / 3),
+        tamizajeBipolarTEA: a300dpi(150, 1),
+        tamizajeProdromal: a300dpi(150, 1),
+        // Barras: puede salir a 400 pt
+        tamizajeTLP: a300dpi(400, 2 / 3)
     } : {
         imc: [800, 600], // Aspect ratio 4:3 para gráficas de barras horizontales
         aptitud: [800, 600], // Aspect ratio 4:3 para gráficas de barras horizontales

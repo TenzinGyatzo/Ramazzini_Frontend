@@ -2,7 +2,6 @@
 import { fechaLocalHoy } from '@/helpers/dates';
 import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { cargarPdfMake, pdfMakeCargado, precargarPdfMake } from '@/lib/cargarPdfMake';
-import * as xlsx from 'xlsx';
 import InformesAPI from '@/api/InformesAPI';
 import { informePersonalizacionService } from '@/api/informe-personalizacion.service';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
@@ -11,6 +10,7 @@ import RichTextEditor from '@/components/RichTextEditor.vue';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import { useModalDirtyGuard } from '@/composables/useModalDirtyGuard';
 import {
+  celdaDeExcel,
   definicionResumenEjecutivo,
   hojasDeExcel,
   nombreDeArchivo,
@@ -294,10 +294,12 @@ const conLoGuardado = (informe: InformeDeTablero, tipo: TipoConConclusiones): In
   recomendacionesTabla: filasDe(personalizaciones[tipo]),
 });
 
-const descargarExcel = (informe: InformeDeTablero) => {
+/** SheetJS se descarga al pedir el Excel, no con el tablero (como pdfmake). */
+const descargarExcel = async (informe: InformeDeTablero) => {
+  const xlsx = await import('xlsx');
   const libro = xlsx.utils.book_new();
   for (const hoja of hojasDeExcel(informe)) {
-    const datosDeHoja = xlsx.utils.aoa_to_sheet(hoja.filas);
+    const datosDeHoja = xlsx.utils.aoa_to_sheet(hoja.filas.map((fila) => fila.map(celdaDeExcel)));
     const columnas = Math.max(1, ...hoja.filas.map((fila) => fila.length));
     datosDeHoja['!cols'] = Array.from({ length: columnas }, (_, i) => ({
       wch: Math.min(60, Math.max(10, ...hoja.filas.map((fila) => String(fila[i] ?? '').length + 2))),
@@ -319,7 +321,7 @@ const generar = async (modo: 'ver' | 'descargar') => {
   try {
     if (id === 'excel') {
       const informe = props.armar();
-      descargarExcel(informe);
+      await descargarExcel(informe);
       registrar(informe, id, 'download');
       return;
     }
