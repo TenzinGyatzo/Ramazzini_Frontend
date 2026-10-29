@@ -121,6 +121,31 @@ function normalizeFirmanteApi(body: unknown): Record<string, unknown> | null {
 }
 
 /** Obtiene firmante médico o enfermera del usuario (para validar tipoPersonal CEX). */
+/**
+ * Pide de una vez lo que consultan las validaciones de la nota médica al guardar (catálogo CEX y
+ * regla CIE-10 de cada código). Esas validaciones van una tras otra; así ya lo encuentran en
+ * memoria. Un fallo aquí no importa: la validación lo vuelve a pedir.
+ */
+export async function precargarValidacionesNotaMedica(formData: {
+  codigoCIE10Principal?: string | null;
+  codigoCIEDiagnostico2?: string | null;
+  codigoCIEDiagnostico3?: string | null;
+  codigosCIE10Complementarios?: (string | null)[] | null;
+}): Promise<void> {
+  const codigos = [
+    formData.codigoCIE10Principal,
+    formData.codigoCIEDiagnostico2,
+    formData.codigoCIEDiagnostico3,
+    ...(Array.isArray(formData.codigosCIE10Complementarios) ? formData.codigosCIE10Complementarios : []),
+  ]
+    .map((codigo) => extractCIE10Code(String(codigo ?? '')))
+    .filter((codigo): codigo is string => !!codigo);
+  await Promise.all([
+    getCexCatalogCodes().catch(() => null),
+    ...[...new Set(codigos)].map((codigo) => findCIE10Rule(codigo).catch(() => null)),
+  ]);
+}
+
 export async function fetchMedicoEnfermeraFirmantes(userId: string | undefined): Promise<{
   medicoFirmante: MedicoFirmanteLike;
   enfermeraFirmante: EnfermeraFirmanteLike;

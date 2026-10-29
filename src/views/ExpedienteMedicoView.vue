@@ -264,20 +264,28 @@ const lastFetchedTrabajadorId = ref('');
 
 onMounted(async () => {
   const idProveedorSalud = userStore.user?.idProveedorSalud;
-  if (idProveedorSalud) {
-    await proveedorSaludStore.loadProveedorSalud(idProveedorSalud);
-
-    historiasDelMes.value = await proveedorSaludStore.getHistoriasClinicasDelMes();
-  } else {
+  if (!idProveedorSalud) {
     console.error("No se encontró idProveedorSalud en el usuario.");
   }
-  
-  // Cargar datos del firmante para validación
-  await loadFirmanteData();
-
-  if (userStore.user?._id && proveedorSaludStore.isSIRES) {
-    await fetchBorradoresPendientes({ userId: userStore.user._id });
-  }
+  // Todo a la vez: proveedor, historias del mes y datos del firmante para validación. Los
+  // borradores pendientes esperan solo al proveedor (dependen de su régimen)
+  const proveedorCargado = idProveedorSalud
+    ? proveedorSaludStore.loadProveedorSalud(idProveedorSalud)
+    : Promise.resolve();
+  await Promise.all([
+    proveedorCargado,
+    idProveedorSalud
+      ? proveedorSaludStore.getHistoriasClinicasDelMesById(idProveedorSalud).then((historias) => {
+          historiasDelMes.value = historias;
+        })
+      : Promise.resolve(),
+    loadFirmanteData(),
+    proveedorCargado.then(() =>
+      userStore.user?._id && proveedorSaludStore.isSIRES
+        ? fetchBorradoresPendientes({ userId: userStore.user._id })
+        : undefined,
+    ),
+  ]);
 });
 
 const toggleDocumentoExternoModal = () => {
@@ -603,9 +611,14 @@ async function aplicarRetorno(trabajadorId: string) {
 }
 
 onMounted(async () => {
-  await fetchData();
   const trabajadorId = String(route.params.idTrabajador ?? '');
-  if (trabajadorId && !vistaDesmontada) aplicarRetorno(trabajadorId);
+  // Con la lista de este trabajador ya cargada (p. ej. al volver de guardar un documento, que
+  // ya está en ella) se va al documento sin esperar a que termine la recarga
+  const yaCargada = documentosSonDelTrabajador.value;
+  const recarga = fetchData();
+  if (yaCargada && trabajadorId) aplicarRetorno(trabajadorId);
+  await recarga;
+  if (!yaCargada && trabajadorId && !vistaDesmontada) aplicarRetorno(trabajadorId);
 });
 
 onBeforeUnmount(() => {

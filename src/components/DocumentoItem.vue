@@ -2024,25 +2024,28 @@ const ensurePdfGenerationTracker = ({ rapido = false } = {}) => {
                 return null;
             }
         },
-        onStatus: (status) => {
-            trackedPdfStatus.value = status;
-            const doc = currentDocumentData.value;
-            if (doc && typeof doc === 'object') {
-                doc.pdfStatus = status;
-            }
-            if (status === 'ready' || status === 'failed') {
-                pdfGenerationStore.clearLocalGenerating(props.documentoId);
-            }
-            if (status === 'ready') {
-                pdfDisponible.value = true;
-                pdfCheckScheduled = false;
-                schedulePdfCheck();
-            } else if (status === 'failed') {
-                pdfDisponible.value = false;
-            }
-        },
+        onStatus: aplicarEstadoPdf,
     });
 };
+
+/** Estado del PDF que llega por la consulta periódica o por la respuesta del servidor. */
+function aplicarEstadoPdf(status) {
+    trackedPdfStatus.value = status;
+    const doc = currentDocumentData.value;
+    if (doc && typeof doc === 'object') {
+        doc.pdfStatus = status;
+    }
+    if (status === 'ready' || status === 'failed') {
+        pdfGenerationStore.clearLocalGenerating(props.documentoId);
+    }
+    if (status === 'ready') {
+        pdfDisponible.value = true;
+        pdfCheckScheduled = false;
+        schedulePdfCheck();
+    } else if (status === 'failed') {
+        pdfDisponible.value = false;
+    }
+}
 
 watch(
     [
@@ -3267,6 +3270,20 @@ const schedulePdfCheck = () => {
   pdfCheckScheduled = true;
   runPdfAvailabilityCheck();
 };
+
+// Quien pidió el PDF (p. ej. el formulario al guardar) avisa en cuanto el servidor responde:
+// no hace falta esperar a la siguiente consulta periódica. También si terminó antes de que
+// este documento apareciera en el expediente.
+watch(
+  () => pdfGenerationStore.isLocalReady(props.documentoId),
+  (listo) => {
+    if (!listo) return;
+    stopPdfTracker();
+    aplicarEstadoPdf('ready');
+    pdfGenerationStore.forgetLocalReady(props.documentoId);
+  },
+  { immediate: true },
+);
 
 // Verificar disponibilidad al montar el componente (diferido hasta viewport visible)
 onMounted(() => {

@@ -106,13 +106,9 @@ export async function generarInformePdf(
 
   const apiEndpoint = `${import.meta.env.VITE_API_URL}/informes/${tipoApi}/${empresaId}/${trabajadorId}/${documentoId}/${userId}`;
 
-  try {
-    try {
-      await DocumentosAPI.markPdfGenerating(tipoApi, trabajadorId, documentoId);
-    } catch (markError) {
-      console.warn('No se pudo marcar pdfStatus generating:', markError);
-    }
-
+  // El servidor marca el documento como «generando» al recibir la petición; esta pantalla
+  // ya lo muestra así (markLocalGenerating), sin esperar a una petición previa
+  const pedirPdf = async (): Promise<void> => {
     if (tipoApi === 'audiometria') {
       const doc = await resolveDocumento(
         tipoApi,
@@ -200,6 +196,12 @@ export async function generarInformePdf(
     }
 
     await axios.get(apiEndpoint, authRequestConfig());
+  };
+
+  try {
+    await pedirPdf();
+    // La respuesta llega con el archivo ya escrito: el expediente lo muestra listo de inmediato
+    pdfGenerationStore.markLocalReady(documentoId);
   } catch (error) {
     pdfGenerationStore.clearLocalGenerating(documentoId);
     throw error;

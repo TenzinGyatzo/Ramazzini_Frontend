@@ -133,6 +133,38 @@ export const useDocumentosStore = defineStore("documentos", () => {
     return true;
   }
 
+  /** Tipo del formulario (singular) → clave de la lista del expediente. */
+  const CLAVE_DE_LISTA_POR_TIPO: Record<string, string> = {
+    antidoping: 'antidopings',
+    aptitud: 'aptitudes',
+    audiometria: 'audiometrias',
+    certificado: 'certificados',
+    certificadoExpedito: 'certificadosExpedito',
+    documentoExterno: 'documentosExternos',
+    examenVista: 'examenesVista',
+    exploracionFisica: 'exploracionesFisicas',
+    historiaClinica: 'historiasClinicas',
+    notaMedica: 'notasMedicas',
+    notaAclaratoria: 'notasAclaratorias',
+    receta: 'recetas',
+    constanciaAptitud: 'constanciasAptitud',
+    entrevistaPsicologica: 'entrevistasPsicologicas',
+  };
+
+  /**
+   * Pone en el expediente cargado el documento que se acaba de guardar (nuevo o editado), para
+   * que se vea al volver sin esperar a recargar todo. Devuelve false si no aplica (otro
+   * trabajador, tipo desconocido o sin fecha); la recarga de siempre lo trae igual.
+   */
+  function ponerDocumentoGuardado(tipoDocumento: string, trabajadorId: string, documento: any): boolean {
+    const clave = CLAVE_DE_LISTA_POR_TIPO[tipoDocumento] ?? tipoDocumento;
+    if (!(DOCUMENT_STORE_KEYS as readonly string[]).includes(clave)) return false;
+    if (documentosDeTrabajadorId.value !== String(trabajadorId)) return false;
+    if (!documento?._id || !obtenerCampoFecha(clave, documento)) return false;
+    quitarDocumento(documento._id);
+    return agregarDocumentos(clave, [documento]);
+  }
+
   /**
    * Quita un documento del expediente cargado en cuanto se elimina, sin esperar a recargar.
    * Un año que se queda sin documentos deja de mostrarse.
@@ -454,6 +486,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     fetchDocumentById,
     fetchAllDocuments,
     agregarDocumentos,
+    ponerDocumentoGuardado,
     quitarDocumento,
     setCurrentDocument,
     setCurrentTypeOfDocument,

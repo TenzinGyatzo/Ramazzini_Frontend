@@ -170,10 +170,4 @@ export default {
     finalizarDocumento(documentType: string, trabajadorId: string, documentId: string) {
         return api.post(`/expedientes/${trabajadorId}/documentos/${documentType}/${documentId}/finalizar`);
     },
-
-    markPdfGenerating(documentType: string, trabajadorId: string, documentId: string) {
-        return api.post(
-            `/expedientes/${trabajadorId}/documentos/${documentType}/${documentId}/pdf-status/generating`,
-        );
-    },
 }

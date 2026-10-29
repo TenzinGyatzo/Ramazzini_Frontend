@@ -34,7 +34,10 @@ vi.mock('./cie10', async (importOriginal) => {
   };
 });
 
+import { findCIE10Rule } from './cie10';
+import { getCexCatalogCodes } from '@/helpers/cexCatalogCodes';
 import {
+  precargarValidacionesNotaMedica,
   normalizeNotaMedicaDiagnosticosPv,
   validateDiagnostico2Sis,
   validateDiagnostico3Sis,
@@ -299,5 +302,32 @@ describe('validateNotaMedicaDiagnosticos2Y3', () => {
       ['codigoCIEDiagnostico2'],
       ['codigoCIEDiagnostico3'],
     ]);
+  });
+});
+
+describe('precargarValidacionesNotaMedica', () => {
+  it('pide a la vez el catálogo CEX y la regla de cada código, sin repetir ni vacíos', async () => {
+    vi.mocked(findCIE10Rule).mockClear();
+    vi.mocked(getCexCatalogCodes).mockClear();
+
+    await precargarValidacionesNotaMedica({
+      codigoCIE10Principal: 'C530 - Tumor maligno del endocérvix',
+      codigoCIEDiagnostico2: 'MT01',
+      codigoCIEDiagnostico3: '',
+      codigosCIE10Complementarios: ['C530', null],
+    });
+
+    expect(getCexCatalogCodes).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(findCIE10Rule).mock.calls.map(([codigo]) => codigo).sort()).toEqual([
+      'C530',
+      'MT01',
+    ]);
+  });
+
+  it('un fallo al precargar no interrumpe el guardado', async () => {
+    vi.mocked(findCIE10Rule).mockRejectedValueOnce(new Error('sin conexión'));
+    await expect(
+      precargarValidacionesNotaMedica({ codigoCIE10Principal: 'C530' }),
+    ).resolves.toBeUndefined();
   });
 });

@@ -414,7 +414,7 @@ import ModalSuscripcion from '../suscripciones/ModalSuscripcion.vue';
 import { esLimiteHistoriasAlcanzado } from '@/helpers/limiteHistoriasDelMes';
 import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaRamazziniScope, validarNotaMedicaPreSubmit, validarNotaMedicaEmbarazo, validarFechaDocumentoPreSubmit } from '@/helpers/validacionCampos';
 import { validateCIE10Duplicates, generateBlockingToastMessage } from '@/helpers/cie10';
-import { validateNotaMedicaDiagnosticos2Y3, fetchMedicoEnfermeraFirmantes, normalizeNotaMedicaDiagnosticosPv } from '@/helpers/notaMedicaDiagnosticosSis';
+import { validateNotaMedicaDiagnosticos2Y3, fetchMedicoEnfermeraFirmantes, normalizeNotaMedicaDiagnosticosPv, precargarValidacionesNotaMedica } from '@/helpers/notaMedicaDiagnosticosSis';
 import {
   normalizeNotaMedicaConfirmacionDiagnostica,
   validateNotaMedicaConfirmacionDiagnostica,
@@ -1812,8 +1812,12 @@ export default {
           trabajadores.currentTrabajador?.sexo === 'Femenino';
         const trabajadorNm = trabajadores.currentTrabajador;
 
-        const { medicoFirmante: medicoFirmanteConf, enfermeraFirmante: enfermeraFirmanteConf } =
-          await fetchMedicoEnfermeraFirmantes(user.value?._id);
+        // Firmante, catálogo CEX y reglas CIE-10 a la vez; las validaciones de abajo ya los encuentran
+        const [{ medicoFirmante: medicoFirmanteConf, enfermeraFirmante: enfermeraFirmanteConf }] =
+          await Promise.all([
+            fetchMedicoEnfermeraFirmantes(user.value?._id),
+            precargarValidacionesNotaMedica(formData.formDataNotaMedica),
+          ]);
         const fechaNotaConf = formData.formDataNotaMedica.fechaNotaMedica
           ? new Date(formData.formDataNotaMedica.fechaNotaMedica)
           : new Date();
@@ -2042,8 +2046,10 @@ export default {
         clearTimeout(temporizadorLento);
         guardadoLento.value = false;
 
-        // Navegar YA (no await markPdfGenerating ni PDF). resetForm diferido para no bloquear el paint.
+        // Navegar YA (no se espera el PDF). resetForm diferido para no bloquear el paint.
         permitirSalidaTrasGuardar();
+        // El documento ya está en la lista al llegar; la recarga del expediente solo confirma
+        documentos.ponerDocumentoGuardado(tipoDocEnviado, trabajadorId, documentoGuardado);
         // El expediente lleva la vista al documento guardado y lo ilumina
         anotarDocumentoGuardado(trabajadorId, documentId);
         router.push({
