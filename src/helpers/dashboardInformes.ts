@@ -444,8 +444,31 @@ const sinEspacios = (texto: string) =>
     .replace(/[^A-Za-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
 
-export const nombreDeArchivo = (prefijo: string, informe: InformeDeTablero, hoy: string, extension: string) =>
-  `${prefijo}_${sinEspacios(informe.empresa) || 'Empresa'}_${hoy}.${extension}`;
+/** «Periodo del 1/1/2026 al 31/10/2026» → «1-1-2026_a_31-10-2026»; vacío si no hay periodo. */
+const periodoParaArchivo = (periodo: string) => {
+  const fechas = periodo.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}).*?(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return fechas ? `${fechas.slice(1, 4).join('-')}_a_${fechas.slice(4, 7).join('-')}` : '';
+};
+
+/**
+ * Empresa, centro (si no es toda la empresa) y periodo, para que los informes de
+ * distintos centros o periodos no se descarguen con el mismo nombre. Sin periodo
+ * (todos los registros), la fecha de hoy.
+ */
+export const nombreDeArchivo = (
+  prefijo: string,
+  informe: Pick<InformeDeTablero, 'empresa' | 'centro' | 'periodo'>,
+  hoy: string,
+  extension: string,
+) =>
+  [
+    prefijo,
+    sinEspacios(informe.empresa) || 'Empresa',
+    informe.centro && informe.centro !== 'Todos' ? sinEspacios(informe.centro) : '',
+    periodoParaArchivo(informe.periodo) || hoy,
+  ]
+    .filter(Boolean)
+    .join('_') + `.${extension}`;
 
 // ---- Resumen para dirección e informes temáticos (pdfmake)
 
@@ -472,6 +495,7 @@ export function definicionResumenEjecutivo(
     ['Fecha', informe.fecha],
   ];
 
+  const limiteDeFilas = opciones.todasLasTablas ? FILAS_POR_TABLA_EN_TEMATICO : FILAS_POR_TABLA_EN_RESUMEN;
   const tablas = [
     ...(informe.comparativo ? [informe.comparativo] : []),
     ...informe.tablas.filter((tabla) => opciones.todasLasTablas || TABLAS_DEL_RESUMEN.includes(tabla.titulo)),
@@ -485,13 +509,25 @@ export function definicionResumenEjecutivo(
           body: [
             tabla.columnas.map((columna) => ({ text: columna, style: 'encabezado' })),
             ...tabla.filas
-              .slice(0, opciones.todasLasTablas ? FILAS_POR_TABLA_EN_TEMATICO : FILAS_POR_TABLA_EN_RESUMEN)
+              .slice(0, limiteDeFilas)
               .map((fila) => fila.map((celda, i) => ({ text: String(celda), alignment: i ? 'right' : 'left' }))),
           ],
         },
         layout: 'lightHorizontalLines',
         fontSize: 9,
       },
+      // Nunca se recorta en silencio: se dice cuántas filas quedaron fuera y dónde verlas
+      ...(tabla.filas.length > limiteDeFilas
+        ? [
+            {
+              text: `Se muestran ${limiteDeFilas} de ${tabla.filas.length} filas. La tabla completa está en «Tablas en Excel».`,
+              fontSize: 7.5,
+              italics: true,
+              color: '#6b7280',
+              margin: [0, 2, 0, 0],
+            },
+          ]
+        : []),
     ]);
 
   const recomendaciones = informe.recomendacionesTabla.length

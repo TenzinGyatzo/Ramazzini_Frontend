@@ -250,10 +250,36 @@ describe('informes del tablero de salud', () => {
     ).not.toContain('Planta Sur');
   });
 
-  it('nombra los archivos con la empresa y la fecha', () => {
+  it('nombra los archivos con la empresa, el centro y el periodo', () => {
     const informe = armarInforme({ ...fuentes, conFiltros: false }, contexto);
+    // Toda la empresa: sin centro
     expect(nombreDeArchivo('ResumenEjecutivo', informe, '2026-10-10', 'pdf')).toBe(
-      'ResumenEjecutivo_Aceros_del_Norte_S_A_2026-10-10.pdf',
+      'ResumenEjecutivo_Aceros_del_Norte_S_A_1-1-2026_a_31-3-2026.pdf',
+    );
+    expect(nombreDeArchivo('ResumenEjecutivo', { ...informe, centro: 'Planta Norte' }, '2026-10-10', 'pdf')).toBe(
+      'ResumenEjecutivo_Aceros_del_Norte_S_A_Planta_Norte_1-1-2026_a_31-3-2026.pdf',
+    );
+    // Sin periodo, la fecha de hoy
+    expect(
+      nombreDeArchivo('ResumenEjecutivo', { ...informe, periodo: 'Todos los registros históricos' }, '2026-10-10', 'xlsx'),
+    ).toBe('ResumenEjecutivo_Aceros_del_Norte_S_A_2026-10-10.xlsx');
+  });
+
+  it('dice cuántas filas quedaron fuera cuando recorta una tabla', () => {
+    const agentes = {
+      seccion: 'Antecedentes y agentes de riesgo',
+      titulo: 'Agentes de riesgo',
+      columnas: ['Agente', 'Trabajadores', 'Porcentaje'],
+      filas: Array.from({ length: 11 }, (_, i) => [`Agente ${i + 1}`, 11 - i, `${11 - i} %`]),
+    };
+    const informe = { ...armarInforme({ ...fuentes, conFiltros: false }, contexto), tablas: [agentes] };
+    const texto = JSON.stringify(definicionResumenEjecutivo(informe));
+    expect(texto).toContain('Agente 8');
+    expect(texto).not.toContain('Agente 9');
+    expect(texto).toContain('Se muestran 8 de 11 filas. La tabla completa está en «Tablas en Excel».');
+    // Sin recorte, sin aviso
+    expect(JSON.stringify(definicionResumenEjecutivo({ ...informe, tablas: [{ ...agentes, filas: agentes.filas.slice(0, 5) }] }))).not.toContain(
+      'Se muestran',
     );
   });
 });

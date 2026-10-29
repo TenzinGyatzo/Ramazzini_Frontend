@@ -8,6 +8,10 @@ export interface RegistrarExportacionDashboardPayload {
   periodo: string;
   centroTrabajo: string;
   totalTrabajadores?: number;
+  /** Qué informe de la ventana «Informes» se generó. */
+  tipo?: 'completo' | 'resumen' | 'cardiometabolico' | 'auditivo' | 'musculoesqueletico' | 'excel';
+  /** Filtros de población aplicados, en texto; se omite si es toda la plantilla. */
+  segmento?: string;
   modo: 'view' | 'download';
 }
 

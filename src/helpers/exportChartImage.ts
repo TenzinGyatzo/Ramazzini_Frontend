@@ -1,6 +1,35 @@
 import Chart from 'chart.js/auto';
 
-export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, height = 900): string {
+/**
+ * Copia profunda que conserva las funciones (formateadores de etiquetas, colores
+ * por contexto…), que JSON.stringify descarta. Las funciones se comparten con el
+ * original; los objetos y arreglos se copian para poder ajustarlos sin tocar la
+ * gráfica de la pantalla.
+ */
+export function clonarConFunciones<T>(valor: T): T {
+  if (Array.isArray(valor)) return valor.map((item) => clonarConFunciones(item)) as T;
+  if (valor && typeof valor === 'object' && Object.getPrototypeOf(valor) === Object.prototype) {
+    return Object.fromEntries(
+      Object.entries(valor as Record<string, unknown>)
+        .filter(([, item]) => item !== undefined)
+        .map(([clave, item]) => [clave, clonarConFunciones(item)]),
+    ) as T;
+  }
+  return valor;
+}
+
+export function exportarGraficaAltaResolucion(
+  chartConfig: any,
+  width = 1200,
+  height = 900,
+  opciones: {
+    /**
+     * Conserva los formateadores de la configuración, como «12 (35 %)» en las
+     * etiquetas del tablero. Sin esta opción se descartan, como siempre (audiograma).
+     */
+    conservarFunciones?: boolean;
+  } = {},
+): string {
   const exportCanvas = document.createElement('canvas');
   
   // Calcular aspect ratio basado en el tipo de gráfica
@@ -38,13 +67,15 @@ export function exportarGraficaAltaResolucion(chartConfig: any, width = 1200, he
   }
 
   // Clona la configuración y ajusta el tamaño
-  const config = JSON.parse(JSON.stringify(chartConfig));
+  const config = opciones.conservarFunciones
+    ? clonarConFunciones(chartConfig)
+    : JSON.parse(JSON.stringify(chartConfig));
   config.options = config.options || {};
   config.options.responsive = false;
   config.options.maintainAspectRatio = false; // Importante para controlar el aspect ratio
   config.options.animation = false;
 
-  // JSON.stringify elimina callbacks; restaurar ticks del audiograma
+  // Sin conservarFunciones, JSON.stringify elimina callbacks; restaurar ticks del audiograma
   if (
     config.type === 'line' &&
     config.options.scales?.y?.title?.text === 'Umbral Auditivo (dB)'

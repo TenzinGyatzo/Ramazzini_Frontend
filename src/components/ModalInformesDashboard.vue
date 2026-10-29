@@ -273,15 +273,18 @@ const guardar = async () => {
 const generando = ref<'' | 'ver' | 'descargar'>('');
 const hoy = () => fechaLocalHoy();
 
-/** Queda en la bitácora igual que el informe completo. */
-const registrar = (informe: InformeDeTablero, modo: 'view' | 'download') =>
+/** Queda en la bitácora igual que el informe completo; no se espera al servidor para entregarlo. */
+const registrar = (informe: InformeDeTablero, tipo: IdDeInforme, modo: 'view' | 'download') => {
   InformesAPI.registrarExportacionDashboard({
     empresaId: props.empresaId,
     periodo: informe.periodo,
     centroTrabajo: informe.centro || 'Todos',
     totalTrabajadores: props.totalTrabajadores,
+    tipo,
+    segmento: informe.segmento || undefined,
     modo,
   }).catch(() => {});
+};
 
 /** El informe con las conclusiones y recomendaciones guardadas para ese tipo. */
 const conLoGuardado = (informe: InformeDeTablero, tipo: TipoConConclusiones): InformeDeTablero => ({
@@ -316,8 +319,8 @@ const generar = async (modo: 'ver' | 'descargar') => {
   try {
     if (id === 'excel') {
       const informe = props.armar();
-      await registrar(informe, 'download');
       descargarExcel(informe);
+      registrar(informe, id, 'download');
       return;
     }
     const tema = esTema(id) ? id : null;
@@ -328,14 +331,14 @@ const generar = async (modo: 'ver' | 'descargar') => {
       definicionResumenEjecutivo(informe, tema ? { titulo: tituloDeTema(tema), todasLasTablas: true } : {}) as any,
     );
     if (modo === 'ver') {
-      // Se abre antes de esperar al servidor para que el navegador no bloquee la pestaña
+      // Se abre antes de avisar al servidor para que el navegador no bloquee la pestaña
       pdf.open();
-      await registrar(informe, 'view');
+      registrar(informe, id, 'view');
     } else {
-      await registrar(informe, 'download');
       pdf.download(
         nombreDeArchivo(tema ? tituloDeTema(tema).replace(/\s+/g, '') : 'ResumenParaDireccion', informe, hoy(), 'pdf'),
       );
+      registrar(informe, id, 'download');
     }
   } catch (error) {
     console.error('Error al generar el informe:', error);

@@ -8,12 +8,13 @@ import {
   recomendacionesTablaToPdfMake,
   isHtmlContentEmpty
 } from '@/helpers/pdfHtmlParser';
-import { ref, nextTick, watch, computed, onMounted } from 'vue';
+import { ref, nextTick, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { cargarPdfMake, precargarPdfMake } from '@/lib/cargarPdfMake';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import InformesAPI from '@/api/InformesAPI';
 import { formatearTituloProfesional } from '@/helpers/nombres';
 import { seccionesAdicionalesDelInforme, type SeccionesAdicionales } from '@/helpers/dashboardInformeCompleto';
+import { nombreDeArchivo } from '@/helpers/dashboardInformes';
 
 const props = defineProps<{
   refsGraficas: Record<string, any>;
@@ -121,7 +122,8 @@ const obtenerBase64 = (graficaObj: any, customWidth?: number, customHeight?: num
       return exportarGraficaAltaResolucion(
         graficaObj.config,
         customWidth || 1200,
-        customHeight || 900
+        customHeight || 900,
+        { conservarFunciones: true },
       );
     }
     const el = graficaObj.ref?.$el || graficaObj.ref;
@@ -2560,98 +2562,89 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
     };
 };
 
-// Estado para controlar cuando se está generando el PDF
+// ---- Generar
+// Mientras se arma el PDF (con muchas gráficas tarda unos segundos) se muestra un aviso.
+// Si sale bien, el aviso se cierra solo; si falla, lo dice y se cierra con su botón o con Esc.
 const generandoPDF = ref(false);
 const mostrarModalGeneracion = ref(false);
-const mensajeExito = ref('');
+const errorDeGeneracion = ref('');
 
-// Watcher para monitorear cambios en el estado
-watch(generandoPDF, (newValue) => {
-  if (!newValue) {
-    // Ya no cerramos automáticamente el modal
-    // El usuario debe hacer clic para cerrarlo
-  }
-});
-
-const generarPDF = async () => {
-  generandoPDF.value = true;
-  mostrarModalGeneracion.value = true;
-  
-  // Esperar a que Vue actualice el DOM
-  await nextTick();
-  
-  // Pequeño delay para asegurar que el modal se muestre
-  setTimeout(async () => {
-    try {
-      if (props.empresaId) {
-        await InformesAPI.registrarExportacionDashboard({
-          empresaId: props.empresaId,
-          periodo: props.periodo ?? '',
-          centroTrabajo: props.centroTrabajo ?? 'Todos',
-          totalTrabajadores: props.totalTrabajadores,
-          modo: 'view',
-        }).catch(() => {});
-      }
-
-      const docDefinition = generarDocDefinition(false); // Calidad normal
-      const pdfMake = await cargarPdfMake();
-      pdfMake.createPdf(docDefinition).open();
-      mensajeExito.value = 'El informe se generó correctamente. Puedes revisarlo en la ventana que se abrió.';
-    } catch (error) {
-      console.error('Error al generar PDF:', error);
-      mensajeExito.value = 'Error al generar el PDF.';
-    } finally {
-      // Pequeño delay para que el usuario vea el estado de carga
-      setTimeout(() => {
-        generandoPDF.value = false;
-      }, 1000);
-    }
-  }, 100);
+/** Queda en la bitácora; no se espera al servidor para entregar el PDF. */
+const registrarExportacion = (modo: 'view' | 'download') => {
+  if (!props.empresaId) return;
+  InformesAPI.registrarExportacionDashboard({
+    empresaId: props.empresaId,
+    periodo: props.periodo ?? '',
+    centroTrabajo: props.centroTrabajo ?? 'Todos',
+    totalTrabajadores: props.totalTrabajadores,
+    tipo: 'completo',
+    segmento: props.segmento || undefined,
+    modo,
+  }).catch(() => {});
 };
+
+/**
+ * Deja que el navegador pinte el aviso antes de armar el PDF, que ocupa la página mientras tanto.
+ * Con la pestaña en segundo plano no hay cuadros que pintar: el temporizador evita quedarse esperando.
+ */
+const esperarPintado = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => setTimeout(resolve, 0));
+    setTimeout(resolve, 100);
+  });
+
+const generar = async (modo: 'ver' | 'descargar') => {
+  if (generandoPDF.value) return;
+  // La pestaña se abre dentro del clic: si se abriera al terminar, el navegador podría bloquearla
+  const ventana = modo === 'ver' ? window.open('', '_blank') : null;
+  generandoPDF.value = true;
+  errorDeGeneracion.value = '';
+  mostrarModalGeneracion.value = true;
+  try {
+    await nextTick();
+    await esperarPintado();
+    const pdfMake = await cargarPdfMake();
+    // La vista previa en calidad normal (rápida); la descarga en alta calidad
+    const pdf = pdfMake.createPdf(generarDocDefinition(modo === 'descargar'));
+    if (modo === 'ver') {
+      pdf.open({}, ventana ?? undefined);
+      registrarExportacion('view');
+    } else {
+      pdf.download(
+        nombreDeArchivo(
+          'InformeSaludLaboral',
+          { empresa: props.nombreEmpresa ?? '', centro: props.centroTrabajo ?? '', periodo: props.periodo ?? '' },
+          fechaLocalHoy(),
+          'pdf',
+        ),
+      );
+      registrarExportacion('download');
+    }
+    mostrarModalGeneracion.value = false;
+  } catch (error) {
+    console.error('Error al generar el informe completo:', error);
+    ventana?.close();
+    errorDeGeneracion.value =
+      modo === 'ver' ? 'No se pudo generar el informe.' : 'No se pudo descargar el informe.';
+  } finally {
+    generandoPDF.value = false;
+  }
+};
+
+const generarPDF = () => generar('ver');
+const descargarPDF = () => generar('descargar');
 
 const cerrarModal = () => {
-  if (!generandoPDF.value && mensajeExito.value) {
-    // Solo cerrar si ya terminó el proceso y hay mensaje de éxito
-    mostrarModalGeneracion.value = false;
-    mensajeExito.value = '';
-  }
+  if (generandoPDF.value) return;
+  mostrarModalGeneracion.value = false;
+  errorDeGeneracion.value = '';
 };
 
-const descargarPDF = async () => {
-  generandoPDF.value = true;
-  mostrarModalGeneracion.value = true;
-  
-  // Esperar a que Vue actualice el DOM
-  await nextTick();
-  
-  // Pequeño delay para asegurar que el modal se muestre
-  setTimeout(async () => {
-    try {
-      if (props.empresaId) {
-        await InformesAPI.registrarExportacionDashboard({
-          empresaId: props.empresaId,
-          periodo: props.periodo ?? '',
-          centroTrabajo: props.centroTrabajo ?? 'Todos',
-          totalTrabajadores: props.totalTrabajadores,
-          modo: 'download',
-        }).catch(() => {});
-      }
-
-      const docDefinition = generarDocDefinition(true); // Alta calidad
-      const pdfMake = await cargarPdfMake();
-      pdfMake.createPdf(docDefinition).download(`InformeSaludLaboral_${props.nombreEmpresa?.replace(/\s+/g, '_') || 'Empresa'}_${fechaLocalHoy()}.pdf`);
-      mensajeExito.value = 'Informe generado correctamente.';
-    } catch (error) {
-      console.error('Error al descargar PDF:', error);
-      mensajeExito.value = 'Error al descargar el informe.';
-    } finally {
-      // Pequeño delay para que el usuario vea el estado de carga
-      setTimeout(() => {
-        generandoPDF.value = false;
-      }, 1000);
-    }
-  }, 100);
+const alPresionarTecla = (evento: KeyboardEvent) => {
+  if (evento.key === 'Escape' && mostrarModalGeneracion.value) cerrarModal();
 };
+onMounted(() => window.addEventListener('keydown', alPresionarTecla));
+onBeforeUnmount(() => window.removeEventListener('keydown', alPresionarTecla));
 
 defineExpose({ generarPDF, descargarPDF });
 
@@ -2764,38 +2757,41 @@ const crearTablaPDF = (datos: any[], columnas: string[], titulo: string, tipoTab
 </style>
 
 <template>
-    <!-- Modal de generación de PDF -->
+    <!-- Aviso mientras se genera el PDF; si falla, lo dice y se puede cerrar -->
     <Transition name="fade">
       <div 
         v-if="mostrarModalGeneracion" 
         class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
-        @click="!generandoPDF && mensajeExito ? cerrarModal() : null"
+        role="alertdialog"
+        aria-modal="true"
+        :aria-busy="generandoPDF"
+        data-test="informe-completo-aviso"
+        @click.self="cerrarModal"
       >
-        <div class="bg-white rounded-xl p-6 shadow-xl max-w-md w-full mx-4 max-h-[calc(100dvh-2rem)] overflow-y-auto" @click.stop>
-          <div class="flex flex-col items-center justify-center space-y-4 py-10">
-            <!-- Spinner durante la generación -->
-            <svg v-if="generandoPDF" class="animate-spin h-8 w-8 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
-            
-            <!-- Icono de éxito cuando termina -->
-            <i v-else class="fas fa-check-circle text-4xl text-emerald-600"></i>
-            
-            <!-- Mensajes dinámicos -->
-            <p v-if="generandoPDF" class="text-gray-700 text-center">Generando el informe, por favor espera...</p>
-            <p v-else class="text-gray-700 text-center">{{ mensajeExito || 'Proceso completado' }}</p>
-            
-            <p v-if="generandoPDF" class="text-sm text-gray-500 text-center">Esto puede tomar unos segundos.</p>
-            
-            <!-- Botón de cerrar solo cuando está listo -->
-<!--             <button 
-              v-if="!generandoPDF && mensajeExito"
-              @click="cerrarModal"
-              class="mt-4 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition duration-200"
-            >
-              Cerrar
-            </button> -->
+        <div class="bg-white rounded-xl p-6 shadow-xl max-w-md w-full mx-4 max-h-[calc(100dvh-2rem)] overflow-y-auto">
+          <div class="flex flex-col items-center justify-center space-y-4 py-8">
+            <template v-if="generandoPDF">
+              <svg class="animate-spin h-8 w-8 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              <p class="text-gray-700 text-center">Generando el informe, por favor espera...</p>
+              <p class="text-sm text-gray-500 text-center">Esto puede tomar unos segundos.</p>
+            </template>
+            <template v-else-if="errorDeGeneracion">
+              <!-- Tamaño sin text-4xl: el modo oscuro aclara esa clase y el ícono perdería el rojo -->
+              <i class="fas fa-circle-exclamation text-red-600" style="font-size: 2.25rem"></i>
+              <p class="text-gray-700 text-center" data-test="informe-completo-error">
+                {{ errorDeGeneracion }} Inténtalo de nuevo; si vuelve a fallar, recarga la página.
+              </p>
+              <button
+                type="button"
+                class="mt-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition duration-200"
+                @click="cerrarModal"
+              >
+                Cerrar
+              </button>
+            </template>
           </div>
         </div>
       </div>
