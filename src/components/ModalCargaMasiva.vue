@@ -281,7 +281,7 @@ const handleSubmit = async () => {
             <span class="carga-masiva-paso">3</span>
             <p class="min-w-0 flex-1">
               <span class="font-medium text-gray-900">Sube el archivo.</span>
-              Se registran los renglones correctos; los que tengan algún error aparecen en un resumen con su motivo, para que los corrijas y los subas de nuevo.
+              Se registran las filas correctas; las que tengan algún error aparecen en un resumen con su motivo, para que las corrijas y las subas de nuevo.
             </p>
           </li>
         </ol>

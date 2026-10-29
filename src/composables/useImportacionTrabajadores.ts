@@ -101,7 +101,7 @@ export const useImportacionTrabajadores = () => {
     } catch (error: any) {
       console.error('[DEBUG] Error inesperado en la importación:', error)
 
-      // Los renglones con errores vienen en una respuesta 200; aquí solo llegan fallos
+      // Las filas con errores vienen en una respuesta 200; aquí solo llegan fallos
       // de la petición completa
       const tiempoAgotado = esTiempoAgotadoDeImportacion(error, Date.now() - inicio)
       const errorResumen: ImportResumen = {

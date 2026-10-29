@@ -53,7 +53,7 @@
           <div class="modal-resumen-importacion-stats grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="modal-resumen-importacion-stat bg-green-50 border border-green-200 rounded-lg p-4 text-center">
               <div class="text-2xl font-bold text-green-600">{{ resumen.totalProcessed }}</div>
-              <div class="text-sm text-green-700">Renglones procesados</div>
+              <div class="text-sm text-green-700">Filas procesadas</div>
             </div>
             <div class="bg-green-100 border border-green-300 rounded-lg p-4 text-center">
               <div class="text-2xl font-bold text-green-700">{{ resumen.successful }}</div>
@@ -173,9 +173,9 @@
             <div v-if="resumen.failed > 0" class="bg-red-50 border border-red-200 rounded-lg p-4">
               <h4 class="text-lg font-medium text-red-800 mb-2">⚠️ Atención</h4>
               <p class="text-red-700 text-sm">
-                {{ resumen.failed === 1 ? '1 renglón no se registró' : `${resumen.failed} renglones no se registraron` }}.
-                En la pestaña «Errores» está el motivo de cada uno, con su número de renglón en el Excel.
-                Corrígelos y sube solo esos renglones, para no duplicar a los que ya se registraron.
+                {{ resumen.failed === 1 ? '1 fila no se registró' : `${resumen.failed} filas no se registraron` }}.
+                En la pestaña «Errores» está el motivo de cada una, con su número de fila en el Excel.
+                Corrígelas y sube solo esas filas, para no duplicar a los que ya se registraron.
               </p>
             </div>
 
@@ -216,8 +216,8 @@
                   <div class="flex items-start justify-between">
                     <div class="min-w-0 flex-1">
                       <h5 class="text-sm font-medium text-red-800 mb-1">
-                        <span v-if="error.fila" class="modal-resumen-importacion-fila">Renglón {{ error.fila }}</span>
-                        {{ nombreDelRenglon(error.worker) }}
+                        <span v-if="error.fila" class="modal-resumen-importacion-fila">Fila {{ error.fila }}</span>
+                        {{ nombreDeFila(error.worker) }}
                         <span v-if="error.worker?.sexo" class="text-xs text-gray-600 font-normal">({{ error.worker.sexo }})</span>
                       </h5>
                       <p class="mb-2 text-xs text-gray-600">
@@ -228,7 +228,7 @@
 
                       <!-- Un motivo por problema -->
                       <ul class="mb-3 space-y-1 text-sm text-red-700">
-                        <li v-for="(motivo, mIndex) in motivosDelRenglon(error)" :key="mIndex" class="flex gap-2">
+                        <li v-for="(motivo, mIndex) in motivosDeFila(error)" :key="mIndex" class="flex gap-2">
                           <i class="fa-solid fa-circle-xmark mt-1 shrink-0 text-xs" aria-hidden="true"></i>
                           <span class="min-w-0 break-words">{{ motivo }}</span>
                         </li>
@@ -306,8 +306,8 @@
                   <div class="flex items-center justify-between">
                     <div class="min-w-0 flex-1">
                       <h5 class="text-sm font-medium text-green-800">
-                        <span v-if="success.fila" class="modal-resumen-importacion-fila">Renglón {{ success.fila }}</span>
-                        {{ nombreDelRenglon(success.worker) }}
+                        <span v-if="success.fila" class="modal-resumen-importacion-fila">Fila {{ success.fila }}</span>
+                        {{ nombreDeFila(success.worker) }}
                         <span v-if="success.worker?.sexo" class="text-xs text-gray-600 font-normal">({{ success.worker.sexo }})</span>
                       </h5>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 mt-2">
@@ -395,7 +395,7 @@
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <h5 class="text-sm font-medium text-purple-800 mb-2">
-                        {{ nombreDelRenglon(trabajador.worker) }}
+                        {{ nombreDeFila(trabajador.worker) }}
                       </h5>
 
                       <!-- Campos normalizados -->
@@ -510,10 +510,10 @@ import { fechaLocalHoy } from '@/helpers/dates';
 import { ref, computed } from 'vue'
 import * as XLSX from 'xlsx'
 import {
-  fechaDelRenglon,
+  fechaDeFila,
   filasReporteErrores,
-  motivosDelRenglon,
-  nombreDelRenglon,
+  motivosDeFila,
+  nombreDeFila,
 } from '@/helpers/resumenImportacion'
 
 interface ImportResult {
@@ -634,9 +634,9 @@ const closeModal = () => {
   emit('close')
 }
 
-const formatDate = (date: string | Date) => fechaDelRenglon(date) || 'N/A'
+const formatDate = (date: string | Date) => fechaDeFila(date) || 'N/A'
 
-/** Un renglón por motivo, con renglón del Excel, CURP y NSS. */
+/** Una fila por motivo, con la fila del Excel, CURP y NSS. */
 const downloadErrorReport = () => {
   const hoja = XLSX.utils.aoa_to_sheet(filasReporteErrores(props.resumen.data))
   hoja['!cols'] = [
