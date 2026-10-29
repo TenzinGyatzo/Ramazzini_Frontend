@@ -280,6 +280,18 @@ describe('informes del tablero de salud', () => {
     expect(libro.Sheets.Hoja.C1).toMatchObject({ t: 'n', v: 0.35 });
   });
 
+  it('lleva el logo de la empresa junto al título, solo si es una imagen', () => {
+    const logo = 'data:image/png;base64,iVBORw0KGgo=';
+    const conLogo = definicionResumenEjecutivo(armarInforme({ ...fuentes, conFiltros: false }, { ...contexto, logo }));
+    expect(JSON.stringify(conLogo.content[0])).toContain(logo);
+    // Un archivo que no es imagen (p. ej. la página de error del servidor) no se imprime
+    for (const otro of [undefined, 'data:text/html;base64,PGh0bWw+']) {
+      const sinLogo = definicionResumenEjecutivo(armarInforme({ ...fuentes, conFiltros: false }, { ...contexto, logo: otro }));
+      expect(JSON.stringify(sinLogo)).not.toContain('"image"');
+      expect(JSON.stringify(sinLogo.content[0])).toContain('Resumen de salud laboral para dirección');
+    }
+  });
+
   it('cada página del resumen dice de quién es y su número', () => {
     const informe = armarInforme({ ...fuentes, conFiltros: false }, { ...contexto, centro: 'Planta Norte' });
     const pie = definicionResumenEjecutivo(informe).footer(2, 3);

@@ -3032,6 +3032,7 @@ const contextoDeInforme = () => ({
       comparativo: tablaComparativa.value,
       porCentro: tablaPorCentro.value,
       responsable: nombreMedicoFirmanteDashboard.value ?? '',
+      logo: logoBase64.value,
       fecha: new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }),
       // Cada informe tiene sus conclusiones y recomendaciones: las pone la ventana de informes
       conclusiones: '',
@@ -3897,12 +3898,20 @@ const alGuardarConclusiones = (tipo, personalizacion) => {
 const logoBase64 = ref();
 
 
+// Sin logo (o si no se pudo leer), ninguno: antes quedaba el de la empresa anterior y salía en sus informes
 watch(
   () => empresasStore.currentEmpresa,
   async (nuevaEmpresa) => {
-    if (nuevaEmpresa?.logotipoEmpresa?.data) {
-      const rutaLogo = `/uploads/logos/${nuevaEmpresa.logotipoEmpresa.data}`;
-      logoBase64.value = await obtenerBase64Logo(rutaLogo);
+    logoBase64.value = undefined;
+    const archivo = nuevaEmpresa?.logotipoEmpresa?.data;
+    if (!archivo) return;
+    try {
+      const logo = await obtenerBase64Logo(`/uploads/logos/${archivo}`);
+      // Si mientras tanto se cambió de empresa, este logo ya no es el suyo
+      if (empresasStore.currentEmpresa?.logotipoEmpresa?.data !== archivo) return;
+      logoBase64.value = typeof logo === 'string' && logo.startsWith('data:image/') ? logo : undefined;
+    } catch (error) {
+      console.error('No se pudo cargar el logo de la empresa:', error);
     }
   },
   { immediate: true }

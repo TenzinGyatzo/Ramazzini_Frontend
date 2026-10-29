@@ -77,6 +77,8 @@ export interface InformeDeTablero {
   /** Filtros de población aplicados; vacío si es toda la plantilla. */
   segmento: string;
   responsable: string;
+  /** Logotipo de la empresa como data URL de imagen; sin él, el informe sale sin logo. */
+  logo?: string;
   /** Fecha de generación, ya con formato. */
   fecha: string;
   cifras: CifraClave[];
@@ -374,6 +376,7 @@ export function armarInforme(
     | 'periodo'
     | 'segmento'
     | 'responsable'
+    | 'logo'
     | 'fecha'
     | 'conclusiones'
     | 'recomendaciones'
@@ -582,8 +585,22 @@ export function definicionResumenEjecutivo(
       margin: [48, 20, 48, 0],
     }),
     content: [
-      { text: opciones.titulo ?? TITULO_DEL_RESUMEN, style: 'titulo' },
-      { text: informe.empresa, style: 'empresa' },
+      // Con logo, a la derecha del título, como en el informe completo
+      {
+        columns: [
+          {
+            width: '*',
+            stack: [
+              { text: opciones.titulo ?? TITULO_DEL_RESUMEN, style: 'titulo' },
+              { text: informe.empresa, style: 'empresa' },
+            ],
+          },
+          ...(informe.logo?.startsWith('data:image/')
+            ? [{ width: 'auto', image: informe.logo, fit: [90, 45], alignment: 'right' }]
+            : []),
+        ],
+        columnGap: 12,
+      },
       {
         table: { widths: ['auto', '*'], body: ficha.map(([dato, valor]) => [{ text: dato, bold: true }, valor]) },
         layout: 'noBorders',
