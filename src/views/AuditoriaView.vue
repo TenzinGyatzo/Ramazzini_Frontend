@@ -4,6 +4,7 @@ import { useUserStore } from "@/stores/user";
 import { useProveedorSaludStore } from "@/stores/proveedorSalud";
 import auditAPI from "@/api/auditAPI";
 import type { AuditEventItem } from "@/api/auditAPI";
+import { GRUPOS_EVENTOS_AUDITORIA, etiquetaEventoAuditoria } from "@/constants/auditActionTypes";
 
 const userStore = useUserStore();
 const proveedorSaludStore = useProveedorSaludStore();
@@ -180,66 +181,8 @@ async function verifyAudit() {
           <label>Tipo de evento</label>
           <select v-model="actionType" class="filter-select">
             <option value="">Todos</option>
-            <optgroup label="Documentos">
-              <option value="DOC_CREATE_DRAFT">Doc. borrador creado</option>
-              <option value="DOC_UPDATE_DRAFT">Doc. borrador actualizado</option>
-              <option value="DOC_FINALIZE">Doc. finalizado</option>
-              <option value="DOC_ANULATE">Doc. anulado</option>
-              <option value="SIGNED_FORM_CREATED">Formato firmado en pantalla</option>
-              <option value="SIGNED_FORM_DELETED">Formato firmado en pantalla eliminado</option>
-              <option value="SIGNED_FORM_CONFIG_UPDATED">Firma en pantalla activada o desactivada</option>
-              <option value="RESULTS_SEMAPHORE_UPDATED">Semaforización de resultados activada o desactivada</option>
-              <option value="DISABILITY_CONFIG_UPDATED">Configuración de incapacidades modificada</option>
-              <option value="REPORT_COLOR_UPDATED">Color de los informes modificado</option>
-            </optgroup>
-            <optgroup label="Accesos">
-              <option value="LOGIN_SUCCESS">Login exitoso</option>
-              <option value="LOGIN_FAIL">Login fallido</option>
-              <option value="SESSION_UNLOCK_SUCCESS">Sesión desbloqueada</option>
-              <option value="SESSION_UNLOCK_FAIL">Sesión desbloqueo fallido</option>
-              <option value="ACUERDO_CONFIDENCIALIDAD_ACEPTADO">Acuerdo de confidencialidad aceptado</option>
-            </optgroup>
-            <optgroup label="Admin / asignaciones">
-              <option value="ADMIN_ROLES_PERMISSIONS">Roles/permisos</option>
-              <option value="ADMIN_USER_ASSIGNMENTS">Asignaciones usuario</option>
-              <!-- <option value="ADMIN_CONFIG_SIRES">Config SIRES</option> -->
-            </optgroup>
-            <optgroup label="Trabajadores">
-              <option value="WORKER_DELETED">Trabajador eliminado</option>
-              <option value="WORKER_DELETE_DENIED">Eliminación de trabajador rechazada</option>
-              <option value="WORKER_TRANSFER">Transferencia de trabajador</option>
-              <option value="WORKER_FUSION_MANUAL">Fusión de trabajadores</option>
-              <option value="WORKER_DUPLICATE_DISMISSED">Duplicado descartado</option>
-            </optgroup>
-            <optgroup label="Empresas">
-              <option value="VIGENCIAS_EMPRESAS_ACTUALIZADAS">Empresas en seguimiento de vigencias modificadas</option>
-            </optgroup>
-            <optgroup label="Inventario">
-              <option value="INVENTORY_ADJUSTED">Ajuste de inventario</option>
-              <option value="INVENTORY_WRITE_OFF">Baja de inventario</option>
-              <option value="INVENTORY_CATALOG_UPDATED">Catálogo de insumos modificado</option>
-              <option value="INVENTORY_CONFIG_UPDATED">Configuración del inventario modificada</option>
-            </optgroup>
-            <optgroup label="Exportaciones">
-              <option value="WORKERS_EXPORT_EXCEL">Export Excel trabajadores</option>
-              <option value="DASHBOARD_REPORT_EXPORTED">Informe dashboard exportado</option>
-            </optgroup>
-            <optgroup label="GIIS / sistema">
-              <option value="GIIS_EXPORT_FILE_GENERATED">GIIS archivo generado</option>
-              <option value="GIIS_EXPORT_DOWNLOADED">GIIS descargado</option>
-              <option value="AUDIT_EXPORT_DOWNLOAD">Export auditoría descargado</option>
-            </optgroup>
-            <optgroup label="Gestión de usuarios">
-              <option value="USER_INVITATION_SENT">Invitación enviada</option>
-              <option value="USER_ACTIVATED">Usuario activado</option>
-              <option value="USER_SUSPENDED">Cuenta suspendida</option>
-              <option value="USER_REACTIVATED">Cuenta reactivada</option>
-              <option value="USER_DELETED">Usuario eliminado</option>
-              <option value="USER_PASSWORD_CHANGED">Contraseña cambiada</option>
-            </optgroup>
-            <optgroup label="Perfiles de firmantes">
-              <option value="SIGNER_PROFILE_CREATED">Perfil firmante creado</option>
-              <option value="SIGNER_PROFILE_UPDATED">Perfil firmante actualizado</option>
+            <optgroup v-for="g in GRUPOS_EVENTOS_AUDITORIA" :key="g.grupo" :label="g.grupo">
+              <option v-for="e in g.eventos" :key="e.valor" :value="e.valor">{{ e.etiqueta }}</option>
             </optgroup>
           </select>
         </div>
@@ -291,7 +234,7 @@ async function verifyAudit() {
               <td class="cell-actor" :title="ev.actorSnapshot?.email ?? ev.actorId">
                 {{ ev.actorSnapshot?.email ?? ev.actorId }}
               </td>
-              <td class="cell-long" :title="ev.actionType">{{ ev.actionType }}</td>
+              <td class="cell-long" :title="ev.actionType">{{ etiquetaEventoAuditoria(ev.actionType) }}</td>
               <td class="cell-long" :title="ev.resourceType ?? undefined">
                 {{ ev.resourceType ?? "—" }}
               </td>
