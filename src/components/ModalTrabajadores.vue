@@ -159,18 +159,31 @@ const isPaisNacimientoReadOnly = computed(
   () => isIdentificationLocked.value,
 );
 
+const AVISO_IDENTIFICACION = {
+  verificando: 'Verificando qué datos de identificación se pueden modificar…',
+  finalizado: 'Los datos de identificación y el sexo biológico no pueden modificarse porque el trabajador ya tiene un documento clínico finalizado.',
+  curpGenerica: 'Complete la CURP real y los datos de nacimiento; después quedarán bloqueados.',
+  registro: 'Los datos de identificación no pueden modificarse tras el registro. El sexo biológico sigue siendo editable hasta que exista un documento clínico finalizado.',
+};
+
 const identificationSectionNotice = computed(() => {
   if (!isWorkerIdentificationReadOnly.value) return '';
-  // Aún no se sabe: lo dice «Verificando…» junto a «Identificación»
-  if (verificandoDetalle.value) return '';
-  if (hasFinalizedClinicalDocument.value) {
-    return 'Los datos de identificación y el sexo biológico no pueden modificarse porque el trabajador ya tiene un documento clínico finalizado.';
-  }
-  if (hasGenericCurpStored.value) {
-    return 'Complete la CURP real y los datos de nacimiento; después quedarán bloqueados.';
-  }
-  return 'Los datos de identificación no pueden modificarse tras el registro. El sexo biológico sigue siendo editable hasta que exista un documento clínico finalizado.';
+  // Aún no se sabe cuál aviso va: la caja ya ocupa su lugar y dice qué está pasando
+  if (verificandoDetalle.value) return AVISO_IDENTIFICACION.verificando;
+  if (hasFinalizedClinicalDocument.value) return AVISO_IDENTIFICACION.finalizado;
+  if (hasGenericCurpStored.value) return AVISO_IDENTIFICACION.curpGenerica;
+  return AVISO_IDENTIFICACION.registro;
 });
+
+/**
+ * Los avisos que pueden quedar al terminar de verificar. Van invisibles y encimados en la caja:
+ * así mide lo que el más largo en cualquier ancho y el formulario no se mueve al cambiar el texto.
+ */
+const avisosPosiblesIdentificacion = computed(() => [
+  AVISO_IDENTIFICACION.verificando,
+  AVISO_IDENTIFICACION.finalizado,
+  hasGenericCurpStored.value ? AVISO_IDENTIFICACION.curpGenerica : AVISO_IDENTIFICACION.registro,
+]);
 
 function omitImmutableIdentificationFields(payload) {
   if (!isWorkerIdentificationReadOnly.value) {
@@ -1376,9 +1389,24 @@ const {
           </div>
           <p
             v-if="identificationSectionNotice"
-            class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2 mb-3"
+            class="grid text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2 mb-3"
+            :role="verificandoDetalle ? 'status' : undefined"
+            data-testid="aviso-identificacion"
           >
-            {{ identificationSectionNotice }}
+            <span
+              v-for="aviso in avisosPosiblesIdentificacion"
+              :key="aviso"
+              class="col-start-1 row-start-1 invisible"
+              aria-hidden="true"
+            ><i class="fa-solid fa-spinner mr-1"></i>{{ aviso }}</span>
+            <span class="col-start-1 row-start-1">
+              <i
+                v-if="verificandoDetalle"
+                class="fa-solid fa-spinner fa-spin mr-1"
+                aria-hidden="true"
+                data-testid="verificando-identificacion"
+              ></i>{{ identificationSectionNotice }}
+            </span>
           </p>
           <div
             v-if="posibleDuplicadoRegistro"
@@ -1419,17 +1447,7 @@ const {
             @node="formNode = $event"
             @submit="handleSubmit" @submit-invalid="onFormSubmitInvalid" @input="formData = $event">
             <section>
-              <h3 class="flex items-center gap-2 text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3">
-                Identificación
-                <span
-                  v-if="verificandoDetalle && isWorkerIdentificationReadOnly"
-                  class="text-xs font-normal text-gray-500"
-                  role="status"
-                  data-testid="verificando-identificacion"
-                >
-                  <i class="fa-solid fa-spinner fa-spin mr-1" aria-hidden="true"></i>Verificando…
-                </span>
-              </h3>
+              <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3">Identificación</h3>
               <div class="lg:grid gap-3 lg:grid-cols-2">
               <div>
                 <!-- México: validación RENAPO según régimen -->
