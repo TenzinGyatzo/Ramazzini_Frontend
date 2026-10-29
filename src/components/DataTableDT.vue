@@ -1079,7 +1079,7 @@ function inicializarDataTable() {
                       : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                   }"
                   data-id="${escapeHtml(row._id)}"
-                  data-nombre="${escapeHtml(row.nombre)}"
+                  data-nombre="${escapeHtml([row.primerApellido, row.segundoApellido, row.nombre].filter(Boolean).join(' '))}"
                   title="${canEliminarFusionarTrabajadores.value ? 'Eliminar trabajador' : 'No tienes permiso para eliminar trabajadores'}"
                 >
                   <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm order-1">

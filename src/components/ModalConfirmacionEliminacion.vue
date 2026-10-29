@@ -4,6 +4,8 @@ import { useVerificacionEliminacion } from '@/composables/useVerificacionElimina
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
 import { TIPOS_DOCUMENTO_EXPEDIENTE, nombreTipoDocumento } from '@/helpers/documentosExpediente';
 import { iconoTipoDocumento } from '@/helpers/iconoTipoDocumento';
+import { tituloEliminacion } from '@/config/eliminacion';
+import { NO_SE_PUEDE_DESHACER } from '@/utils/resumenEliminacion';
 
 const props = defineProps({
   isVisible: {
@@ -48,6 +50,9 @@ watch(
 );
 
 const requierePassword = computed(() => props.nivel === 'moderado');
+const titulo = computed(() =>
+  tituloEliminacion(`${props.selectedCount} documento${props.selectedCount !== 1 ? 's' : ''}`),
+);
 const isBusy = computed(() => isConfirming.value || verifying.value);
 
 const handleConfirm = async () => {
@@ -120,44 +125,41 @@ const resumenPorTipo = computed(() => {
         </div>
 
         <!-- Modal -->
-        <div class="modal-confirmacion-eliminacion modal-eliminacion relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-lg mx-auto">
-          <!-- Header -->
-          <div class="bg-gradient-to-r from-red-500 to-rose-600 px-4 py-3 sm:px-6">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-3">
-                <div class="flex-shrink-0">
-                  <i class="fas fa-exclamation-triangle text-white text-xl"></i>
-                </div>
-                <div>
-                  <h3 class="text-lg font-medium text-white">
-                    Confirmar Eliminación Masiva
-                  </h3>
-                  <p class="text-red-100 text-sm">
-                    Esta acción no se puede deshacer
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div
+          class="modal-confirmacion-eliminacion modal-eliminacion relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-lg mx-auto"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="modal-confirmacion-eliminacion-titulo"
+        >
+          <button
+            type="button"
+            class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+            aria-label="Cerrar"
+            title="Cerrar"
+            data-testid="eliminacion-cerrar"
+            :disabled="isBusy"
+            @click="handleCancel"
+          >
+            <i class="fas fa-times" aria-hidden="true"></i>
+          </button>
 
           <!-- Content -->
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div class="sm:flex sm:items-start">
               <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                <i class="fas fa-trash-alt text-red-600 text-lg"></i>
+                <i class="fas fa-trash-alt text-red-600 text-lg" aria-hidden="true"></i>
               </div>
-              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">
-                  ¿Estás seguro?
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full min-w-0">
+                <h3
+                  id="modal-confirmacion-eliminacion-titulo"
+                  class="text-lg leading-6 font-semibold text-gray-900 sm:pr-8"
+                  data-testid="eliminacion-titulo"
+                >
+                  {{ titulo }}
                 </h3>
                 <div class="mt-2">
-                  <p class="text-sm text-gray-500">
-                    Estás a punto de eliminar <span class="font-semibold text-red-600">{{ selectedCount }} documento{{ selectedCount !== 1 ? 's' : '' }}</span> de forma permanente.
-                  </p>
-
                   <!-- Detalles de documentos: por tipo real, con su cantidad -->
-                  <div v-if="resumenPorTipo.length > 0" class="mt-4 bg-gray-50 rounded-lg p-3" data-resumen-eliminacion>
-                    <p class="text-xs font-medium text-gray-700 mb-2">Documentos a eliminar:</p>
+                  <div v-if="resumenPorTipo.length > 0" class="bg-gray-50 rounded-lg p-3 text-left" data-resumen-eliminacion>
                     <ul class="grid grid-cols-1 gap-y-1.5 text-xs">
                       <li
                         v-for="fila in resumenPorTipo"
@@ -178,11 +180,16 @@ const resumenPorTipo = computed(() => {
                     </ul>
                   </div>
 
-                  <div v-if="requierePassword" class="mt-4 space-y-1">
-                    <label class="block text-xs font-medium text-gray-700">
+                  <p class="mt-3 text-sm text-gray-500" data-testid="eliminacion-resumen">
+                    {{ NO_SE_PUEDE_DESHACER }}
+                  </p>
+
+                  <div v-if="requierePassword" class="mt-4 space-y-1 text-left">
+                    <label for="modal-confirmacion-eliminacion-password" class="block text-xs font-medium text-gray-700">
                       Confirma tu contraseña
                     </label>
                     <input
+                      id="modal-confirmacion-eliminacion-password"
                       v-model="password"
                       type="password"
                       autocomplete="current-password"
@@ -207,7 +214,7 @@ const resumenPorTipo = computed(() => {
             >
               <i v-if="isBusy" class="fas fa-spinner fa-spin mr-2"></i>
               <i v-else class="fas fa-trash-alt mr-2"></i>
-              {{ isBusy ? 'Eliminando...' : 'Sí, eliminar' }}
+              {{ isBusy ? 'Eliminando...' : 'Eliminar' }}
             </button>
             <button
               type="button"

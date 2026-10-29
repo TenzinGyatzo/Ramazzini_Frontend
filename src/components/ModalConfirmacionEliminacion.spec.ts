@@ -47,4 +47,18 @@ describe('ModalConfirmacionEliminacion', () => {
     const w = montar([]);
     expect(w.find('[data-resumen-eliminacion]').exists()).toBe(false);
   });
+
+  it('título con verbo y sustantivo, sin preguntar si está seguro; la X cierra', async () => {
+    const w = montar([{ documentType: 'antidoping' }, { documentType: 'historiaClinica' }]);
+    expect(w.find('[data-testid="eliminacion-titulo"]').text()).toBe('¿Eliminar 2 documentos?');
+    expect(w.find('[data-testid="eliminacion-resumen"]').text()).toBe('No se puede deshacer.');
+    expect(w.text()).not.toMatch(/¿Estás seguro\?|Estás a punto/);
+    await w.find('button[aria-label="Cerrar"]').trigger('click');
+    expect(w.emitted('cancel')).toHaveLength(1);
+  });
+
+  it('un solo documento en singular', () => {
+    const w = montar([{ documentType: 'antidoping' }]);
+    expect(w.find('[data-testid="eliminacion-titulo"]').text()).toBe('¿Eliminar 1 documento?');
+  });
 });

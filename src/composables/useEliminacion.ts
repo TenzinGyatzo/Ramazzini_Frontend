@@ -5,10 +5,8 @@ import type {
   EntidadEliminable,
   NivelEliminacion,
 } from '@/config/eliminacion';
-import {
-  ETIQUETAS_ENTIDAD,
-  resolverNivel,
-} from '@/config/eliminacion';
+import { NOMBRE_EN_TITULO, resolverNivel } from '@/config/eliminacion';
+import { nombreTipoDocumentoEnFrase } from '@/helpers/documentosExpediente';
 import type { ResumenEliminacion } from '@/utils/resumenEliminacion';
 
 export interface EliminacionRequest {
@@ -16,6 +14,10 @@ export interface EliminacionRequest {
   /** ID del recurso a eliminar (para auditoría de auth fail). */
   resourceId?: string;
   identificacion: string;
+  /** Tipo del documento del expediente, para el título («¿Eliminar historia clínica?»). */
+  tipoDocumento?: string;
+  /** Nombre que el usuario le dio al documento (documentos externos): «Electrocardiograma». */
+  nombreDocumento?: string;
   textoConfirmacion?: string;
   detalleContexto?: DetalleContextoEliminacion;
   mensajePersonalizado?: string;
@@ -28,8 +30,10 @@ export interface EliminacionRequest {
 const isOpen = ref(false);
 const isConfirming = ref(false);
 const nivel = ref<NivelEliminacion>('simple');
+/** Lo que se elimina, tal como va en el título «¿Eliminar …?». */
 const tipoRegistro = ref('');
 const identificacion = ref('');
+const nombreDocumento = ref('');
 const textoConfirmacionEsperado = ref('');
 const detalleContexto = ref<DetalleContextoEliminacion | null>(null);
 const mensajePersonalizado = ref('');
@@ -58,6 +62,7 @@ function resetState() {
   nivel.value = 'simple';
   tipoRegistro.value = '';
   identificacion.value = '';
+  nombreDocumento.value = '';
   textoConfirmacionEsperado.value = '';
   detalleContexto.value = null;
   mensajePersonalizado.value = '';
@@ -70,8 +75,12 @@ function resetState() {
 function requestEliminacion(request: EliminacionRequest) {
   isOpen.value = true;
   nivel.value = resolverNivel(request.entidad, request.contextoNivel);
-  tipoRegistro.value = ETIQUETAS_ENTIDAD[request.entidad];
+  tipoRegistro.value =
+    request.entidad === 'documentoExpediente' && request.tipoDocumento
+      ? nombreTipoDocumentoEnFrase(request.tipoDocumento)
+      : NOMBRE_EN_TITULO[request.entidad];
   identificacion.value = request.identificacion;
+  nombreDocumento.value = request.nombreDocumento ?? '';
   textoConfirmacionEsperado.value =
     request.textoConfirmacion ?? request.identificacion;
   detalleContexto.value = request.detalleContexto ?? null;
@@ -149,6 +158,7 @@ export function useEliminacion() {
     nivel,
     tipoRegistro,
     identificacion,
+    nombreDocumento,
     textoConfirmacionEsperado,
     detalleContexto,
     mensajePersonalizado,

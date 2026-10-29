@@ -1,20 +1,29 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import type { NivelEliminacion } from '@/config/eliminacion';
-import type { DetalleContextoEliminacion } from '@/config/eliminacion';
+import type {
+  DetalleContextoEliminacion,
+  EntidadEliminable,
+  NivelEliminacion,
+} from '@/config/eliminacion';
+import { ETIQUETA_IDENTIFICACION, tituloEliminacion } from '@/config/eliminacion';
 import { useVerificacionEliminacion } from '@/composables/useVerificacionEliminacion';
 import { useEscapeToClose } from '@/composables/useEscapeToClose';
 import type { ResumenEliminacion } from '@/utils/resumenEliminacion';
 import {
+  NO_SE_PUEDE_DESHACER,
   avisoDocumentosFinalizados,
   fraseDeLoQueSeElimina,
+  fraseDependientesSinResumen,
 } from '@/utils/resumenEliminacion';
 
 const props = defineProps<{
   isVisible: boolean;
   nivel: NivelEliminacion;
+  /** Lo que se elimina, en minúsculas: «centro», «historia clínica». */
   tipoRegistro: string;
   identificacion: string;
+  /** Nombre del documento externo; va antes de su fecha. */
+  nombreDocumento?: string;
   textoConfirmacionEsperado: string;
   detalleContexto?: DetalleContextoEliminacion | null;
   mensajePersonalizado?: string;
@@ -66,14 +75,39 @@ watch(
   },
 );
 
-const mensajePrincipal = computed(() => {
-  if (props.mensajePersonalizado) return props.mensajePersonalizado;
-  return `Parece que quieres eliminar el/la ${props.tipoRegistro} identificado(a) como`;
+const titulo = computed(() => tituloEliminacion(props.tipoRegistro));
+
+/** El tipo de recurso de auditoría es la entidad que se elimina. */
+const entidad = computed(() => props.auditResourceType as EntidadEliminable | undefined);
+
+/** «Centro», «Fecha»…: va antes del nombre en negritas. */
+const etiquetaIdentificacion = computed(() => {
+  const etiqueta = entidad.value ? ETIQUETA_IDENTIFICACION[entidad.value] : undefined;
+  return etiqueta ?? props.tipoRegistro.charAt(0).toUpperCase() + props.tipoRegistro.slice(1);
 });
 
-const loQueSeElimina = computed(() =>
-  props.resumen ? fraseDeLoQueSeElimina(props.resumen) : null,
-);
+/** El estudio ya va en la identificación; en el detalle no se repite. */
+const estudioEnDetalle = computed(() => {
+  const estudio = props.detalleContexto?.tipoEstudioLabel;
+  return estudio && estudio !== props.identificacion ? estudio : '';
+});
+const hayDetalle = computed(() => {
+  const d = props.detalleContexto;
+  return !!d && !!(estudioEnDetalle.value || d.fecha || d.resultado || d.tipoSangre);
+});
+
+/** Solo lo que complementa al título: qué más se elimina y que no se puede deshacer. */
+const descripcion = computed(() => {
+  const loQueSeElimina =
+    props.mensajePersonalizado ||
+    (props.resumen
+      ? fraseDeLoQueSeElimina(props.resumen)
+      : props.nivel === 'robusto' && entidad.value
+        ? fraseDependientesSinResumen(entidad.value)
+        : null);
+  return [loQueSeElimina, NO_SE_PUEDE_DESHACER].filter(Boolean).join(' ');
+});
+
 const avisoFinalizados = computed(() =>
   props.resumen ? avisoDocumentosFinalizados(props.resumen) : null,
 );
@@ -123,11 +157,25 @@ const handleConfirm = async () => {
         class="fixed inset-0 z-10 w-screen overflow-y-auto"
         @click.self="handleCancel"
       >
-        <div class="flex min-h-full justify-center p-8 text-center items-center">
+        <div class="flex min-h-full justify-center p-4 sm:p-8 text-center items-center">
           <div
-            class="modal-eliminacion modal-inner relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
+            class="modal-eliminacion modal-inner relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full sm:my-8 sm:max-w-lg"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="modal-eliminacion-titulo"
             @click.stop
           >
+            <button
+              type="button"
+              class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+              aria-label="Cerrar"
+              title="Cerrar"
+              data-testid="eliminacion-cerrar"
+              :disabled="isBusy"
+              @click="handleCancel"
+            >
+              <i class="fas fa-times" aria-hidden="true" />
+            </button>
             <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
               <div class="sm:flex sm:items-start">
                 <div
@@ -139,6 +187,7 @@ const handleConfirm = async () => {
                     viewBox="0 0 24 24"
                     stroke-width="1.5"
                     stroke="currentColor"
+                    aria-hidden="true"
                   >
                     <path
                       stroke-linecap="round"
@@ -147,26 +196,39 @@ const handleConfirm = async () => {
                     />
                   </svg>
                 </div>
-                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                  <h3 class="text-lg font-semibold leading-6 text-gray-900">
-                    CONFIRMAR ELIMINACIÓN
+                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full min-w-0">
+                  <h3
+                    id="modal-eliminacion-titulo"
+                    class="text-lg font-semibold leading-6 text-gray-900 sm:pr-8"
+                    data-testid="eliminacion-titulo"
+                  >
+                    {{ titulo }}
                   </h3>
                   <div class="mt-2 space-y-3">
-                    <p class="text-md text-gray-500">
-                      <span>{{ mensajePrincipal }}</span>
-                      <template v-if="!mensajePersonalizado">
-                        <strong>"{{ identificacion }}"</strong>.
-                      </template>
-                      Esta acción no se puede deshacer. ¿Desea continuar?
-                    </p>
+                    <div v-if="nombreDocumento || identificacion" class="space-y-0.5">
+                      <p
+                        v-if="nombreDocumento"
+                        class="text-sm text-gray-700 break-words"
+                        data-testid="eliminacion-nombre-documento"
+                      >
+                        Documento: <strong class="font-semibold text-gray-900">{{ nombreDocumento }}</strong>
+                      </p>
+                      <p
+                        v-if="identificacion"
+                        class="text-sm text-gray-700 break-words"
+                        data-testid="eliminacion-identificacion"
+                      >
+                        {{ etiquetaIdentificacion }}: <strong class="font-semibold text-gray-900">{{ identificacion }}</strong>
+                      </p>
+                    </div>
 
                     <div
-                      v-if="detalleContexto && (detalleContexto.fecha || detalleContexto.resultado || detalleContexto.tipoSangre || detalleContexto.tipoEstudioLabel)"
+                      v-if="hayDetalle && detalleContexto"
                       class="rounded-lg bg-gray-50 p-3 text-sm text-gray-700 space-y-1"
                     >
-                      <div v-if="detalleContexto.tipoEstudioLabel" class="flex gap-2">
+                      <div v-if="estudioEnDetalle" class="flex gap-2">
                         <span class="font-semibold">Estudio:</span>
-                        <span>{{ detalleContexto.tipoEstudioLabel }}</span>
+                        <span>{{ estudioEnDetalle }}</span>
                       </div>
                       <div v-if="detalleContexto.fecha" class="flex gap-2">
                         <span class="font-semibold">Fecha:</span>
@@ -182,13 +244,9 @@ const handleConfirm = async () => {
                       </div>
                     </div>
 
-                    <div
-                      v-if="loQueSeElimina"
-                      class="rounded-lg bg-gray-50 p-3 text-sm text-gray-700"
-                      data-testid="eliminacion-resumen"
-                    >
-                      {{ loQueSeElimina }}
-                    </div>
+                    <p class="text-sm text-gray-500" data-testid="eliminacion-resumen">
+                      {{ descripcion }}
+                    </p>
 
                     <div
                       v-if="avisoFinalizados"
@@ -199,39 +257,32 @@ const handleConfirm = async () => {
                       {{ avisoFinalizados }}
                     </div>
 
-                    <div v-if="nivel === 'robusto'" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                      <template v-if="loQueSeElimina">
-                        Esta eliminación es irreversible: se elimina todo o no se elimina nada.
-                      </template>
-                      <template v-else>
-                        Esta eliminación es irreversible y afectará todos los registros dependientes. (Trabajadores y expedientes asociados).
-                      </template>
-                      Escribe <strong>{{ textoConfirmacionEsperado }}</strong> para confirmar.
+                    <div v-if="requiereTexto" class="space-y-1">
+                      <label for="modal-eliminacion-texto" class="block text-sm font-medium text-gray-700">
+                        Escribe <strong class="font-semibold text-gray-900 break-words">{{ textoConfirmacionEsperado }}</strong> para confirmar
+                      </label>
+                      <input
+                        id="modal-eliminacion-texto"
+                        v-model="textoConfirmacion"
+                        type="text"
+                        autocomplete="off"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        :placeholder="textoConfirmacionEsperado"
+                        @keyup.enter="handleConfirm"
+                      />
                     </div>
 
                     <div v-if="requierePassword" class="space-y-1">
-                      <label class="block text-sm font-medium text-gray-700">
+                      <label for="modal-eliminacion-password" class="block text-sm font-medium text-gray-700">
                         Confirma tu contraseña
                       </label>
                       <input
+                        id="modal-eliminacion-password"
                         v-model="password"
                         type="password"
                         autocomplete="current-password"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                         placeholder="Tu contraseña"
-                        @keyup.enter="handleConfirm"
-                      />
-                    </div>
-
-                    <div v-if="requiereTexto" class="space-y-1">
-                      <label class="block text-sm font-medium text-gray-700">
-                        Escribe el nombre exacto para confirmar
-                      </label>
-                      <input
-                        v-model="textoConfirmacion"
-                        type="text"
-                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                        :placeholder="textoConfirmacionEsperado"
                         @keyup.enter="handleConfirm"
                       />
                     </div>

@@ -79,6 +79,7 @@ const {
   nivel: eliminacionNivel,
   tipoRegistro: eliminacionTipoRegistro,
   identificacion: eliminacionIdentificacion,
+  nombreDocumento: eliminacionNombreDocumento,
   textoConfirmacionEsperado: eliminacionTextoConfirmacion,
   detalleContexto: eliminacionDetalleContexto,
   mensajePersonalizado: eliminacionMensajePersonalizado,
@@ -351,10 +352,13 @@ const solicitarEliminacionDocumento = (
   documentId: string,
   documentName: string,
   documentType: string,
+  nombreDocumento?: string,
 ) => {
   requestEliminacionLocal({
     entidad: 'documentoExpediente',
     identificacion: documentName,
+    tipoDocumento: documentType,
+    nombreDocumento,
     onConfirm: async () => {
       try {
         // Un formato firmado en pantalla se elimina con el registro de su firma (lo hace el servidor)
@@ -1294,6 +1298,7 @@ const crearDocumento = (tipoDocumento: string) =>
             :nivel="eliminacionNivel"
             :tipo-registro="eliminacionTipoRegistro"
             :identificacion="eliminacionIdentificacion"
+            :nombre-documento="eliminacionNombreDocumento"
             :texto-confirmacion-esperado="eliminacionTextoConfirmacion"
             :detalle-contexto="eliminacionDetalleContexto"
             :mensaje-personalizado="eliminacionMensajePersonalizado"

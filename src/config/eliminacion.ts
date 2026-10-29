@@ -23,17 +23,33 @@ export const NIVEL_POR_ENTIDAD: Record<EntidadEliminable, NivelEliminacion> = {
   seguimientoProgramado: 'simple',
 };
 
-export const ETIQUETAS_ENTIDAD: Record<EntidadEliminable, string> = {
+/** Lo que se elimina, en minúsculas, para el título «¿Eliminar …?». */
+export const NOMBRE_EN_TITULO: Record<EntidadEliminable, string> = {
+  empresa: 'empresa',
+  centroTrabajo: 'centro',
+  trabajador: 'trabajador',
+  usuario: 'usuario',
+  documentoExpediente: 'documento',
+  documentosMasivos: 'documentos',
+  resultadoClinico: 'resultado clínico',
+  riesgoTrabajo: 'riesgo de trabajo',
+  seguimientoProgramado: 'inasistencia',
+};
+
+/** Etiqueta antes del nombre en negritas: «Centro: Oficinas Tlajomulco». */
+export const ETIQUETA_IDENTIFICACION: Record<EntidadEliminable, string> = {
   empresa: 'Empresa',
-  centroTrabajo: 'Centro de Trabajo',
+  centroTrabajo: 'Centro',
   trabajador: 'Trabajador',
   usuario: 'Usuario',
-  documentoExpediente: 'Documento',
+  documentoExpediente: 'Fecha',
   documentosMasivos: 'Documentos',
-  resultadoClinico: 'Resultado clínico',
-  riesgoTrabajo: 'Riesgo de Trabajo',
-  seguimientoProgramado: 'Inasistencia',
+  resultadoClinico: 'Estudio',
+  riesgoTrabajo: 'Riesgo de trabajo',
+  seguimientoProgramado: 'Fecha',
 };
+
+export const tituloEliminacion = (nombre: string): string => `¿Eliminar ${nombre}?`;
 
 export interface ContextoNivelEliminacion {
   /** Eliminación masiva de documentos */

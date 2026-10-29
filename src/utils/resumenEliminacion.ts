@@ -38,29 +38,48 @@ const enLista = (partes: string[]) =>
     ? `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`
     : (partes[0] ?? '');
 
-/** «3 centros de trabajo, 120 trabajadores y 950 documentos», o `null` si no cuelga nada. */
-export function loQueSeElimina(resumen: ResumenEliminacion): string | null {
-  const partes: string[] = [];
+/**
+ * Qué más se elimina, en una frase: «Se eliminarán 5 centros de trabajo y 95 trabajadores y
+ * sus documentos.» (empresa o centro) o «Se eliminarán 8 documentos.» (trabajador). Omite lo
+ * que está en cero; `null` si el registro está vacío.
+ */
+export function fraseDeLoQueSeElimina(resumen: ResumenEliminacion): string | null {
+  const conteos: { n: number; texto: string }[] = [];
   if (resumen.nivel === 'empresa' && resumen.centros > 0) {
-    partes.push(cantidad(resumen.centros, 'centro de trabajo', 'centros de trabajo'));
+    conteos.push({
+      n: resumen.centros,
+      texto: cantidad(resumen.centros, 'centro de trabajo', 'centros de trabajo'),
+    });
   }
   if (resumen.nivel !== 'trabajador' && resumen.trabajadores > 0) {
-    partes.push(cantidad(resumen.trabajadores, 'trabajador', 'trabajadores'));
+    conteos.push({
+      n: resumen.trabajadores,
+      texto: cantidad(resumen.trabajadores, 'trabajador', 'trabajadores'),
+    });
   }
-  if (resumen.documentos > 0) {
-    partes.push(cantidad(resumen.documentos, 'documento', 'documentos'));
+  // Los documentos de una empresa o un centro son los de sus trabajadores: no se cuentan aparte
+  const susDocumentos = resumen.documentos > 0 && conteos.length > 0;
+  if (resumen.documentos > 0 && !susDocumentos) {
+    conteos.push({
+      n: resumen.documentos,
+      texto: cantidad(resumen.documentos, 'documento', 'documentos'),
+    });
   }
-  return partes.length ? enLista(partes) : null;
+  if (conteos.length === 0) return null;
+
+  const singular = conteos.length === 1 && conteos[0].n === 1 && !susDocumentos;
+  const lista = enLista(conteos.map((c) => c.texto));
+  return `Se ${singular ? 'eliminará' : 'eliminarán'} ${lista}${susDocumentos ? ' y sus documentos' : ''}.`;
 }
 
-/** Frase para la ventana de confirmación; `null` si el registro está vacío. */
-export function fraseDeLoQueSeElimina(resumen: ResumenEliminacion): string | null {
-  const lista = loQueSeElimina(resumen);
-  if (!lista) return null;
-  return resumen.nivel === 'trabajador'
-    ? `También se eliminará todo su expediente: ${lista}.`
-    : `También se eliminarán ${lista}.`;
+/** Sin resumen del servidor, lo que se sabe que depende de una empresa o un centro. */
+export function fraseDependientesSinResumen(entidad: string): string | null {
+  if (entidad === 'empresa') return 'Se eliminarán sus centros de trabajo, trabajadores y documentos.';
+  if (entidad === 'centroTrabajo') return 'Se eliminarán sus trabajadores y sus documentos.';
+  return null;
 }
+
+export const NO_SE_PUEDE_DESHACER = 'No se puede deshacer.';
 
 /**
  * Aviso cuando la eliminación está permitida pero se lleva documentos finalizados o

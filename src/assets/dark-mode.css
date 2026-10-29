@@ -2369,6 +2369,11 @@ html.dark-mode .modal-confirmacion-eliminacion input[type='password']:focus {
   outline: none;
 }
 
+/* X de cierre de las ventanas de eliminación: gris tenue que se aclara al pasar el cursor */
+html.dark-mode .modal-eliminacion button[aria-label='Cerrar']:hover {
+  color: #e2e8f0 !important;
+}
+
 /*
  * Steps de documentos (formularios Vue en componentes con `border-shadow`):
  * unificar color de controles nativos para evitar inputs blancos con texto claro.

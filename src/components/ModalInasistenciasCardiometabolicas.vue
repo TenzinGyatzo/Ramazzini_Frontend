@@ -194,7 +194,7 @@ async function removeRecord(item: SeguimientoProgramadoCardiometabolico): Promis
 
   requestEliminacion?.({
     entidad: 'seguimientoProgramado',
-    identificacion: `Inasistencia del ${fechaDisplay(item.fechaProgramada)}`,
+    identificacion: fechaDisplay(item.fechaProgramada),
     onConfirm: async () => {
       try {
         await SeguimientoProgramadoCardiometabolicoAPI.remove(id, item._id);

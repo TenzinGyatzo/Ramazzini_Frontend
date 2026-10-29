@@ -105,6 +105,22 @@ export type ElementoDelAnio = DocumentoSuelto | SubgrupoDelAnio;
 
 export const nombreTipoDocumento = (tipo: string): string => DOCUMENT_DISPLAY_NAMES[tipo] ?? tipo;
 
+/** Nombres que en una frase se dicen más corto que en el expediente. */
+const NOMBRE_CORTO_EN_FRASE: Record<string, string> = {
+  aptitud: 'aptitud',
+};
+
+/**
+ * Nombre del tipo dentro de una frase («¿Eliminar historia clínica?»): las palabras en
+ * mayúscula inicial pasan a minúsculas y las siglas se conservan («(MDQ)»).
+ */
+export const nombreTipoDocumentoEnFrase = (tipo: string): string =>
+  NOMBRE_CORTO_EN_FRASE[tipo] ??
+  nombreTipoDocumento(tipo)
+    .split(' ')
+    .map((palabra) => (/^[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+$/.test(palabra) ? palabra.toLowerCase() : palabra))
+    .join(' ');
+
 /**
  * Orden completo de tipos a partir de lo que guardó el proveedor.
  * Lo desconocido o repetido se ignora, y un tipo que la lista guardada no trae

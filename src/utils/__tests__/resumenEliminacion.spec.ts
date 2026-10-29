@@ -3,8 +3,8 @@ import { mount } from '@vue/test-utils';
 import {
   avisoDocumentosFinalizados,
   fraseDeLoQueSeElimina,
+  fraseDependientesSinResumen,
   lineasDeUbicaciones,
-  loQueSeElimina,
   sugerenciaBloqueo,
   tituloBloqueo,
   ubicacionesRestantes,
@@ -14,6 +14,8 @@ import { useEliminacion } from '@/composables/useEliminacion';
 import ModalEliminacionRevisando from '@/components/ModalEliminacionRevisando.vue';
 import ModalEliminacionBloqueada from '@/components/ModalEliminacionBloqueada.vue';
 import ModalEliminacion from '@/components/ModalEliminacion.vue';
+import { NOMBRE_EN_TITULO, tituloEliminacion } from '@/config/eliminacion';
+import { nombreTipoDocumentoEnFrase } from '@/helpers/documentosExpediente';
 
 vi.mock('@/api/AuthAPI', () => ({ default: { verifyCurrentPassword: vi.fn() } }));
 
@@ -50,30 +52,81 @@ const bloqueada = (cambios: Partial<ResumenEliminacion> = {}) =>
   });
 
 describe('lo que se va a eliminar', () => {
-  it('empresa: centros, trabajadores y documentos, con separador de miles', () => {
-    expect(loQueSeElimina(resumen())).toBe('3 centros de trabajo, 1,200 trabajadores y 9,500 documentos');
+  it('empresa: centros y trabajadores, «y sus documentos», con separador de miles', () => {
     expect(fraseDeLoQueSeElimina(resumen())).toBe(
-      'También se eliminarán 3 centros de trabajo, 1,200 trabajadores y 9,500 documentos.',
+      'Se eliminarán 3 centros de trabajo y 1,200 trabajadores y sus documentos.',
+    );
+  });
+
+  it('centro: trabajadores y sus documentos', () => {
+    expect(fraseDeLoQueSeElimina(resumen({ nivel: 'centro', centros: 0, trabajadores: 10 }))).toBe(
+      'Se eliminarán 10 trabajadores y sus documentos.',
     );
   });
 
   it('singulares, y solo lo que sí hay', () => {
-    expect(loQueSeElimina(resumen({ centros: 1, trabajadores: 1, documentos: 1 }))).toBe(
-      '1 centro de trabajo, 1 trabajador y 1 documento',
+    expect(fraseDeLoQueSeElimina(resumen({ centros: 1, trabajadores: 1, documentos: 1 }))).toBe(
+      'Se eliminarán 1 centro de trabajo y 1 trabajador y sus documentos.',
     );
-    expect(loQueSeElimina(resumen({ centros: 2, trabajadores: 0, documentos: 0 }))).toBe('2 centros de trabajo');
-    expect(loQueSeElimina(resumen({ nivel: 'centro', centros: 0, trabajadores: 40, documentos: 0 }))).toBe(
-      '40 trabajadores',
+    expect(fraseDeLoQueSeElimina(resumen({ centros: 2, trabajadores: 0, documentos: 0 }))).toBe(
+      'Se eliminarán 2 centros de trabajo.',
     );
+    expect(fraseDeLoQueSeElimina(resumen({ centros: 1, trabajadores: 0, documentos: 0 }))).toBe(
+      'Se eliminará 1 centro de trabajo.',
+    );
+    expect(
+      fraseDeLoQueSeElimina(resumen({ nivel: 'centro', centros: 0, trabajadores: 40, documentos: 0 })),
+    ).toBe('Se eliminarán 40 trabajadores.');
   });
 
-  it('trabajador: solo su expediente', () => {
-    const r = resumen({ nivel: 'trabajador', centros: 0, trabajadores: 1, documentos: 12 });
-    expect(fraseDeLoQueSeElimina(r)).toBe('También se eliminará todo su expediente: 12 documentos.');
+  it('trabajador: sus documentos', () => {
+    const r = resumen({ nivel: 'trabajador', centros: 0, trabajadores: 1, documentos: 8 });
+    expect(fraseDeLoQueSeElimina(r)).toBe('Se eliminarán 8 documentos.');
+    expect(fraseDeLoQueSeElimina({ ...r, documentos: 1 })).toBe('Se eliminará 1 documento.');
   });
 
   it('un registro vacío no muestra desglose', () => {
     expect(fraseDeLoQueSeElimina(resumen({ centros: 0, trabajadores: 0, documentos: 0 }))).toBeNull();
+    expect(
+      fraseDeLoQueSeElimina(resumen({ nivel: 'trabajador', centros: 0, trabajadores: 1, documentos: 0 })),
+    ).toBeNull();
+  });
+
+  it('sin resumen: lo que depende de una empresa o un centro', () => {
+    expect(fraseDependientesSinResumen('empresa')).toContain('centros de trabajo, trabajadores y documentos');
+    expect(fraseDependientesSinResumen('centroTrabajo')).toBe('Se eliminarán sus trabajadores y sus documentos.');
+    expect(fraseDependientesSinResumen('trabajador')).toBeNull();
+  });
+});
+
+describe('título de la confirmación', () => {
+  it('verbo y sustantivo según lo que se elimina', () => {
+    expect(tituloEliminacion(NOMBRE_EN_TITULO.empresa)).toBe('¿Eliminar empresa?');
+    expect(tituloEliminacion(NOMBRE_EN_TITULO.centroTrabajo)).toBe('¿Eliminar centro?');
+    expect(tituloEliminacion(NOMBRE_EN_TITULO.trabajador)).toBe('¿Eliminar trabajador?');
+    expect(tituloEliminacion(NOMBRE_EN_TITULO.seguimientoProgramado)).toBe('¿Eliminar inasistencia?');
+  });
+
+  it('documentos del expediente: nombre del tipo en minúsculas, siglas intactas', () => {
+    expect(nombreTipoDocumentoEnFrase('aptitud')).toBe('aptitud');
+    expect(nombreTipoDocumentoEnFrase('historiaClinica')).toBe('historia clínica');
+    expect(nombreTipoDocumentoEnFrase('antidoping')).toBe('antidoping');
+    expect(nombreTipoDocumentoEnFrase('examenVista')).toBe('examen de la vista');
+    expect(nombreTipoDocumentoEnFrase('trastornosEstadoAnimo')).toBe(
+      'cuestionario trastornos de estado de ánimo (MDQ)',
+    );
+  });
+
+  it('el composable arma el título del documento con su tipo', () => {
+    const eliminacion = useEliminacion();
+    eliminacion.requestEliminacion({
+      entidad: 'documentoExpediente',
+      identificacion: '12/03/2026',
+      tipoDocumento: 'historiaClinica',
+      onConfirm: async () => undefined,
+    });
+    expect(eliminacion.tipoRegistro.value).toBe('historia clínica');
+    eliminacion.cancelarEliminacion();
   });
 });
 
@@ -254,17 +307,19 @@ describe('ventanas', () => {
     const wrapper = mount(ModalEliminacionBloqueada, { props: { resumen: bloqueada() } });
     const texto = wrapper.text();
     expect(texto).toContain('No se puede eliminar la empresa');
-    expect(texto).toContain('"ACME"');
+    expect(texto).toContain('Empresa: ACME');
     expect(texto).toContain('14 documentos finalizados o anulados');
     expect(texto).toContain('Juan López · Planta Norte — 3 documentos');
     expect(texto).toContain('y 10 trabajadores más');
     expect(texto).toContain('No se eliminó nada.');
     expect(wrapper.findAll('input')).toHaveLength(0);
     const botones = wrapper.findAll('button');
-    expect(botones).toHaveLength(1);
-    expect(botones[0].text()).toBe('Entendido');
-    await botones[0].trigger('click');
-    expect(wrapper.emitted('close')).toHaveLength(1);
+    // «Entendido» y la X de cierre
+    expect(botones).toHaveLength(2);
+    expect(botones.map((b) => b.text())).toContain('Entendido');
+    await wrapper.find('button[aria-label="Cerrar"]').trigger('click');
+    await botones.find((b) => b.text() === 'Entendido')!.trigger('click');
+    expect(wrapper.emitted('close')).toHaveLength(2);
   });
 
   it('bloqueada sin resumen no muestra nada', () => {
@@ -277,20 +332,31 @@ describe('ventanas', () => {
       props: {
         isVisible: true,
         nivel: 'robusto',
-        tipoRegistro: 'Empresa',
+        tipoRegistro: 'empresa',
         identificacion: 'ACME',
         textoConfirmacionEsperado: 'ACME',
+        auditResourceType: 'empresa',
         resumen: r,
       },
     });
 
-  it('confirmación: dice exactamente qué se elimina', () => {
+  it('confirmación: título con verbo y sustantivo, identificación breve y qué se elimina', () => {
     const wrapper = confirmacion(resumen());
+    expect(wrapper.find('[data-testid="eliminacion-titulo"]').text()).toBe('¿Eliminar empresa?');
+    expect(wrapper.find('[data-testid="eliminacion-identificacion"]').text()).toBe('Empresa: ACME');
+    expect(wrapper.find('[data-testid="eliminacion-identificacion"] strong').text()).toBe('ACME');
     expect(wrapper.find('[data-testid="eliminacion-resumen"]').text()).toBe(
-      'También se eliminarán 3 centros de trabajo, 1,200 trabajadores y 9,500 documentos.',
+      'Se eliminarán 3 centros de trabajo y 1,200 trabajadores y sus documentos. No se puede deshacer.',
     );
     expect(wrapper.find('[data-testid="eliminacion-aviso-finalizados"]').exists()).toBe(false);
-    expect(wrapper.text()).toContain('se elimina todo o no se elimina nada');
+    expect(wrapper.text()).toContain('Escribe ACME para confirmar');
+    expect(wrapper.text()).not.toMatch(/CONFIRMAR ELIMINACIÓN|Parece que quieres|¿Desea continuar\?|¿Estás seguro\?/);
+  });
+
+  it('confirmación: la X cierra, como Cancelar', async () => {
+    const wrapper = confirmacion(resumen());
+    await wrapper.find('button[aria-label="Cerrar"]').trigger('click');
+    expect(wrapper.emitted('cancel')).toHaveLength(1);
   });
 
   it('confirmación sin régimen con documentos finalizados: aviso de pérdida permanente', () => {
@@ -300,9 +366,46 @@ describe('ventanas', () => {
     );
   });
 
-  it('confirmación sin resumen (otros registros, o consulta fallida): como antes', () => {
+  it('confirmación sin resumen (consulta fallida): lo que depende de la empresa', () => {
     const wrapper = confirmacion(null);
-    expect(wrapper.find('[data-testid="eliminacion-resumen"]').exists()).toBe(false);
-    expect(wrapper.text()).toContain('afectará todos los registros dependientes');
+    expect(wrapper.find('[data-testid="eliminacion-resumen"]').text()).toBe(
+      'Se eliminarán sus centros de trabajo, trabajadores y documentos. No se puede deshacer.',
+    );
+  });
+
+  it('confirmación de un registro sin dependientes: solo «No se puede deshacer.»', () => {
+    const wrapper = mount(ModalEliminacion, {
+      props: {
+        isVisible: true,
+        nivel: 'simple',
+        tipoRegistro: 'historia clínica',
+        identificacion: '12/03/2026',
+        textoConfirmacionEsperado: '12/03/2026',
+        auditResourceType: 'documentoExpediente',
+      },
+    });
+    expect(wrapper.find('[data-testid="eliminacion-titulo"]').text()).toBe('¿Eliminar historia clínica?');
+    expect(wrapper.find('[data-testid="eliminacion-identificacion"]').text()).toBe('Fecha: 12/03/2026');
+    expect(wrapper.find('[data-testid="eliminacion-resumen"]').text()).toBe('No se puede deshacer.');
+    expect(wrapper.findAll('input')).toHaveLength(0);
+    expect(wrapper.find('[data-testid="eliminacion-nombre-documento"]').exists()).toBe(false);
+  });
+
+  it('documento externo: su nombre antes de la fecha', () => {
+    const wrapper = mount(ModalEliminacion, {
+      props: {
+        isVisible: true,
+        nivel: 'simple',
+        tipoRegistro: 'documento externo',
+        identificacion: '06-04-2026',
+        nombreDocumento: 'Electrocardiograma',
+        textoConfirmacionEsperado: '06-04-2026',
+        auditResourceType: 'documentoExpediente',
+      },
+    });
+    expect(wrapper.find('[data-testid="eliminacion-titulo"]').text()).toBe('¿Eliminar documento externo?');
+    expect(wrapper.find('[data-testid="eliminacion-nombre-documento"]').text()).toBe('Documento: Electrocardiograma');
+    expect(wrapper.find('[data-testid="eliminacion-identificacion"]').text()).toBe('Fecha: 06-04-2026');
+    expect(wrapper.find('[data-testid="eliminacion-resumen"]').text()).toBe('No se puede deshacer.');
   });
 });

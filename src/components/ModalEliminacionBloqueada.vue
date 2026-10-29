@@ -22,6 +22,11 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>();
 
 const titulo = computed(() => (props.resumen ? tituloBloqueo(props.resumen) : ''));
+const ETIQUETA: Record<ResumenEliminacion['nivel'], string> = {
+  empresa: 'Empresa',
+  centro: 'Centro',
+  trabajador: 'Trabajador',
+};
 const lineas = computed(() => (props.resumen ? lineasDeUbicaciones(props.resumen) : []));
 const restantes = computed(() => (props.resumen ? ubicacionesRestantes(props.resumen) : null));
 const sugerencia = computed(() => (props.resumen ? sugerenciaBloqueo(props.resumen) : null));
@@ -38,13 +43,24 @@ useEscapeToClose(cerrar, () => props.resumen != null);
         @click="cerrar"
       />
       <div class="fixed inset-0 z-10 w-screen overflow-y-auto" @click.self="cerrar">
-        <div class="flex min-h-full justify-center p-8 text-center items-center">
+        <div class="flex min-h-full justify-center p-4 sm:p-8 text-center items-center">
           <div
-            class="modal-eliminacion modal-inner relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
+            class="modal-eliminacion modal-inner relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full sm:my-8 sm:max-w-lg"
             role="alertdialog"
             aria-modal="true"
+            aria-labelledby="modal-eliminacion-bloqueada-titulo"
             @click.stop
           >
+            <button
+              type="button"
+              class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Cerrar"
+              title="Cerrar"
+              data-testid="eliminacion-cerrar"
+              @click="cerrar"
+            >
+              <i class="fas fa-times" aria-hidden="true" />
+            </button>
             <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
               <div class="sm:flex sm:items-start">
                 <div
@@ -52,15 +68,18 @@ useEscapeToClose(cerrar, () => props.resumen != null);
                 >
                   <i class="fas fa-lock text-amber-600" />
                 </div>
-                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                  <h3 class="text-lg font-semibold leading-6 text-gray-900">
+                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full min-w-0">
+                  <h3
+                    id="modal-eliminacion-bloqueada-titulo"
+                    class="text-lg font-semibold leading-6 text-gray-900 sm:pr-8"
+                  >
                     {{ titulo }}
                   </h3>
                   <div class="mt-2 space-y-3">
-                    <p v-if="resumen.nombre" class="text-md text-gray-500">
-                      <strong>"{{ resumen.nombre }}"</strong>
+                    <p v-if="resumen.nombre" class="text-sm text-gray-700 break-words">
+                      {{ ETIQUETA[resumen.nivel] }}: <strong class="font-semibold text-gray-900">{{ resumen.nombre }}</strong>
                     </p>
-                    <p class="text-md text-gray-500">{{ resumen.mensaje }}</p>
+                    <p class="text-sm text-gray-500">{{ resumen.mensaje }}</p>
 
                     <div
                       v-if="lineas.length"
