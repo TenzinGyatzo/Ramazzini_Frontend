@@ -10,8 +10,9 @@ import type {
   CreateConsentimientoDto,
 } from '@/types/consentimiento';
 
-// Estado del día por trabajador, compartido entre vistas: con él la ventana de consentimiento
-// abre al instante. Si cambió (otro día, otro equipo), el servidor lo vuelve a exigir al guardar.
+// Estado por trabajador, compartido entre vistas: con él la ventana de consentimiento abre al
+// instante. El consentimiento vale por trabajador y versión del texto; el estado guardado se
+// refresca cada día por si cambió en otro equipo, y de todos modos el servidor lo revisa al guardar.
 const estadoPorTrabajador = new Map<
   string,
   { dia: string; estado: Promise<ConsentimientoStatus | null> }

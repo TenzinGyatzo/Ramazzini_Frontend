@@ -1,13 +1,11 @@
 import { ref } from 'vue';
 import { useRegulatoryPolicy } from './useRegulatoryPolicy';
 import { useRegulatoryErrorMapper } from './useRegulatoryErrorMapper';
-import { useTreatmentConsent } from './useTreatmentConsent';
 import type { ConsentimientoCreated } from '@/types/consentimiento';
 
 export function useTreatmentConsentGate() {
   const { dailyConsentEnabled } = useRegulatoryPolicy();
   const { extractRegulatoryError } = useRegulatoryErrorMapper();
-  const { checkStatus } = useTreatmentConsent();
 
   const showModal = ref(false);
   const modalTrabajadorId = ref('');
@@ -57,18 +55,7 @@ export function useTreatmentConsentGate() {
       const result = await pendingAction.value();
       resolveAction.value?.(result);
     } catch (error: any) {
-      const regulatoryError = extractRegulatoryError(error);
-      if (regulatoryError?.errorCode === 'CONSENT_ALREADY_EXISTS') {
-        await checkStatus(modalTrabajadorId.value);
-        try {
-          const result = await pendingAction.value();
-          resolveAction.value?.(result);
-        } catch (retryError) {
-          rejectAction.value?.(retryError);
-        }
-      } else {
-        rejectAction.value?.(error);
-      }
+      rejectAction.value?.(error);
     } finally {
       pendingAction.value = null;
       resolveAction.value = null;

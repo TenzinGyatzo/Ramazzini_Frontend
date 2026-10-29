@@ -83,7 +83,7 @@ export function useRegulatoryPolicy() {
   );
 
   /**
-   * Indica si el consentimiento diario está habilitado
+   * Indica si se pide el consentimiento para tratamiento de información (una vez por trabajador y versión)
    */
   const dailyConsentEnabled = computed<boolean>(() => 
     proveedorSaludStore.dailyConsentEnabled

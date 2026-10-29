@@ -32,7 +32,7 @@ export interface RegulatoryPolicy {
         giisExportEnabled: boolean;
         notaAclaratoriaEnabled: boolean;
         cluesFieldVisible: boolean; // CLUES visible solo en SIRES
-        dailyConsentEnabled: boolean; // Consentimiento diario habilitado solo en SIRES
+        dailyConsentEnabled: boolean; // Consentimiento para tratamiento de información (una vez por trabajador y versión); lo decide el servidor
         confidentialityAgreementEnabled: boolean; // Acuerdo de confidencialidad (SIRES y SIN_REGIMEN)
         auditTrailEnabled: boolean; // Trail de auditoría (consulta/exportación/registro)
         workerIdentificationImmutable: boolean; // Identificación trabajador inmutable post-alta

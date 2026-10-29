@@ -84,21 +84,6 @@ const ERROR_CODE_MESSAGES: Record<
     },
   },
 
-  CONSENT_ALREADY_EXISTS: {
-    SIN_REGIMEN: {
-      title: 'Consentimiento ya registrado',
-      message:
-        'Ya existe un consentimiento registrado para este trabajador en la versión vigente.',
-      type: 'warning',
-    },
-    SIRES_NOM024: {
-      title: 'Consentimiento ya registrado',
-      message:
-        'Ya existe un consentimiento registrado para este trabajador en la versión vigente.',
-      type: 'warning',
-    },
-  },
-
   CONSENT_REQUIRED: {
     SIN_REGIMEN: {
       title: 'Consentimiento requerido',
