@@ -350,7 +350,7 @@
                           <span class="font-medium">NSS:</span> -
                         </div>
                         <div v-if="success.posibleDuplicado" class="sm:col-span-2 mt-2 p-2 rounded bg-amber-100 text-amber-900">
-                          <span class="font-medium">Posible duplicado ({{ success.posibleDuplicado.criterio }}):</span>
+                          <span class="font-medium">Posible duplicado ({{ etiquetaCriterioDuplicado(success.posibleDuplicado.criterio) }}):</span>
                           {{ success.posibleDuplicado.trabajador?.nombre }}
                           {{ success.posibleDuplicado.trabajador?.primerApellido }}
                         </div>
@@ -507,6 +507,7 @@
 
 <script setup lang="ts">
 import { fechaLocalHoy } from '@/helpers/dates';
+import { etiquetaCriterioDuplicado } from '@/helpers/criterioDuplicado';
 import { ref, computed } from 'vue'
 import * as XLSX from 'xlsx'
 import {

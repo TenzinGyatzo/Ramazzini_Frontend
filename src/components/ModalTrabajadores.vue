@@ -10,6 +10,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 import { convertirFechaISOaYYYYMMDD, calcularEdad, calcularAntiguedad, isBirthDateInRegistrationRange, getRegistrationBirthDateInputBounds, buildRegistrationAgeRangeMessage } from '@/helpers/dates';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
+import { etiquetaCriterioDuplicado } from '@/helpers/criterioDuplicado';
 import { extractApiErrorMessage, extractCurpA1Issues, isCurpA1ApiError } from '@/helpers/apiErrors';
 import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 import api from '@/lib/axios';
@@ -1053,7 +1054,7 @@ const handleSubmit = async (data) => {
         posibleDuplicadoRegistro.value = response.posibleDuplicado;
         nuevoTrabajadorId.value = response.data?._id;
         toast.open({
-          message: `Trabajador registrado. Posible duplicado detectado (${response.posibleDuplicado.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM'}). La alerta quedará pendiente hasta fusionar.`,
+          message: `Trabajador registrado. Posible duplicado detectado (${etiquetaCriterioDuplicado(response.posibleDuplicado.criterio, identificadorPersonalLabel.value)}). La alerta quedará pendiente hasta fusionar.`,
           type: 'warning',
         });
         trabajadores.fetchTrabajadoresConHistoria(
@@ -1221,7 +1222,7 @@ const confirmarTransferencia = async () => {
 
     if (response?.posibleDuplicado) {
       toast.open({
-        message: `Trabajador transferido a ${empresaNombre} (${centroNombre}). Posible duplicado detectado (${response.posibleDuplicado.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM'}).`,
+        message: `Trabajador transferido a ${empresaNombre} (${centroNombre}). Posible duplicado detectado (${etiquetaCriterioDuplicado(response.posibleDuplicado.criterio, identificadorPersonalLabel.value)}).`,
         type: 'warning',
       });
     } else {
@@ -1414,7 +1415,7 @@ const {
           >
             <p class="font-medium text-amber-900 dark:text-amber-100">
               Posible duplicado detectado
-              ({{ posibleDuplicadoRegistro.criterio === 'CURP' ? 'misma CURP' : 'mismo folio UM' }})
+              ({{ etiquetaCriterioDuplicado(posibleDuplicadoRegistro.criterio, identificadorPersonalLabel) }})
             </p>
             <p class="mt-1 text-amber-900/90 dark:text-amber-100/90">
               Coincide con:

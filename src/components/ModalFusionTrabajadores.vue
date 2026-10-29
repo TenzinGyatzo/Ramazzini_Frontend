@@ -14,6 +14,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { extractApiErrorMessage } from '@/helpers/apiErrors';
 import { getIdentificadorPersonalLabel } from '@/helpers/proveedorPais';
+import { etiquetaCriterioDuplicado } from '@/helpers/criterioDuplicado';
 import { isGenericCurp } from '@/helpers/isGenericCurp';
 import {
   LIMITE_TEXTO_FUSION,
@@ -316,10 +317,7 @@ const centrosDistintos = computed(() => {
 });
 
 const criterioCoincidenciaLabel = computed(() => {
-  const criterio = preview.value?.criterioMatch;
-  if (!criterio) return 'confirmación manual';
-  if (criterio === 'FOLIO') return 'mismos datos de identidad';
-  return `misma ${identificadorPersonalLabel.value}`;
+  return etiquetaCriterioDuplicado(preview.value?.criterioMatch, identificadorPersonalLabel.value);
 });
 
 const identidadCoincide = computed(() => preview.value?.identidadCoincide !== false);
