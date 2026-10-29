@@ -88,10 +88,9 @@ const usarSugerencia = () => {
   if (sugerencia.value) agentesSeleccionados.value = [...sugerencia.value.agentes];
 };
 
-// Aplicar los mismos agentes a los compañeros activos del puesto (cambio de varios a la vez:
-// se confirma antes y solo se tocan los que no los tienen ya)
+// Aplicar los mismos agentes a los compañeros activos del puesto (solo se tocan los que no
+// los tienen ya). La casilla y el botón «Guardar para N trabajadores» ya dicen a cuántos se aplica
 const aplicarAlPuesto = ref(false);
-const confirmandoAplicacion = ref(false);
 const puestoTrabajador = computed(() => String(trabajadores.currentTrabajador?.puesto ?? '').trim());
 const companeros = computed(() =>
   listaDelCentro.value
@@ -99,12 +98,6 @@ const companeros = computed(() =>
     : { todos: [], porCambiar: [] },
 );
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
-watch(aplicarAlPuesto, () => {
-  confirmandoAplicacion.value = false;
-});
-watch(agentesSeleccionados, () => {
-  confirmandoAplicacion.value = false;
-});
 
 // Puesto, empresa y antigüedad en una línea, omitiendo lo que no esté capturado
 const datosTrabajador = computed(() => {
@@ -167,11 +160,6 @@ const isSubmitting = ref(false);
 const handleSubmit = async () => {
   if (isSubmitting.value) return;
   const aplicarAOtros = aplicarAlPuesto.value && companeros.value.porCambiar.length > 0;
-  // Cambiar a varios trabajadores se confirma antes
-  if (aplicarAOtros && !confirmandoAplicacion.value) {
-    confirmandoAplicacion.value = true;
-    return;
-  }
   isSubmitting.value = true;
 
   try {
@@ -372,40 +360,8 @@ const handleSubmit = async () => {
         </label>
       </div>
 
-      <!-- Confirmación antes de cambiar a varios trabajadores -->
-      <div
-        v-if="confirmandoAplicacion && !isSubmitting"
-        class="modal-riesgos__confirmar-puesto border-t border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900"
-        role="alert"
-      >
-        <p>
-          Se reemplazarán los agentes de
-          <span class="font-semibold">
-            {{ companeros.porCambiar.length }} {{ plural(companeros.porCambiar.length, 'trabajador', 'trabajadores') }} más
-          </span>
-          con el puesto {{ puestoTrabajador }} por:
-          <span class="font-semibold">{{ agentesSeleccionados.length ? agentesSeleccionados.join(' · ') : 'ningún agente' }}</span>.
-        </p>
-        <div class="mt-2 flex justify-end gap-2">
-          <button
-            type="button"
-            class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
-            @click="confirmandoAplicacion = false"
-          >
-            Volver
-          </button>
-          <button
-            type="button"
-            class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
-            @click="handleSubmit"
-          >
-            Sí, guardar para {{ companeros.porCambiar.length + 1 }} trabajadores
-          </button>
-        </div>
-      </div>
-
       <!-- Acciones -->
-      <div v-else class="flex flex-wrap items-center gap-2 border-t border-gray-200 px-5 py-3">
+      <div class="flex flex-wrap items-center gap-2 border-t border-gray-200 px-5 py-3">
         <button
           v-if="agentesSeleccionados.length"
           type="button"
