@@ -1,5 +1,5 @@
 <script setup>
-import { inject, ref, shallowRef, watch, computed, provide, nextTick } from 'vue';
+import { inject, ref, shallowRef, watch, computed, provide, nextTick, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { recordarTrabajadorNuevo, recordarUltimoTrabajador } from '@/helpers/estadoTablaTrabajadores';
 import ModalBajaTrabajador from '@/components/ModalBajaTrabajador.vue';
@@ -125,8 +125,13 @@ const hasGenericCurpStored = computed(() =>
   isGenericCurp(trabajadores.currentTrabajador?.curp),
 );
 
+/** La edición abre con los datos de la tabla; esto es mientras llega lo que la tabla no trae. */
+const verificandoDetalle = ref(false);
+
+// Mientras se verifica, la identificación se trata como bloqueada: nadie alcanza a cambiar
+// un dato que debía estar protegido
 const hasFinalizedClinicalDocument = computed(() =>
-  Boolean(trabajadores.currentTrabajador?.tieneDocumentoClinicoFinalizado),
+  verificandoDetalle.value || Boolean(trabajadores.currentTrabajador?.tieneDocumentoClinicoFinalizado),
 );
 
 const isWorkerIdentificationReadOnly = computed(() =>
@@ -156,6 +161,8 @@ const isPaisNacimientoReadOnly = computed(
 
 const identificationSectionNotice = computed(() => {
   if (!isWorkerIdentificationReadOnly.value) return '';
+  // Aún no se sabe: lo dice «Verificando…» junto a «Identificación»
+  if (verificandoDetalle.value) return '';
   if (hasFinalizedClinicalDocument.value) {
     return 'Los datos de identificación y el sexo biológico no pueden modificarse porque el trabajador ya tiene un documento clínico finalizado.';
   }
@@ -570,7 +577,7 @@ const buildFormState = () => ({
   residencia: { ...nom024ResidenciaFields.value },
 });
 
-const { isDirty: formularioModificado } = useDirtySnapshot(buildFormState, {
+const { isDirty: formularioModificado, markClean: marcarFormularioLimpio } = useDirtySnapshot(buildFormState, {
   resetTrigger: () => !trabajadores.loadingModal,
 });
 // Ya registrado, no hay nada que descartar al cerrar
@@ -759,6 +766,76 @@ provide('formSubmitAttempted', formSubmitAttempted);
 // (el estado de validez de cada campo de FormKit es reactivo)
 const formNode = shallowRef(null);
 const formRootEl = ref(null);
+
+/** Campos de la edición, con el valor que les da el formulario a partir del trabajador. */
+const CAMPOS_EDICION = [
+  'primerApellido', 'segundoApellido', 'nombre', 'curp', 'sexo', 'sexoCURP', 'fechaNacimiento',
+  'escolaridad', 'estadoCivil', 'puesto', 'fechaIngreso', 'numeroEmpleado', 'nss', 'telefono',
+  'contactoEmergenciaNombre', 'contactoEmergenciaTelefono', 'entidadNacimiento', 'paisNacimiento',
+  'entidadResidencia', 'municipioResidencia', 'localidadResidencia', 'paisResidencia',
+];
+
+const valorEnFormulario = (trabajador, campo) => {
+  const valor = trabajador?.[campo];
+  if (campo === 'fechaNacimiento' || campo === 'fechaIngreso') return convertirFechaISOaYYYYMMDD(valor) || '';
+  if (campo === 'primerApellido' || campo === 'segundoApellido' || campo === 'nombre') {
+    return normalizeWorkerPersonName(valor, personNameRegime.value);
+  }
+  if (campo === 'escolaridad' && paisProveedor.value === 'GT' && valor === 'Preparatoria') return 'Diversificado';
+  return String(valor ?? '');
+};
+
+/**
+ * Completa en segundo plano lo que la tabla no trae (si tiene documentos finalizados, sus
+ * riesgos). Si el servidor tiene datos más recientes que la tabla, se ponen solo en los campos
+ * que el usuario no ha tocado: lo que ya escribió no se pierde.
+ */
+async function completarDetalle() {
+  const mostrado = trabajadores.currentTrabajador;
+  const empresaId = empresas.currentEmpresaId;
+  const centroId = centrosTrabajo.currentCentroTrabajoId;
+  // Desde el expediente el trabajador ya viene completo
+  if (!mostrado?._id || 'tieneDocumentoClinicoFinalizado' in mostrado || !empresaId || !centroId) return;
+
+  verificandoDetalle.value = true;
+  try {
+    const detalle = await trabajadores.obtenerTrabajadorDetalle(empresaId, centroId, mostrado._id);
+    // Se cerró o se abrió otro trabajador mientras llegaba
+    if (trabajadores.currentTrabajador !== mostrado || !detalle) return;
+
+    const estabaLimpio = !formularioModificado.value;
+    const enPantalla = formNode.value?.value ?? {};
+    const actualizar = [];
+    const conservar = new Set();
+    for (const campo of CAMPOS_EDICION) {
+      const antes = valorEnFormulario(mostrado, campo);
+      const ahora = valorEnFormulario(detalle, campo);
+      if (antes === ahora) continue;
+      if (String(enPantalla[campo] ?? '') === antes) actualizar.push([campo, ahora]);
+      else conservar.add(campo);
+    }
+
+    // Sin reemplazar el objeto: así no se vuelven a sincronizar los campos desde cero
+    for (const [clave, valor] of Object.entries(detalle)) {
+      if (!conservar.has(clave)) mostrado[clave] = valor;
+    }
+    for (const [campo, valor] of actualizar) {
+      formNode.value?.at(campo)?.input(valor);
+    }
+    if (estabaLimpio) {
+      await formNode.value?.settled;
+      await nextTick();
+      marcarFormularioLimpio();
+    }
+  } catch (error) {
+    // Sin detalle se edita con los datos de la tabla; el servidor vuelve a validar al guardar
+    console.error('Error al completar el trabajador:', error);
+  } finally {
+    verificandoDetalle.value = false;
+  }
+}
+
+onMounted(completarDetalle);
 const resumenErroresActivo = ref(false);
 
 const etiquetasCampos = computed(() => ({
@@ -805,7 +882,7 @@ const onFormSubmitInvalid = () => {
 };
 
 const handleSubmit = async (data) => {
-  if (isSubmitting.value) return;
+  if (isSubmitting.value || verificandoDetalle.value) return;
   isSubmitting.value = true;
 
   try {
@@ -1342,7 +1419,17 @@ const {
             @node="formNode = $event"
             @submit="handleSubmit" @submit-invalid="onFormSubmitInvalid" @input="formData = $event">
             <section>
-              <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3">Identificación</h3>
+              <h3 class="flex items-center gap-2 text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3">
+                Identificación
+                <span
+                  v-if="verificandoDetalle && isWorkerIdentificationReadOnly"
+                  class="text-xs font-normal text-gray-500"
+                  role="status"
+                  data-testid="verificando-identificacion"
+                >
+                  <i class="fa-solid fa-spinner fa-spin mr-1" aria-hidden="true"></i>Verificando…
+                </span>
+              </h3>
               <div class="lg:grid gap-3 lg:grid-cols-2">
               <div>
                 <!-- México: validación RENAPO según régimen -->
@@ -1758,7 +1845,7 @@ const {
                 </button>
               </p>
             </div>
-            <FormKit type="submit" :disabled="isSubmitting">
+            <FormKit type="submit" :disabled="isSubmitting || verificandoDetalle">
               <span v-if="isSubmitting">Guardando...</span>
               <span v-else>{{ trabajadores.currentTrabajador._id ? 'Actualizar Trabajador' : 'Guardar Trabajador'
                 }}</span>

@@ -313,6 +313,27 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     }
   }
 
+  /**
+   * El detalle del trabajador sin tocar el estado ni mostrar «Cargando…»: la edición abre
+   * con los datos de la tabla y completa con esto lo que la tabla no trae.
+   */
+  async function obtenerTrabajadorDetalle(
+    empresaId: string,
+    centroTrabajoId: string,
+    trabajadorId: string,
+  ): Promise<Trabajador> {
+    try {
+      const { data } = await TrabajadoresAPI.getTrabajadorById(empresaId, centroTrabajoId, trabajadorId);
+      return data;
+    } catch (error: any) {
+      const redirectTo = error?.response?.data?.redirectTo;
+      if (error?.response?.status === 410 && redirectTo) {
+        return obtenerTrabajadorDetalle(empresaId, centroTrabajoId, redirectTo);
+      }
+      throw error;
+    }
+  }
+
   async function fetchTrabajadorById(
     empresaId: string,
     centroTrabajoId: string,
@@ -521,6 +542,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     fetchSexosYFechasNacimientoActivos,
     fetchDashboardData,
     fetchTrabajadorById,
+    obtenerTrabajadorDetalle,
     createTrabajador,
     updateTrabajador,
     aplicarAgentesRiesgo,

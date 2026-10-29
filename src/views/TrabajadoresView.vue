@@ -634,6 +634,8 @@ const openModal = async (empresa: Empresa | null = null, centroTrabajo: CentroTr
 };
 
 const openModalInternal = async (empresa: Empresa | null = null, centroTrabajo: CentroTrabajo | null = null, trabajador: Trabajador | null = null) => {
+  // La edición abre al instante con los datos de la tabla; el modal completa en segundo plano
+  // lo que la tabla no trae (si tiene documentos finalizados)
   if (empresa && centroTrabajo && trabajador) {
     trabajadores.hydrateCurrentTrabajadorFromListado(trabajador);
   } else {
@@ -641,11 +643,6 @@ const openModalInternal = async (empresa: Empresa | null = null, centroTrabajo: 
   }
 
   showModal.value = true;
-
-  if (empresa && centroTrabajo && trabajador?._id) {
-    void trabajadores.fetchTrabajadorById(empresa._id, centroTrabajo._id, trabajador._id)
-      .catch((error) => console.error('Error al cargar el trabajador:', error));
-  }
 };
 
 const closeModal = () => showModal.value = false;
