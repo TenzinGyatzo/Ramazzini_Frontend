@@ -376,58 +376,50 @@ const crearPortada = (): Content[] => {
     return portada;
 };
 
+/**
+ * Ancho impreso (pt) de las gráficas de secciones que deben caber en una sola página con
+ * su texto y su tabla: grupos etarios (hasta 11 grupos), IMC y factores de riesgo (9 agentes).
+ */
+const ANCHO_GRAFICA = { grupos: 400, imc: 360, agentes: 360 };
+/** Donas de corrección visual y daltonismo: las dos subsecciones comparten una página. */
+const ANCHO_DONA_VISION = 120;
+/** Filas de tabla más bajas, para las mismas secciones. */
+const CELDA_COMPACTA: [number, number, number, number] = [3, 1, 3, 1];
+
 const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinitions => {
     // Crear la portada
     const portada = crearPortada();
 
-    // Generación de imágenes con calidad ajustable.
-    // Alta calidad: 300 dpi al ancho con que cada gráfica se imprime (puntos × 300 / 72),
-    // con la misma proporción de siempre. Antes eran 2000-3600 px para gráficas de 150-460 pt:
-    // de 3 a 10 veces más píxeles sin ganancia visible, y la descarga tardaba unas cuatro veces más.
-    // Calidad normal (vista previa): dimensiones fijas, más rápidas.
-    const a300dpi = (puntos: number, proporcion: number) => {
-        const ancho = Math.round((puntos * 300) / 72);
+    // Cada gráfica se dibuja con la proporción con que se imprime y a una resolución que
+    // depende de la calidad: 300 dpi al descargar (puntos × 300 / 72) y 144 en la vista previa,
+    // que es más rápida. Antes la vista previa usaba otras proporciones (más altas), así que
+    // algunas secciones cabían en una página al descargar pero no en la vista previa.
+    // Antes de la versión de 300 dpi eran 2000-3600 px para gráficas de 150-460 pt.
+    const pixelesPorPunto = altaCalidad ? 300 / 72 : 2;
+    const aPixeles = (puntos: number, proporcion: number) => {
+        const ancho = Math.round(puntos * pixelesPorPunto);
         return [ancho, Math.round(ancho * proporcion)];
     };
-    const dimensiones = altaCalidad ? {
-        imc: a300dpi(400, 2 / 3),
-        aptitud: a300dpi(365, 2 / 3),
-        lentes: a300dpi(150, 1),
-        corregida: a300dpi(150, 1),
-        daltonismo: a300dpi(150, 1),
-        agentes: a300dpi(400, 2 / 3),
-        grupos: a300dpi(460, 5 / 9),
-        cintura: a300dpi(200, 27 / 20),
-        sexo: a300dpi(175, 1),
-        tensionArterial: a300dpi(400, 2 / 3),
-        audiometriaDistribucion: a300dpi(400, 2 / 3),
-        espirometriaDistribucion: a300dpi(400, 2 / 3),
-        ekgDistribucion: a300dpi(400, 2 / 3),
-        rayosXDistribucion: a300dpi(400, 2 / 3),
-        analisisLaboratorioDistribucion: a300dpi(400, 2 / 3),
-        tamizajeBipolarTEA: a300dpi(150, 1),
-        tamizajeProdromal: a300dpi(150, 1),
+    const dimensiones = {
+        imc: aPixeles(ANCHO_GRAFICA.imc, 2 / 3),
+        aptitud: aPixeles(365, 2 / 3),
+        lentes: aPixeles(150, 1),
+        corregida: aPixeles(ANCHO_DONA_VISION, 1),
+        daltonismo: aPixeles(ANCHO_DONA_VISION, 1),
+        agentes: aPixeles(ANCHO_GRAFICA.agentes, 2 / 3),
+        grupos: aPixeles(ANCHO_GRAFICA.grupos, 5 / 9),
+        cintura: aPixeles(200, 27 / 20),
+        sexo: aPixeles(175, 1),
+        tensionArterial: aPixeles(400, 2 / 3),
+        audiometriaDistribucion: aPixeles(400, 2 / 3),
+        espirometriaDistribucion: aPixeles(400, 2 / 3),
+        ekgDistribucion: aPixeles(400, 2 / 3),
+        rayosXDistribucion: aPixeles(400, 2 / 3),
+        analisisLaboratorioDistribucion: aPixeles(400, 2 / 3),
+        tamizajeBipolarTEA: aPixeles(150, 1),
+        tamizajeProdromal: aPixeles(150, 1),
         // Barras: puede salir a 400 pt
-        tamizajeTLP: a300dpi(400, 2 / 3)
-    } : {
-        imc: [800, 600], // Aspect ratio 4:3 para gráficas de barras horizontales
-        aptitud: [800, 600], // Aspect ratio 4:3 para gráficas de barras horizontales
-        lentes: [600, 600], // Aspect ratio 1:1 para gráficas circulares
-        corregida: [600, 600], // Aspect ratio 1:1 para gráficas circulares
-        daltonismo: [600, 600], // Aspect ratio 1:1 para gráficas circulares
-        agentes: [800, 600], // Aspect ratio 4:3 para gráficas de barras
-        grupos: [1000, 600], // Aspect ratio 5:3 para gráficas de barras más anchas
-        cintura: [600, 800], // Aspect ratio 4:3 para gráficas de barras
-        sexo: [600, 600], // Aspect ratio 1:1 para gráficas circulares
-        tensionArterial: [800, 600], // Aspect ratio 4:3 para gráficas de barras
-        audiometriaDistribucion: [800, 600], // Barras distribución audiometría
-        espirometriaDistribucion: [800, 600], // Barras distribución espirometría
-        ekgDistribucion: [800, 600], // Barras distribución EKG
-        rayosXDistribucion: [800, 600],
-        analisisLaboratorioDistribucion: [800, 600],
-        tamizajeBipolarTEA: [600, 600],
-        tamizajeProdromal: [600, 600],
-        tamizajeTLP: [800, 600]
+        tamizajeTLP: aPixeles(400, 2 / 3)
     };
 
     const imagenes = {
@@ -577,11 +569,11 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
                 style: 'textoNormal',
                 margin: [0, 0, 0, 10]
             },
-            { 
-                image: imagenes.grupos, 
-                width: 460, 
+            {
+                image: imagenes.grupos,
+                width: ANCHO_GRAFICA.grupos,
                 alignment: 'center',
-                margin: [0, 10, 0, 10] 
+                margin: [0, 4, 0, 4]
             }
         );
         
@@ -601,7 +593,8 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
                     datosGrupos,
                     ['Grupo Etario', 'Hombres', 'Mujeres'],
                     'Distribución Demográfica Detallada',
-                    'gruposEtarios'
+                    'gruposEtarios',
+                    { compacta: true }
                 );
                 tablaGrupos.forEach(item => contenido.push(item));
             }
@@ -636,11 +629,11 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
                 style: 'textoNormal',
                 margin: [0, 0, 0, 10]
             },
-            { 
-                image: imagenes.imc, 
-                width: 400, 
+            {
+                image: imagenes.imc,
+                width: ANCHO_GRAFICA.imc,
                 alignment: 'center',
-                margin: [0, 10, 0, 20] 
+                margin: [0, 4, 0, 10]
             }
         );
         
@@ -1188,11 +1181,11 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
                     style: 'textoNormal',
                     margin: [0, 0, 0, 10]
                 },
-                { 
-                    image: imagenes.agentes, 
-                    width: 400, 
+                {
+                    image: imagenes.agentes,
+                    width: ANCHO_GRAFICA.agentes,
                     alignment: 'center',
-                    margin: [0, 0, 0, 20] 
+                    margin: [0, 0, 0, 10]
                 }
             );
                 
@@ -1210,7 +1203,8 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
                         datosAgentesFiltrados,
                         ['Agente de Riesgo', 'Expuestos (Porcentaje)'],
                         'Detalle de Exposición a Agentes de Riesgo',
-                        'agentesRiesgo'
+                        'agentesRiesgo',
+                        { compacta: true }
                     );
                     tablaAgentes.forEach(item => contenido.push(item));
                 }
@@ -1467,7 +1461,7 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
                         // Columna izquierda: Gráfica
                         {
                             image: imagenes.corregida,
-                            width: 150,
+                            width: ANCHO_DONA_VISION,
                             alignment: 'center'
                         },
                         // Columna derecha: Tabla de datos
@@ -1558,7 +1552,7 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
                         // Columna izquierda: Gráfica
                         {
                             image: imagenes.daltonismo,
-                            width: 150,
+                            width: ANCHO_DONA_VISION,
                             alignment: 'center'
                         },
                         // Columna derecha: Tabla de datos
@@ -2659,7 +2653,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', alPresionarTecla));
 defineExpose({ generarPDF, descargarPDF });
 
 // Función para crear tablas en PDF con colores condicionales
-const crearTablaPDF = (datos: any[], columnas: string[], titulo: string, tipoTabla: string = 'general'): Content[] => {
+const crearTablaPDF = (
+  datos: any[],
+  columnas: string[],
+  titulo: string,
+  tipoTabla: string = 'general',
+  opciones: { compacta?: boolean } = {},
+): Content[] => {
+  // Compacta: menos margen vertical en cada celda, para que la sección quepa en una página
+  const margenDeCelda = opciones.compacta ? { margin: CELDA_COMPACTA } : {};
   if (!datos || datos.length === 0) return [];
   
   // Filtrar y limpiar los datos para evitar celdas undefined
@@ -2733,10 +2735,11 @@ const crearTablaPDF = (datos: any[], columnas: string[], titulo: string, tipoTab
         widths: tipoTabla === 'aptitud' ? [140, 100, '*'] : columnas.map(() => '*'),
         body: [
           columnas.map(col => ({ text: col, style: 'tableHeader' })),
-          ...datosLimpios.map((fila, filaIndex) => 
-            fila.map((celda, columnaIndex) => ({ 
-              text: celda, 
-              style: getCellStyle(celda, columnaIndex, filaIndex) 
+          ...datosLimpios.map((fila, filaIndex) =>
+            fila.map((celda, columnaIndex) => ({
+              text: celda,
+              style: getCellStyle(celda, columnaIndex, filaIndex),
+              ...margenDeCelda
             }))
           )
         ]
