@@ -4510,6 +4510,10 @@ html.dark-mode .dashboard-indice__enlace:hover {
   color: #6ee7b7 !important;
 }
 
+html.dark-mode .productividad-skeleton {
+  background-color: #334155;
+}
+
 html.dark-mode .dashboard-filtros {
   background-color: #1e293b !important;
   border-color: #334155 !important;

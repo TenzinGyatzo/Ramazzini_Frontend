@@ -1,6 +1,11 @@
 import auth from '@/lib/axiosAuth'
 import proveedor from '@/lib/axiosProveedor'
 
+interface AlcanceProductividad {
+    idEmpresa?: string;
+    idCentroTrabajo?: string;
+}
+
 export default {
     // Obtener estadísticas de productividad para todos los usuarios de un proveedor
     async getProductivityStatsByProveedor(
@@ -8,10 +13,13 @@ export default {
         fechaInicio?: string,
         fechaFin?: string,
         signal?: AbortSignal,
+        alcance: AlcanceProductividad = {},
     ) {
         const params = new URLSearchParams();
         if (fechaInicio) params.append('fechaInicio', fechaInicio);
         if (fechaFin) params.append('fechaFin', fechaFin);
+        if (alcance.idEmpresa) params.append('idEmpresa', alcance.idEmpresa);
+        if (alcance.idCentroTrabajo) params.append('idCentroTrabajo', alcance.idCentroTrabajo);
 
         const queryString = params.toString();
         const url = `/users/productividad/${idProveedorSalud}${queryString ? `?${queryString}` : ''}`;
@@ -36,10 +44,17 @@ export default {
     },
 
     // Obtener estadísticas detalladas de un usuario específico
-    async getUserDetailedStats(userId: string, fechaInicio?: string, fechaFin?: string) {
+    async getUserDetailedStats(
+        userId: string,
+        fechaInicio?: string,
+        fechaFin?: string,
+        alcance: AlcanceProductividad = {},
+    ) {
         const params = new URLSearchParams();
         if (fechaInicio) params.append('fechaInicio', fechaInicio);
         if (fechaFin) params.append('fechaFin', fechaFin);
+        if (alcance.idEmpresa) params.append('idEmpresa', alcance.idEmpresa);
+        if (alcance.idCentroTrabajo) params.append('idCentroTrabajo', alcance.idCentroTrabajo);
         
         const queryString = params.toString();
         const url = `/users/estadisticas/${userId}${queryString ? `?${queryString}` : ''}`;
@@ -60,18 +75,6 @@ export default {
     // Obtener comparativa de productividad entre usuarios
     async getProductivityComparison(idProveedorSalud: string, periodo: string = 'mes') {
         return auth.get(`/users/${idProveedorSalud}/comparativa?periodo=${periodo}`);
-    },
-
-    // Exportar reporte de productividad
-    async exportProductivityReport(idProveedorSalud: string, formato: string = 'excel', fechaInicio?: string, fechaFin?: string) {
-        const params = new URLSearchParams();
-        params.append('formato', formato);
-        if (fechaInicio) params.append('fechaInicio', fechaInicio);
-        if (fechaFin) params.append('fechaFin', fechaFin);
-        
-        return auth.get(`/users/${idProveedorSalud}/exportar-productividad?${params.toString()}`, {
-            responseType: 'blob'
-        });
     },
 
     // Obtener métricas de rendimiento por período
@@ -100,6 +103,7 @@ export default {
         antidopings: number;
         notas: number;
         externos: number;
+        otros: number;
     }) {
         return proveedor.patch(`/reglas-puntaje/${idProveedorSalud}`, reglasPuntaje);
     }

@@ -3,46 +3,37 @@ import { ref, onMounted, onUnmounted, inject, computed, watch } from "vue";
 import { useUserStore } from "@/stores/user";
 import UserProductivityItem from "@/components/UserProductivityItem.vue";
 import UserProductivityAPI from "@/api/UserProductivityAPI";
+import EmpresasAPI from "@/api/EmpresasAPI";
+import CentrosTrabajoAPI from "@/api/CentrosTrabajoAPI";
+import { OPCIONES_PERIODO_PRODUCTIVIDAD as opcionesPeriodo, TODO_EL_HISTORIAL, fechaLocal, fechasDePeriodo } from "@/helpers/periodosProductividad";
+import { periodoDeReferencia } from "@/helpers/dashboardComparativo";
+import {
+  AYUDA_OTROS_DOCUMENTOS,
+  COLUMNAS_DOCUMENTOS,
+  REGLAS_POR_DEFECTO,
+  armarFilas,
+  diaCorto,
+  fechaCorta,
+  filasParaExcel,
+  ordenarFilas,
+  textoDeDiferencia,
+  tiempoTranscurrido,
+} from "@/helpers/productividadTabla";
+
+const PERIODO_INICIAL = 'Este mes';
 
 const toast = inject("toast");
 const userStore = useUserStore();
-const usuarios = ref([]);
 const loading = ref(true);
 const savingConfig = ref(false);
-const fechaInicio = ref(null);
-const fechaFin = ref(null);
-const periodoPredefinido = ref('');
-
-// Computed para obtener la última actividad global
-const ultimaActividadGlobal = computed(() => {
-  if (usuariosConProductividad.value.length === 0) return 'Sin datos';
-  
-  // Encontrar la fecha más reciente entre todos los usuarios
-  const fechas = usuariosConProductividad.value
-    .map(usuario => usuario.productividad?.ultimoInforme)
-    .filter(fecha => fecha !== null && fecha !== undefined)
-    .map(fecha => new Date(fecha));
-  
-  if (fechas.length === 0) return 'Sin actividad';
-  
-  const fechaMasReciente = new Date(Math.max(...fechas));
-  const ahora = new Date();
-  const diferenciaMs = ahora - fechaMasReciente;
-  const diferenciaHoras = Math.floor(diferenciaMs / (1000 * 60 * 60));
-  const diferenciaDias = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24));
-  
-  if (diferenciaHoras < 24) {
-    return diferenciaHoras === 0 ? 'Hace menos de 1 hora' : `Hace ${diferenciaHoras}h`;
-  } else if (diferenciaDias < 7) {
-    return diferenciaDias === 1 ? 'Hace 1 día' : `Hace ${diferenciaDias} días`;
-  } else {
-    return fechaMasReciente.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-});
+const periodoPredefinido = ref(PERIODO_INICIAL);
+const fechaInicio = ref(fechasDePeriodo(PERIODO_INICIAL).inicio);
+const fechaFin = ref(fechasDePeriodo(PERIODO_INICIAL).fin);
+const rolElegido = ref('');
+const idEmpresa = ref('');
+const idCentroTrabajo = ref('');
+const empresas = ref([]);
+const centros = ref([]);
 
 const user = computed(() => userStore.user);
 
@@ -51,88 +42,23 @@ const esAdministrador = computed(() => {
   return user.value?.role === 'Administrador';
 });
 
-// Opciones de periodos predefinidos
-const opcionesPeriodo = [
-  'Hoy',
-  'Esta semana', 
-  'Este mes',
-  'Mes anterior',
-  'Últimos 3 meses',
-  'Últimos 6 meses',
-  'Este año',
-  'Año anterior'
-];
-
-// Función para calcular fechas según el periodo seleccionado
-const calcularFechasPeriodo = (periodo) => {
-  const hoy = new Date();
-  
-  switch (periodo) {
-    case 'Hoy':
-      return {
-        inicio: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()),
-        fin: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
-      };
-    case 'Esta semana':
-      const inicioSemana = new Date(hoy);
-      inicioSemana.setDate(hoy.getDate() - hoy.getDay() + 1); // Lunes
-      inicioSemana.setHours(0, 0, 0, 0);
-      const finSemana = new Date(inicioSemana);
-      finSemana.setDate(inicioSemana.getDate() + 6); // Domingo
-      finSemana.setHours(23, 59, 59, 999);
-      return { inicio: inicioSemana, fin: finSemana };
-    case 'Este mes':
-      return {
-        inicio: new Date(hoy.getFullYear(), hoy.getMonth(), 1),
-        fin: new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)
-      };
-    case 'Mes anterior':
-      return {
-        inicio: new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1),
-        fin: new Date(hoy.getFullYear(), hoy.getMonth(), 0)
-      };
-    case 'Últimos 3 meses':
-      const inicio3Meses = new Date(hoy.getFullYear(), hoy.getMonth() - 2, 1);
-      const fin3Meses = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-      return { inicio: inicio3Meses, fin: fin3Meses };
-    case 'Últimos 6 meses':
-      const inicio6Meses = new Date(hoy.getFullYear(), hoy.getMonth() - 5, 1);
-      const fin6Meses = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-      return { inicio: inicio6Meses, fin: fin6Meses };
-    case 'Este año':
-      return {
-        inicio: new Date(hoy.getFullYear(), 0, 1),
-        fin: new Date(hoy.getFullYear(), 11, 31)
-      };
-    case 'Año anterior':
-      return {
-        inicio: new Date(hoy.getFullYear() - 1, 0, 1),
-        fin: new Date(hoy.getFullYear() - 1, 11, 31)
-      };
-    default:
-      return { inicio: null, fin: null };
-  }
-};
-
 // Función para manejar el cambio de periodo predefinido
 const manejarCambioPeriodo = (periodo) => {
-  if (periodo === '') {
-    // Si se selecciona "Seleccionar periodo", limpiar las fechas
+  if (periodo === TODO_EL_HISTORIAL) {
     fechaInicio.value = null;
     fechaFin.value = null;
     return;
   }
-  
-  const fechas = calcularFechasPeriodo(periodo);
-  fechaInicio.value = fechas.inicio.toISOString().split('T')[0];
-  fechaFin.value = fechas.fin.toISOString().split('T')[0];
+
+  const fechas = fechasDePeriodo(periodo);
+  if (!fechas) return;
+  fechaInicio.value = fechas.inicio;
+  fechaFin.value = fechas.fin;
 };
 
-// Función para limpiar fechas
-const limpiarFechas = () => {
-  fechaInicio.value = null;
-  fechaFin.value = null;
-  periodoPredefinido.value = '';
+const restablecerPeriodo = () => {
+  periodoPredefinido.value = PERIODO_INICIAL;
+  manejarCambioPeriodo(PERIODO_INICIAL);
 };
 
 // Computed para validar rango de fechas
@@ -140,89 +66,100 @@ const rangoInvalido = computed(() => {
   return fechaInicio.value && fechaFin.value && new Date(fechaInicio.value) > new Date(fechaFin.value);
 });
 
-// Computed para determinar si hay filtros aplicados
-const hayFiltrosAplicados = computed(() => {
-  return fechaInicio.value || fechaFin.value;
+// Se compara lo que ya pasó: un mes en curso contra un mes completo siempre saldría a la baja
+const periodoAnterior = computed(() => {
+  if (!fechaInicio.value || !fechaFin.value || rangoInvalido.value) return null;
+  const hoy = fechaLocal(new Date());
+  const fin = fechaFin.value > hoy ? hoy : fechaFin.value;
+  return periodoDeReferencia(fechaInicio.value, fin, 'anterior');
 });
-
-// Sistema de puntuación para ranking (usando configuración reactiva)
-const calcularPuntuacion = (productividad) => {
-  if (!productividad) return 0;
-  
-  const puntos = {
-    aptitudes: productividad.totalAptitudes * configuracionPuntos.value.aptitudes,
-    historias: productividad.totalHistoriasClinicas * configuracionPuntos.value.historias,
-    exploraciones: productividad.totalExploracionesFisicas * configuracionPuntos.value.exploraciones,
-    examenesVista: productividad.totalExamenesVista * configuracionPuntos.value.examenesVista,
-    audiometrias: productividad.totalAudiometrias * configuracionPuntos.value.audiometrias,
-    antidopings: productividad.totalAntidopings * configuracionPuntos.value.antidopings,
-    notas: productividad.totalNotasMedicas * configuracionPuntos.value.notas,
-    externos: productividad.totalDocumentosExternos * configuracionPuntos.value.externos
-  };
-  
-  return puntos.aptitudes + puntos.historias + puntos.exploraciones + 
-         puntos.examenesVista + puntos.audiometrias + puntos.antidopings + 
-         puntos.notas + puntos.externos;
-};
-
-// Computed para ranking de usuarios
-const rankingUsuarios = computed(() => {
-  return usuariosConProductividad.value
-    .map(usuario => ({
-      ...usuario,
-      puntuacion: calcularPuntuacion(usuario.productividad)
-    }))
-    .sort((a, b) => b.puntuacion - a.puntuacion);
-});
-
-// Computed para top 3 performers
-const topPerformers = computed(() => {
-  return rankingUsuarios.value.slice(0, 3);
-});
-
-// Estado para mostrar todo el ranking
-const mostrarRankingCompleto = ref(false);
-
-// Estado para el modal de reglas de puntaje
-const mostrarModalReglas = ref(false);
 
 // Configuración de puntos (reactiva para permitir modificaciones)
-const configuracionPuntos = ref({
-  aptitudes: 3,
-  historias: 1,
-  exploraciones: 1,
-  examenesVista: 1,
-  audiometrias: 1,
-  antidopings: 1,
-  notas: 2,
-  externos: 0
-});
-
-// Configuración original (para resetear)
-const configuracionOriginal = {
-  aptitudes: 3,
-  historias: 1,
-  exploraciones: 1,
-  examenesVista: 1,
-  audiometrias: 1,
-  antidopings: 1,
-  notas: 2,
-  externos: 0
-};
+const configuracionPuntos = ref({ ...REGLAS_POR_DEFECTO });
 
 const usuariosConProductividad = ref([]);
-const skipWatchRecarga = ref(true);
+const documentosAnteriores = ref(null);
 let abortController = null;
 let debounceTimer = null;
 
-const aplicarReglasPuntaje = (reglas) => {
-  if (reglas) {
-    configuracionPuntos.value = { ...configuracionOriginal, ...reglas };
-  }
+const opcionesDeRol = computed(() =>
+  [...new Set(usuariosConProductividad.value.map((usuario) => usuario.role).filter(Boolean))].sort()
+);
+
+// Orden de la tabla: cada proveedor tiene sus reglas de puntaje, así que entre proveedores
+// no hay puntos comparables y el administrador ve documentos
+const ordenElegido = ref(null);
+const orden = computed(() => ordenElegido.value ?? {
+  clave: esAdministrador.value ? 'totalDocumentos' : 'puntos',
+  descendente: true,
+});
+
+const alternarOrden = (clave) => {
+  const { clave: actual, descendente } = orden.value;
+  ordenElegido.value = clave === actual
+    ? { clave, descendente: !descendente }
+    : { clave, descendente: clave !== 'usuario' };
 };
 
+const filasVisibles = computed(() => {
+  const usuarios = rolElegido.value
+    ? usuariosConProductividad.value.filter((usuario) => usuario.role === rolElegido.value)
+    : usuariosConProductividad.value;
+  const filas = armarFilas(usuarios, configuracionPuntos.value, documentosAnteriores.value);
+  return ordenarFilas(filas, orden.value.clave, orden.value.descendente);
+});
+
+const hayComparacion = computed(() => documentosAnteriores.value !== null);
+
+const encabezados = computed(() => [
+  { clave: 'usuario', titulo: 'Usuario', izquierda: true },
+  ...(esAdministrador.value ? [] : [{ clave: 'puntos', titulo: 'Puntos', ayuda: 'Según las reglas de puntaje' }]),
+  ...COLUMNAS_DOCUMENTOS,
+  { clave: 'totalDocumentos', titulo: 'Total', ayuda: 'Total de Documentos' },
+  ...(hayComparacion.value ? [{ clave: 'cambio', titulo: 'Cambio', ayuda: textoPeriodoAnterior.value }] : []),
+  { clave: 'ultimoInforme', titulo: 'Último Informe', izquierda: true },
+]);
+
+const textoPeriodoAnterior = computed(() =>
+  periodoAnterior.value
+    ? `Contra ${diaCorto(periodoAnterior.value.desde)} - ${diaCorto(periodoAnterior.value.hasta)}`
+    : ''
+);
+
+// Resumen de lo que se ve en la tabla
+const totalDocumentos = computed(() =>
+  filasVisibles.value.reduce((suma, fila) => suma + (fila.productividad?.totalDocumentos || 0), 0)
+);
+const usuariosConActividad = computed(() =>
+  filasVisibles.value.filter((fila) => fila.productividad?.totalDocumentos).length
+);
+const promedioPorUsuario = computed(() =>
+  filasVisibles.value.length ? Math.round(totalDocumentos.value / filasVisibles.value.length) : 0
+);
+const diferenciaTotal = computed(() =>
+  hayComparacion.value ? filasVisibles.value.reduce((suma, fila) => suma + fila.diferencia, 0) : null
+);
+const ultimaActividad = computed(() => {
+  const fechas = filasVisibles.value
+    .map((fila) => fila.productividad?.ultimoInforme)
+    .filter(Boolean)
+    .map((fecha) => new Date(fecha).getTime());
+  return fechas.length ? new Date(Math.max(...fechas)) : null;
+});
+
+const consultarUsuarios = (inicio, fin, signal) =>
+  esAdministrador.value
+    ? UserProductivityAPI.getAllProductivityStats(inicio, fin, signal)
+    : UserProductivityAPI.getProductivityStatsByProveedor(
+        user.value.idProveedorSalud,
+        inicio,
+        fin,
+        signal,
+        { idEmpresa: idEmpresa.value, idCentroTrabajo: idCentroTrabajo.value }
+      );
+
 // Función para cargar datos con filtros
-const cargarDatos = async (inicio, fin) => {
+const cargarDatos = async () => {
   if (abortController) {
     abortController.abort();
   }
@@ -232,29 +169,24 @@ const cargarDatos = async (inicio, fin) => {
   try {
     loading.value = true;
 
-    let response;
-
-    if (esAdministrador.value) {
-      response = await UserProductivityAPI.getAllProductivityStats(inicio, fin, signal);
-    } else {
-      response = await UserProductivityAPI.getProductivityStatsByProveedor(
-        user.value.idProveedorSalud,
-        inicio,
-        fin,
-        signal
-      );
-    }
+    const anterior = periodoAnterior.value;
+    const [response, responseAnterior] = await Promise.all([
+      consultarUsuarios(fechaInicio.value, fechaFin.value, signal),
+      anterior ? consultarUsuarios(anterior.desde, anterior.hasta, signal) : null,
+    ]);
 
     if (signal.aborted) return;
 
     const payload = response.data;
-    if (payload?.usuarios) {
-      usuariosConProductividad.value = payload.usuarios;
-      aplicarReglasPuntaje(payload.reglasPuntaje);
-    } else if (Array.isArray(payload)) {
-      usuariosConProductividad.value = payload;
-    } else {
+    if (!payload?.usuarios) {
       throw new Error("No se obtuvieron datos de productividad");
+    }
+    usuariosConProductividad.value = payload.usuarios;
+    documentosAnteriores.value = responseAnterior
+      ? new Map(responseAnterior.data.usuarios.map((usuario) => [usuario._id, usuario.productividad?.totalDocumentos || 0]))
+      : null;
+    if (payload.reglasPuntaje) {
+      configuracionPuntos.value = { ...REGLAS_POR_DEFECTO, ...payload.reglasPuntaje };
     }
   } catch (error) {
     if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError') {
@@ -262,6 +194,7 @@ const cargarDatos = async (inicio, fin) => {
     }
     console.error("Error al cargar datos:", error);
     usuariosConProductividad.value = [];
+    documentosAnteriores.value = null;
     toast.open({
       type: "error",
       message: "Error al cargar los datos de productividad",
@@ -274,11 +207,31 @@ const cargarDatos = async (inicio, fin) => {
   }
 };
 
-onMounted(async () => {
-  periodoPredefinido.value = 'Este mes';
-  manejarCambioPeriodo('Este mes');
-  skipWatchRecarga.value = false;
-  await cargarDatos(fechaInicio.value, fechaFin.value);
+const cargarEmpresas = async () => {
+  try {
+    const { data } = await EmpresasAPI.getEmpresas(user.value.idProveedorSalud);
+    empresas.value = Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error al cargar empresas:", error);
+  }
+};
+
+const alCambiarEmpresa = async () => {
+  idCentroTrabajo.value = '';
+  centros.value = [];
+  if (!idEmpresa.value) return;
+  const empresa = idEmpresa.value;
+  try {
+    const { data } = await CentrosTrabajoAPI.getCentrosTrabajo(empresa);
+    if (empresa === idEmpresa.value && Array.isArray(data)) centros.value = data;
+  } catch (error) {
+    console.error("Error al cargar centros de trabajo:", error);
+  }
+};
+
+onMounted(() => {
+  cargarDatos();
+  if (!esAdministrador.value) cargarEmpresas();
 });
 
 onUnmounted(() => {
@@ -286,10 +239,8 @@ onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer);
 });
 
-// Watcher para recargar datos cuando cambien las fechas
-watch([fechaInicio, fechaFin], ([inicio, fin]) => {
-  if (skipWatchRecarga.value) return;
-
+// Watcher para recargar datos cuando cambien las fechas, la empresa o el centro
+watch([fechaInicio, fechaFin, idEmpresa, idCentroTrabajo], ([inicio, fin]) => {
   if (inicio && fin && new Date(inicio) > new Date(fin)) {
     toast.open({
       message: 'La fecha de inicio no puede ser mayor que la fecha final.',
@@ -299,37 +250,60 @@ watch([fechaInicio, fechaFin], ([inicio, fin]) => {
   }
 
   if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    cargarDatos(inicio, fin);
-  }, 300);
+  debounceTimer = setTimeout(cargarDatos, 300);
 });
 
-// Función para obtener estadísticas de un usuario específico
-const obtenerEstadisticasUsuario = async (userId) => {
+const exportarExcel = async () => {
   try {
-    console.log("Obteniendo estadísticas para usuario:", userId);
-    
-    const response = await UserProductivityAPI.getUserDetailedStats(
-      userId, 
-      fechaInicio.value, 
-      fechaFin.value
+    const { descargarFilasExcel } = await import("@/helpers/exportarExcel");
+    const periodo = fechaInicio.value && fechaFin.value ? `${fechaInicio.value} a ${fechaFin.value}` : 'historial';
+    descargarFilasExcel(
+      filasParaExcel(filasVisibles.value, { conPuntos: !esAdministrador.value, conProveedor: esAdministrador.value }),
+      `Productividad ${periodo}.xlsx`,
+      'Productividad'
     );
-    
-    if (response.data) {
-      return response.data;
-    } else {
-      throw new Error("No se obtuvieron estadísticas del usuario");
-    }
+  } catch (error) {
+    console.error("Error al exportar:", error);
+    toast.open({ type: "error", message: "No se pudo generar el archivo de Excel", position: "top-right" });
+  }
+};
+
+// Detalle de un usuario: lo mismo que la tabla, más su actividad por día
+const detalle = ref(null);
+
+const abrirDetalle = async (usuario) => {
+  detalle.value = { usuario, cargando: true, tipos: [], dias: [] };
+  try {
+    const { data } = await UserProductivityAPI.getUserDetailedStats(usuario._id, fechaInicio.value, fechaFin.value, {
+      idEmpresa: idEmpresa.value,
+      idCentroTrabajo: idCentroTrabajo.value,
+    });
+    if (detalle.value?.usuario._id !== usuario._id) return;
+    detalle.value = {
+      usuario,
+      cargando: false,
+      tipos: COLUMNAS_DOCUMENTOS
+        .map(({ clave, ayuda, titulo }) => ({ clave, titulo: titulo === 'Otros' ? 'Otros documentos' : ayuda, total: data[clave] || 0 }))
+        .filter(({ total }) => total > 0),
+      dias: [...data.actividadPorDia].reverse(),
+    };
   } catch (error) {
     console.error("Error al obtener estadísticas:", error);
+    detalle.value = null;
     toast.open({
       type: "error",
       message: "Error al obtener estadísticas del usuario",
       position: "top-right",
     });
-    return null;
   }
 };
+
+const cerrarDetalle = () => {
+  detalle.value = null;
+};
+
+// Estado para el modal de reglas de puntaje
+const mostrarModalReglas = ref(false);
 
 // Funciones para el modal de reglas de puntaje
 const abrirModalReglas = async () => {
@@ -365,19 +339,19 @@ const guardarConfiguracion = async () => {
 };
 
 const resetearConfiguracion = () => {
-  configuracionPuntos.value = { ...configuracionOriginal };
+  configuracionPuntos.value = { ...REGLAS_POR_DEFECTO };
 };
 
 const cargarConfiguracionGuardada = async () => {
   try {
     const response = await UserProductivityAPI.getReglasPuntaje(user.value.idProveedorSalud);
     if (response.data) {
-      configuracionPuntos.value = response.data;
+      configuracionPuntos.value = { ...REGLAS_POR_DEFECTO, ...response.data };
     }
   } catch (error) {
     console.error('Error al cargar configuración:', error);
     // En caso de error, usar configuración por defecto
-    configuracionPuntos.value = { ...configuracionOriginal };
+    configuracionPuntos.value = { ...REGLAS_POR_DEFECTO };
   }
 };
 
@@ -391,508 +365,257 @@ const getInputClasses = (colorClass) => {
 <template>
   <Transition appear mode="out-in" name="slide-up">
     <div class="w-full max-w-7xl mx-auto p-6">
-      <!-- Header -->
-      <div class="mb-3">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-800 mb-1">
-              Monitoreo de Productividad
-            </h1>
-            <p class="text-gray-600">
-              {{ esAdministrador ? 'Supervisa el rendimiento de todos los usuarios del sistema' : 'Supervisa el rendimiento y actividad de los usuarios del sistema' }}
-            </p>
-          </div>
-          <div v-if="esAdministrador" class="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full">
-            <i class="fas fa-crown text-sm"></i>
-            <span class="text-sm font-medium">Modo Administrador</span>
-          </div>
+      <!-- Encabezado -->
+      <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-800 mb-1">Productividad</h1>
+          <p class="text-gray-600">
+            {{ esAdministrador ? 'Actividad de todos los usuarios del sistema' : 'Actividad de los usuarios de tu organización' }}
+          </p>
         </div>
-        <hr class="mt-4 border-gray-200" />
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="text-sm font-medium text-gray-600 hover:text-gray-800"
+            data-test="abrir-reglas"
+            @click="abrirModalReglas"
+          >
+            <i class="fas fa-cog mr-1"></i>
+            Reglas de puntaje
+          </button>
+          <button
+            type="button"
+            class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="loading || filasVisibles.length === 0"
+            data-test="exportar-excel"
+            @click="exportarExcel"
+          >
+            <i class="fas fa-file-excel mr-2"></i>
+            Exportar a Excel
+          </button>
+        </div>
       </div>
 
-      <!-- Filtros y controles -->
-      <div class="mb-1 flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div class="flex gap-2">
-          <!-- <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <i class="fas fa-download mr-2"></i>
-            Exportar
-          </button> -->
-          
-          <button 
-            @click="abrirModalReglas"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            title="Configurar reglas de puntaje"
-          >
-            <i class="fas fa-cog mr-2"></i>
-            Reglas de Puntaje
-          </button>
+      <!-- Filtros -->
+      <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <div class="dashboard-filtros flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3" data-test="filtros-productividad">
+          <label class="flex flex-col">
+            <span class="mb-0.5 text-[11px] text-gray-500">Rol</span>
+            <select v-model="rolElegido" class="dashboard-filtros__campo h-[34px] sm:h-[26px] border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-0 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-rol">
+              <option value="">Todos</option>
+              <option v-for="rol in opcionesDeRol" :key="rol" :value="rol">{{ rol }}</option>
+            </select>
+          </label>
+          <template v-if="!esAdministrador">
+            <label class="flex flex-col">
+              <span class="mb-0.5 text-[11px] text-gray-500">Empresa</span>
+              <select v-model="idEmpresa" class="dashboard-filtros__campo h-[34px] max-w-[14rem] sm:h-[26px] border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-0 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-empresa" @change="alCambiarEmpresa">
+                <option value="">Todas</option>
+                <option v-for="empresa in empresas" :key="empresa._id" :value="empresa._id">{{ empresa.nombreComercial }}</option>
+              </select>
+            </label>
+            <label class="flex flex-col">
+              <span class="mb-0.5 text-[11px] text-gray-500">Centro de trabajo</span>
+              <select v-model="idCentroTrabajo" :disabled="!idEmpresa" class="dashboard-filtros__campo h-[34px] max-w-[14rem] sm:h-[26px] border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-0 rounded-md shadow-sm text-xs text-gray-700 bg-white disabled:opacity-60" data-test="filtro-centro">
+                <option value="">Todos</option>
+                <option v-for="centro in centros" :key="centro._id" :value="centro._id">{{ centro.nombreCentro }}</option>
+              </select>
+            </label>
+          </template>
         </div>
 
         <!-- Filtro de periodo -->
-        <div class="flex flex-col justify-end text-xs ml-auto w-full sm:w-auto">
-          <div class="flex items-center gap-2">
+        <div class="flex flex-col justify-end text-xs w-full sm:w-auto">
+          <div class="flex flex-wrap items-center gap-x-2">
             <label class="block text-xs font-medium text-gray-700 mb-1">Periodo</label>
-            <transition name="fade">
-              <button 
-                v-if="fechaInicio || fechaFin"
-                @click="limpiarFechas"
-                class="block text-xs font-medium mb-1 text-red-600 hover:text-red-500"
-              >
-                &nbsp;
-                <i class="fa-solid fa-calendar-xmark"></i>
-                &nbsp;Limpiar
-              </button>
-            </transition>
+            <span
+              v-if="fechaInicio && fechaFin"
+              class="mb-1 flex items-center gap-1 text-xs"
+              :class="rangoInvalido ? 'text-rose-600' : 'text-emerald-600'"
+              data-test="aviso-periodo"
+            >
+              <i :class="['fas', rangoInvalido ? 'fa-circle-exclamation text-rose-500' : 'fa-filter text-emerald-500']"></i>
+              {{ rangoInvalido ? 'Corrige el orden de las fechas' : `${diaCorto(fechaInicio)} - ${diaCorto(fechaFin)}` }}
+            </span>
+            <button
+              v-if="periodoPredefinido !== PERIODO_INICIAL"
+              type="button"
+              class="ml-auto block text-xs font-medium mb-1 text-gray-600 hover:text-gray-800"
+              data-test="restablecer-periodo"
+              @click="restablecerPeriodo"
+            >
+              <i class="fa-solid fa-rotate-left"></i>
+              &nbsp;Este mes
+            </button>
           </div>
 
-          <div class="grid grid-cols-1 sm:flex sm:items-end gap-2">
-            <!-- Select de periodos predefinidos -->
-            <div class="flex flex-col">
+          <div class="flex flex-col sm:flex-row sm:items-end sm:justify-end gap-3 sm:gap-2">
+            <div class="flex flex-col w-full sm:w-auto">
               <label class="text-[11px] text-gray-500 mb-0.5">Periodo rápido</label>
               <select
                 v-model="periodoPredefinido"
+                class="border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white transition duration-150 ease-in-out w-full sm:min-w-[140px]"
+                data-test="periodo-rapido"
                 @change="manejarCambioPeriodo(periodoPredefinido)"
-                class="border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white transition duration-150 ease-in-out min-w-full sm:min-w-[120px]"
               >
-                <option value="">Seleccionar periodo</option>
+                <option value="" disabled>Personalizado</option>
                 <option v-for="opcion in opcionesPeriodo" :key="opcion" :value="opcion">{{ opcion }}</option>
               </select>
             </div>
-
-            <div class="grid grid-cols-1 xs:grid-cols-2 sm:flex sm:flex-row gap-2">
-              <!-- Fecha inicio -->
-              <div class="flex flex-col">
-                <label for="fechaInicio" class="text-[11px] text-gray-500 mb-0.5">Inicio</label>
-                <input
-                  id="fechaInicio"
-                  type="date"
-                  v-model="fechaInicio"
-                  class="border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white transition"
-                />
-              </div>
-              <!-- Fecha fin -->
-              <div class="flex flex-col">
-                <label for="fechaFin" class="text-[11px] text-gray-500 mb-0.5">Final</label>
-                <input
-                  id="fechaFin"
-                  type="date"
-                  v-model="fechaFin"
-                  class="border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white transition"
-                />
-              </div>
+            <div class="flex flex-col w-full sm:w-auto">
+              <label for="fechaInicio" class="text-[11px] text-gray-500 mb-0.5">Inicio</label>
+              <input
+                id="fechaInicio"
+                type="date"
+                v-model="fechaInicio"
+                class="border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white transition w-full"
+                @input="periodoPredefinido = ''"
+              />
             </div>
-          </div>
-
-          <!-- Testigo de filtro -->
-          <!-- Este div externo SIEMPRE existe y tiene una altura mínima -->
-          <div class="min-h-[1.5rem]">
-            <!-- Aquí va el elemento que aparece/desaparece -->
-            <transition name="fade">
-              <div
-                v-if="fechaInicio && fechaFin"
-                class="flex items-center gap-1 mt-2"
-              >
-                <!-- Contenido del testigo -->
-                <i
-                  :class="[
-                    'fas',
-                    'text-xs',
-                    rangoInvalido ? 'fa-circle-exclamation text-rose-500' : 'fa-filter text-emerald-500'
-                  ]"
-                ></i>
-                <span
-                  :class="[
-                    'text-xs',
-                    rangoInvalido ? 'text-rose-600' : 'text-emerald-600'
-                  ]"
-                >
-                  {{ rangoInvalido
-                    ? 'Filtro no aplicado: corrige el orden de las fechas'
-                    : `Filtro aplicado: ${new Date(fechaInicio).toLocaleDateString('es-MX', { timeZone: 'UTC' })} - ${new Date(fechaFin).toLocaleDateString('es-MX', { timeZone: 'UTC' })}` }}
-                </span>
-              </div>
-            </transition>
+            <div class="flex flex-col w-full sm:w-auto">
+              <label for="fechaFin" class="text-[11px] text-gray-500 mb-0.5">Final</label>
+              <input
+                id="fechaFin"
+                type="date"
+                v-model="fechaFin"
+                class="border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white transition w-full"
+                @input="periodoPredefinido = ''"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Loading state -->
-      <div v-if="loading" class="flex justify-center items-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <span class="ml-3 text-gray-600">Cargando datos de productividad...</span>
-      </div>
-
-      <!-- Tabla de Ranking -->
-      <div v-else-if="rankingUsuarios.length > 0" class="mb-8">
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                  <i class="fas fa-trophy text-yellow-500"></i>
-                  Ranking de Productividad
-                </h2>
-                <span class="ml-2 text-sm text-gray-500">
-                  ({{ esAdministrador ? 'Todos los usuarios del sistema' : hayFiltrosAplicados ? 'Período filtrado' : 'Todos los datos' }})
-                </span>
-              </div>
-              <button
-                @click="mostrarRankingCompleto = !mostrarRankingCompleto"
-                class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                <i class="fas mr-2" :class="mostrarRankingCompleto ? 'fa-eye-slash' : 'fa-eye'"></i>
-                {{ mostrarRankingCompleto ? 'Ver solo Top 3' : 'Ver ranking completo' }}
-              </button>
-            </div>
+      <!-- Carga -->
+      <div v-if="loading" aria-hidden="true" data-test="productividad-skeleton">
+        <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div v-for="n in 4" :key="n" class="dashboard-cifra rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <div class="productividad-skeleton h-3 w-24 rounded" />
+            <div class="productividad-skeleton mt-2 h-7 w-14 rounded" />
+            <div class="productividad-skeleton mt-1.5 h-3 w-20 rounded" />
           </div>
-          
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-xs">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Posición
-                  </th>
-                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Usuario
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Puntuación
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Aptitudes
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Historias Clínicas">
-                    Historias
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Exploraciones Físicas">
-                    Exploraciones
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Exámenes de la Vista">
-                    Ex. Vista
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Audiometrías">
-                    Audiometrías
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Antidopings">
-                    Antidopings
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Notas Médicas">
-                    Notas
-                  </th>
-                  <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Notas Médicas">
-                    Externos
-                  </th>
-                  <th v-if="esAdministrador" class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Proveedor
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr
-                  v-for="(usuario, index) in (mostrarRankingCompleto ? rankingUsuarios : topPerformers)"
-                  :key="usuario._id"
-                  class="hover:bg-gray-50 transition-colors"
-                  :class="{
-                    'bg-yellow-50': index === 0,
-                    'bg-gray-50': index === 1,
-                    'bg-orange-50': index === 2
-                  }"
-                >
-                  <!-- Posición -->
-                  <td class="px-3 py-3 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <span
-                        class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-                        :class="{
-                          'bg-yellow-500 text-white': index === 0,
-                          'bg-gray-400 text-white': index === 1,
-                          'bg-orange-500 text-white': index === 2,
-                          'bg-gray-200 text-gray-700': index > 2
-                        }"
-                      >
-                        {{ index + 1 }}
-                      </span>
-                      <div class="ml-2">
-                        <div class="text-xs font-medium text-gray-900">
-                          {{ index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '' }}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Usuario -->
-                  <td class="px-3 py-3 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div class="flex-shrink-0 h-8 w-8">
-                        <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <i class="fas fa-user text-blue-600 text-xs"></i>
-                        </div>
-                      </div>
-                      <div class="ml-3">
-                        <div class="text-sm font-medium text-gray-900 truncate max-w-[170px]">
-                          {{ usuario.username }}
-                        </div>
-                        <div class="text-xs text-gray-500 truncate max-w-[170px]">
-                          {{ usuario.email }}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Puntuación -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="text-sm font-bold text-gray-900">
-                      {{ usuario.puntuacion }} <span class="text-xs font-normal text-gray-500">pts</span>
-                    </div>
-                  </td>
-
-                  <!-- Aptitudes -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ usuario.productividad?.totalAptitudes || 0 }}
-                      </div>
-                      <div class="ml-2">
-                        <i class="fas fa-user-check text-green-500 text-xs"></i>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Historias -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ usuario.productividad?.totalHistoriasClinicas || 0 }}
-                      </div>
-                      <div class="ml-2">
-                        <i class="fas fa-notes-medical text-teal-500 text-xs"></i>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Exploraciones -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ usuario.productividad?.totalExploracionesFisicas || 0 }}
-                      </div>
-                      <div class="ml-2">
-                        <i class="fas fa-heartbeat text-indigo-500 text-xs"></i>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Ex. Vista -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ usuario.productividad?.totalExamenesVista || 0 }}
-                      </div>
-                      <div class="ml-2">
-                        <i class="fas fa-eye text-yellow-500 text-xs"></i>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Audiometrías -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ usuario.productividad?.totalAudiometrias || 0 }}
-                      </div>
-                      <div class="ml-2">
-                        <i class="fas fa-volume-up text-purple-500 text-xs"></i>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Antidopings -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ usuario.productividad?.totalAntidopings || 0 }}
-                      </div>
-                      <div class="ml-2">
-                        <i class="fas fa-flask text-red-500 text-xs"></i>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Notas -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ usuario.productividad?.totalNotasMedicas || 0 }}
-                      </div>
-                      <div class="ml-2">
-                        <i class="fas fa-stethoscope text-orange-500 text-xs"></i>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Externos -->
-                  <td class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-sm font-medium text-gray-900">
-                        {{ usuario.productividad?.totalDocumentosExternos || 0 }}
-                      </div>
-                      <div class="ml-2">
-                        <i class="fas fa-file-upload text-gray-600 text-xs"></i>
-                      </div>
-                    </div>
-                  </td>
-
-                  <!-- Proveedor (solo para administradores) -->
-                  <td v-if="esAdministrador" class="px-2 py-3 whitespace-nowrap text-center">
-                    <div class="flex items-center justify-center">
-                      <div class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                        {{ usuario.proveedorNombre || 'Sin proveedor' }}
-                      </div>
-                    </div>
-                  </td>
-
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        </div>
+        <div class="dashboard-cifra rounded-lg border border-gray-200 bg-white p-4">
+          <div v-for="n in 6" :key="n" class="productividad-skeleton mb-3 h-6 rounded last:mb-0" />
         </div>
       </div>
 
-      <!-- Tabla de productividad -->
-      <div v-if="!loading && usuariosConProductividad.length > 0" class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-table text-blue-500"></i>
-                Detalle de Productividad
-              </h2>
-              <span class="ml-2 text-sm text-gray-500">
-                ({{ esAdministrador ? 'Todos los usuarios del sistema' : hayFiltrosAplicados ? 'Período filtrado' : 'Todos los datos' }})
-              </span>
-            </div>
+      <template v-else>
+        <!-- Resumen -->
+        <dl class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4" data-test="productividad-resumen">
+          <div class="dashboard-cifra rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <dt class="text-xs text-gray-500">Usuarios con actividad</dt>
+            <dd class="text-2xl font-bold text-gray-900">{{ usuariosConActividad }}</dd>
+            <dd class="text-xs text-gray-500">de {{ filasVisibles.length }}</dd>
           </div>
-        </div>
-        
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 text-xs">
+          <div class="dashboard-cifra rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <dt class="text-xs text-gray-500">Documentos</dt>
+            <dd class="text-2xl font-bold text-gray-900">{{ totalDocumentos }}</dd>
+            <dd class="text-xs text-gray-500" :title="textoPeriodoAnterior" data-test="cambio-total">
+              {{ hayComparacion ? `${textoDeDiferencia(diferenciaTotal)} contra el periodo anterior` : 'Sin comparación' }}
+            </dd>
+          </div>
+          <div class="dashboard-cifra rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <dt class="text-xs text-gray-500">Promedio por usuario</dt>
+            <dd class="text-2xl font-bold text-gray-900">{{ promedioPorUsuario }}</dd>
+            <dd class="text-xs text-gray-500">documentos</dd>
+          </div>
+          <div class="dashboard-cifra rounded-lg border border-gray-200 bg-white px-4 py-3">
+            <dt class="text-xs text-gray-500">Última actividad</dt>
+            <dd class="text-2xl font-bold text-gray-900">{{ ultimaActividad ? fechaCorta(ultimaActividad) : 'Sin datos' }}</dd>
+            <dd class="text-xs text-gray-500">{{ tiempoTranscurrido(ultimaActividad) }}</dd>
+          </div>
+        </dl>
+
+        <!-- Tabla -->
+        <div v-if="filasVisibles.length > 0" class="dashboard-cifra overflow-x-auto rounded-lg border border-gray-200 bg-white">
+          <table class="min-w-full divide-y divide-gray-200 text-xs" data-test="tabla-productividad">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuario
+                <th
+                  v-for="encabezado in encabezados"
+                  :key="encabezado.clave"
+                  class="px-2 py-2 text-xs font-medium uppercase tracking-wider text-gray-500"
+                  :class="encabezado.izquierda ? 'text-left' : 'text-center'"
+                  :title="encabezado.ayuda"
+                  :aria-sort="orden.clave === encabezado.clave ? (orden.descendente ? 'descending' : 'ascending') : 'none'"
+                >
+                  <button type="button" class="font-medium uppercase tracking-wider hover:text-gray-800" @click="alternarOrden(encabezado.clave)">
+                    {{ encabezado.titulo }}
+                    <i
+                      v-if="orden.clave === encabezado.clave"
+                      class="fas ml-0.5 text-[9px]"
+                      :class="orden.descendente ? 'fa-arrow-down' : 'fa-arrow-up'"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
                 </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Aptitudes
-                </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Historias Clínicas">
-                  Historias
-                </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Exploraciones Físicas">
-                  Exploraciones
-                </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Exámenes de la Vista">
-                  Ex. Vista
-                </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Audiometrías">
-                  Audiometrías
-                </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Antidopings">
-                  Antidopings
-                </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Notas Médicas">
-                  Notas
-                </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Documentos Externos">
-                  Externos
-                </th>
-                <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="Total de Documentos">
-                  Total
-                </th>
-                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Último Informe
-                </th>
-                <th v-if="esAdministrador" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th v-if="esAdministrador" class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Proveedor
                 </th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="divide-y divide-gray-200 bg-white">
               <UserProductivityItem
-                v-for="usuario in usuariosConProductividad"
-                :key="usuario._id"
-                :usuario="usuario"
-                :mostrar-estado-actividad="!hayFiltrosAplicados"
+                v-for="fila in filasVisibles"
+                :key="fila._id"
+                :usuario="fila"
+                :mostrar-puntos="!esAdministrador"
+                :mostrar-cambio="hayComparacion"
                 :mostrar-proveedor="esAdministrador"
-                @ver-detalles="obtenerEstadisticasUsuario"
+                @ver-detalles="abrirDetalle"
               />
             </tbody>
           </table>
         </div>
-      </div>
 
-      <!-- Mensaje cuando no hay datos -->
-      <div v-if="!loading && usuariosConProductividad.length === 0" class="text-center py-12">
-        <div class="text-gray-500">
-          <i class="fas fa-users text-4xl mb-4"></i>
+        <!-- Mensaje cuando no hay datos -->
+        <div v-else class="text-center py-12">
+          <i class="fas fa-users text-4xl mb-4 text-gray-500"></i>
           <h3 class="text-lg font-medium text-gray-900 mb-2">No hay usuarios disponibles</h3>
           <p class="text-gray-500">No se encontraron usuarios con datos de productividad.</p>
         </div>
-      </div>
+      </template>
 
-      <!-- Resumen estadístico -->
-      <div v-if="!loading" class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-              <i class="fas fa-users text-xl"></i>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Total Usuarios</p>
-              <p class="text-2xl font-bold text-gray-900">{{ usuariosConProductividad.length }}</p>
+      <!-- Detalle de un usuario -->
+      <div
+        v-if="detalle"
+        class="productivity-reglas-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        data-test="detalle-usuario"
+        @click.self="cerrarDetalle"
+      >
+        <div class="productivity-reglas-modal bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div class="productivity-reglas-modal__header px-6 py-4 border-b border-gray-200">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h3 class="truncate text-lg font-semibold text-gray-800">{{ detalle.usuario.username }}</h3>
+                <p class="truncate text-sm text-gray-500">{{ detalle.usuario.role }} · {{ detalle.usuario.email }}</p>
+              </div>
+              <button type="button" class="productivity-reglas-modal__close text-gray-400 hover:text-gray-600 transition-colors" aria-label="Cerrar" @click="cerrarDetalle">
+                <i class="fas fa-times text-xl"></i>
+              </button>
             </div>
           </div>
-        </div>
 
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-green-100 text-green-600">
-              <i class="fas fa-file-medical text-xl"></i>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Total Documentos</p>
-              <p class="text-2xl font-bold text-gray-900">
-                {{ usuariosConProductividad.reduce((sum, u) => sum + u.productividad.totalDocumentos, 0) }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <i class="fas fa-chart-line text-xl"></i>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Promedio por Usuario</p>
-              <p class="text-2xl font-bold text-gray-900">
-                {{ usuariosConProductividad.length
-                  ? Math.round(usuariosConProductividad.reduce((sum, u) => sum + u.productividad.totalDocumentos, 0) / usuariosConProductividad.length)
-                  : 0 }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-              <i class="fas fa-calendar text-xl"></i>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Última Actividad</p>
-              <p class="text-lg font-bold text-gray-900">{{ ultimaActividadGlobal }}</p>
-            </div>
+          <div class="productivity-reglas-modal__body px-6 py-4">
+            <p v-if="detalle.cargando" class="py-6 text-center text-sm text-gray-500">Cargando...</p>
+            <p v-else-if="detalle.dias.length === 0" class="py-6 text-center text-sm text-gray-500">Sin actividad en este periodo.</p>
+            <template v-else>
+              <h4 class="mb-2 text-sm font-medium text-gray-700">Documentos por tipo</h4>
+              <ul class="mb-5 divide-y divide-gray-200 text-sm">
+                <li v-for="tipo in detalle.tipos" :key="tipo.clave" class="flex justify-between py-1.5">
+                  <span class="text-gray-700">{{ tipo.titulo }}</span>
+                  <span class="font-medium text-gray-900">{{ tipo.total }}</span>
+                </li>
+              </ul>
+              <h4 class="mb-2 text-sm font-medium text-gray-700">Actividad por día</h4>
+              <ul class="max-h-64 divide-y divide-gray-200 overflow-y-auto text-sm" data-test="actividad-por-dia">
+                <li v-for="dia in detalle.dias" :key="dia.fecha" class="flex justify-between py-1.5 pr-2">
+                  <span class="text-gray-700">{{ diaCorto(dia.fecha) }}</span>
+                  <span class="font-medium text-gray-900">{{ dia.total }}</span>
+                </li>
+              </ul>
+            </template>
           </div>
         </div>
       </div>
@@ -1103,6 +826,27 @@ const getInputClasses = (colorClass) => {
                   <span class="text-sm text-gray-500">puntos</span>
                 </div>
               </div>
+
+              <!-- Otros documentos -->
+              <div class="productivity-reglas-modal__rule productivity-reglas-modal__rule--gray flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <i class="fas fa-file-medical text-sky-500 text-lg"></i>
+                  <div>
+                    <div class="font-medium text-gray-900">Otros documentos</div>
+                    <div class="text-sm text-gray-500">{{ AYUDA_OTROS_DOCUMENTOS }}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model.number="configuracionPuntos.otros"
+                    type="number"
+                    min="0"
+                    max="100"
+                    :class="getInputClasses('border-gray-500 ring-gray-500')"
+                  />
+                  <span class="text-sm text-gray-500">puntos</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1142,6 +886,22 @@ const getInputClasses = (colorClass) => {
 </template>
 
 <style scoped>
+.productividad-skeleton {
+  background-color: rgb(229 231 235);
+  animation: productividad-parpadeo 2.4s ease-in-out infinite;
+}
+
+@keyframes productividad-parpadeo {
+  0%,
+  100% {
+    opacity: 0.38;
+  }
+
+  50% {
+    opacity: 0.72;
+  }
+}
+
 .slide-up-enter-active,
 .slide-up-leave-active {
   transition: all 0.3s ease;
