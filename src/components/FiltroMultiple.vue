@@ -115,7 +115,7 @@ onBeforeUnmount(() => {
     <button
       ref="boton"
       type="button"
-      class="dashboard-filtros__campo flex max-w-[14rem] items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-2 py-2 text-left text-xs text-gray-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-emerald-500 sm:py-1"
+      class="dashboard-filtros__campo flex h-[34px] max-w-[14rem] items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-2 text-left text-xs text-gray-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-emerald-500 sm:h-[26px]"
       :aria-expanded="abierto"
       aria-haspopup="true"
       :aria-label="`${etiqueta}: ${resumen}`"

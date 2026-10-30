@@ -10,6 +10,7 @@ import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useInformePersonalizacionStore } from '@/stores/informePersonalizacion';
 import { clasificarPorEdadYSexo, ordenarPorGrupoEtario, contarPorCategoriaIMC, etiquetasEnfermedades, contarEnfermedadesCronicas, etiquetasAntecedentesReferidos, contarAntecedentesReferidos, etiquetasVisionSinCorreccion, calcularRequierenLentes, contarVisionSinCorreccion, calcularVistaCorregida, calcularDaltonismo, etiquetasAptitudPuesto, etiquetasAptitudPuestoTabla, contarPorAptitudPuesto, calcularCircunferenciaCintura, contarConsultasUltimos30Dias, etiquetasAgentesRiesgo, contarAgentesRiesgo, contarPorSexo, categoriasTensionArterialOrdenadas, contarPorCategoriaTensionArterial, calcularProporcionAudiometria, distribuirResultadosHBC, calcularProporcionResultadosClinicos, distribuirResultadosClinicos, distribuirResultadosClinicosPorCategoriasMultiples, mapToCategoriasMultiples, ordenTipoAlteracionEkg, ordenTipoAlteracionEspirometria, ordenTipoAlteracionRayosX, ordenTipoAlteracionAnalisisLaboratorio, etiquetasTipoAlteracionEkg, etiquetasTipoAlteracionEspirometria, etiquetasTipoAlteracionRayosX, etiquetasTipoAlteracionAnalisisLaboratorio, calcularAnilloTamizajeBipolarTEA, calcularAnilloTamizajeProdromalCPB, calcularBarrasFranjasTamizajeTLP, tablaFranjasTamizajeTLP } from '@/helpers/dashboardDataProcessor';
 import FiltroMultiple from '@/components/FiltroMultiple.vue';
+import DashboardResumenSkeleton from '@/components/skeletons/DashboardResumenSkeleton.vue';
 import GraficaBarras from '@/components/graficas/GraficaBarras.vue';
 import GraficaAnillo from '@/components/graficas/GraficaAnillo.vue';
 import DonaConLeyenda from '@/components/graficas/DonaConLeyenda.vue';
@@ -122,6 +123,11 @@ const centroSeleccionado = ref('Todos')
 const tablaGruposEtarios = ref([]);
 const dashboardData = ref([]);
 const dashboardLoading = ref(false);
+// Primera carga: los controles aún no sirven. Al recargar por un filtro siguen a la vista
+const cargaInicial = ref(true);
+watch(dashboardLoading, (cargando) => {
+  if (!cargando) cargaInicial.value = false;
+});
 const chartRenderWave = ref(0);
 const fechaInicio = ref(null)
 const fechaFin = ref(null)
@@ -3965,10 +3971,10 @@ const tablaCintura = computed(() => {
     <div>
       <div class="mx-auto">
         <div v-if="!empresasStore.currentEmpresa" class="text-center py-8">
-          <p class="text-gray-600 text-lg">Loading empresa data...</p>
+          <p class="text-gray-600 text-lg">Cargando empresa...</p>
         </div>
 
-        <div v-else>
+        <div v-else :class="{ 'tablero-cargando': cargaInicial }">
           <!-- Header con logo a la izquierda y datos a la derecha -->
           <div class="flex flex-col xl:flex-row xl:items-start gap-4 xl:gap-6 mb-4">
             <img
@@ -3995,7 +4001,7 @@ const tablaCintura = computed(() => {
                   <span class="hidden md:inline">Trabajadores evaluados</span>
                   <span class="md:hidden font-medium">Trabajadores</span>
                 </div>
-                <div class="text-xl sm:text-2xl font-bold text-emerald-600 leading-tight">{{ totalTrabajadores }}</div>
+                <div class="tablero-cargando__dato text-xl sm:text-2xl font-bold text-emerald-600 leading-tight">{{ totalTrabajadores }}</div>
               </div>
               
               <!-- Selector de centro de trabajo -->
@@ -4186,7 +4192,7 @@ const tablaCintura = computed(() => {
               />
               <label class="flex flex-col">
                 <span class="mb-0.5 text-[11px] text-gray-500">Sexo</span>
-                <select v-model="filtrosPoblacion.sexo" class="dashboard-filtros__campo border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-sexo">
+                <select v-model="filtrosPoblacion.sexo" class="dashboard-filtros__campo h-[34px] [field-sizing:content] sm:h-[26px] border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-0 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-sexo">
                   <option value="">Todos</option>
                   <option v-for="sexo in SEXOS" :key="sexo" :value="sexo">{{ sexo }}</option>
                 </select>
@@ -4243,11 +4249,11 @@ const tablaCintura = computed(() => {
             </div>
           </div>
 
-          <div
-            v-if="dashboardLoading"
-            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 auto-rows-[340px] sm:auto-rows-[360px] md:auto-rows-[380px] lg:auto-rows-[400px]"
-          >
-            <DashboardChartSkeleton v-for="n in 8" :key="'dashboard-skel-' + n" />
+          <div v-if="dashboardLoading">
+            <DashboardResumenSkeleton />
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 auto-rows-[340px] sm:auto-rows-[360px] md:auto-rows-[380px] lg:auto-rows-[400px]">
+              <DashboardChartSkeleton v-for="n in 8" :key="'dashboard-skel-' + n" />
+            </div>
           </div>
 
           <div v-else>
@@ -6947,3 +6953,55 @@ const tablaCintura = computed(() => {
     @guardada="alGuardarConclusiones"
   />
 </template>
+
+<style>
+/* Primera carga: los controles conservan su lugar y se ven como skeleton */
+.tablero-cargando select,
+.tablero-cargando input,
+.tablero-cargando [data-test='abrir-informes'],
+.tablero-cargando [data-test='filtro-multiple-boton'],
+.tablero-cargando__dato {
+  animation: tablero-parpadeo 2.4s ease-in-out infinite;
+}
+.tablero-cargando select,
+.tablero-cargando input,
+.tablero-cargando [data-test='abrir-informes'],
+.tablero-cargando [data-test='filtro-multiple-boton'] {
+  border-color: transparent !important;
+  background-color: rgb(229 231 235) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: transparent !important;
+  pointer-events: none;
+}
+.tablero-cargando [data-test='abrir-informes'] *,
+.tablero-cargando [data-test='filtro-multiple-boton'] * {
+  visibility: hidden;
+}
+.tablero-cargando .tablero-cargando__dato {
+  width: 3rem;
+  margin-inline: auto;
+  border-radius: 0.375rem;
+  background-color: rgb(229 231 235);
+  color: transparent;
+}
+html.dark-mode .tablero-cargando select,
+html.dark-mode .tablero-cargando input,
+html.dark-mode .tablero-cargando [data-test='abrir-informes'],
+html.dark-mode .tablero-cargando [data-test='filtro-multiple-boton'],
+html.dark-mode .tablero-cargando .tablero-cargando__dato {
+  background-color: #334155 !important;
+  color: transparent !important;
+}
+
+@keyframes tablero-parpadeo {
+  0%,
+  100% {
+    opacity: 0.38;
+  }
+
+  50% {
+    opacity: 0.72;
+  }
+}
+</style>
