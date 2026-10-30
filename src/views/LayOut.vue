@@ -157,8 +157,8 @@ const GUIAS_DE_USO = [
 
 const LOGO_ASSETS = [
   '/img/logosRamazzini/RamazziniBrand.png',
-  '/img/logosRamazzini/RamazziniLogoNoBg.png',
-  '/img/logosRamazzini/RamazziniLogoClaroNoBg.png',
+  '/img/logosRamazzini/RamazziniLogoNoBg-1000.webp',
+  '/img/logosRamazzini/RamazziniLogoClaroNoBg-1000.webp',
 ];
 
 // Función para cerrar el menú si se hace clic fuera
@@ -806,10 +806,10 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
         class="layout-nav-link logo-transition mb-5 mt-3 block aspect-[5210/1403] w-2/3 transform cursor-pointer transition-transform duration-300 ease hover:scale-105 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 2xl:w-1/6"
       >
         <img
-          :src="isDarkMode ? '/img/logosRamazzini/RamazziniLogoClaroNoBg.png' : '/img/logosRamazzini/RamazziniLogoNoBg.png'"
+          :src="isDarkMode ? '/img/logosRamazzini/RamazziniLogoClaroNoBg-1000.webp' : '/img/logosRamazzini/RamazziniLogoNoBg-1000.webp'"
           alt="Ramazzini-Logo"
-          width="5210"
-          height="1403"
+          width="1000"
+          height="269"
           decoding="async"
           class="block h-auto w-full drop-shadow-lg"
         />

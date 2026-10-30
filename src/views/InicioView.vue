@@ -309,18 +309,18 @@ function irAConsejo() {
         </div>
         <div class="hidden shrink-0 lg:block">
           <img
-            src="/img/logosRamazzini/RamazziniLogoNoBg.png"
+            src="/img/logosRamazzini/RamazziniLogoNoBg-1000.webp"
             alt="Ramazzini"
-            width="5210"
-            height="1403"
+            width="1000"
+            height="269"
             decoding="async"
             class="h-14 w-auto sm:h-16 dark:hidden"
           />
           <img
-            src="/img/logosRamazzini/RamazziniLogoClaroNoBg.png"
+            src="/img/logosRamazzini/RamazziniLogoClaroNoBg-1000.webp"
             alt="Ramazzini"
-            width="5210"
-            height="1403"
+            width="1000"
+            height="269"
             decoding="async"
             class="hidden h-14 w-auto sm:h-16 dark:block"
           />

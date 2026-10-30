@@ -49,6 +49,15 @@ export function invalidateInicioHoyListCache() {
   hoyListCache.clear();
 }
 
+/**
+ * Tras guardar o eliminar un documento: lo mostrado sigue en pantalla, pero al
+ * volver a Inicio se pide de nuevo en segundo plano, sin esperar los 90 s.
+ */
+export function marcarInicioDesactualizado() {
+  inicioResumenState.lastFetchedAt.value = null;
+  invalidateInicioHoyListCache();
+}
+
 export function invalidateInicioResumenCache() {
   inicioResumenState.resumen.value = null;
   inicioResumenState.loading.value = false;

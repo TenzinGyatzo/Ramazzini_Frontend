@@ -480,7 +480,7 @@ onMounted(() => {
     :class="currentStep === 2 ? 'max-w-lg mt-6' : 'max-w-sm mt-20'"
   >
   <img
-    :src="isHtmlDark ? '/img/logosRamazzini/RamazziniLogoClaroNoBg.png' : '/img/logosRamazzini/RamazziniLogoNoBg.png'"
+    :src="isHtmlDark ? '/img/logosRamazzini/RamazziniLogoClaroNoBg-1000.webp' : '/img/logosRamazzini/RamazziniLogoNoBg-1000.webp'"
     alt="Ramazzini Logo"
     class="object-contain p-2 mx-auto"
     :class="currentStep === 2 ? 'max-w-[140px] max-h-[72px]' : 'max-w-[250px] max-h-[250px]'"

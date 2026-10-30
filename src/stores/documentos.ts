@@ -3,6 +3,7 @@ import { mensajesDeInventario, type ResumenInventario } from '@/helpers/insumosS
 import { ref, computed } from "vue";
 import DocumentosAPI from "@/api/DocumentosAPI";
 import { getToast } from "@/utils/toast";
+import { marcarInicioDesactualizado } from "@/composables/inicioResumenCache";
 import type { OrganizacionDelAnio, OrganizacionPorAnio } from "@/helpers/documentosExpediente";
 import type {
   Antidoping,
@@ -394,6 +395,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     try {
       loading.value = true;
       const response = await DocumentosAPI.createDocument(documentType, trabajadorId, data);
+      marcarInicioDesactualizado();
       avisarInventario(response.data);
       return unwrapPersistedDocument(response.data);
     } catch (error) {
@@ -408,6 +410,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     try {
       loading.value = true;
       const response = await DocumentosAPI.updateDocument(documentType, trabajadorId, documentId, data);
+      marcarInicioDesactualizado();
       avisarInventario(response.data);
       return unwrapPersistedDocument(response.data);
     } catch (error) {
@@ -422,6 +425,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     try {
       loading.value = true;
       const response = await DocumentosAPI.uploadExternalDocument(trabajadorId, formData);
+      marcarInicioDesactualizado();
       return response.data; // Retorna solo los datos relevantes
     } catch (error) {
       console.error('Error al crear el documento en el store:', error);
@@ -435,6 +439,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     try {
       loading.value = true;
       await DocumentosAPI.deleteDocumentById(documentType, trabajadorId, documentId, razonAnulacion);
+      marcarInicioDesactualizado();
     } catch (error) {
       console.log(error);
       throw error;
@@ -454,6 +459,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
       try {
         loading.value = true;
         await DocumentosAPI.finalizarDocumento(documentType, trabajadorId, documentId);
+        marcarInicioDesactualizado();
       } catch (error) {
         console.error('Error al finalizar el documento en el store:', error);
         throw error;
