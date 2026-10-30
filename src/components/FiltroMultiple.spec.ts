@@ -75,6 +75,43 @@ describe('FiltroMultiple', () => {
     w.unmount();
   });
 
+  it('con muchas opciones ofrece buscador, sin distinguir acentos', async () => {
+    const muchas = Array.from({ length: 8 }, (_, i) => ({ valor: `v${i}`, texto: `Operación ${i}` }));
+    const w = mount(FiltroMultiple, {
+      props: { etiqueta: 'Puesto', opciones: muchas, modelValue: [] },
+      attachTo: document.body,
+    });
+    await w.find('[data-test="filtro-multiple-boton"]').trigger('click');
+    const buscador = w.find('[data-test="filtro-multiple-buscador"]');
+    expect(document.activeElement).toBe(buscador.element);
+    await buscador.setValue('OPERACION 3');
+    expect(w.findAll('[data-test="filtro-multiple-opcion"]')).toHaveLength(1);
+    await buscador.setValue('nada');
+    expect(w.text()).toContain('Sin opciones');
+    w.unmount();
+  });
+
+  it('una lista corta no lleva buscador', async () => {
+    const w = montar();
+    await boton(w).trigger('click');
+    expect(w.find('[data-test="filtro-multiple-buscador"]').exists()).toBe(false);
+    w.unmount();
+  });
+
+  it('en píldoras las opciones están a la vista y se encienden al tocarlas', async () => {
+    const w = mount(FiltroMultiple, {
+      props: { etiqueta: 'Edad', opciones, modelValue: ['b'], variante: 'pildoras' as const },
+    });
+    expect(w.find('[data-test="filtro-multiple-boton"]').exists()).toBe(false);
+    const pildoras = w.findAll('[data-test="filtro-multiple-pildora"]');
+    expect(pildoras.map((p) => p.attributes('aria-pressed'))).toEqual(['false', 'true', 'false']);
+    await pildoras[0].trigger('click');
+    expect(pildoras[0].attributes('aria-pressed')).toBe('true');
+    vi.advanceTimersByTime(600);
+    expect(w.emitted('update:modelValue')).toEqual([[['b', 'a']]]);
+    w.unmount();
+  });
+
   it('cierra al hacer clic fuera, y «Quitar filtros» desde afuera se refleja', async () => {
     const w = montar(['a']);
     await boton(w).trigger('click');

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   filtrosParaLaTabla,
   filtrosVacios,
+  chipsDeFiltros,
   hayFiltros,
   parametrosDeFiltros,
   puestosDisponibles,
@@ -55,11 +56,20 @@ describe('filtros de población del tablero de salud', () => {
     );
   });
 
-  it('en pantalla cuenta las listas largas; el informe las lleva completas', () => {
-    const elegidos = filtros({ puesto: ['A', 'B', 'C', 'D'], agente: ['Ruido', 'Polvos', 'Químicos', 'Vibraciones'] });
-    expect(textoDeFiltros(elegidos, { breve: true })).toBe('4 puestos · 4 agentes de riesgo');
-    expect(textoDeFiltros(elegidos)).toBe('Puesto: A, B, C, D · Expuestos a: Ruido, Polvos, Químicos, Vibraciones');
-    expect(textoDeFiltros(filtros({ puesto: ['A', 'B', 'C'] }), { breve: true })).toBe('Puesto: A, B, C');
+  it('los chips permiten quitar opción por opción; una lista larga va en uno solo', () => {
+    expect(chipsDeFiltros(filtros())).toEqual([]);
+    expect(
+      chipsDeFiltros(filtros({ puesto: ['Soldador'], sexo: 'Femenino', edad: ['hasta30'], antiguedad: ['de1a4'], agente: ['Ruido'] })),
+    ).toEqual([
+      { filtro: 'puesto', valor: 'Soldador', texto: 'Soldador' },
+      { filtro: 'sexo', texto: 'Femenino' },
+      { filtro: 'edad', valor: 'hasta30', texto: 'Hasta 30 años' },
+      { filtro: 'antiguedad', valor: 'de1a4', texto: 'Antigüedad: De 1 a 4 años' },
+      { filtro: 'agente', valor: 'Ruido', texto: 'Expuestos a: Ruido' },
+    ]);
+    const puesto = Array.from({ length: 7 }, (_, i) => `P${i}`);
+    expect(chipsDeFiltros(filtros({ puesto }))).toEqual([{ filtro: 'puesto', texto: '7 puestos' }]);
+    expect(textoDeFiltros(filtros({ puesto }))).toBe(`Puesto: ${puesto.join(', ')}`);
   });
 
   it('lleva a la tabla de trabajadores lo que la tabla sabe filtrar, y dice qué no', () => {

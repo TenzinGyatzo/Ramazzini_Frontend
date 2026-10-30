@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 /**
- * Filtro de selección múltiple: un botón del tamaño de un desplegable que abre la
- * lista de opciones. «Solo esta» deja una sola opción, como un desplegable normal.
+ * Filtro de selección múltiple, en dos formas según el largo de la lista:
+ * - `lista`: botón del tamaño de un desplegable que abre interruptores, con buscador
+ *   si son muchas opciones. «Solo esta» deja una sola, como un desplegable normal.
+ * - `pildoras`: las opciones a la vista, para listas cortas.
  */
 export interface OpcionDeFiltro {
   valor: string;
@@ -15,22 +17,26 @@ const props = withDefaults(
     etiqueta: string;
     opciones: OpcionDeFiltro[];
     modelValue: string[];
+    variante?: 'lista' | 'pildoras';
     /** Texto cuando no hay nada elegido («Todos», «Cualquier agente»). */
     textoTodas?: string;
     /** Alinea el panel a la derecha del botón, para los filtros del final de la fila. */
     panelALaDerecha?: boolean;
   }>(),
-  { textoTodas: 'Todos', panelALaDerecha: false },
+  { variante: 'lista', textoTodas: 'Todos', panelALaDerecha: false },
 );
 const emit = defineEmits<{ 'update:modelValue': [valor: string[]] }>();
 
 // Marcar varias seguidas no debe recargar el tablero por cada una
 const ESPERA_AL_MARCAR_MS = 500;
+const OPCIONES_PARA_BUSCADOR = 8;
 
 const abierto = ref(false);
+const busqueda = ref('');
 const seleccion = ref<string[]>([...props.modelValue]);
 const raiz = ref<HTMLElement | null>(null);
 const boton = ref<HTMLButtonElement | null>(null);
+const buscador = ref<HTMLInputElement | null>(null);
 let temporizador: number | undefined;
 
 watch(
@@ -47,6 +53,17 @@ const resumen = computed(() => {
   if (seleccion.value.length > 1) return `${seleccion.value.length} opciones`;
   const [valor] = seleccion.value;
   return props.opciones.find((o) => o.valor === valor)?.texto ?? valor;
+});
+
+const conBuscador = computed(() => props.opciones.length >= OPCIONES_PARA_BUSCADOR);
+
+const sinAcentos = (texto: string) =>
+  texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase('es');
+
+const opcionesVisibles = computed(() => {
+  const buscado = sinAcentos(busqueda.value.trim());
+  if (!buscado) return props.opciones;
+  return props.opciones.filter((o) => sinAcentos(o.texto).includes(buscado));
 });
 
 function aplicar() {
@@ -73,6 +90,13 @@ function quitarTodas() {
   aplicar();
 }
 
+async function abrir() {
+  busqueda.value = '';
+  abierto.value = true;
+  await nextTick();
+  buscador.value?.focus();
+}
+
 function cerrar() {
   if (temporizador !== undefined) aplicar();
   abierto.value = false;
@@ -95,7 +119,25 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="raiz" class="filtro-multiple relative flex flex-col" @keydown.esc.stop="alPresionarEsc">
+  <div v-if="variante === 'pildoras'" class="filtro-multiple flex flex-col" role="group" :aria-label="etiqueta">
+    <span class="mb-0.5 text-[11px] text-gray-500">{{ etiqueta }}</span>
+    <div class="flex flex-wrap gap-1">
+      <button
+        v-for="opcion in opciones"
+        :key="opcion.valor"
+        type="button"
+        class="filtro-pildora"
+        :class="{ 'filtro-pildora--activa': seleccion.includes(opcion.valor) }"
+        :aria-pressed="seleccion.includes(opcion.valor)"
+        data-test="filtro-multiple-pildora"
+        @click="alternar(opcion.valor)"
+      >
+        {{ opcion.texto }}
+      </button>
+    </div>
+  </div>
+
+  <div v-else ref="raiz" class="filtro-multiple relative flex flex-col" @keydown.esc.stop="alPresionarEsc">
     <span class="mb-0.5 text-[11px] text-gray-500">{{ etiqueta }}</span>
     <button
       ref="boton"
@@ -105,7 +147,7 @@ onBeforeUnmount(() => {
       aria-haspopup="true"
       :aria-label="`${etiqueta}: ${resumen}`"
       data-test="filtro-multiple-boton"
-      @click="abierto ? cerrar() : (abierto = true)"
+      @click="abierto ? cerrar() : abrir()"
     >
       <span class="truncate">{{ resumen }}</span>
       <i class="fas fa-chevron-down text-[9px] text-gray-400" aria-hidden="true"></i>
@@ -118,6 +160,17 @@ onBeforeUnmount(() => {
       role="group"
       :aria-label="etiqueta"
     >
+      <div v-if="conBuscador" class="px-2 pb-1 pt-1">
+        <input
+          ref="buscador"
+          v-model="busqueda"
+          type="search"
+          class="filtro-multiple__buscador w-full rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none"
+          :placeholder="`Buscar ${etiqueta.toLowerCase()}`"
+          :aria-label="`Buscar ${etiqueta.toLowerCase()}`"
+          data-test="filtro-multiple-buscador"
+        />
+      </div>
       <button
         type="button"
         class="filtro-multiple__todas block w-full px-3 py-1.5 text-left text-xs font-medium text-emerald-700 hover:bg-gray-50"
@@ -128,18 +181,20 @@ onBeforeUnmount(() => {
       </button>
       <ul class="max-h-64 overflow-y-auto">
         <li
-          v-for="opcion in opciones"
+          v-for="opcion in opcionesVisibles"
           :key="opcion.valor"
           class="filtro-multiple__opcion group flex items-center gap-2 px-3 py-1 hover:bg-gray-50"
         >
           <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-xs text-gray-700">
             <input
               type="checkbox"
-              class="h-3.5 w-3.5 shrink-0 accent-emerald-600"
+              role="switch"
+              class="filtro-interruptor__casilla"
               :checked="seleccion.includes(opcion.valor)"
               data-test="filtro-multiple-opcion"
               @change="alternar(opcion.valor)"
             />
+            <span class="filtro-interruptor" aria-hidden="true"></span>
             <span class="truncate" :title="opcion.texto">{{ opcion.texto }}</span>
           </label>
           <button
@@ -152,7 +207,7 @@ onBeforeUnmount(() => {
             Solo esta
           </button>
         </li>
-        <li v-if="opciones.length === 0" class="px-3 py-1.5 text-xs text-gray-500">Sin opciones</li>
+        <li v-if="opcionesVisibles.length === 0" class="px-3 py-1.5 text-xs text-gray-500">Sin opciones</li>
       </ul>
     </div>
   </div>
@@ -163,5 +218,67 @@ onBeforeUnmount(() => {
   .filtro-multiple__solo {
     opacity: 1;
   }
+}
+
+/* Interruptor pequeño: la casilla real queda encima, invisible, y lleva el foco */
+.filtro-interruptor__casilla {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.filtro-interruptor {
+  position: relative;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 0.875rem;
+  border-radius: 999px;
+  background-color: #cbd5e1;
+  transition: background-color 120ms ease;
+}
+.filtro-interruptor::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 999px;
+  background-color: #fff;
+  transition: transform 120ms ease;
+}
+.filtro-interruptor__casilla:checked + .filtro-interruptor {
+  background-color: #059669;
+}
+.filtro-interruptor__casilla:checked + .filtro-interruptor::after {
+  transform: translateX(0.625rem);
+}
+.filtro-interruptor__casilla:focus-visible + .filtro-interruptor {
+  outline: 2px solid #10b981;
+  outline-offset: 1px;
+}
+
+.filtro-pildora {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background-color: #fff;
+  color: #374151;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  padding: 0.125rem 0.5rem;
+  white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.filtro-pildora:hover {
+  border-color: #34d399;
+}
+.filtro-pildora:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 1px;
+}
+.filtro-pildora--activa {
+  border-color: #059669;
+  background-color: #059669;
+  color: #fff;
 }
 </style>

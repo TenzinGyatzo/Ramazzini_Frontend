@@ -77,28 +77,49 @@ export function parametrosDeFiltros(filtros: FiltrosDePoblacion): Record<string,
   return parametros;
 }
 
-const MAXIMO_EN_TEXTO_BREVE = 3;
-
-/**
- * «Puesto: Soldador, Chofer · Sexo: Femenino · De 40 a 49 años»; cadena vacía sin
- * filtros. `breve` cuenta las listas largas («5 puestos») para mostrarlas en pantalla.
- */
-export function textoDeFiltros(filtros: FiltrosDePoblacion, { breve = false } = {}): string {
-  const enumerar = (valores: string[], singular: string, plural: string) =>
-    breve && valores.length > MAXIMO_EN_TEXTO_BREVE
-      ? `${valores.length} ${plural}`
-      : `${singular}: ${valores.join(', ')}`;
+/** «Puesto: Soldador, Chofer · Sexo: Femenino · De 40 a 49 años»; cadena vacía sin filtros. */
+export function textoDeFiltros(filtros: FiltrosDePoblacion): string {
   const edades = rangosElegidos(RANGOS_DE_EDAD, filtros.edad).map((r) => r.texto);
   const antiguedades = rangosElegidos(RANGOS_DE_ANTIGUEDAD, filtros.antiguedad).map((r) => r.texto.toLowerCase());
   return [
-    filtros.puesto.length ? enumerar(filtros.puesto, 'Puesto', 'puestos') : '',
+    filtros.puesto.length ? `Puesto: ${filtros.puesto.join(', ')}` : '',
     filtros.sexo ? `Sexo: ${filtros.sexo}` : '',
     edades.join(', '),
     antiguedades.length ? `Antigüedad: ${antiguedades.join(', ')}` : '',
-    filtros.agente.length ? enumerar(filtros.agente, 'Expuestos a', 'agentes de riesgo') : '',
+    filtros.agente.length ? `Expuestos a: ${filtros.agente.join(', ')}` : '',
   ]
     .filter(Boolean)
     .join(' · ');
+}
+
+export interface ChipDeFiltro {
+  filtro: keyof FiltrosDePoblacion;
+  /** Opción que quita; sin valor, quita todo el filtro. */
+  valor?: string;
+  texto: string;
+}
+
+const MAXIMO_DE_CHIPS_POR_FILTRO = 6;
+
+/** Lo elegido, para mostrarlo y quitarlo uno por uno; una lista larga va en un solo chip. */
+export function chipsDeFiltros(filtros: FiltrosDePoblacion): ChipDeFiltro[] {
+  const deLista = (
+    filtro: 'puesto' | 'agente' | 'edad' | 'antiguedad',
+    opciones: { valor: string; texto: string }[],
+    plural: string,
+  ): ChipDeFiltro[] =>
+    opciones.length > MAXIMO_DE_CHIPS_POR_FILTRO
+      ? [{ filtro, texto: `${opciones.length} ${plural}` }]
+      : opciones.map((o) => ({ filtro, ...o }));
+  const deRangos = (lista: Rango[], claves: string[], prefijo = '') =>
+    rangosElegidos(lista, claves).map((r) => ({ valor: r.clave, texto: `${prefijo}${r.texto}` }));
+  return [
+    ...deLista('puesto', filtros.puesto.map((p) => ({ valor: p, texto: p })), 'puestos'),
+    ...(filtros.sexo ? [{ filtro: 'sexo' as const, texto: filtros.sexo }] : []),
+    ...deLista('edad', deRangos(RANGOS_DE_EDAD, filtros.edad), 'rangos de edad'),
+    ...deLista('antiguedad', deRangos(RANGOS_DE_ANTIGUEDAD, filtros.antiguedad, 'Antigüedad: '), 'rangos de antigüedad'),
+    ...deLista('agente', filtros.agente.map((a) => ({ valor: a, texto: `Expuestos a: ${a}` })), 'agentes de riesgo'),
+  ];
 }
 
 /**

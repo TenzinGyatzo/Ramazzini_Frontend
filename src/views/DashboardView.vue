@@ -73,6 +73,7 @@ import {
   RANGOS_DE_ANTIGUEDAD,
   RANGOS_DE_EDAD,
   SEXOS,
+  chipsDeFiltros,
   filtrosParaLaTabla,
   filtrosVacios,
   hayFiltros,
@@ -129,7 +130,12 @@ const periodoPredefinido = ref('')
 // Filtros de población: a qué trabajadores se refieren las estadísticas
 const filtrosPoblacion = reactive(filtrosVacios());
 const hayFiltrosPoblacion = computed(() => hayFiltros(filtrosPoblacion));
-const textoFiltrosPoblacion = computed(() => textoDeFiltros(filtrosPoblacion, { breve: true }));
+const textoFiltrosPoblacion = computed(() => textoDeFiltros(filtrosPoblacion));
+const chipsFiltrosPoblacion = computed(() => chipsDeFiltros(filtrosPoblacion));
+const quitarChipDeFiltro = ({ filtro, valor }) => {
+  if (valor === undefined) filtrosPoblacion[filtro] = filtrosVacios()[filtro];
+  else filtrosPoblacion[filtro] = filtrosPoblacion[filtro].filter((v) => v !== valor);
+};
 const limpiarFiltrosPoblacion = () => Object.assign(filtrosPoblacion, filtrosVacios());
 
 // Funciones para manejar localStorage del centro seleccionado
@@ -3029,7 +3035,7 @@ const contextoDeInforme = () => ({
       empresa: empresasStore.currentEmpresa?.nombreComercial ?? '',
       centro: centroSeleccionado.value,
       periodo: periodoReporte.value,
-      segmento: textoDeFiltros(filtrosPoblacion),
+      segmento: textoFiltrosPoblacion.value,
       comparativo: tablaComparativa.value,
       porCentro: tablaPorCentro.value,
       responsable: nombreMedicoFirmanteDashboard.value ?? '',
@@ -4188,14 +4194,14 @@ const tablaCintura = computed(() => {
               <FiltroMultiple
                 v-model="filtrosPoblacion.edad"
                 etiqueta="Edad"
-                texto-todas="Todas"
+                variante="pildoras"
                 :opciones="opcionesDeEdad"
                 data-test="filtro-edad"
               />
               <FiltroMultiple
                 v-model="filtrosPoblacion.antiguedad"
                 etiqueta="Antigüedad"
-                texto-todas="Todas"
+                variante="pildoras"
                 :opciones="opcionesDeAntiguedad"
                 data-test="filtro-antiguedad"
               />
@@ -4216,9 +4222,25 @@ const tablaCintura = computed(() => {
                 <i class="fa-solid fa-filter-circle-xmark mr-1" aria-hidden="true"></i>Quitar filtros
               </button>
             </div>
-            <p v-if="hayFiltrosPoblacion" class="mt-2 text-xs text-emerald-700" data-test="filtros-aplicados">
-              Todo el tablero se refiere a: {{ textoFiltrosPoblacion }}
-            </p>
+            <div v-if="hayFiltrosPoblacion" class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-emerald-700" data-test="filtros-aplicados">
+              <span>Todo el tablero se refiere a:</span>
+              <span
+                v-for="chip in chipsFiltrosPoblacion"
+                :key="`${chip.filtro}-${chip.valor ?? ''}`"
+                class="dashboard-filtros__chip inline-flex items-center gap-1 rounded-full bg-emerald-50 py-0.5 pl-2 pr-1 text-emerald-800"
+                data-test="filtro-chip"
+              >
+                {{ chip.texto }}
+                <button
+                  type="button"
+                  class="dashboard-filtros__chip-quitar flex h-4 w-4 items-center justify-center rounded-full hover:bg-emerald-200"
+                  :aria-label="`Quitar ${chip.texto}`"
+                  @click="quitarChipDeFiltro(chip)"
+                >
+                  &times;
+                </button>
+              </span>
+            </div>
           </div>
 
           <div
