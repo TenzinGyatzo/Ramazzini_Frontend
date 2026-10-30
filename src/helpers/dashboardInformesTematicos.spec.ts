@@ -148,4 +148,60 @@ describe('informes temáticos del tablero de salud', () => {
     expect(texto).toContain('Puesto: Soldador');
     expect(texto).not.toContain('Resumen de salud laboral para dirección');
   });
+
+  it('cada tema lleva hasta tres gráficas principales, con la conclusión como titular', () => {
+    const cardio = informeTematico('cardiometabolico', fuentes, contexto).graficas ?? [];
+    expect(cardio.map((g) => g.titular)).toEqual([
+      '50 % tiene sobrepeso u obesidad',
+      '25 % tiene presión arterial alta o en rango de hipertensión',
+      // Sin seguimiento cardiometabólico, los antecedentes
+      'El antecedente más referido es hipertensión (2 trabajadores)',
+    ]);
+    // Las barras de IMC con su semáforo: verde lo normal, ámbar el sobrepeso
+    expect((cardio[0] as any).filas.map((f: any) => [f.etiqueta, f.color])).toEqual([
+      ['Normal', '#10B981'],
+      ['Sobrepeso', '#F59E0B'],
+    ]);
+
+    const auditivo = informeTematico('auditivo', fuentes, contexto).graficas ?? [];
+    expect(auditivo.map((g) => g.titular)).toEqual([
+      '38 % de las audiometrías tuvo un resultado distinto de normal',
+      '70 % de la plantilla está expuesta a ruido',
+      'El diagnóstico de oído más frecuente fue H919 - HIPOACUSIA',
+    ]);
+
+    const musculo = informeTematico('musculoesqueletico', fuentes, contexto).graficas ?? [];
+    expect(musculo.map((g) => g.titular)).toEqual([
+      '60 % de la plantilla está expuesta a factores ergonómicos',
+      '2 trabajadores refieren antecedente de lumbalgia',
+      'El diagnóstico musculoesquelético o de traumatismo más frecuente fue M545 - LUMBAGO',
+    ]);
+  });
+
+  it('con gráficas, el PDF va de los resultados a las conclusiones y deja las tablas como anexo', () => {
+    const informe = informeTematico('cardiometabolico', fuentes, { ...contexto, conclusiones: '<p>Conclusión del médico</p>' });
+    const dibujadas: string[] = [];
+    const definicion = definicionResumenEjecutivo(informe, {
+      titulo: tituloDeTema('cardiometabolico'),
+      todasLasTablas: true,
+      dibujar: (config, ancho, alto) => {
+        dibujadas.push(`${config.type} ${ancho}x${alto}`);
+        return 'data:image/png;base64,AAAA';
+      },
+    });
+    expect(dibujadas).toHaveLength(3);
+    const texto = JSON.stringify(definicion.content);
+    const posicion = (fragmento: string) => texto.indexOf(fragmento);
+    expect(posicion('50 % tiene sobrepeso u obesidad')).toBeLessThan(posicion('Hallazgos principales'));
+    expect(posicion('Hallazgos principales')).toBeLessThan(posicion('Conclusión del médico'));
+    expect(posicion('Conclusión del médico')).toBeLessThan(posicion('Anexo: tablas de detalle'));
+    expect(posicion('Anexo: tablas de detalle')).toBeLessThan(posicion('Circunferencia de cintura","style"'));
+
+    // Sin quien dibuje (o sin gráficas) se queda como antes: tablas antes de las conclusiones
+    const sinDibujar = JSON.stringify(
+      definicionResumenEjecutivo(informe, { titulo: tituloDeTema('cardiometabolico'), todasLasTablas: true }).content,
+    );
+    expect(sinDibujar).not.toContain('Anexo: tablas de detalle');
+    expect(sinDibujar.indexOf('Circunferencia de cintura')).toBeLessThan(sinDibujar.indexOf('Conclusión del médico'));
+  });
 });

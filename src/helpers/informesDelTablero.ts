@@ -195,16 +195,27 @@ export function estadoDeInforme(id: IdDeInforme, datos: DatosParaEstado): Estado
 
   const tematico = datos.tematicos[id];
   const disponible = tematico.tablas.length > 0;
+  const graficas = tematico.graficas ?? [];
   return {
     disponible,
     motivo: disponible ? '' : MOTIVO_SIN_DATOS[id],
-    incluye: TABLAS_DE_TEMA[id]
+    incluye: [
+      ...(graficas.length
+        ? [
+            {
+              texto: `${graficas.length === 1 ? 'Gráfica principal' : `${graficas.length} gráficas principales`}, con su conclusión`,
+              incluido: true,
+            },
+          ]
+        : []),
+      ...TABLAS_DE_TEMA[id]
       .map((titulo) => ({ texto: titulo, incluido: tiene(titulo, tematico) }))
       .filter(
         (parte) =>
           parte.incluido ||
           !(SECCION_DE_TABLA[parte.texto] && sinHistorial(SECCION_DE_TABLA[parte.texto])),
       ),
+    ],
   };
 }
 

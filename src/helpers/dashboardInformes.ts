@@ -19,6 +19,7 @@ import {
 import { consultasPorMes, resumirDiagnosticos, type DiagnosticoDeTablero } from './dashboardDiagnosticos';
 import { cifrasClave, registrosDe, type CifraClave } from './dashboardSecciones';
 import { htmlToPdfMakeContent, isHtmlContentEmpty } from './pdfHtmlParser';
+import { contenidoDeGraficas, type DibujarGrafica, type GraficaDeInforme } from './dashboardGraficasInforme';
 import {
   hallazgosNordico,
   hallazgosSueno,
@@ -92,6 +93,8 @@ export interface InformeDeTablero {
   comparativo?: TablaDeInforme | null;
   /** Los mismos indicadores por centro de trabajo, cuando la empresa tiene varios. */
   porCentro?: TablaDeInforme | null;
+  /** Gráficas principales, con su titular (informes temáticos). */
+  graficas?: GraficaDeInforme[];
 }
 
 const pct = (parte: number, total: number) => (total > 0 ? Math.round((parte / total) * 100) : 0);
@@ -498,6 +501,8 @@ export function definicionResumenEjecutivo(
     titulo?: string;
     /** Incluye todas las tablas del informe, completas, en lugar de las principales. */
     todasLasTablas?: boolean;
+    /** Quién dibuja las gráficas principales; sin él, el informe sale sin gráficas. */
+    dibujar?: DibujarGrafica;
   } = {},
 ): Record<string, any> {
   const ficha = [
@@ -569,6 +574,9 @@ export function definicionResumenEjecutivo(
         ]
       : [];
 
+  const graficas = contenidoDeGraficas(informe.graficas ?? [], opciones.dibujar);
+  const conGraficas = graficas.length > 0;
+
   // Cada hoja dice de quién es y qué página es: los temáticos suelen pasar de una
   const deQuien = informe.centro && informe.centro !== 'Todos' ? `${informe.empresa} · ${informe.centro}` : informe.empresa;
 
@@ -619,15 +627,34 @@ export function definicionResumenEjecutivo(
         columnGap: 8,
         margin: [0, 0, 0, 8],
       },
-      { text: 'Hallazgos principales', style: 'subtitulo' },
-      informe.hallazgos.length
-        ? { ul: informe.hallazgos, style: 'parrafo' }
-        : { text: 'No hay registros suficientes en el periodo para describir hallazgos.', style: 'parrafo' },
-      ...tablas,
+      ...graficas,
+      // Con gráficas, los hallazgos no se parten: si no caben junto a ellas, pasan completos a la página siguiente
+      {
+        unbreakable: conGraficas,
+        stack: [
+          { text: 'Hallazgos principales', style: 'subtitulo' },
+          informe.hallazgos.length
+            ? { ul: informe.hallazgos, style: 'parrafo' }
+            : { text: 'No hay registros suficientes en el periodo para describir hallazgos.', style: 'parrafo' },
+        ],
+      },
+      ...(conGraficas ? [] : tablas),
       ...(isHtmlContentEmpty(informe.conclusiones)
         ? []
         : [{ text: 'Conclusiones', style: 'subtitulo' }, ...htmlToPdfMakeContent(informe.conclusiones)]),
       ...recomendaciones,
+      // Con gráficas, el detalle va al final: la primera parte se lee como presentación de resultados
+      ...(conGraficas && tablas.length
+        ? [
+            { text: 'Anexo: tablas de detalle', style: 'titulo', fontSize: 13, pageBreak: 'before', margin: [0, 0, 0, 2] },
+            {
+              text: 'Las cifras de las gráficas y los hallazgos, completas y con todas sus categorías.',
+              fontSize: 8.5,
+              color: '#6b7280',
+            },
+            ...tablas,
+          ]
+        : []),
       {
         text: 'Los hallazgos se redactan automáticamente a partir de los registros del periodo; describen los datos y no sustituyen la valoración del responsable médico.',
         fontSize: 7,
@@ -645,6 +672,8 @@ export function definicionResumenEjecutivo(
       parrafo: { fontSize: 9.5, lineHeight: 1.25 },
       // Estilo que usa el texto con formato de las conclusiones
       textoNormal: { fontSize: 9.5, lineHeight: 1.25 },
+      // Título de una gráfica sin titular (como en el informe completo)
+      subtituloTabla: { fontSize: 11, bold: true, color: '#047857' },
     },
     defaultStyle: { fontSize: 9.5 },
   };

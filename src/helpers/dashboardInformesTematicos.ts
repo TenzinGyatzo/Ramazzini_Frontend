@@ -3,6 +3,10 @@
  * tablero, las que tocan un tema (riesgo cardiometabólico, salud auditiva,
  * sistema musculoesquelético), los diagnósticos de consulta de sus capítulos de
  * la CIE-10 y unos hallazgos redactados a partir de esas cifras.
+ *
+ * Son para presentar resultados a gerentes y directivos: cada uno lleva sus
+ * gráficas principales (hasta GRAFICAS_POR_TEMA), cada una con un titular que dice
+ * la conclusión, y las tablas quedan como anexo de detalle.
  */
 import { capituloDe, type DiagnosticoDeTablero } from './dashboardDiagnosticos';
 import {
@@ -12,13 +16,24 @@ import {
   type TablaDeInforme,
 } from './dashboardInformes';
 import { registrosDe } from './dashboardSecciones';
-import { TITULOS_NORDICO, hallazgosNordico, type NordicoDeTablero } from './dashboardCuestionarios';
+import { TITULOS_NORDICO, hallazgosNordico, resumirNordico, type NordicoDeTablero } from './dashboardCuestionarios';
+import {
+  COLOR_DE_TONO,
+  barrasDeTabla,
+  donaDe,
+  graficasCardiometabolico,
+  graficasNordico,
+  graficasOtologica,
+  type GraficaDeInforme,
+} from './dashboardGraficasInforme';
 import { TITULO_HABITOS, hallazgosHabitos, type HabitosDeTablero } from './dashboardHabitos';
 import {
   TITULOS_CARDIOMETABOLICO,
   TITULOS_OTOLOGICA,
   hallazgosCardiometabolico,
   hallazgosOtologica,
+  resumirCardiometabolico,
+  resumirOtologica,
   type CardiometabolicoDeTablero,
   type OtologicaDeTablero,
 } from './dashboardSeguimiento';
@@ -103,6 +118,36 @@ export function diagnosticosDeCapitulos(
   };
 }
 
+/** Gráficas principales de cada informe temático; las demás cifras quedan en las tablas. */
+export const GRAFICAS_POR_TEMA = 3;
+
+const minusculaInicial = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
+
+/** La fila con más casos de una tabla, o undefined si ninguna tiene. */
+const mayorFila = (tabla: TablaDeInforme | null | undefined) =>
+  (tabla?.filas ?? []).reduce<Fila | undefined>((mayor, fila) => (numero(fila) > (mayor ? numero(mayor) : 0) ? fila : mayor), undefined);
+
+/** Diagnósticos de un grupo como barras, con el más frecuente en el titular. */
+const graficaDeDiagnosticos = (tabla: TablaDeInforme | null, titulo: string, de: string) => {
+  const mayor = mayorFila(tabla);
+  return mayor
+    ? barrasDeTabla(titulo, tabla!.filas, {
+        titular: `El diagnóstico ${de} más frecuente fue ${mayor[0]}`,
+        nota: `Sobre ${plural(total(tabla!), 'diagnóstico registrado', 'diagnósticos registrados')} de este grupo en las consultas del periodo.`,
+      })
+    : null;
+};
+
+/** Las filas de antecedentes nombran a las personas («Hipertensivos»); el titular, la enfermedad. */
+const ENFERMEDAD_DE_ANTECEDENTE: Record<string, string> = {
+  Diabéticos: 'diabetes',
+  Hipertensivos: 'hipertensión',
+  Cardiopáticos: 'cardiopatía',
+};
+
+const principales = (candidatas: (GraficaDeInforme | null | undefined)[]) =>
+  candidatas.filter((grafica): grafica is GraficaDeInforme => !!grafica).slice(0, GRAFICAS_POR_TEMA);
+
 const hallazgoDeDiagnosticos = (tabla: TablaDeInforme | null, de: string): string[] =>
   tabla
     ? [
@@ -119,6 +164,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
 
   let tablas: (TablaDeInforme | null | undefined)[] = [];
   const hallazgos: string[] = [];
+  let graficas: GraficaDeInforme[] = [];
 
   if (tema === 'cardiometabolico') {
     const imc = tabla('Índice de masa corporal');
@@ -168,6 +214,37 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
       ),
     );
     hallazgos.push(...hallazgoDeDiagnosticos(dx, 'del grupo metabólico o cardiovascular'));
+
+    // Peso, presión y las condiciones en seguimiento (o, sin seguimiento, los antecedentes)
+    const seguimiento = resumirCardiometabolico(
+      registrosDe(fuentes.datos, fuentes.indiceCentro, 'cardiometabolico') as CardiometabolicoDeTablero[],
+    );
+    const condicion = [...seguimiento.condiciones].sort((a, b) => b.cantidad - a.cantidad)[0];
+    const [condiciones] = graficasCardiometabolico(seguimiento);
+    const cronica = mayorFila(cronicas);
+    graficas = principales([
+      barrasDeTabla('Índice de masa corporal', imc?.filas, {
+        titular: `${pct(sumaDe(imc, /sobrepeso|obesidad/i), total(imc))} % tiene sobrepeso u obesidad`,
+        nota: `${plural(total(imc), 'trabajador', 'trabajadores')} con exploración física en el periodo.`,
+      }),
+      barrasDeTabla('Presión arterial', presion?.filas, {
+        titular: `${pct(sumaDe(presion, /^alta$|hipertensi/i), total(presion))} % tiene presión arterial alta o en rango de hipertensión`,
+        nota: `${plural(total(presion), 'trabajador', 'trabajadores')} con presión arterial registrada en el periodo.`,
+      }),
+      condiciones && condicion
+        ? {
+            ...condiciones,
+            titular: `${plural(seguimiento.enSeguimiento, 'trabajador', 'trabajadores')} en seguimiento; la condición más frecuente es ${minusculaInicial(condicion.etiqueta)}`,
+          }
+        : cronica
+          ? barrasDeTabla(titulos[3], cronicas!.filas, {
+              titular: `El antecedente más referido es ${ENFERMEDAD_DE_ANTECEDENTE[String(cronica[0])] ?? minusculaInicial(String(cronica[0]))} (${plural(numero(cronica), 'trabajador', 'trabajadores')})`,
+            })
+          : null,
+      barrasDeTabla('Circunferencia de cintura', cintura?.filas, {
+        titular: `${pct(sumaDe(cintura, /alto riesgo/i), total(cintura))} % tiene circunferencia de cintura de alto riesgo`,
+      }),
+    ]);
   }
 
   if (tema === 'auditivo') {
@@ -194,6 +271,44 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
       ...hallazgosOtologica(registrosDe(fuentes.datos, fuentes.indiceCentro, 'otologica') as OtologicaDeTablero[]),
     );
     hallazgos.push(...hallazgoDeDiagnosticos(dx, 'de oído'));
+
+    // Audiometrías, protección auditiva y exposición a ruido
+    const otologica = resumirOtologica(registrosDe(fuentes.datos, fuentes.indiceCentro, 'otologica') as OtologicaDeTablero[]);
+    const [proteccion, sintomas] = graficasOtologica(otologica);
+    const sinProteccionSiempre = otologica.proteccion
+      .filter((p) => p.clave !== 'SIEMPRE')
+      .reduce((suma, p) => suma + p.cantidad, 0);
+    const alteradas = total(audiometria) - sumaDe(audiometria, /^normal/i);
+    const expuestos = ruido ? numero(ruido.filas[0]) : 0;
+    const sintoma = sintomas?.tipo === 'barras' ? [...sintomas.filas].sort((a, b) => b.cantidad - a.cantidad)[0] : undefined;
+    graficas = principales([
+      barrasDeTabla('Resultados de audiometría', audiometria?.filas, {
+        titular: alteradas
+          ? `${pct(alteradas, total(audiometria))} % de las audiometrías tuvo un resultado distinto de normal`
+          : 'Todas las audiometrías del periodo resultaron normales',
+        nota: `${plural(total(audiometria), 'audiometría', 'audiometrías')} en el periodo.`,
+      }),
+      proteccion?.tipo === 'dona'
+        ? {
+            ...proteccion,
+            titular: `${pct(sinProteccionSiempre, otologica.expuestosConRespuesta)} % de quienes trabajan con ruido no usa siempre protección auditiva`,
+          }
+        : null,
+      expuestos && plantilla
+        ? donaDe(
+            'Exposición a ruido',
+            [
+              { etiqueta: 'Expuestos a ruido', cantidad: expuestos, color: COLOR_DE_TONO.atencion },
+              { etiqueta: 'Sin exposición registrada', cantidad: Math.max(0, plantilla - expuestos), color: COLOR_DE_TONO.resto },
+            ],
+            { titular: `${pct(expuestos, plantilla)} % de la plantilla está expuesta a ruido` },
+          )
+        : null,
+      sintomas && sintoma
+        ? { ...sintomas, titular: `Lo más referido en la historia otológica: ${minusculaInicial(sintoma.etiqueta)} (${pct(sintoma.cantidad, sintoma.total)} %)` }
+        : null,
+      graficaDeDiagnosticos(dx, titulos[2], 'de oído'),
+    ]);
   }
 
   if (tema === 'musculoesqueletico') {
@@ -218,11 +333,46 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
       ...hallazgosNordico(registrosDe(fuentes.datos, fuentes.indiceCentro, 'cuestionarioNordico') as NordicoDeTablero[]),
     );
     hallazgos.push(...hallazgoDeDiagnosticos(dx, 'del grupo musculoesquelético o de traumatismos'));
+
+    // Cuestionario Nórdico (resultado y zonas), exposición ergonómica, antecedentes y diagnósticos
+    const resumen = resumirNordico(registrosDe(fuentes.datos, fuentes.indiceCentro, 'cuestionarioNordico') as NordicoDeTablero[]);
+    const [resultado, zonas] = graficasNordico(resumen);
+    const requieren = resumen.semaforo.find((s) => s.clave === 'rojo')?.cantidad ?? 0;
+    const zona = resumen.zonas12Meses.find((z) => z.cantidad > 0);
+    const vibraciones = sumaDe(ergonomia ?? undefined, /vibraci/i);
+    const lumbalgia = sumaDe(antecedentes ?? undefined, /lumbalg/i);
+    const accidentes = sumaDe(antecedentes ?? undefined, /accidente/i);
+    graficas = principales([
+      resultado
+        ? {
+            ...resultado,
+            titular: requieren
+              ? `${pct(requieren, resumen.evaluados)} % de los evaluados requiere seguimiento por molestias musculoesqueléticas`
+              : `${pct(resumen.conMolestia12Meses, resumen.evaluados)} % de los evaluados reportó molestias en los últimos 12 meses`,
+          }
+        : null,
+      zonas && zona
+        ? { ...zonas, titular: `La zona con más molestias es ${minusculaInicial(zona.etiqueta)} (${pct(zona.cantidad, resumen.evaluados)} % de los evaluados)` }
+        : null,
+      barrasDeTabla(titulos[0], ergonomia?.filas, {
+        titular: ergonomicos
+          ? `${pct(ergonomicos, plantilla)} % de la plantilla está expuesta a factores ergonómicos`
+          : `${pct(vibraciones, plantilla)} % de la plantilla está expuesta a vibraciones`,
+        color: COLOR_DE_TONO.atencion,
+      }),
+      barrasDeTabla(titulos[1], antecedentes?.filas, {
+        titular: lumbalgia
+          ? `${plural(lumbalgia, 'trabajador refiere', 'trabajadores refieren')} antecedente de lumbalgia`
+          : `${plural(accidentes, 'trabajador refiere', 'trabajadores refieren')} antecedente de accidentes`,
+      }),
+      graficaDeDiagnosticos(dx, titulos[2], 'musculoesquelético o de traumatismo'),
+    ]);
   }
 
   return {
     ...armarInforme({ ...fuentes, conFiltros: !!contexto.segmento }, { ...contexto, comparativo: null, porCentro: null }),
     hallazgos,
+    graficas,
     tablas: tablas.filter((t): t is TablaDeInforme => !!t && t.filas.some((fila) => numero(fila) > 0)),
   };
 }

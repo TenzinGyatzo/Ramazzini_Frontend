@@ -127,6 +127,19 @@ describe('ventana de informes del tablero', () => {
     expect(omitidos(cardio)).toHaveLength(9);
   });
 
+  it('un informe temático con gráficas lo anuncia primero', () => {
+    const grafica = { tipo: 'barras' as const, titulo: 'Índice de masa corporal', filas: [] };
+    const conGraficas = datos({
+      tematicos: {
+        ...datos().tematicos,
+        cardiometabolico: informe({ tablas: [tabla('Salud física', 'Índice de masa corporal')], graficas: [grafica, grafica] }),
+      },
+    });
+    expect(incluidos(estadoDeInforme('cardiometabolico', conGraficas))[0]).toBe('2 gráficas principales, con su conclusión');
+    // Sin gráficas no se anuncia nada
+    expect(incluidos(estadoDeInforme('cardiometabolico', datos()))).toEqual(['Índice de masa corporal']);
+  });
+
   it('el Excel lista sus hojas', () => {
     const estado = estadoDeInforme('excel', datos());
     expect(estado.disponible).toBe(true);

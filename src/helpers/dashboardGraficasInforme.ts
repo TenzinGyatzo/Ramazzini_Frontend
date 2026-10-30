@@ -37,19 +37,22 @@ export interface FilaDeBarras {
   cantidad: number;
   /** Contra qué se calcula el porcentaje de esta fila. */
   total: number;
+  /** El porcentaje que ya trae la tabla, si se calculó sobre otra base; manda sobre `total`. */
+  porcentaje?: number;
   color: string;
 }
 
+interface Comun {
+  titulo: string;
+  /** Para presentar resultados: la conclusión en una frase («41 % tiene sobrepeso u obesidad»). */
+  titular?: string;
+  nota?: string;
+}
+
 export type GraficaDeInforme =
-  | { tipo: 'dona'; titulo: string; segmentos: Segmento[]; total: number; nota?: string }
-  | { tipo: 'barras'; titulo: string; filas: FilaDeBarras[]; nota?: string }
-  | {
-      tipo: 'columnas';
-      titulo: string;
-      etiquetas: string[];
-      series: { etiqueta: string; valores: number[]; color: string }[];
-      nota?: string;
-    };
+  | (Comun & { tipo: 'dona'; segmentos: Segmento[]; total: number })
+  | (Comun & { tipo: 'barras'; filas: FilaDeBarras[] })
+  | (Comun & { tipo: 'columnas'; etiquetas: string[]; series: { etiqueta: string; valores: number[]; color: string }[] });
 
 /** Filas por gráfica de barras; el resto queda en la tabla que la acompaña. */
 export const FILAS_POR_GRAFICA = 10;
@@ -75,6 +78,85 @@ const dona = (titulo: string, segmentos: Segmento[], nota?: string): GraficaDeIn
   const total = segmentos.reduce((suma, s) => suma + s.cantidad, 0);
   return total > 0 ? { tipo: 'dona', titulo, segmentos, total, ...(nota ? { nota } : {}) } : null;
 };
+
+/**
+ * Colores de las categorías que tienen escala, los mismos que las gráficas del
+ * tablero: verde lo favorable, ámbar atención, naranja y rojos el riesgo creciente.
+ */
+const COLOR_DE_CATEGORIA: Record<string, string> = {
+  // Índice de masa corporal
+  'Bajo peso': '#F59E0B',
+  Normal: '#10B981',
+  Sobrepeso: '#F59E0B',
+  'Obesidad clase I': '#F97316',
+  'Obesidad clase II': '#DC2626',
+  'Obesidad clase III': '#7F1D1D',
+  // Presión arterial
+  Óptima: '#10B981',
+  Alta: '#F59E0B',
+  'Hipertensión grado 1': '#F97316',
+  'Hipertensión grado 2': '#DC2626',
+  'Hipertensión grado 3': '#7F1D1D',
+  // Circunferencia de cintura
+  'Bajo riesgo': '#10B981',
+  'Riesgo aumentado': '#F59E0B',
+  'Alto riesgo': '#DC2626',
+};
+
+/** Color de una categoría con escala; las de audiometría por su grado. Sin escala, el gris del tablero. */
+export function colorDeCategoria(etiqueta: string, porDefecto: string = COLOR_DE_TONO.neutro): string {
+  if (COLOR_DE_CATEGORIA[etiqueta]) return COLOR_DE_CATEGORIA[etiqueta];
+  const texto = etiqueta.toLowerCase();
+  if (/^normal/.test(texto)) return '#10B981';
+  if (/profunda/.test(texto)) return '#7C2D12';
+  if (/moderada.{0,3}severa/.test(texto)) return '#DC2626';
+  if (/severa/.test(texto)) return '#991B1B';
+  if (/moderada/.test(texto)) return '#F97316';
+  if (/leve/.test(texto)) return '#F59E0B';
+  return porDefecto;
+}
+
+type FilaDeTabla = (string | number)[];
+
+/**
+ * Barras a partir de las filas de una tabla del informe ([concepto, cantidad, «35 %»?]),
+ * con el mismo porcentaje que la tabla. Sin filas con casos, ninguna.
+ */
+export function barrasDeTabla(
+  titulo: string,
+  filas: FilaDeTabla[] | undefined,
+  opciones: { titular?: string; nota?: string; color?: string; total?: number } = {},
+): GraficaDeInforme | null {
+  const conCasos = (filas ?? []).filter((fila) => typeof fila[1] === 'number' && fila[1] > 0);
+  if (!conCasos.length) return null;
+  const total = opciones.total ?? conCasos.reduce((suma, fila) => suma + (fila[1] as number), 0);
+  return {
+    tipo: 'barras',
+    titulo,
+    ...(opciones.titular ? { titular: opciones.titular } : {}),
+    ...(opciones.nota ? { nota: opciones.nota } : {}),
+    filas: conCasos.slice(0, FILAS_POR_GRAFICA).map((fila) => {
+      const porcentaje = typeof fila[2] === 'string' ? Number(fila[2].replace(/[^\d.]/g, '')) : NaN;
+      return {
+        etiqueta: String(fila[0]),
+        cantidad: fila[1] as number,
+        total,
+        ...(Number.isFinite(porcentaje) && typeof fila[2] === 'string' && fila[2].trim() ? { porcentaje } : {}),
+        color: colorDeCategoria(String(fila[0]), opciones.color),
+      };
+    }),
+  };
+}
+
+/** Dona de dos o más partes; null si no suma nada. */
+export function donaDe(
+  titulo: string,
+  segmentos: Segmento[],
+  opciones: { titular?: string; nota?: string } = {},
+): GraficaDeInforme | null {
+  const grafica = dona(titulo, segmentos, opciones.nota);
+  return grafica && opciones.titular ? { ...grafica, titular: opciones.titular } : grafica;
+}
 
 const sinVacias = (graficas: (GraficaDeInforme | null)[]) =>
   graficas.filter((grafica): grafica is GraficaDeInforme => !!grafica);
@@ -336,7 +418,10 @@ export function configDeGrafica(grafica: GraficaDeInforme): Record<string, any> 
           anchor: 'end',
           align: 'end',
           font: { size: 8, weight: 'bold' },
-          formatter: (valor: number, contexto: any) => `${valor} (${pct(valor, filas[contexto.dataIndex].total)} %)`,
+          formatter: (valor: number, contexto: any) => {
+            const fila = filas[contexto.dataIndex];
+            return `${valor} (${fila.porcentaje ?? pct(valor, fila.total)} %)`;
+          },
         },
       },
       scales: {
@@ -350,4 +435,123 @@ export function configDeGrafica(grafica: GraficaDeInforme): Record<string, any> 
       },
     },
   };
+}
+
+// ---- Contenido para pdfmake
+
+type Contenido = Record<string, any>;
+
+/**
+ * Dibuja una configuración de Chart.js medida en puntos del PDF y devuelve la imagen.
+ * Sin ella (pruebas, o si el navegador no puede dibujar), las secciones van solo con tablas.
+ */
+export type DibujarGrafica = (config: Record<string, any>, anchoPt: number, altoPt: number) => string | undefined;
+
+const pctTexto = (parte: number, total: number) => `${total > 0 ? Math.round((parte / total) * 100) : 0} %`;
+
+/** Leyenda: una fila por color, en una tabla sin bordes (el cuadro es una celda con relleno). */
+const leyendaDeColores = (filas: { color: string; texto: Contenido['text'] }[], fontSize: number): Contenido => ({
+  table: {
+    widths: [7, '*'],
+    body: filas.map((fila) => [
+      { text: '', fillColor: fila.color, margin: [0, 1, 0, 1] },
+      { text: fila.texto, fontSize, margin: [4, 0, 0, 0] },
+    ]),
+  },
+  layout: {
+    hLineWidth: () => 0,
+    vLineWidth: () => 0,
+    paddingLeft: () => 0,
+    paddingRight: () => 0,
+    paddingTop: () => 2,
+    paddingBottom: () => 2,
+  },
+});
+
+/**
+ * Cada gráfica con su título, como en la pantalla; la dona, con su leyenda a un lado.
+ * Con titular, la conclusión va primero en grande y el tema debajo, en gris.
+ */
+export function contenidoDeGraficas(graficas: GraficaDeInforme[], dibujar?: DibujarGrafica): Contenido[] {
+  if (!dibujar) return [];
+  return graficas.flatMap((grafica): Contenido[] => {
+    const [ancho, alto] = medidasDe(grafica);
+    let imagen: string | undefined;
+    try {
+      imagen = dibujar(configDeGrafica(grafica), ancho, alto);
+    } catch (error) {
+      console.error(`No se pudo dibujar la gráfica «${grafica.titulo}»:`, error);
+    }
+    if (!imagen) return [];
+    const titulo = grafica.titular
+      ? {
+          stack: [
+            { text: grafica.titular, fontSize: 12, bold: true, color: '#111827' },
+            { text: grafica.titulo, fontSize: 8.5, color: '#6b7280', margin: [0, 1, 0, 0] },
+          ],
+          margin: [0, 16, 0, 6],
+        }
+      : { text: grafica.titulo, style: 'subtituloTabla', margin: [0, 15, 0, 6] };
+    const nota = grafica.nota
+      ? [{ text: grafica.nota, fontSize: 8, italics: true, color: '#6b7280', margin: [0, 4, 0, 0] }]
+      : [];
+
+    if (grafica.tipo === 'dona') {
+      const leyenda = leyendaDeColores(
+        grafica.segmentos.map((segmento) => ({
+          color: segmento.color,
+          texto: [
+            `${segmento.etiqueta}: `,
+            { text: `${segmento.cantidad} (${pctTexto(segmento.cantidad, grafica.total)})`, bold: true },
+          ],
+        })),
+        9.5,
+      );
+      const filasDeLeyenda = grafica.segmentos.length;
+      return [
+        {
+          unbreakable: true,
+          stack: [
+            titulo,
+            {
+              columns: [
+                { width: ancho, image: imagen, fit: [ancho, alto] },
+                {
+                  width: '*',
+                  stack: [
+                    leyenda,
+                    { text: `Total: ${grafica.total}`, fontSize: 9, color: '#6b7280', margin: [0, 2, 0, 0] },
+                    ...nota,
+                  ],
+                  // Centrada a la altura de la dona
+                  margin: [18, Math.max(0, alto / 2 - (filasDeLeyenda * 16 + 14) / 2), 0, 0],
+                },
+              ],
+            },
+          ],
+        },
+      ];
+    }
+
+    const series =
+      grafica.tipo === 'columnas'
+        ? [
+            {
+              columns: [
+                { width: '*', text: '' },
+                ...grafica.series.map((serie) => ({
+                  width: 'auto',
+                  ...leyendaDeColores([{ color: serie.color, texto: serie.etiqueta }], 8.5),
+                })),
+                { width: '*', text: '' },
+              ],
+              columnGap: 14,
+              margin: [0, 4, 0, 0],
+            },
+          ]
+        : [];
+    return [
+      { unbreakable: true, stack: [titulo, { image: imagen, width: ancho, alignment: 'center' }, ...series, ...nota] },
+    ];
+  });
 }

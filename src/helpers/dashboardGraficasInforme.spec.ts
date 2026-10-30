@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   COLOR_DE_TONO,
+  barrasDeTabla,
+  colorDeCategoria,
   FILAS_POR_GRAFICA,
   configDeGrafica,
   graficasAntidoping,
@@ -86,5 +88,30 @@ describe('gráficas de las secciones nuevas del informe completo', () => {
     });
     expect(config.options.plugins.datalabels.formatter(3, { dataIndex: 0 })).toBe('3 (25 %)');
     expect(config.options.scales.y.ticks.autoSkip).toBe(false);
+  });
+
+  it('las categorías con escala llevan el color del tablero; lo demás, el que se pida', () => {
+    expect(colorDeCategoria('Normal')).toBe('#10B981');
+    expect(colorDeCategoria('Obesidad clase II')).toBe('#DC2626');
+    expect(colorDeCategoria('Hipertensión grado 1')).toBe('#F97316');
+    expect(colorDeCategoria('Hipoacusia leve')).toBe('#F59E0B');
+    expect(colorDeCategoria('Hipoacusia moderada-severa')).toBe('#DC2626');
+    expect(colorDeCategoria('Hipoacusia profunda')).toBe('#7C2D12');
+    expect(colorDeCategoria('Ergonómicos', COLOR_DE_TONO.atencion)).toBe(COLOR_DE_TONO.atencion);
+  });
+
+  it('las barras de una tabla usan su mismo porcentaje y omiten las filas sin casos', () => {
+    const grafica = barrasDeTabla(
+      'Exposición',
+      [
+        ['Ergonómicos', 6, '60 %'],
+        ['Vibraciones', 0, '0 %'],
+      ],
+      { titular: '60 % de la plantilla está expuesta' },
+    ) as any;
+    expect(grafica.titular).toBe('60 % de la plantilla está expuesta');
+    expect(grafica.filas).toEqual([{ etiqueta: 'Ergonómicos', cantidad: 6, total: 6, porcentaje: 60, color: COLOR_DE_TONO.neutro }]);
+    expect(configDeGrafica(grafica).options.plugins.datalabels.formatter(6, { dataIndex: 0 })).toBe('6 (60 %)');
+    expect(barrasDeTabla('Vacía', [['Ruido', 0, '0 %']])).toBeNull();
   });
 });

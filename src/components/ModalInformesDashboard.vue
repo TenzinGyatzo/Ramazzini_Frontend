@@ -2,6 +2,7 @@
 import { fechaLocalHoy } from '@/helpers/dates';
 import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { cargarPdfMake, pdfMakeCargado, precargarPdfMake } from '@/lib/cargarPdfMake';
+import { dibujarEnPuntos } from '@/helpers/exportChartImage';
 import InformesAPI from '@/api/InformesAPI';
 import { informePersonalizacionService } from '@/api/informe-personalizacion.service';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
@@ -329,8 +330,11 @@ const generar = async (modo: 'ver' | 'descargar') => {
     const informe = conLoGuardado(tema ? props.armarTema(tema) : props.armar(), id);
     // Ya precargado al abrir la ventana: así `open()` ocurre dentro del clic y no se bloquea
     const pdfMake = pdfMakeCargado() ?? (await cargarPdfMake());
+    // Los temáticos llevan sus gráficas principales: a 300 dpi al descargar, a 144 en la vista previa
+    const dibujar = (config: Record<string, any>, ancho: number, alto: number) =>
+      dibujarEnPuntos(config, ancho, alto, modo === 'descargar' ? 300 / 72 : 2);
     const pdf = pdfMake.createPdf(
-      definicionResumenEjecutivo(informe, tema ? { titulo: tituloDeTema(tema), todasLasTablas: true } : {}) as any,
+      definicionResumenEjecutivo(informe, tema ? { titulo: tituloDeTema(tema), todasLasTablas: true, dibujar } : {}) as any,
     );
     if (modo === 'ver') {
       // Se abre antes de avisar al servidor para que el navegador no bloquee la pestaña
