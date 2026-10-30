@@ -117,7 +117,16 @@ describe('ventana de informes del tablero', () => {
     const auditivo = estadoDeInforme('auditivo', datos());
     expect(auditivo.disponible).toBe(false);
     expect(auditivo.motivo).toBe('Sin exposición a ruido, audiometrías ni diagnósticos de oído en el periodo');
-    expect(omitidos(auditivo).slice(0, 3)).toEqual(['Exposición a ruido', 'Audiometría', 'Diagnósticos de oído en las consultas']);
+    expect(omitidos(auditivo).slice(0, 4)).toEqual([
+      'Exposición a ruido',
+      'Expuestos a ruido con audiometría en el periodo',
+      'Audiometría',
+      'Diagnósticos de oído en las consultas',
+    ]);
+    // Si el centro nunca ha hecho audiometrías, no se anuncia esa vigilancia
+    expect(omitidos(estadoDeInforme('auditivo', datos({ historial: { gabinete: false } })))).not.toContain(
+      'Expuestos a ruido con audiometría en el periodo',
+    );
   });
 
   it('un informe temático con registros dice cuáles de sus tablas saldrán', () => {

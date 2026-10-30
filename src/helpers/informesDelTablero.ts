@@ -3,7 +3,7 @@
  * uno, si se puede generar con los datos que el tablero muestra y qué incluirá.
  */
 import type { InformeDeTablero } from './dashboardInformes';
-import { TABLAS_DE_TEMA, type TemaDeInforme } from './dashboardInformesTematicos';
+import { TABLAS_DE_TEMA, TITULO_COBERTURA_AUDIOMETRIA, type TemaDeInforme } from './dashboardInformesTematicos';
 import { TITULOS_NORDICO } from './dashboardCuestionarios';
 import { TITULOS_CARDIOMETABOLICO, TITULOS_OTOLOGICA } from './dashboardSeguimiento';
 
@@ -12,6 +12,8 @@ const SECCION_DE_TABLA: Record<string, string> = Object.fromEntries([
   ...Object.values(TITULOS_NORDICO).map((titulo) => [titulo, 'musculoesqueletico']),
   ...Object.values(TITULOS_CARDIOMETABOLICO).map((titulo) => [titulo, 'cardiometabolico']),
   ...Object.values(TITULOS_OTOLOGICA).map((titulo) => [titulo, 'otologica']),
+  // Si el centro nunca ha hecho audiometrías, no se anuncia que falten
+  [TITULO_COBERTURA_AUDIOMETRIA, 'gabinete'],
 ]);
 
 export type IdDeInforme = 'completo' | 'resumen' | TemaDeInforme | 'excel';

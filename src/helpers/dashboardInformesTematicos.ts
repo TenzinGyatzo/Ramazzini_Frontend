@@ -15,7 +15,8 @@ import {
   type InformeDeTablero,
   type TablaDeInforme,
 } from './dashboardInformes';
-import { registrosDe } from './dashboardSecciones';
+import { historialDe, registrosDe } from './dashboardSecciones';
+import { porcentajeDeCobertura, resumirCobertura, type CoberturaDeTablero } from './dashboardCobertura';
 import { TITULOS_NORDICO, hallazgosNordico, resumirNordico, type NordicoDeTablero } from './dashboardCuestionarios';
 import {
   COLOR_DE_TONO,
@@ -46,6 +47,8 @@ export const TEMAS_DE_INFORME: { valor: TemaDeInforme; texto: string; titulo: st
   { valor: 'musculoesqueletico', texto: 'Sistema musculoesquelético', titulo: 'Informe del sistema musculoesquelético' },
 ];
 
+export const TITULO_COBERTURA_AUDIOMETRIA = 'Expuestos a ruido con audiometría en el periodo';
+
 /** Tablas que cada informe temático puede llevar, en orden; salen las que tienen registros. */
 export const TABLAS_DE_TEMA: Record<TemaDeInforme, string[]> = {
   cardiometabolico: [
@@ -59,6 +62,7 @@ export const TABLAS_DE_TEMA: Record<TemaDeInforme, string[]> = {
   ],
   auditivo: [
     'Exposición a ruido',
+    TITULO_COBERTURA_AUDIOMETRIA,
     'Audiometría',
     'Diagnósticos de oído en las consultas',
     ...Object.values(TITULOS_OTOLOGICA),
@@ -251,13 +255,39 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const titulos = TABLAS_DE_TEMA.auditivo;
     const ruido = recortar(agentes, /^ruido$/i, titulos[0]);
     const audiometria = tabla('Audiometría');
-    const dx = diagnosticosDeCapitulos(diagnosticos, ['VIII'], titulos[2]);
-    tablas = [ruido, audiometria, ...Object.values(TITULOS_OTOLOGICA).map((titulo) => tabla(titulo)), dx];
+    const dx = diagnosticosDeCapitulos(diagnosticos, ['VIII'], titulos[3]);
+    // De los expuestos a ruido, cuántos tienen audiometría en el periodo (la misma cifra que
+    // «Vigilancia según la exposición» del tablero; si el centro nunca ha hecho audiometrías, no sale)
+    const vigilancia = resumirCobertura(
+      registrosDe(fuentes.datos, fuentes.indiceCentro, 'coberturaExposicion') as CoberturaDeTablero[],
+      historialDe(fuentes.datos, fuentes.indiceCentro),
+    ).find((fila) => fila.clave === 'audiometria');
+    const cobertura: TablaDeInforme | null = vigilancia
+      ? {
+          seccion: 'Exposición',
+          titulo: TITULO_COBERTURA_AUDIOMETRIA,
+          columnas: ['Expuestos a ruido', 'Trabajadores', 'Porcentaje'],
+          filas: [
+            ['Con audiometría en el periodo', vigilancia.cantidad, `${porcentajeDeCobertura(vigilancia)} %`],
+            [
+              'Sin audiometría en el periodo',
+              vigilancia.total - vigilancia.cantidad,
+              `${100 - porcentajeDeCobertura(vigilancia)} %`,
+            ],
+          ],
+        }
+      : null;
+    tablas = [ruido, cobertura, audiometria, ...Object.values(TITULOS_OTOLOGICA).map((titulo) => tabla(titulo)), dx];
 
     if (ruido) {
       const expuestos = numero(ruido.filas[0]);
       hallazgos.push(
         `${plural(expuestos, 'trabajador está expuesto', 'trabajadores están expuestos')} a ruido (${pct(expuestos, plantilla)} % de la plantilla).`,
+      );
+    }
+    if (vigilancia) {
+      hallazgos.push(
+        `De ${plural(vigilancia.total, 'trabajador expuesto', 'trabajadores expuestos')} a ruido, ${vigilancia.cantidad} ${vigilancia.cantidad === 1 ? 'tiene' : 'tienen'} audiometría en el periodo (${porcentajeDeCobertura(vigilancia)} %).`,
       );
     }
     if (total(audiometria)) {
@@ -282,6 +312,24 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const expuestos = ruido ? numero(ruido.filas[0]) : 0;
     const sintoma = sintomas?.tipo === 'barras' ? [...sintomas.filas].sort((a, b) => b.cantidad - a.cantidad)[0] : undefined;
     graficas = principales([
+      // Lo primero que pregunta quien dirige: ¿los expuestos tienen su audiometría?
+      vigilancia
+        ? donaDe(
+            'Vigilancia de los expuestos a ruido',
+            [
+              { etiqueta: 'Con audiometría en el periodo', cantidad: vigilancia.cantidad, color: COLOR_DE_TONO.favorable },
+              {
+                etiqueta: 'Sin audiometría en el periodo',
+                cantidad: vigilancia.total - vigilancia.cantidad,
+                color: COLOR_DE_TONO.atencion,
+              },
+            ],
+            {
+              titular: `${porcentajeDeCobertura(vigilancia)} % de los expuestos a ruido tiene su audiometría del periodo`,
+              nota: 'La exposición es la registrada hoy en cada trabajador; la audiometría cuenta si se hizo dentro del periodo.',
+            },
+          )
+        : null,
       barrasDeTabla('Resultados de audiometría', audiometria?.filas, {
         titular: alteradas
           ? `${pct(alteradas, total(audiometria))} % de las audiometrías tuvo un resultado distinto de normal`
@@ -307,7 +355,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
       sintomas && sintoma
         ? { ...sintomas, titular: `Lo más referido en la historia otológica: ${minusculaInicial(sintoma.etiqueta)} (${pct(sintoma.cantidad, sintoma.total)} %)` }
         : null,
-      graficaDeDiagnosticos(dx, titulos[2], 'de oído'),
+      graficaDeDiagnosticos(dx, titulos[3], 'de oído'),
     ]);
   }
 

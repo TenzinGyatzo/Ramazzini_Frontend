@@ -204,4 +204,42 @@ describe('informes temáticos del tablero de salud', () => {
     expect(sinDibujar).not.toContain('Anexo: tablas de detalle');
     expect(sinDibujar.indexOf('Circunferencia de cintura')).toBeLessThan(sinDibujar.indexOf('Conclusión del médico'));
   });
+
+  it('auditivo: de los expuestos a ruido, cuántos tienen audiometría en el periodo, como en el tablero', () => {
+    const conCobertura = [
+      {
+        ...datos[0],
+        coberturaExposicion: [
+          [
+            { agente: 'Ruido', estudio: 'audiometria', expuestos: 7, conEstudio: 5 },
+            { agente: 'Polvos', estudio: 'espirometria', expuestos: 3, conEstudio: 1 },
+          ],
+        ],
+      },
+    ];
+    const informe = informeTematico('auditivo', { ...fuentes, datos: conCobertura }, contexto);
+    // Es la primera gráfica: lo primero que pregunta quien dirige
+    const [vigilancia] = informe.graficas ?? [];
+    expect(vigilancia.titular).toBe('71 % de los expuestos a ruido tiene su audiometría del periodo');
+    expect((vigilancia as any).segmentos.map((s: any) => [s.etiqueta, s.cantidad])).toEqual([
+      ['Con audiometría en el periodo', 5],
+      ['Sin audiometría en el periodo', 2],
+    ]);
+    expect(informe.hallazgos).toContain('De 7 trabajadores expuestos a ruido, 5 tienen audiometría en el periodo (71 %).');
+    expect(informe.tablas.find((t) => t.titulo === 'Expuestos a ruido con audiometría en el periodo')?.filas).toEqual([
+      ['Con audiometría en el periodo', 5, '71 %'],
+      ['Sin audiometría en el periodo', 2, '29 %'],
+    ]);
+
+    // Si el centro nunca ha hecho audiometrías, no se afirma que falten
+    // historial es un objeto por centro, no una lista como los demás campos
+    const sinHistorial = [{ ...conCobertura[0], historial: { gabinete: false } as any }];
+    const sinAudiometrias = {
+      ...fuentes,
+      datos: [{ ...sinHistorial[0], coberturaExposicion: [[{ agente: 'Ruido', estudio: 'audiometria', expuestos: 7, conEstudio: 0 }]] }],
+    };
+    const otro = informeTematico('auditivo', sinAudiometrias, contexto);
+    expect(otro.tablas.map((t) => t.titulo)).not.toContain('Expuestos a ruido con audiometría en el periodo');
+    expect(otro.hallazgos.join(' ')).not.toContain('tienen audiometría');
+  });
 });
