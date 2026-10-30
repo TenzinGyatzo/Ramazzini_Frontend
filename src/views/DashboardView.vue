@@ -4192,7 +4192,7 @@ const tablaCintura = computed(() => {
               />
               <label class="flex flex-col">
                 <span class="mb-0.5 text-[11px] text-gray-500">Sexo</span>
-                <select v-model="filtrosPoblacion.sexo" class="dashboard-filtros__campo h-[34px] [field-sizing:content] sm:h-[26px] border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-0 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-sexo">
+                <select v-model="filtrosPoblacion.sexo" class="dashboard-filtros__campo h-[34px] sm:h-[26px] border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-0 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-sexo">
                   <option value="">Todos</option>
                   <option v-for="sexo in SEXOS" :key="sexo" :value="sexo">{{ sexo }}</option>
                 </select>
