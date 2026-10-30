@@ -861,13 +861,15 @@
             <!-- Contenedor principal del visor -->
             <div class="relative w-full h-full flex flex-col">
               <div class="flex-1 mt-16 sm:mt-20 mx-2 sm:mx-4 mb-4 bg-white rounded-xl shadow-2xl overflow-hidden">
-                <VPdfViewer 
-                  :src="pdfUrl" 
-                  :initialThumbnails-visible="initialThumbnailsVisible" 
-                  :initialScale="initialScale"
-                  locale="customLang" 
-                  :localization="localization" 
-                />
+                <VisorPdfLicencia>
+                  <VPdfViewer
+                    :src="pdfUrl"
+                    :initialThumbnails-visible="initialThumbnailsVisible"
+                    :initialScale="initialScale"
+                    locale="customLang"
+                    :localization="localizacionVisorPdf"
+                  />
+                </VisorPdfLicencia>
               </div>
             </div>
 
@@ -984,7 +986,7 @@ import {
   headClinicalFile,
   registrarDescargaArchivoClinico,
 } from '@/lib/clinicalFiles';
-import { VPdfViewer, Locales, useLicense } from '@vue-pdf-viewer/viewer';
+import { VPdfViewer, VisorPdfLicencia, localizacionVisorPdf } from '@/helpers/visorPdf';
 import { useResultadosClinicosStore, type ResultadoClinico } from '@/stores/resultadosClinicos';
 import type { DocumentoExterno } from '@/interfaces/documentos.inteface';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -1919,78 +1921,6 @@ const cancelarPendingVincularDocumento = () => {
   pendingVincularDocumento.value = false;
 };
 
-const licenseKey = import.meta.env.VITE_VPV_LICENSE;
-useLicense({ licenseKey });
-
-const localization = {
-    customLang: {
-        ...Locales.en_US,
-        documentPropertiesLabel: 'Propiedades del documento',
-        documentPropertiesTooltip: 'Mostrar propiedades del documento',
-        downloadFileLabel: 'Descargar',
-        downloadFileTooltip: 'Descargar archivo',
-        dragDropFileMessage: 'Arrastra y suelta un archivo aquí para abrirlo',
-        dualPageLabel: 'Página doble',
-        firstPageTooltip: 'Ir a la primera página',
-        fullScreenLabel: 'Pantalla completa',
-        fullScreenTooltip: 'Ver en pantalla completa',
-        handToolLabel: 'Herramienta de mano',
-        handToolTooltip: 'Mover página con herramienta de mano',
-        horizontalScrollingLabel: 'Desplazamiento horizontal',
-        lastPageLabel: 'Última página',
-        lastPageTooltip: 'Ir a la última página',
-        moreOptionTooltip: 'Más opciones',
-        nextPageTooltip: 'Página siguiente',
-        openLocalFileLabel: 'Abrir archivo local',
-        openLocalFileTooltip: 'Seleccionar un archivo local para abrir',
-        pageScrollingLabel: 'Desplazamiento por página',
-        passwordConfirmLabel: 'Confirmar',
-        passwordError: 'Contraseña incorrecta',
-        passwordModalMessage: 'Este documento está protegido con contraseña. Introduce la contraseña para continuar.',
-        passwordModalTitle: 'Contraseña requerida',
-        passwordPlaceholder: 'Introducir contraseña',
-        previousPageTooltip: 'Página anterior',
-        printCancelLabel: 'Cancelar impresión',
-        printLabel: 'Imprimir',
-        printLoadingMessage: 'Preparando para imprimir...',
-        printTooltip: 'Imprimir archivo',
-        propertiesAuthorLabel: 'Autor',
-        propertiesCreateOnLabel: 'Creado el',
-        propertiesCreatorLabel: 'Creador',
-        propertiesFilenameLabel: 'Nombre del archivo',
-        propertiesFileSizeLabel: 'Tamaño del archivo',
-        propertiesKeywordLabel: 'Palabras clave',
-        propertiesModifiedOnLabel: 'Modificado el',
-        propertiesPageCountLabel: 'Cantidad de páginas',
-        propertiesPDFProducerLabel: 'Productor PDF',
-        propertiesPDFVersionLabel: 'Versión de PDF',
-        propertiesSubjectLabel: 'Asunto',
-        propertiesTitleLabel: 'Título',
-        rotateClockwiseLabel: 'Girar a la derecha',
-        rotateClockwiseTooltip: 'Girar en sentido horario',
-        rotateCounterclockwiseLabel: 'Girar a la izquierda',
-        rotateCounterclockwiseTooltip: 'Girar en sentido antihorario',
-        searchButtonTooltip: 'Buscar',
-        searchCloseButtonTooltip: 'Cerrar búsqueda',
-        searchInputPlaceholder: 'Buscar...',
-        searchNextTooltip: 'Siguiente resultado',
-        searchPrevTooltip: 'Resultado anterior',
-        singlePageLabel: 'Página única',
-        textSelectionLabel: 'Seleccionar texto',
-        textSelectionTooltip: 'Activar herramienta de selección de texto',
-        themeEnableDarkTooltip: 'Activar modo oscuro',
-        themeEnableLightTooltip: 'Activar modo claro',
-        thumbnailTooltip: 'Miniaturas',
-        verticalScrollingLabel: 'Desplazamiento vertical',
-        wrappedScrollingLabel: 'Desplazamiento envuelto',
-        zoomActualSize: 'Tamaño real',
-        zoomInTooltip: 'Acercar',
-        zoomOutTooltip: 'Alejar',
-        zoomPageFit: 'Ajustar a la página',
-        zoomPageWidth: 'Ajustar al ancho de la página',
-        zoomSelectTooltip: 'Seleccionar nivel de zoom'
-    }
-};
 
 const joinClinicalPath = (ruta: string, nombreArchivo: string) =>
   `${ruta}/${nombreArchivo}`.replace(/\/+/g, '/');

@@ -66,6 +66,7 @@ import { useRolePermissions } from '@/composables/useRolePermissions';
 import { useProfessionalDataValidation } from '@/composables/useProfessionalDataValidation';
 import { useNavigateWithTreatmentConsent } from '@/composables/useNavigateWithTreatmentConsent';
 import { useResultadosClinicosStore } from '@/stores/resultadosClinicos';
+import { precargarVisorPdf } from '@/helpers/visorPdf';
 import ResultadosClinicosPanel from '@/components/ResultadosClinicosPanel.vue';
 import ResultadosClinicosSubsection from '@/components/ResultadosClinicosSubsection.vue';
 import ExpedienteHeaderSkeleton from '@/components/skeletons/ExpedienteHeaderSkeleton.vue';
@@ -726,6 +727,7 @@ const cerrarMenuTipos = (evento: Event) => {
   if (!filtroTiposRef.value?.contains(evento.target as Node)) menuTiposAbierto.value = false;
 };
 onMounted(() => {
+  precargarVisorPdf();
   document.addEventListener('pointerdown', cerrarMenuTipos);
   document.addEventListener('keydown', cerrarMenuTipos);
 });

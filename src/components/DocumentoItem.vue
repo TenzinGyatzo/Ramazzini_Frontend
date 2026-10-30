@@ -31,8 +31,8 @@ import {
     avisoDeDestinoRebasado,
 } from '@/helpers/navegacionVisor';
 import { anotarDocumentoAbierto } from '@/helpers/retornoExpediente';
-import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref, defineAsyncComponent } from 'vue';
-import { Locales, useLicense, ZoomLevel } from '@vue-pdf-viewer/viewer';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch, unref } from 'vue';
+import { VPdfViewer, VisorPdfLicencia, localizacionVisorPdf, zoomAnchoDePagina } from '@/helpers/visorPdf';
 import { enqueuePdfAvailabilityCheck } from '@/composables/usePdfAvailabilityQueue';
 import { usePdfGenerationTracker } from '@/composables/usePdfGenerationTracker';
 import { generarInformePdf } from '@/composables/useGenerarInformePdf';
@@ -40,9 +40,6 @@ import { usePdfGenerationStore } from '@/stores/pdfGeneration';
 import { getToast } from '@/utils/toast';
 import { mensajeErrorArchivo } from '@/helpers/mensajeErrorArchivo';
 
-const VPdfViewer = defineAsyncComponent(() =>
-  import('@vue-pdf-viewer/viewer').then((mod) => mod.VPdfViewer),
-);
 import { useRouter } from 'vue-router';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
@@ -441,13 +438,6 @@ const descargarYGuardarArchivo = async (ruta, nombreArchivo, nombreArchivoReal, 
 };
 
 
-// If the value is empty or incorrect, the watermark will remain.
-const licenseKey = import.meta.env.VITE_VPV_LICENSE;
-
-// useLicense must be used here to ensure proper license
-// initialization before the component renders.
-useLicense({ licenseKey });
-
 // Estados para mostrar el visor y la URL del PDF
 const showPdfViewer = ref(false);
 const pdfUrl = ref('');
@@ -503,76 +493,6 @@ async function fetchPdfMetadata(blob) {
     }
 }
 
-const localization = {
-    customLang: {
-        // Import the English localization as a fallback
-        ...Locales.en_US,
-        documentPropertiesLabel: 'Propiedades del documento',
-        documentPropertiesTooltip: 'Mostrar propiedades del documento',
-        downloadFileLabel: 'Descargar',
-        downloadFileTooltip: 'Descargar archivo',
-        dragDropFileMessage: 'Arrastra y suelta un archivo aquí para abrirlo',
-        dualPageLabel: 'Página doble',
-        firstPageTooltip: 'Ir a la primera página',
-        fullScreenLabel: 'Pantalla completa',
-        fullScreenTooltip: 'Ver en pantalla completa',
-        handToolLabel: 'Herramienta de mano',
-        handToolTooltip: 'Mover página con herramienta de mano',
-        horizontalScrollingLabel: 'Desplazamiento horizontal',
-        lastPageLabel: 'Última página',
-        lastPageTooltip: 'Ir a la última página',
-        moreOptionTooltip: 'Más opciones',
-        nextPageTooltip: 'Página siguiente',
-        openLocalFileLabel: 'Abrir archivo local',
-        openLocalFileTooltip: 'Seleccionar un archivo local para abrir',
-        pageScrollingLabel: 'Desplazamiento por página',
-        passwordConfirmLabel: 'Confirmar',
-        passwordError: 'Contraseña incorrecta',
-        passwordModalMessage: 'Este documento está protegido con contraseña. Introduce la contraseña para continuar.',
-        passwordModalTitle: 'Contraseña requerida',
-        passwordPlaceholder: 'Introducir contraseña',
-        previousPageTooltip: 'Página anterior',
-        printCancelLabel: 'Cancelar impresión',
-        printLabel: 'Imprimir',
-        printLoadingMessage: 'Preparando para imprimir...',
-        printTooltip: 'Imprimir archivo',
-        propertiesAuthorLabel: 'Autor',
-        propertiesCreateOnLabel: 'Creado el',
-        propertiesCreatorLabel: 'Creador',
-        propertiesFilenameLabel: 'Nombre del archivo',
-        propertiesFileSizeLabel: 'Tamaño del archivo',
-        propertiesKeywordLabel: 'Palabras clave',
-        propertiesModifiedOnLabel: 'Modificado el',
-        propertiesPageCountLabel: 'Cantidad de páginas',
-        propertiesPDFProducerLabel: 'Productor PDF',
-        propertiesPDFVersionLabel: 'Versión de PDF',
-        propertiesSubjectLabel: 'Asunto',
-        propertiesTitleLabel: 'Título',
-        rotateClockwiseLabel: 'Girar a la derecha',
-        rotateClockwiseTooltip: 'Girar en sentido horario',
-        rotateCounterclockwiseLabel: 'Girar a la izquierda',
-        rotateCounterclockwiseTooltip: 'Girar en sentido antihorario',
-        searchButtonTooltip: 'Buscar',
-        searchCloseButtonTooltip: 'Cerrar búsqueda',
-        searchInputPlaceholder: 'Buscar...',
-        searchNextTooltip: 'Siguiente resultado',
-        searchPrevTooltip: 'Resultado anterior',
-        singlePageLabel: 'Página única',
-        textSelectionLabel: 'Seleccionar texto',
-        textSelectionTooltip: 'Activar herramienta de selección de texto',
-        themeEnableDarkTooltip: 'Activar modo oscuro',
-        themeEnableLightTooltip: 'Activar modo claro',
-        thumbnailTooltip: 'Miniaturas',
-        verticalScrollingLabel: 'Desplazamiento vertical',
-        wrappedScrollingLabel: 'Desplazamiento envuelto',
-        zoomActualSize: 'Tamaño real',
-        zoomInTooltip: 'Acercar',
-        zoomOutTooltip: 'Alejar',
-        zoomPageFit: 'Ajustar a la página',
-        zoomPageWidth: 'Ajustar al ancho de la página',
-        zoomSelectTooltip: 'Seleccionar nivel de zoom'
-    }
-};
 
 const buildPdfUrl = (ruta, nombrePDF, updatedAt = null, options = {}) => {
     const { useCacheBuster = true, fallbackToNow = false } = options;
@@ -931,7 +851,7 @@ function applyFitToWidth(retryCount = 0) {
     }
 
     // Sin metadatos: PageWidth y luego forzar tope por altura
-    zoomCtrl.zoom(ZoomLevel.PageWidth);
+    zoomCtrl.zoom(zoomAnchoDePagina());
     nextTick(() => {
         if (generation !== pdfViewerClampGeneration) return;
         schedulePdfZoomClamp(zoomCtrl, generation, 0);
@@ -5859,19 +5779,20 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                     <div v-if="!pdfViewerReady" class="visor-cargando flex h-full w-full items-center justify-center" role="status" aria-label="Cargando PDF">
                         <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
                     </div>
-                    <VPdfViewer
-                        v-else
-                        :key="pdfViewerMountKey"
-                        ref="pdfViewerRef"
-                        class="h-full w-full max-w-full"
-                        :src="pdfUrl"
-                        :initialThumbnails-visible="initialThumbnailsVisible"
-                        :initialScale="pdfInitialScale"
-                        :afterCanvasLoaded="pdfAfterCanvasLoaded"
-                        locale="customLang"
-                        :localization="localization"
-                        @loaded="handlePdfViewerLoaded"
-                    />
+                    <VisorPdfLicencia v-else>
+                        <VPdfViewer
+                            :key="pdfViewerMountKey"
+                            ref="pdfViewerRef"
+                            class="h-full w-full max-w-full"
+                            :src="pdfUrl"
+                            :initialThumbnails-visible="initialThumbnailsVisible"
+                            :initialScale="pdfInitialScale"
+                            :afterCanvasLoaded="pdfAfterCanvasLoaded"
+                            locale="customLang"
+                            :localization="localizacionVisorPdf"
+                            @loaded="handlePdfViewerLoaded"
+                        />
+                    </VisorPdfLicencia>
                 </div>
             </div>
 
