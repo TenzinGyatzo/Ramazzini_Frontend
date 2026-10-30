@@ -14,6 +14,8 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import InformesAPI from '@/api/InformesAPI';
 import { formatearTituloProfesional } from '@/helpers/nombres';
 import { seccionesAdicionalesDelInforme, type SeccionesAdicionales } from '@/helpers/dashboardInformeCompleto';
+import { contenidoDeGraficas, graficaDeVigilancia } from '@/helpers/dashboardGraficasInforme';
+import { porcentajeDeCobertura } from '@/helpers/dashboardCobertura';
 import { nombreDeArchivo } from '@/helpers/dashboardInformes';
 
 const props = defineProps<{
@@ -396,6 +398,9 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
     // algunas secciones cabían en una página al descargar pero no en la vista previa.
     // Antes de la versión de 300 dpi eran 2000-3600 px para gráficas de 150-460 pt.
     const pixelesPorPunto = altaCalidad ? 300 / 72 : 2;
+    // Para las gráficas medidas en puntos (secciones nuevas y vigilancia según la exposición)
+    const dibujar = (config: Record<string, any>, ancho: number, alto: number) =>
+        dibujarEnPuntos(config, ancho, alto, pixelesPorPunto);
     const aPixeles = (puntos: number, proporcion: number) => {
         const ancho = Math.round(puntos * pixelesPorPunto);
         return [ancho, Math.round(ancho * proporcion)];
@@ -1208,6 +1213,35 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
                     );
                     tablaAgentes.forEach(item => contenido.push(item));
                 }
+            }
+
+            // Vigilancia según la exposición: de los expuestos, cuántos tienen su estudio en el periodo
+            const vigilancia = props.seccionesAdicionales?.vigilancia ?? [];
+            const graficaVigilancia = graficaDeVigilancia(vigilancia);
+            if (graficaVigilancia) {
+                contenido.push(
+                    { text: 'Vigilancia según la exposición', style: 'subtituloSeccion', pageBreak: 'before' },
+                    {
+                        text: [
+                            'De los trabajadores activos expuestos a cada factor, cuántos tienen en el periodo ',
+                            { text: 'el estudio que le corresponde', bold: true },
+                            ': audiometría para el ruido, espirometría para los polvos y Cuestionario Nórdico para los factores ergonómicos. ',
+                            'Una vigilancia incompleta es una ',
+                            { text: 'brecha que se puede cerrar', bold: true },
+                            ' programando los estudios pendientes. La exposición es la registrada hoy en cada trabajador; el estudio cuenta si se hizo dentro del periodo.'
+                        ],
+                        style: 'textoNormal',
+                        margin: [0, 0, 0, 6]
+                    },
+                    ...(contenidoDeGraficas([graficaVigilancia], dibujar) as Content[]),
+                    ...crearTablaPDF(
+                        vigilancia.map((fila) => [fila.etiqueta, fila.cantidad, fila.total, `${porcentajeDeCobertura(fila)} %`]),
+                        ['Exposición y estudio', 'Con el estudio', 'Expuestos', 'Porcentaje'],
+                        'Detalle de la vigilancia',
+                        'general',
+                        { compacta: true }
+                    )
+                );
             }
             numeroSeccion++; // Solo incrementar si se mostró la sección
         }
@@ -2105,7 +2139,7 @@ const generarDocDefinition = (altaCalidad: boolean = false): TDocumentDefinition
     // Hábitos, seguimiento, cuestionarios, antidoping, diagnósticos e inventario, cuando hay registros.
     // Sus gráficas se miden en puntos: a 300 dpi al descargar y a 144 en la vista previa.
     const adicionales = seccionesAdicionalesDelInforme(props.seccionesAdicionales ?? {}, numeroSeccion, {
-        dibujar: (config, ancho, alto) => dibujarEnPuntos(config, ancho, alto, altaCalidad ? 300 / 72 : 2),
+        dibujar,
     });
     contenido.push(...(adicionales.contenido as Content[]));
     numeroSeccion = adicionales.siguienteNumero;

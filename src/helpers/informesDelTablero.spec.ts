@@ -167,4 +167,14 @@ describe('ventana de informes del tablero', () => {
     );
     expect(hallazgosComoBorrador([])).toBe('');
   });
+
+  it('el informe completo anuncia la vigilancia según la exposición, junto a los agentes de riesgo', () => {
+    const conVigilancia = datos({
+      general: informe({ tablas: [tabla('Exposición', 'Agentes de riesgo'), tabla('Exposición', 'Vigilancia según la exposición')] }),
+    });
+    const partes = incluidos(estadoDeInforme('completo', conVigilancia));
+    expect(partes.indexOf('Vigilancia según la exposición')).toBe(partes.indexOf('Antecedentes y agentes de riesgo') + 1);
+    // Sin esa tabla (sin expuestos, o estudios que el centro no usa), no se menciona
+    expect(estadoDeInforme('completo', datos()).incluye.map((i) => i.texto)).not.toContain('Vigilancia según la exposición');
+  });
 });

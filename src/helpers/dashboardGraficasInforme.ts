@@ -10,6 +10,7 @@
  */
 import type { ResumenAntidoping } from './dashboardAntidoping';
 import type { Conteo, ResumenNordico, ResumenSueno } from './dashboardCuestionarios';
+import type { FilaDeCobertura } from './dashboardCobertura';
 import type { ResumenDeDiagnosticos } from './dashboardDiagnosticos';
 import type { ResumenHabitos } from './dashboardHabitos';
 import type { ResumenCardiometabolico, ResumenOtologico } from './dashboardSeguimiento';
@@ -282,6 +283,23 @@ export const graficasDiagnosticos = (r: ResumenDeDiagnosticos) =>
         ),
       ])
     : [];
+
+/** «Vigilancia según la exposición»: cada barra, sobre los expuestos a ese factor (como en el tablero). */
+export const graficaDeVigilancia = (filas: FilaDeCobertura[]): GraficaDeInforme | null =>
+  filas.length
+    ? {
+        tipo: 'barras',
+        titulo: 'Expuestos con el estudio que les corresponde',
+        filas: filas.map((fila) => ({
+          // Espacio que no se parte: «(de 40)» nunca queda en dos líneas
+          etiqueta: `${fila.etiqueta} (de\u00a0${fila.total})`,
+          cantidad: fila.cantidad,
+          total: fila.total,
+          color: COLOR_DE_TONO.neutro,
+        })),
+        nota: 'Cada porcentaje se calcula sobre los trabajadores expuestos a ese factor.',
+      }
+    : null;
 
 // ---- Medidas y configuración de Chart.js (en puntos del PDF)
 

@@ -5,6 +5,7 @@
  * Devuelven contenido de pdfmake con los estilos que ya define el informe
  * (components/DescargarInformeDashboard.vue).
  */
+import type { FilaDeCobertura } from './dashboardCobertura';
 import type { ResumenDeDiagnosticos } from './dashboardDiagnosticos';
 import {
   contenidoDeGraficas,
@@ -88,6 +89,8 @@ export interface SeccionesAdicionales {
   cardiometabolico?: CardiometabolicoDeTablero[] | null;
   /** Historia otológica más reciente de cada trabajador. */
   otologica?: OtologicaDeTablero[] | null;
+  /** «Vigilancia según la exposición» del tablero; va junto a los factores de riesgo ocupacional. */
+  vigilancia?: FilaDeCobertura[] | null;
 }
 
 const tablasDeInforme = (tablas: TablaDeInforme[]): Contenido[] =>

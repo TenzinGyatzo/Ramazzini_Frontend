@@ -321,4 +321,27 @@ describe('informes del tablero de salud', () => {
       'Se muestran',
     );
   });
+
+  it('el Excel lleva la vigilancia según la exposición, en la hoja de exposición', () => {
+    const conCobertura = [
+      {
+        ...datos[0],
+        coberturaExposicion: [
+          [
+            { agente: 'Ruido', estudio: 'audiometria', expuestos: 10, conEstudio: 7 },
+            { agente: 'Polvos', estudio: 'espirometria', expuestos: 4, conEstudio: 1 },
+          ],
+        ],
+      },
+    ];
+    const tablas = tablasDelTablero({ ...fuentes, datos: conCobertura } as any);
+    const vigilancia = tablas.find((t) => t.titulo === 'Vigilancia según la exposición');
+    expect(vigilancia?.seccion).toBe('Exposición');
+    expect(vigilancia?.filas).toEqual([
+      ['Ruido: con audiometría', 7, 10, '70 %'],
+      ['Polvos: con espirometría', 1, 4, '25 %'],
+    ]);
+    // Sin expuestos, no hay tabla
+    expect(tablasDelTablero(fuentes).map((t) => t.titulo)).not.toContain('Vigilancia según la exposición');
+  });
 });

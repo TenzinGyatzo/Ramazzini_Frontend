@@ -242,4 +242,20 @@ describe('informes temáticos del tablero de salud', () => {
     expect(otro.tablas.map((t) => t.titulo)).not.toContain('Expuestos a ruido con audiometría en el periodo');
     expect(otro.hallazgos.join(' ')).not.toContain('tienen audiometría');
   });
+
+  it('musculoesquelético: de los expuestos a factores ergonómicos, cuántos tienen Cuestionario Nórdico', () => {
+    const conCobertura = [
+      { ...datos[0], coberturaExposicion: [[{ agente: 'Ergonómicos', estudio: 'nordico', expuestos: 6, conEstudio: 3 }]] },
+    ];
+    const informe = informeTematico('musculoesqueletico', { ...fuentes, datos: conCobertura }, contexto);
+    expect(informe.graficas?.[0].titular).toBe(
+      '50 % de los expuestos a factores ergonómicos tiene su Cuestionario Nórdico del periodo',
+    );
+    expect(informe.hallazgos).toContain(
+      'De 6 trabajadores expuestos a factores ergonómicos, 3 tienen Cuestionario Nórdico en el periodo (50 %).',
+    );
+    expect(informe.tablas.map((t) => t.titulo)).toContain(
+      'Expuestos a factores ergonómicos con Cuestionario Nórdico en el periodo',
+    );
+  });
 });

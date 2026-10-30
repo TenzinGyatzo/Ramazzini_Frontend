@@ -17,7 +17,8 @@ import {
   etiquetasEnfermedades,
 } from './dashboardDataProcessor';
 import { consultasPorMes, resumirDiagnosticos, type DiagnosticoDeTablero } from './dashboardDiagnosticos';
-import { cifrasClave, registrosDe, type CifraClave } from './dashboardSecciones';
+import { cifrasClave, historialDe, registrosDe, type CifraClave } from './dashboardSecciones';
+import { porcentajeDeCobertura, resumirCobertura, type CoberturaDeTablero } from './dashboardCobertura';
 import { htmlToPdfMakeContent, isHtmlContentEmpty } from './pdfHtmlParser';
 import { contenidoDeGraficas, type DibujarGrafica, type GraficaDeInforme } from './dashboardGraficasInforme';
 import {
@@ -172,6 +173,9 @@ const suma = (filas: [string, number, ...unknown[]][]) => filas.reduce((total, f
 const mayor = <T extends [string, number, ...unknown[]]>(filas: T[]): T | undefined =>
   filas.reduce<T | undefined>((mejor, fila) => (fila[1] > (mejor?.[1] ?? 0) ? fila : mejor), undefined);
 
+/** De los expuestos a ruido, polvos y factores ergonómicos, cuántos tienen el estudio que les corresponde. */
+export const TITULO_VIGILANCIA = 'Vigilancia según la exposición';
+
 export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
   const c = calcular(fuentes);
   const tablas: (TablaDeInforme | null)[] = [];
@@ -213,6 +217,18 @@ export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
   }
   tablas.push(...tablasHabitos(registrosDe(fuentes.datos, fuentes.indiceCentro, 'habitos') as HabitosDeTablero[]));
   if (suma(c.agentes)) tablas.push(conPorcentaje('Exposición', 'Agentes de riesgo', 'Agente', c.agentes));
+  const vigilancia = resumirCobertura(
+    registrosDe(fuentes.datos, fuentes.indiceCentro, 'coberturaExposicion') as CoberturaDeTablero[],
+    historialDe(fuentes.datos, fuentes.indiceCentro),
+  );
+  if (vigilancia.length) {
+    tablas.push({
+      seccion: 'Exposición',
+      titulo: TITULO_VIGILANCIA,
+      columnas: ['Exposición y estudio', 'Con el estudio', 'Expuestos', 'Porcentaje'],
+      filas: vigilancia.map((fila) => [fila.etiqueta, fila.cantidad, fila.total, `${porcentajeDeCobertura(fila)} %`]),
+    });
+  }
 
   for (const tabla of fuentes.tablasDePantalla ?? []) tablas.push(tablaDePantalla(tabla));
 

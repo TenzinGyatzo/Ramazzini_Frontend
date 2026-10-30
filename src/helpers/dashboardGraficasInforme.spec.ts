@@ -5,6 +5,7 @@ import {
   colorDeCategoria,
   FILAS_POR_GRAFICA,
   configDeGrafica,
+  graficaDeVigilancia,
   graficasAntidoping,
   graficasDiagnosticos,
   graficasNordico,
@@ -113,5 +114,18 @@ describe('gráficas de las secciones nuevas del informe completo', () => {
     expect(grafica.filas).toEqual([{ etiqueta: 'Ergonómicos', cantidad: 6, total: 6, porcentaje: 60, color: COLOR_DE_TONO.neutro }]);
     expect(configDeGrafica(grafica).options.plugins.datalabels.formatter(6, { dataIndex: 0 })).toBe('6 (60 %)');
     expect(barrasDeTabla('Vacía', [['Ruido', 0, '0 %']])).toBeNull();
+  });
+
+  it('la vigilancia se dibuja con una barra por estudio, sobre sus propios expuestos', () => {
+    const grafica = graficaDeVigilancia([
+      { clave: 'audiometria', etiqueta: 'Ruido: con audiometría', cantidad: 38, total: 55 },
+      { clave: 'nordico', etiqueta: 'Ergonómicos: con Cuestionario Nórdico', cantidad: 0, total: 12 },
+    ]) as any;
+    expect(grafica.filas.map((f: any) => [f.etiqueta, f.cantidad, f.total])).toEqual([
+      ['Ruido: con audiometría (de\u00a055)', 38, 55],
+      ['Ergonómicos: con Cuestionario Nórdico (de\u00a012)', 0, 12],
+    ]);
+    expect(configDeGrafica(grafica).options.plugins.datalabels.formatter(38, { dataIndex: 0 })).toBe('38 (69 %)');
+    expect(graficaDeVigilancia([])).toBeNull();
   });
 });

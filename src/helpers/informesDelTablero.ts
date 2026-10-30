@@ -2,8 +2,13 @@
  * Ventana «Informes» del tablero de salud: catálogo de informes y, para cada
  * uno, si se puede generar con los datos que el tablero muestra y qué incluirá.
  */
-import type { InformeDeTablero } from './dashboardInformes';
-import { TABLAS_DE_TEMA, TITULO_COBERTURA_AUDIOMETRIA, type TemaDeInforme } from './dashboardInformesTematicos';
+import { TITULO_VIGILANCIA, type InformeDeTablero } from './dashboardInformes';
+import {
+  TABLAS_DE_TEMA,
+  TITULO_COBERTURA_AUDIOMETRIA,
+  TITULO_COBERTURA_NORDICO,
+  type TemaDeInforme,
+} from './dashboardInformesTematicos';
 import { TITULOS_NORDICO } from './dashboardCuestionarios';
 import { TITULOS_CARDIOMETABOLICO, TITULOS_OTOLOGICA } from './dashboardSeguimiento';
 
@@ -14,6 +19,7 @@ const SECCION_DE_TABLA: Record<string, string> = Object.fromEntries([
   ...Object.values(TITULOS_OTOLOGICA).map((titulo) => [titulo, 'otologica']),
   // Si el centro nunca ha hecho audiometrías, no se anuncia que falten
   [TITULO_COBERTURA_AUDIOMETRIA, 'gabinete'],
+  [TITULO_COBERTURA_NORDICO, 'musculoesqueletico'],
 ]);
 
 export type IdDeInforme = 'completo' | 'resumen' | TemaDeInforme | 'excel';
@@ -156,10 +162,16 @@ export function estadoDeInforme(id: IdDeInforme, datos: DatosParaEstado): Estado
       motivo: disponible ? '' : 'No hay trabajadores con los filtros elegidos',
       incluye: SECCIONES_DEL_COMPLETO.filter(
         ({ seccion }) => seccion === null || !!datos.secciones[seccion] || !sinHistorial(seccion),
-      ).map(({ texto, seccion }) => ({
-        texto,
-        incluido: disponible && (seccion === null || !!datos.secciones[seccion]),
-      })),
+      ).flatMap(({ texto, seccion }) => [
+        {
+          texto,
+          incluido: disponible && (seccion === null || !!datos.secciones[seccion]),
+        },
+        // Junto a los agentes de riesgo, y solo si hay expuestos con un estudio que el centro usa
+        ...(texto === 'Antecedentes y agentes de riesgo' && tiene(TITULO_VIGILANCIA)
+          ? [{ texto: TITULO_VIGILANCIA, incluido: disponible }]
+          : []),
+      ]),
     };
   }
 

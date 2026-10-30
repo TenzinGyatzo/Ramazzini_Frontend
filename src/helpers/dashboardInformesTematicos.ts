@@ -16,7 +16,12 @@ import {
   type TablaDeInforme,
 } from './dashboardInformes';
 import { historialDe, registrosDe } from './dashboardSecciones';
-import { porcentajeDeCobertura, resumirCobertura, type CoberturaDeTablero } from './dashboardCobertura';
+import {
+  porcentajeDeCobertura,
+  resumirCobertura,
+  type CoberturaDeTablero,
+  type EstudioDeCobertura,
+} from './dashboardCobertura';
 import { TITULOS_NORDICO, hallazgosNordico, resumirNordico, type NordicoDeTablero } from './dashboardCuestionarios';
 import {
   COLOR_DE_TONO,
@@ -48,6 +53,7 @@ export const TEMAS_DE_INFORME: { valor: TemaDeInforme; texto: string; titulo: st
 ];
 
 export const TITULO_COBERTURA_AUDIOMETRIA = 'Expuestos a ruido con audiometría en el periodo';
+export const TITULO_COBERTURA_NORDICO = 'Expuestos a factores ergonómicos con Cuestionario Nórdico en el periodo';
 
 /** Tablas que cada informe temático puede llevar, en orden; salen las que tienen registros. */
 export const TABLAS_DE_TEMA: Record<TemaDeInforme, string[]> = {
@@ -69,6 +75,7 @@ export const TABLAS_DE_TEMA: Record<TemaDeInforme, string[]> = {
   ],
   musculoesqueletico: [
     'Exposición a factores ergonómicos y vibraciones',
+    TITULO_COBERTURA_NORDICO,
     'Antecedentes de lumbalgia y accidentes',
     'Diagnósticos musculoesqueléticos y traumatismos en las consultas',
     // Del Cuestionario Nórdico, si el proveedor lo aplica
@@ -148,6 +155,63 @@ const ENFERMEDAD_DE_ANTECEDENTE: Record<string, string> = {
   Hipertensivos: 'hipertensión',
   Cardiopáticos: 'cardiopatía',
 };
+
+/** Cómo se nombra cada vigilancia según la exposición en los informes temáticos. */
+const VIGILANCIA: Record<
+  Exclude<EstudioDeCobertura, 'espirometria'>,
+  { expuestosA: string; estudio: string; elEstudio: string; titulo: string }
+> = {
+  audiometria: { expuestosA: 'ruido', estudio: 'audiometría', elEstudio: 'la audiometría', titulo: TITULO_COBERTURA_AUDIOMETRIA },
+  nordico: {
+    expuestosA: 'factores ergonómicos',
+    estudio: 'Cuestionario Nórdico',
+    elEstudio: 'el cuestionario',
+    titulo: TITULO_COBERTURA_NORDICO,
+  },
+};
+
+/**
+ * De los expuestos a un factor, cuántos tienen en el periodo el estudio que les
+ * corresponde: la misma cifra que «Vigilancia según la exposición» del tablero.
+ * Si el centro nunca ha usado ese estudio no sale nada (no se afirma que falte).
+ */
+function vigilanciaDe(fuentes: Fuentes, clave: keyof typeof VIGILANCIA) {
+  const fila = resumirCobertura(
+    registrosDe(fuentes.datos, fuentes.indiceCentro, 'coberturaExposicion') as CoberturaDeTablero[],
+    historialDe(fuentes.datos, fuentes.indiceCentro),
+  ).find((f) => f.clave === clave);
+  if (!fila) return { tabla: null, hallazgo: [] as string[], grafica: null };
+  const { expuestosA, estudio, elEstudio, titulo } = VIGILANCIA[clave];
+  const porcentaje = porcentajeDeCobertura(fila);
+  const sinEstudio = fila.total - fila.cantidad;
+  const tabla: TablaDeInforme = {
+    seccion: 'Exposición',
+    titulo,
+    columnas: [`Expuestos a ${expuestosA}`, 'Trabajadores', 'Porcentaje'],
+    filas: [
+      [`Con ${estudio} en el periodo`, fila.cantidad, `${porcentaje} %`],
+      [`Sin ${estudio} en el periodo`, sinEstudio, `${100 - porcentaje} %`],
+    ],
+  };
+  return {
+    tabla,
+    hallazgo: [
+      `De ${plural(fila.total, 'trabajador expuesto', 'trabajadores expuestos')} a ${expuestosA}, ${fila.cantidad} ${fila.cantidad === 1 ? 'tiene' : 'tienen'} ${estudio} en el periodo (${porcentaje} %).`,
+    ],
+    // Lo primero que pregunta quien dirige: ¿los expuestos tienen su estudio?
+    grafica: donaDe(
+      `Vigilancia de los expuestos a ${expuestosA}`,
+      [
+        { etiqueta: `Con ${estudio} en el periodo`, cantidad: fila.cantidad, color: COLOR_DE_TONO.favorable },
+        { etiqueta: `Sin ${estudio} en el periodo`, cantidad: sinEstudio, color: COLOR_DE_TONO.atencion },
+      ],
+      {
+        titular: `${porcentaje} % de los expuestos a ${expuestosA} tiene su ${estudio} del periodo`,
+        nota: `La exposición es la registrada hoy en cada trabajador; ${elEstudio} cuenta si se hizo dentro del periodo.`,
+      },
+    ),
+  };
+}
 
 const principales = (candidatas: (GraficaDeInforme | null | undefined)[]) =>
   candidatas.filter((grafica): grafica is GraficaDeInforme => !!grafica).slice(0, GRAFICAS_POR_TEMA);
@@ -256,28 +320,9 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const ruido = recortar(agentes, /^ruido$/i, titulos[0]);
     const audiometria = tabla('Audiometría');
     const dx = diagnosticosDeCapitulos(diagnosticos, ['VIII'], titulos[3]);
-    // De los expuestos a ruido, cuántos tienen audiometría en el periodo (la misma cifra que
-    // «Vigilancia según la exposición» del tablero; si el centro nunca ha hecho audiometrías, no sale)
-    const vigilancia = resumirCobertura(
-      registrosDe(fuentes.datos, fuentes.indiceCentro, 'coberturaExposicion') as CoberturaDeTablero[],
-      historialDe(fuentes.datos, fuentes.indiceCentro),
-    ).find((fila) => fila.clave === 'audiometria');
-    const cobertura: TablaDeInforme | null = vigilancia
-      ? {
-          seccion: 'Exposición',
-          titulo: TITULO_COBERTURA_AUDIOMETRIA,
-          columnas: ['Expuestos a ruido', 'Trabajadores', 'Porcentaje'],
-          filas: [
-            ['Con audiometría en el periodo', vigilancia.cantidad, `${porcentajeDeCobertura(vigilancia)} %`],
-            [
-              'Sin audiometría en el periodo',
-              vigilancia.total - vigilancia.cantidad,
-              `${100 - porcentajeDeCobertura(vigilancia)} %`,
-            ],
-          ],
-        }
-      : null;
-    tablas = [ruido, cobertura, audiometria, ...Object.values(TITULOS_OTOLOGICA).map((titulo) => tabla(titulo)), dx];
+    // De los expuestos a ruido, cuántos tienen audiometría en el periodo
+    const vigilancia = vigilanciaDe(fuentes, 'audiometria');
+    tablas = [ruido, vigilancia.tabla, audiometria, ...Object.values(TITULOS_OTOLOGICA).map((titulo) => tabla(titulo)), dx];
 
     if (ruido) {
       const expuestos = numero(ruido.filas[0]);
@@ -285,11 +330,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
         `${plural(expuestos, 'trabajador está expuesto', 'trabajadores están expuestos')} a ruido (${pct(expuestos, plantilla)} % de la plantilla).`,
       );
     }
-    if (vigilancia) {
-      hallazgos.push(
-        `De ${plural(vigilancia.total, 'trabajador expuesto', 'trabajadores expuestos')} a ruido, ${vigilancia.cantidad} ${vigilancia.cantidad === 1 ? 'tiene' : 'tienen'} audiometría en el periodo (${porcentajeDeCobertura(vigilancia)} %).`,
-      );
-    }
+    hallazgos.push(...vigilancia.hallazgo);
     if (total(audiometria)) {
       const normales = sumaDe(audiometria, /^normal/i);
       const alterados = total(audiometria) - normales;
@@ -312,24 +353,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const expuestos = ruido ? numero(ruido.filas[0]) : 0;
     const sintoma = sintomas?.tipo === 'barras' ? [...sintomas.filas].sort((a, b) => b.cantidad - a.cantidad)[0] : undefined;
     graficas = principales([
-      // Lo primero que pregunta quien dirige: ¿los expuestos tienen su audiometría?
-      vigilancia
-        ? donaDe(
-            'Vigilancia de los expuestos a ruido',
-            [
-              { etiqueta: 'Con audiometría en el periodo', cantidad: vigilancia.cantidad, color: COLOR_DE_TONO.favorable },
-              {
-                etiqueta: 'Sin audiometría en el periodo',
-                cantidad: vigilancia.total - vigilancia.cantidad,
-                color: COLOR_DE_TONO.atencion,
-              },
-            ],
-            {
-              titular: `${porcentajeDeCobertura(vigilancia)} % de los expuestos a ruido tiene su audiometría del periodo`,
-              nota: 'La exposición es la registrada hoy en cada trabajador; la audiometría cuenta si se hizo dentro del periodo.',
-            },
-          )
-        : null,
+      vigilancia.grafica,
       barrasDeTabla('Resultados de audiometría', audiometria?.filas, {
         titular: alteradas
           ? `${pct(alteradas, total(audiometria))} % de las audiometrías tuvo un resultado distinto de normal`
@@ -362,10 +386,12 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
   if (tema === 'musculoesqueletico') {
     const titulos = TABLAS_DE_TEMA.musculoesqueletico;
     const ergonomia = recortar(agentes, /ergon|vibraci/i, titulos[0]);
-    const antecedentes = recortar(tabla('Antecedentes referidos'), /lumbalg|accidente/i, titulos[1]);
-    const dx = diagnosticosDeCapitulos(diagnosticos, ['XIII', 'XIX'], titulos[2]);
+    const antecedentes = recortar(tabla('Antecedentes referidos'), /lumbalg|accidente/i, titulos[2]);
+    const dx = diagnosticosDeCapitulos(diagnosticos, ['XIII', 'XIX'], titulos[3]);
     const nordico = generales.filter((t) => (Object.values(TITULOS_NORDICO) as string[]).includes(t.titulo));
-    tablas = [ergonomia, antecedentes, ...nordico, dx];
+    // De los expuestos a factores ergonómicos, cuántos tienen Cuestionario Nórdico en el periodo
+    const vigilancia = vigilanciaDe(fuentes, 'nordico');
+    tablas = [ergonomia, vigilancia.tabla, antecedentes, ...nordico, dx];
 
     const ergonomicos = sumaDe(ergonomia ?? undefined, /ergon/i);
     if (ergonomicos) {
@@ -373,6 +399,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
         `${plural(ergonomicos, 'trabajador está expuesto', 'trabajadores están expuestos')} a factores ergonómicos (${pct(ergonomicos, plantilla)} % de la plantilla).`,
       );
     }
+    hallazgos.push(...vigilancia.hallazgo);
     const lumbalgias = sumaDe(antecedentes ?? undefined, /lumbalg/i);
     if (lumbalgias) {
       hallazgos.push(`${plural(lumbalgias, 'trabajador refiere', 'trabajadores refieren')} antecedente de lumbalgia en su historia clínica.`);
@@ -391,6 +418,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const lumbalgia = sumaDe(antecedentes ?? undefined, /lumbalg/i);
     const accidentes = sumaDe(antecedentes ?? undefined, /accidente/i);
     graficas = principales([
+      vigilancia.grafica,
       resultado
         ? {
             ...resultado,
@@ -408,12 +436,12 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
           : `${pct(vibraciones, plantilla)} % de la plantilla está expuesta a vibraciones`,
         color: COLOR_DE_TONO.atencion,
       }),
-      barrasDeTabla(titulos[1], antecedentes?.filas, {
+      barrasDeTabla(titulos[2], antecedentes?.filas, {
         titular: lumbalgia
           ? `${plural(lumbalgia, 'trabajador refiere', 'trabajadores refieren')} antecedente de lumbalgia`
           : `${plural(accidentes, 'trabajador refiere', 'trabajadores refieren')} antecedente de accidentes`,
       }),
-      graficaDeDiagnosticos(dx, titulos[2], 'musculoesquelético o de traumatismo'),
+      graficaDeDiagnosticos(dx, titulos[3], 'musculoesquelético o de traumatismo'),
     ]);
   }
 

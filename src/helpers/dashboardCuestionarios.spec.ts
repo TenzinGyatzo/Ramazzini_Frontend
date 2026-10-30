@@ -215,6 +215,7 @@ describe('informes: solo aparece lo que el proveedor usa', () => {
     const tematico = (historial: Record<string, boolean>) =>
       estadoDeInforme('musculoesqueletico', { ...datos, historial }).incluye.map((i) => i.texto);
     expect(tematico({ musculoesqueletico: false })).toHaveLength(3);
-    expect(tematico({ musculoesqueletico: true })).toHaveLength(8);
+    // Con el Nórdico en uso: sus cinco tablas, las tres de siempre y la vigilancia de los expuestos a factores ergonómicos
+    expect(tematico({ musculoesqueletico: true })).toHaveLength(9);
   });
 });

@@ -3051,6 +3051,7 @@ const seccionesAdicionalesDelInformeCompleto = computed(() => ({
   antidoping: registrosAntidoping.value,
   cardiometabolico: registrosCardiometabolico.value,
   otologica: registrosOtologica.value,
+  vigilancia: coberturaDelTablero.value,
   periodoInventario: `del ${fechaLarga(periodoInventario.value.desde)} al ${fechaLarga(periodoInventario.value.hasta)}`,
 }));
 
