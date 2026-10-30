@@ -4194,14 +4194,14 @@ const tablaCintura = computed(() => {
               <FiltroMultiple
                 v-model="filtrosPoblacion.edad"
                 etiqueta="Edad"
-                variante="pildoras"
+                texto-todas="Todas"
                 :opciones="opcionesDeEdad"
                 data-test="filtro-edad"
               />
               <FiltroMultiple
                 v-model="filtrosPoblacion.antiguedad"
                 etiqueta="Antigüedad"
-                variante="pildoras"
+                texto-todas="Todas"
                 :opciones="opcionesDeAntiguedad"
                 data-test="filtro-antiguedad"
               />

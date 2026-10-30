@@ -4524,12 +4524,6 @@ html.dark-mode .dashboard-filtros__chip-quitar:hover {
   background-color: rgba(167, 243, 208, 0.2) !important;
 }
 
-html.dark-mode .filtro-pildora:not(.filtro-pildora--activa) {
-  background-color: #0f172a !important;
-  border-color: #475569 !important;
-  color: #e2e8f0 !important;
-}
-
 html.dark-mode .filtro-multiple__buscador {
   background-color: #0f172a !important;
   border-color: #475569 !important;
