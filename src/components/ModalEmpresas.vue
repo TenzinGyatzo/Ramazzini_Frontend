@@ -163,6 +163,14 @@ const handleDrop = (event) => {
 };
 
 const proveedorSalud = computed(() => proveedorSaludStore.proveedorSalud);
+
+// La miniatura muestra el logotipo nuevo si ya se eligió; si no, el actual
+const logotipoMostrado = computed(() => {
+  if (logotipoPreview.value) return logotipoPreview.value;
+  const empresa = empresas.currentEmpresa;
+  const logo = empresa?.logotipoEmpresa?.data;
+  return logo ? `/uploads/logos/${logo}?t=${empresa.updatedAt}` : null;
+});
 const isSubmitting = ref(false);
 
 // Función para manejar el envío del formulario
@@ -264,84 +272,54 @@ const handleSubmit = async (data) => {
             <FormKit type="text" label="Giro de la empresa" name="giroDeEmpresa" normalizar="texto" placeholder="Giro de la Empresa"
               :value="empresas.currentEmpresa?.giroDeEmpresa || ''" />
 
-            <!-- Área de arrastrar y soltar para el logotipo -->
+            <!-- Franja para el logotipo: muestra el actual (o el nuevo) y recibe el archivo -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Logotipo</label>
-              <div 
-                class="border-2 border-dashed rounded-lg min-h-[7rem] sm:min-h-[9rem] max-w-full sm:max-w-md md:max-w-lg mx-auto px-4 py-5 sm:p-6 text-center transition-all duration-200 cursor-pointer"
-                :class="[
-                  isDragOver 
-                    ? 'border-emerald-500 bg-emerald-50 sm:scale-105' 
-                    : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
-                ]"
+              <div
+                class="logotipo-franja flex items-center gap-4 border-2 border-dashed rounded-lg p-3 text-left transition-colors duration-200 cursor-pointer"
+                :class="isDragOver
+                  ? 'border-emerald-500 bg-emerald-50'
+                  : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'"
+                role="button"
+                tabindex="0"
+                aria-label="Seleccionar logotipo"
                 @dragenter="handleDragEnter"
                 @dragleave="handleDragLeave"
                 @dragover="handleDragOver"
                 @drop="handleDrop"
                 @click="$refs.logotipoInput.click()"
+                @keydown.enter.prevent="$refs.logotipoInput.click()"
+                @keydown.space.prevent="$refs.logotipoInput.click()"
               >
                 <input
                   ref="logotipoInput"
                   type="file"
-                                              accept=".png,.jpg,.jpeg"
-                  @change="handleFileChange"
+                  accept=".png,.jpg,.jpeg"
                   class="hidden"
+                  @click.stop
+                  @change="handleFileChange"
                 />
-                
-                <div class="text-gray-600">
-                  <!-- Icono dinámico de Imagen -->
-                  <div class="mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 transition-all duration-200" :class="isDragOver ? 'sm:scale-110' : ''">
-                    <div v-if="!isDragOver" class="flex items-center justify-center">
-                      <svg class="h-10 w-10 sm:h-12 sm:w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                    </div>
-
-                    <div v-else class="flex items-center justify-center">
-                      <svg class="h-10 w-10 sm:h-12 sm:w-12 text-emerald-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                  
-                  <!-- Texto dinámico -->
-                  <p class="text-sm sm:text-base md:text-lg font-medium transition-colors duration-200" :class="isDragOver ? 'text-emerald-700' : ''">
-                    {{ isDragOver ? '¡Suelta el logotipo aquí!' : 'Arrastra el logotipo aquí o haz clic para seleccionar' }}
+                <div class="logotipo-miniatura flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-white">
+                  <img
+                    v-if="logotipoMostrado"
+                    :src="logotipoMostrado"
+                    :alt="'Logo de ' + (empresas.currentEmpresa?.nombreComercial || 'la empresa')"
+                    class="h-full w-full object-contain"
+                  />
+                  <svg v-else class="h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-gray-700" :class="{ 'text-emerald-700': isDragOver }">
+                    {{ isDragOver ? 'Suelta el logotipo aquí' : 'Arrastra el logotipo o haz clic para seleccionar' }}
                   </p>
-                  <p class="text-xs sm:text-sm text-gray-500 mt-2">PNG, JPG, JPEG (máximo 1MB)</p>
-                  
-                  <!-- Indicador visual cuando se arrastra -->
-                  <div v-if="isDragOver" class="mt-3">
-                    <div class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs sm:text-sm">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Listo para soltar
-                    </div>
-                  </div>
+                  <p class="mt-1 truncate text-xs text-gray-500">
+                    {{ logotipoArchivo ? `Nuevo: ${logotipoArchivo.name}` : 'PNG, JPG, JPEG (máximo 1 MB)' }}
+                  </p>
                 </div>
               </div>
             </div>
-            </div>
-
-            <!-- Mostrar la vista previa del logotipo -->
-            <div class="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 sm:gap-6">
-              <div class="w-full sm:flex-1 sm:min-w-0 flex flex-col items-center" v-if="empresas.currentEmpresa?.logotipoEmpresa?.data">
-                <p class="font-medium text-base sm:text-lg text-gray-700">Logotipo actual:</p>
-                <img
-                  :src="'/uploads/logos/' + empresas.currentEmpresa?.logotipoEmpresa?.data + '?t=' + empresas.currentEmpresa?.updatedAt"
-                  :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
-                  class="w-full max-w-40 sm:max-w-48 aspect-square object-contain mt-2 border-2 border-gray-300 rounded-lg" />
-              </div>
-              <Transition appear name="fade-slow">
-                <div v-if="logotipoPreview" class="w-full sm:flex-1 sm:min-w-0 flex flex-col items-center">
-                  <p v-if="empresas.currentEmpresa?.logotipoEmpresa?.data" class="font-medium text-base sm:text-lg text-gray-700">
-                    Logotipo nuevo:</p>
-                  <p v-else class="font-medium text-base sm:text-lg text-gray-700">Logotipo:</p>
-                  <img :src="logotipoPreview" alt="Vista previa del logotipo"
-                    class="w-full max-w-40 sm:max-w-48 aspect-square object-contain mt-2 border-2 border-gray-300 rounded-lg" />
-                </div>
-              </Transition>
             </div>
             <hr class="my-3">
             <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
@@ -370,20 +348,6 @@ const handleSubmit = async (data) => {
 
 
 <style scoped>
-.fade-slow-enter-from,
-.fade-slow-leave-to {
-  opacity: 0;
-}
-
-.fade-slow-enter-active,
-.fade-slow-leave-active {
-  transition: all 500ms ease-out;
-}
-
-.fade-slow-leave-active {
-  transition-delay: 250ms;
-}
-
 /* Estilo para colorear asteriscos de campos obligatorios en FormKit */
 :deep(.formkit-label) {
   color: #374151; /* Color base del texto del label */

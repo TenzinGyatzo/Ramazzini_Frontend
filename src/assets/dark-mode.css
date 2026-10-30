@@ -2192,6 +2192,12 @@ html.dark-mode .auth-green-submit-match-login .formkit-input[type='submit']:hove
 }
 
 /* Modales (Empresas, Centros, Trabajadores): submit verde más oscuro en dark mode. */
+/* Miniatura del logotipo: fondo blanco, los logos suelen ser oscuros o transparentes */
+html.dark-mode .modal-empresas .logotipo-miniatura {
+  background-color: #fff !important;
+  border-color: #475569 !important;
+}
+
 html.dark-mode .modal-empresas .formkit-outer[data-type='submit'] .formkit-input,
 html.dark-mode .modal-centros .formkit-outer[data-type='submit'] .formkit-input,
 html.dark-mode .modal-trabajadores .formkit-outer[data-type='submit'] .formkit-input {
