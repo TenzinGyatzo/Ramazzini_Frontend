@@ -116,8 +116,11 @@ const recargarCentroActual = async () => {
 
 const abrirEdicionCentro = () => {
   executeIfCanManageCentrosTrabajo(async () => {
-    // El modal edita el centro cargado completo, no el resumen del listado
-    if (await recargarCentroActual()) showCentroModal.value = true;
+    // La vista ya tiene el centro completo: abrir al instante. Si no, leerlo primero
+    const actual = centrosTrabajo.currentCentroTrabajo;
+    const yaCargado =
+      actual?.updatedAt && String(actual._id) === String(route.params.idCentroTrabajo ?? '');
+    if (yaCargado || (await recargarCentroActual())) showCentroModal.value = true;
   }, 'editar centros de trabajo');
 };
 
