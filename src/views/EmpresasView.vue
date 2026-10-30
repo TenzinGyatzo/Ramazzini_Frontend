@@ -79,21 +79,16 @@ const openModal = async (empresa: Empresa | null = null) => {
 };
 
 const openModalInternal = async (empresa: Empresa | null = null) => {
-  showModal.value = false;  // Cerramos el modal antes de cargar
-  empresas.loadingModal = true;  // Iniciamos la carga del modal
-
+  // La lista ya trae la empresa completa: el modal abre al instante, sin ir al servidor
   if (empresa) {
-    try {
-      await empresas.fetchEmpresaById(empresa._id);  // Esperamos a que se cargue la empresa
-    } catch (error) {
-      console.error('Error al cargar la empresa:', error);
+    if (!empresas.usarEmpresaDeLaLista(empresa._id)) {
+      await empresas.fetchEmpresaById(empresa._id);
     }
   } else {
     empresas.resetCurrentEmpresa();  // Resetear si es una nueva empresa
   }
 
-  empresas.loadingModal = false;  // Terminamos la carga del modal
-  showModal.value = true;  // Abrimos el modal
+  showModal.value = true;
 };
 
 const closeModal = () => {

@@ -58,8 +58,11 @@ const recargarEmpresaActual = async () => {
 
 const abrirEdicionEmpresa = () => {
   executeIfCanManageEmpresas(async () => {
-    // El modal edita la empresa cargada completa, no el resumen del listado
-    if (await recargarEmpresaActual()) showEmpresaModal.value = true;
+    // La vista ya tiene la empresa completa: abrir al instante. Si no, leerla primero
+    const actual = empresas.currentEmpresa;
+    const yaCargada =
+      actual?.updatedAt && String(actual._id) === String(route.params.idEmpresa ?? '');
+    if (yaCargada || (await recargarEmpresaActual())) showEmpresaModal.value = true;
   }, 'editar empresas');
 };
 

@@ -72,8 +72,10 @@ const {
 watch(
     () => userStore.user,
     (currentUser) => {
-        if (currentUser?.idProveedorSalud) {
-            proveedorSaludStore.loadProveedorSalud(currentUser.idProveedorSalud);
+        const idProveedorSalud = currentUser?.idProveedorSalud;
+        // Normalmente ya está cargado: no repetir la lectura en cada apertura
+        if (idProveedorSalud && String(proveedorSaludStore.proveedorSalud?._id) !== String(idProveedorSalud)) {
+            proveedorSaludStore.loadProveedorSalud(idProveedorSalud);
         }
     },
     { immediate: true }

@@ -83,6 +83,17 @@ export const useEmpresasStore = defineStore("empresas", () => {
     }
   }
 
+  /** Para editar sin esperar al servidor: la lista trae la empresa completa. Devuelve si la encontró. */
+  function usarEmpresaDeLaLista(id: string) {
+    const empresa = empresas.value.find((e) => String(e._id) === String(id));
+    if (!empresa) return false;
+    detailSeq += 1; // Una lectura en curso no debe pisar a la empresa elegida
+    loadingModal.value = false;
+    currentEmpresa.value = empresa;
+    currentEmpresaId.value = String(empresa._id);
+    return true;
+  }
+
   async function fetchEmpresaById(id: string) {
     const seq = ++detailSeq;
     try {
@@ -147,6 +158,7 @@ export const useEmpresasStore = defineStore("empresas", () => {
     clear,
     fetchEmpresas,
     fetchEmpresaById,
+    usarEmpresaDeLaLista,
     createEmpresa,
     updateEmpresaById,
     deleteEmpresaById,
