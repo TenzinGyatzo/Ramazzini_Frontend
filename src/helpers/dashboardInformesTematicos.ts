@@ -18,6 +18,7 @@ import {
 import { historialDe, registrosDe } from './dashboardSecciones';
 import {
   porcentajeDeCobertura,
+  porcentajeLegible,
   resumirCobertura,
   type CoberturaDeTablero,
   type EstudioDeCobertura,
@@ -174,8 +175,12 @@ const VIGILANCIA: Record<
  * De los expuestos a un factor, cuántos tienen en el periodo el estudio que les
  * corresponde: la misma cifra que «Vigilancia según la exposición» del tablero.
  * Si el centro nunca ha usado ese estudio no sale nada (no se afirma que falte).
+ *
+ * `conElEstudio` es cuántos trabajadores tienen ese estudio en el periodo, expuestos o
+ * no: si son más que los expuestos con estudio, se explica la diferencia (la vigilancia
+ * solo cuenta a quienes tienen registrada la exposición), para que las cifras cuadren.
  */
-function vigilanciaDe(fuentes: Fuentes, clave: keyof typeof VIGILANCIA) {
+function vigilanciaDe(fuentes: Fuentes, clave: keyof typeof VIGILANCIA, conElEstudio = 0) {
   const fila = resumirCobertura(
     registrosDe(fuentes.datos, fuentes.indiceCentro, 'coberturaExposicion') as CoberturaDeTablero[],
     historialDe(fuentes.datos, fuentes.indiceCentro),
@@ -184,19 +189,25 @@ function vigilanciaDe(fuentes: Fuentes, clave: keyof typeof VIGILANCIA) {
   const { expuestosA, estudio, elEstudio, titulo } = VIGILANCIA[clave];
   const porcentaje = porcentajeDeCobertura(fila);
   const sinEstudio = fila.total - fila.cantidad;
+  const sinExposicion = conElEstudio - fila.cantidad;
+  const aclaracion =
+    sinExposicion > 0
+      ? `De los ${plural(conElEstudio, 'trabajador', 'trabajadores')} con ${estudio} en el periodo, ${sinExposicion} no ${sinExposicion === 1 ? 'tiene' : 'tienen'} registrada exposición a ${expuestosA}.`
+      : '';
   const tabla: TablaDeInforme = {
     seccion: 'Exposición',
     titulo,
     columnas: [`Expuestos a ${expuestosA}`, 'Trabajadores', 'Porcentaje'],
     filas: [
       [`Con ${estudio} en el periodo`, fila.cantidad, `${porcentaje} %`],
-      [`Sin ${estudio} en el periodo`, sinEstudio, `${100 - porcentaje} %`],
+      [`Sin ${estudio} en el periodo`, sinEstudio, `${porcentajeLegible(sinEstudio, fila.total)} %`],
     ],
   };
   return {
     tabla,
     hallazgo: [
-      `De ${plural(fila.total, 'trabajador expuesto', 'trabajadores expuestos')} a ${expuestosA}, ${fila.cantidad} ${fila.cantidad === 1 ? 'tiene' : 'tienen'} ${estudio} en el periodo (${porcentaje} %).`,
+      `De ${plural(fila.total, 'trabajador expuesto', 'trabajadores expuestos')} a ${expuestosA}, ${fila.cantidad} ${fila.cantidad === 1 ? 'tiene' : 'tienen'} ${estudio} en el periodo (${porcentaje} %).` +
+        (aclaracion ? ` ${aclaracion}` : ''),
     ],
     // Lo primero que pregunta quien dirige: ¿los expuestos tienen su estudio?
     grafica: donaDe(
@@ -207,7 +218,9 @@ function vigilanciaDe(fuentes: Fuentes, clave: keyof typeof VIGILANCIA) {
       ],
       {
         titular: `${porcentaje} % de los expuestos a ${expuestosA} tiene su ${estudio} del periodo`,
-        nota: `La exposición es la registrada hoy en cada trabajador; ${elEstudio} cuenta si se hizo dentro del periodo.`,
+        nota:
+          `La exposición es la registrada hoy en cada trabajador; ${elEstudio} cuenta si se hizo dentro del periodo.` +
+          (aclaracion ? ` ${aclaracion}` : ''),
       },
     ),
   };
@@ -321,7 +334,7 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const audiometria = tabla('Audiometría');
     const dx = diagnosticosDeCapitulos(diagnosticos, ['VIII'], titulos[3]);
     // De los expuestos a ruido, cuántos tienen audiometría en el periodo
-    const vigilancia = vigilanciaDe(fuentes, 'audiometria');
+    const vigilancia = vigilanciaDe(fuentes, 'audiometria', total(audiometria));
     tablas = [ruido, vigilancia.tabla, audiometria, ...Object.values(TITULOS_OTOLOGICA).map((titulo) => tabla(titulo)), dx];
 
     if (ruido) {
@@ -390,7 +403,11 @@ export function informeTematico(tema: TemaDeInforme, fuentes: Fuentes, contexto:
     const dx = diagnosticosDeCapitulos(diagnosticos, ['XIII', 'XIX'], titulos[3]);
     const nordico = generales.filter((t) => (Object.values(TITULOS_NORDICO) as string[]).includes(t.titulo));
     // De los expuestos a factores ergonómicos, cuántos tienen Cuestionario Nórdico en el periodo
-    const vigilancia = vigilanciaDe(fuentes, 'nordico');
+    const vigilancia = vigilanciaDe(
+      fuentes,
+      'nordico',
+      resumirNordico(registrosDe(fuentes.datos, fuentes.indiceCentro, 'cuestionarioNordico') as NordicoDeTablero[]).evaluados,
+    );
     tablas = [ergonomia, vigilancia.tabla, antecedentes, ...nordico, dx];
 
     const ergonomicos = sumaDe(ergonomia ?? undefined, /ergon/i);

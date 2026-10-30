@@ -10,7 +10,7 @@
  */
 import type { ResumenAntidoping } from './dashboardAntidoping';
 import type { Conteo, ResumenNordico, ResumenSueno } from './dashboardCuestionarios';
-import type { FilaDeCobertura } from './dashboardCobertura';
+import { porcentajeLegible, type FilaDeCobertura } from './dashboardCobertura';
 import type { ResumenDeDiagnosticos } from './dashboardDiagnosticos';
 import type { ResumenHabitos } from './dashboardHabitos';
 import type { ResumenCardiometabolico, ResumenOtologico } from './dashboardSeguimiento';
@@ -363,7 +363,7 @@ export function configDeGrafica(grafica: GraficaDeInforme): Record<string, any> 
             font: { size: 8, weight: 'bold' },
             // Solo en las porciones con espacio para el número
             display: (contexto: any) => pct(contexto.dataset.data[contexto.dataIndex], grafica.total) >= 8,
-            formatter: (valor: number) => `${pct(valor, grafica.total)} %`,
+            formatter: (valor: number) => `${porcentajeLegible(valor, grafica.total)} %`,
           },
         },
       },
@@ -438,7 +438,7 @@ export function configDeGrafica(grafica: GraficaDeInforme): Record<string, any> 
           font: { size: 8, weight: 'bold' },
           formatter: (valor: number, contexto: any) => {
             const fila = filas[contexto.dataIndex];
-            return `${valor} (${fila.porcentaje ?? pct(valor, fila.total)} %)`;
+            return `${valor} (${fila.porcentaje ?? porcentajeLegible(valor, fila.total)} %)`;
           },
         },
       },
@@ -465,7 +465,7 @@ type Contenido = Record<string, any>;
  */
 export type DibujarGrafica = (config: Record<string, any>, anchoPt: number, altoPt: number) => string | undefined;
 
-const pctTexto = (parte: number, total: number) => `${total > 0 ? Math.round((parte / total) * 100) : 0} %`;
+const pctTexto = (parte: number, total: number) => `${porcentajeLegible(parte, total)} %`;
 
 /** Leyenda: una fila por color, en una tabla sin bordes (el cuadro es una celda con relleno). */
 const leyendaDeColores = (filas: { color: string; texto: Contenido['text'] }[], fontSize: number): Contenido => ({

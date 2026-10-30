@@ -50,5 +50,18 @@ export function resumirCobertura(
     .filter((fila) => fila.total > 0 && (fila.cantidad > 0 || historial[DE_CADA_ESTUDIO[fila.clave].seccion] !== false));
 }
 
-export const porcentajeDeCobertura = (fila: FilaDeCobertura) =>
-  fila.total > 0 ? Math.round((fila.cantidad / fila.total) * 100) : 0;
+/**
+ * Porcentaje entero, salvo cuando el redondeo diría algo falso: 1 de 434 no es
+ * «0 %» (es 0.2 %) y 433 de 434 no es «100 %» (es 99.8 %). En esos casos, un decimal.
+ */
+export function porcentajeLegible(parte: number, total: number): number {
+  if (total <= 0 || parte <= 0) return 0;
+  if (parte >= total) return 100;
+  const exacto = (parte / total) * 100;
+  const entero = Math.round(exacto);
+  if (entero === 0) return Math.max(0.1, Math.round(exacto * 10) / 10);
+  if (entero === 100) return Math.min(99.9, Math.round(exacto * 10) / 10);
+  return entero;
+}
+
+export const porcentajeDeCobertura = (fila: FilaDeCobertura) => porcentajeLegible(fila.cantidad, fila.total);

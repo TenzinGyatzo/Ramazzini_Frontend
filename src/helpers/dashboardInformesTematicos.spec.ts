@@ -225,7 +225,11 @@ describe('informes temáticos del tablero de salud', () => {
       ['Con audiometría en el periodo', 5],
       ['Sin audiometría en el periodo', 2],
     ]);
-    expect(informe.hallazgos).toContain('De 7 trabajadores expuestos a ruido, 5 tienen audiometría en el periodo (71 %).');
+    // Hay 8 trabajadores con audiometría, pero solo 5 de los expuestos: se explica la diferencia
+    expect(informe.hallazgos).toContain(
+      'De 7 trabajadores expuestos a ruido, 5 tienen audiometría en el periodo (71 %). De los 8 trabajadores con audiometría en el periodo, 3 no tienen registrada exposición a ruido.',
+    );
+    expect(vigilancia.nota).toContain('3 no tienen registrada exposición a ruido');
     expect(informe.tablas.find((t) => t.titulo === 'Expuestos a ruido con audiometría en el periodo')?.filas).toEqual([
       ['Con audiometría en el periodo', 5, '71 %'],
       ['Sin audiometría en el periodo', 2, '29 %'],
