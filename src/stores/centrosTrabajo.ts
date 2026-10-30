@@ -112,6 +112,18 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
     }
   }
 
+  /** Para editar sin esperar al servidor: la lista trae el centro completo. Devuelve si lo encontró. */
+  function usarCentroDeLaLista(id: string) {
+    const centro = centrosTrabajo.value.find((c) => String(c._id) === String(id));
+    if (!centro) return false;
+    detailSeq += 1; // Una lectura en curso no debe pisar al centro elegido
+    loadingDetail.value = false;
+    loadingModal.value = false;
+    currentCentroTrabajo.value = centro;
+    currentCentroTrabajoId.value = String(centro._id);
+    return true;
+  }
+
   async function fetchCentroTrabajoById(
     empresaId: string,
     centroTrabajoId: string
@@ -206,6 +218,7 @@ export const useCentrosTrabajoStore = defineStore("centros-trabajo", () => {
     clear,
     fetchCentrosTrabajo,
     fetchCentroTrabajoById,
+    usarCentroDeLaLista,
     createCentroTrabajo,
     updateCentroTrabajoById,
     deleteCentroTrabajoById,

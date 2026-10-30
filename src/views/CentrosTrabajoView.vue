@@ -115,13 +115,15 @@ const openModal = async (empresa: Empresa | null = null, centroTrabajo: CentroTr
 
 const openModalInternal = async (empresa: Empresa | null = null, centroTrabajo: CentroTrabajo | null = null) => {
   showModal.value = false;
-  centrosTrabajo.loadingModal;
 
   if (empresa && centroTrabajo) {
-    try {
-      await centrosTrabajo.fetchCentroTrabajoById(empresa._id, centroTrabajo._id);
-    } catch (error) {
-      console.error('Error al cargar el centro de trabajo:', error);
+    // La lista ya trae el centro completo: el modal abre al instante, sin ir al servidor
+    if (!centrosTrabajo.usarCentroDeLaLista(centroTrabajo._id)) {
+      try {
+        await centrosTrabajo.fetchCentroTrabajoById(empresa._id, centroTrabajo._id);
+      } catch (error) {
+        console.error('Error al cargar el centro de trabajo:', error);
+      }
     }
   } else {
     centrosTrabajo.resetCurrentCentroTrabajo();
