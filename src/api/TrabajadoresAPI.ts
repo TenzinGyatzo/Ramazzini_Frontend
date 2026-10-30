@@ -28,7 +28,7 @@ export default {
       centroTrabajoId: string,
       inicio?: string,
       fin?: string,
-      filtros: Record<string, string | number> = {},
+      filtros: Record<string, string | string[]> = {},
     ) {
     // Filtros de población: puesto, sexo, edad, antigüedad y agente de riesgo
     const params: any = { ...filtros };

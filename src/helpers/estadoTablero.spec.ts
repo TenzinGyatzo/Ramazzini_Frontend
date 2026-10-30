@@ -28,7 +28,7 @@ describe('estadoTablero', () => {
     expect(estado).toEqual({
       centro: 'c1',
       periodo: 'Año anterior',
-      filtros: { puesto: 'Operador', sexo: 'Femenino', edad: 'de41a50', antiguedad: 'de1a4', agente: 'Ruido' },
+      filtros: { puesto: ['Operador'], sexo: 'Femenino', edad: ['de41a50'], antiguedad: ['de1a4'], agente: ['Ruido'] },
       comparar: 'anioAnterior',
     });
   });
@@ -62,8 +62,29 @@ describe('estadoTablero', () => {
 
   it('toma el primer valor si un parámetro viene repetido y recorta textos largos', () => {
     const estado = consultaAEstado({ puesto: ['A', 'B'], centro: 'x'.repeat(500) }, AGENTES);
-    expect(estado.filtros.puesto).toBe('A');
+    expect(estado.filtros.puesto).toEqual(['A']);
     expect(estado.centro).toHaveLength(120);
+  });
+
+  it('lee varias opciones por filtro, sin repetir y solo las válidas', () => {
+    const { filtros } = consultaAEstado(
+      {
+        puesto: 'Soldador, ayudante|Chofer|Chofer',
+        edad: 'hasta30|otra|desde61',
+        agente: 'Ruido|Inventado',
+      },
+      AGENTES,
+    );
+    expect(filtros.puesto).toEqual(['Soldador, ayudante', 'Chofer']);
+    expect(filtros.edad).toEqual(['hasta30', 'desde61']);
+    expect(filtros.agente).toEqual(['Ruido']);
+  });
+
+  it('una lista larga no se corta al compararla con la dirección', () => {
+    const puesto = Array.from({ length: 30 }, (_, i) => `Puesto número ${i}`);
+    const consulta = estadoAConsulta({ filtros: { ...filtrosVacios(), puesto }, comparar: 'anterior' });
+    expect(consultaAEstado(consulta, AGENTES).filtros.puesto).toEqual(puesto);
+    expect(mismaConsulta(consulta, consulta)).toBe(true);
   });
 
   it('escribe solo lo necesario: sin vacíos ni la comparación por omisión', () => {
@@ -79,7 +100,7 @@ describe('estadoTablero', () => {
   });
 
   it('ida y vuelta conserva el estado', () => {
-    const consulta = { centro: 'c9', desde: '2026-02-01', hasta: '2026-02-28', agente: 'Biológicos Infecciosos', comparar: 'anioAnterior' };
+    const consulta = { centro: 'c9', desde: '2026-02-01', hasta: '2026-02-28', agente: 'Biológicos Infecciosos', edad: 'hasta30|desde61', comparar: 'anioAnterior' };
     expect(estadoAConsulta(consultaAEstado(consulta, AGENTES))).toEqual(consulta);
   });
 

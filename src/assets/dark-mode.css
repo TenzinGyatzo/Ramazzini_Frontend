@@ -4515,6 +4515,25 @@ html.dark-mode .dashboard-filtros {
   border-color: #334155 !important;
 }
 
+html.dark-mode .filtro-multiple__panel {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+html.dark-mode .filtro-multiple__opcion label {
+  color: #e2e8f0 !important;
+}
+
+html.dark-mode .filtro-multiple__opcion:hover,
+html.dark-mode .filtro-multiple__todas:hover {
+  background-color: #334155 !important;
+}
+
+html.dark-mode .filtro-multiple__todas,
+html.dark-mode .filtro-multiple__solo {
+  color: #6ee7b7 !important;
+}
+
 html.dark-mode .dashboard-filtros__campo {
   background-color: #0f172a !important;
   border-color: #475569 !important;

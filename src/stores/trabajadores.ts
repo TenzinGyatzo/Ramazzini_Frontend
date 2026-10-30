@@ -258,7 +258,7 @@ export const useTrabajadoresStore = defineStore("trabajadores", () => {
     centroTrabajoId: string,
     inicio?: string,
     fin?: string,
-    filtros: Record<string, string | number> = {},
+    filtros: Record<string, string | string[]> = {},
   ) {
     try {
       loading.value = true;

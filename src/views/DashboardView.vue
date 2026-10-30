@@ -9,6 +9,7 @@ import { useUserStore } from '@/stores/user';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useInformePersonalizacionStore } from '@/stores/informePersonalizacion';
 import { clasificarPorEdadYSexo, ordenarPorGrupoEtario, contarPorCategoriaIMC, etiquetasEnfermedades, contarEnfermedadesCronicas, etiquetasAntecedentesReferidos, contarAntecedentesReferidos, etiquetasVisionSinCorreccion, calcularRequierenLentes, contarVisionSinCorreccion, calcularVistaCorregida, calcularDaltonismo, etiquetasAptitudPuesto, etiquetasAptitudPuestoTabla, contarPorAptitudPuesto, calcularCircunferenciaCintura, contarConsultasUltimos30Dias, etiquetasAgentesRiesgo, contarAgentesRiesgo, contarPorSexo, categoriasTensionArterialOrdenadas, contarPorCategoriaTensionArterial, calcularProporcionAudiometria, distribuirResultadosHBC, calcularProporcionResultadosClinicos, distribuirResultadosClinicos, distribuirResultadosClinicosPorCategoriasMultiples, mapToCategoriasMultiples, ordenTipoAlteracionEkg, ordenTipoAlteracionEspirometria, ordenTipoAlteracionRayosX, ordenTipoAlteracionAnalisisLaboratorio, etiquetasTipoAlteracionEkg, etiquetasTipoAlteracionEspirometria, etiquetasTipoAlteracionRayosX, etiquetasTipoAlteracionAnalisisLaboratorio, calcularAnilloTamizajeBipolarTEA, calcularAnilloTamizajeProdromalCPB, calcularBarrasFranjasTamizajeTLP, tablaFranjasTamizajeTLP } from '@/helpers/dashboardDataProcessor';
+import FiltroMultiple from '@/components/FiltroMultiple.vue';
 import GraficaBarras from '@/components/graficas/GraficaBarras.vue';
 import GraficaAnillo from '@/components/graficas/GraficaAnillo.vue';
 import DonaConLeyenda from '@/components/graficas/DonaConLeyenda.vue';
@@ -128,7 +129,7 @@ const periodoPredefinido = ref('')
 // Filtros de población: a qué trabajadores se refieren las estadísticas
 const filtrosPoblacion = reactive(filtrosVacios());
 const hayFiltrosPoblacion = computed(() => hayFiltros(filtrosPoblacion));
-const textoFiltrosPoblacion = computed(() => textoDeFiltros(filtrosPoblacion));
+const textoFiltrosPoblacion = computed(() => textoDeFiltros(filtrosPoblacion, { breve: true }));
 const limpiarFiltrosPoblacion = () => Object.assign(filtrosPoblacion, filtrosVacios());
 
 // Funciones para manejar localStorage del centro seleccionado
@@ -3028,7 +3029,7 @@ const contextoDeInforme = () => ({
       empresa: empresasStore.currentEmpresa?.nombreComercial ?? '',
       centro: centroSeleccionado.value,
       periodo: periodoReporte.value,
-      segmento: textoFiltrosPoblacion.value,
+      segmento: textoDeFiltros(filtrosPoblacion),
       comparativo: tablaComparativa.value,
       porCentro: tablaPorCentro.value,
       responsable: nombreMedicoFirmanteDashboard.value ?? '',
@@ -3082,13 +3083,20 @@ const cifrasDelTablero = computed(() =>
   cifrasClave(dashboardData.value, indiceCentroSeleccionado.value, hayFiltrosPoblacion.value),
 );
 
-/** Puestos de los centros que se ven; conserva el elegido aunque ese centro no lo tenga. */
-const puestosParaFiltro = computed(() => {
-  const puestos = puestosDisponibles(dashboardData.value, indiceCentroSeleccionado.value);
-  return filtrosPoblacion.puesto && !puestos.includes(filtrosPoblacion.puesto)
-    ? [filtrosPoblacion.puesto, ...puestos]
-    : puestos;
+/**
+ * Puestos de los centros que se ven; conserva los elegidos aunque ese centro no los
+ * tenga, y los anteriores mientras recarga, para que la lista abierta no cambie.
+ */
+let ultimosPuestos = [];
+const opcionesDePuesto = computed(() => {
+  const disponibles = puestosDisponibles(dashboardData.value, indiceCentroSeleccionado.value);
+  if (disponibles.length) ultimosPuestos = disponibles;
+  const faltantes = filtrosPoblacion.puesto.filter((p) => !ultimosPuestos.includes(p));
+  return [...faltantes, ...ultimosPuestos].map((puesto) => ({ valor: puesto, texto: puesto }));
 });
+const opcionesDeEdad = RANGOS_DE_EDAD.map((r) => ({ valor: r.clave, texto: r.texto }));
+const opcionesDeAntiguedad = RANGOS_DE_ANTIGUEDAD.map((r) => ({ valor: r.clave, texto: r.texto }));
+const opcionesDeAgente = Object.keys(etiquetasAgentesRiesgo).map((a) => ({ valor: a, texto: a }));
 
 const irASeccion = (id) => {
   document.getElementById(`tablero-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3541,7 +3549,7 @@ function manejarRedireccionFiltroChart(labelOriginal, filtroId, mapaValores = {}
   const delTablero = filtrosParaLaTabla(filtrosPoblacion);
   if (delTablero.sinEquivalente.length) {
     toast.open({
-      message: `La tabla de trabajadores no filtra por ${delTablero.sinEquivalente.join(' ni por ')}: verás también a quienes están fuera de ese rango.`,
+      message: `La tabla de trabajadores no filtra por ${delTablero.sinEquivalente.join(' ni por ')}: verás también a quienes están fuera de esa selección.`,
       type: 'info',
       duration: 7000,
     });
@@ -4164,13 +4172,12 @@ const tablaCintura = computed(() => {
                 <i class="fas fa-filter text-emerald-600" aria-hidden="true"></i>
                 Trabajadores
               </p>
-              <label class="flex flex-col">
-                <span class="mb-0.5 text-[11px] text-gray-500">Puesto</span>
-                <select v-model="filtrosPoblacion.puesto" class="dashboard-filtros__campo border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white max-w-[14rem]" data-test="filtro-puesto">
-                  <option value="">Todos</option>
-                  <option v-for="puesto in puestosParaFiltro" :key="puesto" :value="puesto">{{ puesto }}</option>
-                </select>
-              </label>
+              <FiltroMultiple
+                v-model="filtrosPoblacion.puesto"
+                etiqueta="Puesto"
+                :opciones="opcionesDePuesto"
+                data-test="filtro-puesto"
+              />
               <label class="flex flex-col">
                 <span class="mb-0.5 text-[11px] text-gray-500">Sexo</span>
                 <select v-model="filtrosPoblacion.sexo" class="dashboard-filtros__campo border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-sexo">
@@ -4178,27 +4185,27 @@ const tablaCintura = computed(() => {
                   <option v-for="sexo in SEXOS" :key="sexo" :value="sexo">{{ sexo }}</option>
                 </select>
               </label>
-              <label class="flex flex-col">
-                <span class="mb-0.5 text-[11px] text-gray-500">Edad</span>
-                <select v-model="filtrosPoblacion.edad" class="dashboard-filtros__campo border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-edad">
-                  <option value="">Todas</option>
-                  <option v-for="rango in RANGOS_DE_EDAD" :key="rango.clave" :value="rango.clave">{{ rango.texto }}</option>
-                </select>
-              </label>
-              <label class="flex flex-col">
-                <span class="mb-0.5 text-[11px] text-gray-500">Antigüedad</span>
-                <select v-model="filtrosPoblacion.antiguedad" class="dashboard-filtros__campo border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-antiguedad">
-                  <option value="">Todas</option>
-                  <option v-for="rango in RANGOS_DE_ANTIGUEDAD" :key="rango.clave" :value="rango.clave">{{ rango.texto }}</option>
-                </select>
-              </label>
-              <label class="flex flex-col">
-                <span class="mb-0.5 text-[11px] text-gray-500">Expuestos a</span>
-                <select v-model="filtrosPoblacion.agente" class="dashboard-filtros__campo border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white" data-test="filtro-agente">
-                  <option value="">Cualquier agente</option>
-                  <option v-for="(etiqueta, agente) in etiquetasAgentesRiesgo" :key="agente" :value="agente">{{ agente }}</option>
-                </select>
-              </label>
+              <FiltroMultiple
+                v-model="filtrosPoblacion.edad"
+                etiqueta="Edad"
+                texto-todas="Todas"
+                :opciones="opcionesDeEdad"
+                data-test="filtro-edad"
+              />
+              <FiltroMultiple
+                v-model="filtrosPoblacion.antiguedad"
+                etiqueta="Antigüedad"
+                texto-todas="Todas"
+                :opciones="opcionesDeAntiguedad"
+                data-test="filtro-antiguedad"
+              />
+              <FiltroMultiple
+                v-model="filtrosPoblacion.agente"
+                etiqueta="Expuestos a"
+                texto-todas="Cualquier agente"
+                :opciones="opcionesDeAgente"
+                data-test="filtro-agente"
+              />
               <button
                 v-if="hayFiltrosPoblacion"
                 type="button"

@@ -4,23 +4,27 @@
  * (backend/src/modules/trabajadores/tablero-poblacion.util.ts).
  */
 
+/**
+ * Dentro de un filtro basta con cumplir una de las opciones; entre filtros hay que
+ * cumplirlos todos. El sexo es de una sola opción: elegir ambos sería «Todos».
+ */
 export interface FiltrosDePoblacion {
-  puesto: string;
+  puesto: string[];
   sexo: string;
-  /** Clave de RANGOS_DE_EDAD. */
-  edad: string;
-  /** Clave de RANGOS_DE_ANTIGUEDAD. */
-  antiguedad: string;
-  /** Agente de riesgo al que está expuesto. */
-  agente: string;
+  /** Claves de RANGOS_DE_EDAD. */
+  edad: string[];
+  /** Claves de RANGOS_DE_ANTIGUEDAD. */
+  antiguedad: string[];
+  /** Agentes de riesgo: expuesto al menos a uno. */
+  agente: string[];
 }
 
 export const filtrosVacios = (): FiltrosDePoblacion => ({
-  puesto: '',
+  puesto: [],
   sexo: '',
-  edad: '',
-  antiguedad: '',
-  agente: '',
+  edad: [],
+  antiguedad: [],
+  agente: [],
 });
 
 interface Rango {
@@ -52,34 +56,46 @@ export const RANGOS_DE_ANTIGUEDAD: Rango[] = [
 
 export const SEXOS = ['Masculino', 'Femenino'];
 
-const rango = (lista: Rango[], clave: string) => lista.find((r) => r.clave === clave);
+const rangosElegidos = (lista: Rango[], claves: string[]) => lista.filter((r) => claves.includes(r.clave));
+
+/** «31-40», «-30» (hasta) o «61-» (desde). */
+const rangoParaElServidor = ({ min, max }: Rango) => `${min ?? ''}-${max ?? ''}`;
 
 export const hayFiltros = (filtros: FiltrosDePoblacion) =>
-  Object.values(filtros).some((valor) => !!valor);
+  Object.values(filtros).some((valor) => valor.length > 0);
 
 /** Parámetros que entiende el servidor; solo lleva lo que está elegido. */
-export function parametrosDeFiltros(filtros: FiltrosDePoblacion): Record<string, string | number> {
-  const parametros: Record<string, string | number> = {};
-  if (filtros.puesto) parametros.puesto = filtros.puesto;
+export function parametrosDeFiltros(filtros: FiltrosDePoblacion): Record<string, string | string[]> {
+  const parametros: Record<string, string | string[]> = {};
+  if (filtros.puesto.length) parametros.puesto = filtros.puesto;
   if (filtros.sexo) parametros.sexo = filtros.sexo;
-  if (filtros.agente) parametros.agente = filtros.agente;
-  const edad = rango(RANGOS_DE_EDAD, filtros.edad);
-  if (edad?.min !== undefined) parametros.edadMin = edad.min;
-  if (edad?.max !== undefined) parametros.edadMax = edad.max;
-  const antiguedad = rango(RANGOS_DE_ANTIGUEDAD, filtros.antiguedad);
-  if (antiguedad?.min !== undefined) parametros.antiguedadMin = antiguedad.min;
-  if (antiguedad?.max !== undefined) parametros.antiguedadMax = antiguedad.max;
+  if (filtros.agente.length) parametros.agente = filtros.agente;
+  const edades = rangosElegidos(RANGOS_DE_EDAD, filtros.edad);
+  if (edades.length) parametros.edadRango = edades.map(rangoParaElServidor);
+  const antiguedades = rangosElegidos(RANGOS_DE_ANTIGUEDAD, filtros.antiguedad);
+  if (antiguedades.length) parametros.antiguedadRango = antiguedades.map(rangoParaElServidor);
   return parametros;
 }
 
-/** «Puesto: Soldador · Sexo: Femenino · De 40 a 49 años»; cadena vacía sin filtros. */
-export function textoDeFiltros(filtros: FiltrosDePoblacion): string {
+const MAXIMO_EN_TEXTO_BREVE = 3;
+
+/**
+ * «Puesto: Soldador, Chofer · Sexo: Femenino · De 40 a 49 años»; cadena vacía sin
+ * filtros. `breve` cuenta las listas largas («5 puestos») para mostrarlas en pantalla.
+ */
+export function textoDeFiltros(filtros: FiltrosDePoblacion, { breve = false } = {}): string {
+  const enumerar = (valores: string[], singular: string, plural: string) =>
+    breve && valores.length > MAXIMO_EN_TEXTO_BREVE
+      ? `${valores.length} ${plural}`
+      : `${singular}: ${valores.join(', ')}`;
+  const edades = rangosElegidos(RANGOS_DE_EDAD, filtros.edad).map((r) => r.texto);
+  const antiguedades = rangosElegidos(RANGOS_DE_ANTIGUEDAD, filtros.antiguedad).map((r) => r.texto.toLowerCase());
   return [
-    filtros.puesto ? `Puesto: ${filtros.puesto}` : '',
+    filtros.puesto.length ? enumerar(filtros.puesto, 'Puesto', 'puestos') : '',
     filtros.sexo ? `Sexo: ${filtros.sexo}` : '',
-    rango(RANGOS_DE_EDAD, filtros.edad)?.texto ?? '',
-    filtros.antiguedad ? `Antigüedad: ${rango(RANGOS_DE_ANTIGUEDAD, filtros.antiguedad)?.texto.toLowerCase() ?? ''}` : '',
-    filtros.agente ? `Expuestos a: ${filtros.agente}` : '',
+    edades.join(', '),
+    antiguedades.length ? `Antigüedad: ${antiguedades.join(', ')}` : '',
+    filtros.agente.length ? enumerar(filtros.agente, 'Expuestos a', 'agentes de riesgo') : '',
   ]
     .filter(Boolean)
     .join(' · ');
@@ -88,19 +104,25 @@ export function textoDeFiltros(filtros: FiltrosDePoblacion): string {
 /**
  * Filtros equivalentes en la tabla de trabajadores, para que al ir de una
  * gráfica a la tabla se vea el mismo segmento. La tabla no filtra por edad ni
- * por antigüedad: `sinEquivalente` dice cuáles no se pudieron llevar.
+ * por antigüedad, y solo admite un puesto y un agente: `sinEquivalente` dice
+ * qué no se pudo llevar.
  */
 export function filtrosParaLaTabla(filtros: FiltrosDePoblacion): {
   consulta: Record<string, string>;
   sinEquivalente: string[];
 } {
   const consulta: Record<string, string> = {};
-  if (filtros.puesto) consulta.puesto = filtros.puesto;
+  if (filtros.puesto.length === 1) consulta.puesto = filtros.puesto[0];
   if (filtros.sexo) consulta.sexo = filtros.sexo;
-  if (filtros.agente) consulta.exposicion = filtros.agente;
+  if (filtros.agente.length === 1) consulta.exposicion = filtros.agente[0];
   return {
     consulta,
-    sinEquivalente: [filtros.edad ? 'edad' : '', filtros.antiguedad ? 'antigüedad' : ''].filter(Boolean),
+    sinEquivalente: [
+      filtros.puesto.length > 1 ? 'varios puestos' : '',
+      filtros.edad.length ? 'edad' : '',
+      filtros.antiguedad.length ? 'antigüedad' : '',
+      filtros.agente.length > 1 ? 'varios agentes de riesgo' : '',
+    ].filter(Boolean),
   };
 }
 

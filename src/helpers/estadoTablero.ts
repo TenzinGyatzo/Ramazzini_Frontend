@@ -25,6 +25,9 @@ export const PERIODOS_TABLERO: { etiqueta: string; clave: string }[] = [
 export const CENTRO_TODOS = 'todos';
 const MODO_POR_OMISION = 'anterior';
 const LARGO_MAXIMO_TEXTO = 120;
+const LARGO_MAXIMO_LISTA = 4000;
+/** Separa las opciones de un filtro en la dirección: los puestos pueden llevar comas. */
+const SEPARADOR_DE_OPCIONES = '|';
 
 /** Parámetros de la dirección que describen el estado (además de `centro`). */
 const CLAVES_DE_ESTADO = ['periodo', 'desde', 'hasta', 'puesto', 'sexo', 'edad', 'antiguedad', 'agente', 'comparar'];
@@ -45,6 +48,19 @@ type Consulta = Record<string, unknown>;
 const primero = (valor: unknown): string | undefined => {
   const v = Array.isArray(valor) ? valor[0] : valor;
   return typeof v === 'string' && v.trim() ? v.trim().slice(0, LARGO_MAXIMO_TEXTO) : undefined;
+};
+
+const texto = (valor: unknown): string | undefined => {
+  const v = Array.isArray(valor) ? valor[0] : valor;
+  return typeof v === 'string' && v.trim() ? v.trim().slice(0, LARGO_MAXIMO_LISTA) : undefined;
+};
+
+/** Opciones de un filtro, sin repetir; una dirección anterior trae solo una. */
+const opciones = (valor: unknown): string[] => {
+  const unidas = texto(valor);
+  if (!unidas) return [];
+  const leidas = unidas.split(SEPARADOR_DE_OPCIONES).map((o) => o.trim().slice(0, LARGO_MAXIMO_TEXTO));
+  return [...new Set(leidas.filter(Boolean))];
 };
 
 const esFecha = (valor: string | undefined): valor is string =>
@@ -69,16 +85,14 @@ export function consultaTieneEstado(consulta: Consulta): boolean {
  */
 export function consultaAEstado(consulta: Consulta, agentes: string[]): EstadoTablero {
   const filtros = filtrosVacios();
-  const puesto = primero(consulta.puesto);
-  if (puesto) filtros.puesto = puesto;
+  filtros.puesto = opciones(consulta.puesto);
   const sexo = primero(consulta.sexo);
   if (sexo && SEXOS.includes(sexo)) filtros.sexo = sexo;
-  const edad = primero(consulta.edad);
-  if (edad && RANGOS_DE_EDAD.some((r) => r.clave === edad)) filtros.edad = edad;
-  const antiguedad = primero(consulta.antiguedad);
-  if (antiguedad && RANGOS_DE_ANTIGUEDAD.some((r) => r.clave === antiguedad)) filtros.antiguedad = antiguedad;
-  const agente = primero(consulta.agente);
-  if (agente && agentes.includes(agente)) filtros.agente = agente;
+  filtros.edad = opciones(consulta.edad).filter((clave) => RANGOS_DE_EDAD.some((r) => r.clave === clave));
+  filtros.antiguedad = opciones(consulta.antiguedad).filter((clave) =>
+    RANGOS_DE_ANTIGUEDAD.some((r) => r.clave === clave),
+  );
+  filtros.agente = opciones(consulta.agente).filter((agente) => agentes.includes(agente));
 
   const comparar = primero(consulta.comparar);
   const estado: EstadoTablero = {
@@ -113,7 +127,9 @@ export function estadoAConsulta(estado: EstadoTablero): Record<string, string> {
     if (estado.hasta) consulta.hasta = estado.hasta;
   }
   (Object.keys(estado.filtros) as (keyof FiltrosDePoblacion)[]).forEach((clave) => {
-    if (estado.filtros[clave]) consulta[clave] = estado.filtros[clave];
+    const valor = estado.filtros[clave];
+    const unido = Array.isArray(valor) ? valor.join(SEPARADOR_DE_OPCIONES) : valor;
+    if (unido) consulta[clave] = unido;
   });
   if (estado.comparar && estado.comparar !== MODO_POR_OMISION) consulta.comparar = estado.comparar;
   return consulta;
@@ -122,7 +138,7 @@ export function estadoAConsulta(estado: EstadoTablero): Record<string, string> {
 /** ¿Dos consultas describen lo mismo? (para no reescribir la dirección sin cambios) */
 export function mismaConsulta(a: Consulta, b: Record<string, string>): boolean {
   const claves = new Set([...Object.keys(b), ...['centro', ...CLAVES_DE_ESTADO].filter((c) => a[c] !== undefined)]);
-  return [...claves].every((clave) => primero(a[clave]) === b[clave]);
+  return [...claves].every((clave) => texto(a[clave]) === b[clave]);
 }
 
 // ---- Último estado por empresa durante la sesión de la pestaña (al entrar sin parámetros)
