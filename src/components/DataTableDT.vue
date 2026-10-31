@@ -21,6 +21,8 @@ import $ from 'jquery';
 import { convertirFechaISOaDDMMYYYY, calcularEdad, calcularAntiguedad, determinarVistaCorregida } from '@/helpers/dates';
 import { escapeHtml } from '@/helpers/escapeHtml';
 import { useRouter, useRoute } from 'vue-router';
+import { useNavegacionFilas } from '@/composables/useNavegacionFilas';
+import AvisoTecladoTabla from '@/components/AvisoTecladoTabla.vue';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
@@ -58,7 +60,15 @@ const mostrarLeyendaLocal = ref(props.mostrarLeyenda !== false);
 const mostrarVigenciasLocal = ref(props.mostrarVigencias !== false);
 
 const tablaRef = ref<HTMLElement | null>(null);
+const contenedorTabla = ref<HTMLElement | null>(null);
 let dataTableInstance: any = null;
+const { alPresionar, alPresionarEnPagina, alEnfocar, sincronizar: sincronizarFilas, devolverFoco } = useNavegacionFilas(contenedorTabla, (paso) => {
+  const { page, pages } = dataTableInstance.page.info();
+  const destino = page + paso;
+  if (destino < 0 || destino >= pages) return false;
+  dataTableInstance.page(destino).draw(false);
+  return true;
+});
 let folioTooltipEl: HTMLDivElement | null = null;
 let expedienteTooltipEl: HTMLDivElement | null = null;
 let expedientePrefetchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -236,6 +246,7 @@ onMounted(() => {
     }
   };
   document.addEventListener('keydown', expedienteEscapeHandler);
+  window.addEventListener('keydown', alPresionarEnPagina);
 
   // Usar requestAnimationFrame para asegurar que el DOM esté completamente renderizado
   requestAnimationFrame(() => {
@@ -963,12 +974,13 @@ function inicializarDataTable() {
           title: 'Expediente',
           render: function (data, type, row) {
             const url = router.resolve(buildExpedienteRoute(String(row._id))).href;
+            const nombreParaLector = escapeHtml([row.primerApellido, row.segundoApellido, row.nombre].filter(Boolean).join(' '));
 
             return `
               <a
                 href="${url}"
                 class="btn-expediente bg-emerald-600 text-white rounded-full px-2 py-1 transition-all duration-100 ease-out transform hover:scale-105 shadow-md hover:shadow-lg hover:bg-emerald-500 hover:text-white hover:border-emerald-700 border-2 border-emerald-600 inline-flex items-center"
-                data-id="${escapeHtml(row._id)}"
+                data-id="${escapeHtml(row._id)}" aria-label="Expediente: ${nombreParaLector}"
               >
                 <span class="btn-expediente-label">Expediente</span>
               </a>
@@ -980,6 +992,7 @@ function inicializarDataTable() {
           title: 'Acciones',
           render: function (data, type, row) {
           const esInactivo = row.estadoLaboral === 'Inactivo';
+          const nombreParaLector = escapeHtml([row.primerApellido, row.segundoApellido, row.nombre].filter(Boolean).join(' '));
 
           return `
               <div class="relative h-[32px]">
@@ -988,11 +1001,11 @@ function inicializarDataTable() {
                 ${usaIncapacidades() ? `
                 <button
                   type="button"
-                  class="btn-incapacidades group absolute right-25 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-violet-200 hover:bg-violet-300 text-violet-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-violet-200 hover:border-violet-100 whitespace-nowrap flex items-center overflow-hidden text-sm"
-                  data-id="${escapeHtml(row._id)}"
+                  class="btn-incapacidades group absolute right-25 z-10 hover:z-40 focus-visible:z-40 px-2.5 py-1 rounded-full bg-violet-200 hover:bg-violet-300 text-violet-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-violet-200 hover:border-violet-100 whitespace-nowrap flex items-center overflow-hidden text-sm"
+                  data-id="${escapeHtml(row._id)}" aria-label="Incapacidades: ${nombreParaLector}"
                 >
                   <i class="fa-solid fa-bed"></i>
-                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
+                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 group-focus-visible:max-w-xs group-focus-visible:ml-2 transition-all duration-300 text-sm">
                     Incapacidades
                   </span>
                 </button>
@@ -1002,23 +1015,23 @@ function inicializarDataTable() {
                 ${canEliminarFusionarTrabajadores.value && row.tieneDuplicadoPendiente ? `
                 <button
                   type="button"
-                  class="btn-fusionar group absolute left-12 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-amber-200 whitespace-nowrap flex items-center overflow-hidden text-sm"
-                  data-id="${escapeHtml(row._id)}"
+                  class="btn-fusionar group absolute left-12 z-10 hover:z-40 focus-visible:z-40 px-2.5 py-1 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-amber-200 whitespace-nowrap flex items-center overflow-hidden text-sm"
+                  data-id="${escapeHtml(row._id)}" aria-label="Fusionar: ${nombreParaLector}"
                   title="Fusionar posible duplicado"
                 >
                   <i class="fa-solid fa-object-group"></i>
-                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
+                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 group-focus-visible:max-w-xs group-focus-visible:ml-2 transition-all duration-300 text-sm">
                     Fusionar
                   </span>
                 </button>
                 ` : `
                 <button
                   type="button"
-                  class="btn-riesgos group absolute left-12 z-10 hover:z-40 px-2.5 py-1 rounded-full bg-gray-300 hover:bg-amber-400 text-gray-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-gray-300 hover:border-amber-100 whitespace-nowrap flex items-center overflow-hidden"
-                  data-id="${escapeHtml(row._id)}"
+                  class="btn-riesgos group absolute left-12 z-10 hover:z-40 focus-visible:z-40 px-2.5 py-1 rounded-full bg-gray-300 hover:bg-amber-400 text-gray-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg border-2 border-gray-300 hover:border-amber-100 whitespace-nowrap flex items-center overflow-hidden"
+                  data-id="${escapeHtml(row._id)}" aria-label="Agentes de riesgo: ${nombreParaLector}"
                 >
                   <i class="fa-solid fa-exclamation-triangle"></i>
-                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
+                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 group-focus-visible:max-w-xs group-focus-visible:ml-2 transition-all duration-300 text-sm">
                     Agentes de Riesgo
                   </span>
                 </button>
@@ -1028,16 +1041,16 @@ function inicializarDataTable() {
                 <button
                   type="button"
                   ${canManageTrabajadores.value ? '' : 'disabled'}
-                  class="btn-editar group absolute left-0 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
+                  class="btn-editar group absolute left-0 z-10 hover:z-40 focus-visible:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
                     canManageTrabajadores.value 
                       ? 'bg-sky-100 hover:bg-sky-200 text-sky-600 hover:scale-105 border-sky-100' 
                       : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                   }"
-                  data-id="${escapeHtml(row._id)}"
+                  data-id="${escapeHtml(row._id)}" aria-label="Editar: ${nombreParaLector}"
                   title="${canManageTrabajadores.value ? 'Editar trabajador' : 'No tienes permisos para editar trabajadores'}"
                 >
                   <i class="fa-regular fa-pen-to-square"></i>
-                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm">
+                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 group-focus-visible:max-w-xs group-focus-visible:ml-2 transition-all duration-300 text-sm">
                     Editar
                   </span>
                 </button>
@@ -1047,24 +1060,24 @@ function inicializarDataTable() {
                   esInactivo && reincorporando.has(String(row._id))
                     ? botonReincorporando(row._id)
                     : esInactivo
-                    ? `<button type="button" ${canManageTrabajadores.value ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
+                    ? `<button type="button" ${canManageTrabajadores.value ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 focus-visible:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
                         canManageTrabajadores.value 
                           ? 'bg-green-100 hover:bg-green-200 text-green-600 hover:scale-105 border-green-100' 
                           : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                       }"
-                        data-id="${escapeHtml(row._id)}"
+                        data-id="${escapeHtml(row._id)}" aria-label="Dar de alta: ${nombreParaLector}"
                         title="${canManageTrabajadores.value ? 'Dar de alta trabajador' : 'No tienes permisos para cambiar estado laboral de trabajadores'}">
-                        <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm">Alta</span>
+                        <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 group-focus-visible:max-w-xs group-focus-visible:mr-2 transition-all duration-300 text-sm">Alta</span>
                         <i class="fa-solid fa-person-arrow-up-from-line"></i>
                       </button>`
-                    : `<button type="button" ${canManageTrabajadores.value ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
+                    : `<button type="button" ${canManageTrabajadores.value ? '' : 'disabled'} class="btn-alta-baja group absolute right-12 z-10 hover:z-40 focus-visible:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
                         canManageTrabajadores.value 
                           ? 'bg-orange-100 hover:bg-orange-200 text-orange-600 hover:scale-105 border-orange-100' 
                           : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                       }"
-                        data-id="${escapeHtml(row._id)}"
+                        data-id="${escapeHtml(row._id)}" aria-label="Dar de baja: ${nombreParaLector}"
                         title="${canManageTrabajadores.value ? 'Dar de baja trabajador' : 'No tienes permisos para cambiar estado laboral de trabajadores'}">
-                        <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm">Baja</span>
+                        <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 group-focus-visible:max-w-xs group-focus-visible:mr-2 transition-all duration-300 text-sm">Baja</span>
                         <i class="fa-solid fa-person-arrow-down-to-line"></i>
                       </button>`
                 }
@@ -1073,16 +1086,16 @@ function inicializarDataTable() {
                 <button
                   type="button"
                   ${canEliminarFusionarTrabajadores.value ? '' : 'disabled'}
-                  class="btn-eliminar group absolute right-0 z-10 hover:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
+                  class="btn-eliminar group absolute right-0 z-10 hover:z-40 focus-visible:z-40 px-2.5 py-1 rounded-full transition-all duration-300 transform shadow-md hover:shadow-lg border-2 whitespace-nowrap flex items-center overflow-hidden ${
                     canEliminarFusionarTrabajadores.value
                       ? 'bg-red-100 hover:bg-red-200 text-red-600 hover:scale-105 border-red-100' 
                       : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60 border-gray-100'
                   }"
-                  data-id="${escapeHtml(row._id)}"
+                  data-id="${escapeHtml(row._id)}" aria-label="Eliminar: ${nombreParaLector}"
                   data-nombre="${escapeHtml([row.primerApellido, row.segundoApellido, row.nombre].filter(Boolean).join(' '))}"
                   title="${canEliminarFusionarTrabajadores.value ? 'Eliminar trabajador' : 'No tienes permiso para eliminar trabajadores'}"
                 >
-                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 transition-all duration-300 text-sm order-1">
+                  <span class="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:mr-2 group-focus-visible:max-w-xs group-focus-visible:mr-2 transition-all duration-300 text-sm order-1">
                     Eliminar
                   </span>
                   <i class="fa-solid fa-trash-can order-2"></i>
@@ -1276,6 +1289,7 @@ function inicializarDataTable() {
       if (!tieneNumeroEmpleado) {
         dataTableInstance.column(1).visible(false);
       }
+      sincronizarFilas();
       resaltarUltimoTrabajador();
     };
     // Con los textos locales la tabla termina de iniciar dentro del constructor y el evento
@@ -1288,6 +1302,7 @@ function inicializarDataTable() {
 
     dataTableInstance.on('draw', function () {
       syncExpedienteButtonBadges();
+      sincronizarFilas();
     });
 
     // Abrir el expediente desde el nombre (también con Ctrl/clic con rueda) no selecciona la fila
@@ -1315,6 +1330,7 @@ onBeforeUnmount(() => {
   expedienteViewportCleanup = null;
   if (expedienteEscapeHandler) {
     document.removeEventListener('keydown', expedienteEscapeHandler);
+    window.removeEventListener('keydown', alPresionarEnPagina);
     expedienteEscapeHandler = null;
   }
 
@@ -1493,6 +1509,7 @@ watch(usaIncapacidades, () => {
 
 defineExpose({
   aplicarTodosLosFiltrosDesdeLocalStorage,
+  devolverFoco,
   terminarReincorporacion,
   mostrarVigenciasLocal,
   toggleVigencias: () => {
@@ -1766,8 +1783,10 @@ function calcularEstadoVigencia(fechaAptitudPuesto: string | Date | null): { est
       </div>
       </Transition>
       
+      <AvisoTecladoTabla v-if="rows.length > 0" regresar-a="Centros de trabajo" />
+
       <!-- Tabla -->
-      <div class="overflow-x-auto">
+      <div ref="contenedorTabla" class="overflow-x-auto" @keydown="alPresionar" @focusin="alEnfocar">
         <table id="customTable" ref="tablaRef" class="display w-full"></table>
       </div>
     </div>
@@ -1824,6 +1843,16 @@ table.dataTable tbody a.nombre-expediente:focus-visible {
 }
 html.dark-mode table.dataTable tbody a.nombre-expediente:hover {
   color: #6ee7b7;
+}
+/* Fila en la que está el teclado */
+table.dataTable > tbody > tr:has(a:focus-visible, button:focus-visible) {
+  outline: 2px solid #10b981;
+  outline-offset: -2px;
+}
+table.dataTable tbody .btn-expediente:focus-visible,
+table.dataTable tbody .columna-acciones button:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
 }
 /* En la fila seleccionada (fondo verde), el nombre va en el mismo blanco que el resto de la fila
    (DataTables pinta los enlaces de la fila seleccionada casi negros) */

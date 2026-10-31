@@ -812,6 +812,15 @@ type TrabajadorEstadoLaboral = { _id: string; estadoLaboral: string };
 const trabajadorPorDarDeBaja = ref<TrabajadorEstadoLaboral | null>(null);
 const confirmandoBaja = ref(false);
 
+// Una acción abierta con el teclado regresa a su fila al cerrar la ventana
+const hayVentanaAbierta = computed(() =>
+  showModal.value || showRisksModal.value || showIncapacidadesModal.value || showCentroModal.value ||
+  showFusionModal.value || Boolean(trabajadorPorDarDeBaja.value) || eliminacionOpen.value
+);
+watch(hayVentanaAbierta, (abierta) => {
+  if (!abierta) nextTick(() => dataTableRef.value?.devolverFoco());
+});
+
 const solicitarCambioEstadoLaboral = (trabajador: TrabajadorEstadoLaboral) => {
   if (trabajador?.estadoLaboral === 'Activo') {
     trabajadorPorDarDeBaja.value = trabajador;

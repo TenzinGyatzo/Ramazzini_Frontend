@@ -12,14 +12,14 @@ const DURACION_RESALTADO_MS = 2600;
 const INTENTOS_RESALTADO = 10;
 /** Fracción del alto de la ventana que debe quedar libre arriba y abajo de la tarjeta destino. */
 const MARGEN_VISIBLE = 0.12;
-const FLECHAS: ReadonlySet<string> = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
+export const FLECHAS: ReadonlySet<string> = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
 /** Donde las flechas ya tienen un uso propio: ahí no se toman para las tarjetas. */
-const CON_USO_DE_FLECHAS =
+export const CON_USO_DE_FLECHAS =
   'input, textarea, select, [contenteditable="true"], [role="menu"], [role="listbox"], [role="tablist"], [role="radiogroup"], [role="slider"]';
 /** Letras escritas con menos de esta pausa se juntan («con» busca ese inicio). */
 const PAUSA_ENTRE_LETRAS_MS = 700;
 /** Ventana abierta: las flechas son suyas. */
-const VENTANA_ABIERTA = '[aria-modal="true"], .modal-work-overlay';
+export const VENTANA_ABIERTA = '[aria-modal="true"], .modal-work-overlay';
 
 /** Tarjeta que debe recibir el foco cuando la vista que la muestra termine de cargar. */
 let focoPendiente: string | null = null;
