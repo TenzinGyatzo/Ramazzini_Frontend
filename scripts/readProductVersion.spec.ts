@@ -65,8 +65,8 @@ describe('readProductVersion', () => {
   })
 
   it('parsea los registros reales del monorepo', () => {
-    expect(readSiresEditionVersion()).toBe('v1.0.7')
-    expect(readCommercialEditionVersion()).toBe('v2.0.3')
+    expect(readSiresEditionVersion()).toBe('v1.0.8')
+    expect(readCommercialEditionVersion()).toBe('v2.0.4')
   })
 
   it('no toma el folio SIRES cuando se pide la línea comercial', () => {
