@@ -57,7 +57,7 @@ const omitidos = (estado: ReturnType<typeof estadoDeInforme>) =>
   estado.incluye.filter((i) => !i.incluido).map((i) => i.texto);
 
 describe('ventana de informes del tablero', () => {
-  it('ofrece seis informes: dos generales, tres por tema y los datos en Excel', () => {
+  it('ofrece siete informes: dos generales, tres por tema y dos de datos en Excel', () => {
     expect(INFORMES_DEL_TABLERO.map((i) => [i.grupo, i.id])).toEqual([
       ['Generales', 'completo'],
       ['Generales', 'resumen'],
@@ -65,9 +65,13 @@ describe('ventana de informes del tablero', () => {
       ['Por tema', 'auditivo'],
       ['Por tema', 'musculoesqueletico'],
       ['Datos', 'excel'],
+      ['Datos', 'relacionConsultas'],
     ]);
-    // El Excel es el único que no lleva conclusiones
-    expect(INFORMES_DEL_TABLERO.filter((i) => !i.llevaConclusiones).map((i) => i.id)).toEqual(['excel']);
+    // Los de Excel son los únicos que no llevan conclusiones
+    expect(INFORMES_DEL_TABLERO.filter((i) => !i.llevaConclusiones).map((i) => i.id)).toEqual([
+      'excel',
+      'relacionConsultas',
+    ]);
   });
 
   it('el informe completo anuncia las secciones que el tablero tiene con datos', () => {
@@ -159,6 +163,23 @@ describe('ventana de informes del tablero', () => {
       'Aptitud',
     ]);
     expect(estadoDeInforme('excel', datos({ general: informe() })).disponible).toBe(false);
+  });
+
+  it('la relación de consultas pide un centro y consultas en el periodo', () => {
+    const estado = estadoDeInforme('relacionConsultas', datos({ centroElegido: true }));
+    expect(estado.disponible).toBe(true);
+    expect(omitidos(estado)).toEqual([]);
+
+    const sinCentro = estadoDeInforme('relacionConsultas', datos());
+    expect(sinCentro.disponible).toBe(false);
+    expect(sinCentro.motivo).toContain('elige un centro');
+
+    const sinConsultas = estadoDeInforme(
+      'relacionConsultas',
+      datos({ centroElegido: true, secciones: { diagnosticos: false } }),
+    );
+    expect(sinConsultas.disponible).toBe(false);
+    expect(sinConsultas.motivo).toContain('No hay consultas');
   });
 
   it('convierte los hallazgos en una lista para usarla de borrador', () => {

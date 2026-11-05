@@ -22,9 +22,9 @@ const SECCION_DE_TABLA: Record<string, string> = Object.fromEntries([
   [TITULO_COBERTURA_NORDICO, 'musculoesqueletico'],
 ]);
 
-export type IdDeInforme = 'completo' | 'resumen' | TemaDeInforme | 'excel';
-/** Informes que llevan conclusiones y recomendaciones propias (el Excel no). */
-export type TipoConConclusiones = Exclude<IdDeInforme, 'excel'>;
+export type IdDeInforme = 'completo' | 'resumen' | TemaDeInforme | 'excel' | 'relacionConsultas';
+/** Informes que llevan conclusiones y recomendaciones propias (los de Excel no). */
+export type TipoConConclusiones = Exclude<IdDeInforme, 'excel' | 'relacionConsultas'>;
 
 export interface DefinicionDeInforme {
   id: IdDeInforme;
@@ -98,6 +98,16 @@ export const INFORMES_DEL_TABLERO: DefinicionDeInforme[] = [
     formato: 'Excel',
     llevaConclusiones: false,
   },
+  {
+    id: 'relacionConsultas',
+    grupo: 'Datos',
+    nombre: 'Relación de consultas',
+    paraQue: 'Una fila por consulta del centro',
+    descripcion:
+      'Las notas médicas finalizadas del centro en el periodo, una por fila: trabajador, motivo, diagnóstico CIE-10, tratamiento y quién la firmó. Todo en mayúsculas. Lleva datos personales de los trabajadores.',
+    formato: 'Excel',
+    llevaConclusiones: false,
+  },
 ];
 
 export const GRUPOS_DE_INFORMES = ['Generales', 'Por tema', 'Datos'] as const;
@@ -149,6 +159,8 @@ export interface DatosParaEstado {
    * registros ni historial no se anuncia como omitido: ese proveedor no lo usa.
    */
   historial?: Record<string, boolean>;
+  /** Hay un centro elegido (la relación de consultas es de un solo centro). */
+  centroElegido?: boolean;
 }
 
 export function estadoDeInforme(id: IdDeInforme, datos: DatosParaEstado): EstadoDeInforme {
@@ -204,6 +216,27 @@ export function estadoDeInforme(id: IdDeInforme, datos: DatosParaEstado): Estado
         { texto: 'Comparación con otro periodo', incluido: !!datos.general.comparativo },
         { texto: 'Indicadores por centro de trabajo', incluido: !!datos.general.porCentro },
       ],
+    };
+  }
+
+  if (id === 'relacionConsultas') {
+    const hayConsultas = !!datos.secciones.diagnosticos;
+    const disponible = !!datos.centroElegido && hayConsultas;
+    return {
+      disponible,
+      motivo: !datos.centroElegido
+        ? 'Es de un solo centro: elige un centro de trabajo en el tablero'
+        : hayConsultas
+          ? ''
+          : 'No hay consultas en el periodo con los filtros elegidos',
+      incluye: [
+        'Fecha y hora',
+        'Número de empleado, nombre y edad',
+        'Motivo de consulta',
+        'Sistema (capítulo CIE-10), código y nombre del diagnóstico principal',
+        'Descripción complementaria, tratamiento y observaciones',
+        'Título y nombre de quien firmó',
+      ].map((texto) => ({ texto, incluido: disponible })),
     };
   }
 

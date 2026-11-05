@@ -3,7 +3,7 @@ import { fechaLocalHoy } from '@/helpers/dates';
 import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { cargarPdfMake, pdfMakeCargado, precargarPdfMake } from '@/lib/cargarPdfMake';
 import { dibujarEnPuntos } from '@/helpers/exportChartImage';
-import InformesAPI from '@/api/InformesAPI';
+import InformesAPI, { type FilaRelacionConsultas } from '@/api/InformesAPI';
 import { informePersonalizacionService } from '@/api/informe-personalizacion.service';
 import ModalDiscardConfirmDialog from '@/components/ModalDiscardConfirmDialog.vue';
 import RecomendacionesTabla from '@/components/RecomendacionesTabla.vue';
@@ -56,6 +56,10 @@ const props = defineProps<{
   secciones: Record<string, boolean>;
   /** Secciones opcionales que el centro ha usado alguna vez. */
   historial?: Record<string, boolean>;
+  /** Periodo y filtros de población del tablero, para la relación de consultas. */
+  inicio?: string | null;
+  fin?: string | null;
+  filtros?: Record<string, string | string[]>;
   /** Se arman al pedirlos, con lo que el tablero muestra en ese momento. */
   armar: () => InformeDeTablero;
   armarTema: (tema: TemaDeInforme) => InformeDeTablero;
@@ -83,6 +87,7 @@ const datos = computed<DatosParaEstado>(() => ({
   totalTrabajadores: props.totalTrabajadores,
   secciones: props.secciones,
   historial: props.historial,
+  centroElegido: !!props.centroId,
   general: props.armar(),
   tematicos: {
     cardiometabolico: props.armarTema('cardiometabolico'),
@@ -311,6 +316,59 @@ const descargarExcel = async (informe: InformeDeTablero) => {
   xlsx.writeFile(libro, nombreDeArchivo('EstadisticasDeSalud', informe, hoy(), 'xlsx'));
 };
 
+const COLUMNAS_RELACION: [string, (fila: FilaRelacionConsultas) => string | number][] = [
+  ['FECHA', (fila) => fila.fecha],
+  ['HORA', (fila) => horaDe(fila.registradaEn)],
+  ['NÚMERO DE EMPLEADO', (fila) => fila.numeroEmpleado],
+  ['PRIMER APELLIDO TRABAJADOR', (fila) => fila.primerApellido],
+  ['SEGUNDO APELLIDO TRABAJADOR', (fila) => fila.segundoApellido],
+  ['NOMBRE TRABAJADOR', (fila) => fila.nombre],
+  ['EDAD', (fila) => fila.edad ?? ''],
+  ['MOTIVO', (fila) => fila.motivo],
+  ['SISTEMA', (fila) => fila.sistema],
+  ['CÓDIGO DE DIAGNÓSTICO PRINCIPAL (CIE-10)', (fila) => fila.codigoDiagnostico],
+  ['NOMBRE DE DIAGNÓSTICO', (fila) => fila.nombreDiagnostico],
+  ['DESCRIPCIÓN COMPLEMENTARIA', (fila) => fila.descripcionComplementaria],
+  ['TRATAMIENTO', (fila) => fila.tratamiento],
+  ['OBSERVACIONES', (fila) => fila.observaciones],
+  ['TÍTULO PROFESIONAL', (fila) => fila.tituloFirmante],
+  ['PRIMER APELLIDO FIRMANTE', (fila) => fila.primerApellidoFirmante],
+  ['SEGUNDO APELLIDO FIRMANTE', (fila) => fila.segundoApellidoFirmante],
+  ['NOMBRE FIRMANTE', (fila) => fila.nombreFirmante],
+];
+
+/** La nota solo guarda la fecha: la hora es la de su registro, en la zona del navegador. */
+const horaDe = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false })
+    : '';
+
+/** Una fila por nota médica finalizada del centro; el servidor la entrega ya en mayúsculas. */
+const descargarRelacionConsultas = async (informe: InformeDeTablero) => {
+  if (!props.centroId) return false;
+  const [{ data }, xlsx] = await Promise.all([
+    InformesAPI.obtenerRelacionConsultas(props.empresaId, props.centroId, props.inicio, props.fin, props.filtros),
+    import('xlsx'),
+  ]);
+  if (!data.filas.length) {
+    toast?.open?.({ message: 'No hay notas médicas finalizadas en el periodo con los filtros elegidos.', type: 'info' });
+    return false;
+  }
+  const filas = [
+    COLUMNAS_RELACION.map(([titulo]) => titulo),
+    ...data.filas.map((fila) => COLUMNAS_RELACION.map(([, valor]) => valor(fila))),
+  ];
+  const hoja = xlsx.utils.aoa_to_sheet(filas);
+  hoja['!cols'] = COLUMNAS_RELACION.map((_, i) => ({
+    wch: Math.min(60, Math.max(8, ...filas.map((fila) => String(fila[i] ?? '').length + 2))),
+  }));
+  hoja['!autofilter'] = { ref: xlsx.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: filas.length - 1, c: COLUMNAS_RELACION.length - 1 } }) };
+  const libro = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(libro, hoja, 'Consultas');
+  xlsx.writeFile(libro, nombreDeArchivo('RelacionDeConsultas', informe, hoy(), 'xlsx'));
+  return true;
+};
+
 const generar = async (modo: 'ver' | 'descargar') => {
   const id = elegido.value;
   if (generando.value || !estado.value.disponible) return;
@@ -324,6 +382,11 @@ const generar = async (modo: 'ver' | 'descargar') => {
       const informe = props.armar();
       await descargarExcel(informe);
       registrar(informe, id, 'download');
+      return;
+    }
+    if (id === 'relacionConsultas') {
+      const informe = props.armar();
+      if (await descargarRelacionConsultas(informe)) registrar(informe, id, 'download');
       return;
     }
     const tema = esTema(id) ? id : null;

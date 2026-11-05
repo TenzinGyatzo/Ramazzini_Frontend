@@ -11,9 +11,29 @@ const servicio = vi.hoisted(() => ({
   upsertByEmpresa: vi.fn(),
 }));
 vi.mock('@/api/informe-personalizacion.service', () => ({ informePersonalizacionService: servicio }));
-vi.mock('@/api/InformesAPI', () => ({
-  default: { registrarExportacionDashboard: vi.fn().mockResolvedValue({}) },
+const informesApi = vi.hoisted(() => ({
+  registrarExportacionDashboard: vi.fn().mockResolvedValue({}),
+  obtenerRelacionConsultas: vi.fn(),
 }));
+vi.mock('@/api/InformesAPI', () => ({ default: informesApi }));
+const xlsx = vi.hoisted(() => ({
+  writeFile: vi.fn(),
+  aoa: [] as unknown[][],
+}));
+vi.mock('xlsx', async (original) => {
+  const real: any = await original();
+  return {
+    ...real,
+    utils: {
+      ...real.utils,
+      aoa_to_sheet: (filas: unknown[][]) => {
+        xlsx.aoa = filas;
+        return real.utils.aoa_to_sheet(filas);
+      },
+    },
+    writeFile: xlsx.writeFile,
+  };
+});
 
 import ModalInformesDashboard from './ModalInformesDashboard.vue';
 
@@ -44,7 +64,7 @@ const cardio = informe({
 
 const generarCompleto = vi.fn();
 
-const montar = (centroId: string | undefined) =>
+const montar = (centroId: string | undefined, secciones: Record<string, boolean> = { saludVisual: true, diagnosticos: false }) =>
   mount(ModalInformesDashboard, {
     props: {
       abierto: true,
@@ -54,7 +74,10 @@ const montar = (centroId: string | undefined) =>
       periodo: 'Este año',
       segmento: '',
       totalTrabajadores: 12,
-      secciones: { saludVisual: true, diagnosticos: false },
+      secciones,
+      inicio: '2026-01-01',
+      fin: '2026-12-31',
+      filtros: { sexo: 'Femenino' },
       armar: () => general,
       armarTema: (tema) => (tema === 'cardiometabolico' ? cardio : informe()),
       generarCompleto,
@@ -92,10 +115,10 @@ describe('ventana de informes del tablero', () => {
     servicio.upsertByEmpresaAndCentro.mockImplementation(async (_e: string, _c: string, dto: any, tipo: string) => ({ ...dto, tipoInforme: tipo }));
   });
 
-  it('lista los seis informes y pide las conclusiones de cada tipo para el centro que se ve', async () => {
+  it('lista los siete informes y pide las conclusiones de cada tipo para el centro que se ve', async () => {
     const wrapper = montar('centro1');
     await flushPromises();
-    for (const id of ['completo', 'resumen', 'cardiometabolico', 'auditivo', 'musculoesqueletico', 'excel']) {
+    for (const id of ['completo', 'resumen', 'cardiometabolico', 'auditivo', 'musculoesqueletico', 'excel', 'relacionConsultas']) {
       expect(wrapper.find(`[data-test="informe-${id}"]`).exists()).toBe(true);
     }
     expect(servicio.findByEmpresaAndCentro.mock.calls.map((llamada) => llamada[2])).toEqual([
@@ -196,6 +219,64 @@ describe('ventana de informes del tablero', () => {
     expect(servicio.findByEmpresaOnly).toHaveBeenCalledTimes(5);
     expect(servicio.findByEmpresaAndCentro).not.toHaveBeenCalled();
     expect(wrapper.find('[data-test="informe-conclusiones"]').text()).toContain('toda la empresa');
+    wrapper.unmount();
+  });
+
+  it('la relación de consultas pide las filas del centro con el periodo y los filtros, y arma el Excel', async () => {
+    informesApi.obtenerRelacionConsultas.mockResolvedValue({
+      data: {
+        filas: [
+          {
+            fecha: '05/03/2026',
+            registradaEn: null,
+            numeroEmpleado: 'A-12',
+            primerApellido: 'PÉREZ',
+            segundoApellido: 'NÚÑEZ',
+            nombre: 'JOSÉ',
+            edad: 35,
+            motivo: 'DOLOR AL TRAGAR',
+            sistema: 'SÍNTOMAS Y HALLAZGOS NO CLASIFICADOS',
+            codigoDiagnostico: 'R070',
+            nombreDiagnostico: 'DOLOR DE GARGANTA',
+            descripcionComplementaria: '',
+            tratamiento: 'PARACETAMOL',
+            observaciones: '',
+            tituloFirmante: 'DR.',
+            primerApellidoFirmante: 'LÓPEZ',
+            segundoApellidoFirmante: '',
+            nombreFirmante: 'ANA',
+          },
+        ],
+      },
+    });
+    const wrapper = montar('centro1', { diagnosticos: true });
+    await flushPromises();
+    await wrapper.find('[data-test="informe-relacionConsultas"]').trigger('click');
+    expect(wrapper.find('[data-test="informe-ver"]').exists()).toBe(false);
+    await wrapper.find('[data-test="informe-descargar"]').trigger('click');
+    await flushPromises();
+
+    expect(informesApi.obtenerRelacionConsultas).toHaveBeenCalledWith('empresa1', 'centro1', '2026-01-01', '2026-12-31', {
+      sexo: 'Femenino',
+    });
+    // SheetJS se importa al pedir el Excel
+    await vi.waitFor(() => expect(xlsx.writeFile).toHaveBeenCalled());
+    expect(xlsx.aoa[0]).toHaveLength(18);
+    expect(xlsx.aoa[0][8]).toBe('SISTEMA');
+    expect(xlsx.aoa[1].slice(9, 11)).toEqual(['R070', 'DOLOR DE GARGANTA']);
+    expect(xlsx.writeFile.mock.calls[0][1]).toMatch(/^RelacionDeConsultas_/);
+    expect(informesApi.registrarExportacionDashboard).toHaveBeenCalledWith(
+      expect.objectContaining({ tipo: 'relacionConsultas', modo: 'download' }),
+    );
+    wrapper.unmount();
+  });
+
+  it('sin centro elegido la relación de consultas no se puede generar', async () => {
+    const wrapper = montar(undefined, { diagnosticos: true });
+    await flushPromises();
+    await wrapper.find('[data-test="informe-relacionConsultas"]').trigger('click');
+    expect(wrapper.find('[data-test="informe-motivo"]').text()).toContain('elige un centro');
+    expect(wrapper.find('[data-test="informe-descargar"]').attributes('disabled')).toBeDefined();
     wrapper.unmount();
   });
 });
