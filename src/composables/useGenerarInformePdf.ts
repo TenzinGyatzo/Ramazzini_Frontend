@@ -24,6 +24,7 @@ const TIPO_INFORME_API: Record<string, string> = {
   exploracionfisica: 'exploracionFisica',
   historiaclinica: 'historiaClinica',
   notamedica: 'notaMedica',
+  notaenfermeria: 'notaEnfermeria',
   notaaclaratoria: 'notaAclaratoria',
   controlprenatal: 'controlPrenatal',
   historiaotologica: 'historiaOtologica',

@@ -106,6 +106,7 @@ const documentTypeLabels = {
   certificado: "Certificado",
   certificadoExpedito: "Certificado Expedito",
   notaMedica: "Nota Médica",
+  notaEnfermeria: "Nota de Enfermería",
   notaAclaratoria: "Nota Aclaratoria",
   receta: "Receta",
   controlPrenatal: "Control Prenatal",

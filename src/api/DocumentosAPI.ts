@@ -110,6 +110,10 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/cuestionarioNordico`);
     },
 
+    getNotasEnfermeria(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/notaEnfermeria`);
+    },
+
     getEvaluacionSuenoVigilia(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/evaluacionSuenoVigilia`);
     },

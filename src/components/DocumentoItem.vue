@@ -216,6 +216,7 @@ const user = computed(() => userStore.user ?? {});
 // Composables de permisos — misma matriz que backend assertCanManageDocument
 const {
   canCreateDocument,
+  canAnularEliminarDocument,
   canAnularEliminarDocumentos,
   getRestrictionMessage,
   executeIfCanCreateDocument,
@@ -260,8 +261,8 @@ const documentoOrigenTipo = computed(() =>
 const canManageThisDocument = computed(() =>
   canCreateDocument(props.documentoTipo, documentoOrigenTipo.value),
 );
-const canAnularEliminarThisDocument = computed(
-  () => canManageThisDocument.value && canAnularEliminarDocumentos.value,
+const canAnularEliminarThisDocument = computed(() =>
+  canAnularEliminarDocument(props.documentoTipo, documentoOrigenTipo.value),
 );
 
 const handleEditDocument = (documentoId, documentoTipo) => {
@@ -2306,11 +2307,11 @@ const deleteAnularActionTooltip = computed(() => {
   if (adminNoPuedeEliminar.value) {
     return 'El Administrador de plataforma solo puede eliminar borradores';
   }
-  if (!canManageThisDocument.value) {
-    return getRestrictionMessage(props.documentoTipo);
-  }
   if (!canAnularEliminarThisDocument.value) {
-    return 'No tienes permiso para anular ni eliminar documentos';
+    // Si el documento se puede gestionar, lo que falta es el permiso de anular
+    return canManageThisDocument.value && !canAnularEliminarDocumentos.value
+      ? 'No tienes permiso para anular ni eliminar documentos'
+      : getRestrictionMessage(props.documentoTipo);
   }
   return isAnulacion.value ? 'Anular documento' : 'Eliminar documento';
 });

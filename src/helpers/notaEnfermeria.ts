@@ -194,3 +194,28 @@ export function nombreArchivoNotaEnfermeria(fechaDDMMYYYY: string, horaAtencion?
     ? `Nota Enfermeria ${fechaDDMMYYYY} ${hora}.pdf`
     : `Nota Enfermeria ${fechaDDMMYYYY}.pdf`;
 }
+
+/**
+ * Lo que se envía al servidor: sin tomas de signos vitales vacías, sin renglones de
+ * medicamento vacíos y sin el texto de «Otro» si ese procedimiento ya no está elegido.
+ */
+export function normalizarNotaEnfermeria<T extends Record<string, any>>(datos: T): T {
+  const nota: Record<string, any> = { ...datos };
+  if (!tomaConDatosNotaEnfermeria(nota.signosVitales)) delete nota.signosVitales;
+  const tomas = (nota.tomasControl ?? []).filter(tomaConDatosNotaEnfermeria);
+  if (tomas.length) nota.tomasControl = tomas;
+  else delete nota.tomasControl;
+  const medicamentos = (nota.medicamentos ?? [])
+    .filter((m: any) => m?.idInsumo || String(m?.nombre ?? '').trim())
+    .map((m: any) => {
+      const limpio = { ...m };
+      if (!limpio.via) delete limpio.via;
+      if (!String(limpio.dosis ?? '').trim()) delete limpio.dosis;
+      if (!limpio.hora) delete limpio.hora;
+      return limpio;
+    });
+  if (medicamentos.length) nota.medicamentos = medicamentos;
+  else delete nota.medicamentos;
+  if (!(nota.procedimientos ?? []).includes('otro')) delete nota.procedimientoOtro;
+  return nota as T;
+}

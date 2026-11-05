@@ -3,14 +3,15 @@ import { useUserStore } from '@/stores/user';
 import {
   type PermissionKey,
   DOCUMENT_PERMISSION_KEYS,
+  DOCUMENT_TYPES_SOLO_ENFERMERIA,
   RESULTADO_CLINICO_PERMISSION,
   canCreateDocumentType,
   canManageDocumentPermission,
   getDocumentRestrictionMessage,
   getPermissionBlockReason,
   hasBypassRole,
-  isDocumentBlockedForFirmante,
   isPermissionBlockedByRole,
+  mensajeBloqueoPorPerfil,
   isPermissionEditableForRole,
   resolvePermissionFlag,
 } from '@/constants/rolePermissionPolicy';
@@ -60,17 +61,34 @@ export function useRolePermissions() {
     return !canCreateDocument(documentType);
   }
 
+  /**
+   * Anular o eliminar: el permiso del documento y el de anular. Los documentos solo de
+   * enfermería no exigen además el perfil (los anula quien tenga el permiso, como en el servidor).
+   */
+  function canAnularEliminarDocument(
+    documentType: string,
+    documentoOrigenTipo?: string | null,
+  ): boolean {
+    const gestiona = DOCUMENT_TYPES_SOLO_ENFERMERIA.includes(documentType)
+      ? canManageDocumentPermission(
+          userRole.value,
+          userPermisos.value,
+          documentType,
+          userPerfilProfesional.value,
+          documentoOrigenTipo,
+        )
+      : canCreateDocument(documentType, documentoOrigenTipo);
+    return gestiona && canManagePermission('anularEliminarDocumentos');
+  }
+
   function getRestrictionMessage(documentType: string): string {
-    if (
-      isDocumentBlockedForFirmante(
+    return (
+      mensajeBloqueoPorPerfil(
         userRole.value,
         userPerfilProfesional.value,
         documentType,
-      )
-    ) {
-      return 'Los certificados médicos solo puede expedirlos un médico.';
-    }
-    return getDocumentRestrictionMessage(documentType);
+      ) || getDocumentRestrictionMessage(documentType)
+    );
   }
 
   function canAccessEmpresa(empresaId: string): boolean {
@@ -143,6 +161,7 @@ export function useRolePermissions() {
       DOCUMENT_PERMISSION_KEYS.every(canManageDocumentKey),
     ),
     canCreateDocument,
+    canAnularEliminarDocument,
     isDocumentRestricted,
     getRestrictionMessage,
     canAccessEmpresa,

@@ -1150,3 +1150,38 @@ export interface InformeLongitudinalAudiometrico {
   anuladoPor?: string;
   razonAnulacion?: string;
 }
+
+/** Nota de enfermería: atención de enfermería sin diagnóstico CIE-10 (helpers/notaEnfermeria.ts). */
+export interface NotaEnfermeria {
+    _id: string;
+    fechaNotaEnfermeria: string;
+    horaAtencion: string;
+    relacionTemporal: string;
+    motivoAtencion: string;
+    tipoProblema: string;
+    sistema: string;
+    origen: string;
+    destino: string;
+    habitusExterior: string;
+    signosVitales?: Record<string, number | string>;
+    tomasControl?: Record<string, number | string>[];
+    procedimientos?: string[];
+    procedimientoOtro?: string;
+    detalleProcedimientos?: string;
+    medicamentos?: {
+        idInsumo?: string;
+        nombre?: string;
+        cantidad: number;
+        uso: string;
+        via?: string;
+        dosis?: string;
+        hora?: string;
+    }[];
+    recomendaciones?: string;
+    observaciones?: string;
+    idTrabajador: string;
+    rutaPDF: string;
+    estado?: string;
+    createdBy?: string;
+    updatedBy?: string;
+}

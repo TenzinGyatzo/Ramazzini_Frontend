@@ -28,6 +28,7 @@ import type {
   TrastornoLimitePersonalidad,
   CuestionarioNordico,
   EvaluacionSuenoVigilia,
+  NotaEnfermeria,
   EventoSeguimientoCardiometabolico,
   InformeLongitudinalCardiometabolico,
   InformeLongitudinalAudiometrico,
@@ -45,6 +46,7 @@ export type DocumentsByYear = {
     exploracionesFisicas?: ExploracionFisica[];
     historiasClinicas?: HistoriaClinica[];
     notasMedicas?: NotaMedica[];
+    notasEnfermeria?: NotaEnfermeria[];
     notasAclaratorias?: NotaAclaratoria[];
     controlPrenatal?: ControlPrenatal[];
     historiaOtologica?: HistoriaOtologica[];
@@ -146,6 +148,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     exploracionFisica: 'exploracionesFisicas',
     historiaClinica: 'historiasClinicas',
     notaMedica: 'notasMedicas',
+    notaEnfermeria: 'notasEnfermeria',
     notaAclaratoria: 'notasAclaratorias',
     receta: 'recetas',
     constanciaAptitud: 'constanciasAptitud',
@@ -197,6 +200,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     'exploracionesFisicas',
     'historiasClinicas',
     'notasMedicas',
+    'notasEnfermeria',
     'notasAclaratorias',
     'controlPrenatal',
     'historiaOtologica',
@@ -314,6 +318,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
       exploracionesFisicas: "fechaExploracionFisica",
       historiasClinicas: "fechaHistoriaClinica",
       notasMedicas: "fechaNotaMedica",
+      notasEnfermeria: "fechaNotaEnfermeria",
       notasAclaratorias: "fechaNotaAclaratoria",
       controlPrenatal: "fechaInicioControlPrenatal",
       historiaOtologica: "fechaHistoriaOtologica",

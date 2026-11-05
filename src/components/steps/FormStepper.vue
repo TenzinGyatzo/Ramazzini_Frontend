@@ -13,6 +13,7 @@ import DocumentosAPI from '@/api/DocumentosAPI';
 import { generarInformePdf } from '@/composables/useGenerarInformePdf';
 import { PASOS_NORDICO } from '@/helpers/cuestionarioNordico';
 import { PASOS_SUENO_VIGILIA, normalizarEvaluacionSuenoVigilia } from '@/helpers/evaluacionSuenoVigilia';
+import { normalizarNotaEnfermeria } from '@/helpers/notaEnfermeria';
 import { usePdfGenerationStore } from '@/stores/pdfGeneration';
 import { permitirSalidaTrasGuardar } from '@/composables/useCapturaSinGuardar';
 
@@ -383,6 +384,11 @@ import Step4CuestionarioNordico from '../steps/cuestionarioNordicoSteps/Step4.vu
 import Step5CuestionarioNordico from '../steps/cuestionarioNordicoSteps/Step5.vue';
 import Step6CuestionarioNordico from '../steps/cuestionarioNordicoSteps/Step6.vue';
 import Step1EvaluacionSuenoVigilia from '../steps/evaluacionSuenoVigiliaSteps/Step1.vue';
+import Step1NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step1.vue';
+import Step2NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step2.vue';
+import Step3NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step3.vue';
+import Step4NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step4.vue';
+import Step5NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step5.vue';
 import Step2EvaluacionSuenoVigilia from '../steps/evaluacionSuenoVigiliaSteps/Step2.vue';
 import Step3EvaluacionSuenoVigilia from '../steps/evaluacionSuenoVigiliaSteps/Step3.vue';
 import Step4EvaluacionSuenoVigilia from '../steps/evaluacionSuenoVigiliaSteps/Step4.vue';
@@ -532,6 +538,7 @@ export default {
         'exploracionFisica': 'exploracionesFisicas',
         'historiaClinica': 'historiasClinicas',
         'notaMedica': 'notasMedicas',
+        'notaEnfermeria': 'notasEnfermeria',
         'controlPrenatal': 'controlPrenatal',
         'historiaOtologica': 'historiaOtologica',
         'previoEspirometria': 'previoEspirometria',
@@ -1296,6 +1303,14 @@ export default {
           { component: Step5CuestionarioNordico, name: PASOS_NORDICO[4].nombre },
           { component: Step6CuestionarioNordico, name: PASOS_NORDICO[5].nombre },
         ]);
+      } else if (documentos.currentTypeOfDocument === 'notaEnfermeria') {
+        stepsStore.setSteps([
+          { component: Step1NotaEnfermeria, name: 'Datos de la atención' },
+          { component: Step2NotaEnfermeria, name: 'Clasificación' },
+          { component: Step3NotaEnfermeria, name: 'Valoración' },
+          { component: Step4NotaEnfermeria, name: 'Intervención' },
+          { component: Step5NotaEnfermeria, name: 'Cierre' },
+        ]);
       } else if (documentos.currentTypeOfDocument === 'evaluacionSuenoVigilia') {
         stepsStore.setSteps([
           { component: Step1EvaluacionSuenoVigilia, name: PASOS_SUENO_VIGILIA[0].nombre },
@@ -1610,6 +1625,9 @@ export default {
         datosLimpios = limpiarValoresUndefined(formData.formDataCuestionarioNordico);
         // El resultado lo calcula el servidor al guardar
         delete datosLimpios.resultado;
+      } else if (documentos.currentTypeOfDocument === 'notaEnfermeria') {
+        // Sin tomas ni renglones vacíos: el servidor no acepta tomas sin hora ni medicamentos sin nombre
+        datosLimpios = normalizarNotaEnfermeria(limpiarValoresUndefined(formData.formDataNotaEnfermeria));
       } else if (documentos.currentTypeOfDocument === 'evaluacionSuenoVigilia') {
         // Quita el seguimiento que ya no aplica y el resultado (lo calcula el servidor)
         datosLimpios = normalizarEvaluacionSuenoVigilia(

@@ -42,6 +42,8 @@ import ModalDatosProfesionales from '@/components/modals/ModalDatosProfesionales
 import TreatmentConsentModal from '@/components/TreatmentConsentModal.vue';
 import ModalInasistenciasCardiometabolicas from '@/components/ModalInasistenciasCardiometabolicas.vue';
 import ModalOrdenDocumentos from '@/components/ModalOrdenDocumentos.vue';
+import ModalNotaEnfermeriaSoloEnfermeria from '@/components/ModalNotaEnfermeriaSoloEnfermeria.vue';
+import { resolveFirmanteTipo } from '@/constants/rolePermissionPolicy';
 import ModalRiesgos from '@/components/ModalRiesgos.vue';
 import ModalIncapacidades from '@/components/incapacidades/ModalIncapacidades.vue';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
@@ -523,6 +525,7 @@ const documentTypeLabels = {
   certificado: "Certificado",
   documentoExterno: "Documento Externo",
   notaMedica: "Nota Médica",
+  notaEnfermeria: "Nota de Enfermería",
   historiaOtologica: "Historia Otologica",
   previoEspirometria: "Previo Espirometria",
   eventoSeguimientoCardiometabolico: "Evento de Seguimiento Cardiometabólico",
@@ -783,6 +786,15 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
       showSubscriptionModal.value = true;
       return;
     }
+  }
+
+  if (
+    routeName === 'crear-documento' &&
+    params.tipoDocumento === 'notaEnfermeria' &&
+    resolveFirmanteTipo(userStore.user?.role, userStore.user?.perfilProfesional) === 'medico'
+  ) {
+    avisoNotaEnfermeria.value = true;
+    return;
   }
 
   if (routeName === 'crear-documento' && !canCreateDocument(params.tipoDocumento as string)) {
@@ -1073,7 +1085,15 @@ const tiposDocumentoCrear = [
   { tipo: 'certificado', nombre: 'Certificado', descripcion: 'Certificación médica', icono: 'fas fa-certificate' },
   { tipo: 'antidoping', nombre: 'Antidoping', descripcion: 'Prueba de sustancias', icono: 'fas fa-flask' },
   { tipo: 'notaMedica', nombre: 'Nota Médica', descripcion: 'Consultas', icono: 'fas fa-stethoscope' },
+  { tipo: 'notaEnfermeria', nombre: 'Nota de Enfermería', descripcion: 'Atención de enfermería', icono: 'fas fa-user-nurse' },
 ];
+
+// A los médicos, la Nota de enfermería les ofrece la Nota médica en lugar de solo negarse
+const avisoNotaEnfermeria = ref(false);
+const abrirNotaMedicaDesdeAviso = () => {
+  avisoNotaEnfermeria.value = false;
+  crearDocumento('notaMedica');
+};
 
 // Contadores de la fila "Registrar": dicen qué hay capturado sin abrir cada ventana
 // Incapacidades: módulo encendido, empresa elegida (incluye México) y el permiso de riesgos de trabajo
@@ -1130,6 +1150,11 @@ const crearDocumento = (tipoDocumento: string) =>
   <Transition appear mode="out-in" name="slide-up">
     <div>
       <!-- Modales -->
+      <ModalNotaEnfermeriaSoloEnfermeria
+        :open="avisoNotaEnfermeria"
+        @cerrar="avisoNotaEnfermeria = false"
+        @abrir-nota-medica="abrirNotaMedicaDesdeAviso"
+      />
       <Transition appear name="fade">
         <ModalSuscripcion v-if="showSubscriptionModal" 
           @closeModal="showSubscriptionModal = false"/>

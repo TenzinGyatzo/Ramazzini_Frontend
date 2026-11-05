@@ -26,6 +26,7 @@ export function usePermissionRestrictions() {
     canManageAnyDocumentType,
     canManageAllDocumentTypes,
     canCreateDocument,
+    canAnularEliminarDocument,
     isDocumentRestricted,
     getRestrictionMessage,
     canAccessEmpresa,
@@ -149,7 +150,11 @@ export function usePermissionRestrictions() {
     callback: () => void,
     documentoOrigenTipo?: string | null,
   ) => {
-    if (!validateDocumentCreation(documentType, documentoOrigenTipo)) return;
+    // Los documentos solo de enfermería los anula quien tenga el permiso, sin importar el perfil
+    if (!canAnularEliminarDocument(documentType, documentoOrigenTipo) && canAnularEliminarDocumentos.value) {
+      validateDocumentCreation(documentType, documentoOrigenTipo);
+      return;
+    }
     if (!canAnularEliminarDocumentos.value) {
       toast?.open({
         message: 'No tienes permiso para anular ni eliminar documentos.',
@@ -207,6 +212,7 @@ export function usePermissionRestrictions() {
     canManageAnyDocumentType,
     canManageAllDocumentTypes,
     canCreateDocument,
+    canAnularEliminarDocument,
     isDocumentRestricted,
     getRestrictionMessage,
     canAccessEmpresa,

@@ -35,6 +35,10 @@ const ICONOS: Record<string, IconoTipoDocumento> = {
     icono: 'fas fa-stethoscope',
     clases: 'bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300',
   },
+  notaEnfermeria: {
+    icono: 'fas fa-user-nurse',
+    clases: 'bg-sky-100 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300',
+  },
   receta: {
     icono: 'fas fa-prescription-bottle-medical',
     clases: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300',

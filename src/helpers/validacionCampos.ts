@@ -833,6 +833,46 @@ const camposRequeridosPorTipo: Record<string, Array<{
 
   // Contexto, las 12 preguntas y la seguridad son obligatorios; el seguimiento, solo si hay síntomas.
   // Las 12 preguntas y la seguridad inician con respuesta al abrir su paso; el contexto no.
+  notaEnfermeria: [
+    { campo: 'fechaNotaEnfermeria', nombre: 'Fecha de la atención', tipo: 'fecha', paso: 1, validacion: validarFecha },
+    {
+      campo: 'horaAtencion',
+      nombre: 'Hora de la atención',
+      tipo: 'hora',
+      paso: 1,
+      validacion: (valor: any) => typeof valor === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(valor),
+    },
+    { campo: 'relacionTemporal', nombre: 'Primera vez o subsecuente', tipo: 'seleccion', paso: 1 },
+    { campo: 'motivoAtencion', nombre: 'Motivo de atención', tipo: 'texto', paso: 1 },
+    { campo: 'tipoProblema', nombre: 'Tipo de problema', tipo: 'seleccion', paso: 2 },
+    { campo: 'sistema', nombre: 'Aparato o sistema', tipo: 'seleccion', paso: 2 },
+    { campo: 'origen', nombre: 'Origen de la atención', tipo: 'seleccion', paso: 2 },
+    { campo: 'habitusExterior', nombre: 'Aspecto general (hábitus exterior)', tipo: 'texto', paso: 3 },
+    {
+      campo: 'tomasControl',
+      nombre: 'Hora de cada toma de control',
+      tipo: 'hora',
+      paso: 3,
+      validacion: (tomas: any) => (tomas ?? []).every((t: any) => !!t?.hora),
+    },
+    {
+      campo: 'procedimientoOtro',
+      nombre: 'Descripción del procedimiento «Otro»',
+      tipo: 'texto',
+      paso: 4,
+      validacion: (valor: any, datos: any) =>
+        !(datos?.procedimientos ?? []).includes('otro') || !!String(valor ?? '').trim(),
+    },
+    {
+      campo: 'medicamentos',
+      nombre: 'Cantidad de cada medicamento',
+      tipo: 'numero',
+      paso: 4,
+      validacion: (medicamentos: any) =>
+        (medicamentos ?? []).every((m: any) => Number.isInteger(m?.cantidad) && m.cantidad >= 1),
+    },
+    { campo: 'destino', nombre: 'Destino del trabajador', tipo: 'seleccion', paso: 5 },
+  ],
   evaluacionSuenoVigilia: [
     { campo: 'fechaEvaluacionSuenoVigilia', nombre: 'Fecha de la evaluación de sueño y vigilia', tipo: 'fecha', paso: 1, validacion: validarFecha },
     {
@@ -1230,6 +1270,7 @@ export const DOCUMENT_TYPE_DATE_FIELDS: Record<string, string> = {
   exploracionFisica: 'fechaExploracionFisica',
   historiaClinica: 'fechaHistoriaClinica',
   notaMedica: 'fechaNotaMedica',
+  notaEnfermeria: 'fechaNotaEnfermeria',
   notaAclaratoria: 'fechaNotaAclaratoria',
   controlPrenatal: 'fechaInicioControlPrenatal',
   historiaOtologica: 'fechaHistoriaOtologica',

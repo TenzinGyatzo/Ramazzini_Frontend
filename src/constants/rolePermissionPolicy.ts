@@ -171,6 +171,7 @@ export const DOCUMENT_TYPES_BY_PERMISSION: Record<
     'certificadoExpedito',
     'receta',
     'notaMedica',
+    'notaEnfermeria',
   ],
   gestionarDocumentosEvaluacion: [
     'historiaClinica',
@@ -247,6 +248,7 @@ const TIPO_POR_NOMBRE_ALTERNO: Record<string, string> = {
   historiasClinicas: 'historiaClinica',
   notasAclaratorias: 'notaAclaratoria',
   notasMedicas: 'notaMedica',
+  notasEnfermeria: 'notaEnfermeria',
   recetas: 'receta',
 };
 
@@ -293,7 +295,7 @@ export const GRUPOS_PERMISOS_DOCUMENTOS: readonly GrupoPermisosDocumentos[] = [
     id: 'consulta',
     titulo: 'Consulta y prescripción',
     descripcion: 'Notas médicas de consulta y recetas.',
-    tipos: ['notaMedica', 'receta'],
+    tipos: ['notaMedica', 'notaEnfermeria', 'receta'],
   },
   {
     id: 'evaluaciones',
@@ -463,15 +465,37 @@ export function resolveFirmanteTipo(
   }
 }
 
+/**
+ * Documentos que solo elabora quien firma como enfermera (igual que el servidor). Aplica a
+ * crear, editar y finalizar; consultar, anular y la nota aclaratoria siguen las reglas de siempre.
+ */
+export const DOCUMENT_TYPES_SOLO_ENFERMERIA: readonly string[] = ['notaEnfermeria'];
+
 export function isDocumentBlockedForFirmante(
   role: string | undefined | null,
   perfilProfesional: string | null | undefined,
   documentType: string,
 ): boolean {
-  return (
-    DOCUMENT_TYPES_SOLO_MEDICO.includes(documentType) &&
-    resolveFirmanteTipo(role, perfilProfesional) === 'enfermera'
-  );
+  const firmante = resolveFirmanteTipo(role, perfilProfesional);
+  if (DOCUMENT_TYPES_SOLO_ENFERMERIA.includes(documentType)) {
+    return firmante !== 'enfermera';
+  }
+  return DOCUMENT_TYPES_SOLO_MEDICO.includes(documentType) && firmante === 'enfermera';
+}
+
+/** Por qué el perfil no permite elaborar el documento; vacío si el perfil no lo impide. */
+export function mensajeBloqueoPorPerfil(
+  role: string | undefined | null,
+  perfilProfesional: string | null | undefined,
+  documentType: string,
+): string {
+  if (!isDocumentBlockedForFirmante(role, perfilProfesional, documentType)) return '';
+  if (DOCUMENT_TYPES_SOLO_ENFERMERIA.includes(documentType)) {
+    return resolveFirmanteTipo(role, perfilProfesional) === 'medico'
+      ? 'La Nota de enfermería es exclusiva del personal de enfermería. Para registrar esta atención usa la Nota médica.'
+      : 'La Nota de enfermería es exclusiva del personal de enfermería.';
+  }
+  return 'Los certificados médicos solo puede expedirlos un médico.';
 }
 
 export function isPermissionBlockedByRole(
@@ -668,6 +692,7 @@ export const DOCUMENT_DISPLAY_NAMES: Record<string, string> = {
   certificadoExpedito: 'Certificado Expedito',
   receta: 'Receta',
   notaMedica: 'Nota Médica',
+  notaEnfermeria: 'Nota de Enfermería',
   historiaClinica: 'Historia Clínica',
   exploracionFisica: 'Exploración Física',
   examenVista: 'Examen de la Vista',

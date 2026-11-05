@@ -39,6 +39,7 @@ import VisualizadorCuestionarioProdromalBreve from '@/components/steps/Visualiza
 import VisualizadorTrastornoLimitePersonalidad from '@/components/steps/VisualizadorTrastornoLimitePersonalidad.vue';
 import VisualizadorCuestionarioNordico from '@/components/steps/VisualizadorCuestionarioNordico.vue';
 import VisualizadorEvaluacionSuenoVigilia from '@/components/steps/VisualizadorEvaluacionSuenoVigilia.vue';
+import VisualizadorNotaEnfermeria from '@/components/steps/VisualizadorNotaEnfermeria.vue';
 import {
   PASO_SEGURIDAD_SUENO_VIGILIA,
   PREGUNTAS_SUENO_VIGILIA,
@@ -160,6 +161,7 @@ const formularioPorTipo = (tipo) => ({
   exploracionFisica: formData.formDataExploracionFisica,
   historiaClinica: formData.formDataHistoriaClinica,
   notaMedica: formData.formDataNotaMedica,
+  notaEnfermeria: formData.formDataNotaEnfermeria,
   notaAclaratoria: formData.formDataNotaAclaratoria,
   controlPrenatal: formData.formDataControlPrenatal,
   historiaOtologica: formData.formDataHistoriaOtologica,
@@ -1029,6 +1031,17 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           </div>
           <div class="w-full xl:w-3/5">
             <VisualizadorCuestionarioNordico />
+          </div>
+        </div>
+      </Transition>
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'notaEnfermeria'"
+          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-2/5">
+            <FormStepper />
+          </div>
+          <div class="w-full xl:w-3/5">
+            <VisualizadorNotaEnfermeria />
           </div>
         </div>
       </Transition>
