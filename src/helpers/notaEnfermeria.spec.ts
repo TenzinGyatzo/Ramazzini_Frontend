@@ -100,3 +100,26 @@ describe('campos obligatorios de la nota de enfermería', () => {
     ]);
   });
 });
+
+describe('nota de enfermería en el expediente', () => {
+  it('el archivo lleva la hora, igual que el servidor', async () => {
+    const { obtenerNombreArchivo } = await import('@/helpers/rutas');
+    expect(obtenerNombreArchivo({ horaAtencion: '09:30' }, 'Nota Enfermeria', '05-11-2026')).toBe(
+      'Nota Enfermeria 05-11-2026 0930.pdf',
+    );
+    expect(obtenerNombreArchivo({}, 'Nota Enfermeria', '05-11-2026')).toBe('Nota Enfermeria 05-11-2026.pdf');
+  });
+
+  it('va después de la nota médica y se agrupa sola desde dos notas', async () => {
+    const { TIPOS_DOCUMENTO_EXPEDIENTE, REGLAS_SUBGRUPOS_AUTOMATICOS } = await import('@/helpers/documentosExpediente');
+    const tipos = TIPOS_DOCUMENTO_EXPEDIENTE.map((d) => d.tipo);
+    expect(tipos.indexOf('notaEnfermeria')).toBe(tipos.indexOf('notaMedica') + 1);
+    const regla = REGLAS_SUBGRUPOS_AUTOMATICOS.find((r) => r.id === 'auto-notas-enfermeria')!;
+    expect(regla.aplica((t) => (t === 'notaEnfermeria' ? 1 : 0))).toBe(false);
+    expect(regla.aplica((t) => (t === 'notaEnfermeria' ? 2 : 0))).toBe(true);
+  });
+
+  it('un médico puede hacerle nota aclaratoria', () => {
+    expect(canCreateDocumentType('Médico', permisos, 'notaAclaratoria', null, 'notaEnfermeria')).toBe(true);
+  });
+});

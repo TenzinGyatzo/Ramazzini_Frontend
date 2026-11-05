@@ -1037,6 +1037,7 @@ const totalDocumentosCreados = computed(() => {
       (yearData.certificados?.length || 0) +
       (yearData.certificadosExpedito?.length || 0) +
       (yearData.notasMedicas?.length || 0) +
+      (yearData.notasEnfermeria?.length || 0) +
       (controlPrenatalEnabled.value ? (yearData.controlPrenatal?.length || 0) : 0) +
       (yearData.historiaOtologica?.length || 0) +
       (yearData.previoEspirometria?.length || 0) +

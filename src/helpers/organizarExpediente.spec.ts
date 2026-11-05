@@ -310,6 +310,7 @@ describe('subgrupos automáticos', () => {
   it('las reglas son las acordadas y cada tipo pertenece a una sola', () => {
     expect(REGLAS_SUBGRUPOS_AUTOMATICOS.map((r) => r.nombre)).toEqual([
       'Notas médicas',
+      'Notas de enfermería',
       'Seguimiento cardiometabólico',
       'Auditivo',
       'Salud mental',

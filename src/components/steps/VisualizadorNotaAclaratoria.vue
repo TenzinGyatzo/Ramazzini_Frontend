@@ -40,6 +40,7 @@ const tipoNombres = {
   'exploracionesFisicas': 'Exploración Física',
   'historiasClinicas': 'Historia Clínica',
   'notasMedicas': 'Nota Médica',
+  'notasEnfermeria': 'Nota de Enfermería',
   'controlPrenatal': 'Control Prenatal',
   'historiaOtologica': 'Historia Otológica',
   'previoEspirometria': 'Previo Espirometría',

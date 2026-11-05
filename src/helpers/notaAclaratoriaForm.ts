@@ -13,6 +13,7 @@ export const fechaCamposDocumentoOrigen: Record<string, string> = {
   exploracionesFisicas: 'fechaExploracionFisica',
   historiasClinicas: 'fechaHistoriaClinica',
   notasMedicas: 'fechaNotaMedica',
+  notasEnfermeria: 'fechaNotaEnfermeria',
   controlPrenatal: 'fechaInicioControlPrenatal',
   historiaOtologica: 'fechaHistoriaOtologica',
   previoEspirometria: 'fechaPrevioEspirometria',

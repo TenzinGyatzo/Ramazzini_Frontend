@@ -27,6 +27,7 @@ const tipoSingularAPlural: Record<string, string> = {
   'exploracionFisica': 'exploracionesFisicas',
   'historiaClinica': 'historiasClinicas',
   'notaMedica': 'notasMedicas',
+  'notaEnfermeria': 'notasEnfermeria',
   'controlPrenatal': 'controlPrenatal',
   'historiaOtologica': 'historiaOtologica',
   'previoEspirometria': 'previoEspirometria',

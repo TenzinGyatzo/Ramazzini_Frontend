@@ -22,6 +22,7 @@ export const FUSION_DOCUMENTO_DISPLAY: FusionDocumentoDisplay[] = [
   { modelName: 'CertificadoExpedito', labelSingular: 'Certificado Expedito', labelPlural: 'Certificados Expedito', icon: 'fas fa-certificate', iconClass: 'text-indigo-600', section: 'expediente' },
   { modelName: 'Receta', labelSingular: 'Receta Médica', labelPlural: 'Recetas Médicas', icon: 'fas fa-prescription-bottle-medical', iconClass: 'text-rose-600', section: 'expediente' },
   { modelName: 'NotaMedica', labelSingular: 'Nota Médica', labelPlural: 'Notas Médicas', icon: 'fas fa-stethoscope', iconClass: 'text-pink-600', section: 'expediente' },
+  { modelName: 'NotaEnfermeria', labelSingular: 'Nota de Enfermería', labelPlural: 'Notas de Enfermería', icon: 'fas fa-user-nurse', iconClass: 'text-sky-600', section: 'expediente' },
   { modelName: 'PrevioEspirometria', labelSingular: 'Previo Espirometría', labelPlural: 'Previos Espirometría', icon: 'fas fa-lungs', iconClass: 'text-sky-600', section: 'expediente' },
   { modelName: 'ControlPrenatal', labelSingular: 'Control Prenatal', labelPlural: 'Controles Prenatales', icon: 'fas fa-baby', iconClass: 'text-pink-600', section: 'expediente' },
   { modelName: 'EntrevistaPsicologica', labelSingular: 'Entrevista Psicológica', labelPlural: 'Entrevistas Psicológicas', icon: 'fa-regular fa-comments', iconClass: 'text-slate-600', section: 'expediente' },

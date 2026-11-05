@@ -70,6 +70,13 @@ import DocumentHoverPreview from './DocumentHoverPreview.vue';
 import { usePermissionRestrictions } from '@/composables/usePermissionRestrictions';
 import { useUserStore } from '@/stores/user';
 import { useBorradoresNotaMedica } from '@/composables/useBorradoresNotaMedica';
+import {
+  DESTINOS_NOTA_ENFERMERIA,
+  SISTEMAS_NOTA_ENFERMERIA,
+  TIPOS_PROBLEMA_NOTA_ENFERMERIA,
+  etiquetaNotaEnfermeria,
+  nombreArchivoNotaEnfermeria,
+} from '@/helpers/notaEnfermeria';
 
 const router = useRouter();
 
@@ -160,6 +167,7 @@ const obtenerNombreTipoDocumento = (tipo) => {
     'exploracionFisica': 'Exploración Física',
     'historiaClinica': 'Historia Clínica',
     'notaMedica': 'Nota Médica',
+    'notaEnfermeria': 'Nota de Enfermería',
     'controlPrenatal': 'Control Prenatal',
     'historiaOtologica': 'Historia Otológica',
     'previoEspirometria': 'Previo Espirometría',
@@ -1662,6 +1670,10 @@ const descargarPdfActual = async () => {
                     documento = props.notaMedica;
                     tipoDocumento = 'Nota Medica';
                     break;
+                case 'notaenfermeria':
+                    documento = props.notaEnfermeria;
+                    tipoDocumento = 'Nota Enfermeria';
+                    break;
                 case 'controlprenatal':
                     documento = props.controlPrenatal;
                     tipoDocumento = 'Control Prenatal';
@@ -1866,6 +1878,7 @@ const props = defineProps({
     exploracionFisica: [Object, String],
     historiaClinica: [Object, String],
     notaMedica: [Object, String],
+    notaEnfermeria: [Object, String],
     notaAclaratoria: [Object, String],
     controlPrenatal: [Object, String],
     historiaOtologica: [Object, String],
@@ -1902,10 +1915,29 @@ const notaMedicaBorradorPendiente = computed(() => {
   return getBorradorPendiente(props.notaMedica._id);
 });
 
+/** Fila del expediente: «Tipo de problema · Sistema» y el destino. */
+const clasificacionNotaEnfermeria = computed(() => {
+  const nota = props.notaEnfermeria;
+  if (!nota || typeof nota !== 'object') return '';
+  return [
+    etiquetaNotaEnfermeria(TIPOS_PROBLEMA_NOTA_ENFERMERIA, nota.tipoProblema),
+    etiquetaNotaEnfermeria(SISTEMAS_NOTA_ENFERMERIA, nota.sistema),
+  ].filter(Boolean).join(' · ');
+});
+const destinoNotaEnfermeria = computed(() => {
+  const nota = props.notaEnfermeria;
+  return nota && typeof nota === 'object' ? etiquetaNotaEnfermeria(DESTINOS_NOTA_ENFERMERIA, nota.destino) : '';
+});
+const archivoNotaEnfermeria = computed(() => {
+  const nota = props.notaEnfermeria;
+  if (!nota || typeof nota !== 'object') return '';
+  return nombreArchivoNotaEnfermeria(convertirFechaISOaDDMMYYYY(nota.fechaNotaEnfermeria), nota.horaAtencion);
+});
+
 const currentDocumentData = computed(() => {
     return props.antidoping || props.aptitud || props.audiometria || props.constanciaAptitud ||
            props.certificado || props.certificadoExpedito || props.receta || props.documentoExterno ||
-           props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica ||
+           props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica || props.notaEnfermeria ||
            props.notaAclaratoria || props.controlPrenatal || props.historiaOtologica || props.previoEspirometria ||
            props.entrevistaPsicologica || props.trastornosEstadoAnimo || props.cuestionarioProdromalBreve || props.trastornoLimitePersonalidad || props.cuestionarioNordico || props.evaluacionSuenoVigilia ||
            props.eventoSeguimientoCardiometabolico || props.informeLongitudinalCardiometabolico ||
@@ -2047,6 +2079,7 @@ const fechaCamposOrigen = {
     'exploracionesFisicas': 'fechaExploracionFisica',
     'historiasClinicas': 'fechaHistoriaClinica',
     'notasMedicas': 'fechaNotaMedica',
+    'notasEnfermeria': 'fechaNotaEnfermeria',
     'controlPrenatal': 'fechaInicioControlPrenatal',
     'historiaOtologica': 'fechaHistoriaOtologica',
     'previoEspirometria': 'fechaPrevioEspirometria',
@@ -2075,6 +2108,7 @@ const tipoSingularAPlural = {
     'exploracionFisica': 'exploracionesFisicas',
     'historiaClinica': 'historiasClinicas',
     'notaMedica': 'notasMedicas',
+    'notaEnfermeria': 'notasEnfermeria',
     'controlPrenatal': 'controlPrenatal',
     'historiaOtologica': 'historiaOtologica',
     'previoEspirometria': 'previoEspirometria',
@@ -2329,6 +2363,7 @@ const documentoNombre = computed(() => {
     if (props.exploracionFisica) return 'Exploración Física';
     if (props.historiaClinica) return 'Historia Clínica';
     if (props.notaMedica) return 'Nota Médica';
+    if (props.notaEnfermeria) return 'Nota de Enfermería';
     if (props.entrevistaPsicologica) return 'Entrevista Psicológica';
     if (props.trastornosEstadoAnimo) return 'Trastornos Estado Ánimo';
     if (props.cuestionarioProdromalBreve) return 'Cuestionario Prodromal Breve';
@@ -2953,6 +2988,7 @@ const construirRutaYNombrePDF = () => {
     'exploracionfisica': props.exploracionFisica,
     'historiaclinica': props.historiaClinica,
     'notamedica': props.notaMedica,
+    'notaenfermeria': props.notaEnfermeria,
     'notaaclaratoria': props.notaAclaratoria,
     'controlprenatal': props.controlPrenatal,
     'historiaotologica': props.historiaOtologica,
@@ -2974,7 +3010,7 @@ const construirRutaYNombrePDF = () => {
     return { ruta: null, nombre: null, updatedAt: null };
   }
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaCuestionarioNordico || doc?.fechaEvaluacionSuenoVigilia || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaEnfermeria || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaCuestionarioNordico || doc?.fechaEvaluacionSuenoVigilia || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
 
   // Nombres de documentos (DEBEN coincidir con los del backend para construir rutas correctas)
   const tiposDocumentos = {
@@ -2989,6 +3025,7 @@ const construirRutaYNombrePDF = () => {
     'exploracionfisica': 'Exploracion Fisica',
     'historiaclinica': 'Historia Clinica',
     'notamedica': 'Nota Medica',
+    'notaenfermeria': 'Nota Enfermeria',
     'notaaclaratoria': 'Nota Aclaratoria',
     'controlprenatal': 'Control Prenatal',
     'historiaotologica': 'Historia Otologica',
@@ -3011,6 +3048,9 @@ const construirRutaYNombrePDF = () => {
   let nombreArchivo;
   if (tipoSinEspacios === 'notaaclaratoria' && doc) {
     nombreArchivo = obtenerNombreArchivo(doc, 'Nota Aclaratoria', fechaFormateada, documentos);
+  } else if (tipoSinEspacios === 'notaenfermeria' && fecha) {
+    // Lleva la hora: puede haber varias atenciones el mismo día
+    nombreArchivo = nombreArchivoNotaEnfermeria(fechaFormateada, doc.horaAtencion);
   } else {
     nombreArchivo = fecha ? `${tipoDocumentoFormateado} ${fechaFormateada}.pdf` : `${tipoDocumentoFormateado}.pdf`;
   }
@@ -4462,6 +4502,84 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                     </div>
                 </div>
 
+                <!-- Nota de Enfermería -->
+                <div v-if="typeof notaEnfermeria === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <div class="mr-4 flex-shrink-0 flex items-center gap-1">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
+                            :class="[
+                                isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
+                                isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                            ]"
+                            type="checkbox" :checked="isSelected"
+                            :disabled="!isDeletableInBulkMode"
+                            @change="(event) => handleCheckboxChange(event, notaEnfermeria, 'Nota Enfermeria')">
+                        <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
+                    </div>
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
+                        @click="abrirPdf(
+                            `${notaEnfermeria.rutaPDF}`,
+                            archivoNotaEnfermeria,
+                            notaEnfermeria.updatedAt ? new Date(notaEnfermeria.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${notaEnfermeria.rutaPDF}`,
+                            archivoNotaEnfermeria,
+                            notaEnfermeria.updatedAt ? new Date(notaEnfermeria.updatedAt).getTime() : null,
+                            'Nota Enfermeria')"
+                        @mouseleave="handleHoverLeave">
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-sky-100 rounded-lg mr-3 group-hover:bg-sky-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fas fa-user-nurse text-sky-600 text-lg"></i>
+                        </div>
+                        <div class="sm:w-72 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duration-200 flex items-center max-[390px]:text-base">
+                                    Nota de Enfermería
+                                </h3>
+                                <BadgeNotaAclaratoria
+                                    v-if="tieneNotasAclaratorias"
+                                    :documentoId="documentoId"
+                                    :documentoTipo="documentoTipo"
+                                    class="hidden sm:flex ml-2"
+                                />
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(notaEnfermeria.fechaNotaEnfermeria) }}
+                                    <span v-if="notaEnfermeria.horaAtencion" class="ml-1">{{ notaEnfermeria.horaAtencion }}</span>
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="notaEnfermeria.estado"
+                                    :fechaFinalizacion="notaEnfermeria.fechaFinalizacion"
+                                    :finalizadoPor="notaEnfermeria.finalizadoPor"
+                                    :fechaAnulacion="notaEnfermeria.fechaAnulacion"
+                                    :anuladoPor="notaEnfermeria.anuladoPor"
+                                    :razonAnulacion="notaEnfermeria.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+                        <div v-if="clasificacionNotaEnfermeria" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
+                            <div class="text-sm">
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Clasificación</p>
+                                    <p class="font-medium text-gray-800 text-sm truncate max-w-full" :title="clasificacionNotaEnfermeria">{{ clasificacionNotaEnfermeria }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="destinoNotaEnfermeria" class="hidden xl:block mr-4 flex-shrink-0 min-w-0">
+                            <div class="text-sm">
+                                <div class="px-3 border-l border-gray-200 w-fit max-w-dynamic-base">
+                                    <p class="text-gray-500 text-[11px] font-medium uppercase tracking-wide leading-tight">Destino</p>
+                                    <p class="font-medium text-gray-800 text-sm truncate max-w-full" :title="destinoNotaEnfermeria">{{ destinoNotaEnfermeria }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Receta Médica -->
                 <div v-if="typeof receta === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
                     <!-- Checkbox mejorado -->
@@ -5629,6 +5747,7 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                     'Exploracion Fisica': exploracionFisica,
                     'Historia Clinica': historiaClinica,
                     'Nota Medica': notaMedica,
+                    'Nota Enfermeria': notaEnfermeria,
                     'Nota Aclaratoria': notaAclaratoria,
                     'Control Prenatal': controlPrenatal,
                     'Historia Otologica': historiaOtologica,

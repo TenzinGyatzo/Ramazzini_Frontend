@@ -32,6 +32,7 @@ export const TIPOS_DOCUMENTO_EXPEDIENTE: readonly TipoDocumentoExpediente[] = [
   { clave: 'previoEspirometria', tipo: 'previoEspirometria', etiquetaRuta: 'Previo Espirometria', campoFecha: 'fechaPrevioEspirometria' },
   { clave: 'documentosExternos', tipo: 'documentoExterno', etiquetaRuta: 'Documento Externo', campoFecha: 'fechaDocumento' },
   { clave: 'notasMedicas', tipo: 'notaMedica', etiquetaRuta: 'Nota Medica', campoFecha: 'fechaNotaMedica' },
+  { clave: 'notasEnfermeria', tipo: 'notaEnfermeria', etiquetaRuta: 'Nota Enfermeria', campoFecha: 'fechaNotaEnfermeria' },
   { clave: 'controlPrenatal', tipo: 'controlPrenatal', etiquetaRuta: 'Control Prenatal', campoFecha: 'fechaInicioControlPrenatal' },
   { clave: 'certificadosExpedito', tipo: 'certificadoExpedito', etiquetaRuta: 'Certificado Expedito', campoFecha: 'fechaCertificadoExpedito' },
   { clave: 'recetas', tipo: 'receta', etiquetaRuta: 'Receta', campoFecha: 'fechaReceta' },
@@ -270,6 +271,12 @@ export const REGLAS_SUBGRUPOS_AUTOMATICOS: readonly ReglaSubgrupoAutomatico[] = 
     nombre: 'Notas médicas',
     tipos: ['notaMedica'],
     aplica: (cuantos) => cuantos('notaMedica') >= 2,
+  },
+  {
+    id: 'auto-notas-enfermeria',
+    nombre: 'Notas de enfermería',
+    tipos: ['notaEnfermeria'],
+    aplica: (cuantos) => cuantos('notaEnfermeria') >= 2,
   },
   {
     id: 'auto-seguimiento-cardiometabolico',

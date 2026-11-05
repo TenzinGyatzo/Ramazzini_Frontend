@@ -1,4 +1,5 @@
 import { convertirFechaISOaDDMMYYYY } from './dates';
+import { nombreArchivoNotaEnfermeria } from './notaEnfermeria';
 
 interface Trabajador {
     primerApellido?: string;
@@ -22,6 +23,7 @@ const fechaCamposOrigen = {
     'exploracionesFisicas': 'fechaExploracionFisica',
     'historiasClinicas': 'fechaHistoriaClinica',
     'notasMedicas': 'fechaNotaMedica',
+    'notasEnfermeria': 'fechaNotaEnfermeria',
     'notasAclaratorias': 'fechaNotaAclaratoria',
     'controlPrenatal': 'fechaInicioControlPrenatal',
     'historiaOtologica': 'fechaHistoriaOtologica',
@@ -119,6 +121,11 @@ export const obtenerNombreArchivo = (documento, tipoDocumento, fecha, documentos
     if (tipoDocumento === 'Documento Externo') {
         return `${documento.nombreDocumento || 'Documento'} ${fecha}${documento.extension}`;
     }
+
+    // Lleva la hora: puede haber varias atenciones de enfermería el mismo día
+    if (tipoDocumento === 'Nota Enfermeria') {
+        return nombreArchivoNotaEnfermeria(fecha, documento.horaAtencion);
+    }
     
     // Para Nota Aclaratoria, construir el nombre personalizado
     if (tipoDocumento === 'Nota Aclaratoria') {
@@ -196,6 +203,7 @@ export const obtenerFechaDocumento = (documento) => {
         'fechaHistoriaClinica',
         'fechaDocumento',
         'fechaNotaMedica',
+        'fechaNotaEnfermeria',
         'fechaNotaAclaratoria',
         'fechaInicioControlPrenatal',
         'fechaHistoriaOtologica',
