@@ -12,6 +12,7 @@ import type { ResumenAntidoping } from './dashboardAntidoping';
 import type { Conteo, ResumenNordico, ResumenSueno } from './dashboardCuestionarios';
 import { porcentajeLegible, type FilaDeCobertura } from './dashboardCobertura';
 import type { ResumenDeDiagnosticos } from './dashboardDiagnosticos';
+import type { FilaPorSistema, ResumenEnfermeria } from './dashboardEnfermeria';
 import type { ResumenHabitos } from './dashboardHabitos';
 import type { ResumenCardiometabolico, ResumenOtologico } from './dashboardSeguimiento';
 
@@ -283,6 +284,36 @@ export const graficasDiagnosticos = (r: ResumenDeDiagnosticos) =>
         ),
       ])
     : [];
+
+/** Atención de enfermería: sistema y tipo de problema, la combinada con las consultas y la evolución por mes. */
+export const graficasEnfermeria = (r: ResumenEnfermeria, porSistema: FilaPorSistema[] = []) => {
+  if (!r.atenciones) return [];
+  const combinada = porSistema.filter((f) => f.total > 0).slice(0, FILAS_POR_GRAFICA);
+  return sinVacias([
+    barras('Atenciones por aparato o sistema', r.porSistema, r.atenciones, COLOR_DE_TONO.neutro),
+    barras('Atenciones por tipo de problema', r.porTipo, r.atenciones, COLOR_DE_TONO.neutro),
+    combinada.some((f) => f.consultas > 0)
+      ? {
+          tipo: 'columnas',
+          titulo: 'Atenciones por sistema: consultas y enfermería',
+          etiquetas: combinada.map((f) => f.etiqueta),
+          series: [
+            { etiqueta: 'Consultas médicas', valores: combinada.map((f) => f.consultas), color: COLOR_DE_TONO.neutro },
+            { etiqueta: 'Enfermería', valores: combinada.map((f) => f.enfermeria), color: COLOR_DE_TONO.favorable },
+          ],
+          nota: 'Consultas por el capítulo de la CIE-10 de su diagnóstico principal.',
+        }
+      : null,
+    r.porMes.length > 1
+      ? {
+          tipo: 'columnas',
+          titulo: 'Atenciones de enfermería por mes',
+          etiquetas: r.porMes.map((mes) => mes.etiqueta),
+          series: [{ etiqueta: 'Atenciones', valores: r.porMes.map((mes) => mes.cantidad), color: COLOR_DE_TONO.neutro }],
+        }
+      : null,
+  ]);
+};
 
 /** «Vigilancia según la exposición»: cada barra, sobre los expuestos a ese factor (como en el tablero). */
 export const graficaDeVigilancia = (filas: FilaDeCobertura[]): GraficaDeInforme | null =>

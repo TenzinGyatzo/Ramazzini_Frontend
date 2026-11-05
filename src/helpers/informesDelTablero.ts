@@ -139,6 +139,7 @@ const SECCIONES_DEL_COMPLETO: { texto: string; seccion: string | null }[] = [
   { texto: 'Pruebas antidoping', seccion: 'antidoping' },
   { texto: 'Aptitud al puesto', seccion: null },
   { texto: 'Diagnósticos de las consultas', seccion: 'diagnosticos' },
+  { texto: 'Atención de enfermería', seccion: 'enfermeria' },
   { texto: 'Consumo de insumos', seccion: 'inventario' },
 ];
 

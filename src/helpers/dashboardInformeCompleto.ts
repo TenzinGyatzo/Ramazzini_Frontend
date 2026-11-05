@@ -12,6 +12,7 @@ import {
   graficasAntidoping,
   graficasCardiometabolico,
   graficasDiagnosticos,
+  graficasEnfermeria,
   graficasHabitos,
   graficasNordico,
   graficasOtologica,
@@ -35,6 +36,14 @@ import {
 import { LEYENDA_SUENO_VIGILIA } from './evaluacionSuenoVigilia';
 import { hallazgosAntidoping, resumirAntidoping, tablasAntidoping, type AntidopingDeTablero } from './dashboardAntidoping';
 import { resumirHabitos, tablasHabitos, type HabitosDeTablero } from './dashboardHabitos';
+import {
+  atencionesPorSistema,
+  hallazgosEnfermeria,
+  resumirEnfermeria,
+  tablasEnfermeria,
+  type AtencionEnfermeriaDeTablero,
+} from './dashboardEnfermeria';
+import type { DiagnosticoDeTablero } from './dashboardDiagnosticos';
 import {
   hallazgosCardiometabolico,
   hallazgosOtologica,
@@ -89,6 +98,10 @@ export interface SeccionesAdicionales {
   cardiometabolico?: CardiometabolicoDeTablero[] | null;
   /** Historia otológica más reciente de cada trabajador. */
   otologica?: OtologicaDeTablero[] | null;
+  /** Atenciones de enfermería del periodo. */
+  enfermeria?: AtencionEnfermeriaDeTablero[] | null;
+  /** Diagnósticos de las consultas, uno por renglón: para la gráfica combinada por sistema. */
+  diagnosticosDetalle?: DiagnosticoDeTablero[] | null;
   /** «Vigilancia según la exposición» del tablero; va junto a los factores de riesgo ocupacional. */
   vigilancia?: FilaDeCobertura[] | null;
 }
@@ -237,6 +250,22 @@ export function seccionesAdicionalesDelInforme(
         style: 'textoNormal',
       });
     }
+    numero++;
+  }
+
+  const enfermeria = datos.enfermeria ?? [];
+  if (enfermeria.length) {
+    const detalle = datos.diagnosticosDetalle ?? [];
+    contenido.push(
+      { text: `${numero}. ATENCIÓN DE ENFERMERÍA`, style: 'tituloSeccion', pageBreak: 'before' },
+      {
+        text: 'Atenciones que el personal de enfermería registró en el periodo: de qué tipo fueron, qué aparato o sistema afectaban, qué se hizo y a dónde fue el trabajador al terminar. Se cuentan todas las atenciones: un mismo trabajador puede tener más de una.',
+        style: 'textoNormal',
+      },
+      { ul: hallazgosEnfermeria(enfermeria), style: 'textoNormal', margin: [0, 6, 0, 0] },
+      ...graficas(graficasEnfermeria(resumirEnfermeria(enfermeria), atencionesPorSistema(detalle, enfermeria))),
+      ...tablasDeInforme(tablasEnfermeria(enfermeria, detalle)),
+    );
     numero++;
   }
 

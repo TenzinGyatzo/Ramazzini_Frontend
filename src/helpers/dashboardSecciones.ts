@@ -65,6 +65,7 @@ export const SECCIONES_DE_TABLERO: SeccionDeTablero[] = [
   { id: 'antidoping', titulo: 'Pruebas antidoping', icono: 'fas fa-vial' },
   { id: 'aptitud', titulo: 'Aptitud al puesto', icono: 'fas fa-clipboard-check' },
   { id: 'diagnosticos', titulo: 'Consultas y diagnósticos', icono: 'fas fa-notes-medical' },
+  { id: 'enfermeria', titulo: 'Atención de enfermería', icono: 'fas fa-user-nurse' },
   { id: 'incapacidades', titulo: 'Incapacidades', icono: 'fas fa-bed-pulse' },
   { id: 'inventario', titulo: 'Inventario', icono: 'fas fa-boxes-stacked' },
 ];

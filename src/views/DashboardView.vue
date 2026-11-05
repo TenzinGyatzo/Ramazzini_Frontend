@@ -26,6 +26,7 @@ import { porcentajeDeCobertura, resumirCobertura } from '@/helpers/dashboardCobe
 import { armarInforme } from '@/helpers/dashboardInformes';
 import { informeTematico } from '@/helpers/dashboardInformesTematicos';
 import { consultasPorMes, resumirDiagnosticos } from '@/helpers/dashboardDiagnosticos';
+import { atencionesPorSistema, resumirEnfermeria } from '@/helpers/dashboardEnfermeria';
 import InventarioAPI from '@/api/InventarioAPI';
 import { useInventarioStore } from '@/stores/inventario';
 import { cantidadConUnidad } from '@/helpers/inventario';
@@ -2736,6 +2737,29 @@ const consultasMensuales = computed(() => {
   }));
 });
 
+// ---- Atención de enfermería
+
+const registrosEnfermeria = computed(() =>
+  registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'atencionesEnfermeria'),
+);
+const enfermeriaDelTablero = computed(() => resumirEnfermeria(registrosEnfermeria.value));
+/** Consultas (capítulo del diagnóstico principal) y enfermería (capítulo equivalente de su sistema). */
+const sistemasCombinados = computed(() =>
+  atencionesPorSistema(
+    registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'diagnosticos'),
+    registrosEnfermeria.value,
+  ),
+);
+const maximoCombinado = computed(() => Math.max(1, ...sistemasCombinados.value.map((fila) => fila.total)));
+const enfermeriaMensual = computed(() => {
+  const meses = enfermeriaDelTablero.value.porMes;
+  const maximo = Math.max(1, ...meses.map((mes) => mes.cantidad));
+  return meses.map((mes) => ({
+    ...mes,
+    alto: `${mes.cantidad ? Math.max(4, (mes.cantidad / maximo) * 100) : 0}%`,
+  }));
+});
+
 // ---- Inventario clínico: consumo del periodo y existencias de hoy, de los centros que se ven
 
 const inventarioStore = useInventarioStore();
@@ -2859,6 +2883,7 @@ const seccionConDatos = computed(() => ({
   sueno: suenoDelTablero.value.evaluados > 0,
   aptitud: true,
   diagnosticos: diagnosticosDeConsultas.value.total > 0 || consultasDelTablero.value.consultas > 0,
+  enfermeria: enfermeriaDelTablero.value.atenciones > 0,
   inventario:
     inventarioStore.habilitado &&
     (consumoDeInsumos.value.length > 0 ||
@@ -3064,6 +3089,8 @@ const seccionesAdicionalesDelInformeCompleto = computed(() => ({
   antidoping: registrosAntidoping.value,
   cardiometabolico: registrosCardiometabolico.value,
   otologica: registrosOtologica.value,
+  enfermeria: registrosEnfermeria.value,
+  diagnosticosDetalle: registrosDe(dashboardData.value, indiceCentroSeleccionado.value, 'diagnosticos'),
   vigilancia: coberturaDelTablero.value,
   periodoInventario: `del ${fechaLarga(periodoInventario.value.desde)} al ${fechaLarga(periodoInventario.value.hasta)}`,
 }));
@@ -6720,6 +6747,129 @@ const tablaCintura = computed(() => {
                         :key="mes.clave"
                         class="min-w-0 flex-1 truncate text-center text-[11px] text-gray-500"
                       >
+                        {{ mes.etiqueta }}
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Atención de enfermería -->
+            <section
+              v-show="seccionConDatos.enfermeria"
+              id="tablero-enfermeria"
+              class="dashboard-seccion mb-8 scroll-mt-4"
+              data-test="seccion-enfermeria"
+            >
+              <h2 class="dashboard-seccion__titulo mb-1 flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <i :class="[seccionDe('enfermeria').icono, 'text-emerald-600']" aria-hidden="true"></i>
+                {{ seccionDe('enfermeria').titulo }}
+              </h2>
+              <p v-if="enfermeriaDelTablero.atenciones > 0" class="mb-3 text-sm text-gray-500" data-test="resumen-enfermeria">
+                {{ enfermeriaDelTablero.atenciones }}
+                {{ enfermeriaDelTablero.atenciones === 1 ? 'atención registrada' : 'atenciones registradas' }}
+                por enfermería a {{ enfermeriaDelTablero.trabajadores }}
+                {{ enfermeriaDelTablero.trabajadores === 1 ? 'trabajador' : 'trabajadores' }} en el periodo.
+                <template v-if="enfermeriaDelTablero.primeraVez || enfermeriaDelTablero.subsecuentes">
+                  {{ enfermeriaDelTablero.primeraVez }} de primera vez y {{ enfermeriaDelTablero.subsecuentes }} subsecuentes.
+                </template>
+              </p>
+              <div class="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 xl:[&>*:last-child:nth-child(odd)]:col-span-2">
+                <div v-if="enfermeriaDelTablero.porTipo.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="enfermeria-tipo">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Por tipo de problema</h3>
+                  <ListaDeConteos :filas="enfermeriaDelTablero.porTipo" :total="enfermeriaDelTablero.atenciones" />
+                </div>
+                <div v-if="enfermeriaDelTablero.porSistema.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="enfermeria-sistema">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Por aparato o sistema</h3>
+                  <ListaDeConteos :filas="enfermeriaDelTablero.porSistema" :total="enfermeriaDelTablero.atenciones" :limite="13" />
+                </div>
+                <div v-if="enfermeriaDelTablero.porOrigen.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="enfermeria-origen">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Por origen</h3>
+                  <ListaDeConteos :filas="enfermeriaDelTablero.porOrigen" :total="enfermeriaDelTablero.atenciones" />
+                </div>
+                <div v-if="enfermeriaDelTablero.porDestino.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="enfermeria-destino">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Destino del trabajador</h3>
+                  <ListaDeConteos :filas="enfermeriaDelTablero.porDestino" :total="enfermeriaDelTablero.atenciones" />
+                </div>
+                <div v-if="enfermeriaDelTablero.procedimientos.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="enfermeria-procedimientos">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Procedimientos más frecuentes</h3>
+                  <ListaDeConteos :filas="enfermeriaDelTablero.procedimientos" :total="enfermeriaDelTablero.atenciones" />
+                  <p class="mt-3 text-xs italic text-gray-500">Sobre el total de atenciones; una atención puede llevar varios.</p>
+                </div>
+                <div v-if="enfermeriaDelTablero.medicamentos.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col" data-test="enfermeria-medicamentos">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Medicamentos administrados y entregados</h3>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                      <thead>
+                        <tr class="text-left text-xs uppercase tracking-wide text-gray-500">
+                          <th class="py-1 pr-3 font-medium">Medicamento</th>
+                          <th class="py-1 px-2 text-right font-medium">Administrado</th>
+                          <th class="py-1 px-2 text-right font-medium">Entregado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="medicamento in enfermeriaDelTablero.medicamentos.slice(0, 10)" :key="medicamento.nombre" class="border-t border-gray-200">
+                          <td class="py-1.5 pr-3 text-gray-800">{{ medicamento.nombre }}</td>
+                          <td class="py-1.5 px-2 text-right tabular-nums text-gray-700">{{ medicamento.administrado || '—' }}</td>
+                          <td class="py-1.5 px-2 text-right tabular-nums text-gray-700">{{ medicamento.entregado || '—' }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p class="mt-3 text-xs italic text-gray-500">
+                    Incluye los escritos a mano; los del catálogo también aparecen en el consumo del inventario.<template v-if="enfermeriaDelTablero.medicamentos.length > 10"> Se muestran los 10 más usados; todos están en el Excel.</template>
+                  </p>
+                </div>
+                <div v-if="sistemasCombinados.some((fila) => fila.consultas > 0)" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col xl:col-span-2" data-test="enfermeria-combinada">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Atenciones por sistema: consultas y enfermería</h3>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                      <thead>
+                        <tr class="text-left text-xs uppercase tracking-wide text-gray-500">
+                          <th class="py-1 pr-3 font-medium">Sistema</th>
+                          <th class="py-1 px-2 text-right font-medium">Consultas</th>
+                          <th class="py-1 px-2 text-right font-medium">Enfermería</th>
+                          <th class="py-1 pl-2 text-right font-medium">Total</th>
+                          <th class="hidden w-1/3 py-1 pl-4 sm:table-cell"><span class="sr-only">Proporción</span></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="fila in sistemasCombinados" :key="fila.clave" class="border-t border-gray-200" data-test="enfermeria-combinada-fila">
+                          <td class="py-1.5 pr-3 text-gray-800">{{ fila.etiqueta }}</td>
+                          <td class="py-1.5 px-2 text-right tabular-nums text-gray-700">{{ fila.consultas }}</td>
+                          <td class="py-1.5 px-2 text-right tabular-nums text-gray-700">{{ fila.enfermeria }}</td>
+                          <td class="py-1.5 pl-2 text-right font-semibold tabular-nums text-gray-900">{{ fila.total }}</td>
+                          <td class="hidden py-1.5 pl-4 sm:table-cell" aria-hidden="true">
+                            <div class="flex h-2.5 overflow-hidden rounded bg-gray-200" :style="{ width: `${(fila.total / maximoCombinado) * 100}%` }">
+                              <span class="lista-conteos__barra h-full bg-gray-600" data-tono="neutro" :style="{ width: `${(fila.consultas / fila.total) * 100}%` }"></span>
+                              <span class="lista-conteos__barra h-full bg-emerald-500" data-tono="favorable" :style="{ width: `${(fila.enfermeria / fila.total) * 100}%` }"></span>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p class="mt-3 text-xs italic text-gray-500">
+                    Consultas médicas (gris) por el capítulo de la CIE-10 de su diagnóstico principal; atenciones de enfermería (verde) por el capítulo equivalente de su sistema.
+                  </p>
+                </div>
+                <div v-if="enfermeriaDelTablero.porMes.length" class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow flex flex-col xl:col-span-2" data-test="enfermeria-por-mes">
+                  <h3 class="mb-4 border-b border-gray-200 pb-2 text-base sm:text-lg font-semibold text-gray-800">Atenciones por mes</h3>
+                  <div class="overflow-x-auto">
+                    <ol class="flex h-40 items-end gap-2" :style="{ minWidth: enfermeriaMensual.length * 2.75 + 'rem' }">
+                      <li
+                        v-for="mes in enfermeriaMensual"
+                        :key="mes.clave"
+                        class="flex h-full min-w-0 flex-1 flex-col items-center justify-end"
+                        :title="`${mes.etiqueta}: ${mes.cantidad} ${mes.cantidad === 1 ? 'atención' : 'atenciones'}`"
+                      >
+                        <span class="mb-1 text-xs tabular-nums text-gray-700">{{ mes.cantidad || '' }}</span>
+                        <span class="lista-conteos__barra w-full max-w-[3rem] rounded-t bg-gray-600" data-tono="neutro" :style="{ height: mes.alto }"></span>
+                      </li>
+                    </ol>
+                    <ol class="mt-1 flex gap-2 border-t border-gray-200 pt-1" :style="{ minWidth: enfermeriaMensual.length * 2.75 + 'rem' }" aria-hidden="true">
+                      <li v-for="mes in enfermeriaMensual" :key="mes.clave" class="min-w-0 flex-1 truncate text-center text-[11px] text-gray-500">
                         {{ mes.etiqueta }}
                       </li>
                     </ol>

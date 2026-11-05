@@ -85,6 +85,7 @@ describe('ventana de informes del tablero', () => {
       'Molestias musculoesqueléticas',
       'Sueño y vigilia',
       'Pruebas antidoping',
+      'Atención de enfermería',
       'Consumo de insumos',
     ]);
     expect(incluidos(estado)).toContain('Diagnósticos de las consultas');

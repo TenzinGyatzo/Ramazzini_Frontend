@@ -85,6 +85,7 @@ describe('secciones y cifras del tablero de salud', () => {
       'antidoping',
       'aptitud',
       'diagnosticos',
+      'enfermeria',
       'incapacidades',
       'inventario',
     ]);

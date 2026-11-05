@@ -30,6 +30,7 @@ import {
   type SuenoDeTablero,
 } from './dashboardCuestionarios';
 import { hallazgosAntidoping, tablasAntidoping, type AntidopingDeTablero } from './dashboardAntidoping';
+import { hallazgosEnfermeria, tablasEnfermeria, type AtencionEnfermeriaDeTablero } from './dashboardEnfermeria';
 import { hallazgosHabitos, tablasHabitos, type HabitosDeTablero } from './dashboardHabitos';
 import {
   hallazgosCardiometabolico,
@@ -262,6 +263,12 @@ export function tablasDelTablero(fuentes: Fuentes): TablaDeInforme[] {
   }
   tablas.push(...tablasConsultas(c.consultas as ConsultaDeTablero[]));
   tablas.push(...tablasIncapacidades(fuentes.incapacidades));
+  tablas.push(
+    ...tablasEnfermeria(
+      de('atencionesEnfermeria') as AtencionEnfermeriaDeTablero[],
+      de('diagnosticos') as DiagnosticoDeTablero[],
+    ),
+  );
   const meses = consultasPorMes(c.consultas.map((consulta) => consulta?.fechaNotaMedica));
   if (meses.length) {
     tablas.push({
@@ -379,6 +386,8 @@ export function hallazgosDelTablero(fuentes: Fuentes): string[] {
           : '.'),
     );
   }
+  // Enfermería: cuántas atenciones y de qué; el destino queda en la tabla
+  hallazgos.push(...hallazgosEnfermeria(de('atencionesEnfermeria') as AtencionEnfermeriaDeTablero[]).slice(0, 2));
   const insumo = [...(fuentes.insumos ?? [])].sort((a, b) => b.consumo - a.consumo)[0];
   if (insumo && insumo.consumo > 0) {
     hallazgos.push(`El insumo más consumido fue ${insumo.nombre}: ${insumo.consumo} (${insumo.unidad}).`);
