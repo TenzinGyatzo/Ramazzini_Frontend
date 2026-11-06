@@ -16,6 +16,7 @@ import {
   filasDesdeDocumento,
   filasValidas,
   type FilaInsumoSuministrado,
+  type UsoInsumo,
 } from '@/helpers/insumosSuministrados';
 import type { FilaExistencia } from '@/interfaces/inventario.interface';
 
@@ -45,16 +46,36 @@ const porId = computed(
   () => new Map(existencias.value.map((fila) => [fila.insumo._id, fila])),
 );
 
-/** Insumos elegibles en un renglón: activos y no usados en otro renglón. */
+const USOS: UsoInsumo[] = ['ADMINISTRADO', 'ENTREGADO'];
+
+/** Otro renglón ya tiene este insumo con este uso. */
+function repetido(fila: FilaInsumoSuministrado, idInsumo: string, uso: UsoInsumo) {
+  return filas.value.some((f) => f !== fila && f.idInsumo === idInsumo && f.uso === uso);
+}
+
+/**
+ * Insumos elegibles en un renglón: activos y no ocupados con los dos usos en otros
+ * renglones. Un insumo puede ir una vez administrado y otra entregado (una dosis
+ * ahora y piezas para llevar).
+ */
 function opcionesPara(fila: FilaInsumoSuministrado) {
-  const usados = new Set(
-    filas.value.filter((f) => f !== fila).map((f) => f.idInsumo),
-  );
   return existencias.value.filter(
     (e) =>
-      !usados.has(e.insumo._id) &&
+      !USOS.every((uso) => repetido(fila, e.insumo._id, uso)) &&
       (e.insumo.activo || e.insumo._id === fila.idInsumo),
   );
+}
+
+/** El otro uso ya está en otro renglón con este insumo: elegirlo lo duplicaría. */
+function usoOcupado(fila: FilaInsumoSuministrado, uso: UsoInsumo) {
+  return !!fila.idInsumo && fila.uso !== uso && repetido(fila, fila.idInsumo, uso);
+}
+
+/** Al elegir un insumo que ya está con este uso en otro renglón, este renglón toma el otro. */
+function alElegirInsumo(fila: FilaInsumoSuministrado) {
+  if (fila.idInsumo && repetido(fila, fila.idInsumo, fila.uso)) {
+    fila.uso = fila.uso === 'ENTREGADO' ? 'ADMINISTRADO' : 'ENTREGADO';
+  }
 }
 
 function disponible(idInsumo: string): number {
@@ -68,12 +89,15 @@ function unidadDe(idInsumo: string): string {
   return porId.value.get(idInsumo)?.insumo.unidad ?? '';
 }
 
+/** Lo pedido de ese insumo en todos los renglones (administrado y entregado). */
+function pedidoDe(idInsumo: string): number {
+  return filas.value
+    .filter((f) => f.idInsumo === idInsumo && typeof f.cantidad === 'number')
+    .reduce((total, f) => total + (f.cantidad as number), 0);
+}
+
 function faltaExistencia(fila: FilaInsumoSuministrado): boolean {
-  return (
-    !!fila.idInsumo &&
-    typeof fila.cantidad === 'number' &&
-    fila.cantidad > disponible(fila.idInsumo)
-  );
+  return !!fila.idInsumo && pedidoDe(fila.idInsumo) > disponible(fila.idInsumo);
 }
 
 function agregar() {
@@ -97,7 +121,9 @@ onMounted(async () => {
   for (const fila of filasDesdeDocumento(
     documentos.currentDocument?.insumosSuministrados,
   )) {
-    yaDescontado.value[fila.idInsumo] = Number(fila.cantidad) || 0;
+    // Suma: el mismo insumo puede estar administrado y entregado
+    yaDescontado.value[fila.idInsumo] =
+      (yaDescontado.value[fila.idInsumo] ?? 0) + (Number(fila.cantidad) || 0);
   }
 
   try {
@@ -153,6 +179,7 @@ const campo =
             v-model="fila.idInsumo"
             :class="[campo, 'min-w-0 flex-1 basis-56']"
             :aria-label="`Insumo ${indice + 1}`"
+            @change="alElegirInsumo(fila)"
           >
             <option value="" disabled>Selecciona un insumo</option>
             <option
@@ -177,8 +204,8 @@ const campo =
             :class="[campo, 'w-36']"
             :aria-label="`Uso del insumo ${indice + 1}`"
           >
-            <option value="ADMINISTRADO">Administrado</option>
-            <option value="ENTREGADO">Entregado</option>
+            <option value="ADMINISTRADO" :disabled="usoOcupado(fila, 'ADMINISTRADO')">Administrado</option>
+            <option value="ENTREGADO" :disabled="usoOcupado(fila, 'ENTREGADO')">Entregado</option>
           </select>
           <button
             type="button"

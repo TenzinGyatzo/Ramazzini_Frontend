@@ -46,8 +46,8 @@ export function filasDesdeDocumento(valor: unknown): FilaInsumoSuministrado[] {
 }
 
 /**
- * Renglones listos para guardar: con insumo, cantidad entera ≥ 1 y sin insumos
- * repetidos (el servidor rechaza duplicados; se conserva el primero).
+ * Renglones listos para guardar: con insumo, cantidad entera ≥ 1 y sin repetir insumo
+ * con el mismo uso (una vez administrado y otra entregado sí; se conserva el primero).
  */
 export function filasValidas(filas: FilaInsumoSuministrado[]): InsumoSuministrado[] {
   const vistos = new Set<string>();
@@ -55,8 +55,9 @@ export function filasValidas(filas: FilaInsumoSuministrado[]): InsumoSuministrad
   for (const fila of filas) {
     const cantidad = Number(fila.cantidad);
     if (!fila.idInsumo || !Number.isInteger(cantidad) || cantidad < 1) continue;
-    if (vistos.has(fila.idInsumo)) continue;
-    vistos.add(fila.idInsumo);
+    const clave = `${fila.idInsumo}:${fila.uso}`;
+    if (vistos.has(clave)) continue;
+    vistos.add(clave);
     validas.push({ idInsumo: fila.idInsumo, cantidad, uso: fila.uso });
   }
   return validas;

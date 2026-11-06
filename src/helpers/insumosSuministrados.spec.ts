@@ -20,7 +20,7 @@ describe('insumos suministrados', () => {
     expect(filasDesdeDocumento(undefined)).toEqual([]);
   });
 
-  it('solo guarda renglones completos, enteros y sin insumos repetidos', () => {
+  it('solo guarda renglones completos, enteros y sin repetir insumo con el mismo uso', () => {
     expect(
       filasValidas([
         { idInsumo: 'a1', cantidad: 2, uso: 'ENTREGADO' },
@@ -28,9 +28,14 @@ describe('insumos suministrados', () => {
         { idInsumo: 'b2', cantidad: 0, uso: 'ADMINISTRADO' },
         { idInsumo: 'c3', cantidad: 1.5, uso: 'ADMINISTRADO' },
         { idInsumo: 'd4', cantidad: '', uso: 'ADMINISTRADO' },
-        { idInsumo: 'a1', cantidad: 9, uso: 'ADMINISTRADO' },
+        { idInsumo: 'a1', cantidad: 9, uso: 'ENTREGADO' },
+        // El mismo insumo, administrado: una dosis ahora y piezas para llevar
+        { idInsumo: 'a1', cantidad: 1, uso: 'ADMINISTRADO' },
       ]),
-    ).toEqual([{ idInsumo: 'a1', cantidad: 2, uso: 'ENTREGADO' }]);
+    ).toEqual([
+      { idInsumo: 'a1', cantidad: 2, uso: 'ENTREGADO' },
+      { idInsumo: 'a1', cantidad: 1, uso: 'ADMINISTRADO' },
+    ]);
   });
 
   it('arma los mensajes de lo que movió el guardado', () => {
