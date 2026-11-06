@@ -20,7 +20,7 @@ const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const proveedorSaludStore = useProveedorSaludStore();
-const { validateDocumentCreation, executeIfCanManageOtrosDocumentos } = usePermissionRestrictions();
+const { validateDocumentCreation } = usePermissionRestrictions();
 const { validationResult, loadFirmanteData, ensureProfessionalDataReady } = useProfessionalDataValidation();
 const {
   navigateWithTreatmentConsent,
@@ -247,10 +247,10 @@ useEscapeToClose(
 );
 
 const abrirInasistencias = () => {
-  executeIfCanManageOtrosDocumentos(() => {
-    emit('openInasistencias');
-    closeModal();
-  }, 'registrar inasistencias a seguimientos');
+  // Con permisos por documento rige el de inasistencias, no «otros documentos» (como en el servidor)
+  if (!validateDocumentCreation('seguimientoProgramadoCardiometabolico')) return;
+  emit('openInasistencias');
+  closeModal();
 };
 
 const crearDocumento = async (opcion) => {

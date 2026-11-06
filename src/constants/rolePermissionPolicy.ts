@@ -717,22 +717,42 @@ export const DOCUMENT_DISPLAY_NAMES: Record<string, string> = {
   resultadoClinico: 'Resultados clínicos',
 };
 
-export function getDocumentRestrictionMessage(documentType: string): string {
-  const permissionKey = getPermissionForDocumentType(documentType);
-  const documentName = DOCUMENT_DISPLAY_NAMES[documentType] || documentType;
+/** Grupo de la pantalla de permisos en el que aparece el documento; null si no está en ninguno. */
+export function getGrupoPermisosDeDocumento(
+  documentType: string,
+): GrupoPermisosDocumentos | null {
+  return (
+    GRUPOS_PERMISOS_DOCUMENTOS.find((grupo) => grupo.tipos.includes(documentType)) ?? null
+  );
+}
 
-  if (permissionKey === 'gestionarDocumentosDiagnostico') {
-    return 'No tienes permisos para gestionar documentos de diagnóstico y certificación.';
-  }
-  if (permissionKey === 'gestionarDocumentosEvaluacion') {
-    return `No tienes permisos para gestionar documentos de evaluación como ${documentName}.`;
-  }
-  if (permissionKey === 'gestionarDocumentosExternos') {
-    return 'No tienes permisos para gestionar documentos externos.';
-  }
-  if (permissionKey === 'gestionarOtrosDocumentos') {
-    return `No tienes permisos para gestionar otros documentos como ${documentName}.`;
-  }
+/** «el documento «Receta» (Consulta y prescripción)»: nombre y grupo como los ve el Principal. */
+function describirDocumentoParaPermiso(documentType: string): string {
+  const nombre = DOCUMENT_DISPLAY_NAMES[documentType] || documentType;
+  const grupo = getGrupoPermisosDeDocumento(documentType);
+  return grupo ? `«${nombre}» (${grupo.titulo})` : `«${nombre}»`;
+}
 
-  return 'No tienes permisos para gestionar este tipo de documento.';
+/**
+ * Por qué no puede trabajar con el documento. Nombra el documento y el grupo de la pantalla
+ * de permisos, no la categoría anterior (que solo se conserva por compatibilidad). La nota
+ * aclaratoria, con su documento de origen, señala ese documento.
+ */
+export function getDocumentRestrictionMessage(
+  documentType: string,
+  documentoOrigenTipo?: string | null,
+): string {
+  if (!getLegacyCategoryForDocumentPermission(documentType)) {
+    return 'No tienes permiso para este tipo de documento.';
+  }
+  const origen = documentoOrigenTipo ? tipoDocumentoParaPermiso(documentoOrigenTipo) : null;
+  if (
+    documentType === NOTA_ACLARATORIA &&
+    origen &&
+    origen !== NOTA_ACLARATORIA &&
+    getLegacyCategoryForDocumentPermission(origen)
+  ) {
+    return `No tienes permiso para el documento ${describirDocumentoParaPermiso(origen)}, por eso no puedes hacer su nota aclaratoria.`;
+  }
+  return `No tienes permiso para el documento ${describirDocumentoParaPermiso(documentType)}.`;
 }

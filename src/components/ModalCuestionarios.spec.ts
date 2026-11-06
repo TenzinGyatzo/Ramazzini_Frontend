@@ -10,7 +10,6 @@ const controlPrenatalEnabled = ref(true);
 vi.mock('@/composables/usePermissionRestrictions', () => ({
   usePermissionRestrictions: () => ({
     validateDocumentCreation,
-    executeIfCanManageOtrosDocumentos: (callback: () => void) => callback(),
   }),
 }));
 vi.mock('@/composables/useProfessionalDataValidation', () => ({
@@ -152,9 +151,19 @@ describe('ModalCuestionarios', () => {
 
     await wrapper.find('[data-opcion="inasistencias"]').trigger('click');
 
+    expect(validateDocumentCreation).toHaveBeenCalledWith('seguimientoProgramadoCardiometabolico');
     expect(wrapper.emitted('openInasistencias')).toHaveLength(1);
     expect(wrapper.emitted('closeModal')).toHaveLength(1);
     expect(navigateWithTreatmentConsent).not.toHaveBeenCalled();
+  });
+
+  it('sin permiso de inasistencias no abre el registro', async () => {
+    validateDocumentCreation.mockReturnValueOnce(false);
+    const wrapper = montar();
+
+    await wrapper.find('[data-opcion="inasistencias"]').trigger('click');
+
+    expect(wrapper.emitted('openInasistencias')).toBeUndefined();
   });
 
   it('Enter en el buscador abre el primer resultado', async () => {

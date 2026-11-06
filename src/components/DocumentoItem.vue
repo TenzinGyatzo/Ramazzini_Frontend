@@ -2331,7 +2331,7 @@ const editActionTooltip = computed(() => {
   if (esFormatoFirmado.value) return 'Firmado en pantalla: no se edita';
   if (isReadOnly.value) return 'Ver documento';
   if (!canManageThisDocument.value) {
-    return getRestrictionMessage(props.documentoTipo);
+    return getRestrictionMessage(props.documentoTipo, documentoOrigenTipo.value);
   }
   return 'Editar documento';
 });
@@ -2345,7 +2345,7 @@ const deleteAnularActionTooltip = computed(() => {
     // Si el documento se puede gestionar, lo que falta es el permiso de anular
     return canManageThisDocument.value && !canAnularEliminarDocumentos.value
       ? 'No tienes permiso para anular ni eliminar documentos'
-      : getRestrictionMessage(props.documentoTipo);
+      : getRestrictionMessage(props.documentoTipo, documentoOrigenTipo.value);
   }
   return isAnulacion.value ? 'Anular documento' : 'Eliminar documento';
 });

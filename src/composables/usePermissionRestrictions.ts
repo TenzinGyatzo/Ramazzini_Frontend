@@ -87,7 +87,7 @@ export function usePermissionRestrictions() {
   ): boolean => {
     if (!canCreateDocument(documentType, documentoOrigenTipo)) {
       toast?.open({
-        message: getRestrictionMessage(documentType),
+        message: getRestrictionMessage(documentType, documentoOrigenTipo),
         type: 'error',
         position: 'top-right',
       });

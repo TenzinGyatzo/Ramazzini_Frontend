@@ -1,5 +1,6 @@
 import {
   DOCUMENT_PERMISSION_KEYS,
+  DOCUMENT_TYPES_SOLO_ENFERMERIA,
   GRUPOS_PERMISOS_DOCUMENTOS,
   PERMISSION_KEYS,
   ROLE_DEFAULT_PERMISSIONS,
@@ -62,7 +63,9 @@ export function motivoBloqueoDocumento(role: string, tipo: string): string | nul
     return `No disponible para el rol ${role}`;
   }
   if (isDocumentBlockedForFirmante(role, null, tipo)) {
-    return 'Solo lo expide un médico';
+    return DOCUMENT_TYPES_SOLO_ENFERMERIA.includes(tipo)
+      ? 'Exclusivo del personal de enfermería'
+      : 'Solo lo expide un médico';
   }
   return null;
 }

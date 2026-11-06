@@ -81,13 +81,25 @@ export function useRolePermissions() {
     return gestiona && canManagePermission('anularEliminarDocumentos');
   }
 
-  function getRestrictionMessage(documentType: string): string {
+  /**
+   * La nota aclaratoria sigue al documento que aclara solo con permisos por documento;
+   * sin ellos rige su propia categoría, así que el mensaje no menciona el origen.
+   */
+  function getRestrictionMessage(
+    documentType: string,
+    documentoOrigenTipo?: string | null,
+  ): string {
+    const tienePorDocumento = !!userPermisos.value?.documentos;
     return (
       mensajeBloqueoPorPerfil(
         userRole.value,
         userPerfilProfesional.value,
         documentType,
-      ) || getDocumentRestrictionMessage(documentType)
+      ) ||
+      getDocumentRestrictionMessage(
+        documentType,
+        tienePorDocumento ? documentoOrigenTipo : null,
+      )
     );
   }
 
