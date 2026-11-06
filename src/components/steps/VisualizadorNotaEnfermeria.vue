@@ -15,8 +15,10 @@ import {
   PASO_CIERRE_NOTA_ENFERMERIA,
   PASO_CLASIFICACION_NOTA_ENFERMERIA,
   PASO_DATOS_NOTA_ENFERMERIA,
-  PASO_INTERVENCION_NOTA_ENFERMERIA,
-  PASO_VALORACION_NOTA_ENFERMERIA,
+  PASO_MEDICAMENTOS_NOTA_ENFERMERIA,
+  PASO_ORIGEN_NOTA_ENFERMERIA,
+  PASO_PROCEDIMIENTOS_NOTA_ENFERMERIA,
+  PASO_SIGNOS_NOTA_ENFERMERIA,
   RELACIONES_TEMPORALES_NOTA_ENFERMERIA,
   SISTEMAS_NOTA_ENFERMERIA,
   TIPOS_PROBLEMA_NOTA_ENFERMERIA,
@@ -37,9 +39,10 @@ useVisualizadorScrollPaso(scrollRoot, () => stepsStore.currentStep);
 const fd = computed(() => formData.formDataNotaEnfermeria);
 
 const clasificacion = computed(() => [
-  { titulo: 'TIPO DE PROBLEMA', valor: etiquetaNotaEnfermeria(TIPOS_PROBLEMA_NOTA_ENFERMERIA, fd.value.tipoProblema) },
-  { titulo: 'APARATO O SISTEMA', valor: etiquetaNotaEnfermeria(SISTEMAS_NOTA_ENFERMERIA, fd.value.sistema) },
-  { titulo: 'ORIGEN', valor: etiquetaNotaEnfermeria(ORIGENES_NOTA_ENFERMERIA, fd.value.origen) },
+  { titulo: 'TIPO DE PROBLEMA', valor: etiquetaNotaEnfermeria(TIPOS_PROBLEMA_NOTA_ENFERMERIA, fd.value.tipoProblema), paso: PASO_CLASIFICACION_NOTA_ENFERMERIA },
+  { titulo: 'APARATO O SISTEMA', valor: etiquetaNotaEnfermeria(SISTEMAS_NOTA_ENFERMERIA, fd.value.sistema), paso: PASO_CLASIFICACION_NOTA_ENFERMERIA },
+  // El origen se captura junto con el aspecto general
+  { titulo: 'ORIGEN', valor: etiquetaNotaEnfermeria(ORIGENES_NOTA_ENFERMERIA, fd.value.origen), paso: PASO_ORIGEN_NOTA_ENFERMERIA },
 ]);
 
 const filasSignos = computed(() => filasSignosNotaEnfermeria(fd.value));
@@ -121,16 +124,18 @@ const celda = 'text-xs sm:text-sm px-2 py-0 border border-gray-300';
       {{ fd.motivoAtencion || 'Sin capturar' }}
     </p>
 
-    <!-- Clasificación (paso 2) -->
-    <div
-      class="shrink-0 cursor-pointer"
-      :data-paso="PASO_CLASIFICACION_NOTA_ENFERMERIA"
-      :class="resaltePaso(PASO_CLASIFICACION_NOTA_ENFERMERIA)"
-      @click="irASiExiste(PASO_CLASIFICACION_NOTA_ENFERMERIA)"
-    >
+    <!-- Clasificación (pasos 2 y 3) -->
+    <div class="shrink-0">
       <table class="table-auto w-full border-collapse border border-gray-200">
         <tbody>
-          <tr v-for="fila in clasificacion" :key="fila.titulo" class="odd:bg-white even:bg-gray-50">
+          <tr
+            v-for="fila in clasificacion"
+            :key="fila.titulo"
+            class="cursor-pointer odd:bg-white even:bg-gray-50"
+            :data-paso="fila.paso"
+            :class="resaltePaso(fila.paso)"
+            @click="irASiExiste(fila.paso)"
+          >
             <td :class="[celda, 'w-1/3 font-light']">{{ fila.titulo }}</td>
             <td :class="[celda, fila.valor ? 'font-medium' : 'text-amber-700']">{{ fila.valor || 'Sin elegir' }}</td>
           </tr>
@@ -138,17 +143,24 @@ const celda = 'text-xs sm:text-sm px-2 py-0 border border-gray-300';
       </table>
     </div>
 
-    <!-- Valoración (paso 3) -->
+    <!-- Aspecto general (paso 3) -->
+    <p
+      class="shrink-0 cursor-pointer text-sm text-gray-800"
+      :data-paso="PASO_ORIGEN_NOTA_ENFERMERIA"
+      :class="resaltePaso(PASO_ORIGEN_NOTA_ENFERMERIA)"
+      @click="irASiExiste(PASO_ORIGEN_NOTA_ENFERMERIA)"
+    >
+      <span class="font-semibold">Aspecto general (hábitus exterior):</span>
+      {{ fd.habitusExterior || 'Sin capturar' }}
+    </p>
+
+    <!-- Signos vitales (paso 4) -->
     <div
       class="shrink-0 cursor-pointer space-y-2"
-      :data-paso="PASO_VALORACION_NOTA_ENFERMERIA"
-      :class="resaltePaso(PASO_VALORACION_NOTA_ENFERMERIA)"
-      @click="irASiExiste(PASO_VALORACION_NOTA_ENFERMERIA)"
+      :data-paso="PASO_SIGNOS_NOTA_ENFERMERIA"
+      :class="resaltePaso(PASO_SIGNOS_NOTA_ENFERMERIA)"
+      @click="irASiExiste(PASO_SIGNOS_NOTA_ENFERMERIA)"
     >
-      <p class="text-sm text-gray-800">
-        <span class="font-semibold">Aspecto general (hábitus exterior):</span>
-        {{ fd.habitusExterior || 'Sin capturar' }}
-      </p>
       <div v-if="filasSignos.length" class="overflow-x-auto -mx-1 sm:mx-0">
         <table class="table-auto w-full min-w-[560px] border-collapse border border-gray-200 text-xs" data-signos>
           <thead>
@@ -182,12 +194,12 @@ const celda = 'text-xs sm:text-sm px-2 py-0 border border-gray-300';
       <p v-else class="text-xs italic text-gray-500">Sin signos vitales registrados</p>
     </div>
 
-    <!-- Intervención (paso 4) -->
+    <!-- Procedimientos (paso 5) -->
     <div
       class="shrink-0 cursor-pointer space-y-2"
-      :data-paso="PASO_INTERVENCION_NOTA_ENFERMERIA"
-      :class="resaltePaso(PASO_INTERVENCION_NOTA_ENFERMERIA)"
-      @click="irASiExiste(PASO_INTERVENCION_NOTA_ENFERMERIA)"
+      :data-paso="PASO_PROCEDIMIENTOS_NOTA_ENFERMERIA"
+      :class="resaltePaso(PASO_PROCEDIMIENTOS_NOTA_ENFERMERIA)"
+      @click="irASiExiste(PASO_PROCEDIMIENTOS_NOTA_ENFERMERIA)"
     >
       <p class="text-sm text-gray-800">
         <span class="font-semibold">Procedimientos realizados:</span>
@@ -197,6 +209,15 @@ const celda = 'text-xs sm:text-sm px-2 py-0 border border-gray-300';
         <span class="font-semibold">Detalle:</span>
         {{ fd.detalleProcedimientos }}
       </p>
+    </div>
+
+    <!-- Medicamentos (paso 6) -->
+    <div
+      class="shrink-0 cursor-pointer space-y-2"
+      :data-paso="PASO_MEDICAMENTOS_NOTA_ENFERMERIA"
+      :class="resaltePaso(PASO_MEDICAMENTOS_NOTA_ENFERMERIA)"
+      @click="irASiExiste(PASO_MEDICAMENTOS_NOTA_ENFERMERIA)"
+    >
       <table
         v-if="medicamentos.length"
         class="table-auto w-full border-collapse border border-gray-200 text-xs"
@@ -230,7 +251,7 @@ const celda = 'text-xs sm:text-sm px-2 py-0 border border-gray-300';
       <p v-else class="text-xs italic text-gray-500">Sin medicamentos administrados ni entregados</p>
     </div>
 
-    <!-- Cierre (paso 5) -->
+    <!-- Cierre (paso 7) -->
     <div
       class="shrink-0 cursor-pointer space-y-2"
       :data-paso="PASO_CIERRE_NOTA_ENFERMERIA"
@@ -238,7 +259,8 @@ const celda = 'text-xs sm:text-sm px-2 py-0 border border-gray-300';
       @click="irASiExiste(PASO_CIERRE_NOTA_ENFERMERIA)"
     >
       <p class="text-sm text-gray-800">
-        <span class="font-semibold">Destino del trabajador:</span>
+        <!-- Entre dos etiquetas Vue no conserva el salto de línea: el espacio va explícito -->
+        <span class="font-semibold">Destino del trabajador:</span>{{ ' ' }}
         <span :class="fd.destino ? '' : 'text-amber-700'">
           {{ etiquetaNotaEnfermeria(DESTINOS_NOTA_ENFERMERIA, fd.destino) || 'Sin elegir' }}
         </span>

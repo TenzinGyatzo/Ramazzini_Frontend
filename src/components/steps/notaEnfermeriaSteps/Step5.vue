@@ -1,49 +1,62 @@
 <script setup>
 import { useFormDataStore } from '@/stores/formDataStore';
-import { DESTINOS_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
-import { claseEtiqueta, claseInput, claseOpcion } from './estilos';
+import { PROCEDIMIENTOS_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
+import Requerido from './Requerido.vue';
+import { claseEtiqueta, claseInput, claseOpcionLista } from './estilos';
 
 const { formDataNotaEnfermeria } = useFormDataStore();
+
+const elegido = (clave) => (formDataNotaEnfermeria.procedimientos ?? []).includes(clave);
+
+const alternar = (clave) => {
+  const actuales = formDataNotaEnfermeria.procedimientos ?? [];
+  formDataNotaEnfermeria.procedimientos = elegido(clave)
+    ? actuales.filter((c) => c !== clave)
+    : [...actuales, clave];
+  if (clave === 'otro' && !elegido('otro')) delete formDataNotaEnfermeria.procedimientoOtro;
+};
 </script>
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Cierre</h1>
+    <h1 class="text-2xl font-bold mb-2 text-gray-900">Procedimientos</h1>
 
-    <div class="mt-5" data-pregunta="destino">
-      <p :class="claseEtiqueta">Destino del trabajador</p>
-      <div class="flex flex-wrap gap-2">
+    <div class="mt-5" data-pregunta="procedimientos">
+      <p :class="claseEtiqueta">Procedimientos realizados <span class="font-normal text-gray-500">(los que apliquen)</span></p>
+      <!-- Dos columnas fijas, en el orden de la lista -->
+      <div class="grid grid-cols-2 gap-1.5">
         <button
-          v-for="opcion in DESTINOS_NOTA_ENFERMERIA"
+          v-for="opcion in PROCEDIMIENTOS_NOTA_ENFERMERIA"
           :key="opcion.clave"
           type="button"
-          :class="claseOpcion(formDataNotaEnfermeria.destino === opcion.clave)"
-          :aria-pressed="formDataNotaEnfermeria.destino === opcion.clave"
-          @click="formDataNotaEnfermeria.destino = opcion.clave"
+          :class="claseOpcionLista(elegido(opcion.clave))"
+          :aria-pressed="elegido(opcion.clave)"
+          @click="alternar(opcion.clave)"
         >
+          <i v-if="elegido(opcion.clave)" class="fas fa-check mr-1 text-emerald-600" aria-hidden="true"></i>
           {{ opcion.etiqueta }}
         </button>
       </div>
+      <label v-if="elegido('otro')" class="mt-3 block">
+        <span :class="claseEtiqueta">¿Qué otro procedimiento? <Requerido /></span>
+        <input
+          v-model="formDataNotaEnfermeria.procedimientoOtro"
+          type="text"
+          maxlength="300"
+          data-campo="procedimientoOtro"
+          :class="[claseInput, 'mt-1.5']"
+        />
+      </label>
+      <label class="mt-3 block">
+        <span :class="claseEtiqueta">Detalle de lo realizado <span class="font-normal text-gray-500">(opcional)</span></span>
+        <textarea
+          v-model="formDataNotaEnfermeria.detalleProcedimientos"
+          rows="2"
+          maxlength="2000"
+          :class="[claseInput, 'mt-1.5']"
+        ></textarea>
+      </label>
     </div>
 
-    <div class="mt-5">
-      <p :class="claseEtiqueta">Recomendaciones e indicaciones al trabajador</p>
-      <textarea
-        v-model="formDataNotaEnfermeria.recomendaciones"
-        rows="3"
-        maxlength="2000"
-        :class="claseInput"
-      ></textarea>
-    </div>
-
-    <div class="mt-5">
-      <p :class="claseEtiqueta">Observaciones</p>
-      <textarea
-        v-model="formDataNotaEnfermeria.observaciones"
-        rows="3"
-        maxlength="2000"
-        :class="claseInput"
-      ></textarea>
-    </div>
   </div>
 </template>

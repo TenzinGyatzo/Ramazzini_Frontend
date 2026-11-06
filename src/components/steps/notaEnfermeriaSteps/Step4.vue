@@ -1,60 +1,88 @@
 <script setup>
+import { onMounted } from 'vue';
+import { format } from 'date-fns';
 import { useFormDataStore } from '@/stores/formDataStore';
-import { PROCEDIMIENTOS_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
-import MedicamentosNotaEnfermeria from './MedicamentosNotaEnfermeria.vue';
-import { claseEtiqueta, claseInput, claseOpcion } from './estilos';
+import { MAX_TOMAS_CONTROL_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
+import CamposSignosVitales from './CamposSignosVitales.vue';
+import {
+  claseAyuda,
+  claseBotonAgregar,
+  claseBotonQuitar,
+  claseEtiquetaCampo,
+  claseInput,
+} from './estilos';
 
 const { formDataNotaEnfermeria } = useFormDataStore();
 
-const elegido = (clave) => (formDataNotaEnfermeria.procedimientos ?? []).includes(clave);
+onMounted(() => {
+  if (!formDataNotaEnfermeria.signosVitales) formDataNotaEnfermeria.signosVitales = {};
+});
 
-const alternar = (clave) => {
-  const actuales = formDataNotaEnfermeria.procedimientos ?? [];
-  formDataNotaEnfermeria.procedimientos = elegido(clave)
-    ? actuales.filter((c) => c !== clave)
-    : [...actuales, clave];
-  if (clave === 'otro' && !elegido('otro')) delete formDataNotaEnfermeria.procedimientoOtro;
+const agregarToma = () => {
+  if (!formDataNotaEnfermeria.tomasControl) formDataNotaEnfermeria.tomasControl = [];
+  formDataNotaEnfermeria.tomasControl.push({ hora: format(new Date(), 'HH:mm') });
+};
+
+const quitarToma = (indice) => {
+  formDataNotaEnfermeria.tomasControl.splice(indice, 1);
 };
 </script>
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Intervención</h1>
+    <h1 class="text-2xl font-bold mb-2 text-gray-900">Signos vitales</h1>
 
-    <div class="mt-5" data-pregunta="procedimientos">
-      <p :class="claseEtiqueta">Procedimientos realizados <span class="font-normal text-gray-500">(los que apliquen)</span></p>
-      <div class="flex flex-wrap gap-2">
-        <button
-          v-for="opcion in PROCEDIMIENTOS_NOTA_ENFERMERIA"
-          :key="opcion.clave"
-          type="button"
-          :class="claseOpcion(elegido(opcion.clave))"
-          :aria-pressed="elegido(opcion.clave)"
-          @click="alternar(opcion.clave)"
-        >
-          {{ opcion.etiqueta }}
-        </button>
-      </div>
-      <input
-        v-if="elegido('otro')"
-        v-model="formDataNotaEnfermeria.procedimientoOtro"
-        type="text"
-        maxlength="300"
-        placeholder="¿Qué otro procedimiento?"
-        data-campo="procedimientoOtro"
-        :class="[claseInput, 'mt-2']"
-      />
-      <textarea
-        v-model="formDataNotaEnfermeria.detalleProcedimientos"
-        rows="2"
-        maxlength="2000"
-        placeholder="Detalle de lo realizado (opcional)"
-        :class="[claseInput, 'mt-2']"
-      ></textarea>
+    <div class="mt-3">
+      <p :class="claseAyuda">Todos son opcionales: captura solo los que tomaste.</p>
+      <CamposSignosVitales v-if="formDataNotaEnfermeria.signosVitales" :toma="formDataNotaEnfermeria.signosVitales" />
     </div>
 
-    <div class="mt-5 border-t border-gray-200 pt-4">
-      <MedicamentosNotaEnfermeria />
+    <div
+      v-for="(toma, indice) in formDataNotaEnfermeria.tomasControl ?? []"
+      :key="indice"
+      class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3"
+      :data-toma-control="indice + 1"
+    >
+      <div class="mb-3 flex items-end justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Toma de control {{ indice + 1 }}</p>
+          <label :class="[claseEtiquetaCampo, 'mt-2']">
+            Hora
+            <input
+              v-model="toma.hora"
+              type="time"
+              :class="[claseInput, 'mt-1 w-36 font-normal']"
+              :aria-label="`Hora de la toma de control ${indice + 1}`"
+            />
+          </label>
+        </div>
+        <button
+          type="button"
+          :class="claseBotonQuitar"
+          :aria-label="`Quitar la toma de control ${indice + 1}`"
+          title="Quitar toma de control"
+          @click="quitarToma(indice)"
+        >
+          <i class="fas fa-trash-alt" aria-hidden="true"></i>
+        </button>
+      </div>
+      <CamposSignosVitales :toma="toma" />
+    </div>
+
+    <div class="mt-4">
+      <button
+        v-if="(formDataNotaEnfermeria.tomasControl?.length ?? 0) < MAX_TOMAS_CONTROL_NOTA_ENFERMERIA"
+        type="button"
+        :class="claseBotonAgregar"
+        data-agregar-toma
+        @click="agregarToma"
+      >
+        <i class="fas fa-plus" aria-hidden="true"></i>
+        Agregar toma de control
+      </button>
+      <p class="mt-1 text-xs text-gray-500">
+        Hasta {{ MAX_TOMAS_CONTROL_NOTA_ENFERMERIA }}. Por ejemplo, para registrar la respuesta tras administrar un medicamento.
+      </p>
     </div>
   </div>
 </template>

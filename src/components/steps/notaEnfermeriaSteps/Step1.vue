@@ -7,7 +7,8 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { RELACIONES_TEMPORALES_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
-import { claseEtiqueta, claseInput, claseOpcion } from './estilos';
+import Requerido from './Requerido.vue';
+import { claseEtiqueta, claseInput, claseOpcionLista } from './estilos';
 
 const trabajadores = useTrabajadoresStore();
 const { formDataNotaEnfermeria } = useFormDataStore();
@@ -45,11 +46,10 @@ watch(fechaNotaEnfermeria, (valor) => {
 <template>
   <div>
     <h1 class="text-2xl font-bold mb-2 text-gray-900">Nota de enfermería</h1>
-    <p class="text-xs italic text-gray-500">Atención de enfermería. Sin diagnóstico CIE-10.</p>
 
-    <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div class="mt-5 grid grid-cols-2 gap-3">
       <div>
-        <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de la atención</h2>
+        <p :class="claseEtiqueta">Fecha de la atención <Requerido /></p>
         <FormKit
           type="date"
           name="fechaNotaEnfermeria"
@@ -60,24 +60,25 @@ watch(fechaNotaEnfermeria, (valor) => {
         />
       </div>
       <div>
-        <h2 class="text-lg font-medium mb-3 text-gray-800">Hora</h2>
-        <input
-          v-model="formDataNotaEnfermeria.horaAtencion"
+        <p :class="claseEtiqueta">Hora <Requerido /></p>
+        <!-- Mismo control que la fecha, para que se vean iguales -->
+        <FormKit
           type="time"
+          name="horaAtencion"
           data-campo="horaAtencion"
-          :class="claseInput"
+          v-model="formDataNotaEnfermeria.horaAtencion"
         />
       </div>
     </div>
 
     <div class="mt-5" data-pregunta="relacionTemporal">
-      <p :class="claseEtiqueta">¿Es la primera vez que se le atiende por este motivo?</p>
-      <div class="flex flex-wrap gap-2">
+      <p :class="claseEtiqueta">¿Es la primera vez que se le atiende por este motivo? <Requerido /></p>
+      <div class="grid grid-cols-2 gap-2">
         <button
           v-for="opcion in RELACIONES_TEMPORALES_NOTA_ENFERMERIA"
           :key="opcion.clave"
           type="button"
-          :class="claseOpcion(formDataNotaEnfermeria.relacionTemporal === opcion.clave)"
+          :class="claseOpcionLista(formDataNotaEnfermeria.relacionTemporal === opcion.clave)"
           :aria-pressed="formDataNotaEnfermeria.relacionTemporal === opcion.clave"
           @click="formDataNotaEnfermeria.relacionTemporal = opcion.clave"
         >
@@ -87,7 +88,7 @@ watch(fechaNotaEnfermeria, (valor) => {
     </div>
 
     <div class="mt-5">
-      <p :class="claseEtiqueta">Motivo de atención</p>
+      <p :class="claseEtiqueta">Motivo de atención <Requerido /></p>
       <textarea
         v-model="formDataNotaEnfermeria.motivoAtencion"
         rows="3"

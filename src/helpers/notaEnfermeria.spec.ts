@@ -95,8 +95,8 @@ describe('campos obligatorios de la nota de enfermería', () => {
     });
     expect(camposFaltantes).toEqual([
       expect.objectContaining({ nombre: 'Aparato o sistema', paso: 2 }),
-      expect.objectContaining({ nombre: 'Descripción del procedimiento «Otro»', paso: 4 }),
-      expect.objectContaining({ nombre: 'Destino del trabajador', paso: 5 }),
+      expect.objectContaining({ nombre: 'Descripción del procedimiento «Otro»', paso: 5 }),
+      expect.objectContaining({ nombre: 'Destino del trabajador', paso: 7 }),
     ]);
   });
 });
@@ -121,5 +121,43 @@ describe('nota de enfermería en el expediente', () => {
 
   it('un médico puede hacerle nota aclaratoria', () => {
     expect(canCreateDocumentType('Médico', permisos, 'notaAclaratoria', null, 'notaEnfermeria')).toBe(true);
+  });
+});
+
+describe('signos vitales fuera de rango', () => {
+  it('dice en pocas palabras qué está mal en cada campo', async () => {
+    const { erroresSignosNotaEnfermeria } = await import('@/helpers/notaEnfermeria');
+    expect(erroresSignosNotaEnfermeria({ frecuenciaCardiaca: 300, temperatura: 36.55, dolor: 4.5 })).toEqual({
+      frecuenciaCardiaca: 'Debe estar entre 40 y 220',
+      temperatura: 'Solo un decimal',
+      dolor: 'Sin decimales',
+    });
+    expect(erroresSignosNotaEnfermeria({ tensionArterialSistolica: 120 })).toEqual({
+      tensionArterialDiastolica: 'Falta la diastólica',
+    });
+    expect(erroresSignosNotaEnfermeria({ tensionArterialSistolica: 80, tensionArterialDiastolica: 95 })).toEqual({
+      tensionArterialSistolica: 'Debe ser mayor que la diastólica',
+    });
+    expect(erroresSignosNotaEnfermeria({ tensionArterialSistolica: 120, tensionArterialDiastolica: 80, temperatura: 36.5 })).toEqual({});
+  });
+
+  it('no deja guardar con signos fuera de rango, ni en las tomas de control', () => {
+    const base = {
+      fechaNotaEnfermeria: '2026-11-05',
+      horaAtencion: '09:30',
+      relacionTemporal: 'primeraVez',
+      motivoAtencion: 'Cefalea',
+      tipoProblema: 'sintoma',
+      sistema: 'neurologico',
+      origen: 'enfermedadGeneral',
+      habitusExterior: 'Sin alteraciones',
+      destino: 'regresaPuesto',
+    };
+    expect(validarCamposRequeridos('notaEnfermeria', { ...base, signosVitales: { temperatura: 36.5 } }).esValido).toBe(true);
+    const { camposFaltantes } = validarCamposRequeridos('notaEnfermeria', {
+      ...base,
+      tomasControl: [{ hora: '10:00', saturacionOxigeno: 120 }],
+    });
+    expect(camposFaltantes).toEqual([expect.objectContaining({ nombre: 'Signos vitales fuera de rango o incompletos', paso: 4 })]);
   });
 });

@@ -29,17 +29,20 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
     inventario.llevaInventario = () => false;
   });
 
-  it('el aparato o sistema se busca sin acentos y se elige con un clic', async () => {
+  it('el aparato o sistema se elige con un clic entre las trece opciones a la vista', async () => {
     const wrapper = await montar('./Step2.vue');
-    await wrapper.find('[data-buscador]').setValue('oido');
     const opciones = wrapper.findAll('[data-opcion]');
-    expect(opciones.map((o) => o.attributes('data-opcion'))).toEqual(['oido']);
-    await opciones[0].trigger('click');
+    expect(opciones).toHaveLength(13);
+    // «General» es la etiqueta más larga: va al final y ocupa las dos columnas
+    expect(opciones.at(-1)!.attributes('data-opcion')).toBe('general');
+    expect(opciones.at(-1)!.classes()).toContain('col-span-2');
+    await wrapper.find('[data-opcion="oido"]').trigger('click');
     expect(fd.sistema).toBe('oido');
+    expect(wrapper.find('[data-opcion="oido"]').attributes('aria-pressed')).toBe('true');
   });
 
   it('elegir «Otro» pide su descripción; quitarlo la borra', async () => {
-    const wrapper = await montar('./Step4.vue');
+    const wrapper = await montar('./Step5.vue');
     const otro = wrapper.findAll('button').find((b) => b.text() === 'Otro')!;
     await otro.trigger('click');
     expect(fd.procedimientos).toEqual(['otro']);
@@ -51,7 +54,7 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
   });
 
   it('las tomas de control llevan hora y son hasta tres', async () => {
-    const wrapper = await montar('./Step3.vue');
+    const wrapper = await montar('./Step4.vue');
     for (let i = 0; i < 3; i++) await wrapper.find('[data-agregar-toma]').trigger('click');
     expect(fd.tomasControl).toHaveLength(3);
     expect(fd.tomasControl.every((t: any) => /^\d{2}:\d{2}$/.test(t.hora))).toBe(true);
@@ -61,6 +64,57 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
     expect(fd.tomasControl[0].dolor).toBe(4);
     await wrapper.find('[data-toma-control="1"] [data-signo="dolor"]').setValue('');
     expect(fd.tomasControl[0]).not.toHaveProperty('dolor');
+  });
+
+  it('un signo fuera de rango muestra su aviso debajo del campo', async () => {
+    const wrapper = await montar('./Step4.vue');
+    await wrapper.find('[data-signo="frecuenciaCardiaca"]').setValue('300');
+    expect(wrapper.find('[data-error-signo="frecuenciaCardiaca"]').text()).toBe('Debe estar entre 40 y 220');
+    await wrapper.find('[data-signo="frecuenciaCardiaca"]').setValue('80');
+    expect(wrapper.find('[data-error-signo="frecuenciaCardiaca"]').exists()).toBe(false);
+  });
+
+  it('con catálogo, un medicamento nuevo empieza sin elegir y «Otro» pide el nombre', async () => {
+    (useInventarioStore() as any).llevaInventario = () => true;
+    inventarioApi.getExistencias.mockResolvedValue({
+      data: [{ insumo: { _id: 'ins1', nombre: 'Paracetamol', activo: true }, existencia: 2 }],
+    });
+    const wrapper = await montar('./MedicamentosNotaEnfermeria.vue');
+    await flushPromises();
+    await wrapper.find('[data-agregar-medicamento]').trigger('click');
+    expect((wrapper.find('select[aria-label="Medicamento 1"]').element as HTMLSelectElement).value).toBe('');
+    expect(wrapper.find('input[aria-label="Nombre del medicamento 1"]').exists()).toBe(false);
+    // Más de lo que hay: avisa, pero deja guardar
+    await wrapper.find('select[aria-label="Medicamento 1"]').setValue('ins1');
+    await wrapper.find('input[aria-label="Cantidad del medicamento 1"]').setValue('3');
+    expect(wrapper.text()).toContain('Solo hay');
+    // El uso se elige con dos botones
+    await wrapper.findAll('[role="group"] button').find((b) => b.text() === 'Entregado')!.trigger('click');
+    expect(fd.medicamentos[0].uso).toBe('ENTREGADO');
+  });
+
+  it('el mismo medicamento va una vez administrado y otra entregado', async () => {
+    (useInventarioStore() as any).llevaInventario = () => true;
+    inventarioApi.getExistencias.mockResolvedValue({
+      data: [{ insumo: { _id: 'ins1', nombre: 'Paracetamol', activo: true }, existencia: 10 }],
+    });
+    const wrapper = await montar('./MedicamentosNotaEnfermeria.vue');
+    await flushPromises();
+    await wrapper.find('[data-agregar-medicamento]').trigger('click');
+    await wrapper.find('select[aria-label="Medicamento 1"]').setValue('ins1');
+    await wrapper.find('[data-agregar-medicamento]').trigger('click');
+    // Sigue en la lista del segundo renglón y, al elegirlo, toma el otro uso
+    await wrapper.find('select[aria-label="Medicamento 2"]').setValue('ins1');
+    expect(fd.medicamentos.map((m: any) => [m.idInsumo, m.uso])).toEqual([
+      ['ins1', 'ADMINISTRADO'],
+      ['ins1', 'ENTREGADO'],
+    ]);
+    // Cambiarlo a administrado lo duplicaría: el botón queda deshabilitado
+    const administrado2 = wrapper.findAll('[aria-label="Uso del medicamento 2"] button').find((b) => b.text() === 'Administrado')!;
+    expect(administrado2.attributes('disabled')).toBeDefined();
+    // Con los dos usos ocupados ya no se ofrece en un tercer renglón
+    await wrapper.find('[data-agregar-medicamento]').trigger('click');
+    expect(wrapper.find('select[aria-label="Medicamento 3"] option[value="ins1"]').exists()).toBe(false);
   });
 
   it('sin inventario los medicamentos se escriben a mano', async () => {

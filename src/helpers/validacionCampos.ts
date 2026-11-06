@@ -33,6 +33,7 @@ import {
 } from '@/helpers/informeLongitudinalAudiometrico';
 import { recomendacionesIlaSonValidas } from '@/helpers/ilaRecomendaciones';
 import { REGIONES_NORDICO, detalleRegionNordicoCompleto } from '@/helpers/cuestionarioNordico';
+import { signosValidosNotaEnfermeria } from '@/helpers/notaEnfermeria';
 import {
   AREAS_SUENO_VIGILIA,
   PASO_AREA_SUENO_VIGILIA,
@@ -846,20 +847,27 @@ const camposRequeridosPorTipo: Record<string, Array<{
     { campo: 'motivoAtencion', nombre: 'Motivo de atención', tipo: 'texto', paso: 1 },
     { campo: 'tipoProblema', nombre: 'Tipo de problema', tipo: 'seleccion', paso: 2 },
     { campo: 'sistema', nombre: 'Aparato o sistema', tipo: 'seleccion', paso: 2 },
-    { campo: 'origen', nombre: 'Origen de la atención', tipo: 'seleccion', paso: 2 },
+    { campo: 'origen', nombre: 'Origen de la atención', tipo: 'seleccion', paso: 3 },
     { campo: 'habitusExterior', nombre: 'Aspecto general (hábitus exterior)', tipo: 'texto', paso: 3 },
+    {
+      campo: 'signosVitales',
+      nombre: 'Signos vitales fuera de rango o incompletos',
+      tipo: 'numero',
+      paso: 4,
+      validacion: (_valor: any, datos: any) => signosValidosNotaEnfermeria(datos ?? {}),
+    },
     {
       campo: 'tomasControl',
       nombre: 'Hora de cada toma de control',
       tipo: 'hora',
-      paso: 3,
+      paso: 4,
       validacion: (tomas: any) => (tomas ?? []).every((t: any) => !!t?.hora),
     },
     {
       campo: 'procedimientoOtro',
       nombre: 'Descripción del procedimiento «Otro»',
       tipo: 'texto',
-      paso: 4,
+      paso: 5,
       validacion: (valor: any, datos: any) =>
         !(datos?.procedimientos ?? []).includes('otro') || !!String(valor ?? '').trim(),
     },
@@ -867,11 +875,11 @@ const camposRequeridosPorTipo: Record<string, Array<{
       campo: 'medicamentos',
       nombre: 'Cantidad de cada medicamento',
       tipo: 'numero',
-      paso: 4,
+      paso: 6,
       validacion: (medicamentos: any) =>
         (medicamentos ?? []).every((m: any) => Number.isInteger(m?.cantidad) && m.cantidad >= 1),
     },
-    { campo: 'destino', nombre: 'Destino del trabajador', tipo: 'seleccion', paso: 5 },
+    { campo: 'destino', nombre: 'Destino del trabajador', tipo: 'seleccion', paso: 7 },
   ],
   evaluacionSuenoVigilia: [
     { campo: 'fechaEvaluacionSuenoVigilia', nombre: 'Fecha de la evaluación de sueño y vigilia', tipo: 'fecha', paso: 1, validacion: validarFecha },

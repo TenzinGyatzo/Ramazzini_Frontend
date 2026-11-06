@@ -13,7 +13,7 @@ import DocumentosAPI from '@/api/DocumentosAPI';
 import { generarInformePdf } from '@/composables/useGenerarInformePdf';
 import { PASOS_NORDICO } from '@/helpers/cuestionarioNordico';
 import { PASOS_SUENO_VIGILIA, normalizarEvaluacionSuenoVigilia } from '@/helpers/evaluacionSuenoVigilia';
-import { normalizarNotaEnfermeria } from '@/helpers/notaEnfermeria';
+import { PASOS_NOTA_ENFERMERIA, normalizarNotaEnfermeria } from '@/helpers/notaEnfermeria';
 import { usePdfGenerationStore } from '@/stores/pdfGeneration';
 import { permitirSalidaTrasGuardar } from '@/composables/useCapturaSinGuardar';
 
@@ -389,6 +389,8 @@ import Step2NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step2.vue';
 import Step3NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step3.vue';
 import Step4NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step4.vue';
 import Step5NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step5.vue';
+import Step6NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step6.vue';
+import Step7NotaEnfermeria from '../steps/notaEnfermeriaSteps/Step7.vue';
 import Step2EvaluacionSuenoVigilia from '../steps/evaluacionSuenoVigiliaSteps/Step2.vue';
 import Step3EvaluacionSuenoVigilia from '../steps/evaluacionSuenoVigiliaSteps/Step3.vue';
 import Step4EvaluacionSuenoVigilia from '../steps/evaluacionSuenoVigiliaSteps/Step4.vue';
@@ -1305,11 +1307,13 @@ export default {
         ]);
       } else if (documentos.currentTypeOfDocument === 'notaEnfermeria') {
         stepsStore.setSteps([
-          { component: Step1NotaEnfermeria, name: 'Datos de la atención' },
-          { component: Step2NotaEnfermeria, name: 'Clasificación' },
-          { component: Step3NotaEnfermeria, name: 'Valoración' },
-          { component: Step4NotaEnfermeria, name: 'Intervención' },
-          { component: Step5NotaEnfermeria, name: 'Cierre' },
+          { component: Step1NotaEnfermeria, name: PASOS_NOTA_ENFERMERIA[0] },
+          { component: Step2NotaEnfermeria, name: PASOS_NOTA_ENFERMERIA[1] },
+          { component: Step3NotaEnfermeria, name: PASOS_NOTA_ENFERMERIA[2] },
+          { component: Step4NotaEnfermeria, name: PASOS_NOTA_ENFERMERIA[3] },
+          { component: Step5NotaEnfermeria, name: PASOS_NOTA_ENFERMERIA[4] },
+          { component: Step6NotaEnfermeria, name: PASOS_NOTA_ENFERMERIA[5] },
+          { component: Step7NotaEnfermeria, name: PASOS_NOTA_ENFERMERIA[6] },
         ]);
       } else if (documentos.currentTypeOfDocument === 'evaluacionSuenoVigilia') {
         stepsStore.setSteps([

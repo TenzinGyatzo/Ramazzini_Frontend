@@ -1077,7 +1077,7 @@ const datosTrabajador = computed(() => {
 });
 
 // Documentos que se crean directo desde el expediente (el resto está en "Más documentos")
-const tiposDocumentoCrear = [
+const TIPOS_DOCUMENTO_CREAR = [
   { tipo: 'historiaClinica', nombre: 'Historia Clínica', descripcion: 'Entrevista médica', icono: 'fas fa-notes-medical' },
   { tipo: 'exploracionFisica', nombre: 'Exploración Física', descripcion: 'Aparatos y sistemas', icono: 'fa-solid fa-person' },
   { tipo: 'examenVista', nombre: 'Examen Vista', descripcion: 'Agudeza visual y colores', icono: 'fas fa-eye' },
@@ -1088,6 +1088,14 @@ const tiposDocumentoCrear = [
   { tipo: 'notaMedica', nombre: 'Nota Médica', descripcion: 'Consultas', icono: 'fas fa-stethoscope' },
   { tipo: 'notaEnfermeria', nombre: 'Nota de Enfermería', descripcion: 'Atención de enfermería', icono: 'fas fa-user-nurse' },
 ];
+// La Nota de enfermería solo se ofrece a quien firma como personal de enfermería
+const tiposDocumentoCrear = computed(() =>
+  TIPOS_DOCUMENTO_CREAR.filter(
+    (tipo) =>
+      tipo.tipo !== 'notaEnfermeria' ||
+      resolveFirmanteTipo(userStore.user?.role, userStore.user?.perfilProfesional) === 'enfermera',
+  ),
+);
 
 // A los médicos, la Nota de enfermería les ofrece la Nota médica en lugar de solo negarse
 const avisoNotaEnfermeria = ref(false);
