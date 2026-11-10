@@ -172,11 +172,10 @@ export function useProfessionalDataValidation() {
     }
   };
 
-  // Con los datos de este usuario ya cargados y completos no se espera al servidor; si faltan
-  // se vuelve a consultar, por si los completó en otra pestaña
-  const firmanteCargadoCompleto = () => {
+  // ¿Los datos cargados son de este usuario? (sin firmante que aplicar, cuenta como sí)
+  const firmanteDeEsteUsuarioCargado = () => {
     const userId = currentUser.value?._id;
-    if (!userId || !validationResult.value.isValid) return false;
+    if (!userId) return false;
     const role = currentUser.value?.role;
     const perfilProfesional = currentUser.value?.perfilProfesional;
     if (!resolveFirmanteTipo(role, perfilProfesional)) return true;
@@ -190,9 +189,18 @@ export function useProfessionalDataValidation() {
     return String(firmante?.idUser ?? '') === String(userId);
   };
 
+  /**
+   * Con los datos de este usuario ya cargados se responde al instante, sin esperar al
+   * servidor. Si faltan datos, se vuelven a consultar en segundo plano por si los completó
+   * en otra pestaña (la ventana de aviso se cierra sola si llegan completos).
+   * Sin datos de este usuario, se espera la consulta.
+   */
   const ensureProfessionalDataReady = async (tipoDocumento?: string | null) => {
     tipoDocumentoEvaluado.value = tipoDocumento ?? null;
-    if (firmanteCargadoCompleto()) return validationResult.value;
+    if (firmanteDeEsteUsuarioCargado()) {
+      if (!validationResult.value.isValid) void loadFirmanteData();
+      return validationResult.value;
+    }
     await loadFirmanteData();
     return validationResult.value;
   };

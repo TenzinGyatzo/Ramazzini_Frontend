@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCurrentUser } from '@/composables/useCurrentUser';
 import { getFirmanteRouteNameByRole } from '@/composables/useProfessionalDataValidation';
@@ -22,6 +22,14 @@ const props = defineProps({
     default: null
   }
 });
+
+// Si la consulta en segundo plano trae los datos completos (los llenó en otra pestaña), cerrar
+watch(
+  () => props.missingFields.length,
+  (faltantes) => {
+    if (faltantes === 0) closeModal();
+  },
+);
 
 // Enfermería: solo la Nota médica exige la cédula; si es lo único que falta, decirlo así
 const soloFaltaCedulaNotaMedica = computed(

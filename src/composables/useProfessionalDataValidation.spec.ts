@@ -55,13 +55,36 @@ describe('validación de datos profesionales al crear un documento', () => {
     expect(medicoStore.loadMedicoFirmante).not.toHaveBeenCalled();
   });
 
-  it('si faltan datos vuelve a consultar (pudo completarlos en otra pestaña)', async () => {
+  it('si faltan datos responde al instante y vuelve a consultar en segundo plano', async () => {
     medicoStore.medicoFirmante = { ...completo, numeroCedulaProfesional: '', idUser: 'u1' };
+    let terminar: () => void = () => {};
+    medicoStore.loadMedicoFirmante.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          terminar = () => {
+            medicoStore.medicoFirmante = { ...completo, idUser: 'u1' };
+            resolve();
+          };
+        }),
+    );
+    const validacion = useProfessionalDataValidation();
+    // No espera a la consulta: la ventana de aviso puede abrirse ya
+    const result = await validacion.ensureProfessionalDataReady();
+    expect(result.isValid).toBe(false);
+    expect(medicoStore.loadMedicoFirmante).toHaveBeenCalledWith('u1');
+
+    // Si los completó en otra pestaña, la validación se actualiza al llegar la consulta
+    terminar();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(validacion.validationResult.value.isValid).toBe(true);
+  });
+
+  it('sin datos de este usuario sí espera la consulta', async () => {
     medicoStore.loadMedicoFirmante.mockImplementation(async () => {
       medicoStore.medicoFirmante = { ...completo, idUser: 'u1' };
     });
     const result = await useProfessionalDataValidation().ensureProfessionalDataReady();
-    expect(medicoStore.loadMedicoFirmante).toHaveBeenCalledWith('u1');
     expect(result.isValid).toBe(true);
   });
 
