@@ -990,6 +990,7 @@ const firmaSrc = computed(() => {
                                         label="País de nacimiento"
                                         placeholder="Buscar por nombre de país..."
                                         :required="paisNacimientoRequired"
+                                        :disabled="isCurpConformationReadOnly"
                                         geo-context="firmante"
                                     />
                                 </div>
