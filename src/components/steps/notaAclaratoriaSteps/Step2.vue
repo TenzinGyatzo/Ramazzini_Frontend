@@ -8,8 +8,18 @@ import {
   nombreFirmanteFromReferencia,
   prefetchNombresFirmantes,
 } from '@/helpers/firmantePorUsuario';
+import {
+  DOCUMENTO_QUE_EXIGE_CEDULA_ENFERMERIA,
+  useProfessionalDataValidation,
+} from '@/composables/useProfessionalDataValidation';
 
 const { formDataNotaAclaratoria } = useFormDataStore();
+const { ensureProfessionalDataReady } = useProfessionalDataValidation();
+
+// Aclarar una Nota médica exige la cédula, como crearla (enfermería sin cédula no puede)
+const faltaCedulaParaNotaMedica = ref(false);
+const esNotaMedicaBloqueada = (opcion) =>
+  faltaCedulaParaNotaMedica.value && opcion.tipoDocumento === 'notasMedicas';
 const documentos = useDocumentosStore();
 const trabajadores = useTrabajadoresStore();
 
@@ -140,9 +150,14 @@ const nombreAnuladoPor = (opcion) =>
 
 onMounted(async () => {
   // Cargar todos los documentos del trabajador
-  if (trabajadores.currentTrabajadorId) {
-    await documentos.fetchAllDocuments(trabajadores.currentTrabajadorId);
-  }
+  const [, validacionNotaMedica] = await Promise.all([
+    trabajadores.currentTrabajadorId
+      ? documentos.fetchAllDocuments(trabajadores.currentTrabajadorId)
+      : Promise.resolve(),
+    ensureProfessionalDataReady(DOCUMENTO_QUE_EXIGE_CEDULA_ENFERMERIA),
+  ]);
+  faltaCedulaParaNotaMedica.value =
+    validacionNotaMedica.missingFields.includes('numeroCedulaProfesional');
 
   // Esperar a que los computed se actualicen después de cargar los documentos
   await nextTick();
@@ -159,7 +174,7 @@ onMounted(async () => {
         op => op.tipoDocumento === docOrigenTipo && op.documentoId === docOrigenId
       );
       if (opcion) {
-        selectDocumento(opcion);
+        selectDocumento(opcion, { desdeCarga: true });
       }
     }
   } else if (formDataNotaAclaratoria.documentoOrigenTipo && formDataNotaAclaratoria.documentoOrigenId) {
@@ -169,7 +184,7 @@ onMounted(async () => {
     );
     
     if (opcion) {
-      selectDocumento(opcion);
+      selectDocumento(opcion, { desdeCarga: true });
     }
   }
 });
@@ -246,7 +261,9 @@ const onInput = (e) => {
 };
 
 // Seleccionar documento
-const selectDocumento = (opcion) => {
+// La carga de un borrador ya guardado no se bloquea; solo la elección en la lista
+const selectDocumento = (opcion, { desdeCarga = false } = {}) => {
+  if (!desdeCarga && esNotaMedicaBloqueada(opcion)) return;
   selectedEntry.value = opcion;
   query.value = opcion.nombreMostrar;
   documentoSeleccionado.value = opcion.value;
@@ -321,11 +338,26 @@ const hideResults = () => {
             v-for="opcion in filteredDocumentos" 
             :key="opcion.value"
             @click="selectDocumento(opcion)"
-            class="p-3 hover:bg-emerald-50 cursor-pointer border-b last:border-b-0 transition-colors"
+            :aria-disabled="esNotaMedicaBloqueada(opcion) ? 'true' : undefined"
+            :class="[
+              'p-3 border-b last:border-b-0 transition-colors',
+              esNotaMedicaBloqueada(opcion)
+                ? 'cursor-not-allowed opacity-60'
+                : 'hover:bg-emerald-50 cursor-pointer',
+            ]"
           >
             <div class="flex justify-between items-start">
               <div class="flex-1">
-                <span class="font-bold text-emerald-700 text-base block mb-1">{{ opcion.nombreMostrar }}</span>
+                <span
+                  :class="[
+                    'font-bold text-base block mb-1',
+                    esNotaMedicaBloqueada(opcion) ? 'text-gray-500' : 'text-emerald-700',
+                  ]"
+                >{{ opcion.nombreMostrar }}</span>
+                <p v-if="esNotaMedicaBloqueada(opcion)" class="text-sm text-amber-700 mb-1">
+                  <i class="fas fa-lock mr-1 text-xs"></i>
+                  Para aclarar una Nota médica registra tu cédula profesional
+                </p>
                 
                 <!-- Información del documento en múltiples líneas -->
                 <div class="text-sm text-gray-700 space-y-0.5">

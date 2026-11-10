@@ -1,4 +1,4 @@
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useMedicoFirmanteStore } from '@/stores/medicoFirmante';
 import { useEnfermeraFirmanteStore } from '@/stores/enfermeraFirmante';
@@ -31,13 +31,25 @@ export function getFirmanteTypeLabelByRole(
   return '';
 }
 
+/** Documento para el que la enfermera sí necesita su cédula profesional. */
+export const DOCUMENTO_QUE_EXIGE_CEDULA_ENFERMERIA = 'notaMedica';
+
+/**
+ * Campos que el firmante debe tener para crear el documento.
+ * Médicos: cédula siempre. Enfermería: cédula solo para la Nota médica; los demás
+ * documentos se crean sin ella (el pie de página la omite).
+ */
 export function getRequiredFieldsByRole(
   role: string | undefined,
   perfilProfesional?: string | null,
+  tipoDocumento?: string | null,
 ): string[] {
   const tipo = resolveFirmanteTipo(role, perfilProfesional);
   const required = ['nombre', 'primerApellido', 'tituloProfesional'];
-  if (tipo === 'medico' || tipo === 'enfermera') {
+  if (
+    tipo === 'medico' ||
+    (tipo === 'enfermera' && tipoDocumento === DOCUMENTO_QUE_EXIGE_CEDULA_ENFERMERIA)
+  ) {
     required.push('numeroCedulaProfesional');
   }
   return required;
@@ -47,8 +59,9 @@ export function getMissingFields(
   firmante: FirmanteRecord | null,
   role: string | undefined,
   perfilProfesional?: string | null,
+  tipoDocumento?: string | null,
 ): string[] {
-  const requiredFields = getRequiredFieldsByRole(role, perfilProfesional);
+  const requiredFields = getRequiredFieldsByRole(role, perfilProfesional, tipoDocumento);
 
   if (!firmante) {
     return requiredFields;
@@ -83,6 +96,7 @@ export function buildProfessionalDataValidation(
   role: string | undefined,
   firmante: FirmanteRecord | null,
   perfilProfesional?: string | null,
+  tipoDocumento?: string | null,
 ) {
   if (!resolveFirmanteTipo(role, perfilProfesional)) {
     return {
@@ -90,16 +104,18 @@ export function buildProfessionalDataValidation(
       missingFields: [] as string[],
       routeName: '',
       firmanteTypeLabel: '',
+      tipoDocumento: tipoDocumento ?? null,
     };
   }
 
-  const missingFields = getMissingFields(firmante, role, perfilProfesional);
+  const missingFields = getMissingFields(firmante, role, perfilProfesional, tipoDocumento);
 
   return {
     isValid: missingFields.length === 0,
     missingFields,
     routeName: getFirmanteRouteNameByRole(role, perfilProfesional),
     firmanteTypeLabel: getFirmanteTypeLabelByRole(role, perfilProfesional),
+    tipoDocumento: tipoDocumento ?? null,
   };
 }
 
@@ -113,6 +129,9 @@ export function useProfessionalDataValidation() {
   const { enfermeraFirmante } = storeToRefs(enfermeraStore);
   const { tecnicoFirmante } = storeToRefs(tecnicoStore);
 
+  // Documento que se intenta crear (la cédula de enfermería depende de él)
+  const tipoDocumentoEvaluado = ref<string | null>(null);
+
   const validationResult = computed(() => {
     const role = currentUser.value?.role;
     const perfilProfesional = currentUser.value?.perfilProfesional;
@@ -124,7 +143,12 @@ export function useProfessionalDataValidation() {
       tecnicoFirmante.value as FirmanteRecord | null,
     );
 
-    return buildProfessionalDataValidation(role, firmante, perfilProfesional);
+    return buildProfessionalDataValidation(
+      role,
+      firmante,
+      perfilProfesional,
+      tipoDocumentoEvaluado.value,
+    );
   });
 
   const loadFirmanteData = async () => {
@@ -166,7 +190,8 @@ export function useProfessionalDataValidation() {
     return String(firmante?.idUser ?? '') === String(userId);
   };
 
-  const ensureProfessionalDataReady = async () => {
+  const ensureProfessionalDataReady = async (tipoDocumento?: string | null) => {
+    tipoDocumentoEvaluado.value = tipoDocumento ?? null;
     if (firmanteCargadoCompleto()) return validationResult.value;
     await loadFirmanteData();
     return validationResult.value;

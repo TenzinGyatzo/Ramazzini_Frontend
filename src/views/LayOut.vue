@@ -347,7 +347,9 @@ const camposPendientesEnfermera = computed(() => {
     pendientes.push("Sexo");
   }
   if (!enfermera?.tituloProfesional) pendientes.push("Título Profesional");
-  if (!enfermera?.numeroCedulaProfesional) pendientes.push("Número de Registro/Cédula Profesional");
+  if (!enfermera?.numeroCedulaProfesional) {
+    pendientes.push("Número de Registro/Cédula Profesional (necesaria para la Nota médica)");
+  }
 
   return pendientes;
 });

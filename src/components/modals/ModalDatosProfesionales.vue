@@ -16,8 +16,21 @@ const props = defineProps({
   firmanteTypeLabel: {
     type: String,
     default: ''
+  },
+  tipoDocumento: {
+    type: String,
+    default: null
   }
 });
+
+// Enfermería: solo la Nota médica exige la cédula; si es lo único que falta, decirlo así
+const soloFaltaCedulaNotaMedica = computed(
+  () =>
+    props.tipoDocumento === 'notaMedica' &&
+    props.missingFields.length === 1 &&
+    props.missingFields[0] === 'numeroCedulaProfesional' &&
+    props.firmanteTypeLabel === 'Enfermero/a'
+);
 
 const emit = defineEmits(['closeModal', 'navigateToConfig']);
 const router = useRouter();
@@ -83,7 +96,10 @@ const missingFieldsLabels = computed(() => {
           <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Datos Profesionales Incompletos</h2>
           
           <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-left">
-            <p class="text-gray-700 text-sm sm:text-base leading-relaxed">
+            <p v-if="soloFaltaCedulaNotaMedica" class="text-gray-700 text-sm sm:text-base leading-relaxed">
+              Para elaborar la <strong>Nota médica</strong> necesitas registrar tu cédula profesional. Los demás documentos puedes crearlos sin ella.
+            </p>
+            <p v-else class="text-gray-700 text-sm sm:text-base leading-relaxed">
               Para poder generar documentos médicos, es obligatorio que cuentes con tu información profesional registrada como <strong>{{ firmanteTypeLabel }}</strong>.
             </p>
             
@@ -99,7 +115,9 @@ const missingFieldsLabels = computed(() => {
           </div>
 
           <p class="text-gray-600 text-sm mb-8">
-            Por favor, completa tus datos profesionales en la sección de configuración para habilitar la creación de documentos.
+            {{ soloFaltaCedulaNotaMedica
+              ? 'Regístrala en tus datos profesionales para habilitar la Nota médica.'
+              : 'Por favor, completa tus datos profesionales en la sección de configuración para habilitar la creación de documentos.' }}
           </p>
 
           <div class="flex flex-col sm:flex-row gap-3">

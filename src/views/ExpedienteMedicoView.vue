@@ -807,7 +807,9 @@ const navigateTo = async (routeName: string, params: Record<string, unknown>) =>
 
   // Validar datos profesionales antes de crear cualquier documento
   if (routeName === 'crear-documento') {
-    const professionalValidation = await ensureProfessionalDataReady();
+    const professionalValidation = await ensureProfessionalDataReady(
+      params.tipoDocumento as string,
+    );
     if (!professionalValidation.isValid) {
       showProfessionalDataModal.value = true;
       return;
@@ -1303,6 +1305,7 @@ const crearDocumento = (tipoDocumento: string) =>
           :missingFields="validationResult.missingFields"
           :routeName="validationResult.routeName"
           :firmanteTypeLabel="validationResult.firmanteTypeLabel"
+          :tipoDocumento="validationResult.tipoDocumento ?? undefined"
           @closeModal="showProfessionalDataModal = false"
           @navigateToConfig="showProfessionalDataModal = false"
         />

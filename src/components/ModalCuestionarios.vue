@@ -258,7 +258,7 @@ const crearDocumento = async (opcion) => {
   // Si aún no llegó la precarga del expediente, que corra junto con la validación del firmante
   precargarConsentimiento(trabajadores.currentTrabajadorId);
 
-  const professionalValidation = await ensureProfessionalDataReady();
+  const professionalValidation = await ensureProfessionalDataReady(opcion.tipoDocumento);
   if (!professionalValidation.isValid) {
     showProfessionalDataModal.value = true;
     return;
@@ -403,6 +403,7 @@ const seleccionarPrimerResultado = () => {
         :missingFields="validationResult.missingFields"
         :routeName="validationResult.routeName"
         :firmanteTypeLabel="validationResult.firmanteTypeLabel"
+        :tipoDocumento="validationResult.tipoDocumento"
         @closeModal="showProfessionalDataModal = false"
         @navigateToConfig="() => { showProfessionalDataModal = false; closeModal(); }"
       />

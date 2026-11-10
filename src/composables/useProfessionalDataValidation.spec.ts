@@ -26,10 +26,18 @@ vi.mock('@/composables/useCurrentUser', async () => {
   };
 });
 vi.mock('@/constants/rolePermissionPolicy', () => ({
-  resolveFirmanteTipo: (role?: string) => (role === 'Médico' ? 'medico' : null),
+  resolveFirmanteTipo: (role?: string, perfil?: string | null) => {
+    if (role === 'Médico') return 'medico';
+    if (role === 'Enfermero/a') return 'enfermera';
+    if (role === 'Técnico Evaluador') return 'tecnico';
+    if (role === 'Principal') return perfil === 'enfermeria' ? 'enfermera' : 'medico';
+    return null;
+  },
 }));
 
-const { useProfessionalDataValidation } = await import('./useProfessionalDataValidation');
+const { useProfessionalDataValidation, buildProfessionalDataValidation } = await import(
+  './useProfessionalDataValidation'
+);
 
 const completo = { nombre: 'Ana', primerApellido: 'Pérez', tituloProfesional: 'Dra.', numeroCedulaProfesional: '123' };
 
@@ -61,5 +69,47 @@ describe('validación de datos profesionales al crear un documento', () => {
     medicoStore.medicoFirmante = { ...completo, idUser: 'otro' };
     await useProfessionalDataValidation().ensureProfessionalDataReady();
     expect(medicoStore.loadMedicoFirmante).toHaveBeenCalledWith('u1');
+  });
+
+  it('el resultado informa el documento evaluado', async () => {
+    medicoStore.medicoFirmante = { ...completo, idUser: 'u1' };
+    const result = await useProfessionalDataValidation().ensureProfessionalDataReady('receta');
+    expect(result.tipoDocumento).toBe('receta');
+  });
+});
+
+describe('cédula profesional según el documento', () => {
+  const sinCedula = { ...completo, numeroCedulaProfesional: '' };
+
+  it('enfermería sin cédula puede crear documentos que no son la Nota médica', () => {
+    for (const tipo of ['notaEnfermeria', 'receta', 'cuestionarioNordico', 'notaAclaratoria']) {
+      const r = buildProfessionalDataValidation('Enfermero/a', sinCedula, null, tipo);
+      expect(r.isValid).toBe(true);
+    }
+  });
+
+  it('enfermería sin cédula no puede crear la Nota médica', () => {
+    const r = buildProfessionalDataValidation('Enfermero/a', sinCedula, null, 'notaMedica');
+    expect(r.isValid).toBe(false);
+    expect(r.missingFields).toEqual(['numeroCedulaProfesional']);
+  });
+
+  it('el Principal con perfil de enfermería sigue la misma regla', () => {
+    expect(buildProfessionalDataValidation('Principal', sinCedula, 'enfermeria', 'receta').isValid).toBe(true);
+    expect(buildProfessionalDataValidation('Principal', sinCedula, 'enfermeria', 'notaMedica').isValid).toBe(false);
+  });
+
+  it('enfermería sigue necesitando nombre, apellido y título en cualquier documento', () => {
+    const r = buildProfessionalDataValidation('Enfermero/a', { ...sinCedula, tituloProfesional: '' }, null, 'receta');
+    expect(r.missingFields).toEqual(['tituloProfesional']);
+  });
+
+  it('el médico necesita la cédula en todos los documentos', () => {
+    expect(buildProfessionalDataValidation('Médico', sinCedula, null, 'receta').isValid).toBe(false);
+    expect(buildProfessionalDataValidation('Principal', sinCedula, 'medicina', 'receta').isValid).toBe(false);
+  });
+
+  it('el técnico no necesita la cédula', () => {
+    expect(buildProfessionalDataValidation('Técnico Evaluador', sinCedula, null, 'audiometria').isValid).toBe(true);
   });
 });
