@@ -110,5 +110,47 @@
     },
     "expectCrossValid": false,
     "expectCodes": ["CURP_CROSS_CONSONANTES"]
+  },
+  {
+    "id": "ok-jose-nombre-unico",
+    "curp": "HEHJ800611HMNRRS05",
+    "demographics": {
+      "fechaNacimiento": "1980-06-11",
+      "sexo": "Masculino",
+      "entidadNacimiento": "16",
+      "nombre": "JOSÉ",
+      "primerApellido": "HERRERA",
+      "segundoApellido": "HERRERA"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "fail-jose-nombre-unico-con-x",
+    "curp": "HEHX800611HMNRRX05",
+    "demographics": {
+      "fechaNacimiento": "1980-06-11",
+      "sexo": "Masculino",
+      "entidadNacimiento": "16",
+      "nombre": "JOSÉ",
+      "primerApellido": "HERRERA",
+      "segundoApellido": "HERRERA"
+    },
+    "expectCrossValid": false,
+    "expectCodes": ["CURP_CROSS_INICIALES", "CURP_CROSS_CONSONANTES"]
+  },
+  {
+    "id": "ok-maria-nombre-unico",
+    "curp": "LOGM850203MJCPMR02",
+    "demographics": {
+      "fechaNacimiento": "1985-02-03",
+      "sexo": "Femenino",
+      "entidadNacimiento": "14",
+      "nombre": "MARIA",
+      "primerApellido": "LOPEZ",
+      "segundoApellido": "GOMEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
   }
 ]

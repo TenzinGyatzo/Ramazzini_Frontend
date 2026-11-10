@@ -136,16 +136,18 @@ function isCommonGivenPrefix(token: string): boolean {
 
 /**
  * Palabra efectiva del nombre para posición 4 (reglas 1.2, 1.3).
+ * MARIA/JOSE (y abreviaturas) se omiten solo si les sigue otra palabra
+ * significativa; si son el único nombre («JOSE», «MARIA», «JOSE DE»), se usan.
  */
 export function resolveEffectiveGivenName(raw?: string): string {
-  let tokens = skipLeadingParticles(tokenizeNamePart(raw ?? ''));
+  const tokens = skipLeadingParticles(tokenizeNamePart(raw ?? ''));
   if (tokens.length === 0) {
     return '';
   }
 
   if (isCommonGivenPrefix(tokens[0])) {
     const remaining = skipLeadingParticles(tokens.slice(1));
-    return remaining[0] ?? '';
+    return remaining[0] ?? tokens[0];
   }
 
   return tokens[0];
