@@ -20,6 +20,7 @@ import {
   PAIS_PROHIBIDO_FIRMANTE_MESSAGE,
 } from '@/helpers/paisNacimiento';
 import { isMexicoPais } from '@/helpers/geoSelectorRules';
+import { etiquetaCedulaPiePagina } from '@/helpers/textoCedulaPiePagina';
 import { FIRMANTE_EDAD_MINIMA, FIRMANTE_EDAD_MAXIMA, PERSON_NAME_MAX_LENGTH, PERSON_NAME_VALIDATION_MESSAGE, PERSON_NAME_CHARACTERS_VALIDATION_MESSAGE, PERSON_NAME_CHARACTERS_SIN_REGIMEN_VALIDATION_MESSAGE } from '../../formkit.config';
 import {
   formatearTituloProfesional,
@@ -1100,7 +1101,7 @@ const firmaSrc = computed(() => {
                                         </span><br v-if="piePaginaFirmante.nombre">
                                         
                                         <span v-if="piePaginaFirmante.numeroCedulaProfesional" class="font-light">
-                                            {{ proveedorSaludStore.proveedorSalud.pais === 'MX' ? 'Cédula Profesional Médico Cirujano No.' : 'Registro Profesional No.' }} {{ piePaginaFirmante.numeroCedulaProfesional }}
+                                            {{ etiquetaCedulaPiePagina(proveedorSaludStore.proveedorSalud?.pais, 'medico') }} {{ piePaginaFirmante.numeroCedulaProfesional }}
                                         </span><br v-if="piePaginaFirmante.numeroCedulaProfesional">
                                         
                                         <span v-if="piePaginaFirmante.especialistaSaludTrabajo && !piePaginaFirmante.numeroCedulaEspecialista" class="font-light">
