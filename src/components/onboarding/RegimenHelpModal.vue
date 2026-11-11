@@ -36,7 +36,7 @@ const explicacionSugerencia = computed(() => {
   if (!sugerencia.value) return '';
   
   if (sugerencia.value === 'SIRES_NOM024') {
-    return 'Basado en tus respuestas, tu operación requiere cumplimiento normativo estricto y trazabilidad completa. Se recomienda el cumplimiento con normativa oficial vigente.';
+    return 'Basado en tus respuestas, tu operación requiere cumplimiento normativo estricto y trazabilidad completa. Se recomienda elegir «Cumplimiento normativo».';
   } else {
     return 'Basado en tus respuestas, puedes continuar sin aplicar un régimen regulatorio específico. El sistema operará como plataforma clínica general.';
   }

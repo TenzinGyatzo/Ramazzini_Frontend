@@ -502,7 +502,7 @@ watch(
             
             <!-- <p v-if="isMX" class="mt-1 text-xs text-amber-600 flex items-center gap-1">
                 <i class="fas fa-info-circle"></i>
-                Campo obligatorio para proveedores en México (NOM-024)
+                Campo obligatorio para proveedores en México
             </p> -->
         </div>
 
@@ -529,7 +529,7 @@ watch(
                 </Transition>
                 <!-- <p v-if="isMX" class="mt-1 text-xs text-amber-600 flex items-center gap-1">
                     <i class="fas fa-info-circle"></i>
-                    Campo obligatorio para proveedores en México (NOM-024)
+                    Campo obligatorio para proveedores en México
                 </p> -->
             </div>
         </div>
