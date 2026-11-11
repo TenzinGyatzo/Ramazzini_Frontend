@@ -51,7 +51,7 @@ const ERROR_CODE_MESSAGES: Record<
     },
     SIRES_NOM024: {
       title: 'Documento inmutable',
-      message: 'Por inalterabilidad según la política regulatoria SIRES (NOM-024), este documento no puede modificarse en su estado actual.',
+      message: 'Por inalterabilidad normativa, este documento no puede modificarse en su estado actual.',
       type: 'warning',
     },
   },
@@ -64,7 +64,7 @@ const ERROR_CODE_MESSAGES: Record<
     },
     SIRES_NOM024: {
       title: 'Campo requerido',
-      message: 'Este campo es obligatorio según la normativa SIRES (NOM-024).',
+      message: 'Este campo es obligatorio.',
       type: 'error',
     },
   },
@@ -94,7 +94,7 @@ const ERROR_CODE_MESSAGES: Record<
     SIRES_NOM024: {
       title: 'Consentimiento requerido',
       message:
-        'Se requiere consentimiento para tratamiento de información en SIRES (versión vigente) para crear este documento.',
+        'Se requiere el consentimiento para tratamiento de información (versión vigente) para crear este documento.',
       type: 'error',
     },
   },
@@ -209,7 +209,7 @@ export function mapRegulatoryErrorMessage(
     if (regime === 'SIN_REGIMEN') {
       suggestedAction = 'Si necesitas esta función, contacta al administrador para habilitarla.';
     } else {
-      suggestedAction = 'Esta función solo está disponible para proveedores con régimen SIRES (NOM-024).';
+      suggestedAction = 'Esta función solo está disponible con cumplimiento normativo.';
     }
   }
 
@@ -227,7 +227,7 @@ export function mapRegulatoryErrorMessage(
           'en su estado actual',
           `cuando está ${docState}`,
         );
-        suggestedAction = 'Los documentos finalizados o anulados son inmutables según la política regulatoria SIRES (NOM-024).';
+        suggestedAction = 'Los documentos finalizados o anulados no pueden modificarse.';
       } else {
         message = message.replace(
           'en su estado actual',
