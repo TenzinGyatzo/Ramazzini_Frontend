@@ -36,7 +36,7 @@ const explicacionSugerencia = computed(() => {
   if (!sugerencia.value) return '';
   
   if (sugerencia.value === 'SIRES_NOM024') {
-    return 'Basado en tus respuestas, tu operación requiere cumplimiento normativo estricto y trazabilidad completa. Se recomienda aplicar el régimen SIRES (NOM-024).';
+    return 'Basado en tus respuestas, tu operación requiere cumplimiento normativo estricto y trazabilidad completa. Se recomienda el cumplimiento con normativa oficial vigente.';
   } else {
     return 'Basado en tus respuestas, puedes continuar sin aplicar un régimen regulatorio específico. El sistema operará como plataforma clínica general.';
   }
@@ -191,7 +191,7 @@ const preguntaCompletada = (numero) => {
             >
               <div class="flex items-center gap-2 mb-3">
                 <p class="text-sm font-medium text-gray-800 flex-1">
-                  1. ¿Tu operación requiere cumplir con un marco normativo específico (por ejemplo, SIRES NOM-024-SSA3-2012)?
+                  1. ¿Tu operación requiere cumplir con la normativa oficial vigente para registros electrónicos de salud?
                 </p>
                 <Transition name="check-fade">
                   <i 
@@ -351,7 +351,7 @@ const preguntaCompletada = (numero) => {
                         @click="aplicarSugerencia"
                         class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
-                        Aplicar SIRES (NOM-024)
+                        Aplicar cumplimiento normativo
                       </button>
                       <button
                         v-else

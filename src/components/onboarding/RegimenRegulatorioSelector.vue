@@ -124,12 +124,12 @@ const selectRegimen = (regimen) => {
             :checked="regimenSeleccionado === 'SIRES_NOM024'"
             @change="selectRegimen('SIRES_NOM024')"
             class="sr-only"
-            aria-label="Seleccionar régimen SIRES (NOM-024)"
+            aria-label="Seleccionar cumplimiento con normativa oficial vigente"
           />
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
               <div class="font-semibold text-gray-800 flex-1">
-                SIRES — NOM-024
+                Cumplimiento con normativa oficial vigente
               </div>
               <i
                 v-if="regimenSeleccionado === 'SIRES_NOM024'"
@@ -202,7 +202,7 @@ const selectRegimen = (regimen) => {
               aria-label="Aceptar declaración para continuar sin régimen regulatorio"
             />
             <span class="ml-3 text-sm text-gray-800">
-              Entiendo que esta cuenta operará sin régimen regulatorio y que no podré cambiarlo aquí. Para usar SIRES tendré que registrar otra cuenta.
+              Entiendo que esta cuenta operará sin régimen regulatorio y que no podré cambiarlo aquí. Para operar con cumplimiento de normativa oficial tendré que registrar otra cuenta.
               <span class="text-red-500">*</span>
             </span>
           </label>
