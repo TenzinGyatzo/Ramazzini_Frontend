@@ -122,6 +122,15 @@ const sentinelOptions = computed(() => {
   return buildEntidadSentinelOptions(allowed);
 });
 
+const sinCodigosRepetidos = (entries) => {
+  const vistos = new Set();
+  return entries.filter((entry) => {
+    if (vistos.has(entry.code)) return false;
+    vistos.add(entry.code);
+    return true;
+  });
+};
+
 const filterEstadosForMode = (entries, { prependAllSentinels = true } = {}) => {
   const sorted = filterEntidadCatalogEntries(
     sortEstadosByCode(entries || []),
@@ -130,9 +139,11 @@ const filterEstadosForMode = (entries, { prependAllSentinels = true } = {}) => {
   const allowed = allowedEntidadCodes.value;
 
   // Typed search: keep only sentinels already present in `entries` (query matches).
+  // Los especiales armados aquí (00, 99…) también vienen del catálogo: uno por código.
   if (!prependAllSentinels) {
-    if (!allowed) return sorted;
-    return sorted.filter((entry) => allowed.includes(entry.code));
+    const unicos = sinCodigosRepetidos(sorted);
+    if (!allowed) return unicos;
+    return unicos.filter((entry) => allowed.includes(entry.code));
   }
 
   if (!allowed) {
