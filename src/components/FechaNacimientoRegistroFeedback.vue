@@ -5,6 +5,7 @@ import {
   calculateExactAgeDuration,
   formatExactAgeDuration,
   buildRegistrationAgeRangeMessage,
+  buildRegistrationAgeRangeText,
 } from '@/helpers/dates';
 import {
   FIELD_AUXILIARY_MESSAGES_CLASS,
@@ -72,7 +73,7 @@ const invalidMessage = computed(() => {
       normalizedFecha.value,
     );
   } catch {
-    return `Edad fuera de rango (${props.minYears} a ${props.maxYears} años, incluyendo meses y días).`;
+    return buildRegistrationAgeRangeText(props.minYears, props.maxYears);
   }
 });
 

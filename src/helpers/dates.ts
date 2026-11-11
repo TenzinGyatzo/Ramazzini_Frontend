@@ -322,9 +322,16 @@ function getBirthDateBounds(
   minYears: number,
   maxYears: number,
 ): { min: Date; max: Date } {
+  // Años cumplidos (espejo de backend/src/utils/age-registration.util.ts): válido desde el día
+  // en que cumple minYears y hasta la víspera de cumplir maxYears + 1
   const referencia = normalizeDateOnlyLocal(fechaReferencia);
+  const cumpleMaxMasUno = normalizeDateOnlyLocal(
+    subtractCalendarYears(referencia, maxYears + 1),
+  );
+  const min = new Date(cumpleMaxMasUno);
+  min.setDate(min.getDate() + 1);
   return {
-    min: normalizeDateOnlyLocal(subtractCalendarYears(referencia, maxYears)),
+    min: normalizeDateOnlyLocal(min),
     max: normalizeDateOnlyLocal(subtractCalendarYears(referencia, minYears)),
   };
 }
@@ -394,10 +401,15 @@ function buildRegistrationAgeRangeMessage(
       fechaNacimiento,
       fechaReferencia,
     );
-    return `Edad fuera de rango (${minYears} a ${maxYears} años, incluyendo meses y días). Edad calculada: ${formatExactAgeDuration(duration)}.`;
+    return `${buildRegistrationAgeRangeText(minYears, maxYears)} Edad calculada: ${formatExactAgeDuration(duration)}.`;
   } catch {
-    return `Edad fuera de rango (${minYears} a ${maxYears} años, incluyendo meses y días).`;
+    return buildRegistrationAgeRangeText(minYears, maxYears);
   }
+}
+
+/** «Edad fuera de rango (de 17 a 100 años cumplidos; no se aceptan 101 o más).» */
+function buildRegistrationAgeRangeText(minYears: number, maxYears: number): string {
+  return `Edad fuera de rango (de ${minYears} a ${maxYears} años cumplidos; no se aceptan ${maxYears + 1} o más).`;
 }
 
 function formatBirthDateBoundForInput(date: Date): string {
@@ -464,6 +476,7 @@ export {
   isBirthDateInRegistrationRange,
   getRegistrationBirthDateInputBounds,
   buildRegistrationAgeRangeMessage,
+  buildRegistrationAgeRangeText,
   calculateExactAgeDuration,
   formatExactAgeDuration,
 };

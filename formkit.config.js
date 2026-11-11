@@ -15,7 +15,7 @@ import {
 
 export const FIRMANTE_EDAD_MINIMA = 18;
 export const FIRMANTE_EDAD_MAXIMA = 90;
-export const TRABAJADOR_EDAD_MINIMA = 18;
+export const TRABAJADOR_EDAD_MINIMA = 17;
 export const TRABAJADOR_EDAD_MAXIMA = 100;
 export const PERSON_NAME_MIN_LENGTH = 2;
 export const PERSON_NAME_MAX_LENGTH = 50;

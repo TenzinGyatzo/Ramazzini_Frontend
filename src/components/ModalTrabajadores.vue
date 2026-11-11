@@ -935,7 +935,7 @@ const handleSubmit = async (data) => {
     return;
   }
 
-  // Validar rango de edad permitido para registro: 18-100 años (duración exacta)
+  // Rango de edad para registro: de 17 a 100 años cumplidos (hasta la víspera de cumplir 101)
   if (data.fechaNacimiento) {
     const edadValida = isBirthDateInRegistrationRange(
       data.fechaNacimiento,

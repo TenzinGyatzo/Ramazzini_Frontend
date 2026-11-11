@@ -51,7 +51,9 @@ describe('calcularEdadPrecisa - médico firmante', () => {
     expect(calcularEdadPrecisa(fecha91)).toBe(91);
   });
 
-  it('should use firmante age constants 18-90', () => {
+  it('límites: trabajadores de 17 a 100 cumplidos; firmantes de 18 a 90', () => {
+    expect(TRABAJADOR_EDAD_MINIMA).toBe(17);
+    expect(TRABAJADOR_EDAD_MAXIMA).toBe(100);
     expect(FIRMANTE_EDAD_MINIMA).toBe(18);
     expect(FIRMANTE_EDAD_MAXIMA).toBe(90);
 
@@ -61,104 +63,50 @@ describe('calcularEdadPrecisa - médico firmante', () => {
   });
 });
 
-describe('isBirthDateInRegistrationRange - regla 2', () => {
-  it('trabajador: rechaza 17a 11m 30d y 100a 0m 1d', () => {
-    expect(
-      isBirthDateInRegistrationRange(
-        date(2008, 8, 8),
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(false);
-    expect(
-      isBirthDateInRegistrationRange(
-        date(1926, 8, 6),
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(false);
+// Espejo de backend/src/utils/age-registration.util.spec.ts (REF = 7 ago 2026)
+describe('isBirthDateInRegistrationRange - años cumplidos', () => {
+  const trabajador = (fecha: Date | string) =>
+    isBirthDateInRegistrationRange(fecha, REF, TRABAJADOR_EDAD_MINIMA, TRABAJADOR_EDAD_MAXIMA);
+  const firmante = (fecha: Date | string) =>
+    isBirthDateInRegistrationRange(fecha, REF, FIRMANTE_EDAD_MINIMA, FIRMANTE_EDAD_MAXIMA);
+
+  it('trabajador: cumple 17 hoy → válido; le falta un día → rechazado', () => {
+    expect(trabajador(date(2009, 8, 7))).toBe(true);
+    expect(trabajador(date(2009, 8, 8))).toBe(false);
   });
 
-  it('trabajador: acepta 18a 0m 0d, 18a 0m 1d y 100a 0m 0d', () => {
-    expect(
-      isBirthDateInRegistrationRange(
-        date(2008, 8, 7),
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(true);
-    expect(
-      isBirthDateInRegistrationRange(
-        date(2008, 8, 6),
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(true);
-    expect(
-      isBirthDateInRegistrationRange(
-        date(1926, 8, 7),
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(true);
+  it('trabajador: acepta 100a 0m 1d y la víspera de cumplir 101; rechaza al cumplir 101', () => {
+    expect(trabajador(date(1926, 8, 6))).toBe(true);
+    expect(trabajador(date(1925, 8, 8))).toBe(true);
+    expect(trabajador(date(1925, 8, 7))).toBe(false);
   });
 
-  it('firmante: rechaza 90a 0m 1d y acepta 90a 0m 0d', () => {
-    expect(
-      isBirthDateInRegistrationRange(date(1936, 8, 6), REF, 18, 90),
-    ).toBe(false);
-    expect(
-      isBirthDateInRegistrationRange(date(1936, 8, 7), REF, 18, 90),
-    ).toBe(true);
+  it('firmante: cumple 18 hoy → válido; le falta un día → rechazado', () => {
+    expect(firmante(date(2008, 8, 7))).toBe(true);
+    expect(firmante(date(2008, 8, 8))).toBe(false);
+  });
+
+  it('firmante: acepta 90a 0m 1d y la víspera de cumplir 91; rechaza al cumplir 91', () => {
+    expect(firmante(date(1936, 8, 6))).toBe(true);
+    expect(firmante(date(1935, 8, 8))).toBe(true);
+    expect(firmante(date(1935, 8, 7))).toBe(false);
   });
 
   it('parsea strings YYYY-MM-DD como fecha local (input type=date)', () => {
-    expect(
-      isBirthDateInRegistrationRange(
-        '1926-08-07',
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(true);
-    expect(
-      isBirthDateInRegistrationRange(
-        '1926-08-06',
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(false);
-    expect(
-      isBirthDateInRegistrationRange('1936-08-07', REF, 18, 90),
-    ).toBe(true);
-    expect(
-      isBirthDateInRegistrationRange('1936-08-06', REF, 18, 90),
-    ).toBe(false);
+    expect(trabajador('1925-08-08')).toBe(true);
+    expect(trabajador('1925-08-07')).toBe(false);
+    expect(firmante('1935-08-08')).toBe(true);
+    expect(firmante('1935-08-07')).toBe(false);
   });
 
   it('parsea fechas ISO UTC como date-only', () => {
-    expect(
-      isBirthDateInRegistrationRange(
-        '1926-08-07T00:00:00.000Z',
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(true);
-    expect(
-      isBirthDateInRegistrationRange(
-        new Date('1926-08-07T00:00:00.000Z'),
-        REF,
-        TRABAJADOR_EDAD_MINIMA,
-        TRABAJADOR_EDAD_MAXIMA,
-      ),
-    ).toBe(true);
+    expect(trabajador('1925-08-08T00:00:00.000Z')).toBe(true);
+    expect(trabajador(new Date('1925-08-08T00:00:00.000Z'))).toBe(true);
+  });
+
+  it('nacido un 29 de febrero: la víspera de 101 sí, al cumplirlos no', () => {
+    expect(isBirthDateInRegistrationRange(date(1924, 2, 29), date(2025, 2, 28), 17, 100)).toBe(true);
+    expect(isBirthDateInRegistrationRange(date(1924, 2, 29), date(2025, 3, 1), 17, 100)).toBe(false);
   });
 
   it('genera mensaje descriptivo con edad calculada', () => {
@@ -166,24 +114,32 @@ describe('isBirthDateInRegistrationRange - regla 2', () => {
       buildRegistrationAgeRangeMessage(
         TRABAJADOR_EDAD_MINIMA,
         TRABAJADOR_EDAD_MAXIMA,
-        '1926-08-07',
+        '1925-08-07',
         REF,
       ),
     ).toBe(
-      'Edad fuera de rango (18 a 100 años, incluyendo meses y días). Edad calculada: 100 años, 0 meses y 0 días.',
+      'Edad fuera de rango (de 17 a 100 años cumplidos; no se aceptan 101 o más). Edad calculada: 101 años, 0 meses y 0 días.',
     );
   });
 });
 
 describe('getRegistrationBirthDateInputBounds', () => {
-  it('genera límites YYYY-MM-DD alineados con la regla exacta', () => {
-    const bounds = getRegistrationBirthDateInputBounds(
+  it('el calendario va de la víspera del máximo + 1 al día en que cumple el mínimo', () => {
+    const trabajador = getRegistrationBirthDateInputBounds(
       TRABAJADOR_EDAD_MINIMA,
       TRABAJADOR_EDAD_MAXIMA,
       REF,
     );
-    expect(bounds.min).toBe('1926-08-07');
-    expect(bounds.max).toBe('2008-08-07');
+    expect(trabajador.min).toBe('1925-08-08');
+    expect(trabajador.max).toBe('2009-08-07');
+
+    const firmante = getRegistrationBirthDateInputBounds(
+      FIRMANTE_EDAD_MINIMA,
+      FIRMANTE_EDAD_MAXIMA,
+      REF,
+    );
+    expect(firmante.min).toBe('1935-08-08');
+    expect(firmante.max).toBe('2008-08-07');
   });
 });
 
