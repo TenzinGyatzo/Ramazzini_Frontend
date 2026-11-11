@@ -18,7 +18,7 @@ const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const resultadosClinicosStore = useResultadosClinicosStore();
 const proveedorSaludStore = useProveedorSaludStore();
-const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax({ conEdades: false });
 
 // Emit para cerrar modal y actualizar datos
 const emit = defineEmits(['closeModalUpdate', 'updateData', 'abrirResultados']);

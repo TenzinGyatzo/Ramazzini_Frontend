@@ -479,4 +479,5 @@ export {
   buildRegistrationAgeRangeText,
   calculateExactAgeDuration,
   formatExactAgeDuration,
+  parseDateOnlyValue,
 };

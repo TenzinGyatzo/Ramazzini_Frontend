@@ -420,7 +420,8 @@ import ModalCamposFaltantes from '../ModalCamposFaltantes.vue';
 import TreatmentConsentModal from '../TreatmentConsentModal.vue';
 import ModalSuscripcion from '../suscripciones/ModalSuscripcion.vue';
 import { esLimiteHistoriasAlcanzado } from '@/helpers/limiteHistoriasDelMes';
-import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaRamazziniScope, validarNotaMedicaPreSubmit, validarNotaMedicaEmbarazo, validarFechaDocumentoPreSubmit } from '@/helpers/validacionCampos';
+import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaRamazziniScope, validarNotaMedicaPreSubmit, validarNotaMedicaEmbarazo, validarFechaDocumentoPreSubmit, DOCUMENT_TYPE_DATE_FIELDS } from '@/helpers/validacionCampos';
+import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { validateCIE10Duplicates, generateBlockingToastMessage } from '@/helpers/cie10';
 import { validateNotaMedicaDiagnosticos2Y3, fetchMedicoEnfermeraFirmantes, normalizeNotaMedicaDiagnosticosPv, precargarValidacionesNotaMedica } from '@/helpers/notaMedicaDiagnosticosSis';
 import {
@@ -506,6 +507,7 @@ export default {
     const showSiresUI = computed(() => proveedorSaludStore.showSiresUI);
     const notaAclaratoriaEnabled = computed(() => proveedorSaludStore.notaAclaratoriaEnabled);
     const { cie10Required } = useNom024Fields();
+    const { mensajeEdadEnFecha } = useSiresDocumentDateMax();
     
     // Composable para consentimiento de tratamiento de información (SIRES)
     const {
@@ -1759,6 +1761,20 @@ export default {
         }
 
         datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
+      }
+
+      // VALIDACIÓN E2 (cumplimiento normativo): en la fecha del documento el trabajador ya
+      // tiene 17 años y quien firma 18. Sin régimen no aplica (mensajeEdadEnFecha devuelve '').
+      {
+        const campoFechaE2 = DOCUMENT_TYPE_DATE_FIELDS[documentos.currentTypeOfDocument];
+        const mensajeE2 = campoFechaE2
+          ? mensajeEdadEnFecha(datosLimpios?.[campoFechaE2])
+          : '';
+        if (mensajeE2) {
+          stepsStore.goToStep(1);
+          toast.open({ message: mensajeE2, type: 'error' });
+          return;
+        }
       }
 
       // VALIDACIÓN E1 SIRES: fecha no futura para documentos del wizard (excepto notaMedica, validada abajo)

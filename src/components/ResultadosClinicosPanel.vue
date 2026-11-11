@@ -1022,7 +1022,7 @@ const requestEliminacion = inject<(request: EliminacionRequest) => void>('reques
 const store = useResultadosClinicosStore();
 const documentos = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
-const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax({ conEdades: false });
 const isHtmlDark = useHtmlDarkMode();
 
 const currentStep = ref<'select' | 'form'>('select');

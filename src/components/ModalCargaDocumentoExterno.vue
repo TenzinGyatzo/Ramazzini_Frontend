@@ -39,7 +39,7 @@ const { currentCentroTrabajo } = useCentrosTrabajoStore();
 const { currentTrabajador } = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const { ensureUserLoaded } = useCurrentUser();
-const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax({ conEdades: false });
 
 /**
  * `documentosSubidos`: los documentos creados, para agregarlos a la lista sin recargar el

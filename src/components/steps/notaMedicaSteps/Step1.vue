@@ -28,7 +28,7 @@ const trabajadores = useTrabajadoresStore();
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
 const proveedorSaludStore = useProveedorSaludStore();
-const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
+const { fechaDocumentoMax, fechaDocumentoMin, mensajeEdadEnFecha } = useSiresDocumentDateMax();
 const showSiresUI = computed(() => proveedorSaludStore.showSiresUI);
 
 // Valor local para la pregunta principal
@@ -77,7 +77,10 @@ const mensajeErrorFechaConsulta = computed(() => {
     return 'La fecha de consulta no puede ser posterior al día de hoy';
   }
   if (fechaDocumentoMin.value && fechaNotaMedica.value < fechaDocumentoMin.value) {
-    return 'La fecha de consulta no puede tener más de 30 días de antigüedad';
+    return (
+      mensajeEdadEnFecha(fechaNotaMedica.value) ||
+      'La fecha de consulta no puede tener más de 30 días de antigüedad'
+    );
   }
   return '';
 });
