@@ -54,6 +54,32 @@ export function requiresGenericCurpForEntidadNacimiento(
   );
 }
 
+/** CATALOG_KEY cat_pais: SE IGNORA */
+export const PAIS_NACIMIENTO_SE_IGNORA = 247;
+
+/** Trabajadores: país 247 (SE IGNORA) / 248 (NO ESPECIFICADO) exige CURP genérica. */
+export function requiresGenericCurpForPaisNacimiento(
+  pais: string | number | undefined | null,
+): boolean {
+  if (pais == null || String(pais).trim() === '') return false;
+  const num = Number(pais);
+  return num === PAIS_NACIMIENTO_SE_IGNORA || num === PAIS_RESIDENCIA_NO_ESPECIFICADO;
+}
+
+/**
+ * Lugar de nacimiento desconocido (entidad 00/99 o país 247/248): solo CURP genérica.
+ * Espejo de backend/src/utils/giis-residencia-geo.util.ts.
+ */
+export function requiresGenericCurpForNacimiento(
+  entidad: string | undefined | null,
+  pais: string | number | undefined | null,
+): boolean {
+  return (
+    requiresGenericCurpForEntidadNacimiento(entidad) ||
+    requiresGenericCurpForPaisNacimiento(pais)
+  );
+}
+
 export function getGiisGeoForEntidadResidencia(entidad: string): {
   municipio: string;
   localidad: string;

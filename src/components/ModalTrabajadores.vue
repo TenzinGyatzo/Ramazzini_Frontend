@@ -22,7 +22,7 @@ import { useNom024Fields } from '@/composables/useNom024Fields';
 import { useEntidadPaisNacimientoCoherence } from '@/composables/useEntidadPaisNacimientoCoherence';
 import { useResidenciaGeoCoherence, initializeResidenciaGeoFields } from '@/composables/useEntidadPaisResidenciaCoherence';
 import { isGenericCurp } from '@/helpers/isGenericCurp';
-import { requiresGenericCurpForEntidadNacimiento } from '@/helpers/giisResidenciaGeo';
+import { requiresGenericCurpForNacimiento } from '@/helpers/giisResidenciaGeo';
 import {
   getWorkerImmutablePayloadFields,
 } from '@/helpers/workerPaisNacimientoImmutability';
@@ -430,8 +430,9 @@ const nom024NacimientoFields = ref({
 });
 
 const requiresGenericCurp = computed(() =>
-  requiresGenericCurpForEntidadNacimiento(
+  requiresGenericCurpForNacimiento(
     nom024NacimientoFields.value.entidadNacimiento,
+    nom024NacimientoFields.value.paisNacimiento,
   ),
 );
 
@@ -1482,7 +1483,7 @@ const {
                       <span
                         v-else-if="requiresGenericCurp"
                         class="shrink-0 text-xs font-normal text-gray-500"
-                        title="Con entidad NO ESPECIFICADO o SE IGNORA solo aplica la CURP genérica"
+                        title="Con país o entidad de nacimiento NO ESPECIFICADO o SE IGNORA solo aplica la CURP genérica"
                       >
                         CURP genérica obligatoria
                       </span>
@@ -1493,7 +1494,7 @@ const {
                   v-if="isMxProveedor && requiresGenericCurp"
                   class="text-xs text-gray-500 mt-1 mb-2"
                 >
-                  Para «NO ESPECIFICADO» o «SE IGNORA», debe usarse XXXX999999XXXXXX99.
+                  Con país o entidad de nacimiento «NO ESPECIFICADO» o «SE IGNORA», debe usarse XXXX999999XXXXXX99.
                 </p>
                 <CurpInlineFeedback
                   v-if="isMxProveedor"
