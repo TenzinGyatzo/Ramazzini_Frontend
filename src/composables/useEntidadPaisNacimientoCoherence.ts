@@ -18,7 +18,10 @@ export interface FirmanteNacimientoFields {
   paisNacimiento: string | number;
 }
 
-const NON_MEXICO_ENTIDAD_CODES = ['NE', '00', '88', '99'];
+// Solo nacimiento en el extranjero. 00 (NO ESPECIFICADO) y 99 (SE IGNORA) son válidas con
+// país México para trabajadores (getAllowedEntidadCodesForPaisNacimiento); para firmantes
+// ya se descartan antes (getExcludedEntidadCodes).
+const NON_MEXICO_ENTIDAD_CODES = ['NE', '88'];
 
 function isNonMexicoEntidad(entidad: string): boolean {
   return NON_MEXICO_ENTIDAD_CODES.includes(entidad);
@@ -47,7 +50,7 @@ function clearEntidadIfInvalid(
  * - País ≠ México → fuerza entidad 88 (NO APLICA), igual que residencia
  * - Cambio a México: limpia entidad si ya no es válida (p. ej. 88)
  * - Entidad estatal MX (01-32) → país 142
- * - Entidad NE/00/88/99 con país 142 → limpia país
+ * - Entidad NE/88 (extranjero) con país 142 → limpia país; 00/99 conservan México
  */
 export function useEntidadPaisNacimientoCoherence(
   formulario: Ref<FirmanteNacimientoFields>,

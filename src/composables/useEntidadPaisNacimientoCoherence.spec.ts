@@ -55,6 +55,35 @@ describe('useEntidadPaisNacimientoCoherence', () => {
     expect(formulario.value.paisNacimiento).toBe('');
   });
 
+  it('trabajador con México conserva el país al elegir 00 o 99', async () => {
+    for (const entidad of ['00', '99']) {
+      const formulario = ref({
+        entidadNacimiento: '',
+        paisNacimiento: 142,
+      });
+
+      useEntidadPaisNacimientoCoherence(formulario, 'trabajador');
+      formulario.value.entidadNacimiento = entidad;
+      await nextTick();
+
+      expect(formulario.value.paisNacimiento).toBe(142);
+      expect(formulario.value.entidadNacimiento).toBe(entidad);
+    }
+  });
+
+  it('limpia país México al seleccionar entidad 88', async () => {
+    const formulario = ref({
+      entidadNacimiento: '',
+      paisNacimiento: 142,
+    });
+
+    useEntidadPaisNacimientoCoherence(formulario, 'trabajador');
+    formulario.value.entidadNacimiento = '88';
+    await nextTick();
+
+    expect(formulario.value.paisNacimiento).toBe('');
+  });
+
   it('firmante limpia entidad 00 aunque el país esté vacío', async () => {
     const formulario = ref({
       entidadNacimiento: '00',
