@@ -25,7 +25,13 @@ const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
 const glucemia = ref(null);
-const tipoMedicion = ref(-1);
+/** null = sin elegir; 0 = no, 1 = sí, -1 = «Se desconoce» (elegido a propósito) */
+const tipoMedicion = ref(null);
+const opcionesAyunas = [
+  { value: 0, label: 'No (no fue en ayunas)' },
+  { value: 1, label: 'Sí (fue en ayunas)' },
+  { value: -1, label: 'Se desconoce' },
+];
 const resultadoObtenidoaTravesde = ref(-1);
 const seDesconoceGlucemia = ref(false);
 
@@ -56,7 +62,7 @@ function hasGlucemiaCapturada() {
 }
 
 function resetConditionalFields() {
-  tipoMedicion.value = -1;
+  tipoMedicion.value = null;
   resultadoObtenidoaTravesde.value = -1;
 }
 
@@ -90,7 +96,8 @@ onMounted(() => {
   glucemia.value = init.display;
 
   if (hasGlucemiaCapturada()) {
-    tipoMedicion.value = getValFromSource('tipoMedicion') ?? -1;
+    // Con cifra de glucemia, un -1 guardado es «Se desconoce» elegido
+    tipoMedicion.value = getValFromSource('tipoMedicion') ?? null;
     resultadoObtenidoaTravesde.value =
       getValFromSource('resultadoObtenidoaTravesde') ?? -1;
   } else {
@@ -130,7 +137,7 @@ const mensajeErrorGlucemia = computed(() =>
 
 const mensajeErrorTipoMedicion = computed(() => {
   if (!hasGlucemiaCapturada()) return '';
-  if (tipoMedicion.value !== 0 && tipoMedicion.value !== 1) {
+  if (![0, 1, -1].includes(tipoMedicion.value)) {
     return NOTA_MEDICA_CEX_MESSAGES.tipoMedicion;
   }
   return '';
@@ -209,53 +216,28 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           <label class="block text-base font-medium text-gray-800 mb-3">
             ¿La medición fue en ayunas? <span class="text-red-500">*</span>
           </label>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label
+              v-for="opcion in opcionesAyunas"
+              :key="opcion.value"
               :class="[
                 'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                tipoMedicion === 0
+                tipoMedicion === opcion.value
                   ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
                   : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30',
               ]"
             >
-              <input type="radio" :value="0" v-model="tipoMedicion" class="sr-only" />
+              <input type="radio" :value="opcion.value" v-model="tipoMedicion" class="sr-only" />
               <span
                 :class="[
                   'text-sm transition-colors duration-200',
-                  tipoMedicion === 0 ? 'text-emerald-700 font-semibold' : 'text-gray-700',
+                  tipoMedicion === opcion.value ? 'text-emerald-700 font-semibold' : 'text-gray-700',
                 ]"
               >
-                No (no fue en ayunas)
+                {{ opcion.label }}
               </span>
               <div
-                v-if="tipoMedicion === 0"
-                class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-              </div>
-            </label>
-
-            <label
-              :class="[
-                'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                tipoMedicion === 1
-                  ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
-                  : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30',
-              ]"
-            >
-              <input type="radio" :value="1" v-model="tipoMedicion" class="sr-only" />
-              <span
-                :class="[
-                  'text-sm transition-colors duration-200',
-                  tipoMedicion === 1 ? 'text-emerald-700 font-semibold' : 'text-gray-700',
-                ]"
-              >
-                Sí (fue en ayunas)
-              </span>
-              <div
-                v-if="tipoMedicion === 1"
+                v-if="tipoMedicion === opcion.value"
                 class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">

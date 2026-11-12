@@ -239,11 +239,47 @@ export function hidratarPesoTallaDesconocidoNotaMedica<
   if (Number(doc.peso) === NOTA_MEDICA_CEX_SENTINEL.peso) doc.peso = null;
   if (Number(doc.talla) === NOTA_MEDICA_CEX_SENTINEL.talla) doc.talla = null;
 
+  // Lo guardado como desconocido se edita con «Se desconoce» marcado
+  const marcas = doc as T & PesoTallaSeDesconoce;
+  if ('peso' in doc) marcas.pesoSeDesconoce = pesoUnknown;
+  if ('talla' in doc) marcas.tallaSeDesconoce = tallaUnknown;
+
   if (pesoUnknown || tallaUnknown || !puedeMostrarImcNotaMedica(doc.peso, doc.talla)) {
     doc.indiceMasaCorporal = null;
     doc.categoriaIMC = null;
   }
   return doc;
+}
+
+/**
+ * Casillas «Se desconoce» de peso y talla mientras se captura la nota. En pantalla el valor
+ * queda vacío (un 999 tecleado sigue siendo error); al enviar, la casilla se vuelve 999.
+ */
+export interface PesoTallaSeDesconoce {
+  pesoSeDesconoce?: boolean;
+  tallaSeDesconoce?: boolean;
+}
+
+/** Peso o talla capturados: valor numérico o «Se desconoce» marcado a propósito. */
+export function pesoTallaCapturado(
+  field: 'peso' | 'talla',
+  datos: Record<string, any> | null | undefined,
+): boolean {
+  if (!datos) return false;
+  if (datos[`${field}SeDesconoce`] === true) return true;
+  const valor = datos[field];
+  if (valor === undefined || valor === null || valor === '') return false;
+  return Number.isFinite(Number(valor));
+}
+
+/** Datos a enviar: «Se desconoce» marcado → 999; las casillas no viajan al servidor. */
+export function aplicarSeDesconocePesoTalla<T extends Record<string, any>>(datos: T): T {
+  const out: Record<string, any> = { ...datos };
+  if (out.pesoSeDesconoce === true) out.peso = NOTA_MEDICA_CEX_SENTINEL.peso;
+  if (out.tallaSeDesconoce === true) out.talla = NOTA_MEDICA_CEX_SENTINEL.talla;
+  delete out.pesoSeDesconoce;
+  delete out.tallaSeDesconoce;
+  return out as T;
 }
 
 function digitParts(value: number): {
@@ -350,7 +386,12 @@ export function validateNotaMedicaCexQuantities(
   if (includeSoma) {
     const g = data.glucemia;
     if (g != null && Number(g) !== 0 && !Number.isNaN(Number(g))) {
-      if (data.tipoMedicion !== 0 && data.tipoMedicion !== 1) {
+      // 0 = no, 1 = sí, -1 = «Se desconoce» elegido; sin elegir (null) no se acepta
+      if (
+        data.tipoMedicion !== 0 &&
+        data.tipoMedicion !== 1 &&
+        data.tipoMedicion !== -1
+      ) {
         return NOTA_MEDICA_CEX_MESSAGES.tipoMedicion;
       }
       if (

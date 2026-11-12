@@ -149,6 +149,9 @@ function setCategoriaCircunferencia() {
 function syncFormData() {
   formDataNotaMedica.peso = toPersistedValue('peso', seDesconocePeso.value, peso.value);
   formDataNotaMedica.talla = toPersistedValue('talla', seDesconoceTalla.value, talla.value);
+  // Peso y talla son obligatorios: valor o «Se desconoce» marcado (al enviar se vuelve 999)
+  formDataNotaMedica.pesoSeDesconoce = seDesconocePeso.value;
+  formDataNotaMedica.tallaSeDesconoce = seDesconoceTalla.value;
   formDataNotaMedica.circunferenciaCintura = toPersistedValue(
     'circunferenciaCintura',
     seDesconoceCircunferencia.value,
@@ -159,15 +162,8 @@ function syncFormData() {
   formDataNotaMedica.categoriaCircunferenciaCintura = categoriaCircunferenciaCintura.value;
 }
 
+/** Solo la cintura se da por desconocida si queda vacía; peso y talla se eligen a propósito. */
 function finalizeEmptyAsUnknown() {
-  if (!seDesconocePeso.value && isBlankOrZero(peso.value)) {
-    seDesconocePeso.value = true;
-    peso.value = null;
-  }
-  if (!seDesconoceTalla.value && isBlankOrZero(talla.value)) {
-    seDesconoceTalla.value = true;
-    talla.value = null;
-  }
   if (!seDesconoceCircunferencia.value && isBlankOrZero(circunferenciaCintura.value)) {
     seDesconoceCircunferencia.value = true;
     circunferenciaCintura.value = null;

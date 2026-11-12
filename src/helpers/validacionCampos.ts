@@ -20,6 +20,7 @@ import {
   NOTA_MEDICA_CEX_MESSAGES,
   validateNotaMedicaCexField,
   validateNotaMedicaCexQuantities,
+  pesoTallaCapturado,
   type NotaMedicaCexField,
 } from '@/helpers/notaMedicaCexRanges';
 import {
@@ -161,6 +162,22 @@ function esCeroOUno(valor: any): boolean {
 }
 
 /** GIIS-B015: 0|1 obligatorio solo si el prompt UNEME aplica en captura. */
+/** Géneros del archivo de intercambio (0 = no especificado, 88 = otro). */
+const GENEROS_NOTA_MEDICA = [0, 1, 2, 3, 4, 5, 6, 88];
+
+function validarGeneroNotaMedica(valor: any): boolean {
+  return GENEROS_NOTA_MEDICA.includes(valor);
+}
+
+/** Valor numérico o «Se desconoce» marcado a propósito. */
+function validarPesoNotaMedica(_valor: any, datos?: any): boolean {
+  return pesoTallaCapturado('peso', datos);
+}
+
+function validarTallaNotaMedica(_valor: any, datos?: any): boolean {
+  return pesoTallaCapturado('talla', datos);
+}
+
 function validarPrimeraVezUnemeSiAplica(valor: any, datos?: any): boolean {
   if (datos?.primeraVezUnemeAplica !== true) return true;
   return esCeroOUno(valor);
@@ -346,6 +363,11 @@ const camposRequeridosPorTipo: Record<string, Array<{
   notaMedica: [
     { campo: 'fechaNotaMedica', nombre: 'Fecha de la nota médica', tipo: 'fecha', paso: 1, validacion: validarFecha },
     { campo: 'motivoConsulta', nombre: 'Motivo de consulta', tipo: 'texto', paso: 2, validacion: validarTexto },
+    // Solo con cumplimiento normativo (sus pasos no existen sin régimen); el paso real sale del mapa de pasos
+    { campo: 'genero', nombre: 'Género', tipo: 'seleccion', paso: 3, validacion: validarGeneroNotaMedica },
+    { campo: 'derechohabiencia', nombre: 'Derechohabiencia', tipo: 'seleccion', paso: 3, validacion: validarTexto },
+    { campo: 'peso', nombre: 'Peso (valor o «Se desconoce»)', tipo: 'numero', paso: 7, validacion: validarPesoNotaMedica },
+    { campo: 'talla', nombre: 'Talla (valor o «Se desconoce»)', tipo: 'numero', paso: 7, validacion: validarTallaNotaMedica },
     { campo: 'codigoCIE10Principal', nombre: 'Diagnóstico principal', tipo: 'seleccion', paso: 6, validacion: validarSeleccion },
     { campo: 'relacionTemporal', nombre: 'Relación temporal', tipo: 'seleccion', paso: 6, validacion: validarRelacionTemporal },
     {
@@ -1193,8 +1215,14 @@ export function validarCamposRequeridos(
   if (tipoDocumento === 'notaMedica' && options?.showSiresUI === false) {
     camposRequeridos = camposRequeridos.filter(
       (campo) =>
-        campo.campo !== 'relacionTemporal' &&
-        campo.campo !== 'primeraVezUneme',
+        ![
+          'relacionTemporal',
+          'primeraVezUneme',
+          'genero',
+          'derechohabiencia',
+          'peso',
+          'talla',
+        ].includes(campo.campo),
     );
   }
 
@@ -1209,6 +1237,12 @@ export function validarCamposRequeridos(
         campo.campo === 'relacionTemporal'
       ) {
         return { ...campo, paso: stepMap.diagnostico };
+      }
+      if (campo.campo === 'genero' || campo.campo === 'derechohabiencia') {
+        return { ...campo, paso: stepMap.genero ?? campo.paso };
+      }
+      if (campo.campo === 'peso' || campo.campo === 'talla') {
+        return { ...campo, paso: stepMap.somatometria ?? campo.paso };
       }
       return campo;
     });

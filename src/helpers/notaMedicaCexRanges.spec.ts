@@ -6,6 +6,8 @@ import {
   isCexUnknown,
   puedeMostrarImcNotaMedica,
   hidratarPesoTallaDesconocidoNotaMedica,
+  pesoTallaCapturado,
+  aplicarSeDesconocePesoTalla,
 } from './notaMedicaCexRanges';
 import { validarNotaMedicaPreSubmit } from './validacionCampos';
 
@@ -36,13 +38,21 @@ describe('notaMedicaCexRanges', () => {
   });
 
   it('valida glucemia condicional', () => {
+    // Sin elegir si fue en ayunas no se acepta; -1 es «Se desconoce» elegido
+    expect(
+      validateNotaMedicaCexQuantities({
+        glucemia: 90,
+        tipoMedicion: null,
+        resultadoObtenidoaTravesde: 1,
+      }),
+    ).toBeTruthy();
     expect(
       validateNotaMedicaCexQuantities({
         glucemia: 90,
         tipoMedicion: -1,
         resultadoObtenidoaTravesde: 1,
       }),
-    ).toBeTruthy();
+    ).toBeNull();
     expect(
       validateNotaMedicaCexQuantities({
         glucemia: 90,
@@ -108,7 +118,7 @@ describe('validarNotaMedicaPreSubmit CEX', () => {
       {
         fechaNotaMedica: ymd(),
         glucemia: 100,
-        tipoMedicion: -1,
+        tipoMedicion: null,
         resultadoObtenidoaTravesde: 1,
       },
       { fechaNacimiento: '1990-01-01' },
@@ -186,5 +196,32 @@ describe('validarNotaMedicaPreSubmit CEX', () => {
       false,
     );
     expect(r.valido).toBe(true);
+  });
+});
+
+describe('peso y talla: valor o «Se desconoce» marcado', () => {
+  it('capturado: número o casilla; vacío no', () => {
+    expect(pesoTallaCapturado('peso', { peso: 70 })).toBe(true);
+    expect(pesoTallaCapturado('peso', { peso: null, pesoSeDesconoce: true })).toBe(true);
+    expect(pesoTallaCapturado('peso', { peso: null, pesoSeDesconoce: false })).toBe(false);
+    expect(pesoTallaCapturado('talla', { talla: '' })).toBe(false);
+    expect(pesoTallaCapturado('talla', {})).toBe(false);
+  });
+
+  it('al enviar, la casilla se vuelve 999 y no viaja', () => {
+    const out = aplicarSeDesconocePesoTalla({
+      peso: null,
+      talla: 170,
+      pesoSeDesconoce: true,
+      tallaSeDesconoce: false,
+    });
+    expect(out).toEqual({ peso: 999, talla: 170 });
+    expect(aplicarSeDesconocePesoTalla({ peso: null })).toEqual({ peso: null });
+  });
+
+  it('al editar, lo guardado como 999 llega con la casilla marcada', () => {
+    const doc = hidratarPesoTallaDesconocidoNotaMedica({ peso: 999, talla: 170 }) as any;
+    expect(doc.pesoSeDesconoce).toBe(true);
+    expect(doc.tallaSeDesconoce).toBe(false);
   });
 });

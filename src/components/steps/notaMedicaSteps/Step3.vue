@@ -62,10 +62,11 @@ function normalizeGenero(value) {
 
 function syncFormData() {
   formDataNotaMedica.genero = genero.value;
+  // Sin marca queda vacío: es obligatorio elegir (también «No especificado» o «Se ignora»)
   formDataNotaMedica.derechohabiencia =
     derechohabienciaSeleccion.value.length > 0
       ? derechohabienciaSeleccion.value.join('&')
-      : '0';
+      : null;
 }
 
 function handleDerechohabienciaChange(clickedValue) {
@@ -134,13 +135,12 @@ onMounted(async () => {
   // Sin precarga: solo restaurar valor ya guardado en el formulario/documento
   genero.value = normalizeGenero(getValFromSource('genero', null));
 
-  const savedDerecho = getValFromSource('derechohabiencia', '0');
-  let savedCodes = [];
-  if (typeof savedDerecho === 'string' && savedDerecho !== '0') {
-    savedCodes = savedDerecho.split('&').filter(Boolean);
-  } else if (savedDerecho === '0') {
-    savedCodes = [];
-  }
+  // Lo guardado se muestra marcado, también «0 – No especificado» (antes se ponía solo)
+  const savedDerecho = getValFromSource('derechohabiencia', null);
+  const savedCodes =
+    typeof savedDerecho === 'string'
+      ? savedDerecho.split('&').map((c) => c.trim()).filter(Boolean)
+      : [];
   derechohabienciaSeleccion.value = [...savedCodes];
 
   await loadAfiliacionOptions(savedCodes);

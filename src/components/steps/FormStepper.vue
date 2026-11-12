@@ -424,6 +424,7 @@ import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMe
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { validateCIE10Duplicates, generateBlockingToastMessage } from '@/helpers/cie10';
 import { validateNotaMedicaDiagnosticos2Y3, fetchMedicoEnfermeraFirmantes, normalizeNotaMedicaDiagnosticosPv, precargarValidacionesNotaMedica } from '@/helpers/notaMedicaDiagnosticosSis';
+import { aplicarSeDesconocePesoTalla } from '@/helpers/notaMedicaCexRanges';
 import {
   normalizeNotaMedicaConfirmacionDiagnostica,
   validateNotaMedicaConfirmacionDiagnostica,
@@ -1921,7 +1922,10 @@ export default {
           return;
         }
 
-        datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
+        // «Se desconoce» de peso/talla viaja como 999; vacío viaja vacío y el servidor lo rechaza
+        datosLimpios = aplicarSeDesconocePesoTalla(
+          limpiarValoresUndefined(formData.formDataNotaMedica),
+        );
         delete datosLimpios.primeraVezUnemeAplica;
         delete datosLimpios.esPrimeraVezAnioPreview;
         delete datosLimpios.primeraVezAnio;

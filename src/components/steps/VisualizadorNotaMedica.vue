@@ -377,8 +377,14 @@ const muestraDiagnostico3 = computed(() =>
       <p class="text-justify font-medium">
         <template v-if="formData.formDataNotaMedica.glucemia && formData.formDataNotaMedica.glucemia !== 0">
           Glucemia: <span class="font-light">{{ formData.formDataNotaMedica.glucemia }} mg/dl</span>
-          <template v-if="formData.formDataNotaMedica.tipoMedicion !== -1">
-            &nbsp;| <span class="font-light">{{ formData.formDataNotaMedica.tipoMedicion === 1 ? 'En ayunas' : 'Sin ayuno' }}</span>
+          <template v-if="[0, 1, -1].includes(formData.formDataNotaMedica.tipoMedicion)">
+            &nbsp;| <span class="font-light">{{
+              formData.formDataNotaMedica.tipoMedicion === 1
+                ? 'En ayunas'
+                : formData.formDataNotaMedica.tipoMedicion === 0
+                  ? 'Sin ayuno'
+                  : 'Ayuno: se desconoce'
+            }}</span>
           </template>
         </template>
         <template v-else>

@@ -16,6 +16,10 @@ const baseNotaMedica = {
   motivoConsulta: 'Consulta de seguimiento',
   codigoCIE10Principal: 'E11',
   relacionTemporal: 0,
+  genero: 1,
+  derechohabiencia: '2',
+  peso: 70,
+  talla: 170,
 };
 
 describe('primeraVezUneme en submit de nota médica', () => {
