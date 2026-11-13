@@ -222,3 +222,17 @@ describe('examen de la vista', () => {
     ]);
   });
 });
+
+describe('audiometría', () => {
+  it('obligatorios con instrucción, en orden de pasos (método antes que la fecha)', () => {
+    const faltantes = validarCamposRequeridos('audiometria', {}, {}).camposFaltantes;
+    const lista = ordenarProblemas(problemasPorFaltantes(faltantes));
+    expect(lista.map((x) => [x.paso, x.campo, x.mensaje])).toEqual([
+      [1, 'metodoAudiometria', 'Elige el método de la audiometría.'],
+      [1, 'fechaAudiometria', 'Elige la fecha de la audiometría.'],
+      [2, 'oidoDerecho125', 'Captura los valores del oído derecho.'],
+      [3, 'oidoIzquierdo125', 'Captura los valores del oído izquierdo.'],
+      [6, 'diagnosticoAudiometria', 'Escribe el diagnóstico.'],
+    ]);
+  });
+});

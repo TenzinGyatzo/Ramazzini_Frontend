@@ -347,7 +347,7 @@ const insertarDiagnostico = (texto) => {
 <template>
     <h1 class="font-bold mb-4 text-gray-800 leading-5">Diagnóstico Audiométrico</h1>
     
-    <div class="mb-4">
+    <div data-campo="diagnosticoAudiometria" class="mb-4">
         <h2 class="text-lg font-semibold mb-2 text-gray-800">Diagnóstico:</h2>
 
         <!-- Textarea (source of truth local) -->

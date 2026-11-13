@@ -42,6 +42,12 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   sinCorreccionLejanaInterpretacion: 'Captura la agudeza visual lejana sin lentes.',
   sinCorreccionCercanaInterpretacion: 'Captura la agudeza visual cercana sin lentes.',
   interpretacionIshihara: 'Captura las placas correctas de la prueba de Ishihara.',
+  // Audiometría
+  metodoAudiometria: 'Elige el método de la audiometría.',
+  fechaAudiometria: 'Elige la fecha de la audiometría.',
+  oidoDerecho125: 'Captura los valores del oído derecho.',
+  oidoIzquierdo125: 'Captura los valores del oído izquierdo.',
+  diagnosticoAudiometria: 'Escribe el diagnóstico.',
 };
 
 /** Nombre corto en la lista para cada dato (si no viene de la validación). */
@@ -55,6 +61,11 @@ const NOMBRE_CAMPO: Record<string, string> = {
   sinCorreccionLejanaInterpretacion: 'Agudeza visual lejana sin lentes',
   sinCorreccionCercanaInterpretacion: 'Agudeza visual cercana sin lentes',
   interpretacionIshihara: 'Prueba de Ishihara',
+  metodoAudiometria: 'Método de la audiometría',
+  fechaAudiometria: 'Fecha de la audiometría',
+  oidoDerecho125: 'Oído derecho',
+  oidoIzquierdo125: 'Oído izquierdo',
+  diagnosticoAudiometria: 'Diagnóstico',
   altura: 'Altura',
   indiceMasaCorporal: 'IMC',
   primeraVezUneme: 'Primera consulta del año en especialidades',
@@ -168,6 +179,9 @@ const ORDEN_EN_PANTALLA = [
   'fechaHistoriaClinica',
   // Exploración física (paso 1)
   'fechaExploracionFisica',
+  // Audiometría (paso 1: método arriba, fecha abajo)
+  'metodoAudiometria',
+  'fechaAudiometria',
   // Nota médica
   'tipoNota',
   'fechaNotaMedica',

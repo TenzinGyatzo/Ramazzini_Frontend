@@ -1640,7 +1640,7 @@ export default {
     };
 
     // Documentos con obligatorios y fecha (ventana y edad en la fecha), en orden de pasos:
-    // historia clínica y examen de la vista
+    // historia clínica, examen de la vista y audiometría
     const recolectarProblemasObligatoriosYFecha = (tipo, df) => {
       const campoFecha = DOCUMENT_TYPE_DATE_FIELDS[tipo];
       const invalidos = [];
@@ -1699,7 +1699,7 @@ export default {
 
     // Documentos que, al guardar, llevan al dato pendiente (paso + campo + qué corregir)
     const tieneAtencionCampos = () =>
-      ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista'].includes(
+      ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria'].includes(
         documentos.currentTypeOfDocument,
       );
 
@@ -1712,6 +1712,7 @@ export default {
       if (documentos.currentTypeOfDocument === 'examenVista') {
         return formData.formDataExamenVista;
       }
+      if (documentos.currentTypeOfDocument === 'audiometria') return formData.formDataAudiometria;
       return null;
     };
 
@@ -1727,6 +1728,9 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'examenVista') {
         return recolectarProblemasObligatoriosYFecha('examenVista', formData.formDataExamenVista);
+      }
+      if (documentos.currentTypeOfDocument === 'audiometria') {
+        return recolectarProblemasObligatoriosYFecha('audiometria', formData.formDataAudiometria);
       }
       return [];
     };

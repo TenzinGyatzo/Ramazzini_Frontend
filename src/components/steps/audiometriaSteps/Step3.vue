@@ -520,7 +520,7 @@ watch(() => formDataAudiometria.oidoIzquierdo8000, (newValue) => {
   <div>
     <h1 class="mb-4 text-sm text-gray-800 leading-5"><span class="text-xl font-bold">OÍDO IZQUIERDO</span> - Valores Audiométricos</h1>
     
-    <div class="mb-4">
+    <div data-campo="oidoIzquierdo125" class="mb-4">
       <p class="font-medium mb-3 text-gray-700 leading-5">
         Ingrese los umbrales auditivos en decibeles (dB) para cada frecuencia:
       </p>

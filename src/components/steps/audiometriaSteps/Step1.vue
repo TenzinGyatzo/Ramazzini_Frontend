@@ -46,6 +46,11 @@ onMounted(() => {
   const trabajadorNombre = trabajadores.currentTrabajador.nombre;
   const trabajadorId = trabajadores.currentTrabajadorId;
   formDataAudiometria.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
+
+  // Lo que se ve (método y fecha) llega al formulario desde el inicio; con los valores por
+  // defecto no se copiaba hasta cambiar algo o salir del paso
+  formDataAudiometria.metodoAudiometria = metodoAudiometria.value;
+  formDataAudiometria.fechaAudiometria = fechaAudiometria.value;
 });
 
 onUnmounted(() => {
@@ -84,7 +89,7 @@ watch(fechaAudiometria, (newValue) => {
     </div>
     
     <!-- Pregunta principal con mejor jerarquía -->
-    <div class="mb-8">
+    <div data-campo="metodoAudiometria" class="mb-8">
       <p class="text-lg font-medium mb-4 text-gray-800">¿Método de audiometría?</p>
       
       <!-- Diseño de Radio Buttons más Visual tipo Card -->
@@ -162,7 +167,7 @@ watch(fechaAudiometria, (newValue) => {
     </div>
 
     <!-- Sección de fecha con mejor espaciado -->
-    <div class="mt-8">
+    <div data-campo="fechaAudiometria" class="mt-8">
       <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de realización</h2>
       <FormKit 
         type="date" 
