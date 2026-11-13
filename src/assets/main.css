@@ -418,13 +418,22 @@ html.dark-mode .inicio-nav--enlace:focus-visible {
   outline-color: #34d399 !important;
 }
 
-/* Dato que impide guardar (helpers/enfocarCampo): resaltado y, debajo, qué corregir */
+/* Dato que impide guardar (helpers/enfocarCampo): resaltado y, debajo, qué corregir.
+   El contorno es una capa propia (::before) que solo cambia de opacidad y de halo,
+   y el mensaje (::after) entra con un fundido: animaciones que el navegador hace fluidas. */
 .campo-atencion {
-  outline: 2px solid #f59e0b;
-  outline-offset: 6px;
-  border-radius: 0.5rem;
+  position: relative;
   scroll-margin: 6rem;
-  animation: campo-atencion-pulso 1.2s ease-out 1;
+}
+
+.campo-atencion::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 2px solid #f59e0b;
+  border-radius: 0.75rem;
+  pointer-events: none;
+  animation: campo-atencion-contorno 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .campo-atencion[data-atencion]::after {
@@ -439,14 +448,38 @@ html.dark-mode .inicio-nav--enlace:focus-visible {
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.35;
+  animation: campo-atencion-mensaje 260ms ease-out 120ms both;
 }
 
-@keyframes campo-atencion-pulso {
-  0% { outline-color: rgba(245, 158, 11, 0); }
-  30% { outline-color: rgba(245, 158, 11, 1); outline-offset: 10px; }
-  100% { outline-color: rgba(245, 158, 11, 1); outline-offset: 6px; }
+/* Aparece el contorno y un halo que se abre y se desvanece una vez */
+@keyframes campo-atencion-contorno {
+  0% {
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+  }
+}
+
+@keyframes campo-atencion-mensaje {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .campo-atencion { animation: none; }
+  .campo-atencion::before,
+  .campo-atencion[data-atencion]::after {
+    animation: none;
+  }
 }

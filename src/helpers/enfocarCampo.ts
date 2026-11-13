@@ -16,6 +16,8 @@ const ENFOCABLE =
   'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 let limpiarAnterior: (() => void) | null = null;
+/** Cada llamada tiene su número; solo la última marca su campo. */
+let llamadaActual = 0;
 
 /** Selector del contenedor del campo; varios campos pueden compartir uno (data-campo="a b"). */
 export function selectorCampo(campo: string): string {
@@ -30,6 +32,32 @@ export function limpiarAtencionCampo(): void {
 
 function esperar(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** El campo ya se ve completo: no hace falta desplazar ni esperar. */
+function estaALaVista(el: HTMLElement): boolean {
+  const r = el.getBoundingClientRect();
+  const alto = window.innerHeight || document.documentElement.clientHeight;
+  return r.top >= 0 && r.bottom <= alto;
+}
+
+/**
+ * Espera a que termine el desplazamiento suave (evento scrollend, en la ventana o en el
+ * contenedor que se desplace). Con tope por si el navegador no lo emite.
+ */
+function finDelDesplazamiento(tope = 600): Promise<void> {
+  return new Promise((resolve) => {
+    let listo = false;
+    const terminar = () => {
+      if (listo) return;
+      listo = true;
+      document.removeEventListener('scrollend', terminar, true);
+      clearTimeout(temporizador);
+      resolve();
+    };
+    const temporizador = setTimeout(terminar, tope);
+    document.addEventListener('scrollend', terminar, true);
+  });
 }
 
 async function buscarCampo(
@@ -56,17 +84,24 @@ export async function enfocarCampo(
   raiz: ParentNode = document,
 ): Promise<boolean> {
   limpiarAtencionCampo();
+  const llamada = ++llamadaActual;
   if (!campo || typeof document === 'undefined') return false;
 
   const el = await buscarCampo(campo, raiz);
   if (!el) return false;
 
+  const foco = el.matches(ENFOCABLE) ? el : el.querySelector<HTMLElement>(ENFOCABLE);
+  const yaALaVista = estaALaVista(el);
+  if (!yaALaVista) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  foco?.focus({ preventScroll: true });
+
+  // El resaltado se anima cuando la pantalla deja de moverse, para que se vea fluido
+  if (!yaALaVista) await finDelDesplazamiento();
+  // Mientras tanto se pidió ir a otro campo: este ya no se marca
+  if (llamada !== llamadaActual) return false;
+
   el.classList.add(CLASE_ATENCION);
   el.setAttribute(ATRIBUTO_MENSAJE, mensaje);
-  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-
-  const foco = el.matches(ENFOCABLE) ? el : el.querySelector<HTMLElement>(ENFOCABLE);
-  foco?.focus({ preventScroll: true });
 
   const quitar = () => {
     el.classList.remove(CLASE_ATENCION);
