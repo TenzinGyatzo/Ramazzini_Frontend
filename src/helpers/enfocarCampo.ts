@@ -79,6 +79,36 @@ function finDelDesplazamiento(tope = 600): Promise<void> {
   });
 }
 
+/** Momentos en que se vuelve a llevar el texto al principio si el paso lo llenó después. */
+const REVISIONES_TEXTO_MS = [150, 500, 1200];
+
+/**
+ * Un cuadro de texto con contenido (p. ej. un texto sugerido que el paso precarga) se
+ * muestra desde su principio: al enfocarlo, el navegador pone el cursor al final y
+ * desplaza el contenido hasta abajo. Si el texto llega un momento después, se repite,
+ * salvo que el usuario ya haya escrito o hecho clic en el cuadro.
+ */
+export function mostrarTextoDesdeElPrincipio(area: HTMLTextAreaElement): void {
+  let tocado = false;
+  const marcarTocado = () => {
+    tocado = true;
+  };
+  area.addEventListener('keydown', marcarTocado, { once: true });
+  area.addEventListener('pointerdown', marcarTocado, { once: true });
+
+  const alPrincipio = () => {
+    if (tocado || document.activeElement !== area) return;
+    try {
+      area.setSelectionRange(0, 0);
+    } catch {
+      // Algunos tipos no admiten selección
+    }
+    area.scrollTop = 0;
+  };
+  alPrincipio();
+  for (const ms of REVISIONES_TEXTO_MS) setTimeout(alPrincipio, ms);
+}
+
 async function buscarCampo(
   campo: string,
   raiz: ParentNode,
@@ -127,6 +157,7 @@ export async function enfocarCampo(
   // El margen superior (scroll-margin de [data-campo]) deja ver el título del campo
   if (desplazamiento === 'inicio') el.scrollIntoView({ block: 'start', behavior: 'smooth' });
   foco?.focus({ preventScroll: true });
+  if (foco instanceof HTMLTextAreaElement) mostrarTextoDesdeElPrincipio(foco);
 
   // El resaltado se anima cuando la pantalla deja de moverse, para que se vea fluido
   if (!yaALaVista) await finDelDesplazamiento();

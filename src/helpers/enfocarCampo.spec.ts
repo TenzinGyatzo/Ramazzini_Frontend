@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CLASE_ATENCION, comoDesplazar, enfocarCampo, limpiarAtencionCampo } from './enfocarCampo';
+import {
+  CLASE_ATENCION,
+  comoDesplazar,
+  enfocarCampo,
+  limpiarAtencionCampo,
+  mostrarTextoDesdeElPrincipio,
+} from './enfocarCampo';
 
 /** jsdom no calcula cajas: se simula que el campo está a la vista. */
 function visible(el: HTMLElement) {
@@ -171,5 +177,48 @@ describe('enfocarCampo con data-desplazar="no" (cuadro de texto arriba de su pas
     document.dispatchEvent(new Event('scrollend'));
     expect(await promesa).toBe(true);
     scrollTo.mockRestore();
+  });
+});
+
+describe('cuadro de texto con contenido: se ve desde su principio', () => {
+  it('al llevar al campo, el cursor queda al principio y el texto arriba', async () => {
+    document.body.innerHTML = `<div data-campo="resultados"><textarea id="r"></textarea></div>`;
+    const cont = document.querySelector<HTMLElement>('[data-campo="resultados"]')!;
+    visible(cont);
+    const area = document.getElementById('r') as HTMLTextAreaElement;
+    area.value = 'Texto sugerido muy largo\n'.repeat(40);
+    area.scrollTop = 500;
+    expect(await enfocarCampo('resultados', 'Escribe los resultados.')).toBe(true);
+    expect(area.selectionStart).toBe(0);
+    expect(area.selectionEnd).toBe(0);
+    expect(area.scrollTop).toBe(0);
+  });
+
+  it('si el texto llega después, se vuelve a mostrar desde el principio', () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = `<textarea id="m"></textarea>`;
+    const area = document.getElementById('m') as HTMLTextAreaElement;
+    area.focus();
+    mostrarTextoDesdeElPrincipio(area);
+    // El paso precarga el texto un momento después (el cursor se va al final)
+    area.value = 'Medidas sugeridas\n'.repeat(20);
+    area.setSelectionRange(area.value.length, area.value.length);
+    vi.advanceTimersByTime(600);
+    expect(area.selectionStart).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it('si el usuario ya escribió, no le mueve el cursor', () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = `<textarea id="m"></textarea>`;
+    const area = document.getElementById('m') as HTMLTextAreaElement;
+    area.focus();
+    mostrarTextoDesdeElPrincipio(area);
+    area.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+    area.value = 'abc';
+    area.setSelectionRange(3, 3);
+    vi.advanceTimersByTime(1500);
+    expect(area.selectionStart).toBe(3);
+    vi.useRealTimers();
   });
 });
