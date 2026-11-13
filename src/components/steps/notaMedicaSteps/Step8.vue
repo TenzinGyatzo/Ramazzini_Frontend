@@ -216,12 +216,13 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           <label class="block text-base font-medium text-gray-800 mb-3">
             ¿La medición fue en ayunas? <span class="text-red-500">*</span>
           </label>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Se acomodan solas: tres en fila si caben, si no la que sobra baja y ocupa todo el ancho -->
+          <div class="flex flex-wrap gap-3">
             <label
               v-for="opcion in opcionesAyunas"
               :key="opcion.value"
               :class="[
-                'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
+                'relative flex flex-1 basis-48 items-center justify-center text-center py-2.5 px-8 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
                 tipoMedicion === opcion.value
                   ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
                   : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30',
