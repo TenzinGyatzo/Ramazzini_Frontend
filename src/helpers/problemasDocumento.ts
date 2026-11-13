@@ -45,6 +45,9 @@ const NOMBRE_CAMPO: Record<string, string> = {
   motivoExamen: 'Motivo del examen',
   fechaHistoriaClinica: 'Fecha de la historia clínica',
   resumenHistoriaClinica: 'Resumen de la historia clínica',
+  fechaExploracionFisica: 'Fecha de la exploración física',
+  altura: 'Altura',
+  indiceMasaCorporal: 'IMC',
   primeraVezUneme: 'Primera consulta del año en especialidades',
   tensionArterialSistolica: 'Tensión arterial',
   tensionArterialDiastolica: 'Tensión arterial',
@@ -73,15 +76,35 @@ export function nombreDeCampo(campo: string | undefined, porDefecto = 'Dato por 
 }
 
 /** Datos vacíos de la lista de obligatorios → problemas con instrucción. */
-export function problemasPorFaltantes(faltantes: CampoFaltante[]): ProblemaCampo[] {
+export function problemasPorFaltantes(
+  faltantes: CampoFaltante[],
+  /** Textos propios del documento cuando el mismo dato se pide distinto (p. ej. el peso). */
+  instrucciones: Record<string, string> = {},
+): ProblemaCampo[] {
   return faltantes.map((f) => ({
     paso: f.paso ?? null,
     campo: f.campo,
     nombre: f.nombre,
     falta: true,
-    mensaje: (f.campo && INSTRUCCION_FALTA[f.campo]) || `Falta: ${f.nombre}.`,
+    mensaje:
+      (f.campo && (instrucciones[f.campo] ?? INSTRUCCION_FALTA[f.campo])) ||
+      `Falta: ${f.nombre}.`,
   }));
 }
+
+/** Exploración física: somatometría y signos se capturan siempre (sin «Se desconoce»). */
+export const INSTRUCCION_EXPLORACION_FISICA: Record<string, string> = {
+  fechaExploracionFisica: 'Elige la fecha de la exploración física.',
+  peso: 'Escribe el peso.',
+  altura: 'Escribe la altura.',
+  indiceMasaCorporal: 'Escribe el peso y la altura para calcular el IMC.',
+  circunferenciaCintura: 'Escribe la circunferencia de cintura.',
+  tensionArterialSistolica: 'Escribe la tensión arterial sistólica.',
+  tensionArterialDiastolica: 'Escribe la tensión arterial diastólica.',
+  frecuenciaCardiaca: 'Escribe la frecuencia cardiaca.',
+  frecuenciaRespiratoria: 'Escribe la frecuencia respiratoria.',
+  saturacionOxigeno: 'Escribe la saturación de oxígeno.',
+};
 
 /** Resultado de una validación ({ valido, mensaje, paso, campo }) → problema, o null. */
 export function problemaDeValidacion(r: {
@@ -134,6 +157,8 @@ const ORDEN_EN_PANTALLA = [
   // Historia clínica (paso 1)
   'motivoExamen',
   'fechaHistoriaClinica',
+  // Exploración física (paso 1)
+  'fechaExploracionFisica',
   // Nota médica
   'tipoNota',
   'fechaNotaMedica',
@@ -149,6 +174,8 @@ const ORDEN_EN_PANTALLA = [
   'saturacionOxigeno',
   'peso',
   'talla',
+  'altura',
+  'indiceMasaCorporal',
   'circunferenciaCintura',
   'glucemia',
   'tipoMedicion',
@@ -235,4 +262,25 @@ export function aCamposFaltantes(lista: ProblemaCampo[]): CampoFaltante[] {
     campo: p.campo,
     mensaje: p.mensaje,
   }));
+}
+
+/**
+ * Exploración física: la lista de obligatorios revisa vacío y rango juntos. Vacío → se pide
+ * con su instrucción; con valor → se dice por qué no vale (rango o formato). El IMC se
+ * calcula del peso y la altura: si falta alguno de ellos, se pide ese y no el IMC.
+ */
+export function problemasExploracionFisica(
+  faltantes: CampoFaltante[],
+  datos: Record<string, unknown>,
+  motivoInvalido: (campo: string, valor: unknown) => string | null,
+): ProblemaCampo[] {
+  const vacio = (v: unknown) => v === undefined || v === null || v === '';
+  const pendientes = problemasPorFaltantes(faltantes, INSTRUCCION_EXPLORACION_FISICA).map((p) => {
+    if (!p.campo || p.campo === 'indiceMasaCorporal') return p;
+    const valor = datos[p.campo];
+    if (vacio(valor)) return p;
+    return { ...p, falta: false, mensaje: motivoInvalido(p.campo, valor) || 'Revisa este dato.' };
+  });
+  const faltaPesoOAltura = pendientes.some((p) => p.campo === 'peso' || p.campo === 'altura');
+  return pendientes.filter((p) => !(faltaPesoOAltura && p.campo === 'indiceMasaCorporal'));
 }

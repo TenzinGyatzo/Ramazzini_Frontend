@@ -463,6 +463,8 @@ import { isHcSectionsV2Enabled } from '@/composables/useHcSectionsV2';
 import { pasoHistoriaClinicaEnAsistente } from '@/helpers/historiaClinicaSections';
 import { buildHistoriaClinicaSectionSteps } from '@/helpers/buildHistoriaClinicaSectionSteps';
 import { isEfSectionsV2Enabled } from '@/composables/useEfSectionsV2';
+import { legacyStepToSectionIndex as efLegacyStepToSectionIndex } from '@/helpers/exploracionFisicaSections';
+import { validateSomatometriaSignosField } from '@/helpers/somatometriaSignosRanges';
 import { buildExploracionFisicaSectionSteps } from '@/helpers/buildExploracionFisicaSectionSteps';
 import { isAptitudSectionsV2Enabled } from '@/composables/useAptitudSectionsV2';
 import { buildAptitudSectionSteps } from '@/helpers/buildAptitudSectionSteps';
@@ -493,6 +495,7 @@ import {
   aCamposFaltantes,
   campoDeProblemaCie10,
   campoPorPasoDiagnostico,
+  problemasExploracionFisica,
   nombreDeCampo,
   ordenarProblemas,
   problemaDeValidacion,
@@ -1667,13 +1670,50 @@ export default {
       return ordenarProblemas([...problemasPorFaltantes(requeridos.camposFaltantes), ...invalidos]);
     };
 
+    // Exploración física: fecha, somatometría y signos. La lista de obligatorios revisa
+    // vacío y rango juntos; aquí se separan para decir «escribe…» o el rango que falla.
+    const recolectarProblemasExploracionFisica = () => {
+      const df = formData.formDataExploracionFisica;
+      const invalidos = [];
+      const fecha = validarFechaDocumentoPreSubmit('exploracionFisica', df, showSiresUI.value);
+      if (!fecha.valido) {
+        invalidos.push({
+          paso: 1,
+          campo: 'fechaExploracionFisica',
+          nombre: nombreDeCampo('fechaExploracionFisica'),
+          falta: false,
+          mensaje: fecha.mensaje,
+        });
+      }
+      const mensajeE2 = mensajeEdadEnFecha(df.fechaExploracionFisica);
+      if (mensajeE2) {
+        invalidos.push({
+          paso: 1,
+          campo: 'fechaExploracionFisica',
+          nombre: nombreDeCampo('fechaExploracionFisica'),
+          falta: false,
+          mensaje: mensajeE2,
+        });
+      }
+      const requeridos = validarCamposRequeridos('exploracionFisica', limpiarValoresUndefined(df), {});
+      return ordenarProblemas([
+        ...problemasExploracionFisica(requeridos.camposFaltantes, df, validateSomatometriaSignosField),
+        ...invalidos,
+      ]);
+    };
+
     // Documentos que, al guardar, llevan al dato pendiente (paso + campo + qué corregir)
     const tieneAtencionCampos = () =>
-      ['notaMedica', 'historiaClinica'].includes(documentos.currentTypeOfDocument);
+      ['notaMedica', 'historiaClinica', 'exploracionFisica'].includes(
+        documentos.currentTypeOfDocument,
+      );
 
     const datosDelDocumentoActual = () => {
       if (documentos.currentTypeOfDocument === 'notaMedica') return formData.formDataNotaMedica;
       if (documentos.currentTypeOfDocument === 'historiaClinica') return formData.formDataHistoriaClinica;
+      if (documentos.currentTypeOfDocument === 'exploracionFisica') {
+        return formData.formDataExploracionFisica;
+      }
       return null;
     };
 
@@ -1683,6 +1723,9 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'historiaClinica') {
         return recolectarProblemasHistoriaClinica();
+      }
+      if (documentos.currentTypeOfDocument === 'exploracionFisica') {
+        return recolectarProblemasExploracionFisica();
       }
       return [];
     };
@@ -1701,6 +1744,9 @@ export default {
           trabajadores.currentTrabajador?.sexo,
           isHcSectionsV2Enabled(route.query),
         );
+      }
+      if (documentos.currentTypeOfDocument === 'exploracionFisica') {
+        return isEfSectionsV2Enabled(route.query) ? efLegacyStepToSectionIndex(paso) : paso;
       }
       return paso;
     };
@@ -1937,12 +1983,15 @@ export default {
         datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
       }
 
-      // Historia clínica: lo que impide guardar (obligatorios y fecha) lleva al primer dato
-      if (documentos.currentTypeOfDocument === 'historiaClinica') {
+      // Historia clínica y exploración física: lo que impide guardar lleva al primer dato
+      if (
+        documentos.currentTypeOfDocument === 'historiaClinica' ||
+        documentos.currentTypeOfDocument === 'exploracionFisica'
+      ) {
         cerrarAvisoProblemas();
-        const problemasHc = recolectarProblemasHistoriaClinica();
-        if (problemasHc.length > 0) {
-          atenderProblemas(problemasHc);
+        const problemasDoc = recolectarProblemasDocumento();
+        if (problemasDoc.length > 0) {
+          atenderProblemas(problemasDoc);
           return;
         }
       }

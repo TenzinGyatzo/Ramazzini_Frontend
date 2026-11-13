@@ -3,6 +3,8 @@ import {
   aCamposFaltantes,
   campoDeProblemaCie10,
   campoPorPasoDiagnostico,
+  INSTRUCCION_EXPLORACION_FISICA,
+  problemasExploracionFisica,
   ordenarProblemas,
   problemaDeValidacion,
   problemasPorFaltantes,
@@ -11,6 +13,7 @@ import {
 } from './problemasDocumento';
 import { getNotaMedicaStepMap } from './notaMedicaStepMap';
 import { validarCamposRequeridos, validarNotaMedicaPreSubmit } from './validacionCampos';
+import { validateSomatometriaSignosField } from './somatometriaSignosRanges';
 
 const p = (paso: number | null, campo: string, falta = true): ProblemaCampo => ({
   paso,
@@ -158,5 +161,40 @@ describe('historia clínica', () => {
       'Elige la fecha de la historia clínica.',
       'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
     ]);
+  });
+});
+
+describe('exploración física', () => {
+  const motivo = (campo: string, valor: unknown) =>
+    validateSomatometriaSignosField(campo as never, valor);
+
+  it('vacío se pide; con valor fuera de rango se dice el rango', () => {
+    const datos = { fechaExploracionFisica: '2026-11-13', peso: 20, frecuenciaCardiaca: '' };
+    const faltantes = validarCamposRequeridos('exploracionFisica', datos, {}).camposFaltantes;
+    const lista = ordenarProblemas(problemasExploracionFisica(faltantes, datos, motivo));
+    const peso = lista.find((x) => x.campo === 'peso')!;
+    expect(peso).toMatchObject({ falta: false, mensaje: 'Debe ser mínimo 30 kg' });
+    expect(lista.find((x) => x.campo === 'frecuenciaCardiaca')).toMatchObject({
+      falta: true,
+      mensaje: 'Escribe la frecuencia cardiaca.',
+    });
+    // Sin altura no se pide el IMC aparte (se calcula)
+    expect(lista.some((x) => x.campo === 'indiceMasaCorporal')).toBe(false);
+    // En somatometría, en el orden de pantalla
+    expect(lista.filter((x) => x.paso === 2).map((x) => x.campo)).toEqual([
+      'peso',
+      'altura',
+      'circunferenciaCintura',
+    ]);
+  });
+
+  it('el peso de la exploración se pide distinto que en la nota médica', () => {
+    const [ef] = problemasPorFaltantes(
+      [{ nombre: 'Peso', tipo: 'medida', paso: 2, campo: 'peso' }],
+      INSTRUCCION_EXPLORACION_FISICA,
+    );
+    const [nm] = problemasPorFaltantes([{ nombre: 'Peso', tipo: 'numero', paso: 7, campo: 'peso' }]);
+    expect(ef.mensaje).toBe('Escribe el peso.');
+    expect(nm.mensaje).toBe('Escribe el peso; si no se pudo medir, marca «Se desconoce».');
   });
 });

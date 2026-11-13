@@ -67,7 +67,7 @@ watch(fechaExploracionFisica, (newValue) => {
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Exploración Física</h1>
     
-    <div :class="variant === 'compact' ? 'mt-1' : 'mt-6'">
+    <div data-campo="fechaExploracionFisica" :class="variant === 'compact' ? 'mt-1' : 'mt-6'">
       <h2 :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
         Fecha de Exploración Física
       </h2>

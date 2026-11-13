@@ -243,7 +243,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
         Tensión Arterial
       </h3>
       <div :class="['grid grid-cols-2 gap-4', isCompact ? 'mb-2' : 'mb-3']">
-        <div>
+        <div data-campo="tensionArterialSistolica">
           <label for="tensionArterialSistolica" :class="labelClass">
             Sistólica (mmHg)
           </label>
@@ -269,7 +269,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
             </p>
           </transition>
         </div>
-        <div>
+        <div data-campo="tensionArterialDiastolica">
           <label for="tensionArterialDiastolica" :class="labelClass">
             Diastólica (mmHg)
           </label>
@@ -324,7 +324,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
     </div>
 
     <!-- Frecuencia Cardíaca -->
-    <div :class="isCompact ? 'mb-3' : 'mb-6'">
+    <div data-campo="frecuenciaCardiaca" :class="isCompact ? 'mb-3' : 'mb-6'">
       <label for="frecuenciaCardiaca" :class="labelClass">
         Frecuencia Cardíaca (lpm)
       </label>
@@ -381,7 +381,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
     </div>
 
     <!-- Frecuencia Respiratoria -->
-    <div :class="isCompact ? 'mb-3' : 'mb-6'">
+    <div data-campo="frecuenciaRespiratoria" :class="isCompact ? 'mb-3' : 'mb-6'">
       <label for="frecuenciaRespiratoria" :class="labelClass">
         Frecuencia Respiratoria (rpm)
       </label>
@@ -436,7 +436,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
     </div>
 
     <!-- Saturación de Oxígeno -->
-    <div :class="isCompact ? 'mb-2' : 'mb-4'">
+    <div data-campo="saturacionOxigeno" :class="isCompact ? 'mb-2' : 'mb-4'">
       <label for="saturacionOxigeno" :class="labelClass">
         Saturación de Oxígeno (%)
       </label>
