@@ -89,3 +89,18 @@ export function legacyStepToSectionIndex(
 
   return 1;
 }
+
+/**
+ * Paso canónico de la historia clínica (1–46, numeración de mujer) → lugar en el asistente:
+ * con secciones, el número de sección; en el asistente clásico, el paso del arreglo (en
+ * hombres no hay gineco-obstétricos, así que 42–46 quedan en 28–32).
+ */
+export function pasoHistoriaClinicaEnAsistente(
+  pasoCanonico: number,
+  sexo: string | null | undefined,
+  conSecciones: boolean,
+): number {
+  if (conSecciones) return legacyStepToSectionIndex(pasoCanonico, sexo);
+  if (sexo !== 'Femenino' && pasoCanonico >= 42) return pasoCanonico - 14;
+  return pasoCanonico;
+}

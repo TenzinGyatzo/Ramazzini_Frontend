@@ -3,6 +3,7 @@ import {
   getHcSectionDefsForSexo,
   getHcSectionIndex,
   legacyStepToSectionIndex,
+  pasoHistoriaClinicaEnAsistente,
 } from '@/helpers/historiaClinicaSections';
 
 describe('historiaClinicaSections', () => {
@@ -32,5 +33,19 @@ describe('historiaClinicaSections', () => {
   it('getHcSectionIndex respeta sexo para GO', () => {
     expect(getHcSectionIndex('laborales', 'Femenino')).toBe(6);
     expect(getHcSectionIndex('laborales', 'Masculino')).toBe(5);
+  });
+});
+
+describe('pasoHistoriaClinicaEnAsistente', () => {
+  it('con secciones: el resumen es la última sección (hombre y mujer)', () => {
+    expect(pasoHistoriaClinicaEnAsistente(46, 'Femenino', true)).toBe(7);
+    expect(pasoHistoriaClinicaEnAsistente(46, 'Masculino', true)).toBe(6);
+    expect(pasoHistoriaClinicaEnAsistente(1, 'Masculino', true)).toBe(1);
+  });
+
+  it('asistente clásico: en hombres el resumen es el paso 32; en mujeres, el 46', () => {
+    expect(pasoHistoriaClinicaEnAsistente(46, 'Masculino', false)).toBe(32);
+    expect(pasoHistoriaClinicaEnAsistente(46, 'Femenino', false)).toBe(46);
+    expect(pasoHistoriaClinicaEnAsistente(1, 'Masculino', false)).toBe(1);
   });
 });

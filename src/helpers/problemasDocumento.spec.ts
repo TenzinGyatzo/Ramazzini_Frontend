@@ -8,7 +8,7 @@ import {
   problemasPorFaltantes,
   siguienteProblema,
   type ProblemaCampo,
-} from './problemasNotaMedica';
+} from './problemasDocumento';
 import { getNotaMedicaStepMap } from './notaMedicaStepMap';
 import { validarCamposRequeridos, validarNotaMedicaPreSubmit } from './validacionCampos';
 
@@ -140,6 +140,23 @@ describe('orden dentro de un paso: como se ve en pantalla', () => {
       'Elige el género.',
       'Marca la derechohabiencia.',
       'Escribe la talla; si no se pudo medir, marca «Se desconoce».',
+    ]);
+  });
+});
+
+describe('historia clínica', () => {
+  it('faltantes: motivo y fecha en el paso 1 (en ese orden) y el resumen al final', () => {
+    const faltantes = validarCamposRequeridos('historiaClinica', {}, {});
+    const lista = ordenarProblemas(problemasPorFaltantes(faltantes.camposFaltantes));
+    expect(lista.map((x) => [x.campo, x.paso])).toEqual([
+      ['motivoExamen', 1],
+      ['fechaHistoriaClinica', 1],
+      ['resumenHistoriaClinica', 46],
+    ]);
+    expect(lista.map((x) => x.mensaje)).toEqual([
+      'Elige el motivo del examen.',
+      'Elige la fecha de la historia clínica.',
+      'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
     ]);
   });
 });

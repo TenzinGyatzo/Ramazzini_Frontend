@@ -81,7 +81,7 @@ watch(fechaHistoriaClinica, (newValue) => {
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Historia Clínica</h1>
     
     <!-- Pregunta principal con mejor jerarquía -->
-    <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
+    <div data-campo="motivoExamen" :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
       <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿Motivo del examen médico?</p>
       
       <!-- Diseño de Radio Buttons más Visual tipo Card -->
@@ -224,7 +224,7 @@ watch(fechaHistoriaClinica, (newValue) => {
     </div>
 
     <!-- Sección de fecha con mejor espaciado -->
-    <div class="mt-8">
+    <div data-campo="fechaHistoriaClinica" class="mt-8">
       <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de Historia Clínica</h2>
       <FormKit 
         type="date" 

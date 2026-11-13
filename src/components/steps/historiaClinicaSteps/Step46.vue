@@ -165,7 +165,7 @@ const { variant } = toRefs(props);
             <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Resumen Historia Clínica</h1>
             
             <!-- Pregunta principal con mejor jerarquía -->
-            <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
+            <div data-campo="resumenHistoriaClinica" :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
                 <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿Hay hallazgos significativos por resumir?</p>
                 
                 <!-- Diseño de Radio Buttons más Visual tipo Card -->

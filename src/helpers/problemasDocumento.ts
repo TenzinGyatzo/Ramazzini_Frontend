@@ -1,7 +1,9 @@
 /**
- * Lo que impide guardar una nota médica, en el orden de los pasos: datos que faltan y
- * datos que no son válidos se tratan igual. Al guardar se lleva al usuario al primero
- * (paso + campo + qué corregir) y el aviso permite ir al siguiente o ver la lista.
+ * Lo que impide guardar un documento clínico (nota médica, historia clínica…), en el orden
+ * de los pasos: datos que faltan y datos que no son válidos se tratan igual. Al guardar se
+ * lleva al usuario al primero (paso + campo + qué corregir) y el aviso permite ir al
+ * siguiente o ver la lista. Cada documento aporta sus validaciones (FormStepper); aquí van
+ * los textos, el orden en pantalla y la navegación entre pendientes.
  */
 import type { CampoFaltante } from '@/helpers/validacionCampos';
 import type { NotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
@@ -31,11 +33,18 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   relacionTemporal: 'Indica si el diagnóstico principal es de primera vez o subsecuente.',
   primeraVezUneme:
     'Indica si es la primera consulta del año en una Unidad de Especialidades Médicas.',
+  // Historia clínica
+  motivoExamen: 'Elige el motivo del examen.',
+  fechaHistoriaClinica: 'Elige la fecha de la historia clínica.',
+  resumenHistoriaClinica: 'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
 };
 
 /** Nombre corto en la lista para cada dato (si no viene de la validación). */
 const NOMBRE_CAMPO: Record<string, string> = {
   fechaNotaMedica: 'Fecha de la consulta',
+  motivoExamen: 'Motivo del examen',
+  fechaHistoriaClinica: 'Fecha de la historia clínica',
+  resumenHistoriaClinica: 'Resumen de la historia clínica',
   primeraVezUneme: 'Primera consulta del año en especialidades',
   tensionArterialSistolica: 'Tensión arterial',
   tensionArterialDiastolica: 'Tensión arterial',
@@ -122,6 +131,10 @@ export function campoPorPasoDiagnostico(
  * diagnóstico se pide primero la relación temporal y luego el diagnóstico, como en pantalla.
  */
 const ORDEN_EN_PANTALLA = [
+  // Historia clínica (paso 1)
+  'motivoExamen',
+  'fechaHistoriaClinica',
+  // Nota médica
   'tipoNota',
   'fechaNotaMedica',
   'primeraVezUneme',

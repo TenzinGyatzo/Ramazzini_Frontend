@@ -363,7 +363,8 @@ const camposRequeridosPorTipo: Record<string, Array<{
   historiaClinica: [
     { campo: 'motivoExamen', nombre: 'Motivo del examen', tipo: 'seleccion', paso: 1, validacion: validarSeleccion },
     { campo: 'fechaHistoriaClinica', nombre: 'Fecha de historia clínica', tipo: 'fecha', paso: 1, validacion: validarFecha },
-    { campo: 'resumenHistoriaClinica', nombre: 'Resumen de historia clínica', tipo: 'texto', paso: 32, validacion: validarTexto }
+    // Paso canónico (46 = resumen); el lugar real en el asistente lo da pasoHistoriaClinicaEnAsistente
+    { campo: 'resumenHistoriaClinica', nombre: 'Resumen de historia clínica', tipo: 'texto', paso: 46, validacion: validarTexto }
   ],
 
   notaMedica: [
