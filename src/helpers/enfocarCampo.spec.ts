@@ -142,3 +142,34 @@ describe('enfocarCampo con un campo alto', () => {
     expect(document.activeElement?.id).toBe('r');
   });
 });
+
+describe('enfocarCampo con data-desplazar="no" (cuadro de texto arriba de su paso)', () => {
+  it('si su principio se ve, no desplaza aunque el campo sea alto', async () => {
+    document.body.innerHTML = `<div data-campo="medidas" data-desplazar="no"><textarea id="m"></textarea></div>`;
+    const cont = document.querySelector<HTMLElement>('[data-campo="medidas"]')!;
+    visible(cont);
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    // Alto (más que la pantalla) y con su principio a media pantalla
+    cont.getBoundingClientRect = () => ({ top: 400, bottom: 2400, height: 2000 }) as DOMRect;
+    expect(await enfocarCampo('medidas', 'Escribe las medidas preventivas.')).toBe(true);
+    expect(cont.scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(document.activeElement?.id).toBe('m');
+    scrollTo.mockRestore();
+  });
+
+  it('si quedó fuera de la vista, la página sube hasta arriba (nunca baja hacia el campo)', async () => {
+    document.body.innerHTML = `<div data-campo="resultados" data-desplazar="no"><textarea></textarea></div>`;
+    const cont = document.querySelector<HTMLElement>('[data-campo="resultados"]')!;
+    visible(cont);
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    cont.getBoundingClientRect = () => ({ top: -600, bottom: 1400, height: 2000 }) as DOMRect;
+    const promesa = enfocarCampo('resultados', 'Escribe los resultados.');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    expect(cont.scrollIntoView).not.toHaveBeenCalled();
+    document.dispatchEvent(new Event('scrollend'));
+    expect(await promesa).toBe(true);
+    scrollTo.mockRestore();
+  });
+});

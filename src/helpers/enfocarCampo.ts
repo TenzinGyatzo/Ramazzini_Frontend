@@ -111,8 +111,18 @@ export async function enfocarCampo(
 
   const foco = el.matches(ENFOCABLE) ? el : el.querySelector<HTMLElement>(ENFOCABLE);
   const altoPantalla = window.innerHeight || document.documentElement.clientHeight;
-  const desplazamiento = comoDesplazar(el.getBoundingClientRect(), altoPantalla);
+  // data-desplazar="no": el campo queda bien a la vista arriba de su paso (p. ej. un cuadro
+  // de texto con sugerencias largas debajo). Nunca se baja hacia él: si su principio se ve,
+  // no se mueve; si quedó fuera de la vista, la página sube hasta arriba.
+  const rect = el.getBoundingClientRect();
+  const desplazamiento =
+    el.dataset.desplazar === 'no'
+      ? rect.top >= 0 && rect.top <= altoPantalla - PRINCIPIO_VISIBLE_MIN_PX
+        ? 'no'
+        : 'arriba'
+      : comoDesplazar(rect, altoPantalla);
   const yaALaVista = desplazamiento === 'no';
+  if (desplazamiento === 'arriba') window.scrollTo({ top: 0, behavior: 'smooth' });
   if (desplazamiento === 'centro') el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   // El margen superior (scroll-margin de [data-campo]) deja ver el título del campo
   if (desplazamiento === 'inicio') el.scrollIntoView({ block: 'start', behavior: 'smooth' });
