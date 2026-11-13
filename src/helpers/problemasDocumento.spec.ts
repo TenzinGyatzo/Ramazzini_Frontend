@@ -236,3 +236,22 @@ describe('audiometría', () => {
     ]);
   });
 });
+
+describe('aptitud', () => {
+  it('obligatorios con instrucción, en orden de pasos; cada uno en su sección', async () => {
+    const { legacyStepToSectionIndex } = await import('./aptitudSections');
+    const faltantes = validarCamposRequeridos('aptitud', {}, {}).camposFaltantes;
+    const lista = ordenarProblemas(problemasPorFaltantes(faltantes));
+    expect(lista.map((x) => [x.campo, x.mensaje])).toEqual([
+      ['fechaAptitudPuesto', 'Elige la fecha de valoración.'],
+      ['aptitudPuesto', 'Elige la aptitud al puesto.'],
+      ['alteracionesSalud', 'Describe las alteraciones de salud encontradas.'],
+      ['resultados', 'Escribe los resultados.'],
+      ['medidasPreventivas', 'Escribe las medidas preventivas.'],
+    ]);
+    // Con secciones: fecha, (evaluaciones), aptitud, alteraciones, resultados, medidas
+    const secciones = lista.map((x) => legacyStepToSectionIndex(x.paso!));
+    expect(new Set(secciones).size).toBe(5);
+    expect([...secciones].sort((a, b) => a - b)).toEqual(secciones);
+  });
+});

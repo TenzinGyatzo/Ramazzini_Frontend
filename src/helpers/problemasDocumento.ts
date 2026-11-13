@@ -48,6 +48,12 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   oidoDerecho125: 'Captura los valores del oído derecho.',
   oidoIzquierdo125: 'Captura los valores del oído izquierdo.',
   diagnosticoAudiometria: 'Escribe el diagnóstico.',
+  // Aptitud
+  fechaAptitudPuesto: 'Elige la fecha de valoración.',
+  aptitudPuesto: 'Elige la aptitud al puesto.',
+  alteracionesSalud: 'Describe las alteraciones de salud encontradas.',
+  resultados: 'Escribe los resultados.',
+  medidasPreventivas: 'Escribe las medidas preventivas.',
 };
 
 /** Nombre corto en la lista para cada dato (si no viene de la validación). */
@@ -66,6 +72,11 @@ const NOMBRE_CAMPO: Record<string, string> = {
   oidoDerecho125: 'Oído derecho',
   oidoIzquierdo125: 'Oído izquierdo',
   diagnosticoAudiometria: 'Diagnóstico',
+  fechaAptitudPuesto: 'Fecha de valoración',
+  aptitudPuesto: 'Aptitud al puesto',
+  alteracionesSalud: 'Alteraciones de salud',
+  resultados: 'Resultados',
+  medidasPreventivas: 'Medidas preventivas',
   altura: 'Altura',
   indiceMasaCorporal: 'IMC',
   primeraVezUneme: 'Primera consulta del año en especialidades',

@@ -255,7 +255,7 @@ watch(
 <template>
   <div>
   <h1 v-if="variant !== 'compact'" class="font-bold mb-4 text-gray-800 leading-5">Aptitud al Puesto</h1>
-  <div :class="variant === 'compact' ? 'mb-2' : 'mb-4'">
+  <div data-campo="alteracionesSalud" :class="variant === 'compact' ? 'mb-2' : 'mb-4'">
     <h2 v-if="variant !== 'compact'" class="text-lg font-semibold mb-4 text-gray-800">Alteraciones de Salud</h2>
     <p class="text-sm font-medium mb-1 text-gray-800 leading-4">Descripción de alteraciones encontradas:</p>
     <div class="font-light mb-2">

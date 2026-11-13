@@ -29,8 +29,9 @@ const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 // Obtener la fecha actual en formato YYYY-MM-DD
 const today = format(new Date(), 'yyyy-MM-dd');
 
-// Inicializar la referencia local sincronizada con formData
-const fechaAptitudPuesto = ref(today);
+// Inicializar la referencia local sincronizada con formData (al volver al paso se conserva
+// la fecha ya elegida; antes siempre mostraba la de hoy)
+const fechaAptitudPuesto = ref(formDataAptitud.fechaAptitudPuesto || today);
 
 onMounted(() => {
   if (documentos.currentDocument) {
@@ -48,6 +49,10 @@ onMounted(() => {
   const trabajadorNombre = trabajadores.currentTrabajador.nombre;
   const trabajadorId = trabajadores.currentTrabajadorId;
   formDataAptitud.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
+
+  // La fecha que se ve llega al formulario desde el inicio (si no, al guardar con este paso
+  // abierto se pedía una fecha que sí está en pantalla)
+  formDataAptitud.fechaAptitudPuesto = fechaAptitudPuesto.value;
 });
 
 onUnmounted(() => {
@@ -66,7 +71,7 @@ watch(fechaAptitudPuesto, (newValue) => {
 <template>
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Aptitud al Puesto</h1>
-    <div :class="variant === 'compact' ? 'mt-1' : 'mt-6'">
+    <div data-campo="fechaAptitudPuesto" :class="variant === 'compact' ? 'mt-1' : 'mt-6'">
       <h2 :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
         Fecha de Valoración
       </h2>

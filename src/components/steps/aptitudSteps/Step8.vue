@@ -15,6 +15,9 @@ const { formDataAptitud } = useFormDataStore();
 
 // Valor local para la aptitudPuesto principal, inicializado con el valor actual del store
 const aptitudPuesto = ref(formDataAptitud.aptitudPuesto || 'Apto Sin Restricciones');
+// La opción que se ve marcada llega al formulario desde el inicio (con la de por defecto no
+// se copiaba hasta cambiarla o salir del paso)
+formDataAptitud.aptitudPuesto = aptitudPuesto.value;
 
 // Sincronizar el valor seleccionado con formDataAptitud.aptitudPuesto
 watch(aptitudPuesto, (newValue) => {
@@ -34,7 +37,7 @@ onUnmounted(() => {
         <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">APTITUD AL PUESTO</h1>
         <h3 v-if="variant !== 'compact'" class="text-lg font-medium mb-6 text-gray-700">APTITUD AL PUESTO</h3>
         
-        <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
+        <div data-campo="aptitudPuesto" :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
             
             <!-- Diseño de Radio Buttons más Visual tipo Card - Una sola columna -->
             <div class="grid grid-cols-1 gap-3">

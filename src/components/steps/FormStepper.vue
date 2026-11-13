@@ -467,6 +467,7 @@ import { legacyStepToSectionIndex as efLegacyStepToSectionIndex } from '@/helper
 import { validateSomatometriaSignosField } from '@/helpers/somatometriaSignosRanges';
 import { buildExploracionFisicaSectionSteps } from '@/helpers/buildExploracionFisicaSectionSteps';
 import { isAptitudSectionsV2Enabled } from '@/composables/useAptitudSectionsV2';
+import { legacyStepToSectionIndex as aptLegacyStepToSectionIndex } from '@/helpers/aptitudSections';
 import { buildAptitudSectionSteps } from '@/helpers/buildAptitudSectionSteps';
 import { isAntidopingSectionsV2Enabled } from '@/composables/useAntidopingSectionsV2';
 import { buildAntidopingSectionSteps } from '@/helpers/buildAntidopingSectionSteps';
@@ -1640,7 +1641,7 @@ export default {
     };
 
     // Documentos con obligatorios y fecha (ventana y edad en la fecha), en orden de pasos:
-    // historia clínica, examen de la vista y audiometría
+    // historia clínica, examen de la vista, audiometría y aptitud
     const recolectarProblemasObligatoriosYFecha = (tipo, df) => {
       const campoFecha = DOCUMENT_TYPE_DATE_FIELDS[tipo];
       const invalidos = [];
@@ -1699,7 +1700,7 @@ export default {
 
     // Documentos que, al guardar, llevan al dato pendiente (paso + campo + qué corregir)
     const tieneAtencionCampos = () =>
-      ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria'].includes(
+      ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud'].includes(
         documentos.currentTypeOfDocument,
       );
 
@@ -1713,6 +1714,7 @@ export default {
         return formData.formDataExamenVista;
       }
       if (documentos.currentTypeOfDocument === 'audiometria') return formData.formDataAudiometria;
+      if (documentos.currentTypeOfDocument === 'aptitud') return formData.formDataAptitud;
       return null;
     };
 
@@ -1731,6 +1733,9 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'audiometria') {
         return recolectarProblemasObligatoriosYFecha('audiometria', formData.formDataAudiometria);
+      }
+      if (documentos.currentTypeOfDocument === 'aptitud') {
+        return recolectarProblemasObligatoriosYFecha('aptitud', formData.formDataAptitud);
       }
       return [];
     };
@@ -1758,6 +1763,9 @@ export default {
         const id = ID_PASO_EXAMEN_VISTA[paso];
         const indice = id ? stepsStore.steps.findIndex((s) => s.id === id) : -1;
         return indice >= 0 ? indice + 1 : paso;
+      }
+      if (documentos.currentTypeOfDocument === 'aptitud') {
+        return isAptitudSectionsV2Enabled(route.query) ? aptLegacyStepToSectionIndex(paso) : paso;
       }
       return paso;
     };
