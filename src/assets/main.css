@@ -421,9 +421,13 @@ html.dark-mode .inicio-nav--enlace:focus-visible {
 /* Dato que impide guardar (helpers/enfocarCampo): resaltado y, debajo, qué corregir.
    El contorno es una capa propia (::before) que solo cambia de opacidad y de halo,
    y el mensaje (::after) entra con un fundido: animaciones que el navegador hace fluidas. */
+/* Al llevar a un dato, deja ver arriba su título y lo que haya encima */
+[data-campo] {
+  scroll-margin-top: 6rem;
+}
+
 .campo-atencion {
   position: relative;
-  scroll-margin: 6rem;
 }
 
 .campo-atencion::before {

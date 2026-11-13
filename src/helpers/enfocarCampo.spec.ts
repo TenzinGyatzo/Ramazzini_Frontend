@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CLASE_ATENCION, enfocarCampo, limpiarAtencionCampo } from './enfocarCampo';
+import { CLASE_ATENCION, comoDesplazar, enfocarCampo, limpiarAtencionCampo } from './enfocarCampo';
 
 /** jsdom no calcula cajas: se simula que el campo está a la vista. */
 function visible(el: HTMLElement) {
@@ -100,5 +100,37 @@ describe('enfocarCampo', () => {
     await enfocarCampo('b', 'B');
     expect(a.classList.contains(CLASE_ATENCION)).toBe(false);
     expect(b.classList.contains(CLASE_ATENCION)).toBe(true);
+  });
+});
+
+describe('comoDesplazar: campos altos se muestran desde su principio', () => {
+  const pantalla = 800;
+
+  it('campo normal: si se ve completo no se mueve; si no, se centra', () => {
+    expect(comoDesplazar({ top: 100, bottom: 300, height: 200 }, pantalla)).toBe('no');
+    expect(comoDesplazar({ top: 900, bottom: 1100, height: 200 }, pantalla)).toBe('centro');
+    expect(comoDesplazar({ top: -150, bottom: 50, height: 200 }, pantalla)).toBe('centro');
+  });
+
+  it('campo alto: con su principio arriba no se mueve; si no, se muestra desde el principio', () => {
+    // Más alto que el 60 % de la pantalla
+    expect(comoDesplazar({ top: 120, bottom: 1320, height: 1200 }, pantalla)).toBe('no');
+    expect(comoDesplazar({ top: 600, bottom: 1800, height: 1200 }, pantalla)).toBe('inicio');
+    expect(comoDesplazar({ top: -400, bottom: 800, height: 1200 }, pantalla)).toBe('inicio');
+  });
+});
+
+describe('enfocarCampo con un campo alto', () => {
+  it('se desplaza al principio del campo, no al centro', async () => {
+    document.body.innerHTML = `<div data-campo="resultados"><textarea id="r"></textarea></div>`;
+    const cont = document.querySelector<HTMLElement>('[data-campo="resultados"]')!;
+    visible(cont);
+    cont.getBoundingClientRect = () => ({ top: 900, bottom: 2400, height: 1500 }) as DOMRect;
+    const promesa = enfocarCampo('resultados', 'Escribe los resultados.');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(cont.scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' });
+    document.dispatchEvent(new Event('scrollend'));
+    expect(await promesa).toBe(true);
+    expect(document.activeElement?.id).toBe('r');
   });
 });

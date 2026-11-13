@@ -34,11 +34,28 @@ function esperar(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** El campo ya se ve completo: no hace falta desplazar ni esperar. */
-function estaALaVista(el: HTMLElement): boolean {
-  const r = el.getBoundingClientRect();
-  const alto = window.innerHeight || document.documentElement.clientHeight;
-  return r.top >= 0 && r.bottom <= alto;
+/** Un campo que ocupa más de esta parte de la pantalla se muestra desde su principio. */
+const PROPORCION_CAMPO_ALTO = 0.6;
+/** Si el principio de un campo alto ya está en esta parte de arriba, no se desplaza. */
+const PROPORCION_ZONA_SUPERIOR = 0.4;
+
+/**
+ * Cómo llevar el campo a la vista:
+ * - 'no': ya se ve (completo, o si es alto, su principio en la parte de arriba);
+ * - 'centro': campo normal fuera de la vista, se centra;
+ * - 'inicio': campo alto (más que buena parte de la pantalla), se muestra desde su
+ *   principio para no bajar hasta el fondo; la indicación también está en el aviso.
+ */
+export function comoDesplazar(
+  r: Pick<DOMRect, 'top' | 'bottom' | 'height'>,
+  altoPantalla: number,
+): 'no' | 'centro' | 'inicio' {
+  const esAlto = r.height > altoPantalla * PROPORCION_CAMPO_ALTO;
+  if (esAlto) {
+    const principioVisible = r.top >= 0 && r.top <= altoPantalla * PROPORCION_ZONA_SUPERIOR;
+    return principioVisible ? 'no' : 'inicio';
+  }
+  return r.top >= 0 && r.bottom <= altoPantalla ? 'no' : 'centro';
 }
 
 /**
@@ -91,8 +108,12 @@ export async function enfocarCampo(
   if (!el) return false;
 
   const foco = el.matches(ENFOCABLE) ? el : el.querySelector<HTMLElement>(ENFOCABLE);
-  const yaALaVista = estaALaVista(el);
-  if (!yaALaVista) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  const altoPantalla = window.innerHeight || document.documentElement.clientHeight;
+  const desplazamiento = comoDesplazar(el.getBoundingClientRect(), altoPantalla);
+  const yaALaVista = desplazamiento === 'no';
+  if (desplazamiento === 'centro') el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  // El margen superior (scroll-margin de [data-campo]) deja ver el título del campo
+  if (desplazamiento === 'inicio') el.scrollIntoView({ block: 'start', behavior: 'smooth' });
   foco?.focus({ preventScroll: true });
 
   // El resaltado se anima cuando la pantalla deja de moverse, para que se vea fluido
