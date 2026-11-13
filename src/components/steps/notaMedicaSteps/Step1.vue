@@ -199,7 +199,7 @@ watch(primeraVezUneme, (newValue) => {
 
     
     <!-- Pregunta principal con mejor jerarquía -->
-    <div :class="variant === 'compact' ? 'mb-4' : 'mb-8'">
+    <div data-campo="tipoNota" :class="variant === 'compact' ? 'mb-4' : 'mb-8'">
       <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿Tipo de consulta? <span class="text-red-500">*</span></p>
       
       <!-- Diseño de Radio Buttons más Visual tipo Card -->
@@ -309,7 +309,7 @@ watch(primeraVezUneme, (newValue) => {
     </div>
 
     <!-- Sección de fecha con mejor espaciado -->
-    <div :class="variant === 'compact' ? 'mt-4' : 'mt-8'">
+    <div data-campo="fechaNotaMedica" :class="variant === 'compact' ? 'mt-4' : 'mt-8'">
       <h2 :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">Fecha de Consulta <span class="text-red-500">*</span></h2>
       <FormKit 
         type="date" 
@@ -351,7 +351,7 @@ watch(primeraVezUneme, (newValue) => {
       </div>
     </div>
 
-    <div v-if="muestraPrimeraVezUneme" :class="variant === 'compact' ? 'mt-4' : 'mt-8'">
+    <div v-if="muestraPrimeraVezUneme" data-campo="primeraVezUneme" :class="variant === 'compact' ? 'mt-4' : 'mt-8'">
       <h2 :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
         Primera vez UNEME <span class="text-red-500">*</span>
       </h2>

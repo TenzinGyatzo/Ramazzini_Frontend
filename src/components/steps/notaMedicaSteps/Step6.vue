@@ -315,7 +315,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
 
     <h2 :class="variant === 'compact' ? 'text-sm font-semibold text-gray-800 mb-2' : ''">Tensión Arterial</h2>
     <div class="flex gap-4 mb-4 flex-wrap">
-      <div class="w-full sm:w-[calc(50%-0.5rem)]">
+      <div data-campo="tensionArterialSistolica" class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="tensionArterialSistolica">Sistólica (mmHg) <span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input
@@ -339,7 +339,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           {{ mensajeErrorTensionSistolica }}
         </p>
       </div>
-      <div class="w-full sm:w-[calc(50%-0.5rem)]">
+      <div data-campo="tensionArterialDiastolica" class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="tensionArterialDiastolica">Diastólica (mmHg)<span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input
@@ -366,7 +366,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
     </div>
 
     <div class="flex gap-4 mb-4 flex-wrap">
-      <div class="w-full sm:w-[calc(50%-0.5rem)]">
+      <div data-campo="frecuenciaCardiaca" class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="frecuenciaCardiaca">F. Cardíaca (lpm) <span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input
@@ -390,7 +390,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           {{ mensajeErrorFrecuenciaCardiaca }}
         </p>
       </div>
-      <div class="w-full sm:w-[calc(50%-0.5rem)]">
+      <div data-campo="frecuenciaRespiratoria" class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="frecuenciaRespiratoria">F. Resp. (rpm) <span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input
@@ -417,7 +417,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
     </div>
 
     <div class="flex gap-4 mb-4 flex-wrap">
-      <div class="w-full sm:w-[calc(50%-0.5rem)]">
+      <div data-campo="temperatura" class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="temperatura">Temperatura (°C) <span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input
@@ -441,7 +441,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           {{ mensajeErrorTempertura }}
         </p>
       </div>
-      <div class="w-full sm:w-[calc(50%-0.5rem)]">
+      <div data-campo="saturacionOxigeno" class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="saturacionOxigeno">Sat. Oxígeno (%) <span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input

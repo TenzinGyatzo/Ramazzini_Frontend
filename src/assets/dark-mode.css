@@ -4765,3 +4765,15 @@ html.dark-mode .modulos-funciones__color-elegido-nombre {
 html.dark-mode .modulos-funciones__color-elegido-etiqueta {
   color: #94a3b8;
 }
+
+/* Dato que impide guardar (helpers/enfocarCampo) */
+html.dark-mode .campo-atencion[data-atencion]::after {
+  border-color: #b45309;
+  background: rgba(120, 53, 15, 0.35);
+  color: #fcd34d;
+}
+
+html.dark-mode .aviso-atencion > div {
+  background: #1e293b !important;
+  border-color: #b45309 !important;
+}

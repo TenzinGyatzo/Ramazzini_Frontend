@@ -54,7 +54,7 @@ watch(motivoConsulta, (newValue) => {
         </p>
         
         <!-- Campo de textarea mejorado -->
-        <div class="mb-4">
+        <div data-campo="motivoConsulta" class="mb-4">
             <label
                 v-if="variant !== 'compact'"
                 class="block text-base font-medium leading-5 text-gray-800 mb-3"

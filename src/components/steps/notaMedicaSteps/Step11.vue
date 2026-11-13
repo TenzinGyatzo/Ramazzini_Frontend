@@ -379,7 +379,7 @@ watch(() => userStore.user?._id, () => {
     <!-- Bloques visibles solo cuando registrarComorbilidad === Sí -->
     <div v-if="registrarComorbilidad === 1" class="space-y-6">
       <!-- Primera vez diagnóstico 3 (SIRES_NOM024) -->
-      <div v-if="showSiresUI">
+      <div v-if="showSiresUI" data-campo="primeraVezDiagnostico3">
         <h3
           :class="variant === 'compact'
             ? 'text-xs font-medium text-gray-600 mb-1.5'
@@ -428,7 +428,7 @@ watch(() => userStore.user?._id, () => {
       </div>
 
       <!-- 2. Código CIE-10 Diagnóstico 3 (obligatorio cuando comorbilidad=Sí) -->
-      <div>
+      <div data-campo="codigoCIEDiagnostico3">
         <CIE10Autocomplete
           v-model="codigoCIEDiagnostico3"
           label="Código CIE-10 Diagnóstico 3"
@@ -476,7 +476,7 @@ watch(() => userStore.user?._id, () => {
       </div>
 
       <!-- 3. Confirmación diagnóstica 3 (Fe de Erratas: solo cuando aplica) -->
-      <div v-if="muestraConfirmacionDiagnostica3" class="space-y-2 border border-amber-200 rounded-xl p-4 bg-amber-50/30">
+      <div v-if="muestraConfirmacionDiagnostica3" data-campo="confirmacionDiagnostica3" class="space-y-2 border border-amber-200 rounded-xl p-4 bg-amber-50/30">
         <div class="flex items-center gap-2">
           <input
             type="checkbox"

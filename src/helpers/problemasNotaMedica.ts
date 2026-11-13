@@ -1,0 +1,170 @@
+/**
+ * Lo que impide guardar una nota médica, en el orden de los pasos: datos que faltan y
+ * datos que no son válidos se tratan igual. Al guardar se lleva al usuario al primero
+ * (paso + campo + qué corregir) y el aviso permite ir al siguiente o ver la lista.
+ */
+import type { CampoFaltante } from '@/helpers/validacionCampos';
+import type { NotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
+
+export interface ProblemaCampo {
+  /** Paso del asistente clásico (el de secciones se traduce al navegar). */
+  paso: number | null;
+  /** Marca data-campo del paso; sin ella solo se lleva al paso. */
+  campo?: string;
+  /** Qué hacer, dicho al usuario. */
+  mensaje: string;
+  /** Nombre corto para la lista. */
+  nombre: string;
+  /** true si falta; false si hay un valor que no es válido. */
+  falta: boolean;
+}
+
+/** Instrucción para un dato obligatorio vacío (lo que se lee bajo el campo). */
+const INSTRUCCION_FALTA: Record<string, string> = {
+  fechaNotaMedica: 'Elige la fecha de la consulta.',
+  motivoConsulta: 'Escribe el motivo de consulta.',
+  genero: 'Elige el género («No especificado» también vale).',
+  derechohabiencia: 'Marca la derechohabiencia («No especificado» o «Se ignora» también valen).',
+  peso: 'Escribe el peso o marca «Se desconoce».',
+  talla: 'Escribe la talla o marca «Se desconoce».',
+  codigoCIE10Principal: 'Elige el diagnóstico principal.',
+  relacionTemporal: 'Indica si el diagnóstico principal es de primera vez o subsecuente.',
+  primeraVezUneme:
+    'Indica si es la primera consulta del año en una Unidad de Especialidades Médicas.',
+};
+
+/** Nombre corto en la lista para cada dato (si no viene de la validación). */
+const NOMBRE_CAMPO: Record<string, string> = {
+  fechaNotaMedica: 'Fecha de la consulta',
+  primeraVezUneme: 'Primera consulta del año en especialidades',
+  tensionArterialSistolica: 'Tensión arterial',
+  tensionArterialDiastolica: 'Tensión arterial',
+  frecuenciaCardiaca: 'Frecuencia cardiaca',
+  frecuenciaRespiratoria: 'Frecuencia respiratoria',
+  temperatura: 'Temperatura',
+  saturacionOxigeno: 'Saturación de oxígeno',
+  peso: 'Peso',
+  talla: 'Talla',
+  circunferenciaCintura: 'Circunferencia de cintura',
+  glucemia: 'Glucemia',
+  tipoMedicion: '¿En ayunas?',
+  resultadoObtenidoaTravesde: 'Origen del resultado de glucemia',
+  trimestreGestacional: 'Trimestre gestacional',
+  codigoCIE10Principal: 'Diagnóstico principal',
+  codigosCIE10Complementarios: 'Diagnósticos complementarios',
+  codigoCIEDiagnostico2: 'Diagnóstico 2',
+  codigoCIEDiagnostico3: 'Diagnóstico 3',
+  confirmacionDiagnostica: 'Confirmación diagnóstica',
+  confirmacionDiagnostica2: 'Confirmación diagnóstica (diagnóstico 2)',
+  confirmacionDiagnostica3: 'Confirmación diagnóstica (diagnóstico 3)',
+};
+
+export function nombreDeCampo(campo: string | undefined, porDefecto = 'Dato por corregir'): string {
+  return (campo && NOMBRE_CAMPO[campo]) || porDefecto;
+}
+
+/** Datos vacíos de la lista de obligatorios → problemas con instrucción. */
+export function problemasPorFaltantes(faltantes: CampoFaltante[]): ProblemaCampo[] {
+  return faltantes.map((f) => ({
+    paso: f.paso ?? null,
+    campo: f.campo,
+    nombre: f.nombre,
+    falta: true,
+    mensaje: (f.campo && INSTRUCCION_FALTA[f.campo]) || `Falta: ${f.nombre}.`,
+  }));
+}
+
+/** Resultado de una validación ({ valido, mensaje, paso, campo }) → problema, o null. */
+export function problemaDeValidacion(r: {
+  valido: boolean;
+  mensaje?: string;
+  paso?: number;
+  campo?: string;
+}): ProblemaCampo | null {
+  if (r.valido) return null;
+  return {
+    paso: r.paso ?? null,
+    campo: r.campo,
+    nombre: nombreDeCampo(r.campo),
+    falta: false,
+    mensaje: r.mensaje || 'Revisa este dato.',
+  };
+}
+
+/** Campo de cada duplicidad CIE-10 detectada antes de enviar. */
+export function campoDeProblemaCie10(tipo: string): string {
+  if (tipo.startsWith('diagnostico2')) return 'codigoCIEDiagnostico2';
+  if (tipo.startsWith('diagnostico3')) return 'codigoCIEDiagnostico3';
+  return 'codigosCIE10Complementarios';
+}
+
+/** Paso de diagnóstico → campo (código o confirmación) de ese diagnóstico. */
+export function campoPorPasoDiagnostico(
+  paso: number | null | undefined,
+  stepMap: NotaMedicaStepMap,
+  tipo: 'codigo' | 'confirmacion',
+): string | undefined {
+  if (paso == null) return undefined;
+  if (paso === stepMap.diagnostico) {
+    return tipo === 'codigo' ? 'codigoCIE10Principal' : 'confirmacionDiagnostica';
+  }
+  if (paso === stepMap.comorbilidad2) {
+    return tipo === 'codigo' ? 'codigoCIEDiagnostico2' : 'confirmacionDiagnostica2';
+  }
+  if (paso === stepMap.comorbilidad3) {
+    return tipo === 'codigo' ? 'codigoCIEDiagnostico3' : 'confirmacionDiagnostica3';
+  }
+  return undefined;
+}
+
+/**
+ * En el orden de los pasos; dentro de un paso, en el orden en que llegaron. Un mismo campo
+ * aparece una vez (el primero gana: así «falta» no se repite como «no válido»).
+ */
+export function ordenarProblemas(problemas: Array<ProblemaCampo | null>): ProblemaCampo[] {
+  const vistos = new Set<string>();
+  const unicos: ProblemaCampo[] = [];
+  for (const p of problemas) {
+    if (!p) continue;
+    const clave = p.campo ?? `sin-campo:${p.mensaje}`;
+    if (vistos.has(clave)) continue;
+    vistos.add(clave);
+    unicos.push(p);
+  }
+  return unicos
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => (a.p.paso ?? Infinity) - (b.p.paso ?? Infinity) || a.i - b.i)
+    .map(({ p }) => p);
+}
+
+function mismaClave(a: ProblemaCampo, b: ProblemaCampo): boolean {
+  return (a.campo ?? a.mensaje) === (b.campo ?? b.mensaje);
+}
+
+/**
+ * Con la lista recalculada: el que sigue después del actual; si el actual ya se corrigió,
+ * el primero que siga pendiente después de su posición; al final, vuelve al primero.
+ */
+export function siguienteProblema(
+  lista: ProblemaCampo[],
+  actual: ProblemaCampo | null,
+): ProblemaCampo | null {
+  if (lista.length === 0) return null;
+  if (!actual) return lista[0];
+  const i = lista.findIndex((p) => mismaClave(p, actual));
+  if (i >= 0) return lista[(i + 1) % lista.length];
+  const despues = lista.find((p) => (p.paso ?? Infinity) > (actual.paso ?? Infinity));
+  return despues ?? lista[0];
+}
+
+/** Para la lista «Ver todos» (ModalCamposFaltantes). */
+export function aCamposFaltantes(lista: ProblemaCampo[]): CampoFaltante[] {
+  return lista.map((p) => ({
+    nombre: p.nombre,
+    tipo: 'general',
+    revisar: !p.falta,
+    paso: p.paso ?? undefined,
+    campo: p.campo,
+    mensaje: p.mensaje,
+  }));
+}

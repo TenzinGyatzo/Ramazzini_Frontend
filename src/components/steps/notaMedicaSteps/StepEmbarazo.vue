@@ -130,7 +130,7 @@ onUnmounted(syncFormData);
       La edad de la trabajadora está fuera del rango 9–59 años. Se registrará como "No aplica".
     </p>
 
-    <div class="mb-6">
+    <div data-campo="relacionTemporalEmbarazo" class="mb-6">
       <label class="block text-base font-medium text-gray-800 mb-3">
         Relación temporal embarazo
       </label>
@@ -198,7 +198,7 @@ onUnmounted(syncFormData);
       leave-from-class="opacity-100 translate-y-0"
       leave-to-class="opacity-0 -translate-y-2"
     >
-      <div v-if="muestraTrimestre" class="mb-4">
+      <div v-if="muestraTrimestre" data-campo="trimestreGestacional" class="mb-4">
         <label class="block text-base font-medium text-gray-800 mb-3">
           Trimestre gestacional <span class="text-red-500">*</span>
         </label>

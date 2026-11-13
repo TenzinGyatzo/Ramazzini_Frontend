@@ -288,7 +288,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
     </p>
 
     <div class="flex gap-4 mb-4 flex-wrap">
-      <div class="w-full sm:w-[calc(50%-0.5rem)]">
+      <div data-campo="peso" class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="peso">Peso (kg) <span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input
@@ -311,7 +311,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
         <p v-if="mensajeErrorPeso" class="text-red-500 text-sm mt-1">{{ mensajeErrorPeso }}</p>
       </div>
 
-      <div class="w-full sm:w-[calc(50%-0.5rem)]">
+      <div data-campo="talla" class="w-full sm:w-[calc(50%-0.5rem)]">
         <label for="talla">Talla (cm) <span class="text-red-500">*</span></label>
         <div class="mt-1">
           <input
@@ -362,7 +362,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
       </div>
     </div>
 
-    <div class="mb-4">
+    <div data-campo="circunferenciaCintura" class="mb-4">
       <label>Circunferencia de Cintura (cm) <span class="text-red-500">*</span></label>
       <div class="grid grid-cols-2 gap-4 mt-1">
         <div>

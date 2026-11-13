@@ -171,7 +171,7 @@ onUnmounted(() => {
       Género y derechohabiencia
     </p>
 
-    <div :class="variant === 'compact' ? 'mb-4' : 'mb-6'">
+    <div data-campo="genero" :class="variant === 'compact' ? 'mb-4' : 'mb-6'">
       <label for="genero" class="block text-base font-medium text-gray-800 mb-2">
         Género <span class="text-red-500">*</span>
       </label>
@@ -189,7 +189,7 @@ onUnmounted(() => {
       </select>
     </div>
 
-    <div class="mb-4">
+    <div data-campo="derechohabiencia" class="mb-4">
       <label class="block text-base font-medium text-gray-800 mb-2">
         Derechohabiencia <span class="text-red-500">*</span>
       </label>

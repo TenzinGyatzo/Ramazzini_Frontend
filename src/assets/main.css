@@ -417,3 +417,36 @@ html.dark-mode button.inicio-nav--indicador:focus-visible,
 html.dark-mode .inicio-nav--enlace:focus-visible {
   outline-color: #34d399 !important;
 }
+
+/* Dato que impide guardar (helpers/enfocarCampo): resaltado y, debajo, qué corregir */
+.campo-atencion {
+  outline: 2px solid #f59e0b;
+  outline-offset: 6px;
+  border-radius: 0.5rem;
+  scroll-margin: 6rem;
+  animation: campo-atencion-pulso 1.2s ease-out 1;
+}
+
+.campo-atencion[data-atencion]::after {
+  content: attr(data-atencion);
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #fcd34d;
+  border-radius: 0.5rem;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+@keyframes campo-atencion-pulso {
+  0% { outline-color: rgba(245, 158, 11, 0); }
+  30% { outline-color: rgba(245, 158, 11, 1); outline-offset: 10px; }
+  100% { outline-color: rgba(245, 158, 11, 1); outline-offset: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campo-atencion { animation: none; }
+}

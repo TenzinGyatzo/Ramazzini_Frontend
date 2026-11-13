@@ -51,6 +51,12 @@ export interface CampoFaltante {
   nombre: string;
   tipo: string;
   paso?: number;
+  /** Nombre del dato (marca data-campo del paso) para llevar al usuario a él. */
+  campo?: string;
+  /** Qué hay que corregir, cuando no es solo «falta». */
+  mensaje?: string;
+  /** true si el dato tiene un valor que no es válido (no es que falte). */
+  revisar?: boolean;
 }
 
 export interface ValidacionResultado {
@@ -1268,6 +1274,7 @@ export function validarCamposRequeridos(
         nombre: campoRequerido.nombre,
         tipo: campoRequerido.tipo,
         paso: pasoResuelto,
+        campo: campoRequerido.campo,
       });
     }
   }
@@ -1405,7 +1412,7 @@ export function validarNotaMedicaPreSubmit(
   trabajador?: { fechaNacimiento?: string | Date } | null,
   isSIRES: boolean = false,
   esMujer: boolean = false,
-): { valido: boolean; mensaje?: string; paso?: number } {
+): { valido: boolean; mensaje?: string; paso?: number; campo?: string } {
   if (!datosFormulario) return { valido: true };
 
   const stepMap = getNotaMedicaStepMap(isSIRES, esMujer);
@@ -1417,6 +1424,7 @@ export function validarNotaMedicaPreSubmit(
       mensaje:
         'Debe indicar si es la primera consulta del año en una Unidad de Especialidades Médicas',
       paso: 1,
+      campo: 'primeraVezUneme',
     };
   }
 
@@ -1429,6 +1437,7 @@ export function validarNotaMedicaPreSubmit(
       valido: false,
       mensaje: 'La fecha de consulta no puede ser anterior a la fecha de nacimiento del paciente',
       paso: 1,
+      campo: 'fechaNotaMedica',
     };
   }
 
@@ -1440,6 +1449,7 @@ export function validarNotaMedicaPreSubmit(
         valido: false,
         mensaje: 'La edad del paciente no debe ser mayor a 120 años',
         paso: 1,
+        campo: 'fechaNotaMedica',
       };
     }
   }
@@ -1455,6 +1465,7 @@ export function validarNotaMedicaPreSubmit(
             ? 'La fecha de consulta no puede ser posterior al día de hoy'
             : 'La fecha de consulta no puede tener más de 30 días de antigüedad',
         paso: 1,
+        campo: 'fechaNotaMedica',
       };
     }
   }
@@ -1468,10 +1479,41 @@ export function validarNotaMedicaPreSubmit(
       valido: false,
       mensaje: cexError,
       paso: pasoParaErrorCexNotaMedica(cexError, df, stepMap, isSIRES),
+      campo: campoParaErrorCexNotaMedica(cexError, df),
     };
   }
 
   return { valido: true };
+}
+
+/** Campo de la nota médica al que corresponde un mensaje de cantidades CEX. */
+function campoParaErrorCexNotaMedica(
+  mensaje: string,
+  df: Record<string, unknown>,
+): string | undefined {
+  if (
+    mensaje === NOTA_MEDICA_CEX_MESSAGES.taRelacion ||
+    mensaje === NOTA_MEDICA_CEX_MESSAGES.taPareja
+  ) {
+    return 'tensionArterialSistolica';
+  }
+  if (mensaje === NOTA_MEDICA_CEX_MESSAGES.tipoMedicion) return 'tipoMedicion';
+  if (mensaje === NOTA_MEDICA_CEX_MESSAGES.resultadoObtenidoaTravesde) {
+    return 'resultadoObtenidoaTravesde';
+  }
+  const campos: NotaMedicaCexField[] = [
+    'tensionArterialSistolica',
+    'tensionArterialDiastolica',
+    'frecuenciaCardiaca',
+    'frecuenciaRespiratoria',
+    'temperatura',
+    'saturacionOxigeno',
+    'peso',
+    'talla',
+    'circunferenciaCintura',
+    'glucemia',
+  ];
+  return campos.find((field) => validateNotaMedicaCexField(field, df[field]) === mensaje);
 }
 
 function pasoParaErrorCexNotaMedica(
@@ -1526,7 +1568,7 @@ export function validarNotaMedicaEmbarazo(
   datosFormulario: any,
   isSIRES: boolean = false,
   esMujer: boolean = false,
-): { valido: boolean; mensaje?: string; paso?: number } {
+): { valido: boolean; mensaje?: string; paso?: number; campo?: string } {
   if (!datosFormulario || !isSIRES || !esMujer) return { valido: true };
 
   const paso = pasoEmbarazo(isSIRES, esMujer);
@@ -1541,6 +1583,7 @@ export function validarNotaMedicaEmbarazo(
       mensaje:
         'Seleccione el trimestre gestacional cuando registra embarazo (primera vez o subsecuente).',
       paso,
+      campo: 'trimestreGestacional',
     };
   }
 
@@ -1550,6 +1593,7 @@ export function validarNotaMedicaEmbarazo(
       mensaje:
         'El trimestre gestacional debe ser "No aplica" cuando no hay embarazo registrado.',
       paso,
+      campo: 'trimestreGestacional',
     };
   }
 
@@ -1561,24 +1605,24 @@ export function validarNotaMedicaCIEExact4Chars(
   datosFormulario: any,
   isSIRES: boolean = false,
   esMujer: boolean = false,
-): { valido: boolean; mensaje?: string; paso?: number } {
+): { valido: boolean; mensaje?: string; paso?: number; campo?: string } {
   if (!datosFormulario) return { valido: true };
 
   const pasoDiagPrinc = pasoDiagPrincipal(isSIRES, esMujer);
   const pasoDiagSec2 = pasoDiag2(isSIRES, esMujer);
   const pasoDiagSec3 = pasoDiag3(isSIRES, esMujer);
 
-  const campos: Array<{ valor: any; nombre: string; paso: number }> = [
-    { valor: datosFormulario.codigoCIE10Principal, nombre: 'Diagnóstico principal', paso: pasoDiagPrinc },
-    { valor: datosFormulario.codigoCIEDiagnostico2, nombre: 'Diagnóstico 2', paso: pasoDiagSec2 },
-    { valor: datosFormulario.codigoCIEDiagnostico3, nombre: 'Diagnóstico 3', paso: pasoDiagSec3 },
+  const campos: Array<{ valor: any; nombre: string; paso: number; campo: string }> = [
+    { valor: datosFormulario.codigoCIE10Principal, nombre: 'Diagnóstico principal', paso: pasoDiagPrinc, campo: 'codigoCIE10Principal' },
+    { valor: datosFormulario.codigoCIEDiagnostico2, nombre: 'Diagnóstico 2', paso: pasoDiagSec2, campo: 'codigoCIEDiagnostico2' },
+    { valor: datosFormulario.codigoCIEDiagnostico3, nombre: 'Diagnóstico 3', paso: pasoDiagSec3, campo: 'codigoCIEDiagnostico3' },
   ];
 
-  for (const { valor, nombre, paso } of campos) {
+  for (const { valor, nombre, paso, campo } of campos) {
     if (!valor) continue;
     const code = typeof valor === 'string' ? extractCode(valor) : extractCode(String(valor));
     if (code && code.trim() && !hasCIE10Exact4Chars(code)) {
-      return { valido: false, mensaje: `${nombre}: el código CIE-10 debe tener exactamente 4 caracteres`, paso };
+      return { valido: false, mensaje: `${nombre}: el código CIE-10 debe tener exactamente 4 caracteres`, paso, campo };
     }
   }
 
@@ -1589,7 +1633,7 @@ export function validarNotaMedicaCIEExact4Chars(
       if (!c) continue;
       const code = typeof c === 'string' ? extractCode(c) : extractCode(String(c));
       if (code && code.trim() && !hasCIE10Exact4Chars(code)) {
-        return { valido: false, mensaje: `Código CIE complementario ${i + 1} debe tener exactamente 4 caracteres`, paso: pasoDiagPrinc };
+        return { valido: false, mensaje: `Código CIE complementario ${i + 1} debe tener exactamente 4 caracteres`, paso: pasoDiagPrinc, campo: 'codigosCIE10Complementarios' };
       }
     }
   }
@@ -1602,20 +1646,20 @@ export function validarNotaMedicaRamazziniScope(
   datosFormulario: any,
   isSIRES: boolean = false,
   esMujer: boolean = false,
-): { valido: boolean; mensaje?: string; paso?: number } {
+): { valido: boolean; mensaje?: string; paso?: number; campo?: string } {
   if (!datosFormulario) return { valido: true };
 
   const pasoDiagPrinc = pasoDiagPrincipal(isSIRES, esMujer);
   const pasoDiagSec2 = pasoDiag2(isSIRES, esMujer);
   const pasoDiagSec3 = pasoDiag3(isSIRES, esMujer);
 
-  const campos: Array<{ valor: any; nombre: string; paso: number }> = [
-    { valor: datosFormulario.codigoCIE10Principal, nombre: 'Diagnóstico principal', paso: pasoDiagPrinc },
-    { valor: datosFormulario.codigoCIEDiagnostico2, nombre: 'Diagnóstico 2', paso: pasoDiagSec2 },
-    { valor: datosFormulario.codigoCIEDiagnostico3, nombre: 'Diagnóstico 3', paso: pasoDiagSec3 },
+  const campos: Array<{ valor: any; nombre: string; paso: number; campo: string }> = [
+    { valor: datosFormulario.codigoCIE10Principal, nombre: 'Diagnóstico principal', paso: pasoDiagPrinc, campo: 'codigoCIE10Principal' },
+    { valor: datosFormulario.codigoCIEDiagnostico2, nombre: 'Diagnóstico 2', paso: pasoDiagSec2, campo: 'codigoCIEDiagnostico2' },
+    { valor: datosFormulario.codigoCIEDiagnostico3, nombre: 'Diagnóstico 3', paso: pasoDiagSec3, campo: 'codigoCIEDiagnostico3' },
   ];
 
-  for (const { valor, nombre, paso } of campos) {
+  for (const { valor, nombre, paso, campo } of campos) {
     if (!valor) continue;
     const code = typeof valor === 'string' ? extractCode(valor) : extractCode(String(valor));
     const letra = getRamazziniLetraFromCatalogKey(code);
@@ -1624,6 +1668,7 @@ export function validarNotaMedicaRamazziniScope(
         valido: false,
         mensaje: getRamazziniLetraBlockMessage(letra, code.trim().toUpperCase(), nombre),
         paso,
+        campo,
       };
     }
   }
@@ -1644,6 +1689,7 @@ export function validarNotaMedicaRamazziniScope(
             `Código CIE complementario ${i + 1}`,
           ),
           paso: pasoDiagPrinc,
+          campo: 'codigosCIE10Complementarios',
         };
       }
     }

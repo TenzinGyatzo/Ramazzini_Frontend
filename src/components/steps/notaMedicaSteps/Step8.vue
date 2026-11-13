@@ -180,7 +180,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
       Marque "Se desconoce" si no se registró el dato.
     </p>
 
-    <div class="mb-6">
+    <div data-campo="glucemia" class="mb-6">
       <label for="glucemia">Glucemia (mg/dl) <span class="text-red-500">*</span></label>
       <div class="mt-1 flex items-center gap-4">
         <input
@@ -212,7 +212,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
       leave-to-class="opacity-0 -translate-y-2"
     >
       <div v-if="showConditionalFields" class="space-y-6">
-        <div>
+        <div data-campo="tipoMedicion">
           <label class="block text-base font-medium text-gray-800 mb-3">
             ¿La medición fue en ayunas? <span class="text-red-500">*</span>
           </label>
@@ -250,7 +250,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           <p v-if="mensajeErrorTipoMedicion" class="text-red-500 text-sm mt-2">{{ mensajeErrorTipoMedicion }}</p>
         </div>
 
-        <div>
+        <div data-campo="resultadoObtenidoaTravesde">
           <label class="block text-base font-medium text-gray-800 mb-3">
             Resultado obtenido a través de <span class="text-red-500">*</span>
           </label>

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import type { CampoFaltante } from '@/helpers/validacionCampos';
 
 const props = defineProps<{
@@ -7,7 +7,11 @@ const props = defineProps<{
   tipoDocumento: string;
 }>();
 
-const emit = defineEmits(['close']);
+/** ir: índice del renglón; quien abre la lista lleva al paso y al campo. */
+const emit = defineEmits<{ (e: 'close'): void; (e: 'ir', indice: number): void }>();
+
+/** Hay datos con un valor que no es válido, no solo vacíos. */
+const hayPorCorregir = computed(() => props.camposFaltantes.some((c) => c.revisar));
 
 // Función para manejar la tecla ESC
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -86,7 +90,7 @@ const getColorTipo = (tipo: string) => {
           <i class="fa-solid fa-exclamation-triangle text-2xl text-red-600"></i>
         </div>
         <h2 class="text-2xl font-bold text-gray-800 mb-2">
-          Campos Requeridos Faltantes
+          {{ hayPorCorregir ? 'Datos por completar o corregir' : 'Campos Requeridos Faltantes' }}
         </h2>
         <p class="text-sm text-gray-600 mb-2">
           {{ getTipoDocumentoNombre(tipoDocumento) }}
@@ -96,8 +100,11 @@ const getColorTipo = (tipo: string) => {
 
       <!-- Contenido -->
       <div class="mb-8">
-        <p class="text-gray-600 text-lg leading-relaxed mb-6 text-center">
-          Para continuar, necesitas completar los siguientes campos 
+        <p v-if="hayPorCorregir" class="text-gray-600 text-lg leading-relaxed mb-6 text-center">
+          Para continuar, revisa estos datos. Con «Ir» llegas a cada uno.
+        </p>
+        <p v-else class="text-gray-600 text-lg leading-relaxed mb-6 text-center">
+          Para continuar, necesitas completar los siguientes campos
           <span class="font-semibold text-red-600 bg-red-50 px-2 py-1 rounded-md">obligatorios</span>:
         </p>
         
@@ -118,16 +125,32 @@ const getColorTipo = (tipo: string) => {
               <p class="font-medium text-gray-800 truncate">
                 {{ campo.nombre }}
               </p>
+              <p v-if="campo.mensaje" class="text-xs text-gray-600">
+                {{ campo.mensaje }}
+              </p>
               <p v-if="campo.paso" class="text-xs text-gray-500">
                 Paso {{ campo.paso }}
               </p>
             </div>
-            
-            <!-- Indicador de requerido -->
-            <div class="flex-shrink-0">
-              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                Requerido
+
+            <!-- Requerido / por corregir y botón para llegar al dato -->
+            <div class="flex-shrink-0 flex flex-col items-end gap-1.5">
+              <span
+                :class="[
+                  'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                  campo.revisar ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800',
+                ]"
+              >
+                {{ campo.revisar ? 'Revisar' : 'Requerido' }}
               </span>
+              <button
+                v-if="campo.paso"
+                type="button"
+                class="ir-a-campo inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold text-emerald-700 border border-emerald-300 bg-white hover:bg-emerald-50"
+                @click="emit('ir', index)"
+              >
+                Ir <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
             </div>
           </div>
         </div>

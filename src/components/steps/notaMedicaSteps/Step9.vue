@@ -374,7 +374,7 @@ watch(
         </p>
 
         <!-- Relación Temporal (SIRES_NOM024) -->
-        <div v-if="showSiresUI">
+        <div v-if="showSiresUI" data-campo="relacionTemporal">
             <div class="flex items-center gap-2 mb-2">
                 <h3
                     :class="variant === 'compact'
@@ -508,7 +508,7 @@ watch(
 
         <!-- 1. Diagnóstico Principal (Protagonista) -->
         <div class="space-y-4">         
-            <div>
+            <div data-campo="codigoCIE10Principal">
                 <CIE10Autocomplete
                     v-model="codigoCIE10Principal"
                     :label="'Código CIE-10 Principal'"
@@ -535,7 +535,7 @@ watch(
         </div>
 
         <!-- Confirmación Diagnóstica (NOM-024 GIIS-B015) - Fe de Erratas: solo cuando aplica -->
-        <div v-if="muestraConfirmacionDiagnostica1" class="space-y-2 border border-amber-200 rounded-xl p-4 bg-amber-50/30">
+        <div v-if="muestraConfirmacionDiagnostica1" data-campo="confirmacionDiagnostica" class="space-y-2 border border-amber-200 rounded-xl p-4 bg-amber-50/30">
             <div class="flex items-center gap-2">
                 <input
                     type="checkbox"
