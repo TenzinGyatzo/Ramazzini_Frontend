@@ -34,17 +34,18 @@ function esperar(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Un campo que ocupa más de esta parte de la pantalla se muestra desde su principio. */
+/** Un campo que ocupa más de esta parte de la pantalla se trata como alto. */
 const PROPORCION_CAMPO_ALTO = 0.6;
-/** Si el principio de un campo alto ya está en esta parte de arriba, no se desplaza. */
-const PROPORCION_ZONA_SUPERIOR = 0.4;
+/** Del principio de un campo alto debe verse al menos esto para no desplazar (su título). */
+const PRINCIPIO_VISIBLE_MIN_PX = 120;
 
 /**
  * Cómo llevar el campo a la vista:
- * - 'no': ya se ve (completo, o si es alto, su principio en la parte de arriba);
+ * - 'no': ya se ve completo; o, si es alto, su principio se ve en cualquier parte de la
+ *   pantalla (no se baja hasta el fondo: la indicación también está en el aviso);
  * - 'centro': campo normal fuera de la vista, se centra;
- * - 'inicio': campo alto (más que buena parte de la pantalla), se muestra desde su
- *   principio para no bajar hasta el fondo; la indicación también está en el aviso.
+ * - 'inicio': campo alto cuyo principio quedó fuera de la vista (arriba o abajo), se
+ *   muestra desde su principio.
  */
 export function comoDesplazar(
   r: Pick<DOMRect, 'top' | 'bottom' | 'height'>,
@@ -52,7 +53,8 @@ export function comoDesplazar(
 ): 'no' | 'centro' | 'inicio' {
   const esAlto = r.height > altoPantalla * PROPORCION_CAMPO_ALTO;
   if (esAlto) {
-    const principioVisible = r.top >= 0 && r.top <= altoPantalla * PROPORCION_ZONA_SUPERIOR;
+    const principioVisible =
+      r.top >= 0 && r.top <= altoPantalla - PRINCIPIO_VISIBLE_MIN_PX;
     return principioVisible ? 'no' : 'inicio';
   }
   return r.top >= 0 && r.bottom <= altoPantalla ? 'no' : 'centro';

@@ -112,10 +112,18 @@ describe('comoDesplazar: campos altos se muestran desde su principio', () => {
     expect(comoDesplazar({ top: -150, bottom: 50, height: 200 }, pantalla)).toBe('centro');
   });
 
-  it('campo alto: con su principio arriba no se mueve; si no, se muestra desde el principio', () => {
+  it('campo alto: si su principio se ve en cualquier parte de la pantalla, no se mueve', () => {
     // Más alto que el 60 % de la pantalla
     expect(comoDesplazar({ top: 120, bottom: 1320, height: 1200 }, pantalla)).toBe('no');
-    expect(comoDesplazar({ top: 600, bottom: 1800, height: 1200 }, pantalla)).toBe('inicio');
+    // A media pantalla (debajo de los títulos): antes se subía y la página «bajaba»
+    expect(comoDesplazar({ top: 450, bottom: 1650, height: 1200 }, pantalla)).toBe('no');
+    expect(comoDesplazar({ top: 680, bottom: 1880, height: 1200 }, pantalla)).toBe('no');
+  });
+
+  it('campo alto con su principio fuera de la vista: se muestra desde el principio', () => {
+    // Casi al fondo (no alcanza a verse su título), abajo de la pantalla o arriba
+    expect(comoDesplazar({ top: 700, bottom: 1900, height: 1200 }, pantalla)).toBe('inicio');
+    expect(comoDesplazar({ top: 900, bottom: 2100, height: 1200 }, pantalla)).toBe('inicio');
     expect(comoDesplazar({ top: -400, bottom: 800, height: 1200 }, pantalla)).toBe('inicio');
   });
 });
