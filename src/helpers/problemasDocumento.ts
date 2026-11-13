@@ -37,6 +37,11 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   motivoExamen: 'Elige el motivo del examen.',
   fechaHistoriaClinica: 'Elige la fecha de la historia clínica.',
   resumenHistoriaClinica: 'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
+  // Examen de la vista
+  fechaExamenVista: 'Elige la fecha del examen.',
+  sinCorreccionLejanaInterpretacion: 'Captura la agudeza visual lejana sin lentes.',
+  sinCorreccionCercanaInterpretacion: 'Captura la agudeza visual cercana sin lentes.',
+  interpretacionIshihara: 'Captura las placas correctas de la prueba de Ishihara.',
 };
 
 /** Nombre corto en la lista para cada dato (si no viene de la validación). */
@@ -46,6 +51,10 @@ const NOMBRE_CAMPO: Record<string, string> = {
   fechaHistoriaClinica: 'Fecha de la historia clínica',
   resumenHistoriaClinica: 'Resumen de la historia clínica',
   fechaExploracionFisica: 'Fecha de la exploración física',
+  fechaExamenVista: 'Fecha del examen',
+  sinCorreccionLejanaInterpretacion: 'Agudeza visual lejana sin lentes',
+  sinCorreccionCercanaInterpretacion: 'Agudeza visual cercana sin lentes',
+  interpretacionIshihara: 'Prueba de Ishihara',
   altura: 'Altura',
   indiceMasaCorporal: 'IMC',
   primeraVezUneme: 'Primera consulta del año en especialidades',
@@ -284,3 +293,17 @@ export function problemasExploracionFisica(
   const faltaPesoOAltura = pendientes.some((p) => p.campo === 'peso' || p.campo === 'altura');
   return pendientes.filter((p) => !(faltaPesoOAltura && p.campo === 'indiceMasaCorporal'));
 }
+
+/**
+ * Examen de la vista: número de paso de la lista de obligatorios → identificador del paso.
+ * El orden real cambia según el país (en Guatemala hay pasos antes de la agudeza visual),
+ * así que se navega por identificador.
+ */
+export const ID_PASO_EXAMEN_VISTA: Record<number, string> = {
+  1: 'evFecha',
+  2: 'evAvLejanaSin',
+  3: 'evAvCercanaSin',
+  4: 'evAvLejanaCon',
+  5: 'evAvCercanaCon',
+  6: 'evIshihara',
+};

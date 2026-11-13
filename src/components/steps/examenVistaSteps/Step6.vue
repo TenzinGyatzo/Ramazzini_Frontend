@@ -40,6 +40,11 @@ onMounted(() => {
     porcentajeIshihara.value = documentos.currentDocument.porcentajeIshihara;
     interpretacionIshihara.value = documentos.currentDocument.interpretacionIshihara;
   }
+  // Lo que se ve llega al formulario desde el inicio (con los valores por defecto no se
+  // copiaba hasta cambiar algo o salir del paso)
+  formDataExamenVista.placasCorrectas = placasCorrectas.value;
+  formDataExamenVista.porcentajeIshihara = porcentajeIshihara.value;
+  formDataExamenVista.interpretacionIshihara = interpretacionIshihara.value;
 });
 
 onUnmounted(() => {
@@ -75,7 +80,7 @@ function interpretarIshihara() {
     <h3 class="text-lg font-medium mb-6 text-gray-700">PRUEBA DE ISHIHARA</h3>
 
     <!-- Campo de Placas Correctas -->
-    <div class="mb-6">
+    <div data-campo="interpretacionIshihara" class="mb-6">
       <label for="placasCorrectas" class="block text-lg font-normal text-gray-800 mb-3">
         Placas Correctas
       </label>

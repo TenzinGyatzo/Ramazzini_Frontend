@@ -24,6 +24,9 @@ onMounted(() => {
   if (documentos.currentDocument) {
     fechaExamenVista.value = formatDateYYYYMMDD(documentos.currentDocument.fechaExamenVista || today);
   }
+  // La fecha que se ve llega al formulario desde el inicio (si no, al guardar con este paso
+  // abierto se pedía una fecha que sí está en pantalla)
+  formDataExamenVista.fechaExamenVista = fechaExamenVista.value;
 
   // Establece idTrabajador en formData
   formDataExamenVista.idTrabajador = trabajadores.currentTrabajadorId;
@@ -45,8 +48,9 @@ onUnmounted(() => {
   }
 })
 
-// Inicializar la referencia local sincronizada con formData
-const fechaExamenVista = ref(today);
+// Inicializar la referencia local sincronizada con formData (al volver al paso se conserva
+// la fecha ya elegida; antes siempre mostraba la de hoy)
+const fechaExamenVista = ref(formDataExamenVista.fechaExamenVista || today);
 
 // Mantener sincronizados los valores
 watch(fechaExamenVista, (newValue) => {
@@ -57,7 +61,7 @@ watch(fechaExamenVista, (newValue) => {
 <template>
   <div>
     <h1 class="text-2xl font-bold mb-4 text-gray-900">Examen de Vista</h1>
-    <div class="mt-6">
+    <div data-campo="fechaExamenVista" class="mt-6">
       <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de valoración</h2>
       <FormKit 
         type="date" 

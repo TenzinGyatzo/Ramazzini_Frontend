@@ -5,6 +5,7 @@ import {
   campoPorPasoDiagnostico,
   INSTRUCCION_EXPLORACION_FISICA,
   problemasExploracionFisica,
+  ID_PASO_EXAMEN_VISTA,
   ordenarProblemas,
   problemaDeValidacion,
   problemasPorFaltantes,
@@ -196,5 +197,28 @@ describe('exploración física', () => {
     const [nm] = problemasPorFaltantes([{ nombre: 'Peso', tipo: 'numero', paso: 7, campo: 'peso' }]);
     expect(ef.mensaje).toBe('Escribe el peso.');
     expect(nm.mensaje).toBe('Escribe el peso; si no se pudo medir, marca «Se desconoce».');
+  });
+});
+
+describe('examen de la vista', () => {
+  it('obligatorios con instrucción, en orden de pasos', () => {
+    const faltantes = validarCamposRequeridos('examenVista', {}, {}).camposFaltantes;
+    const lista = ordenarProblemas(problemasPorFaltantes(faltantes));
+    expect(lista.map((x) => [x.campo, x.mensaje])).toEqual([
+      ['fechaExamenVista', 'Elige la fecha del examen.'],
+      ['sinCorreccionLejanaInterpretacion', 'Captura la agudeza visual lejana sin lentes.'],
+      ['sinCorreccionCercanaInterpretacion', 'Captura la agudeza visual cercana sin lentes.'],
+      ['interpretacionIshihara', 'Captura las placas correctas de la prueba de Ishihara.'],
+    ]);
+  });
+
+  it('cada paso de la lista tiene su identificador (el orden cambia por país)', () => {
+    const faltantes = validarCamposRequeridos('examenVista', {}, {}).camposFaltantes;
+    expect(faltantes.map((c) => ID_PASO_EXAMEN_VISTA[c.paso!])).toEqual([
+      'evFecha',
+      'evAvLejanaSin',
+      'evAvCercanaSin',
+      'evIshihara',
+    ]);
   });
 });

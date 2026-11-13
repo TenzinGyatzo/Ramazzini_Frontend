@@ -287,7 +287,7 @@ const iconoInterpretacion = 'M15 12a3 3 0 11-6 0 3 3 0 016 0z';
     </label>
 
     <!-- Ojo Izquierdo -->
-    <div class="mb-6">
+    <div data-campo="sinCorreccionLejanaInterpretacion" class="mb-6">
       <label for="ojoIzquierdoLejanaSinCorreccion" class="block text-lg font-normal text-gray-800 mb-3">
         Ojo Izquierdo
       </label>

@@ -232,7 +232,7 @@ const colorInterpretacion = computed(() => {
     </p>
 
     <!-- Ojo Izquierdo -->
-    <div class="mb-6">
+    <div data-campo="sinCorreccionCercanaInterpretacion" class="mb-6">
       <label for="ojoIzquierdoCercanaSinCorreccion" class="block text-lg font-normal text-gray-800 mb-3">Ojo Izquierdo</label>
       <div class="flex flex-wrap items-center gap-4 mt-1 mb-4">
         <div class="flex space-x-4">

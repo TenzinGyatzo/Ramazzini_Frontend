@@ -496,6 +496,7 @@ import {
   campoDeProblemaCie10,
   campoPorPasoDiagnostico,
   problemasExploracionFisica,
+  ID_PASO_EXAMEN_VISTA,
   nombreDeCampo,
   ordenarProblemas,
   problemaDeValidacion,
@@ -1638,37 +1639,31 @@ export default {
       return ordenarProblemas([...problemasPorFaltantes(requeridos.camposFaltantes), ...invalidos]);
     };
 
-    // Historia clínica: obligatorios y fecha (ventana y edad en la fecha), en orden de pasos
-    const recolectarProblemasHistoriaClinica = () => {
-      const df = formData.formDataHistoriaClinica;
+    // Documentos con obligatorios y fecha (ventana y edad en la fecha), en orden de pasos:
+    // historia clínica y examen de la vista
+    const recolectarProblemasObligatoriosYFecha = (tipo, df) => {
+      const campoFecha = DOCUMENT_TYPE_DATE_FIELDS[tipo];
       const invalidos = [];
-      const fecha = validarFechaDocumentoPreSubmit('historiaClinica', df, showSiresUI.value);
-      if (!fecha.valido) {
-        invalidos.push({
-          paso: 1,
-          campo: 'fechaHistoriaClinica',
-          nombre: nombreDeCampo('fechaHistoriaClinica'),
-          falta: false,
-          mensaje: fecha.mensaje,
-        });
-      }
-      const mensajeE2 = mensajeEdadEnFecha(df.fechaHistoriaClinica);
-      if (mensajeE2) {
-        invalidos.push({
-          paso: 1,
-          campo: 'fechaHistoriaClinica',
-          nombre: nombreDeCampo('fechaHistoriaClinica'),
-          falta: false,
-          mensaje: mensajeE2,
-        });
-      }
-      const requeridos = validarCamposRequeridos('historiaClinica', limpiarValoresUndefined(df), {
+      const problemaFecha = (mensaje) => ({
+        paso: 1,
+        campo: campoFecha,
+        nombre: nombreDeCampo(campoFecha),
+        falta: false,
+        mensaje,
+      });
+      const fecha = validarFechaDocumentoPreSubmit(tipo, df, showSiresUI.value);
+      if (!fecha.valido) invalidos.push(problemaFecha(fecha.mensaje));
+      const mensajeE2 = campoFecha ? mensajeEdadEnFecha(df[campoFecha]) : '';
+      if (mensajeE2) invalidos.push(problemaFecha(mensajeE2));
+      const requeridos = validarCamposRequeridos(tipo, limpiarValoresUndefined(df), {
         cie10Required: cie10Required.value,
         showSiresUI: showSiresUI.value,
         esMujer: esMujerTrabajadorActual(),
       });
       return ordenarProblemas([...problemasPorFaltantes(requeridos.camposFaltantes), ...invalidos]);
     };
+    const recolectarProblemasHistoriaClinica = () =>
+      recolectarProblemasObligatoriosYFecha('historiaClinica', formData.formDataHistoriaClinica);
 
     // Exploración física: fecha, somatometría y signos. La lista de obligatorios revisa
     // vacío y rango juntos; aquí se separan para decir «escribe…» o el rango que falla.
@@ -1704,7 +1699,7 @@ export default {
 
     // Documentos que, al guardar, llevan al dato pendiente (paso + campo + qué corregir)
     const tieneAtencionCampos = () =>
-      ['notaMedica', 'historiaClinica', 'exploracionFisica'].includes(
+      ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista'].includes(
         documentos.currentTypeOfDocument,
       );
 
@@ -1713,6 +1708,9 @@ export default {
       if (documentos.currentTypeOfDocument === 'historiaClinica') return formData.formDataHistoriaClinica;
       if (documentos.currentTypeOfDocument === 'exploracionFisica') {
         return formData.formDataExploracionFisica;
+      }
+      if (documentos.currentTypeOfDocument === 'examenVista') {
+        return formData.formDataExamenVista;
       }
       return null;
     };
@@ -1726,6 +1724,9 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'exploracionFisica') {
         return recolectarProblemasExploracionFisica();
+      }
+      if (documentos.currentTypeOfDocument === 'examenVista') {
+        return recolectarProblemasObligatoriosYFecha('examenVista', formData.formDataExamenVista);
       }
       return [];
     };
@@ -1747,6 +1748,12 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'exploracionFisica') {
         return isEfSectionsV2Enabled(route.query) ? efLegacyStepToSectionIndex(paso) : paso;
+      }
+      if (documentos.currentTypeOfDocument === 'examenVista') {
+        // Los pasos cambian de lugar según el país: se busca el paso por su identificador
+        const id = ID_PASO_EXAMEN_VISTA[paso];
+        const indice = id ? stepsStore.steps.findIndex((s) => s.id === id) : -1;
+        return indice >= 0 ? indice + 1 : paso;
       }
       return paso;
     };
@@ -1983,11 +1990,8 @@ export default {
         datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
       }
 
-      // Historia clínica y exploración física: lo que impide guardar lleva al primer dato
-      if (
-        documentos.currentTypeOfDocument === 'historiaClinica' ||
-        documentos.currentTypeOfDocument === 'exploracionFisica'
-      ) {
+      // Documentos con aviso (salvo la nota médica, que revisa antes): lleva al primer dato
+      if (tieneAtencionCampos() && documentos.currentTypeOfDocument !== 'notaMedica') {
         cerrarAvisoProblemas();
         const problemasDoc = recolectarProblemasDocumento();
         if (problemasDoc.length > 0) {
