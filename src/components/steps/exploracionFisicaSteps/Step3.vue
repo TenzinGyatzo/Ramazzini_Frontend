@@ -70,7 +70,11 @@ onMounted(() => {
     saturacionOxigeno.value = documentos.currentDocument.saturacionOxigeno;
     categoriaSaturacionOxigeno.value = documentos.currentDocument.categoriaSaturacionOxigeno;
   }
-  // Si no hay formData ni currentDocument, se mantienen los valores por defecto
+  // Si no hay formData ni currentDocument, se mantienen los valores por defecto.
+  // En todos los casos se copian al formulario desde el inicio (como el paso 2): sin esto,
+  // con los valores por defecto el formulario quedaba vacío hasta tocar algo o salir del
+  // paso, y al guardar se pedían datos que sí se ven en pantalla.
+  guardarEnFormulario();
 });
 
 onUnmounted(() => {
@@ -86,6 +90,11 @@ onUnmounted(() => {
 });
 
 watch([tensionArterialSistolica, tensionArterialDiastolica, frecuenciaCardiaca, frecuenciaRespiratoria, saturacionOxigeno], () => {
+  guardarEnFormulario();
+});
+
+/** Copia los signos (y sus categorías) al formulario. */
+function guardarEnFormulario() {
   formDataExploracionFisica.tensionArterialSistolica = tensionArterialSistolica.value;
   formDataExploracionFisica.tensionArterialDiastolica = tensionArterialDiastolica.value;
   setCategoriaTensionArterial();
@@ -95,7 +104,7 @@ watch([tensionArterialSistolica, tensionArterialDiastolica, frecuenciaCardiaca, 
   setCategoriaFrecuenciaRespiratoria();
   formDataExploracionFisica.saturacionOxigeno = saturacionOxigeno.value;
   setCategoriaSaturacionOxigeno();
-});
+}
 
 function setCategoriaTensionArterial() {
   let sistolica = formDataExploracionFisica.tensionArterialSistolica;
