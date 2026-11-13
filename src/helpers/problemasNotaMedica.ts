@@ -23,10 +23,10 @@ export interface ProblemaCampo {
 const INSTRUCCION_FALTA: Record<string, string> = {
   fechaNotaMedica: 'Elige la fecha de la consulta.',
   motivoConsulta: 'Escribe el motivo de consulta.',
-  genero: 'Elige el género («No especificado» también vale).',
-  derechohabiencia: 'Marca la derechohabiencia («No especificado» o «Se ignora» también valen).',
-  peso: 'Escribe el peso o marca «Se desconoce».',
-  talla: 'Escribe la talla o marca «Se desconoce».',
+  genero: 'Elige el género.',
+  derechohabiencia: 'Marca la derechohabiencia.',
+  peso: 'Escribe el peso; si no se pudo medir, marca «Se desconoce».',
+  talla: 'Escribe la talla; si no se pudo medir, marca «Se desconoce».',
   codigoCIE10Principal: 'Elige el diagnóstico principal.',
   relacionTemporal: 'Indica si el diagnóstico principal es de primera vez o subsecuente.',
   primeraVezUneme:
@@ -118,8 +118,51 @@ export function campoPorPasoDiagnostico(
 }
 
 /**
- * En el orden de los pasos; dentro de un paso, en el orden en que llegaron. Un mismo campo
- * aparece una vez (el primero gana: así «falta» no se repite como «no válido»).
+ * Orden en que se ven los datos dentro de su paso (de arriba abajo). Así, en el paso de
+ * diagnóstico se pide primero la relación temporal y luego el diagnóstico, como en pantalla.
+ */
+const ORDEN_EN_PANTALLA = [
+  'tipoNota',
+  'fechaNotaMedica',
+  'primeraVezUneme',
+  'motivoConsulta',
+  'genero',
+  'derechohabiencia',
+  'tensionArterialSistolica',
+  'tensionArterialDiastolica',
+  'frecuenciaCardiaca',
+  'frecuenciaRespiratoria',
+  'temperatura',
+  'saturacionOxigeno',
+  'peso',
+  'talla',
+  'circunferenciaCintura',
+  'glucemia',
+  'tipoMedicion',
+  'resultadoObtenidoaTravesde',
+  'relacionTemporalEmbarazo',
+  'trimestreGestacional',
+  'relacionTemporal',
+  'codigoCIE10Principal',
+  'codigosCIE10Complementarios',
+  'confirmacionDiagnostica',
+  'primeraVezDiagnostico2',
+  'codigoCIEDiagnostico2',
+  'confirmacionDiagnostica2',
+  'primeraVezDiagnostico3',
+  'codigoCIEDiagnostico3',
+  'confirmacionDiagnostica3',
+];
+
+function posicionEnPantalla(campo: string | undefined): number {
+  const i = campo ? ORDEN_EN_PANTALLA.indexOf(campo) : -1;
+  return i < 0 ? Infinity : i;
+}
+
+/**
+ * En el orden de los pasos; dentro de un paso, en el orden en que se ven los datos (y si no
+ * se conoce, en el que llegaron). Un mismo campo aparece una vez (el primero gana: así
+ * «falta» no se repite como «no válido»).
  */
 export function ordenarProblemas(problemas: Array<ProblemaCampo | null>): ProblemaCampo[] {
   const vistos = new Set<string>();
@@ -133,7 +176,14 @@ export function ordenarProblemas(problemas: Array<ProblemaCampo | null>): Proble
   }
   return unicos
     .map((p, i) => ({ p, i }))
-    .sort((a, b) => (a.p.paso ?? Infinity) - (b.p.paso ?? Infinity) || a.i - b.i)
+    .sort((a, b) => {
+      const porPaso = (a.p.paso ?? Infinity) - (b.p.paso ?? Infinity);
+      if (porPaso) return porPaso;
+      const pa = posicionEnPantalla(a.p.campo);
+      const pb = posicionEnPantalla(b.p.campo);
+      if (pa !== pb) return pa === Infinity ? 1 : pb === Infinity ? -1 : pa - pb;
+      return a.i - b.i;
+    })
     .map(({ p }) => p);
 }
 
@@ -153,7 +203,12 @@ export function siguienteProblema(
   if (!actual) return lista[0];
   const i = lista.findIndex((p) => mismaClave(p, actual));
   if (i >= 0) return lista[(i + 1) % lista.length];
-  const despues = lista.find((p) => (p.paso ?? Infinity) > (actual.paso ?? Infinity));
+  // Ya corregido: el primero que esté después en pantalla (paso y, dentro del paso, posición)
+  const despues = lista.find((p) => {
+    const porPaso = (p.paso ?? Infinity) - (actual.paso ?? Infinity);
+    if (porPaso) return porPaso > 0;
+    return posicionEnPantalla(p.campo) > posicionEnPantalla(actual.campo);
+  });
   return despues ?? lista[0];
 }
 

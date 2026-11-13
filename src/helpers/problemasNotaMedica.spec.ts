@@ -49,7 +49,7 @@ describe('problemas de la nota médica (faltantes e inválidos igual)', () => {
       { nombre: 'Peso', tipo: 'numero', paso: 7, campo: 'peso' },
       { nombre: 'Algo', tipo: 'texto', paso: 2 },
     ]);
-    expect(peso).toMatchObject({ campo: 'peso', falta: true, mensaje: 'Escribe el peso o marca «Se desconoce».' });
+    expect(peso).toMatchObject({ campo: 'peso', falta: true, mensaje: 'Escribe el peso; si no se pudo medir, marca «Se desconoce».' });
     expect(otro.mensaje).toBe('Falta: Algo.');
   });
 
@@ -100,5 +100,46 @@ describe('problemas de la nota médica (faltantes e inválidos igual)', () => {
 
     const faltantes = validarCamposRequeridos('notaMedica', {}, { showSiresUI: true, cie10Required: true });
     expect(faltantes.camposFaltantes.find((c) => c.nombre === 'Género')?.campo).toBe('genero');
+  });
+});
+
+describe('orden dentro de un paso: como se ve en pantalla', () => {
+  it('en diagnóstico, primero la relación temporal y luego el diagnóstico', () => {
+    const mapa = getNotaMedicaStepMap(true, false);
+    const faltantes = validarCamposRequeridos('notaMedica', {}, { showSiresUI: true, cie10Required: true });
+    const lista = ordenarProblemas(problemasPorFaltantes(faltantes.camposFaltantes));
+    const delDiagnostico = lista.filter((x) => x.paso === mapa.diagnostico).map((x) => x.campo);
+    expect(delDiagnostico).toEqual(['relacionTemporal', 'codigoCIE10Principal']);
+    // Y el resto en el orden de los pasos
+    expect(lista.map((x) => x.campo)).toEqual([
+      'fechaNotaMedica',
+      'motivoConsulta',
+      'genero',
+      'derechohabiencia',
+      'peso',
+      'talla',
+      'relacionTemporal',
+      'codigoCIE10Principal',
+    ]);
+  });
+
+  it('«Siguiente» tras corregir uno no se salta otro del mismo paso', () => {
+    const lista = [p(9, 'relacionTemporal'), p(9, 'codigoCIE10Principal'), p(10, 'codigoCIEDiagnostico2')];
+    // Se corrigió la relación temporal: el siguiente es el diagnóstico, del mismo paso
+    const sinRelacion = lista.slice(1);
+    expect(siguienteProblema(sinRelacion, lista[0])?.campo).toBe('codigoCIE10Principal');
+  });
+
+  it('textos: género y derechohabiencia sin aclaraciones; peso y talla dicen cuándo usar «Se desconoce»', () => {
+    const r = problemasPorFaltantes([
+      { nombre: 'Género', tipo: 'seleccion', paso: 3, campo: 'genero' },
+      { nombre: 'Derechohabiencia', tipo: 'seleccion', paso: 3, campo: 'derechohabiencia' },
+      { nombre: 'Talla', tipo: 'numero', paso: 7, campo: 'talla' },
+    ]);
+    expect(r.map((x) => x.mensaje)).toEqual([
+      'Elige el género.',
+      'Marca la derechohabiencia.',
+      'Escribe la talla; si no se pudo medir, marca «Se desconoce».',
+    ]);
   });
 });
