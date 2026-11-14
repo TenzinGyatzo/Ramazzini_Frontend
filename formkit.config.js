@@ -1,4 +1,6 @@
 import { generateClasses } from "@formkit/themes";
+import { createInput } from "@formkit/vue";
+import FormKitFecha from "./src/components/fecha/FormKitFecha.vue";
 import { isBirthDateInRegistrationRange } from "./src/helpers/dates";
 import {
   normalizacionPlugin,
@@ -156,6 +158,10 @@ const personNameOptionalCharactersSinRegimenValidation = ({ value }) => {
 const config = {
   // Campos con `normalizar="…"`: se limpian al salir del campo y al enviar
   plugins: [normalizacionPlugin],
+  // Fechas siempre DD/MM/AAAA, sin depender del idioma del navegador (el valor sigue AAAA-MM-DD)
+  inputs: {
+    date: createInput(FormKitFecha),
+  },
   config: {
     classes: generateClasses({
       global: {

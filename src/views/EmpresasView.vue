@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { fechaDateADDMMAAAA } from '@/helpers/fechaDDMMAAAA';
 import { onUnmounted, ref, watch, inject, computed, watchEffect } from 'vue';
 import EmpresaItem from '@/components/EmpresaItem.vue';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -187,7 +188,7 @@ watchEffect(() => {
       ? () => router.push({ name: 'subscription' })
       : () => abrirWhatsApp(p.nombre);
     toast.open({
-      message: `Aún tienes acceso hasta el ${finDeSuscripcion.toLocaleDateString()}.`,
+      message: `Aún tienes acceso hasta el ${fechaDateADDMMAAAA(finDeSuscripcion)}.`,
       type: 'success',
       onClick: renovar,
     });

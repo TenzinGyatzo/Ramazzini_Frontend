@@ -1630,6 +1630,7 @@ html.dark-mode .resultados-clinicos-panel .rounded-lg.border.border-gray-200.bg-
 
 html.dark-mode .resultados-clinicos-panel input[type='text'],
 html.dark-mode .resultados-clinicos-panel input[type='date'],
+html.dark-mode .resultados-clinicos-panel input[data-fecha],
 html.dark-mode .resultados-clinicos-panel input[type='datetime-local'],
 html.dark-mode .resultados-clinicos-panel select,
 html.dark-mode .resultados-clinicos-panel textarea {
@@ -2160,9 +2161,13 @@ html.dark-mode .modal-trabajadores input.formkit-input:disabled {
 }
 
 html.dark-mode .form-green-submit input[type='date']:disabled,
+html.dark-mode .form-green-submit input[data-fecha]:disabled,
 html.dark-mode .form-green-submit input[type='date'][disabled],
+html.dark-mode .form-green-submit input[data-fecha][disabled],
 html.dark-mode .modal-trabajadores input[type='date']:disabled,
-html.dark-mode .modal-trabajadores input[type='date'][disabled] {
+html.dark-mode .modal-trabajadores input[data-fecha]:disabled,
+html.dark-mode .modal-trabajadores input[type='date'][disabled],
+html.dark-mode .modal-trabajadores input[data-fecha][disabled] {
   color-scheme: dark;
 }
 
@@ -2304,6 +2309,7 @@ html.dark-mode .modal-rts .modal-rts-btn-secondary:hover {
 
 html.dark-mode .modal-rts .modal-rts-form input[type='text'],
 html.dark-mode .modal-rts .modal-rts-form input[type='date'],
+html.dark-mode .modal-rts .modal-rts-form input[data-fecha],
 html.dark-mode .modal-rts .modal-rts-form input[type='number'],
 html.dark-mode .modal-rts .modal-rts-form select,
 html.dark-mode .modal-rts .modal-rts-form textarea {
@@ -2322,7 +2328,8 @@ html.dark-mode .modal-rts .modal-rts-form select option {
   color: #e2e8f0 !important;
 }
 
-html.dark-mode .modal-rts .modal-rts-form input[type='date'] {
+html.dark-mode .modal-rts .modal-rts-form input[type='date'],
+html.dark-mode .modal-rts .modal-rts-form input[data-fecha] {
   color-scheme: dark;
 }
 
@@ -2386,6 +2393,7 @@ html.dark-mode .modal-eliminacion button[aria-label='Cerrar']:hover {
  */
 html.dark-mode .border-shadow input[type='text'],
 html.dark-mode .border-shadow input[type='date'],
+html.dark-mode .border-shadow input[data-fecha],
 html.dark-mode .border-shadow input[type='datetime-local'],
 html.dark-mode .border-shadow input[type='number'],
 html.dark-mode .border-shadow input[type='email'],
@@ -2400,6 +2408,7 @@ html.dark-mode .border-shadow textarea {
 
 html.dark-mode .border-shadow input[type='text']::placeholder,
 html.dark-mode .border-shadow input[type='date']::placeholder,
+html.dark-mode .border-shadow input[data-fecha]::placeholder,
 html.dark-mode .border-shadow input[type='datetime-local']::placeholder,
 html.dark-mode .border-shadow input[type='number']::placeholder,
 html.dark-mode .border-shadow input[type='email']::placeholder,
@@ -2565,7 +2574,9 @@ html.dark-mode .dark-mode-input-surface input,
 html.dark-mode .nota-medica-dark-inputs input[type='text'],
 html.dark-mode .dark-mode-input-surface input[type='text'],
 html.dark-mode .nota-medica-dark-inputs input[type='date'],
+html.dark-mode .nota-medica-dark-inputs input[data-fecha],
 html.dark-mode .dark-mode-input-surface input[type='date'],
+html.dark-mode .dark-mode-input-surface input[data-fecha],
 html.dark-mode .nota-medica-dark-inputs input[type='datetime-local'],
 html.dark-mode .dark-mode-input-surface input[type='datetime-local'],
 html.dark-mode .nota-medica-dark-inputs input[type='number'],
@@ -2619,7 +2630,9 @@ html.dark-mode .dark-mode-input-surface input::placeholder,
 html.dark-mode .nota-medica-dark-inputs input[type='text']::placeholder,
 html.dark-mode .dark-mode-input-surface input[type='text']::placeholder,
 html.dark-mode .nota-medica-dark-inputs input[type='date']::placeholder,
+html.dark-mode .nota-medica-dark-inputs input[data-fecha]::placeholder,
 html.dark-mode .dark-mode-input-surface input[type='date']::placeholder,
+html.dark-mode .dark-mode-input-surface input[data-fecha]::placeholder,
 html.dark-mode .nota-medica-dark-inputs input[type='datetime-local']::placeholder,
 html.dark-mode .dark-mode-input-surface input[type='datetime-local']::placeholder,
 html.dark-mode .nota-medica-dark-inputs input[type='number']::placeholder,
@@ -3536,7 +3549,8 @@ html.dark-mode .modal-update-documento-externo select.formkit-input {
   border-color: #475569 !important;
 }
 
-html.dark-mode .modal-update-documento-externo input[type='date'] {
+html.dark-mode .modal-update-documento-externo input[type='date'],
+html.dark-mode .modal-update-documento-externo input[data-fecha] {
   color-scheme: dark;
 }
 
@@ -3654,6 +3668,7 @@ html.dark-mode .modal-seguimiento-programado .modal-seguimiento-programado-foote
 
 html.dark-mode .modal-seguimiento-programado .seguimiento-form-input,
 html.dark-mode .modal-seguimiento-programado input[type='date'],
+html.dark-mode .modal-seguimiento-programado input[data-fecha],
 html.dark-mode .modal-seguimiento-programado select,
 html.dark-mode .modal-seguimiento-programado textarea {
   background-color: #0f172a !important;
@@ -3671,7 +3686,8 @@ html.dark-mode .modal-seguimiento-programado select option {
   color: #e2e8f0 !important;
 }
 
-html.dark-mode .modal-seguimiento-programado input[type='date'] {
+html.dark-mode .modal-seguimiento-programado input[type='date'],
+html.dark-mode .modal-seguimiento-programado input[data-fecha] {
   color-scheme: dark;
 }
 
@@ -4788,4 +4804,31 @@ html.dark-mode .indicacion-tab kbd {
   border-color: #4b5563;
   background: #1f2937;
   color: #e5e7eb;
+}
+
+/* Calendario del campo de fecha (CampoFecha.vue) */
+html.dark-mode .campo-fecha-calendario {
+  background: #1f2937;
+  border-color: #374151;
+}
+html.dark-mode .campo-fecha-calendario select {
+  background: #111827;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+html.dark-mode .campo-fecha-calendario button:not(:disabled) {
+  color: #e5e7eb;
+}
+html.dark-mode .campo-fecha-calendario button:not(:disabled):hover {
+  background: #374151;
+}
+html.dark-mode .campo-fecha-calendario button.bg-emerald-600 {
+  background: #059669;
+  color: #fff;
+}
+html.dark-mode .campo-fecha-calendario button:disabled {
+  color: #4b5563;
+}
+html.dark-mode .campo-fecha-boton {
+  color: #9ca3af;
 }

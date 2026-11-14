@@ -1,4 +1,5 @@
 <script setup>
+import { fechaDateADDMMAAAA } from '@/helpers/fechaDDMMAAAA';
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter, useRoute } from 'vue-router';
@@ -124,7 +125,7 @@ const modalBase = computed(() => {
       variant: 'contract',
       title: 'Tu plan con Ramazzini no está vigente',
       message: hasta
-        ? `Tu ${nombrePlanContrato(contrato)} estuvo vigente hasta el ${hasta.toLocaleDateString()}.`
+        ? `Tu ${nombrePlanContrato(contrato)} estuvo vigente hasta el ${fechaDateADDMMAAAA(hasta)}.`
         : `Tu ${nombrePlanContrato(contrato)} no tiene una vigencia registrada.`,
       highlight: null,
       highlightDetail:
@@ -168,7 +169,7 @@ const modalBase = computed(() => {
       variant: 'expired',
       title: 'Tu suscripción ha finalizado',
       message: finDeSuscripcion.value
-        ? `Tu acceso expiró el ${finDeSuscripcion.value.toLocaleDateString()}.`
+        ? `Tu acceso expiró el ${fechaDateADDMMAAAA(finDeSuscripcion.value)}.`
         : 'Tu acceso expiró anteriormente.',
       highlight: null,
       highlightDetail:
