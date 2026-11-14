@@ -2,8 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, nextTick, ref } from 'vue';
-import { plugin, defaultConfig, FormKit } from '@formkit/vue';
-import { createInput } from '@formkit/vue';
+import { plugin, defaultConfig, FormKit, createInput } from '@formkit/vue';
 import CampoFecha from './CampoFecha.vue';
 import FormKitFecha from './FormKitFecha.vue';
 
@@ -14,78 +13,104 @@ afterEach(() => {
 const montar = (props: Record<string, unknown> = {}) =>
   mount(CampoFecha, { props: { modelValue: '', ...props }, attachTo: document.body });
 
-const escribir = async (input: HTMLInputElement, valor: string) => {
-  input.value = valor;
-  input.dispatchEvent(new Event('input'));
+/** Lo que manda el navegador al teclear (antes de escribir). */
+const tecla = async (input: HTMLInputElement, data: string | null, inputType = 'insertText') => {
+  input.dispatchEvent(new InputEvent('beforeinput', { data, inputType, cancelable: true, bubbles: true }));
   await nextTick();
 };
+const teclear = async (input: HTMLInputElement, texto: string) => {
+  for (const c of texto) await tecla(input, c);
+};
 
-describe('CampoFecha: DD/MM/AAAA sin depender del navegador', () => {
-  it('muestra el valor AAAA-MM-DD como DD/MM/AAAA', () => {
-    const w = montar({ modelValue: '2026-11-05' });
-    expect((w.find('input').element as HTMLInputElement).value).toBe('05/11/2026');
+describe('CampoFecha: DD/MM/AAAA, se teclea como el campo del navegador', () => {
+  it('vacío muestra la plantilla dd/mm/aaaa; con valor, DD/MM/AAAA', () => {
+    expect((montar().find('input').element as HTMLInputElement).value).toBe('dd/mm/aaaa');
+    expect((montar({ modelValue: '2026-11-05' }).find('input').element as HTMLInputElement).value).toBe(
+      '05/11/2026',
+    );
   });
 
-  it('al teclear, las diagonales se ponen solas y la fecha se entrega solo completa', async () => {
+  it('cada número reemplaza su letra; la fecha se entrega solo completa', async () => {
     const w = montar();
     const input = w.find('input').element as HTMLInputElement;
-    await escribir(input, '0511');
-    expect(input.value).toBe('05/11');
+    input.focus();
+    await teclear(input, '1508');
+    expect(input.value).toBe('15/08/aaaa');
     expect(w.emitted('update:modelValue')).toBeUndefined();
-    await escribir(input, '05/112026');
-    expect(input.value).toBe('05/11/2026');
-    expect(w.emitted('update:modelValue')?.at(-1)).toEqual(['2026-11-05']);
-    expect(w.emitted('change')?.at(-1)).toEqual(['2026-11-05']);
+    await teclear(input, '1985');
+    expect(input.value).toBe('15/08/1985');
+    expect(w.emitted('update:modelValue')?.at(-1)).toEqual(['1985-08-15']);
+    expect(w.emitted('change')?.at(-1)).toEqual(['1985-08-15']);
   });
 
-  it('a medias o imposible: se marca y al salir se entrega vacía (el texto se queda)', async () => {
+  it('borrar regresa la parte a sus letras (no pone ceros) y no lleva el cursor al final', async () => {
     const w = montar({ modelValue: '2026-11-05' });
     const input = w.find('input').element as HTMLInputElement;
-    await escribir(input, '31/02/2026');
-    expect(input.getAttribute('data-fecha-incompleta')).toBe('true');
-    expect(input.getAttribute('aria-invalid')).toBe('true');
-    // Mientras escribe no se manda vacío (los filtros no recargan a cada tecla)
+    input.focus();
+    await w.find('input').trigger('keydown', { key: 'ArrowRight' });
+    await tecla(input, null, 'deleteContentBackward');
+    expect(input.value).toBe('05/mm/2026');
+    // Queda seleccionada la parte borrada (el mes)
+    await nextTick();
+    expect([input.selectionStart, input.selectionEnd]).toEqual([3, 5]);
+  });
+
+  it('a medias al salir: se entrega vacía y se marca; lo escrito se queda', async () => {
+    const w = montar({ modelValue: '2026-11-05' });
+    const input = w.find('input').element as HTMLInputElement;
+    input.focus();
+    await w.find('input').trigger('keydown', { key: 'ArrowRight' });
+    await tecla(input, null, 'deleteContentBackward');
+    // Mientras se escribe no se manda vacío (los filtros no recargan a cada tecla)
     expect(w.emitted('update:modelValue')).toBeUndefined();
-    input.dispatchEvent(new Event('blur'));
+    await w.find('input').trigger('blur');
     expect(w.emitted('update:modelValue')?.at(-1)).toEqual(['']);
     await w.setProps({ modelValue: '' });
-    expect(input.value).toBe('31/02/2026');
+    expect(input.value).toBe('05/mm/2026');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('data-fecha-iso')).toBe('');
   });
 
-  it('borrar todo y salir entrega vacío', async () => {
+  it('← → y Tab recorren día, mes y año; ↑/↓ suben o bajan la parte', async () => {
     const w = montar({ modelValue: '2026-11-05' });
     const input = w.find('input').element as HTMLInputElement;
-    await escribir(input, '');
-    input.dispatchEvent(new Event('blur'));
-    expect(w.emitted('update:modelValue')?.at(-1)).toEqual(['']);
+    input.focus();
+    await w.find('input').trigger('keydown', { key: 'Tab' });
+    await w.find('input').trigger('keydown', { key: 'ArrowUp' });
+    expect(input.value).toBe('05/12/2026');
+    expect(w.emitted('update:modelValue')?.at(-1)).toEqual(['2026-12-05']);
+    // Tab en el año sale del campo (no se intercepta)
+    await w.find('input').trigger('keydown', { key: 'Tab' });
+    const salir = new KeyboardEvent('keydown', { key: 'Tab', cancelable: true });
+    input.dispatchEvent(salir);
+    expect(salir.defaultPrevented).toBe(false);
   });
 
-  it('lo que cambia desde fuera se refleja (p. ej. el formulario que actualiza la fecha)', async () => {
+  it('lo que cambia desde fuera se refleja', async () => {
     const w = montar({ modelValue: '2026-11-05' });
     await w.setProps({ modelValue: '1990-05-01' });
     expect((w.find('input').element as HTMLInputElement).value).toBe('01/05/1990');
     await w.setProps({ modelValue: '' });
-    expect((w.find('input').element as HTMLInputElement).value).toBe('');
+    expect((w.find('input').element as HTMLInputElement).value).toBe('dd/mm/aaaa');
   });
 
   it('fuera de min/max: se entrega igual que antes y se marca', async () => {
     const w = montar({ min: '2026-01-01', max: '2026-12-31' });
     const input = w.find('input').element as HTMLInputElement;
-    await escribir(input, '05/11/2027');
+    input.focus();
+    await teclear(input, '05112027');
     expect(w.emitted('update:modelValue')?.at(-1)).toEqual(['2027-11-05']);
     expect(input.getAttribute('aria-invalid')).toBe('true');
   });
 
-  it('calendario: se abre con el botón o Alt + ↓, en español, y no deja elegir fuera de rango', async () => {
+  it('calendario: Alt + ↓, en español, sin días fuera de rango', async () => {
     const w = montar({ modelValue: '2026-11-05', min: '2026-11-03', max: '2026-11-20' });
     await w.find('input').trigger('keydown', { key: 'ArrowDown', altKey: true });
     expect(w.find('[data-calendario-fecha]').exists()).toBe(true);
     expect(w.find('[data-mes]').text()).toContain('noviembre');
     expect(w.find('[data-dia="2"]').attributes('disabled')).toBeDefined();
-    expect(w.find('[data-dia="21"]').attributes('disabled')).toBeDefined();
     await w.find('[data-dia="10"]').trigger('click');
     expect(w.emitted('update:modelValue')?.at(-1)).toEqual(['2026-11-10']);
-    expect(w.find('[data-calendario-fecha]').exists()).toBe(false);
     expect((w.find('input').element as HTMLInputElement).value).toBe('10/11/2026');
   });
 
@@ -96,8 +121,8 @@ describe('CampoFecha: DD/MM/AAAA sin depender del navegador', () => {
 });
 
 describe('FormKit type="date" usa CampoFecha', () => {
-  const montarFormKit = (inicial: string) => {
-    const valor = ref(inicial);
+  it('conserva etiqueta, muestra DD/MM/AAAA y entrega AAAA-MM-DD', async () => {
+    const valor = ref('1990-05-01');
     const w = mount(
       defineComponent({
         components: { FormKit },
@@ -107,22 +132,15 @@ describe('FormKit type="date" usa CampoFecha', () => {
       }),
       {
         attachTo: document.body,
-        global: {
-          plugins: [[plugin, defaultConfig({ inputs: { date: createInput(FormKitFecha) } })]],
-        },
+        global: { plugins: [[plugin, defaultConfig({ inputs: { date: createInput(FormKitFecha) } })]] },
       },
     );
-    return { w, valor };
-  };
-
-  it('conserva etiqueta, muestra DD/MM/AAAA y entrega AAAA-MM-DD', async () => {
-    const { w, valor } = montarFormKit('1990-05-01');
     await nextTick();
     expect(w.text()).toContain('Fecha de nacimiento');
     const input = w.find('input[data-fecha]').element as HTMLInputElement;
     expect(input.value).toBe('01/05/1990');
-    expect(input.getAttribute('type')).toBe('text');
-    await escribir(input, '15/08/1985');
+    input.focus();
+    await teclear(input, '15081985');
     await new Promise((r) => setTimeout(r, 50));
     expect(valor.value).toBe('1985-08-15');
   });

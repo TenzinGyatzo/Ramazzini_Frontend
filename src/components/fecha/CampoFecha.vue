@@ -1,24 +1,32 @@
 <script setup>
 /**
  * Campo de fecha siempre en DD/MM/AAAA, sin depender del idioma del navegador (punto 31).
- * - El dato (v-model) sigue siendo AAAA-MM-DD, como el campo de fecha del navegador.
- * - Se teclea de corrido: las diagonales se ponen solas («05112026» → «05/11/2026»).
- * - La fecha solo se entrega completa; a medias o imposible (31/02) se marca, y al salir del
- *   campo se entrega vacía (como el campo del navegador). Así los filtros no recargan a cada tecla.
- * - Fuera de min/max se entrega igual que hoy y se marca; el calendario no deja elegirla.
+ * Al teclear se comporta como el campo de fecha del navegador (helpers/segmentosFecha.ts):
+ * plantilla fija «dd/mm/aaaa», cada número reemplaza la letra de su lugar, las diagonales no
+ * se mueven, se trabaja por partes (día, mes, año: clic, ← →, Tab, «/»), borrar regresa la
+ * parte a sus letras y ↑/↓ suben o bajan la parte.
+ * - El dato (v-model) sigue siendo AAAA-MM-DD; solo se entrega completo y existente. Si se sale
+ *   del campo con la fecha a medias, se entrega vacía y queda marcada.
+ * - Fuera de min/max se entrega igual que antes y se marca; el calendario no deja elegirla.
  * - Calendario en español con el botón (no recibe Tab) o Alt + ↓.
  */
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { MESES, dentroDeRango, diasDelMes, esFechaIsoValida, hoyIso } from '@/helpers/fechaDDMMAAAA';
 import {
-  MESES,
-  ddmmaaaaAIso,
-  dentroDeRango,
-  diasDelMes,
-  enmascararFecha,
-  esFechaIsoValida,
-  hoyIso,
-  isoADDMMAAAA,
-} from '@/helpers/fechaDDMMAAAA';
+  RANGO_TEXTO,
+  borrar,
+  borrarTodo,
+  cambiarConFlecha,
+  escribirDigito,
+  estaVacia,
+  estadoDesdeIso,
+  estadoDesdeTextoPegado,
+  irA,
+  isoDe,
+  segmentoEnPosicion,
+  separador,
+  textoDe,
+} from '@/helpers/segmentosFecha';
 
 defineOptions({ inheritAttrs: false });
 
@@ -31,7 +39,8 @@ const props = defineProps({
   required: { type: Boolean, default: false },
   id: { type: String, default: undefined },
   name: { type: String, default: undefined },
-  placeholder: { type: String, default: 'DD/MM/AAAA' },
+  /** No se usa: la plantilla «dd/mm/aaaa» siempre está a la vista (como el campo del navegador). */
+  placeholder: { type: String, default: '' },
   /** Clases del cuadro de texto (las que tenía el campo de fecha que reemplaza). */
   inputClass: { type: [String, Array, Object], default: '' },
 });
@@ -41,29 +50,34 @@ const DIAS_SEMANA = ['L', 'M', 'Mi', 'J', 'V', 'S', 'D'];
 
 const campo = ref(null);
 const raiz = ref(null);
-const texto = ref(isoADDMMAAAA(props.modelValue));
 const abierto = ref(false);
+/** Ya se salió del campo: desde entonces una fecha a medias se marca. */
+const salio = ref(false);
 
 const isoDelModelo = (valor) => {
   const corto = String(valor ?? '').slice(0, 10);
   return esFechaIsoValida(corto) ? corto : '';
 };
 
+const estado = ref(estadoDesdeIso(isoDelModelo(props.modelValue)));
+const texto = computed(() => textoDe(estado.value));
+const isoActual = computed(() => isoDe(estado.value));
+const vacia = computed(() => estaVacia(estado.value));
+const incompleta = computed(() => !vacia.value && !isoActual.value);
+const fueraDeRango = computed(
+  () => !!isoActual.value && !dentroDeRango(isoActual.value, props.min, props.max),
+);
+const marcada = computed(() => fueraDeRango.value || (incompleta.value && salio.value));
+
 // Lo que llega desde fuera (código, otro formulario) se refleja; lo tecleado a medias no se pisa
 watch(
   () => props.modelValue,
   (valor) => {
     const iso = isoDelModelo(valor);
-    if (iso === ddmmaaaaAIso(texto.value)) return;
-    if (!iso && texto.value && !ddmmaaaaAIso(texto.value)) return;
-    texto.value = isoADDMMAAAA(iso);
+    if (iso === isoActual.value) return;
+    if (!iso && incompleta.value) return;
+    estado.value = { ...estadoDesdeIso(iso), segmento: estado.value.segmento };
   },
-);
-
-const isoActual = computed(() => ddmmaaaaAIso(texto.value));
-const incompleta = computed(() => texto.value !== '' && !isoActual.value);
-const fueraDeRango = computed(
-  () => !!isoActual.value && !dentroDeRango(isoActual.value, props.min, props.max),
 );
 
 const entregar = (iso) => {
@@ -72,17 +86,92 @@ const entregar = (iso) => {
   emit('change', iso);
 };
 
-const alEscribir = (e) => {
-  const enmascarado = enmascararFecha(e.target.value);
-  // Solo se reescribe si cambió (así el cursor no se mueve sin necesidad)
-  if (enmascarado !== e.target.value) e.target.value = enmascarado;
-  texto.value = enmascarado;
-  const iso = ddmmaaaaAIso(enmascarado);
-  if (iso) entregar(iso);
+/** Selecciona en el texto la parte actual (día, mes o año), como el campo del navegador. */
+const seleccionarParte = () => {
+  nextTick(() => {
+    const el = campo.value;
+    if (!el || document.activeElement !== el) return;
+    const [ini, fin] = RANGO_TEXTO[estado.value.segmento];
+    try {
+      el.setSelectionRange(ini, fin);
+    } catch {
+      // Algunos navegadores no permiten seleccionar en este momento
+    }
+  });
+};
+
+const aplicar = (nuevo) => {
+  estado.value = nuevo;
+  if (isoActual.value) entregar(isoActual.value);
+  seleccionarParte();
+};
+
+const DIGITO = /\d/;
+const SEPARADOR = /[/.\-\s]/;
+
+/** Todo lo que se escribe o borra pasa por aquí (teclado físico, de celular y pegar). */
+const alAntesDeEscribir = (e) => {
+  e.preventDefault();
+  if (props.readonly || props.disabled) return;
+  const el = campo.value;
+  const todoSeleccionado =
+    !!el && el.selectionStart === 0 && el.selectionEnd === el.value.length && !vacia.value;
+  switch (e.inputType) {
+    case 'insertText':
+    case 'insertCompositionText': {
+      let nuevo = todoSeleccionado ? borrarTodo() : estado.value;
+      for (const c of String(e.data ?? '')) {
+        if (DIGITO.test(c)) nuevo = escribirDigito(nuevo, Number(c));
+        else if (SEPARADOR.test(c)) nuevo = separador(nuevo);
+      }
+      aplicar(nuevo);
+      break;
+    }
+    case 'insertFromPaste':
+    case 'insertFromDrop':
+    case 'insertReplacementText': {
+      const pegado = estadoDesdeTextoPegado(String(e.data ?? e.dataTransfer?.getData('text') ?? ''));
+      if (pegado) aplicar(pegado);
+      break;
+    }
+    case 'deleteContentBackward':
+    case 'deleteContentForward':
+    case 'deleteWordBackward':
+    case 'deleteWordForward':
+    case 'deleteByCut':
+      // Todo seleccionado (Ctrl + A): se vacía; si no, la parte actual vuelve a sus letras
+      if (todoSeleccionado) aplicar(borrarTodo());
+      else aplicar(borrar(estado.value, e.inputType !== 'deleteContentForward'));
+      break;
+    default:
+      break;
+  }
+};
+
+// Pegar en navegadores que no avisan el pegado antes de escribir
+const alPegar = (e) => {
+  e.preventDefault();
+  const pegado = estadoDesdeTextoPegado(e.clipboardData?.getData('text') ?? '');
+  if (pegado) aplicar(pegado);
+};
+
+/** Clic: se trabaja la parte donde se hizo clic. */
+const alSoltarClic = () => {
+  const el = campo.value;
+  if (!el) return;
+  estado.value = irA(estado.value, segmentoEnPosicion(el.selectionStart ?? 0));
+  seleccionarParte();
+};
+
+const alEnfocar = (e) => {
+  seleccionarParte();
+  emit('focus', e);
 };
 
 const alSalir = (e) => {
-  // Vacío o a medias al salir: se entrega vacío (el texto a medias se queda marcado)
+  salio.value = true;
+  estado.value = irA(estado.value, 0);
+  // Vacío o a medias al salir: se entrega vacío (lo escrito se queda a la vista, marcado)
   if (!isoActual.value) entregar('');
   emit('blur', e);
 };
@@ -118,7 +207,7 @@ const anios = computed(() => {
 });
 
 const p2 = (n) => String(n).padStart(2, '0');
-const isoDe = (dia) => `${anioVista.value}-${p2(mesVista.value)}-${p2(dia)}`;
+const isoDelDia = (dia) => `${anioVista.value}-${p2(mesVista.value)}-${p2(dia)}`;
 const hoy = computed(() => (abierto.value ? hoyIso() : ''));
 
 /** Celdas del mes: semanas de lunes a domingo, con huecos al inicio. */
@@ -147,7 +236,7 @@ const mover = (delta) => {
 
 const fijar = (iso) => {
   if (!dentroDeRango(iso, props.min, props.max)) return;
-  texto.value = isoADDMMAAAA(iso);
+  estado.value = estadoDesdeIso(iso);
   entregar(iso);
   cerrar();
 };
@@ -157,10 +246,33 @@ const alTeclear = (e) => {
   if (e.altKey && e.key === 'ArrowDown') {
     e.preventDefault();
     abrir();
-  } else if (e.key === 'Escape' && abierto.value) {
+    return;
+  }
+  if (e.key === 'Escape' && abierto.value) {
     e.preventDefault();
     e.stopPropagation();
     cerrar();
+    return;
+  }
+  // Alt + ← / → son de cambiar de paso; Ctrl o Cmd, del navegador
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const s = estado.value.segmento;
+  const ir = (destino) => {
+    e.preventDefault();
+    estado.value = irA(estado.value, destino);
+    seleccionarParte();
+  };
+  if (e.key === 'ArrowLeft') ir(s - 1);
+  else if (e.key === 'ArrowRight') ir(s + 1);
+  // Tab recorre día, mes y año antes de pasar al siguiente campo (como el del navegador)
+  else if (e.key === 'Tab' && !e.shiftKey && s < 2) ir(s + 1);
+  else if (e.key === 'Tab' && e.shiftKey && s > 0) ir(s - 1);
+  else if (e.key === 'Home') ir(0);
+  else if (e.key === 'End') ir(2);
+  else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (props.readonly || props.disabled) return;
+    aplicar(cambiarConFlecha(estado.value, e.key === 'ArrowUp' ? 1 : -1));
   }
 };
 
@@ -186,20 +298,22 @@ defineExpose({ focus: () => campo.value?.focus() });
       type="text"
       inputmode="numeric"
       autocomplete="off"
-      maxlength="10"
-      :placeholder="placeholder"
+      spellcheck="false"
       :value="texto"
       :disabled="disabled"
       :readonly="readonly"
       :required="required"
-      :aria-invalid="incompleta || fueraDeRango ? 'true' : undefined"
+      :aria-invalid="marcada ? 'true' : undefined"
       :data-fecha-incompleta="incompleta ? 'true' : undefined"
+      :data-fecha-iso="isoActual"
       data-fecha
       v-bind="$attrs"
-      :class="[inputClass, 'campo-fecha-texto', (incompleta || fueraDeRango) && 'campo-fecha-invalida']"
-      @input="alEscribir"
+      :class="[inputClass, 'campo-fecha-texto', marcada && 'campo-fecha-invalida']"
+      @beforeinput="alAntesDeEscribir"
+      @paste="alPegar"
+      @mouseup="alSoltarClic"
       @blur="alSalir"
-      @focus="emit('focus', $event)"
+      @focus="alEnfocar"
       @keydown="alTeclear"
     />
     <button
@@ -244,15 +358,15 @@ defineExpose({ focus: () => campo.value?.focus() });
             v-else
             type="button"
             tabindex="-1"
-            :disabled="!dentroDeRango(isoDe(dia), min, max)"
+            :disabled="!dentroDeRango(isoDelDia(dia), min, max)"
             :data-dia="dia"
             :class="[
               'rounded py-1 disabled:cursor-not-allowed disabled:text-gray-300',
-              isoDe(dia) === isoActual ? 'bg-emerald-600 text-white' : 'text-gray-700 hover:bg-emerald-50',
-              isoDe(dia) === hoy && isoDe(dia) !== isoActual ? 'font-semibold text-emerald-700' : '',
+              isoDelDia(dia) === isoActual ? 'bg-emerald-600 text-white' : 'text-gray-700 hover:bg-emerald-50',
+              isoDelDia(dia) === hoy && isoDelDia(dia) !== isoActual ? 'font-semibold text-emerald-700' : '',
             ]"
             @mousedown.prevent
-            @click="fijar(isoDe(dia))"
+            @click="fijar(isoDelDia(dia))"
           >
             {{ dia }}
           </button>
@@ -269,6 +383,7 @@ defineExpose({ focus: () => campo.value?.focus() });
 <style scoped>
 .campo-fecha-texto {
   padding-right: 2.25rem;
+  font-variant-numeric: tabular-nums;
 }
 .campo-fecha-invalida {
   border-color: #f87171 !important;

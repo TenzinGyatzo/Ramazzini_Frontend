@@ -101,11 +101,12 @@ export const useStepsStore = defineStore("steps", () => {
           return false; // Excluir este input del proceso de validación
         }
   
-        // Una fecha a medias (DD/MM/AAAA incompleto o imposible) cuenta como vacía
-        return (
-          element.offsetParent !== null &&
-          (!element.value.trim() || element.getAttribute('data-fecha-incompleta') === 'true')
-        );
+        // Campo de fecha propio: siempre muestra «dd/mm/aaaa»; cuenta como vacío mientras no
+        // tenga una fecha completa y existente
+        const vacio = element.hasAttribute('data-fecha')
+          ? !element.getAttribute('data-fecha-iso')
+          : !element.value.trim();
+        return element.offsetParent !== null && vacio;
       });
   
     if (visibleInputs.length > 0) {

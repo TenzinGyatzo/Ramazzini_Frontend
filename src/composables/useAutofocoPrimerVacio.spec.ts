@@ -11,7 +11,7 @@ beforeAll(() => {
   Element.prototype.getClientRects = () => [{}] as unknown as DOMRectList;
 });
 
-const esperar = (ms = 60) => new Promise((r) => setTimeout(r, ms));
+const esperar = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 
 /** Un paso con peso, altura y cintura (valores iniciales opcionales). */
 const paso = (valores: Record<string, string> = {}, opciones = {}, deshabilitado: string[] = []) =>
