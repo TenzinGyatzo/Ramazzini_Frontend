@@ -136,7 +136,8 @@ function setCategoriaTensionArterial() {
     categoriaSistolica = 'Hipertensión grado 3';
   }
 
-  // La diastólica es opcional: sin ella, la categoría sale solo de la sistólica
+  // Mientras falta la diastólica (es obligatoria; el aviso al guardar la pide), la categoría
+  // sale de la sistólica
   if (!esMedicion(diastolica)) {
     categoriaDiastolica = '';
   } else if (diastolica <= 80) {

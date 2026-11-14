@@ -98,15 +98,6 @@ function validarNumeroEnRango(field: SomatometriaSignosField) {
   };
 }
 
-/** Si está vacío no bloquea; si hay valor, debe estar en rango. */
-function validarNumeroEnRangoOpcional(field: SomatometriaSignosField) {
-  return (valor: any): boolean => {
-    if (esValorVacio(valor)) return true;
-    if (!validarNumero(valor)) return false;
-    return validateSomatometriaSignosField(field, valor) === null;
-  };
-}
-
 // Función para validar campos de texto
 function validarTexto(texto: any): boolean {
   if (esValorVacio(texto)) return false;
@@ -329,7 +320,7 @@ const camposRequeridosPorTipo: Record<string, Array<{
     { campo: 'fechaCertificadoExpedito', nombre: 'Fecha del certificado', tipo: 'fecha', paso: 1, validacion: validarFecha },
     { campo: 'cuerpoCertificado', nombre: 'Cuerpo del certificado', tipo: 'texto', paso: 2, validacion: validarTexto },
     { campo: 'tensionArterialSistolica', nombre: 'Tensión Arterial', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('tensionArterialSistolica') },
-    { campo: 'tensionArterialDiastolica', nombre: 'Tensión Arterial Diastólica', tipo: 'medida', paso: 3, validacion: validarNumeroEnRangoOpcional('tensionArterialDiastolica') },
+    { campo: 'tensionArterialDiastolica', nombre: 'Tensión Arterial Diastólica', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('tensionArterialDiastolica') },
     { campo: 'frecuenciaCardiaca', nombre: 'Frecuencia Cardíaca', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaCardiaca') },
     { campo: 'frecuenciaRespiratoria', nombre: 'Frecuencia Respiratoria', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaRespiratoria') },
     { campo: 'temperaturaCorporal', nombre: 'Temperatura Corporal', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('temperaturaCorporal') },
@@ -354,7 +345,7 @@ const camposRequeridosPorTipo: Record<string, Array<{
     { campo: 'indiceMasaCorporal', nombre: 'IMC', tipo: 'medida', paso: 2, validacion: validarNumero },
     { campo: 'circunferenciaCintura', nombre: 'Circunferencia Cintura', tipo: 'medida', paso: 2, validacion: validarNumeroEnRango('circunferenciaCintura') },
     { campo: 'tensionArterialSistolica', nombre: 'Tensión Arterial', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('tensionArterialSistolica') },
-    { campo: 'tensionArterialDiastolica', nombre: 'Tensión Arterial Diastólica', tipo: 'medida', paso: 3, validacion: validarNumeroEnRangoOpcional('tensionArterialDiastolica') },
+    { campo: 'tensionArterialDiastolica', nombre: 'Tensión Arterial Diastólica', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('tensionArterialDiastolica') },
     { campo: 'frecuenciaCardiaca', nombre: 'Frecuencia Cardíaca', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaCardiaca') },
     { campo: 'frecuenciaRespiratoria', nombre: 'Frecuencia Respiratoria', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaRespiratoria') },
     { campo: 'saturacionOxigeno', nombre: 'Saturación de Oxígeno', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('saturacionOxigeno') },
