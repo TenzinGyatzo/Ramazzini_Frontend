@@ -2677,8 +2677,8 @@ export default {
         </button>
       </div>
       <div class="mt-1 flex justify-between">
-        <AtajoTeclado :class="{ invisible: stepsStore.currentStep === 1 }" :teclas="['Alt', '←']" texto="anterior" />
-        <AtajoTeclado :teclas="['Alt', '→']" texto="siguiente" />
+        <AtajoTeclado :class="{ invisible: stepsStore.currentStep === 1 }" :teclas="['Alt', '←']" />
+        <AtajoTeclado :teclas="['Alt', '→']" />
       </div>
 
       <AvisoConexionGuardado
@@ -2794,7 +2794,7 @@ export default {
             </div>
           </div>
           <div class="mt-1">
-            <AtajoTeclado :teclas="['Alt', '←']" texto="anterior" />
+            <AtajoTeclado :teclas="['Alt', '←']" />
           </div>
         </div>
       </transition>

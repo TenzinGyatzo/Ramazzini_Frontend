@@ -1,10 +1,11 @@
 <script setup>
-/** Atajo de teclado discreto («Alt ← anterior»): solo en laptop o PC, con el estilo de IndicacionTab. */
+/** Atajo de teclado discreto («Alt ←»): solo en laptop o PC, con el estilo de IndicacionTab. */
 import { esComputadora } from '@/composables/useAutofocoPrimerVacio';
 
 defineProps({
   teclas: { type: Array, required: true },
-  texto: { type: String, required: true },
+  /** Opcional: junto a un botón que ya dice qué hace, basta con las teclas. */
+  texto: { type: String, default: '' },
 });
 
 const visible = esComputadora();
@@ -13,7 +14,7 @@ const visible = esComputadora();
 <template>
   <span v-if="visible" class="indicacion-tab inline-flex items-center gap-1 text-[11px] leading-4 text-gray-400" data-atajo-teclado>
     <kbd v-for="tecla in teclas" :key="tecla">{{ tecla }}</kbd>
-    {{ texto }}
+    <template v-if="texto">{{ texto }}</template>
   </span>
 </template>
 

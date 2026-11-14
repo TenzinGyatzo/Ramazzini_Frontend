@@ -4,7 +4,6 @@ import { mount } from '@vue/test-utils';
 import { defineComponent, h } from 'vue';
 import {
   atajoDePaso,
-  evitarFocoAlHacerClic,
   quitarDelTabLosSoloLectura,
   useTecladoAsistente,
 } from './useTecladoAsistente';
@@ -31,16 +30,11 @@ describe('campos de solo lectura en el área de captura', () => {
     expect(document.getElementById('fuera')?.hasAttribute('tabindex')).toBe(false);
   });
 
-  it('el clic no les pone el cursor', () => {
-    document.body.innerHTML = `<div data-captura-documento><input id="imc" readonly /><input id="peso" /></div>`;
-    const clic = (id: string) => {
-      const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-      Object.defineProperty(e, 'target', { value: document.getElementById(id) });
-      evitarFocoAlHacerClic(e);
-      return e.defaultPrevented;
-    };
-    expect(clic('imc')).toBe(true);
-    expect(clic('peso')).toBe(false);
+  it('con el mouse se pueden seleccionar para copiar (el clic no se bloquea)', () => {
+    document.body.innerHTML = `<div data-captura-documento><input id="imc" readonly value="27.68" /></div>`;
+    const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    document.getElementById('imc')!.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(false);
   });
 });
 

@@ -2,9 +2,8 @@ import { onMounted, onUnmounted } from 'vue';
 
 /**
  * Teclado en el asistente de documentos (FormStepper), para quien captura con Tab:
- * - Los campos de una línea de solo lectura (IMC, categorías, medidas base) no reciben el
- *   cursor: Tab los salta y el clic no se queda en ellos (siguen mostrando su explicación al
- *   pasar el mouse). Los cuadros de texto largos de solo lectura no cambian (se pueden copiar).
+ * - Tab salta los campos de una línea de solo lectura (IMC, categorías, medidas base). Con el
+ *   mouse se pueden seleccionar para copiar su texto. Los cuadros de texto largos no cambian.
  * - Alt + ← / Alt + → cambian de paso (como «Anterior» / «Siguiente»). En Mac, Option + ←/→
  *   mueve el cursor por palabras dentro de un texto: ahí no se intercepta.
  */
@@ -17,14 +16,6 @@ export function quitarDelTabLosSoloLectura(raiz: ParentNode = document): void {
   raiz.querySelectorAll<HTMLInputElement>(`${CAPTURA} ${SOLO_LECTURA}`).forEach((el) => {
     if (el.getAttribute('tabindex') !== '-1') el.setAttribute('tabindex', '-1');
   });
-}
-
-/** Un clic en un campo de solo lectura del área de captura no le pone el cursor. */
-export function evitarFocoAlHacerClic(e: MouseEvent): void {
-  const objetivo = e.target;
-  if (objetivo instanceof HTMLInputElement && objetivo.readOnly && objetivo.closest(CAPTURA)) {
-    e.preventDefault();
-  }
 }
 
 const esMac = () =>
@@ -73,7 +64,6 @@ export function useTecladoAsistente(acciones: {
 
   onMounted(() => {
     quitarDelTabLosSoloLectura();
-    document.addEventListener('mousedown', evitarFocoAlHacerClic, true);
     window.addEventListener('keydown', alTeclear);
     // Los pasos se montan y desmontan: se revisa cada vez que cambia el contenido
     observador = new MutationObserver(() => quitarDelTabLosSoloLectura());
@@ -81,7 +71,6 @@ export function useTecladoAsistente(acciones: {
   });
 
   onUnmounted(() => {
-    document.removeEventListener('mousedown', evitarFocoAlHacerClic, true);
     window.removeEventListener('keydown', alTeclear);
     observador?.disconnect();
   });
