@@ -25,6 +25,8 @@ onMounted(() => {
     // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
     fechaNotaEnfermeria.value = formatDateYYYYMMDD(formDataNotaEnfermeria.fechaNotaEnfermeria);
   }
+  // La fecha que se ve ya cuenta como capturada (si no, al guardar se pediría aunque se vea)
+  formDataNotaEnfermeria.fechaNotaEnfermeria = fechaNotaEnfermeria.value;
   formDataNotaEnfermeria.idTrabajador = trabajadores.currentTrabajadorId;
   // La norma pide la hora de la atención: por defecto, la de ahora
   if (!formDataNotaEnfermeria.horaAtencion) {
@@ -48,7 +50,7 @@ watch(fechaNotaEnfermeria, (valor) => {
     <h1 class="text-2xl font-bold mb-2 text-gray-900">Nota de enfermería</h1>
 
     <div class="mt-5 grid grid-cols-2 gap-3">
-      <div>
+      <div data-campo="fechaNotaEnfermeria">
         <p :class="claseEtiqueta">Fecha de la atención <Requerido /></p>
         <FormKit
           type="date"
@@ -59,19 +61,18 @@ watch(fechaNotaEnfermeria, (valor) => {
           v-model="fechaNotaEnfermeria"
         />
       </div>
-      <div>
+      <div data-campo="horaAtencion">
         <p :class="claseEtiqueta">Hora <Requerido /></p>
         <!-- Mismo control que la fecha, para que se vean iguales -->
         <FormKit
           type="time"
           name="horaAtencion"
-          data-campo="horaAtencion"
           v-model="formDataNotaEnfermeria.horaAtencion"
         />
       </div>
     </div>
 
-    <div class="mt-5" data-pregunta="relacionTemporal">
+    <div class="mt-5" data-pregunta="relacionTemporal" data-campo="relacionTemporal">
       <p :class="claseEtiqueta">¿Es la primera vez que se le atiende por este motivo? <Requerido /></p>
       <div class="grid grid-cols-2 gap-2">
         <button
@@ -87,13 +88,12 @@ watch(fechaNotaEnfermeria, (valor) => {
       </div>
     </div>
 
-    <div class="mt-5">
+    <div class="mt-5" data-campo="motivoAtencion">
       <p :class="claseEtiqueta">Motivo de atención <Requerido /></p>
       <textarea
         v-model="formDataNotaEnfermeria.motivoAtencion"
         rows="3"
         maxlength="2000"
-        data-campo="motivoAtencion"
         placeholder="Por qué acude el trabajador"
         :class="claseInput"
       ></textarea>

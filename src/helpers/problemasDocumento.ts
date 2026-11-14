@@ -7,6 +7,12 @@
  */
 import type { CampoFaltante } from '@/helpers/validacionCampos';
 import type { NotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
+import {
+  PASO_MEDICAMENTOS_NOTA_ENFERMERIA,
+  PASO_SIGNOS_NOTA_ENFERMERIA,
+  erroresSignosNotaEnfermeria,
+  type SignosVitalesNotaEnfermeria,
+} from '@/helpers/notaEnfermeria';
 
 export interface ProblemaCampo {
   /** Paso del asistente clásico (el de secciones se traduce al navegar). */
@@ -59,6 +65,7 @@ const INSTRUCCION_FALTA: Record<string, string> = {
 /** Nombre corto en la lista para cada dato (si no viene de la validación). */
 const NOMBRE_CAMPO: Record<string, string> = {
   fechaNotaMedica: 'Fecha de la consulta',
+  fechaNotaEnfermeria: 'Fecha de la atención',
   motivoExamen: 'Motivo del examen',
   fechaHistoriaClinica: 'Fecha de la historia clínica',
   resumenHistoriaClinica: 'Resumen de la historia clínica',
@@ -185,6 +192,9 @@ export function campoPorPasoDiagnostico(
  * diagnóstico se pide primero la relación temporal y luego el diagnóstico, como en pantalla.
  */
 const ORDEN_EN_PANTALLA = [
+  // Nota de enfermería (paso 1: fecha y hora arriba de «primera vez o subsecuente»)
+  'fechaNotaEnfermeria',
+  'horaAtencion',
   // Historia clínica (paso 1)
   'motivoExamen',
   'fechaHistoriaClinica',
@@ -332,3 +342,115 @@ export const ID_PASO_EXAMEN_VISTA: Record<number, string> = {
   5: 'evAvCercanaCon',
   6: 'evIshihara',
 };
+
+/** Nota de enfermería: instrucción de cada dato obligatorio vacío. */
+export const INSTRUCCION_NOTA_ENFERMERIA: Record<string, string> = {
+  fechaNotaEnfermeria: 'Elige la fecha de la atención.',
+  horaAtencion: 'Escribe la hora de la atención.',
+  relacionTemporal: 'Indica si es la primera vez que se le atiende por este motivo.',
+  motivoAtencion: 'Escribe el motivo de atención.',
+  tipoProblema: 'Elige el tipo de problema.',
+  sistema: 'Elige el aparato o sistema.',
+  origen: 'Elige el origen de la atención.',
+  habitusExterior: 'Describe el aspecto general.',
+  procedimientoOtro: 'Escribe qué otro procedimiento se realizó.',
+  destino: 'Elige el destino del trabajador.',
+};
+
+/** Revisiones de la lista de obligatorios que agrupan varios datos: aquí se separan. */
+const AGRUPADOS_NOTA_ENFERMERIA = new Set(['signosVitales', 'tomasControl', 'medicamentos']);
+
+const NOMBRE_SIGNO_NOTA_ENFERMERIA: Record<string, string> = {
+  tensionArterialSistolica: 'Tensión arterial sistólica',
+  tensionArterialDiastolica: 'Tensión arterial diastólica',
+  frecuenciaCardiaca: 'Frecuencia cardiaca',
+  frecuenciaRespiratoria: 'Frecuencia respiratoria',
+  temperatura: 'Temperatura',
+  saturacionOxigeno: 'Saturación de oxígeno',
+  glucosaCapilar: 'Glucosa capilar',
+  dolor: 'Dolor',
+};
+
+const vacioNE = (v: unknown) => v === undefined || v === null || v === '';
+const tomaConAlgunSigno = (toma?: SignosVitalesNotaEnfermeria | null) =>
+  !!toma &&
+  Object.keys(NOMBRE_SIGNO_NOTA_ENFERMERIA).some(
+    (k) => !vacioNE(toma[k as keyof SignosVitalesNotaEnfermeria]),
+  );
+
+/** Errores de una toma (los mismos que se ven bajo cada signo) → un problema por signo. */
+function problemasDeToma(
+  toma: SignosVitalesNotaEnfermeria | null | undefined,
+  prefijo: string,
+  cual: string,
+): ProblemaCampo[] {
+  return Object.entries(erroresSignosNotaEnfermeria(toma)).map(([clave, error]) => {
+    const signo = NOMBRE_SIGNO_NOTA_ENFERMERIA[clave] ?? clave;
+    const texto = String(error);
+    const falta = texto.startsWith('Falta');
+    return {
+      paso: PASO_SIGNOS_NOTA_ENFERMERIA,
+      campo: `${prefijo}.${clave}`,
+      nombre: `${signo} (${cual})`,
+      falta,
+      mensaje: falta
+        ? `Escribe la ${signo.toLowerCase()}; la tensión arterial lleva las dos cifras.`
+        : `${signo}: ${texto.charAt(0).toLowerCase()}${texto.slice(1)}.`,
+    };
+  });
+}
+
+/**
+ * Nota de enfermería. La lista de obligatorios revisa los signos vitales, las horas de las
+ * tomas de control y las cantidades de los medicamentos como un solo dato cada uno; aquí se
+ * lleva al signo, la toma o el medicamento exacto. Se revisa lo capturado, con los mismos
+ * números que en pantalla; los renglones de medicamento vacíos no se guardan y no se piden.
+ */
+export function problemasNotaEnfermeria(
+  faltantes: CampoFaltante[],
+  datos: {
+    signosVitales?: SignosVitalesNotaEnfermeria | null;
+    tomasControl?: SignosVitalesNotaEnfermeria[] | null;
+    medicamentos?: Array<{ idInsumo?: string; nombre?: string; cantidad?: unknown }> | null;
+  },
+): ProblemaCampo[] {
+  const problemas = problemasPorFaltantes(
+    faltantes.filter((f) => !f.campo || !AGRUPADOS_NOTA_ENFERMERIA.has(f.campo)),
+    INSTRUCCION_NOTA_ENFERMERIA,
+  );
+
+  problemas.push(...problemasDeToma(datos.signosVitales, 'signosVitales', 'toma inicial'));
+  (datos.tomasControl ?? []).forEach((toma, i) => {
+    if (!tomaConAlgunSigno(toma)) return;
+    const cual = `toma de control ${i + 1}`;
+    if (!toma.hora) {
+      problemas.push({
+        paso: PASO_SIGNOS_NOTA_ENFERMERIA,
+        campo: `tomasControl.${i}.hora`,
+        nombre: `Hora de la ${cual}`,
+        falta: true,
+        mensaje: `Escribe la hora de la ${cual}.`,
+      });
+    }
+    problemas.push(...problemasDeToma(toma, `tomasControl.${i}`, cual));
+  });
+
+  (datos.medicamentos ?? []).forEach((m, i) => {
+    // Sin medicamento elegido ni nombre: el renglón no se guarda
+    if (!m?.idInsumo && !String(m?.nombre ?? '').trim()) return;
+    const cantidad = m.cantidad;
+    if (Number.isInteger(cantidad) && (cantidad as number) >= 1) return;
+    const falta = vacioNE(cantidad);
+    problemas.push({
+      paso: PASO_MEDICAMENTOS_NOTA_ENFERMERIA,
+      campo: `medicamentos.${i}.cantidad`,
+      nombre: `Cantidad del medicamento ${i + 1}`,
+      falta,
+      mensaje: falta
+        ? `Escribe la cantidad del medicamento ${i + 1}.`
+        : `La cantidad del medicamento ${i + 1} debe ser un número entero desde 1.`,
+    });
+  });
+
+  return problemas;
+}

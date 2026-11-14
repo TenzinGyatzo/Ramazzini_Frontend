@@ -37,13 +37,12 @@ const alternar = (clave) => {
           {{ opcion.etiqueta }}
         </button>
       </div>
-      <label v-if="elegido('otro')" class="mt-3 block">
+      <label v-if="elegido('otro')" class="mt-3 block" data-campo="procedimientoOtro">
         <span :class="claseEtiqueta">¿Qué otro procedimiento? <Requerido /></span>
         <input
           v-model="formDataNotaEnfermeria.procedimientoOtro"
           type="text"
           maxlength="300"
-          data-campo="procedimientoOtro"
           :class="[claseInput, 'mt-1.5']"
         />
       </label>

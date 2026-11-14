@@ -11,7 +11,7 @@ const { formDataNotaEnfermeria } = useFormDataStore();
   <div>
     <h1 class="text-2xl font-bold mb-2 text-gray-900">Cierre</h1>
 
-    <div class="mt-5" data-pregunta="destino">
+    <div class="mt-5" data-pregunta="destino" data-campo="destino">
       <p :class="claseEtiqueta">Destino del trabajador <Requerido /></p>
       <!-- Una columna, de lo más a lo menos frecuente -->
       <div class="flex max-w-xl flex-col gap-1.5">

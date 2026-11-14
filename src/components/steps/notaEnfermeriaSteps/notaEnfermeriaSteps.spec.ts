@@ -46,7 +46,7 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
     const otro = wrapper.findAll('button').find((b) => b.text() === 'Otro')!;
     await otro.trigger('click');
     expect(fd.procedimientos).toEqual(['otro']);
-    await wrapper.find('[data-campo="procedimientoOtro"]').setValue('Retiro de anillo');
+    await wrapper.find('[data-campo="procedimientoOtro"] input').setValue('Retiro de anillo');
     expect(fd.procedimientoOtro).toBe('Retiro de anillo');
     await otro.trigger('click');
     expect(fd.procedimientos).toEqual([]);
@@ -142,6 +142,29 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
     await wrapper.find('select[aria-label="Medicamento 1"]').setValue('__otro__');
     expect(fd.medicamentos[0]).not.toHaveProperty('idInsumo');
     expect(wrapper.find('input[aria-label="Nombre del medicamento 1"]').exists()).toBe(true);
+  });
+
+  it('la fecha que se ve cuenta como capturada desde que se abre el paso 1', async () => {
+    delete fd.fechaNotaEnfermeria;
+    await montar('./Step1.vue');
+    expect(fd.fechaNotaEnfermeria).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('cada dato obligatorio tiene su marca para llevar a él al guardar', async () => {
+    const paso1 = await montar('./Step1.vue');
+    for (const campo of ['fechaNotaEnfermeria', 'horaAtencion', 'relacionTemporal', 'motivoAtencion']) {
+      expect(paso1.find(`[data-campo="${campo}"]`).exists()).toBe(true);
+    }
+    fd.signosVitales = {};
+    fd.tomasControl = [{ hora: '10:00' }];
+    const paso4 = await montar('./Step4.vue');
+    expect(paso4.find('[data-campo="signosVitales.frecuenciaCardiaca"] input').exists()).toBe(true);
+    expect(paso4.find('[data-campo="tomasControl.0.hora"] input').exists()).toBe(true);
+    expect(paso4.find('[data-campo="tomasControl.0.dolor"] input').exists()).toBe(true);
+    fd.medicamentos = [{ nombre: 'Paracetamol', cantidad: 1, uso: 'ADMINISTRADO' }];
+    const paso6 = await montar('./Step6.vue');
+    await flushPromises();
+    expect(paso6.find('[data-campo="medicamentos.0.cantidad"] input').exists()).toBe(true);
   });
 });
 

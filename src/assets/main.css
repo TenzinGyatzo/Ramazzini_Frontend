@@ -440,6 +440,11 @@ html.dark-mode .inicio-nav--enlace:focus-visible {
   animation: campo-atencion-contorno 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* El aviso bajo el campo ya dice qué corregir: el error en línea del mismo dato se oculta */
+.campo-atencion [data-error-en-linea] {
+  display: none;
+}
+
 .campo-atencion[data-atencion]::after {
   content: attr(data-atencion);
   display: block;

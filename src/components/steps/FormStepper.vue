@@ -497,6 +497,7 @@ import {
   campoDeProblemaCie10,
   campoPorPasoDiagnostico,
   problemasExploracionFisica,
+  problemasNotaEnfermeria,
   ID_PASO_EXAMEN_VISTA,
   nombreDeCampo,
   ordenarProblemas,
@@ -1642,7 +1643,8 @@ export default {
 
     // Documentos con obligatorios y fecha (ventana y edad en la fecha), en orden de pasos:
     // historia clínica, examen de la vista, audiometría y aptitud
-    const recolectarProblemasObligatoriosYFecha = (tipo, df) => {
+    /** Fecha del documento (paso 1): fuera de la ventana permitida o edad mínima en esa fecha. */
+    const problemasDeFecha = (tipo, df) => {
       const campoFecha = DOCUMENT_TYPE_DATE_FIELDS[tipo];
       const invalidos = [];
       const problemaFecha = (mensaje) => ({
@@ -1656,6 +1658,11 @@ export default {
       if (!fecha.valido) invalidos.push(problemaFecha(fecha.mensaje));
       const mensajeE2 = campoFecha ? mensajeEdadEnFecha(df[campoFecha]) : '';
       if (mensajeE2) invalidos.push(problemaFecha(mensajeE2));
+      return invalidos;
+    };
+
+    const recolectarProblemasObligatoriosYFecha = (tipo, df) => {
+      const invalidos = problemasDeFecha(tipo, df);
       const requeridos = validarCamposRequeridos(tipo, limpiarValoresUndefined(df), {
         cie10Required: cie10Required.value,
         showSiresUI: showSiresUI.value,
@@ -1698,11 +1705,32 @@ export default {
       ]);
     };
 
+    // Nota de enfermería: la lista de obligatorios se revisa como se enviará (sin tomas ni
+    // renglones vacíos); signos, horas de las tomas y cantidades se piden uno por uno.
+    const recolectarProblemasNotaEnfermeria = () => {
+      const df = formData.formDataNotaEnfermeria;
+      const requeridos = validarCamposRequeridos(
+        'notaEnfermeria',
+        normalizarNotaEnfermeria(limpiarValoresUndefined(df)),
+        {},
+      );
+      return ordenarProblemas([
+        ...problemasNotaEnfermeria(requeridos.camposFaltantes, df),
+        ...problemasDeFecha('notaEnfermeria', df),
+      ]);
+    };
+
     // Documentos que, al guardar, llevan al dato pendiente (paso + campo + qué corregir)
     const tieneAtencionCampos = () =>
-      ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud'].includes(
-        documentos.currentTypeOfDocument,
-      );
+      [
+        'notaMedica',
+        'historiaClinica',
+        'exploracionFisica',
+        'examenVista',
+        'audiometria',
+        'aptitud',
+        'notaEnfermeria',
+      ].includes(documentos.currentTypeOfDocument);
 
     const datosDelDocumentoActual = () => {
       if (documentos.currentTypeOfDocument === 'notaMedica') return formData.formDataNotaMedica;
@@ -1715,6 +1743,7 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'audiometria') return formData.formDataAudiometria;
       if (documentos.currentTypeOfDocument === 'aptitud') return formData.formDataAptitud;
+      if (documentos.currentTypeOfDocument === 'notaEnfermeria') return formData.formDataNotaEnfermeria;
       return null;
     };
 
@@ -1736,6 +1765,9 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'aptitud') {
         return recolectarProblemasObligatoriosYFecha('aptitud', formData.formDataAptitud);
+      }
+      if (documentos.currentTypeOfDocument === 'notaEnfermeria') {
+        return recolectarProblemasNotaEnfermeria();
       }
       return [];
     };

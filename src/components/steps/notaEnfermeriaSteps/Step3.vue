@@ -11,7 +11,7 @@ const { formDataNotaEnfermeria } = useFormDataStore();
   <div>
     <h1 class="text-2xl font-bold mb-2 text-gray-900">Origen y aspecto general</h1>
 
-    <div class="mt-5" data-pregunta="origen">
+    <div class="mt-5" data-pregunta="origen" data-campo="origen">
       <p :class="claseEtiqueta">Origen de la atención <Requerido /></p>
       <div class="flex max-w-xl flex-col gap-1.5">
         <button
@@ -27,13 +27,12 @@ const { formDataNotaEnfermeria } = useFormDataStore();
       </div>
     </div>
 
-    <div class="mt-5">
+    <div class="mt-5" data-campo="habitusExterior">
       <p :class="claseEtiqueta">Aspecto general (hábitus exterior) <Requerido /></p>
       <textarea
         v-model="formDataNotaEnfermeria.habitusExterior"
         rows="3"
         maxlength="2000"
-        data-campo="habitusExterior"
         placeholder="Conciencia, orientación, marcha, coloración, facies, actitud"
         :class="claseInput"
       ></textarea>

@@ -219,7 +219,7 @@ const quitar = (indice) => {
           </div>
 
           <div class="grid grid-cols-2 gap-3">
-            <label class="block">
+            <label class="block" :data-campo="`medicamentos.${indice}.cantidad`">
               <span :class="claseEtiquetaCampo">Cantidad <Requerido /></span>
               <input
                 v-model.number="fila.cantidad"
@@ -230,7 +230,7 @@ const quitar = (indice) => {
                 :class="claseNumero(cantidadInvalida(fila))"
                 :aria-label="`Cantidad del medicamento ${indice + 1}`"
               />
-              <span v-if="cantidadInvalida(fila)" :class="[claseError, 'block']">Un número entero desde 1</span>
+              <span v-if="cantidadInvalida(fila)" :class="[claseError, 'block']" data-error-en-linea>Un número entero desde 1</span>
             </label>
             <label class="block">
               <span :class="claseEtiquetaCampo">Hora</span>

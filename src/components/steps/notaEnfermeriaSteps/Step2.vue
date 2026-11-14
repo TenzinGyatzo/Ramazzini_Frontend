@@ -14,7 +14,7 @@ const { formDataNotaEnfermeria } = useFormDataStore();
   <div>
     <h1 class="text-2xl font-bold mb-2 text-gray-900">Clasificación</h1>
 
-    <div class="mt-5" data-pregunta="tipoProblema">
+    <div class="mt-5" data-pregunta="tipoProblema" data-campo="tipoProblema">
       <p :class="claseEtiqueta">Tipo de problema <Requerido /></p>
       <!-- Una columna, de lo más a lo menos frecuente -->
       <div class="flex max-w-xl flex-col gap-1.5">
@@ -32,7 +32,7 @@ const { formDataNotaEnfermeria } = useFormDataStore();
       </div>
     </div>
 
-    <div class="mt-5" data-pregunta="sistema">
+    <div class="mt-5" data-pregunta="sistema" data-campo="sistema">
       <p :class="claseEtiqueta">Aparato o sistema <Requerido /></p>
       <!-- Dos columnas fijas: las trece opciones a la vista, sin buscar ni desplazarse -->
       <div class="grid grid-cols-2 gap-1.5">

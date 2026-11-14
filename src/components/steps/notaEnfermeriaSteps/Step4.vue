@@ -34,7 +34,11 @@ const quitarToma = (indice) => {
 
     <div class="mt-3">
       <p :class="claseAyuda">Todos son opcionales: captura solo los que tomaste.</p>
-      <CamposSignosVitales v-if="formDataNotaEnfermeria.signosVitales" :toma="formDataNotaEnfermeria.signosVitales" />
+      <CamposSignosVitales
+        v-if="formDataNotaEnfermeria.signosVitales"
+        :toma="formDataNotaEnfermeria.signosVitales"
+        prefijo-campo="signosVitales"
+      />
     </div>
 
     <div
@@ -46,7 +50,7 @@ const quitarToma = (indice) => {
       <div class="mb-3 flex items-end justify-between gap-3">
         <div>
           <p class="text-sm font-semibold text-gray-800">Toma de control {{ indice + 1 }}</p>
-          <label :class="[claseEtiquetaCampo, 'mt-2']">
+          <label :class="[claseEtiquetaCampo, 'mt-2 block']" :data-campo="`tomasControl.${indice}.hora`">
             Hora
             <input
               v-model="toma.hora"
@@ -66,7 +70,7 @@ const quitarToma = (indice) => {
           <i class="fas fa-trash-alt" aria-hidden="true"></i>
         </button>
       </div>
-      <CamposSignosVitales :toma="toma" />
+      <CamposSignosVitales :toma="toma" :prefijo-campo="`tomasControl.${indice}`" />
     </div>
 
     <div class="mt-4">

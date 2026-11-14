@@ -9,6 +9,8 @@ import { claseError, claseEtiquetaCampo, claseNumero } from './estilos';
  */
 const props = defineProps({
   toma: { type: Object, required: true },
+  /** Marca data-campo de cada signo («signosVitales.frecuenciaCardiaca»): para llevar al dato al guardar. */
+  prefijoCampo: { type: String, default: '' },
 });
 
 const CAMPOS = [
@@ -49,7 +51,11 @@ const guardar = (clave, texto) => {
 
 <template>
   <div class="grid grid-cols-2 gap-x-3 gap-y-3">
-    <div v-for="campo in CAMPOS" :key="campo.clave">
+    <div
+      v-for="campo in CAMPOS"
+      :key="campo.clave"
+      :data-campo="prefijoCampo ? `${prefijoCampo}.${campo.clave}` : undefined"
+    >
       <label :class="claseEtiquetaCampo">
         <!-- Etiqueta y unidad en un solo renglón: todos los campos quedan alineados -->
         <span class="block truncate">
@@ -70,7 +76,7 @@ const guardar = (clave, texto) => {
           @blur="tocados.add(campo.clave)"
         />
       </label>
-      <p v-if="errorDe(campo.clave)" :class="claseError" role="alert" :data-error-signo="campo.clave">
+      <p v-if="errorDe(campo.clave)" :class="claseError" role="alert" :data-error-signo="campo.clave" data-error-en-linea>
         {{ errorDe(campo.clave) }}
       </p>
     </div>
