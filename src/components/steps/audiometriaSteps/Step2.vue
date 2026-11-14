@@ -531,7 +531,7 @@ watch(() => formDataAudiometria.oidoDerecho8000, (newValue) => {
       <p class="font-medium mb-3 text-gray-700 leading-5">
         Ingrese los umbrales auditivos en decibeles (dB) para cada frecuencia:
       </p>
-      <IndicacionTab class="-mt-2 mb-3" />
+      <IndicacionTab class="mb-3" />
       
       <!-- Grid de valores audiométricos -->
       <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
