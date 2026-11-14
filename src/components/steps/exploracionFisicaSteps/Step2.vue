@@ -173,7 +173,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
     <div :class="['grid grid-cols-2 gap-4', variant === 'compact' ? 'mb-3' : 'mb-6']">
       <div data-campo="peso">
         <label for="peso" :class="variant === 'compact' ? 'block text-sm font-medium text-gray-800 mb-1' : 'block text-base font-medium text-gray-800 mb-2'">
-          Peso (Kg)
+          Peso (Kg) <span class="text-red-500" aria-hidden="true">*</span>
         </label>
         <input 
           type="number"
@@ -203,7 +203,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
 
       <div data-campo="altura">
         <label for="altura" :class="variant === 'compact' ? 'block text-sm font-medium text-gray-800 mb-1' : 'block text-base font-medium text-gray-800 mb-2'">
-          Altura (m)
+          Altura (m) <span class="text-red-500" aria-hidden="true">*</span>
         </label>
         <input 
           type="number"
@@ -285,7 +285,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
     <!-- Circunferencia de Cintura -->
     <div data-campo="circunferenciaCintura" :class="variant === 'compact' ? 'mb-2' : 'mb-4'">
       <label :class="variant === 'compact' ? 'block text-sm font-medium text-gray-800 mb-1' : 'block text-base font-medium text-gray-800 mb-2'">
-        Circunferencia de Cintura (cm)
+        Circunferencia de Cintura (cm) <span class="text-red-500" aria-hidden="true">*</span>
       </label>
       <div class="grid grid-cols-2 gap-4">
         <div>

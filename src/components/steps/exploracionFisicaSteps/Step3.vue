@@ -273,7 +273,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
       <div :class="['grid grid-cols-2 gap-4', isCompact ? 'mb-2' : 'mb-3']">
         <div data-campo="tensionArterialSistolica">
           <label for="tensionArterialSistolica" :class="labelClass">
-            Sistólica (mmHg)
+            Sistólica (mmHg) <span class="text-red-500" aria-hidden="true">*</span>
           </label>
           <input 
             type="number"
@@ -299,7 +299,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
         </div>
         <div data-campo="tensionArterialDiastolica">
           <label for="tensionArterialDiastolica" :class="labelClass">
-            Diastólica (mmHg)
+            Diastólica (mmHg) <span class="text-red-500" aria-hidden="true">*</span>
           </label>
           <input 
             type="number"
@@ -354,7 +354,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
     <!-- Frecuencia Cardíaca -->
     <div data-campo="frecuenciaCardiaca" :class="isCompact ? 'mb-3' : 'mb-6'">
       <label for="frecuenciaCardiaca" :class="labelClass">
-        Frecuencia Cardíaca (lpm)
+        Frecuencia Cardíaca (lpm) <span class="text-red-500" aria-hidden="true">*</span>
       </label>
       <div class="grid grid-cols-2 gap-4">
         <div>
@@ -411,7 +411,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
     <!-- Frecuencia Respiratoria -->
     <div data-campo="frecuenciaRespiratoria" :class="isCompact ? 'mb-3' : 'mb-6'">
       <label for="frecuenciaRespiratoria" :class="labelClass">
-        Frecuencia Respiratoria (rpm)
+        Frecuencia Respiratoria (rpm) <span class="text-red-500" aria-hidden="true">*</span>
       </label>
       <div class="grid grid-cols-2 gap-4">
         <div>
@@ -466,7 +466,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
     <!-- Saturación de Oxígeno -->
     <div data-campo="saturacionOxigeno" :class="isCompact ? 'mb-2' : 'mb-4'">
       <label for="saturacionOxigeno" :class="labelClass">
-        Saturación de Oxígeno (%)
+        Saturación de Oxígeno (%) <span class="text-red-500" aria-hidden="true">*</span>
       </label>
       <div class="grid grid-cols-2 gap-4">
         <div>
