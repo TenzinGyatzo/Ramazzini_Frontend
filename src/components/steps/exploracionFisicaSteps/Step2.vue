@@ -12,6 +12,11 @@ import {
 import { esMedicion, imcDesdePesoAltura } from '@/helpers/medicionesClinicas';
 import UsarUltimaExploracionFisica from '../UsarUltimaExploracionFisica.vue';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, el cursor va al primer dato obligatorio vacío
+useAutofocoPrimerVacio(['peso', 'altura', 'circunferenciaCintura']);
+
 const partida = useValorDePartida();
 const props = defineProps({
   variant: {

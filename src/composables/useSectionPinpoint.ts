@@ -53,6 +53,11 @@ async function focusBestControl(
       // Ya escribe el usuario en este campo: no reenfocar.
       const active = document.activeElement;
       if (active === text) return;
+      // El cursor ya está en otro campo de este sub-paso (p. ej. el autofocus lo puso en el
+      // primero vacío): no regresarlo al primero
+      if (active instanceof HTMLElement && anchor.contains(active) && active.matches(TEXT_FOCUS_SELECTOR)) {
+        return;
+      }
       focusElement(text);
       return;
     }

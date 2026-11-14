@@ -11,6 +11,17 @@ import {
 } from '@/helpers/somatometriaSignosRanges';
 import { esMedicion } from '@/helpers/medicionesClinicas';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, el cursor va al primer dato obligatorio vacío
+useAutofocoPrimerVacio([
+  'tensionArterialSistolica',
+  'tensionArterialDiastolica',
+  'frecuenciaCardiaca',
+  'frecuenciaRespiratoria',
+  'saturacionOxigeno',
+]);
+
 const partida = useValorDePartida();
 const props = defineProps({
   variant: {

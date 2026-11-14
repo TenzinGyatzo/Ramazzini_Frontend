@@ -3,6 +3,13 @@ import { ref, watch, onMounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+import IndicacionTab from '../IndicacionTab.vue';
+
+// Al abrir el paso, el cursor queda en 125 Hz con su valor seleccionado: se escribe encima y
+// se avanza con Tab
+useAutofocoPrimerVacio(['oidoDerecho125'], { siempreElPrimero: true });
+
 const { formDataAudiometria } = useFormDataStore();
 const documentos = useDocumentosStore();
 
@@ -524,6 +531,7 @@ watch(() => formDataAudiometria.oidoDerecho8000, (newValue) => {
       <p class="font-medium mb-3 text-gray-700 leading-5">
         Ingrese los umbrales auditivos en decibeles (dB) para cada frecuencia:
       </p>
+      <IndicacionTab class="-mt-2 mb-3" />
       
       <!-- Grid de valores audiométricos -->
       <div class="grid grid-cols-2 md:grid-cols-3 gap-2">

@@ -4,6 +4,11 @@ import { ORIGENES_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
 import Requerido from './Requerido.vue';
 import { claseEtiqueta, claseInput, claseOpcionLista } from './estilos';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, si el aspecto general está vacío, el cursor va a él (el origen son botones)
+useAutofocoPrimerVacio(['habitusExterior']);
+
 const { formDataNotaEnfermeria } = useFormDataStore();
 </script>
 

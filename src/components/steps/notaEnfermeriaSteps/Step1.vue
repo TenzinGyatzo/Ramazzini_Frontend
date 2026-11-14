@@ -10,6 +10,12 @@ import { RELACIONES_TEMPORALES_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria'
 import Requerido from './Requerido.vue';
 import { claseEtiqueta, claseInput, claseOpcionLista } from './estilos';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, si el motivo está vacío, el cursor va a él (la hora ya viene llena y
+// «primera vez o subsecuente» son botones)
+useAutofocoPrimerVacio(['motivoAtencion']);
+
 const trabajadores = useTrabajadoresStore();
 const { formDataNotaEnfermeria } = useFormDataStore();
 const documentos = useDocumentosStore();

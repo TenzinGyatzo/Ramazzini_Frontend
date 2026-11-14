@@ -3,6 +3,11 @@ import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, si el motivo de consulta está vacío, el cursor va a él
+useAutofocoPrimerVacio(['motivoConsulta']);
+
 const props = defineProps({
   variant: {
     type: String,

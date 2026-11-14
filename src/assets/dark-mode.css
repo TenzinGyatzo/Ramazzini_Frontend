@@ -4782,3 +4782,10 @@ html.dark-mode .aviso-atencion > div {
 html.dark-mode input[data-calculado]::placeholder {
   color: #6b7280;
 }
+
+/* Indicación «Tab para avanzar» (IndicacionTab.vue) */
+html.dark-mode .indicacion-tab kbd {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #e5e7eb;
+}

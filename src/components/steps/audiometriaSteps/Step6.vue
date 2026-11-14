@@ -6,6 +6,11 @@ import DocumentosAPI from '@/api/DocumentosAPI';
 import { findNearestDocument } from '@/helpers/findNearestDocuments';
 import { useDocumentosStore } from '@/stores/documentos';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, si el diagnóstico está vacío, el cursor va a él
+useAutofocoPrimerVacio(['diagnosticoAudiometria']);
+
 const trabajadores = useTrabajadoresStore();
 const { formDataAudiometria } = useFormDataStore();
 const documentos = useDocumentosStore();

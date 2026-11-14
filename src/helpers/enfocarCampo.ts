@@ -16,6 +16,17 @@ const ENFOCABLE =
   'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 let limpiarAnterior: (() => void) | null = null;
+/** Momento de la última vez que se pidió llevar a un campo (el autofocus de los pasos cede). */
+let ultimaAtencionMs = 0;
+
+/**
+ * El aviso al guardar está llevando (o acaba de llevar) al usuario a un dato: el autofocus de
+ * los pasos no debe competir. Cubre la espera de buscarCampo mientras el paso se monta.
+ */
+export function hayAtencionEnCurso(): boolean {
+  if (Date.now() - ultimaAtencionMs < ESPERA_MAXIMA_MS + 500) return true;
+  return typeof document !== 'undefined' && !!document.querySelector(`.${CLASE_ATENCION}`);
+}
 /** Cada llamada tiene su número; solo la última marca su campo. */
 let llamadaActual = 0;
 
@@ -133,6 +144,7 @@ export async function enfocarCampo(
   raiz: ParentNode = document,
 ): Promise<boolean> {
   limpiarAtencionCampo();
+  ultimaAtencionMs = Date.now();
   const llamada = ++llamadaActual;
   if (!campo || typeof document === 'undefined') return false;
 
