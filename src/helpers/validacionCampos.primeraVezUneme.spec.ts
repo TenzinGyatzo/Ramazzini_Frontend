@@ -20,6 +20,7 @@ const baseNotaMedica = {
   derechohabiencia: '2',
   peso: 70,
   talla: 170,
+  circunferenciaCintura: 90,
 };
 
 describe('primeraVezUneme en submit de nota médica', () => {

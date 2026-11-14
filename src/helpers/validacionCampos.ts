@@ -175,6 +175,10 @@ function validarTallaNotaMedica(_valor: any, datos?: any): boolean {
   return pesoTallaCapturado('talla', datos);
 }
 
+function validarCinturaNotaMedica(_valor: any, datos?: any): boolean {
+  return pesoTallaCapturado('circunferenciaCintura', datos);
+}
+
 function validarPrimeraVezUnemeSiAplica(valor: any, datos?: any): boolean {
   if (datos?.primeraVezUnemeAplica !== true) return true;
   return esCeroOUno(valor);
@@ -374,6 +378,13 @@ const camposRequeridosPorTipo: Record<string, Array<{
     { campo: 'derechohabiencia', nombre: 'Derechohabiencia', tipo: 'seleccion', paso: 3, validacion: validarTexto },
     { campo: 'peso', nombre: 'Peso (valor o «Se desconoce»)', tipo: 'numero', paso: 7, validacion: validarPesoNotaMedica },
     { campo: 'talla', nombre: 'Talla (valor o «Se desconoce»)', tipo: 'numero', paso: 7, validacion: validarTallaNotaMedica },
+    {
+      campo: 'circunferenciaCintura',
+      nombre: 'Circunferencia de cintura (valor o «Se desconoce»)',
+      tipo: 'numero',
+      paso: 7,
+      validacion: validarCinturaNotaMedica,
+    },
     { campo: 'codigoCIE10Principal', nombre: 'Diagnóstico principal', tipo: 'seleccion', paso: 6, validacion: validarSeleccion },
     { campo: 'relacionTemporal', nombre: 'Relación temporal', tipo: 'seleccion', paso: 6, validacion: validarRelacionTemporal },
     {
@@ -1228,6 +1239,7 @@ export function validarCamposRequeridos(
           'derechohabiencia',
           'peso',
           'talla',
+          'circunferenciaCintura',
         ].includes(campo.campo),
     );
   }
@@ -1247,7 +1259,7 @@ export function validarCamposRequeridos(
       if (campo.campo === 'genero' || campo.campo === 'derechohabiencia') {
         return { ...campo, paso: stepMap.genero ?? campo.paso };
       }
-      if (campo.campo === 'peso' || campo.campo === 'talla') {
+      if (campo.campo === 'peso' || campo.campo === 'talla' || campo.campo === 'circunferenciaCintura') {
         return { ...campo, paso: stepMap.somatometria ?? campo.paso };
       }
       return campo;

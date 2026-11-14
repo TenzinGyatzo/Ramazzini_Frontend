@@ -10,6 +10,7 @@ const completa = {
   derechohabiencia: '2',
   peso: 70,
   talla: 170,
+  circunferenciaCintura: 90,
 };
 const sires = { showSiresUI: true, cie10Required: true, esMujer: false };
 const faltantes = (datos: Record<string, unknown>, opciones = sires) =>

@@ -54,7 +54,7 @@ describe('problemas de la nota médica (faltantes e inválidos igual)', () => {
       { nombre: 'Peso', tipo: 'numero', paso: 7, campo: 'peso' },
       { nombre: 'Algo', tipo: 'texto', paso: 2 },
     ]);
-    expect(peso).toMatchObject({ campo: 'peso', falta: true, mensaje: 'Escribe el peso; si no se pudo medir, marca «Se desconoce».' });
+    expect(peso).toMatchObject({ campo: 'peso', falta: true, mensaje: 'Escribe el peso o marca «Se desconoce».' });
     expect(otro.mensaje).toBe('Falta: Algo.');
   });
 
@@ -123,6 +123,7 @@ describe('orden dentro de un paso: como se ve en pantalla', () => {
       'derechohabiencia',
       'peso',
       'talla',
+      'circunferenciaCintura',
       'relacionTemporal',
       'codigoCIE10Principal',
     ]);
@@ -144,7 +145,7 @@ describe('orden dentro de un paso: como se ve en pantalla', () => {
     expect(r.map((x) => x.mensaje)).toEqual([
       'Elige el género.',
       'Marca la derechohabiencia.',
-      'Escribe la talla; si no se pudo medir, marca «Se desconoce».',
+      'Escribe la talla o marca «Se desconoce».',
     ]);
   });
 });
@@ -197,7 +198,7 @@ describe('exploración física', () => {
     );
     const [nm] = problemasPorFaltantes([{ nombre: 'Peso', tipo: 'numero', paso: 7, campo: 'peso' }]);
     expect(ef.mensaje).toBe('Escribe el peso.');
-    expect(nm.mensaje).toBe('Escribe el peso; si no se pudo medir, marca «Se desconoce».');
+    expect(nm.mensaje).toBe('Escribe el peso o marca «Se desconoce».');
   });
 });
 

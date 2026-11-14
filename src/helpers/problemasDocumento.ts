@@ -33,8 +33,9 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   motivoConsulta: 'Escribe el motivo de consulta.',
   genero: 'Elige el género.',
   derechohabiencia: 'Marca la derechohabiencia.',
-  peso: 'Escribe el peso; si no se pudo medir, marca «Se desconoce».',
-  talla: 'Escribe la talla; si no se pudo medir, marca «Se desconoce».',
+  peso: 'Escribe el peso o marca «Se desconoce».',
+  talla: 'Escribe la talla o marca «Se desconoce».',
+  circunferenciaCintura: 'Escribe la circunferencia de cintura o marca «Se desconoce».',
   codigoCIE10Principal: 'Elige el diagnóstico principal.',
   relacionTemporal: 'Indica si el diagnóstico principal es de primera vez o subsecuente.',
   primeraVezUneme:

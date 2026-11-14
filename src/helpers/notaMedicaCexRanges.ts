@@ -225,6 +225,7 @@ export function hidratarPesoTallaDesconocidoNotaMedica<
   T extends {
     peso?: number | null;
     talla?: number | null;
+    circunferenciaCintura?: number | null;
     indiceMasaCorporal?: number | null;
     categoriaIMC?: string | null;
   },
@@ -243,6 +244,14 @@ export function hidratarPesoTallaDesconocidoNotaMedica<
   const marcas = doc as T & PesoTallaSeDesconoce;
   if ('peso' in doc) marcas.pesoSeDesconoce = pesoUnknown;
   if ('talla' in doc) marcas.tallaSeDesconoce = tallaUnknown;
+  // Cintura: 0 (o vacía en notas anteriores, que la daban por desconocida) → «Se desconoce»
+  if ('circunferenciaCintura' in doc) {
+    const cinturaUnknown =
+      doc.circunferenciaCintura == null ||
+      Number(doc.circunferenciaCintura) === NOTA_MEDICA_CEX_SENTINEL.circunferenciaCintura;
+    marcas.circunferenciaCinturaSeDesconoce = cinturaUnknown;
+    if (cinturaUnknown) doc.circunferenciaCintura = null;
+  }
 
   if (pesoUnknown || tallaUnknown || !puedeMostrarImcNotaMedica(doc.peso, doc.talla)) {
     doc.indiceMasaCorporal = null;
@@ -258,11 +267,12 @@ export function hidratarPesoTallaDesconocidoNotaMedica<
 export interface PesoTallaSeDesconoce {
   pesoSeDesconoce?: boolean;
   tallaSeDesconoce?: boolean;
+  circunferenciaCinturaSeDesconoce?: boolean;
 }
 
-/** Peso o talla capturados: valor numérico o «Se desconoce» marcado a propósito. */
+/** Peso, talla o cintura capturados: valor numérico o «Se desconoce» marcado a propósito. */
 export function pesoTallaCapturado(
-  field: 'peso' | 'talla',
+  field: 'peso' | 'talla' | 'circunferenciaCintura',
   datos: Record<string, any> | null | undefined,
 ): boolean {
   if (!datos) return false;
@@ -277,8 +287,13 @@ export function aplicarSeDesconocePesoTalla<T extends Record<string, any>>(datos
   const out: Record<string, any> = { ...datos };
   if (out.pesoSeDesconoce === true) out.peso = NOTA_MEDICA_CEX_SENTINEL.peso;
   if (out.tallaSeDesconoce === true) out.talla = NOTA_MEDICA_CEX_SENTINEL.talla;
+  // Cintura «Se desconoce» → 0 (valor del archivo de intercambio); el servidor la exige capturada
+  if (out.circunferenciaCinturaSeDesconoce === true) {
+    out.circunferenciaCintura = NOTA_MEDICA_CEX_SENTINEL.circunferenciaCintura;
+  }
   delete out.pesoSeDesconoce;
   delete out.tallaSeDesconoce;
+  delete out.circunferenciaCinturaSeDesconoce;
   return out as T;
 }
 
