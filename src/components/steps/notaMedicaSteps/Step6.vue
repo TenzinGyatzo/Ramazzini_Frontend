@@ -14,6 +14,19 @@ import {
   mensajeErrorCexField,
 } from '@/helpers/notaMedicaCexRanges';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, el cursor va al primer signo vital vacío (los marcados «Se desconoce»
+// quedan desactivados y se saltan)
+useAutofocoPrimerVacio([
+  'tensionArterialSistolica',
+  'tensionArterialDiastolica',
+  'frecuenciaCardiaca',
+  'frecuenciaRespiratoria',
+  'temperatura',
+  'saturacionOxigeno',
+]);
+
 const partida = useValorDePartida();
 const props = defineProps({
   variant: {

@@ -1,5 +1,5 @@
 <script setup>
-/** «Tab para avanzar · Shift Tab para retroceder»: solo en computadora (en celular no hay Tab). */
+/** «Tab para avanzar · Shift Tab para retroceder»: solo en laptop o PC (no en tabletas ni celulares). */
 import { esComputadora } from '@/composables/useAutofocoPrimerVacio';
 
 const visible = esComputadora();

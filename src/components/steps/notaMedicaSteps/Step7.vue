@@ -13,6 +13,11 @@ import {
   mensajeErrorCexField,
 } from '@/helpers/notaMedicaCexRanges';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, el cursor va al primer dato vacío (los marcados «Se desconoce» se saltan)
+useAutofocoPrimerVacio(['peso', 'talla', 'circunferenciaCintura']);
+
 const partida = useValorDePartida();
 const props = defineProps({
   variant: {

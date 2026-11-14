@@ -4,7 +4,7 @@ import { hayAtencionEnCurso, selectorCampo } from '@/helpers/enfocarCampo';
 /**
  * Al abrir un paso, pone el cursor en el primer dato obligatorio que siga vacío (marcas
  * `data-campo`, en el orden de la pantalla) y ahorra el clic. Para que ayude sin estorbar:
- * - solo en computadora (en celular o tableta abriría el teclado y movería la vista);
+ * - solo en laptop o PC (en celular o tableta abriría el teclado y movería la vista);
  * - si el aviso al guardar está llevando a un dato, gana el aviso;
  * - si el usuario ya hizo clic o tecleó desde que se abrió el paso, no se toca nada;
  * - solo campos donde se escribe (ni botones ni campos desactivados) y sin mover la pantalla.
@@ -15,9 +15,20 @@ import { hayAtencionEnCurso, selectorCampo } from '@/helpers/enfocarCampo';
 const ESCRIBIBLE =
   'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly])';
 
+/**
+ * Laptop o PC de escritorio. Las tabletas y celulares quedan fuera aunque tengan teclado o
+ * mouse conectado: un iPad con trackpad dice «puntero fino», y iPadOS se presenta como Mac,
+ * así que además se revisa el navegador y la pantalla táctil.
+ */
 export function esComputadora(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true;
-  return window.matchMedia('(pointer: fine)').matches;
+  if (typeof window === 'undefined') return true;
+  const nav = typeof navigator !== 'undefined' ? navigator : null;
+  const ua = nav?.userAgent ?? '';
+  if (/Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle/i.test(ua)) return false;
+  // iPadOS 13+ se presenta como Macintosh, pero tiene pantalla táctil
+  if (/Macintosh/i.test(ua) && (nav?.maxTouchPoints ?? 0) > 1) return false;
+  if (typeof window.matchMedia !== 'function') return true;
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
 function campoEscribible(campo: string): HTMLInputElement | HTMLTextAreaElement | null {

@@ -14,6 +14,11 @@ import {
   mensajeErrorCexField,
 } from '@/helpers/notaMedicaCexRanges';
 
+import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+
+// Al abrir el paso, si la glucemia está vacía, el cursor va a ella
+useAutofocoPrimerVacio(['glucemia']);
+
 const partida = useValorDePartida();
 const props = defineProps({
   variant: {

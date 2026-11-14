@@ -2,8 +2,9 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, h } from 'vue';
-import { useAutofocoPrimerVacio } from './useAutofocoPrimerVacio';
+import { esComputadora, useAutofocoPrimerVacio } from './useAutofocoPrimerVacio';
 import { enfocarCampo } from '@/helpers/enfocarCampo';
+import IndicacionTab from '@/components/steps/IndicacionTab.vue';
 
 /** jsdom no calcula cajas: todo se considera visible. */
 beforeAll(() => {
@@ -31,7 +32,7 @@ const paso = (valores: Record<string, string> = {}, opciones = {}, deshabilitado
 
 /** Computadora (puntero fino); la configuración de pruebas simula un matchMedia sin coincidencias. */
 beforeEach(() => {
-  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('fine') }) as MediaQueryList);
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('fine') && q.includes('hover: hover') }) as MediaQueryList);
 });
 
 afterEach(() => {
@@ -76,6 +77,28 @@ describe('useAutofocoPrimerVacio', () => {
     document.dispatchEvent(new Event('pointerdown'));
     await esperar();
     expect(document.activeElement?.tagName).toBe('BODY');
+  });
+
+  it('en tableta o celular no se activa aunque diga «puntero fino» (iPad con trackpad, Android)', async () => {
+    for (const ua of [
+      'Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148',
+    ]) {
+      vi.stubGlobal('navigator', { userAgent: ua, maxTouchPoints: 5 });
+      expect(esComputadora()).toBe(false);
+    }
+    // iPadOS se presenta como Mac, pero con pantalla táctil
+    vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', maxTouchPoints: 5 });
+    expect(esComputadora()).toBe(false);
+    // Una Mac de verdad sí
+    vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', maxTouchPoints: 0 });
+    expect(esComputadora()).toBe(true);
+  });
+
+  it('la indicación «Tab para avanzar» solo aparece en laptop o PC', () => {
+    expect(mount(IndicacionTab).find('[data-indicacion-tab]').exists()).toBe(true);
+    vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-X710) Chrome/120', maxTouchPoints: 5 });
+    expect(mount(IndicacionTab).find('[data-indicacion-tab]').exists()).toBe(false);
   });
 
   it('en celular o tableta no se activa', async () => {
