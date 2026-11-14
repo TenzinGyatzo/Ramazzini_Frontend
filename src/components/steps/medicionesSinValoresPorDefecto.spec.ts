@@ -77,9 +77,10 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
       ]);
       expect(ayudas(await montar('./exploracionFisicaSteps/Step3.vue'))).toEqual([
         'Según la tensión',
-        'Según la frecuencia',
-        'Según la frecuencia',
-        'Según la saturación',
+        // Abreviados: el texto completo no cabía en el campo
+        'Según la F.C.',
+        'Según la F.R.',
+        'Según la SpO₂',
       ]);
     });
 

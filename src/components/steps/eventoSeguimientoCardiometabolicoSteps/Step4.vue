@@ -279,7 +279,7 @@ const mensajeErrorFrecuenciaCardiaca = computed(() => {
               categoriaFrecuenciaCardiaca === 'Alta' ? 'bg-red-50 text-red-900' : '',
               categoriaFrecuenciaCardiaca === 'Muy alta' ? 'bg-red-200 text-red-950' : '',
             ]"
-            :value="categoriaFrecuenciaCardiaca" placeholder="Según la frecuencia" data-calculado
+            :value="categoriaFrecuenciaCardiaca" placeholder="Según la F.C." data-calculado
             readonly
             title="Se determina automáticamente según la frecuencia cardiaca ingresada"
           />

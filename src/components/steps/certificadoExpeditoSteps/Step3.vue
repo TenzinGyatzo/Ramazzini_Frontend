@@ -249,7 +249,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
       <div>
         <input type="text"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-gray-100 cursor-default"
-          v-model="categoriaFrecuenciaCardiaca" placeholder="Según la frecuencia" data-calculado readonly title="Se determina automáticamente según la frecuencia cardiaca ingresada" />
+          v-model="categoriaFrecuenciaCardiaca" placeholder="Según la F.C." data-calculado readonly title="Se determina automáticamente según la frecuencia cardiaca ingresada" />
       </div>
     </div>
 
@@ -266,7 +266,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
       <div>
         <input type="text"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-gray-100 cursor-default"
-          v-model="categoriaFrecuenciaRespiratoria" placeholder="Según la frecuencia" data-calculado readonly title="Se determina automáticamente según la frecunecia respiratoria ingresada" />
+          v-model="categoriaFrecuenciaRespiratoria" placeholder="Según la F.R." data-calculado readonly title="Se determina automáticamente según la frecunecia respiratoria ingresada" />
       </div>
     </div>
 
