@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { format } from 'date-fns';
 import {
   aCamposFaltantes,
   campoDeProblemaCie10,
@@ -82,7 +83,7 @@ describe('problemas de la nota médica (faltantes e inválidos igual)', () => {
 
   it('cada validación de la nota dice su campo', () => {
     const fueraDeRango = validarNotaMedicaPreSubmit(
-      { fechaNotaMedica: new Date().toISOString().slice(0, 10), frecuenciaCardiaca: 30 },
+      { fechaNotaMedica: format(new Date(), 'yyyy-MM-dd'), frecuenciaCardiaca: 30 },
       { fechaNacimiento: '1990-01-01' },
       true,
       false,
@@ -91,7 +92,7 @@ describe('problemas de la nota médica (faltantes e inválidos igual)', () => {
 
     const sinAyunas = validarNotaMedicaPreSubmit(
       {
-        fechaNotaMedica: new Date().toISOString().slice(0, 10),
+        fechaNotaMedica: format(new Date(), 'yyyy-MM-dd'),
         glucemia: 100,
         tipoMedicion: null,
         resultadoObtenidoaTravesde: 1,

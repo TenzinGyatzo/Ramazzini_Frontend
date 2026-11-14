@@ -76,22 +76,54 @@ async function focusBestControl(
   if (fallback) focusElement(fallback);
 }
 
+/** Un microstep que ocupa más de esta parte del panel no se centra (se baja de más). */
+const PROPORCION_MICROSTEP_ALTO = 0.6;
+/** Del principio de un microstep alto debe verse al menos esto para no mover el panel. */
+const PRINCIPIO_VISIBLE_MIN_PX = 80;
+
 /**
- * Centra el microstep en el panel scrolleable, un poco por encima del centro.
+ * Siguiente scrollTop del panel para mostrar el microstep, o null si no hay que moverlo.
+ * - Normal: centrado un poco por encima del centro.
+ * - Alto (p. ej. un cuadro de texto con una lista larga de opciones debajo): centrarlo lo
+ *   llevaba hasta el fondo; si su principio ya se ve no se mueve, y si no, se muestra desde
+ *   su principio.
+ */
+export function siguienteScrollMicrostep(
+  panel: { top: number; scrollTop: number; clientHeight: number; scrollHeight: number },
+  microstep: { top: number; height: number },
+): number | null {
+  const topEnContenido = microstep.top - panel.top + panel.scrollTop;
+  const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
+  const acotar = (v: number) => Math.min(maxScroll, Math.max(0, v));
+
+  if (microstep.height > panel.clientHeight * PROPORCION_MICROSTEP_ALTO) {
+    const topVisible = microstep.top - panel.top;
+    const principioSeVe =
+      topVisible >= 0 && topVisible <= panel.clientHeight - PRINCIPIO_VISIBLE_MIN_PX;
+    return principioSeVe ? null : acotar(topEnContenido);
+  }
+
+  const mitad = topEnContenido + microstep.height / 2;
+  return acotar(mitad - panel.clientHeight * 0.3);
+}
+
+/**
+ * Lleva el microstep a la vista en el panel scrolleable (ver siguienteScrollMicrostep).
  * Solo mueve `root` (no el scroll de la página).
  */
 function scrollAnchorTowardCenter(root: HTMLElement, anchor: HTMLElement): void {
   const rootRect = root.getBoundingClientRect();
   const anchorRect = anchor.getBoundingClientRect();
-  const anchorTopInContent =
-    anchorRect.top - rootRect.top + root.scrollTop;
-  const anchorMid = anchorTopInContent + anchorRect.height / 2;
-  const targetFromTop = root.clientHeight * 0.3;
-  const maxScroll = Math.max(0, root.scrollHeight - root.clientHeight);
-  const nextTop = Math.min(
-    maxScroll,
-    Math.max(0, anchorMid - targetFromTop),
+  const nextTop = siguienteScrollMicrostep(
+    {
+      top: rootRect.top,
+      scrollTop: root.scrollTop,
+      clientHeight: root.clientHeight,
+      scrollHeight: root.scrollHeight,
+    },
+    { top: anchorRect.top, height: anchorRect.height },
   );
+  if (nextTop == null) return;
   root.scrollTo({ top: nextTop, behavior: 'smooth' });
 }
 
