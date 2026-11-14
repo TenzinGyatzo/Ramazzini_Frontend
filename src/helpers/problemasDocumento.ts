@@ -136,7 +136,7 @@ export const INSTRUCCION_EXPLORACION_FISICA: Record<string, string> = {
   peso: 'Escribe el peso.',
   altura: 'Escribe la altura.',
   indiceMasaCorporal: 'Escribe el peso y la altura para calcular el IMC.',
-  circunferenciaCintura: 'Escribe la circunferencia de cintura; si no se pudo medir, marca «Se desconoce».',
+  circunferenciaCintura: 'Escribe la circunferencia de cintura o marca «Se desconoce».',
   tensionArterialSistolica: 'Escribe la tensión arterial sistólica.',
   tensionArterialDiastolica: 'Escribe la tensión arterial diastólica.',
   frecuenciaCardiaca: 'Escribe la frecuencia cardiaca.',

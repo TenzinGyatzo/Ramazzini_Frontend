@@ -28,7 +28,7 @@ describe('circunferencia de cintura opcional con «Se desconoce»', () => {
     expect(problemas({ ...completa, circunferenciaCintura: null })).toEqual([
       expect.objectContaining({
         campo: 'circunferenciaCintura',
-        mensaje: 'Escribe la circunferencia de cintura; si no se pudo medir, marca «Se desconoce».',
+        mensaje: 'Escribe la circunferencia de cintura o marca «Se desconoce».',
       }),
     ]);
   });
@@ -42,11 +42,12 @@ describe('circunferencia de cintura opcional con «Se desconoce»', () => {
     expect(p).toMatchObject({ campo: 'circunferenciaCintura', falta: false });
   });
 
-  it('resumen de la aptitud: valor, «se desconoce» o nada (nunca «undefined cm»)', () => {
+  it('resumen de la aptitud: valor y categoría, o nada (nunca «undefined cm»)', () => {
     expect(textoCinturaResumen({ circunferenciaCintura: 90, categoriaCircunferenciaCintura: 'Bajo Riesgo' })).toBe(
       ' Cintura: 90 cm - Bajo Riesgo.',
     );
-    expect(textoCinturaResumen({ circunferenciaCinturaSeDesconoce: true })).toBe(' Cintura: se desconoce.');
+    // Marcada «Se desconoce»: no se menciona la cintura (decisión del usuario)
+    expect(textoCinturaResumen({ circunferenciaCinturaSeDesconoce: true })).toBe('');
     expect(textoCinturaResumen({})).toBe('');
   });
 

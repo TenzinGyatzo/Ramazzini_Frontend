@@ -145,12 +145,10 @@ const textoBase = computed(() => {
     riesgoCintura = 'riesgo no clasificado de desarrollar enfermedades cardiometabólicas.';
   }
 
-  // La cintura es opcional: sin medición la frase dice «se desconoce» si así se marcó, o se omite
+  // La cintura es opcional: sin medición (aunque se marcara «Se desconoce») la frase se omite
   const fraseCintura = esMedicion(circunferenciaCintura)
     ? `Tiene una circunferencia de cintura de ${circunferenciaCintura} cm por lo que tiene ${riesgoCintura} `
-    : nearestExploracionFisica.value.circunferenciaCinturaSeDesconoce
-      ? 'Se desconoce su circunferencia de cintura. '
-      : '';
+    : '';
 
   let tensionArterialTexto = '';
   const categoriasTensionArterialValidas = ['óptima', 'normal', 'alta'];
