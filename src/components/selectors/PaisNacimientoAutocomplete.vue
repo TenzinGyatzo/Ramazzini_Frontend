@@ -1,4 +1,5 @@
 <script setup>
+import { coincideBusqueda } from '@/helpers/busquedaSinAcentos';
 import { ref, watch, onMounted, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
@@ -194,13 +195,11 @@ const performSearch = async (val) => {
   loading.value = true;
   try {
     const { data } = await CatalogsAPI.searchPaises(val, 50);
-    const lowerQuery = val.toLowerCase();
     const matchingSentinels = props.geoContext === 'trabajador'
       ? sentinelOptions.filter(
           (s) =>
             !effectiveExcludeCodes.value.includes(s.code) &&
-            (s.code.includes(lowerQuery) ||
-              s.description.toLowerCase().includes(lowerQuery)),
+            coincideBusqueda(s, val),
         )
       : [];
     results.value = orderPaisesForSelector(

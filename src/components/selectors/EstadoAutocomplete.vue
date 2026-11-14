@@ -1,4 +1,5 @@
 <script setup>
+import { coincideBusqueda } from '@/helpers/busquedaSinAcentos';
 import { ref, watch, onMounted, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import { useCatalogSearchInput } from '@/helpers/catalogSearchInput';
@@ -248,12 +249,8 @@ const performSearch = async (val) => {
   try {
     const { data } = await CatalogsAPI.searchEstados(val);
 
-    const lowerQuery = val.toLowerCase();
-    const matchingSentinels = sentinelOptions.value.filter(
-      (s) =>
-        s.code.toLowerCase().includes(lowerQuery) ||
-        s.description.toLowerCase().includes(lowerQuery),
-    );
+    // Sin acentos ni mayúsculas, como la búsqueda del servidor
+    const matchingSentinels = sentinelOptions.value.filter((s) => coincideBusqueda(s, val));
 
     results.value = filterEstadosForMode(
       [...matchingSentinels, ...(data || [])],

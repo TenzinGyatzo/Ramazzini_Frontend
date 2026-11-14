@@ -1,4 +1,5 @@
 <script setup>
+import { coincideBusqueda } from '@/helpers/busquedaSinAcentos';
 import { ref, watch, computed, inject } from 'vue';
 import CatalogsAPI from '@/api/CatalogsAPI';
 import EstadoAutocomplete from './EstadoAutocomplete.vue';
@@ -304,12 +305,8 @@ const searchMunicipio = async (query) => {
       props.estadoResidencia,
       query,
     );
-    const lowerQuery = query.toLowerCase();
-    const matchingSentinels = buildMunicipioSentinels().filter(
-      (sentinel) =>
-        sentinel.code.includes(lowerQuery) ||
-        sentinel.description.toLowerCase().includes(lowerQuery),
-    );
+    // Sin acentos ni mayúsculas, como la búsqueda del servidor
+    const matchingSentinels = buildMunicipioSentinels().filter((sentinel) => coincideBusqueda(sentinel, query));
 
     municipioResults.value = [
       ...matchingSentinels,
@@ -348,12 +345,8 @@ const searchLocalidad = async (query) => {
       query,
     );
 
-    const lowerQuery = query.toLowerCase();
-    const matchingSentinels = buildLocalidadSentinels().filter(
-      (sentinel) =>
-        sentinel.code.includes(lowerQuery) ||
-        sentinel.description.toLowerCase().includes(lowerQuery),
-    );
+    // Sin acentos ni mayúsculas, como la búsqueda del servidor
+    const matchingSentinels = buildLocalidadSentinels().filter((sentinel) => coincideBusqueda(sentinel, query));
 
     localidadResults.value = [
       ...matchingSentinels,
