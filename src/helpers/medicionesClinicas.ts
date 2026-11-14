@@ -43,3 +43,19 @@ export function quitarMedicionesVacias<T extends Record<string, any>>(datos: T, 
   }
   return o as T;
 }
+
+/**
+ * Cintura en los resúmenes de la aptitud (vista previa y PDF). Es opcional en la exploración
+ * física: sin medición dice «se desconoce» si así se marcó, o no se menciona.
+ */
+export function textoCinturaResumen(ef: {
+  circunferenciaCintura?: number | null;
+  circunferenciaCinturaSeDesconoce?: boolean;
+  categoriaCircunferenciaCintura?: string | null;
+}): string {
+  if (esMedicion(ef.circunferenciaCintura)) {
+    const categoria = ef.categoriaCircunferenciaCintura ? ` - ${ef.categoriaCircunferenciaCintura}` : '';
+    return ` Cintura: ${ef.circunferenciaCintura} cm${categoria}.`;
+  }
+  return ef.circunferenciaCinturaSeDesconoce ? ' Cintura: se desconoce.' : '';
+}

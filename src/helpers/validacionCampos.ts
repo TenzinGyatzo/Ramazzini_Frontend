@@ -343,7 +343,15 @@ const camposRequeridosPorTipo: Record<string, Array<{
     { campo: 'peso', nombre: 'Peso', tipo: 'medida', paso: 2, validacion: validarNumeroEnRango('peso') },
     { campo: 'altura', nombre: 'Altura', tipo: 'medida', paso: 2, validacion: validarNumeroEnRango('altura') },
     { campo: 'indiceMasaCorporal', nombre: 'IMC', tipo: 'medida', paso: 2, validacion: validarNumero },
-    { campo: 'circunferenciaCintura', nombre: 'Circunferencia Cintura', tipo: 'medida', paso: 2, validacion: validarNumeroEnRango('circunferenciaCintura') },
+    // Opcional con constancia: medida o marcada «Se desconoce»
+    {
+      campo: 'circunferenciaCintura',
+      nombre: 'Circunferencia Cintura (valor o «Se desconoce»)',
+      tipo: 'medida',
+      paso: 2,
+      validacion: (valor: any, datos: any) =>
+        datos?.circunferenciaCinturaSeDesconoce === true || validarNumeroEnRango('circunferenciaCintura')(valor),
+    },
     { campo: 'tensionArterialSistolica', nombre: 'Tensión Arterial', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('tensionArterialSistolica') },
     { campo: 'tensionArterialDiastolica', nombre: 'Tensión Arterial Diastólica', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('tensionArterialDiastolica') },
     { campo: 'frecuenciaCardiaca', nombre: 'Frecuencia Cardíaca', tipo: 'medida', paso: 3, validacion: validarNumeroEnRango('frecuenciaCardiaca') },

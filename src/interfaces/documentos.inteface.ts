@@ -302,6 +302,8 @@ export interface ExploracionFisica {
     indiceMasaCorporal?: number;
     categoriaIMC?: string;
     circunferenciaCintura?: number;
+    /** La cintura no se pudo medir: se marcó «Se desconoce». */
+    circunferenciaCinturaSeDesconoce?: boolean;
     categoriaCircunferenciaCintura?: string;
     tensionArterialSistolica?: number;
     tensionArterialDiastolica?: number;

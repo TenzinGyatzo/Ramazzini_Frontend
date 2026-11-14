@@ -1,4 +1,5 @@
 <script setup>
+import { esMedicion } from '@/helpers/medicionesClinicas';
 import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -144,6 +145,13 @@ const textoBase = computed(() => {
     riesgoCintura = 'riesgo no clasificado de desarrollar enfermedades cardiometabólicas.';
   }
 
+  // La cintura es opcional: sin medición la frase dice «se desconoce» si así se marcó, o se omite
+  const fraseCintura = esMedicion(circunferenciaCintura)
+    ? `Tiene una circunferencia de cintura de ${circunferenciaCintura} cm por lo que tiene ${riesgoCintura} `
+    : nearestExploracionFisica.value.circunferenciaCinturaSeDesconoce
+      ? 'Se desconoce su circunferencia de cintura. '
+      : '';
+
   let tensionArterialTexto = '';
   const categoriasTensionArterialValidas = ['óptima', 'normal', 'alta'];
   if (categoriasTensionArterialValidas.includes(categoriaTensionArterial.toLowerCase())) {
@@ -162,7 +170,7 @@ const textoBase = computed(() => {
     'Obesidad clase III': 'obesidad clase III',
   };
 
-  let texto = `${sexo === 'Femenino' ? 'La trabajadora' : 'El trabajador'} presenta ${categoriaIMCMap[categoriaIMC] || categoriaIMC} con un índice de masa corporal (IMC) de ${indiceMasaCorporal}. Tiene una circunferencia de cintura de ${circunferenciaCintura} cm por lo que tiene ${riesgoCintura} Presenta ${tensionArterialTexto}`;
+  let texto = `${sexo === 'Femenino' ? 'La trabajadora' : 'El trabajador'} presenta ${categoriaIMCMap[categoriaIMC] || categoriaIMC} con un índice de masa corporal (IMC) de ${indiceMasaCorporal}. ${fraseCintura}Presenta ${tensionArterialTexto}`;
 
   if (nearestExamenVista.value && sinCorreccionLejanaInterpretacion) {
     const ish = porcentajeIshihara != null ? porcentajeIshihara : 100;

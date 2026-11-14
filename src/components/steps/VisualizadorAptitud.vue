@@ -1,4 +1,5 @@
 <script setup>
+import { textoCinturaResumen } from '@/helpers/medicionesClinicas';
 import { esAudiometriaExternaUtilizable, usarAudiometriaExterna } from '@/helpers/audiometriaFuente';
 import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { onMounted, ref, watch, computed } from 'vue';
@@ -338,7 +339,7 @@ const adiposidadCorporalResumen = computed(() => {
   if (!nearestExploracionFisica.value) {
     return 'No hay exploraciones físicas disponibles';
   }
-  return `IMC: ${nearestExploracionFisica.value.indiceMasaCorporal} - ${nearestExploracionFisica.value.categoriaIMC}. Cintura: ${nearestExploracionFisica.value.circunferenciaCintura} cm - ${nearestExploracionFisica.value.categoriaCircunferenciaCintura}.`;
+  return `IMC: ${nearestExploracionFisica.value.indiceMasaCorporal} - ${nearestExploracionFisica.value.categoriaIMC}.${textoCinturaResumen(nearestExploracionFisica.value)}`;
 });
 
 const examenVistaResumen = computed(() => {

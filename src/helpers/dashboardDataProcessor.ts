@@ -383,6 +383,9 @@ export function calcularCircunferenciaCintura(data: any[]) {
   return {
     alto,
     porcentaje,
+    // La cintura es opcional: cuántos trabajadores con exploración física la tienen registrada
+    medidos: total,
+    conExploracion: data.length,
     chart: {
       labels: ['Alto Riesgo', 'R. Aumentado', 'Bajo Riesgo'],
       datasets: [

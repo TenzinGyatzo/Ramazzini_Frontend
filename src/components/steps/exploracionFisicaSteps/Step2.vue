@@ -34,6 +34,8 @@ const indiceMasaCorporal = ref(null);
 const categoriaIMC = ref('');
 const circunferenciaCintura = ref(null);
 const categoriaCircunferenciaCintura = ref('');
+/** La cintura es opcional: si no se pudo medir se marca «Se desconoce» (queda registrado). */
+const cinturaSeDesconoce = ref(false);
 
 onMounted(() => {
   // Prioridad: formData > documentos.currentDocument > vacío
@@ -44,6 +46,7 @@ onMounted(() => {
     categoriaIMC.value = formDataExploracionFisica.categoriaIMC ?? '';
     circunferenciaCintura.value = formDataExploracionFisica.circunferenciaCintura;
     categoriaCircunferenciaCintura.value = formDataExploracionFisica.categoriaCircunferenciaCintura ?? '';
+    cinturaSeDesconoce.value = formDataExploracionFisica.circunferenciaCinturaSeDesconoce === true;
   } else if (documentos.currentDocument) {
     peso.value = documentos.currentDocument.peso;
     altura.value = documentos.currentDocument.altura;
@@ -51,7 +54,14 @@ onMounted(() => {
     categoriaIMC.value = documentos.currentDocument.categoriaIMC ?? '';
     circunferenciaCintura.value = documentos.currentDocument.circunferenciaCintura;
     categoriaCircunferenciaCintura.value = documentos.currentDocument.categoriaCircunferenciaCintura ?? '';
+    cinturaSeDesconoce.value = documentos.currentDocument.circunferenciaCinturaSeDesconoce === true;
   }
+});
+
+watch(cinturaSeDesconoce, (seDesconoce) => {
+  formDataExploracionFisica.circunferenciaCinturaSeDesconoce = seDesconoce;
+  // Sin medición: se borra la que hubiera (y su categoría)
+  if (seDesconoce) circunferenciaCintura.value = null;
 });
 
 onUnmounted(() => {
@@ -61,6 +71,7 @@ onUnmounted(() => {
   formDataExploracionFisica.categoriaIMC = categoriaIMC.value;
   formDataExploracionFisica.circunferenciaCintura = circunferenciaCintura.value;
   formDataExploracionFisica.categoriaCircunferenciaCintura = categoriaCircunferenciaCintura.value;
+  formDataExploracionFisica.circunferenciaCinturaSeDesconoce = cinturaSeDesconoce.value;
 })
 
 watch([peso, altura, circunferenciaCintura], () => {
@@ -75,7 +86,10 @@ watch([peso, altura, circunferenciaCintura], () => {
 function usarUltimaExploracion(som) {
   if (som.peso != null) peso.value = som.peso;
   if (som.altura != null) altura.value = som.altura;
-  if (som.circunferenciaCintura != null) circunferenciaCintura.value = som.circunferenciaCintura;
+  if (som.circunferenciaCintura != null) {
+    cinturaSeDesconoce.value = false;
+    circunferenciaCintura.value = som.circunferenciaCintura;
+  }
 }
 
 function calcularIMC(peso, altura) {
@@ -281,7 +295,8 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
               :class="variant === 'compact'
                 ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
                 : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
-              v-model="circunferenciaCintura" v-valor-de-partida="partida('circunferenciaCintura')" 
+              v-model="circunferenciaCintura" v-valor-de-partida="partida('circunferenciaCintura')"
+              :disabled="cinturaSeDesconoce" 
               :min="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min"
               :max="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max"
               :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min}-${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max}`"
@@ -299,6 +314,10 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
               ⚠️ {{ mensajeErrorCircunferenciaCintura }}
             </p>
           </transition>
+          <label :class="['flex items-center gap-1.5 text-gray-700', variant === 'compact' ? 'mt-1 text-xs' : 'mt-2 text-sm']">
+            <input type="checkbox" v-model="cinturaSeDesconoce" class="rounded" data-cintura-se-desconoce />
+            Se desconoce
+          </label>
         </div>
         <div class="relative">
           <input 

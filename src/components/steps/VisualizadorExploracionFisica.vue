@@ -203,7 +203,8 @@ const rowPinpointClass = (legacyStep) =>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">CIRCUNFERENCIA CINTURA</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.circunferenciaCintura
-                ? `${formData.formDataExploracionFisica.circunferenciaCintura} cm` : '' }}</td>
+                ? `${formData.formDataExploracionFisica.circunferenciaCintura} cm`
+                : formData.formDataExploracionFisica.circunferenciaCinturaSeDesconoce ? 'Se desconoce' : '' }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.categoriaCircunferenciaCintura }}
             </td>

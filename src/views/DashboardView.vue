@@ -2374,7 +2374,7 @@ const graficaAnalisisLaboratorioDistribucionOptions = {
 
 // Computed para tabla y grafica de circunferencia de cintura
 const graficaCircunferenciaData = computed(() => {
-  if (!dashboardData.value.length) return { chart: {}, alto: 0, porcentaje: 0 };
+  if (!dashboardData.value.length) return { chart: {}, alto: 0, porcentaje: 0, medidos: 0, conExploracion: 0 };
 
   const datos = centroSeleccionado.value === 'Todos'
     ? dashboardData.value.flatMap((d) => d.circunferenciaCintura[0] || [])
@@ -4672,6 +4672,14 @@ const tablaCintura = computed(() => {
                       </span>
                     </span>
                   </h3>
+                  <!-- La cintura es opcional: los porcentajes son sobre quienes la tienen registrada -->
+                  <p
+                    v-if="graficaCircunferenciaData.conExploracion > graficaCircunferenciaData.medidos"
+                    class="text-xs text-gray-500"
+                    data-cintura-medidos
+                  >
+                    {{ graficaCircunferenciaData.medidos }} de {{ graficaCircunferenciaData.conExploracion }} trabajadores con cintura registrada
+                  </p>
                 </div>
                 <div class="flex shrink-0 gap-1.5">
                   <button
