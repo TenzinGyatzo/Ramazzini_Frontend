@@ -335,7 +335,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
             categoriaTensionArterial === 'Hipertensión grado 2' ? 'bg-red-100 text-red-900' : '',
             categoriaTensionArterial === 'Hipertensión grado 3' ? 'bg-red-200 text-red-950' : ''
           ]"
-          v-model="categoriaTensionArterial" 
+          v-model="categoriaTensionArterial" placeholder="Según la tensión" data-calculado 
           readonly 
           title="Se determina automáticamente según los valores de presión arterial"
         />
@@ -391,7 +391,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
               categoriaFrecuenciaCardiaca === 'Alta' ? 'bg-red-50 text-red-900' : '',
               categoriaFrecuenciaCardiaca === 'Muy Alta' ? 'bg-red-200 text-red-950' : ''
             ]"
-            v-model="categoriaFrecuenciaCardiaca" 
+            v-model="categoriaFrecuenciaCardiaca" placeholder="Según la frecuencia" data-calculado 
             readonly 
             title="Se determina automáticamente según la frecuencia cardiaca ingresada"
           />
@@ -446,7 +446,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
               categoriaFrecuenciaRespiratoria === 'Taquipnea' ? 'bg-yellow-50 text-yellow-800' : '',
               categoriaFrecuenciaRespiratoria === 'Hiperventilación' ? 'bg-red-100 text-red-900' : ''
             ]"
-            v-model="categoriaFrecuenciaRespiratoria" 
+            v-model="categoriaFrecuenciaRespiratoria" placeholder="Según la frecuencia" data-calculado 
             readonly 
             title="Se determina automáticamente según la frecuencia respiratoria ingresada"
           />
@@ -502,7 +502,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
               categoriaSaturacionOxigeno === 'Hipoxemia leve' ? 'bg-red-50 text-red-900' : '',
               categoriaSaturacionOxigeno === 'Hipoxemia grave' ? 'bg-red-100 text-red-950' : ''
             ]"
-            v-model="categoriaSaturacionOxigeno" 
+            v-model="categoriaSaturacionOxigeno" placeholder="Según la saturación" data-calculado 
             readonly 
             title="Se determina automáticamente según la saturación de oxígeno ingresada"
           />

@@ -223,7 +223,7 @@ const mensajeErrorFrecuenciaCardiaca = computed(() => {
             categoriaTensionArterial === 'Hipertensión grado 2' ? 'bg-red-100 text-red-900' : '',
             categoriaTensionArterial === 'Hipertensión grado 3' ? 'bg-red-200 text-red-950' : '',
           ]"
-          :value="categoriaTensionArterial"
+          :value="categoriaTensionArterial" placeholder="Según la tensión" data-calculado
           readonly
           title="Se determina automáticamente según los valores de presión arterial"
         />
@@ -279,7 +279,7 @@ const mensajeErrorFrecuenciaCardiaca = computed(() => {
               categoriaFrecuenciaCardiaca === 'Alta' ? 'bg-red-50 text-red-900' : '',
               categoriaFrecuenciaCardiaca === 'Muy alta' ? 'bg-red-200 text-red-950' : '',
             ]"
-            :value="categoriaFrecuenciaCardiaca"
+            :value="categoriaFrecuenciaCardiaca" placeholder="Según la frecuencia" data-calculado
             readonly
             title="Se determina automáticamente según la frecuencia cardiaca ingresada"
           />

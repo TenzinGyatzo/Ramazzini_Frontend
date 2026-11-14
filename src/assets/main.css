@@ -492,3 +492,12 @@ html.dark-mode .inicio-nav--enlace:focus-visible {
     animation: none;
   }
 }
+
+/* Campos calculados (IMC, categorías): mientras están vacíos, el texto de ayuda dice de
+   dónde saldrá el valor; en gris y cursiva para que se lea como ayuda y no como dato */
+input[data-calculado]::placeholder {
+  color: #9ca3af;
+  font-style: italic;
+  font-weight: 400;
+  opacity: 1;
+}

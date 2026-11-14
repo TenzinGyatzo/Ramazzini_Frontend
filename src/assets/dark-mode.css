@@ -4777,3 +4777,8 @@ html.dark-mode .aviso-atencion > div {
   background: #1e293b !important;
   border-color: #b45309 !important;
 }
+
+/* Campos calculados vacíos: texto de ayuda discreto (main.css, input[data-calculado]) */
+html.dark-mode input[data-calculado]::placeholder {
+  color: #6b7280;
+}

@@ -125,12 +125,12 @@ const mensajeErrorAltura = computed(() =>
       <div>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-gray-100 cursor-default"
-          v-model="indiceMasaCorporal" readonly title="El IMC se calcula automáticamente en función al peso y altura" />
+          v-model="indiceMasaCorporal" placeholder="Se calcula solo" data-calculado readonly title="El IMC se calcula automáticamente en función al peso y altura" />
       </div>
       <div>
         <input type="text"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-gray-100 cursor-default"
-          v-model="categoriaIMC" readonly title="La categoría se determina automáticamente según su IMC"/>
+          v-model="categoriaIMC" placeholder="Según el IMC" data-calculado readonly title="La categoría se determina automáticamente según su IMC"/>
       </div>
     </div>
 

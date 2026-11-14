@@ -344,7 +344,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
         <input
           type="number"
           class="w-full p-2 text-center border border-gray-200 rounded-lg text-gray-700 bg-gray-50 cursor-not-allowed font-semibold"
-          :value="indiceMasaCorporal"
+          :value="indiceMasaCorporal" placeholder="Se calcula solo" data-calculado
           readonly
           title="Calculado automáticamente"
         />
@@ -359,7 +359,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             categoriaIMC === 'Obesidad clase II' ? 'bg-red-100 text-red-900' : '',
             categoriaIMC === 'Obesidad clase III' ? 'bg-red-200 text-red-950' : '',
           ]"
-          :value="categoriaIMC"
+          :value="categoriaIMC" placeholder="Según el IMC" data-calculado
           readonly
         />
       </div>
@@ -394,7 +394,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             categoriaCircunferenciaCintura === 'Riesgo elevado' ? 'bg-yellow-50 text-yellow-800' : '',
             categoriaCircunferenciaCintura === 'Riesgo muy elevado' ? 'bg-red-100 text-red-900' : '',
           ]"
-          :value="categoriaCircunferenciaCintura"
+          :value="categoriaCircunferenciaCintura" placeholder="Según la cintura" data-calculado
           readonly
         />
       </div>

@@ -354,7 +354,7 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
       <div class="grid grid-cols-2 gap-4">
         <div class="relative">
           <input
-            v-model="indiceMasaCorporal"
+            v-model="indiceMasaCorporal" placeholder="Se calcula solo" data-calculado
             type="number"
             class="w-full p-3 text-center border-2 border-gray-200 rounded-lg text-gray-700 bg-gray-50 cursor-not-allowed font-semibold"
             readonly
@@ -368,7 +368,7 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
         </div>
         <div class="relative">
           <input
-            v-model="categoriaIMC"
+            v-model="categoriaIMC" placeholder="Según el IMC" data-calculado
             type="text"
             :class="[
               'w-full py-3 px-2 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
@@ -439,7 +439,7 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
         </div>
         <div class="relative">
           <input
-            v-model="categoriaCircunferenciaCintura"
+            v-model="categoriaCircunferenciaCintura" placeholder="Según la cintura" data-calculado
             type="text"
             :class="[
               'w-full py-3 px-2 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',

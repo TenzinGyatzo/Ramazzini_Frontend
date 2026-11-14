@@ -230,7 +230,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
             :class="variant === 'compact'
               ? 'w-full p-2 text-center border border-gray-200 rounded-md text-sm text-gray-700 bg-gray-50 cursor-not-allowed font-semibold'
               : 'w-full p-3 text-center border-2 border-gray-200 rounded-lg text-gray-700 bg-gray-50 cursor-not-allowed font-semibold'"
-            v-model="indiceMasaCorporal" 
+            v-model="indiceMasaCorporal" placeholder="Se calcula solo" data-calculado 
             readonly 
             title="El IMC se calcula automáticamente en función al peso y altura"
           />
@@ -252,7 +252,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
               categoriaIMC === 'Obesidad clase II' ? 'bg-red-100 text-red-900' : '',
               categoriaIMC === 'Obesidad clase III' ? 'bg-red-200 text-red-950' : ''
             ]"
-            v-model="categoriaIMC" 
+            v-model="categoriaIMC" placeholder="Según el IMC" data-calculado 
             readonly 
             title="La categoría se determina automáticamente según su IMC"
           />
@@ -309,7 +309,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
               categoriaCircunferenciaCintura === 'Riesgo Aumentado' ? 'bg-yellow-50 text-yellow-800 text-sm' : '',
               categoriaCircunferenciaCintura === 'Alto Riesgo' ? 'bg-red-100 text-red-900' : ''
             ]"
-            v-model="categoriaCircunferenciaCintura" 
+            v-model="categoriaCircunferenciaCintura" placeholder="Según la cintura" data-calculado 
             readonly 
             title="Clasificación automática según el sexo y la circunferencia de cintura ingresada"
           />

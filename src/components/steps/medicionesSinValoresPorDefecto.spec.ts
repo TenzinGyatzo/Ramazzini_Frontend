@@ -65,6 +65,35 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
     });
   });
 
+  describe('campos calculados vacíos dicen de dónde saldrá el valor', () => {
+    const ayudas = (wrapper: ReturnType<typeof mount>) =>
+      wrapper.findAll('input[data-calculado]').map((i) => i.attributes('placeholder'));
+
+    it('exploración física: IMC y categorías', async () => {
+      expect(ayudas(await montar('./exploracionFisicaSteps/Step2.vue'))).toEqual([
+        'Se calcula solo',
+        'Según el IMC',
+        'Según la cintura',
+      ]);
+      expect(ayudas(await montar('./exploracionFisicaSteps/Step3.vue'))).toEqual([
+        'Según la tensión',
+        'Según la frecuencia',
+        'Según la frecuencia',
+        'Según la saturación',
+      ]);
+    });
+
+    it('con medición, el campo muestra el valor y no la ayuda', async () => {
+      const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
+      const numeros = wrapper.findAll('input[type="number"]:not([readonly])');
+      await numeros[0].setValue('80');
+      await numeros[1].setValue('1.7');
+      const [imc, categoria] = wrapper.findAll('input[data-calculado]');
+      expect((imc.element as HTMLInputElement).value).toBe('27.68');
+      expect((categoria.element as HTMLInputElement).value).toBe('Sobrepeso');
+    });
+  });
+
   describe('certificado expedito', () => {
     it('signos vitales: abren vacíos', async () => {
       const wrapper = await montar('./certificadoExpeditoSteps/Step3.vue');
