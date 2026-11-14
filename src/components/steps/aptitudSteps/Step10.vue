@@ -576,10 +576,9 @@ const generarTextoPrecargado = async () => {
                 </button>
                 <div v-if="isOpen('herniaAbdominal')" class="p-4 border-l-4 border-orange-500 bg-gray-100">
                     <p class="italic text-sm font-light mb-4 text-gray-700 hover:text-orange-700 cursor-pointer text-justify"
-                        @click="copiarTexto('La trabajadora presenta una hernia abdominal, por lo que debe ser valorado por un cirujano. Se recomienda uso en todo momento de faja lumbosacra y asignarle tareas que no impliquen esfuerzo físico excesivo. Asimismo, debe proporcionarse asistencia o equipo adecuado para el manejo de carga.')">
+                        @click="copiarTexto('La trabajadora presenta una hernia abdominal, por lo que debe ser valorado por un cirujano. Se recomienda asignarle tareas que no impliquen esfuerzo físico excesivo. Asimismo, debe proporcionarse asistencia o equipo adecuado para el manejo de carga.')">
                         La trabajadora presenta una hernia abdominal, por lo que debe ser valorado por un
-                        cirujano. Se recomienda uso en todo momento de faja lumbosacra y asignarle tareas que no
-                        impliquen esfuerzo físico excesivo. Asimismo, debe proporcionarse asistencia o equipo
+                        cirujano. Se recomienda asignarle tareas que no impliquen esfuerzo físico excesivo. Asimismo, debe proporcionarse asistencia o equipo
                         adecuado para el manejo de carga.
                     </p>
                 </div>
@@ -904,10 +903,9 @@ const generarTextoPrecargado = async () => {
                 </button>
                 <div v-if="isOpen('herniaAbdominal')" class="p-4 border-l-4 border-orange-500 bg-gray-100">
                     <p class="italic text-sm font-light mb-4 text-gray-700 hover:text-orange-700 cursor-pointer text-justify"
-                        @click="copiarTexto('El individuo presenta una hernia abdominal, por lo que debe ser valorado por un cirujano. Se recomienda uso en todo momento de faja lumbosacra y asignarle tareas que no impliquen esfuerzo físico excesivo. Asimismo, debe proporcionarse asistencia o equipo adecuado para el manejo de carga.')">
+                        @click="copiarTexto('El individuo presenta una hernia abdominal, por lo que debe ser valorado por un cirujano. Se recomienda asignarle tareas que no impliquen esfuerzo físico excesivo. Asimismo, debe proporcionarse asistencia o equipo adecuado para el manejo de carga.')">
                         El individuo presenta una hernia abdominal, por lo que debe ser valorado por un
-                        cirujano. Se recomienda uso en todo momento de faja lumbosacra y asignarle tareas que no
-                        impliquen esfuerzo físico excesivo. Asimismo, debe proporcionarse asistencia o equipo
+                        cirujano. Se recomienda asignarle tareas que no impliquen esfuerzo físico excesivo. Asimismo, debe proporcionarse asistencia o equipo
                         adecuado para el manejo de carga.
                     </p>
                 </div>
