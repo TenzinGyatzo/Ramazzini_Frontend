@@ -26,7 +26,13 @@ const fechaCertificadoExpedito = ref(today);
 onMounted(() => {
   if (documentos.currentDocument) {
     fechaCertificadoExpedito.value = formatDateYYYYMMDD(documentos.currentDocument.fechaCertificadoExpedito || today);
+  } else if (formDataCertificadoExpedito.fechaCertificadoExpedito) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaCertificadoExpedito.value = formatDateYYYYMMDD(formDataCertificadoExpedito.fechaCertificadoExpedito);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataCertificadoExpedito.fechaCertificadoExpedito = fechaCertificadoExpedito.value;
 
   // Establece idTrabajador en formData
   formDataCertificadoExpedito.idTrabajador = trabajadores.currentTrabajadorId;

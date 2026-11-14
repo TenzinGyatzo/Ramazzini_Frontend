@@ -23,7 +23,13 @@ const today = format(new Date(), 'yyyy-MM-dd');
 onMounted(() => {
   if (documentos.currentDocument) {
     fechaInicioControlPrenatal.value = formatDateYYYYMMDD(documentos.currentDocument.fechaInicioControlPrenatal || today);
+  } else if (formDataControlPrenatal.fechaInicioControlPrenatal) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaInicioControlPrenatal.value = formatDateYYYYMMDD(formDataControlPrenatal.fechaInicioControlPrenatal);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataControlPrenatal.fechaInicioControlPrenatal = fechaInicioControlPrenatal.value;
 
   // Establece idTrabajador en formData
   formDataControlPrenatal.idTrabajador = trabajadores.currentTrabajadorId;

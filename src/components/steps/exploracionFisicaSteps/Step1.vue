@@ -35,7 +35,13 @@ const fechaExploracionFisica = ref(today);
 onMounted(() => {
   if (documentos.currentDocument) {
     fechaExploracionFisica.value = formatDateYYYYMMDD(documentos.currentDocument.fechaExploracionFisica || today);
+  } else if (formDataExploracionFisica.fechaExploracionFisica) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaExploracionFisica.value = formatDateYYYYMMDD(formDataExploracionFisica.fechaExploracionFisica);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataExploracionFisica.fechaExploracionFisica = fechaExploracionFisica.value;
 
   // Establece idTrabajador en formData
   formDataExploracionFisica.idTrabajador = trabajadores.currentTrabajadorId;

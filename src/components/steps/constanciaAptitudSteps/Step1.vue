@@ -26,7 +26,13 @@ const fechaConstanciaAptitud = ref(today);
 onMounted(() => {
   if (documentos.currentDocument) {
     fechaConstanciaAptitud.value = formatDateYYYYMMDD(documentos.currentDocument.fechaConstanciaAptitud || today);
+  } else if (formDataConstanciaAptitud.fechaConstanciaAptitud) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaConstanciaAptitud.value = formatDateYYYYMMDD(formDataConstanciaAptitud.fechaConstanciaAptitud);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataConstanciaAptitud.fechaConstanciaAptitud = fechaConstanciaAptitud.value;
 
   // Establece idTrabajador en formData
   formDataConstanciaAptitud.idTrabajador = trabajadores.currentTrabajadorId;

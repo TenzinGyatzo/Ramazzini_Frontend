@@ -34,6 +34,9 @@ onMounted(() => {
     fechaCertificado.value = formatDateYYYYMMDD(
       documentos.currentDocument.fechaCertificado || today,
     );
+  } else if (formDataStore.formDataCertificado.fechaCertificado) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaCertificado.value = formatDateYYYYMMDD(formDataStore.formDataCertificado.fechaCertificado);
   }
 
   formDataStore.formDataCertificado.idTrabajador =

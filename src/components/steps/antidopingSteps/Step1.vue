@@ -34,6 +34,9 @@ onMounted(() => {
     fechaAntidoping.value = formatDateYYYYMMDD(
       documentos.currentDocument.fechaAntidoping || today,
     );
+  } else if (formDataStore.formDataAntidoping.fechaAntidoping) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaAntidoping.value = formatDateYYYYMMDD(formDataStore.formDataAntidoping.fechaAntidoping);
   }
 
   formDataStore.formDataAntidoping.idTrabajador =

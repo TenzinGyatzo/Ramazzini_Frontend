@@ -23,7 +23,13 @@ const today = format(new Date(), 'yyyy-MM-dd');
 onMounted(() => {
   if (documentos.currentDocument) {
     fechaEntrevistaPsicologica.value = formatDateYYYYMMDD(documentos.currentDocument.fechaEntrevistaPsicologica || today);
+  } else if (formDataEntrevistaPsicologica.fechaEntrevistaPsicologica) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaEntrevistaPsicologica.value = formatDateYYYYMMDD(formDataEntrevistaPsicologica.fechaEntrevistaPsicologica);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataEntrevistaPsicologica.fechaEntrevistaPsicologica = fechaEntrevistaPsicologica.value;
 
   // Establece idTrabajador en formData
   formDataEntrevistaPsicologica.idTrabajador = trabajadores.currentTrabajadorId;

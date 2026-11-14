@@ -36,6 +36,9 @@ onMounted(() => {
       formDataReceta.idTrabajador = trabajadores.currentTrabajadorId;
     }
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataReceta.fechaReceta = fechaReceta.value;
   
   
   // Establece rutaPDF en formData

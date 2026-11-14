@@ -34,6 +34,9 @@ onMounted(() => {
     fechaHistoriaOtologica.value = formatDateYYYYMMDD(
       documentos.currentDocument.fechaHistoriaOtologica || today,
     );
+  } else if (formDataStore.formDataHistoriaOtologica.fechaHistoriaOtologica) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaHistoriaOtologica.value = formatDateYYYYMMDD(formDataStore.formDataHistoriaOtologica.fechaHistoriaOtologica);
   }
 
   formDataStore.formDataHistoriaOtologica.idTrabajador =

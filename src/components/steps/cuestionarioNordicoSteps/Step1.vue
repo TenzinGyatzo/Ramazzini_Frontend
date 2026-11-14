@@ -28,6 +28,9 @@ onMounted(() => {
     // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
     fechaCuestionarioNordico.value = formatDateYYYYMMDD(formDataCuestionarioNordico.fechaCuestionarioNordico);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataCuestionarioNordico.fechaCuestionarioNordico = fechaCuestionarioNordico.value;
 
   // Establece idTrabajador en formData
   formDataCuestionarioNordico.idTrabajador = trabajadores.currentTrabajadorId;

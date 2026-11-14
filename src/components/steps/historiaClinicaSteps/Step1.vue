@@ -48,6 +48,9 @@ onMounted(() => {
       formDataHistoriaClinica.idTrabajador = trabajadores.currentTrabajadorId;
     }
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataHistoriaClinica.fechaHistoriaClinica = fechaHistoriaClinica.value;
   
   
   // Establece rutaPDF en formData

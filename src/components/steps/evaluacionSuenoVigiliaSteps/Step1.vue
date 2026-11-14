@@ -32,6 +32,9 @@ onMounted(() => {
     // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
     fechaEvaluacionSuenoVigilia.value = formatDateYYYYMMDD(formDataEvaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataEvaluacionSuenoVigilia.fechaEvaluacionSuenoVigilia = fechaEvaluacionSuenoVigilia.value;
 
   // Establece idTrabajador en formData
   formDataEvaluacionSuenoVigilia.idTrabajador = trabajadores.currentTrabajadorId;

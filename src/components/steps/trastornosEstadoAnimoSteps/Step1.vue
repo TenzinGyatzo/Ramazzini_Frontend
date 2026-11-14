@@ -23,7 +23,13 @@ const today = format(new Date(), 'yyyy-MM-dd');
 onMounted(() => {
   if (documentos.currentDocument) {
     fechaTrastornosEstadoAnimo.value = formatDateYYYYMMDD(documentos.currentDocument.fechaTrastornosEstadoAnimo || today);
+  } else if (formDataTrastornosEstadoAnimo.fechaTrastornosEstadoAnimo) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaTrastornosEstadoAnimo.value = formatDateYYYYMMDD(formDataTrastornosEstadoAnimo.fechaTrastornosEstadoAnimo);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataTrastornosEstadoAnimo.fechaTrastornosEstadoAnimo = fechaTrastornosEstadoAnimo.value;
 
   // Establece idTrabajador en formData
   formDataTrastornosEstadoAnimo.idTrabajador = trabajadores.currentTrabajadorId;

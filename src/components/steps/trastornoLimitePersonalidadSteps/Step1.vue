@@ -23,7 +23,13 @@ const today = format(new Date(), 'yyyy-MM-dd');
 onMounted(() => {
   if (documentos.currentDocument) {
     fechaTrastornoLimitePersonalidad.value = formatDateYYYYMMDD(documentos.currentDocument.fechaTrastornoLimitePersonalidad || today);
+  } else if (formDataTrastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaTrastornoLimitePersonalidad.value = formatDateYYYYMMDD(formDataTrastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataTrastornoLimitePersonalidad.fechaTrastornoLimitePersonalidad = fechaTrastornoLimitePersonalidad.value;
 
   // Establece idTrabajador en formData
   formDataTrastornoLimitePersonalidad.idTrabajador = trabajadores.currentTrabajadorId;

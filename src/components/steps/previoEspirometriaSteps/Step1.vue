@@ -34,6 +34,9 @@ onMounted(() => {
     fechaPrevioEspirometria.value = formatDateYYYYMMDD(
       documentos.currentDocument.fechaPrevioEspirometria || today,
     );
+  } else if (formDataStore.formDataPrevioEspirometria.fechaPrevioEspirometria) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaPrevioEspirometria.value = formatDateYYYYMMDD(formDataStore.formDataPrevioEspirometria.fechaPrevioEspirometria);
   }
 
   formDataStore.formDataPrevioEspirometria.idTrabajador =

@@ -23,7 +23,13 @@ const today = format(new Date(), 'yyyy-MM-dd');
 onMounted(() => {
   if (documentos.currentDocument) {
     fechaCuestionarioProdromalBreve.value = formatDateYYYYMMDD(documentos.currentDocument.fechaCuestionarioProdromalBreve || today);
+  } else if (formDataCuestionarioProdromalBreve.fechaCuestionarioProdromalBreve) {
+    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
+    fechaCuestionarioProdromalBreve.value = formatDateYYYYMMDD(formDataCuestionarioProdromalBreve.fechaCuestionarioProdromalBreve);
   }
+  // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
+  // aviso al guardar); antes solo al cambiarla o salir del paso.
+  formDataCuestionarioProdromalBreve.fechaCuestionarioProdromalBreve = fechaCuestionarioProdromalBreve.value;
 
   // Establece idTrabajador en formData
   formDataCuestionarioProdromalBreve.idTrabajador = trabajadores.currentTrabajadorId;
