@@ -9,11 +9,11 @@ import {
 import { useStepsStore } from '@/stores/steps';
 
 const FOCUSABLE_SELECTOR =
-  'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  'input:not([disabled]):not([type="hidden"]):not([readonly]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /** Preferir campo de texto (detalle ya redactado) sobre chips Sí/No. */
 const TEXT_FOCUS_SELECTOR =
-  'textarea:not([disabled]), input:not([disabled]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="radio"]):not([type="checkbox"])';
+  'textarea:not([disabled]), input:not([disabled]):not([readonly]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="radio"]):not([type="checkbox"])';
 
 function findAnchor(
   root: HTMLElement,
