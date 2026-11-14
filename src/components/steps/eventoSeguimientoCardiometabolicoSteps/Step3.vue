@@ -1,4 +1,6 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, computed } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -7,6 +9,7 @@ import { aplicarObesidadDesdeCategoriaIMC, sincronizarDiagnosticoObesidadPorImc 
 import { obtenerSomatometriaUltimaExploracionFisica } from '@/helpers/cardiometabolico/alturaDesdeExploracionFisica';
 import { esMedicion } from '@/helpers/medicionesClinicas';
 
+const partida = useValorDePartida();
 const trabajadores = useTrabajadoresStore();
 const { formDataEventoSeguimientoCardiometabolico } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -266,7 +269,7 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
         </label>
         <input
           id="peso"
-          v-model.number="peso"
+          v-model.number="peso" v-valor-de-partida="partida('peso')"
           type="number"
           class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
           min="35"
@@ -307,7 +310,7 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
         </label>
         <input
           id="altura"
-          v-model.number="altura"
+          v-model.number="altura" v-valor-de-partida="partida('altura')"
           type="number"
           class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
           step="0.01"
@@ -400,7 +403,7 @@ const mensajeErrorCircunferenciaCintura = computed(() => {
         <div>
           <div class="relative">
             <input
-              v-model.number="circunferenciaCintura"
+              v-model.number="circunferenciaCintura" v-valor-de-partida="partida('circunferenciaCintura')"
               type="number"
               class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
               min="40"

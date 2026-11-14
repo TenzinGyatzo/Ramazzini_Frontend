@@ -1,4 +1,6 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -10,6 +12,7 @@ import {
 import { esMedicion, imcDesdePesoAltura } from '@/helpers/medicionesClinicas';
 import UsarUltimaExploracionFisica from '../UsarUltimaExploracionFisica.vue';
 
+const partida = useValorDePartida();
 const props = defineProps({
   variant: {
     type: String,
@@ -164,7 +167,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
           :class="variant === 'compact'
             ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
             : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
-          v-model="peso" 
+          v-model="peso" v-valor-de-partida="partida('peso')" 
           :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min" 
           :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max" 
           step="0.1"
@@ -194,7 +197,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
           :class="variant === 'compact'
             ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
             : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
-          v-model="altura" 
+          v-model="altura" v-valor-de-partida="partida('altura')" 
           step="0.01" 
           :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min" 
           :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max"
@@ -278,7 +281,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
               :class="variant === 'compact'
                 ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
                 : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
-              v-model="circunferenciaCintura" 
+              v-model="circunferenciaCintura" v-valor-de-partida="partida('circunferenciaCintura')" 
               :min="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min"
               :max="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max"
               :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min}-${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max}`"

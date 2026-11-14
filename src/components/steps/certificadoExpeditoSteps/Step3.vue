@@ -1,4 +1,6 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -8,6 +10,7 @@ import {
 } from '@/helpers/somatometriaSignosRanges';
 import { esMedicion, imcDesdePesoAltura } from '@/helpers/medicionesClinicas';
 
+const partida = useValorDePartida();
 const { formDataCertificadoExpedito } = useFormDataStore();
 const documentos = useDocumentosStore();
 
@@ -214,7 +217,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
         <label for="tensionArterialSistolica">Sistólica (mmHg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="tensionArterialSistolica" :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min" :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max}`">
+          v-model="tensionArterialSistolica" v-valor-de-partida="partida('tensionArterialSistolica')" :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min" :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max}`">
         <p v-if="mensajeErrorTensionSistolica" class="text-red-500 text-sm mt-1">
         {{ mensajeErrorTensionSistolica }}
         </p>
@@ -223,7 +226,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
         <label for="tensionArterialDiastolica">Diastólica (mmHg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="tensionArterialDiastolica" :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min" :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max}`" />
+          v-model="tensionArterialDiastolica" v-valor-de-partida="partida('tensionArterialDiastolica')" :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min" :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max}`" />
         <p v-if="mensajeErrorTensionDiastolica" class="text-red-500 text-sm mt-1">
           {{ mensajeErrorTensionDiastolica }}
         </p>
@@ -238,7 +241,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
       <div>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="frecuenciaCardiaca" :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min" :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max}`" />
+          v-model="frecuenciaCardiaca" v-valor-de-partida="partida('frecuenciaCardiaca')" :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min" :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max}`" />
         <p v-if="mensajeErrorFrecuenciaCardiaca" class="text-red-500 text-sm mt-1">
           {{ mensajeErrorFrecuenciaCardiaca }}
         </p>
@@ -255,7 +258,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
       <div>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="frecuenciaRespiratoria" :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min" :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max}`" />
+          v-model="frecuenciaRespiratoria" v-valor-de-partida="partida('frecuenciaRespiratoria')" :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min" :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max}`" />
         <p v-if="mensajeErrorFrecuenciaRespiratoria" class="text-red-500 text-sm mt-1">
           {{ mensajeErrorFrecuenciaRespiratoria }}
         </p>
@@ -272,7 +275,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
       <div>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="temperaturaCorporal" :min="SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.min" :max="SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.min}-${SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.max}`" step="0.1" />
+          v-model="temperaturaCorporal" v-valor-de-partida="partida('temperatura')" :min="SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.min" :max="SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.min}-${SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.max}`" step="0.1" />
         <p v-if="mensajeErrorTemperaturaCorporal" class="text-red-500 text-sm mt-1">
           {{ mensajeErrorTemperaturaCorporal }}
         </p>

@@ -1,4 +1,6 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, onUnmounted, computed, toRefs, nextTick } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -12,6 +14,7 @@ import {
   mensajeErrorCexField,
 } from '@/helpers/notaMedicaCexRanges';
 
+const partida = useValorDePartida();
 const props = defineProps({
   variant: {
     type: String,
@@ -322,7 +325,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             type="number"
             id="tensionArterialSistolica"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="tensionArterialSistolica ?? ''"
+            :value="tensionArterialSistolica ?? ''" v-valor-de-partida="partida('tensionArterialSistolica')"
             @input="tensionArterialSistolica = parseOptionalNumber($event.target.value)"
             :min="ranges.tensionArterialSistolica.min"
             :max="ranges.tensionArterialSistolica.max"
@@ -346,7 +349,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             type="number"
             id="tensionArterialDiastolica"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="tensionArterialDiastolica ?? ''"
+            :value="tensionArterialDiastolica ?? ''" v-valor-de-partida="partida('tensionArterialDiastolica')"
             @input="tensionArterialDiastolica = parseOptionalNumber($event.target.value)"
             :min="ranges.tensionArterialDiastolica.min"
             :max="ranges.tensionArterialDiastolica.max"
@@ -373,7 +376,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             type="number"
             id="frecuenciaCardiaca"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="frecuenciaCardiaca ?? ''"
+            :value="frecuenciaCardiaca ?? ''" v-valor-de-partida="partida('frecuenciaCardiaca')"
             @input="frecuenciaCardiaca = parseOptionalNumber($event.target.value)"
             :min="ranges.frecuenciaCardiaca.min"
             :max="ranges.frecuenciaCardiaca.max"
@@ -397,7 +400,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             type="number"
             id="frecuenciaRespiratoria"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="frecuenciaRespiratoria ?? ''"
+            :value="frecuenciaRespiratoria ?? ''" v-valor-de-partida="partida('frecuenciaRespiratoria')"
             @input="frecuenciaRespiratoria = parseOptionalNumber($event.target.value)"
             :min="ranges.frecuenciaRespiratoria.min"
             :max="ranges.frecuenciaRespiratoria.max"
@@ -424,7 +427,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             type="number"
             id="temperatura"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="temperatura ?? ''"
+            :value="temperatura ?? ''" v-valor-de-partida="partida('temperatura')"
             @input="temperatura = parseOptionalNumber($event.target.value)"
             step="0.1"
             :min="ranges.temperatura.min"
@@ -448,7 +451,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             type="number"
             id="saturacionOxigeno"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="saturacionOxigeno ?? ''"
+            :value="saturacionOxigeno ?? ''" v-valor-de-partida="partida('saturacionOxigeno')"
             @input="saturacionOxigeno = parseOptionalNumber($event.target.value)"
             :min="ranges.saturacionOxigeno.min"
             :max="ranges.saturacionOxigeno.max"

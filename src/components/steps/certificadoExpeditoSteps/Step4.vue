@@ -1,4 +1,6 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -10,6 +12,7 @@ import {
 } from '@/helpers/somatometriaSignosRanges';
 import { esMedicion, imcDesdePesoAltura } from '@/helpers/medicionesClinicas';
 
+const partida = useValorDePartida();
 const { formDataCertificadoExpedito } = useFormDataStore();
 const documentos = useDocumentosStore();
 
@@ -103,7 +106,7 @@ const mensajeErrorAltura = computed(() =>
         <label for="peso">Peso (Kg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="peso" :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min" :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max" step="0.1"
+          v-model="peso" v-valor-de-partida="partida('peso')" :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min" :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max" step="0.1"
           :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.peso.min}-${SOMATOMETRIA_SIGNOS_RANGES.peso.max}`">
         <p v-if="mensajeErrorPeso" class="text-red-500 text-sm mt-1">{{ mensajeErrorPeso }}</p>
       </div>
@@ -111,7 +114,7 @@ const mensajeErrorAltura = computed(() =>
         <label for="altura">Altura (m)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="altura" step="0.01" :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min" :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max"
+          v-model="altura" v-valor-de-partida="partida('altura')" step="0.01" :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min" :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max"
           :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.altura.min}-${SOMATOMETRIA_SIGNOS_RANGES.altura.max}`" />
         <p v-if="mensajeErrorAltura" class="text-red-500 text-sm mt-1">{{ mensajeErrorAltura }}</p>
       </div>

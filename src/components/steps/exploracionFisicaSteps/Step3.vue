@@ -1,4 +1,6 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -9,6 +11,7 @@ import {
 } from '@/helpers/somatometriaSignosRanges';
 import { esMedicion } from '@/helpers/medicionesClinicas';
 
+const partida = useValorDePartida();
 const props = defineProps({
   variant: {
     type: String,
@@ -275,7 +278,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
             type="number"
             id="tensionArterialSistolica"
             :class="inputClass"
-            v-model="tensionArterialSistolica" 
+            v-model="tensionArterialSistolica" v-valor-de-partida="partida('tensionArterialSistolica')" 
             :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min" 
             :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max"
             :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max}`"
@@ -301,7 +304,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
             type="number"
             id="tensionArterialDiastolica"
             :class="inputClass"
-            v-model="tensionArterialDiastolica" 
+            v-model="tensionArterialDiastolica" v-valor-de-partida="partida('tensionArterialDiastolica')" 
             :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min" 
             :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max"
             :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max}`"
@@ -358,7 +361,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
             type="number"
             id="frecuenciaCardiaca"
             :class="inputClass"
-            v-model="frecuenciaCardiaca" 
+            v-model="frecuenciaCardiaca" v-valor-de-partida="partida('frecuenciaCardiaca')" 
             :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min" 
             :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max"
             :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max}`"
@@ -415,7 +418,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
             type="number"
             id="frecuenciaRespiratoria"
             :class="inputClass"
-            v-model="frecuenciaRespiratoria" 
+            v-model="frecuenciaRespiratoria" v-valor-de-partida="partida('frecuenciaRespiratoria')" 
             :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min" 
             :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max"
             :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max}`"
@@ -470,7 +473,7 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
             type="number"
             id="saturacionOxigeno"
             :class="inputClass"
-            v-model="saturacionOxigeno" 
+            v-model="saturacionOxigeno" v-valor-de-partida="partida('saturacionOxigeno')" 
             :min="SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.min" 
             :max="SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.max"
             :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.min}-${SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.max}`"

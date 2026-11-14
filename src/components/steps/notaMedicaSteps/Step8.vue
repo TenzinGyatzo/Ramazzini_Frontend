@@ -1,4 +1,6 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -12,6 +14,7 @@ import {
   mensajeErrorCexField,
 } from '@/helpers/notaMedicaCexRanges';
 
+const partida = useValorDePartida();
 const props = defineProps({
   variant: {
     type: String,
@@ -187,7 +190,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           type="number"
           id="glucemia"
           class="w-1/2 p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-          :value="glucemia ?? ''"
+          :value="glucemia ?? ''" v-valor-de-partida="partida('glucosa')"
           @input="glucemia = parseOptionalNumber($event.target.value)"
           :min="ranges.glucemia.min"
           :max="ranges.glucemia.max"

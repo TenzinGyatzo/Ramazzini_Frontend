@@ -1,9 +1,12 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { esMedicion } from '@/helpers/medicionesClinicas';
 
+const partida = useValorDePartida();
 const { formDataEventoSeguimientoCardiometabolico } = useFormDataStore();
 const documentos = useDocumentosStore();
 
@@ -161,7 +164,7 @@ const mensajeErrorFrecuenciaCardiaca = computed(() => {
           </label>
           <input
             id="escTensionArterialSistolica"
-            v-model.number="tensionArterialSistolica"
+            v-model.number="tensionArterialSistolica" v-valor-de-partida="partida('tensionArterialSistolica')"
             type="number"
             class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
             min="60"
@@ -187,7 +190,7 @@ const mensajeErrorFrecuenciaCardiaca = computed(() => {
           </label>
           <input
             id="escTensionArterialDiastolica"
-            v-model.number="tensionArterialDiastolica"
+            v-model.number="tensionArterialDiastolica" v-valor-de-partida="partida('tensionArterialDiastolica')"
             type="number"
             class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
             min="40"
@@ -244,7 +247,7 @@ const mensajeErrorFrecuenciaCardiaca = computed(() => {
         <div>
           <input
             id="escFrecuenciaCardiaca"
-            v-model.number="frecuenciaCardiaca"
+            v-model.number="frecuenciaCardiaca" v-valor-de-partida="partida('frecuenciaCardiaca')"
             type="number"
             class="w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
             min="40"

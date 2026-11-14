@@ -1,4 +1,6 @@
 <script setup>
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -11,6 +13,7 @@ import {
   mensajeErrorCexField,
 } from '@/helpers/notaMedicaCexRanges';
 
+const partida = useValorDePartida();
 const props = defineProps({
   variant: {
     type: String,
@@ -295,7 +298,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             type="number"
             id="peso"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="peso ?? ''"
+            :value="peso ?? ''" v-valor-de-partida="partida('peso')"
             @input="peso = parseOptionalNumber($event.target.value)"
             :min="ranges.peso.min"
             :max="ranges.peso.max"
@@ -318,7 +321,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
             type="number"
             id="talla"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="talla ?? ''"
+            :value="talla ?? ''" v-valor-de-partida="partida('tallaCm')"
             @input="talla = parseOptionalNumber($event.target.value)"
             :min="ranges.talla.min"
             :max="ranges.talla.max"
@@ -369,7 +372,7 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           <input
             type="number"
             class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="circunferenciaCintura ?? ''"
+            :value="circunferenciaCintura ?? ''" v-valor-de-partida="partida('circunferenciaCintura')"
             @input="circunferenciaCintura = parseOptionalNumber($event.target.value)"
             :min="ranges.circunferenciaCintura.min"
             :max="ranges.circunferenciaCintura.max"

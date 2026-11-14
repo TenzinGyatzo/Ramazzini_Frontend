@@ -2,6 +2,19 @@
 import { computed, reactive } from 'vue';
 import { RANGOS_SIGNOS_NOTA_ENFERMERIA, erroresSignosNotaEnfermeria } from '@/helpers/notaEnfermeria';
 import { claseError, claseEtiquetaCampo, claseNumero } from './estilos';
+import { vValorDePartida } from '@/directives/valorDePartida';
+import { valorDePartida } from '@/helpers/valorDePartida';
+
+/** Valor de partida de las flechas con el campo vacío (helpers/valorDePartida.ts). */
+const CAMPO_DE_PARTIDA = {
+  tensionArterialSistolica: 'tensionArterialSistolica',
+  tensionArterialDiastolica: 'tensionArterialDiastolica',
+  frecuenciaCardiaca: 'frecuenciaCardiaca',
+  frecuenciaRespiratoria: 'frecuenciaRespiratoria',
+  temperatura: 'temperatura',
+  saturacionOxigeno: 'saturacionOxigeno',
+  glucosaCapilar: 'glucosa',
+};
 
 /**
  * Una toma de signos vitales. Todo es opcional; un campo vacío no se guarda.
@@ -22,7 +35,12 @@ const CAMPOS = [
   { clave: 'saturacionOxigeno', etiqueta: 'Saturación O2', unidad: '%' },
   { clave: 'glucosaCapilar', etiqueta: 'Glucosa capilar', unidad: 'mg/dl' },
   { clave: 'dolor', etiqueta: 'Dolor', unidad: '0 a 10' },
-].map((campo) => ({ ...campo, ...RANGOS_SIGNOS_NOTA_ENFERMERIA[campo.clave] }));
+].map((campo) => ({
+  ...campo,
+  ...RANGOS_SIGNOS_NOTA_ENFERMERIA[campo.clave],
+  // El dolor no tiene valor de partida (de 0 a 10, arranca en 0)
+  partida: CAMPO_DE_PARTIDA[campo.clave] ? valorDePartida(CAMPO_DE_PARTIDA[campo.clave]) : null,
+}));
 
 const PAREJA = { tensionArterialSistolica: 'tensionArterialDiastolica', tensionArterialDiastolica: 'tensionArterialSistolica' };
 
@@ -70,6 +88,7 @@ const guardar = (clave, texto) => {
           :step="campo.decimales ? 0.1 : 1"
           :placeholder="`${campo.min}-${campo.max}`"
           :data-signo="campo.clave"
+          v-valor-de-partida="campo.partida"
           :aria-invalid="!!errorDe(campo.clave)"
           :class="[claseNumero(!!errorDe(campo.clave)), 'mt-1 font-normal']"
           @input="guardar(campo.clave, $event.target.value)"
