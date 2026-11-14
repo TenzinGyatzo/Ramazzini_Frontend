@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, toRefs } from 'vue';
+import { ref, watch, toRefs, onUnmounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 
 const props = defineProps({
@@ -13,13 +13,21 @@ const { variant } = toRefs(props);
 
 const { formDataAptitud } = useFormDataStore();
 
-// Sin opción preseleccionada: la aptitud es el resultado del examen y se elige de forma
-// explícita (al guardar, el aviso la pide si falta). Al editar se muestra la guardada.
+// Sin opción preseleccionada al abrir el paso: se ve que falta elegir. Al editar se muestra
+// la guardada.
 const aptitudPuesto = ref(formDataAptitud.aptitudPuesto || '');
 
 // Sincronizar el valor seleccionado con formDataAptitud.aptitudPuesto
 watch(aptitudPuesto, (newValue) => {
     formDataAptitud.aptitudPuesto = newValue;
+});
+
+// Si se sale del paso sin elegir, queda «Apto sin restricciones» (decisión del usuario,
+// 2026-11-14). Si se guarda sin haber pasado por aquí, el aviso al guardar la pide.
+onUnmounted(() => {
+    if (!formDataAptitud.aptitudPuesto) {
+        formDataAptitud.aptitudPuesto = 'Apto Sin Restricciones';
+    }
 });
 </script>
 

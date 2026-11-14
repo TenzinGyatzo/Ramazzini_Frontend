@@ -37,6 +37,22 @@ describe('Aptitud: lo que se ve llega al formulario al abrir el paso', () => {
     expect(wrapper.findAll('input[type="radio"]:checked')).toHaveLength(0);
   });
 
+  it('paso 8: si se sale sin elegir, queda «Apto sin restricciones»', () => {
+    const datos = useFormDataStore().formDataAptitud as Record<string, unknown>;
+    const wrapper = mount(Step8);
+    expect(datos.aptitudPuesto).toBeUndefined();
+    wrapper.unmount();
+    expect(datos.aptitudPuesto).toBe('Apto Sin Restricciones');
+  });
+
+  it('paso 8: si se eligió otra, al salir se conserva', async () => {
+    const datos = useFormDataStore().formDataAptitud as Record<string, unknown>;
+    const wrapper = mount(Step8);
+    await wrapper.find('input[value="No Apto"]').setValue(true);
+    wrapper.unmount();
+    expect(datos.aptitudPuesto).toBe('No Apto');
+  });
+
   it('paso 8: al editar o volver, muestra la aptitud ya elegida', async () => {
     const datos = useFormDataStore().formDataAptitud as Record<string, unknown>;
     datos.aptitudPuesto = 'No Apto';
