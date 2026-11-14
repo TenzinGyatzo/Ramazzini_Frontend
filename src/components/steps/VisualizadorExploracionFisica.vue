@@ -1,4 +1,5 @@
 <script setup>
+import { esMedicion } from '@/helpers/medicionesClinicas';
 import { ref, computed } from 'vue';
 import { useVisualizadorScrollPaso } from '@/composables/useVisualizadorScrollPaso';
 import { useEmpresasStore } from '@/stores/empresas';
@@ -227,7 +228,7 @@ const rowPinpointClass = (legacyStep) =>
             <td class="text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">TENSIÓN ARTERIAL</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.categoriaTensionArterial ?
-                `${formData.formDataExploracionFisica.tensionArterialSistolica}/${formData.formDataExploracionFisica.tensionArterialDiastolica}
+                `${formData.formDataExploracionFisica.tensionArterialSistolica}${esMedicion(formData.formDataExploracionFisica.tensionArterialDiastolica) ? `/${formData.formDataExploracionFisica.tensionArterialDiastolica}` : ''}
               mmHg` : '' }}</td>
             <td class="text-xs sm:text-sm text-center px-2 py-0 border border-gray-300">
               {{ formData.formDataExploracionFisica.categoriaTensionArterial }}

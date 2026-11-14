@@ -7,6 +7,8 @@ import {
   SOMATOMETRIA_SIGNOS_RANGES,
   mensajeErrorSomatometriaSignosField,
 } from '@/helpers/somatometriaSignosRanges';
+import { esMedicion, imcDesdePesoAltura } from '@/helpers/medicionesClinicas';
+import UsarUltimaExploracionFisica from '../UsarUltimaExploracionFisica.vue';
 
 const props = defineProps({
   variant: {
@@ -21,43 +23,31 @@ const trabajadores = useTrabajadoresStore();
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Valores por defecto que se ajustarán según el sexo
-const peso = ref(80);
-const altura = ref(1.7);
-const indiceMasaCorporal = ref(27.68);
-const categoriaIMC = ref('Sobrepeso');
-const circunferenciaCintura = ref(89);
-const categoriaCircunferenciaCintura = ref('Bajo Riesgo');
+// Sin valores por defecto: se escribe lo que se midió (o se copia de la última exploración
+// física con el botón). Sin medición no hay IMC ni categoría.
+const peso = ref(null);
+const altura = ref(null);
+const indiceMasaCorporal = ref(null);
+const categoriaIMC = ref('');
+const circunferenciaCintura = ref(null);
+const categoriaCircunferenciaCintura = ref('');
 
 onMounted(() => {
-  // Establecer valores por defecto según el sexo
-  const esHombre = trabajadores.currentTrabajador.sexo !== 'Femenino';
-  const pesoPorDefecto = esHombre ? 80 : 70;
-  const alturaPorDefecto = esHombre ? 1.7 : 1.6;
-  const circunferenciaPorDefecto = esHombre ? 93 : 79;
-  
-  // Prioridad: formData > documentos.currentDocument > valores por defecto según sexo
+  // Prioridad: formData > documentos.currentDocument > vacío
   if (formDataExploracionFisica.peso !== undefined) {
     peso.value = formDataExploracionFisica.peso;
     altura.value = formDataExploracionFisica.altura;
     indiceMasaCorporal.value = formDataExploracionFisica.indiceMasaCorporal;
-    categoriaIMC.value = formDataExploracionFisica.categoriaIMC;
+    categoriaIMC.value = formDataExploracionFisica.categoriaIMC ?? '';
     circunferenciaCintura.value = formDataExploracionFisica.circunferenciaCintura;
-    categoriaCircunferenciaCintura.value = formDataExploracionFisica.categoriaCircunferenciaCintura;
+    categoriaCircunferenciaCintura.value = formDataExploracionFisica.categoriaCircunferenciaCintura ?? '';
   } else if (documentos.currentDocument) {
     peso.value = documentos.currentDocument.peso;
     altura.value = documentos.currentDocument.altura;
     indiceMasaCorporal.value = documentos.currentDocument.indiceMasaCorporal;
-    categoriaIMC.value = documentos.currentDocument.categoriaIMC;
+    categoriaIMC.value = documentos.currentDocument.categoriaIMC ?? '';
     circunferenciaCintura.value = documentos.currentDocument.circunferenciaCintura;
-    categoriaCircunferenciaCintura.value = documentos.currentDocument.categoriaCircunferenciaCintura; 
-  } else {
-    // Si no hay datos previos, establecer valores según el sexo
-    peso.value = pesoPorDefecto;
-    altura.value = alturaPorDefecto;
-    circunferenciaCintura.value = circunferenciaPorDefecto;
-    // Recalcular IMC con los valores por defecto
-    calcularIMC(pesoPorDefecto, alturaPorDefecto);
+    categoriaCircunferenciaCintura.value = documentos.currentDocument.categoriaCircunferenciaCintura ?? '';
   }
 });
 
@@ -78,27 +68,27 @@ watch([peso, altura, circunferenciaCintura], () => {
   setCategoriaCircunferenciaCintura();
 });
 
+/** Copia de la última exploración física lo que traiga (solo a pedido del usuario). */
+function usarUltimaExploracion(som) {
+  if (som.peso != null) peso.value = som.peso;
+  if (som.altura != null) altura.value = som.altura;
+  if (som.circunferenciaCintura != null) circunferenciaCintura.value = som.circunferenciaCintura;
+}
+
 function calcularIMC(peso, altura) {
-  if (peso > 0 && altura > 0) {
-    const imc = peso / (altura ** 2); // Altura ya está en metros
-    const imcRedondeado = Math.round(imc * 100) / 100;
-
-    // Actualiza tanto el estado reactivo como el formData
-    indiceMasaCorporal.value = imcRedondeado; // Esto actualizará dinámicamente el v-model
-    formDataExploracionFisica.indiceMasaCorporal = imcRedondeado;
-
-    setCategoriaIMC();
-  } else {
-    indiceMasaCorporal.value = null;
-    formDataExploracionFisica.indiceMasaCorporal = null;
-  }
+  const imc = imcDesdePesoAltura(peso, altura);
+  indiceMasaCorporal.value = imc;
+  formDataExploracionFisica.indiceMasaCorporal = imc;
+  setCategoriaIMC();
 }
 
 function setCategoriaIMC() {
   let IMC = formDataExploracionFisica.indiceMasaCorporal
   let categoria = '';
 
-  if (IMC < 18.5) {
+  if (!esMedicion(IMC)) {
+    categoria = '';
+  } else if (IMC < 18.5) {
     categoria = 'Bajo peso';
   } else if (IMC >= 18.5 && IMC <= 24.99) {
     categoria = 'Normal';
@@ -119,7 +109,9 @@ function setCategoriaIMC() {
 function setCategoriaCircunferenciaCintura() {
   let circunferencia = formDataExploracionFisica.circunferenciaCintura
   let categoria = '';
-  if (trabajadores.currentTrabajador.sexo === 'Femenino') {
+  if (!esMedicion(circunferencia)) {
+    categoria = '';
+  } else if (trabajadores.currentTrabajador.sexo === 'Femenino') {
     if (circunferencia < 80) {
       categoria = 'Bajo Riesgo';
     } else if (circunferencia >= 80 && circunferencia <= 89) {
@@ -157,6 +149,8 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
 <template>
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">SOMATOMETRÍA</h1>
+
+    <UsarUltimaExploracionFisica :compacto="variant === 'compact'" @usar="usarUltimaExploracion" />
 
     <!-- Peso y Altura -->
     <div :class="['grid grid-cols-2 gap-4', variant === 'compact' ? 'mb-3' : 'mb-6']">

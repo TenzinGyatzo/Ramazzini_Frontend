@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onUnmounted, toRefs } from 'vue';
+import { ref, watch, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 
 const props = defineProps({
@@ -13,22 +13,13 @@ const { variant } = toRefs(props);
 
 const { formDataAptitud } = useFormDataStore();
 
-// Valor local para la aptitudPuesto principal, inicializado con el valor actual del store
-const aptitudPuesto = ref(formDataAptitud.aptitudPuesto || 'Apto Sin Restricciones');
-// La opción que se ve marcada llega al formulario desde el inicio (con la de por defecto no
-// se copiaba hasta cambiarla o salir del paso)
-formDataAptitud.aptitudPuesto = aptitudPuesto.value;
+// Sin opción preseleccionada: la aptitud es el resultado del examen y se elige de forma
+// explícita (al guardar, el aviso la pide si falta). Al editar se muestra la guardada.
+const aptitudPuesto = ref(formDataAptitud.aptitudPuesto || '');
 
 // Sincronizar el valor seleccionado con formDataAptitud.aptitudPuesto
 watch(aptitudPuesto, (newValue) => {
     formDataAptitud.aptitudPuesto = newValue;
-});
-
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para aptitudPuesto
-    if (!formDataAptitud.aptitudPuesto) {
-        formDataAptitud.aptitudPuesto = 'Apto Sin Restricciones';
-    }
 });
 </script>
 

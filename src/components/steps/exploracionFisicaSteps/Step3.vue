@@ -7,6 +7,7 @@ import {
   SOMATOMETRIA_SIGNOS_RANGES,
   mensajeErrorSomatometriaSignosField,
 } from '@/helpers/somatometriaSignosRanges';
+import { esMedicion } from '@/helpers/medicionesClinicas';
 
 const props = defineProps({
   variant: {
@@ -37,18 +38,19 @@ const categoryClass = computed(() =>
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-const tensionArterialSistolica = ref(120);
-const tensionArterialDiastolica = ref(80);
-const categoriaTensionArterial = ref('Óptima');
-const frecuenciaCardiaca = ref(80);
-const categoriaFrecuenciaCardiaca = ref('Buena');
-const frecuenciaRespiratoria = ref(17);
-const categoriaFrecuenciaRespiratoria = ref('Normal');
-const saturacionOxigeno = ref(97);
-const categoriaSaturacionOxigeno = ref('Normal');
+// Sin valores por defecto: se escribe lo que se midió. Sin medición no hay categoría.
+const tensionArterialSistolica = ref(null);
+const tensionArterialDiastolica = ref(null);
+const categoriaTensionArterial = ref('');
+const frecuenciaCardiaca = ref(null);
+const categoriaFrecuenciaCardiaca = ref('');
+const frecuenciaRespiratoria = ref(null);
+const categoriaFrecuenciaRespiratoria = ref('');
+const saturacionOxigeno = ref(null);
+const categoriaSaturacionOxigeno = ref('');
 
 onMounted(() => {
-  // Prioridad: formData > documentos.currentDocument > valores por defecto
+  // Prioridad: formData > documentos.currentDocument > vacío
   if (formDataExploracionFisica.tensionArterialSistolica !== undefined) {
     tensionArterialSistolica.value = formDataExploracionFisica.tensionArterialSistolica;
     tensionArterialDiastolica.value = formDataExploracionFisica.tensionArterialDiastolica;
@@ -70,10 +72,8 @@ onMounted(() => {
     saturacionOxigeno.value = documentos.currentDocument.saturacionOxigeno;
     categoriaSaturacionOxigeno.value = documentos.currentDocument.categoriaSaturacionOxigeno;
   }
-  // Si no hay formData ni currentDocument, se mantienen los valores por defecto.
-  // En todos los casos se copian al formulario desde el inicio (como el paso 2): sin esto,
-  // con los valores por defecto el formulario quedaba vacío hasta tocar algo o salir del
-  // paso, y al guardar se pedían datos que sí se ven en pantalla.
+  // Se copia al formulario lo que se ve (con documento nuevo, vacío): así el formulario y la
+  // pantalla coinciden y las categorías corresponden a lo capturado.
   guardarEnFormulario();
 });
 
@@ -113,6 +113,12 @@ function setCategoriaTensionArterial() {
   let categoriaDiastolica = '';
   let categoria = '';
 
+  if (!esMedicion(sistolica)) {
+    // Sin sistólica no hay categoría
+    categoriaTensionArterial.value = '';
+    formDataExploracionFisica.categoriaTensionArterial = '';
+    return;
+  }
   if (sistolica <= 120) {
     categoriaSistolica = 'Óptima';
   } else if (sistolica >= 121 && sistolica <= 130) {
@@ -127,7 +133,10 @@ function setCategoriaTensionArterial() {
     categoriaSistolica = 'Hipertensión grado 3';
   }
 
-  if (diastolica <= 80) {
+  // La diastólica es opcional: sin ella, la categoría sale solo de la sistólica
+  if (!esMedicion(diastolica)) {
+    categoriaDiastolica = '';
+  } else if (diastolica <= 80) {
     categoriaDiastolica = 'Óptima';
   } else if (diastolica >= 81 && diastolica <= 85) {
     categoriaDiastolica = 'Normal';
@@ -163,7 +172,9 @@ function setCategoriaFrecuenciaCardiaca() {
   let frecuencia = formDataExploracionFisica.frecuenciaCardiaca;
   let categoria = '';
 
-  if (frecuencia < 60) {
+  if (!esMedicion(frecuencia)) {
+    categoria = '';
+  } else if (frecuencia < 60) {
     categoria = 'Excelente';
   } else if (frecuencia >= 60 && frecuencia <= 80) {
     categoria = 'Buena';
@@ -185,7 +196,9 @@ function setCategoriaFrecuenciaRespiratoria() {
   let frecuencia = formDataExploracionFisica.frecuenciaRespiratoria;
   let categoria = '';
 
-  if (frecuencia < 12) {
+  if (!esMedicion(frecuencia)) {
+    categoria = '';
+  } else if (frecuencia < 12) {
     categoria = 'Bradipnea';
   } else if (frecuencia >= 12 && frecuencia <= 20) {
     categoria = 'Normal';
@@ -203,7 +216,9 @@ function setCategoriaSaturacionOxigeno() {
   let saturacion = formDataExploracionFisica.saturacionOxigeno;
   let categoria = '';
 
-  if (saturacion >= 95 && saturacion <= 100) {
+  if (!esMedicion(saturacion)) {
+    categoria = '';
+  } else if (saturacion >= 95 && saturacion <= 100) {
     categoria = 'Normal';
   } else if (saturacion >= 91 && saturacion <= 94) {
     categoria = 'Aceptable';

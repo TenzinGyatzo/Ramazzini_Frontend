@@ -5,6 +5,7 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { aplicarObesidadDesdeCategoriaIMC, sincronizarDiagnosticoObesidadPorImc } from '@/helpers/eventoSeguimientoCardiometabolicoOptions';
 import { obtenerSomatometriaUltimaExploracionFisica } from '@/helpers/cardiometabolico/alturaDesdeExploracionFisica';
+import { esMedicion } from '@/helpers/medicionesClinicas';
 
 const trabajadores = useTrabajadoresStore();
 const { formDataEventoSeguimientoCardiometabolico } = useFormDataStore();
@@ -16,12 +17,14 @@ function som() {
   return fd.somatometria;
 }
 
-const peso = ref(70);
-const altura = ref(1.65);
-const indiceMasaCorporal = ref(25.71);
-const categoriaIMC = ref('Normal');
-const circunferenciaCintura = ref(85);
-const categoriaCircunferenciaCintura = ref('Bajo Riesgo');
+// Sin valores por defecto: solo se guarda lo que se midió (son opcionales). Si hay una
+// exploración física, sus mediciones se proponen con una nota de procedencia.
+const peso = ref(null);
+const altura = ref(null);
+const indiceMasaCorporal = ref(null);
+const categoriaIMC = ref('');
+const circunferenciaCintura = ref(null);
+const categoriaCircunferenciaCintura = ref('');
 
 /** Notas discretas cuando peso/altura/circunferencia vienen de la EF más reciente; se ocultan al editar el campo. */
 const mostrarNotaPesoDesdeEF = ref(false);
@@ -123,13 +126,6 @@ onMounted(() => {
     hydrateFromSom(fdSom);
   } else if (docTieneMediciones) {
     hydrateFromSom(docSom);
-  } else {
-    const esHombre = trabajadores.currentTrabajador?.sexo !== 'Femenino';
-    peso.value = esHombre ? 80 : 70;
-    altura.value = esHombre ? 1.7 : 1.6;
-    circunferenciaCintura.value = esHombre ? 93 : 79;
-    calcularIMC(peso.value, altura.value);
-    setCategoriaCircunferenciaCintura();
   }
 
   const alturaPersistida = fdSom?.altura != null || docSom?.altura != null;
@@ -216,7 +212,9 @@ function setCategoriaIMC(IMC) {
 function setCategoriaCircunferenciaCintura() {
   const circunferencia = circunferenciaCintura.value;
   let categoria = '';
-  if (trabajadores.currentTrabajador?.sexo === 'Femenino') {
+  if (!esMedicion(circunferencia)) {
+    categoria = '';
+  } else if (trabajadores.currentTrabajador?.sexo === 'Femenino') {
     if (circunferencia < 80) categoria = 'Bajo Riesgo';
     else if (circunferencia <= 89) categoria = 'Riesgo Aumentado';
     else categoria = 'Alto Riesgo';
@@ -229,6 +227,7 @@ function setCategoriaCircunferenciaCintura() {
 }
 
 const mensajeErrorPeso = computed(() => {
+  if (!esMedicion(peso.value)) return '';
   return peso.value < 35
     ? 'Debe ser mínimo 35'
     : peso.value > 300
@@ -236,6 +235,7 @@ const mensajeErrorPeso = computed(() => {
       : '';
 });
 const mensajeErrorAltura = computed(() => {
+  if (!esMedicion(altura.value)) return '';
   return altura.value < 1.2
     ? 'Debe ser mínimo 1.20 m'
     : altura.value > 2.3
@@ -244,6 +244,7 @@ const mensajeErrorAltura = computed(() => {
 });
 
 const mensajeErrorCircunferenciaCintura = computed(() => {
+  if (!esMedicion(circunferenciaCintura.value)) return '';
   return circunferenciaCintura.value < 40
     ? 'Debe ser mínimo 40 cm'
     : circunferenciaCintura.value > 200

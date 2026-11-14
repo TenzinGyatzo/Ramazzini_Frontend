@@ -491,6 +491,7 @@ import TrabajadoresAPI from '@/api/TrabajadoresAPI';
 import AvisoConexionGuardado from '@/components/steps/AvisoConexionGuardado.vue';
 import AvisoAtencionCampos from '@/components/steps/AvisoAtencionCampos.vue';
 import { enfocarCampo, limpiarAtencionCampo } from '@/helpers/enfocarCampo';
+import { quitarMedicionesVacias } from '@/helpers/medicionesClinicas';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
 import {
   aCamposFaltantes,
@@ -1496,9 +1497,12 @@ export default {
         if (Object.keys(out).length) o.estadoCondiciones = out;
         else delete o.estadoCondiciones;
       }
-      sincronizarEstadoControlAutomatico(o);
-      limpiarControlSinDiagnostico(o);
-      return limpiarValoresUndefined(o);
+      // Mediciones opcionales: solo lo capturado (un campo vacío llega como '' o null); antes
+      // de revisar la coherencia, para que un campo vacío no cuente como medición
+      const medido = quitarMedicionesVacias(o, ['somatometria', 'signosVitales']);
+      sincronizarEstadoControlAutomatico(medido);
+      limpiarControlSinDiagnostico(medido);
+      return limpiarValoresUndefined(medido);
     }
 
     // Función para convertir todas las fechas al formato ISO

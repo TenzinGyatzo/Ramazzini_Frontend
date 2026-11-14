@@ -3,28 +3,42 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import UsarUltimaExploracionFisica from '../UsarUltimaExploracionFisica.vue';
 import {
   SOMATOMETRIA_SIGNOS_RANGES,
   mensajeErrorSomatometriaSignosField,
 } from '@/helpers/somatometriaSignosRanges';
+import { esMedicion, imcDesdePesoAltura } from '@/helpers/medicionesClinicas';
 
 const { formDataCertificadoExpedito } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-const peso = ref(80);
-const altura = ref(1.7);
-const indiceMasaCorporal = ref(27.68);
-const categoriaIMC = ref('Sobrepeso');
+// Sin valores por defecto: se escribe lo que se midió (o se copia de la última exploración
+// física con el botón). Sin medición no hay IMC ni categoría.
+const peso = ref(null);
+const altura = ref(null);
+const indiceMasaCorporal = ref(null);
+const categoriaIMC = ref('');
 
 onMounted(() => {
-  if (documentos.currentDocument) {
-    peso.value = documentos.currentDocument.peso;
-    altura.value = documentos.currentDocument.altura;
-    indiceMasaCorporal.value = documentos.currentDocument.indiceMasaCorporal;
-    categoriaIMC.value = documentos.currentDocument.categoriaIMC;
-    setCategoriaIMC();
+  // Prioridad: formData (se regresó al paso) > documentos.currentDocument > vacío
+  const fuente =
+    formDataCertificadoExpedito.peso !== undefined || formDataCertificadoExpedito.altura !== undefined
+      ? formDataCertificadoExpedito
+      : documentos.currentDocument;
+  if (fuente) {
+    peso.value = fuente.peso ?? null;
+    altura.value = fuente.altura ?? null;
+    indiceMasaCorporal.value = imcDesdePesoAltura(peso.value, altura.value) ?? fuente.indiceMasaCorporal ?? null;
+    setCategoriaIMC(indiceMasaCorporal.value);
   }
 });
+
+/** Copia de la última exploración física lo que traiga (solo a pedido del usuario). */
+function usarUltimaExploracion(som) {
+  if (som.peso != null) peso.value = som.peso;
+  if (som.altura != null) altura.value = som.altura;
+}
 
 onUnmounted(() => {
   formDataCertificadoExpedito.peso = peso.value;
@@ -39,26 +53,18 @@ watch([peso, altura], () => {
 });
 
 function calcularIMC(peso, altura) {
-  if (peso > 0 && altura > 0) {
-    const imc = peso / (altura ** 2); // Altura ya está en metros
-    const imcRedondeado = Math.round(imc * 100) / 100;
-
-    // Actualiza tanto el estado reactivo como el formData
-    indiceMasaCorporal.value = imcRedondeado; // Esto actualizará dinámicamente el v-model
-    formDataCertificadoExpedito.indiceMasaCorporal = imcRedondeado;
-
-    setCategoriaIMC();
-  } else {
-    indiceMasaCorporal.value = null;
-    formDataCertificadoExpedito.indiceMasaCorporal = null;
-  }
+  const imc = imcDesdePesoAltura(peso, altura);
+  indiceMasaCorporal.value = imc;
+  formDataCertificadoExpedito.indiceMasaCorporal = imc;
+  setCategoriaIMC(imc);
 }
 
-function setCategoriaIMC() {
-  let IMC = formDataCertificadoExpedito.indiceMasaCorporal
+function setCategoriaIMC(IMC) {
   let categoria = '';
 
-  if (IMC < 18.5) {
+  if (!esMedicion(IMC)) {
+    categoria = '';
+  } else if (IMC < 18.5) {
     categoria = 'Bajo peso';
   } else if (IMC >= 18.5 && IMC <= 24.99) {
     categoria = 'Normal';
@@ -90,19 +96,23 @@ const mensajeErrorAltura = computed(() =>
     <h1 class="font-bold mb-4 text-gray-800 ">Medidas del cuerpo</h1>
     <h2 class="mb-4">SOMATOMETRÍA</h2>
 
+    <UsarUltimaExploracionFisica :con-cintura="false" @usar="usarUltimaExploracion" />
+
     <div class="flex gap-4 mb-4">
       <div>
         <label for="peso">Peso (Kg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="peso" :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min" :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max" step="0.1">
+          v-model="peso" :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min" :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max" step="0.1"
+          :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.peso.min}-${SOMATOMETRIA_SIGNOS_RANGES.peso.max}`">
         <p v-if="mensajeErrorPeso" class="text-red-500 text-sm mt-1">{{ mensajeErrorPeso }}</p>
       </div>
       <div>
         <label for="altura">Altura (m)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          v-model="altura" step="0.01" :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min" :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max" />
+          v-model="altura" step="0.01" :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min" :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max"
+          :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.altura.min}-${SOMATOMETRIA_SIGNOS_RANGES.altura.max}`" />
         <p v-if="mensajeErrorAltura" class="text-red-500 text-sm mt-1">{{ mensajeErrorAltura }}</p>
       </div>
     </div>

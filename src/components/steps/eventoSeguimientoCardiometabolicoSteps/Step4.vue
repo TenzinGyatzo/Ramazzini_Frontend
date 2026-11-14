@@ -2,6 +2,7 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { esMedicion } from '@/helpers/medicionesClinicas';
 
 const { formDataEventoSeguimientoCardiometabolico } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -21,11 +22,12 @@ function pushSignosVitales() {
   s.categoriaFrecuenciaCardiaca = categoriaFrecuenciaCardiaca.value;
 }
 
-const tensionArterialSistolica = ref(120);
-const tensionArterialDiastolica = ref(80);
-const categoriaTensionArterial = ref('Óptima');
-const frecuenciaCardiaca = ref(80);
-const categoriaFrecuenciaCardiaca = ref('Buena');
+// Sin valores por defecto: solo se guarda lo que se midió (son opcionales).
+const tensionArterialSistolica = ref(null);
+const tensionArterialDiastolica = ref(null);
+const categoriaTensionArterial = ref('');
+const frecuenciaCardiaca = ref(null);
+const categoriaFrecuenciaCardiaca = ref('');
 
 function hydrate(v) {
   if (!v) return;
@@ -67,6 +69,11 @@ function setCategoriaTensionArterial() {
   let categoriaSistolica = '';
   let categoriaDiastolica = '';
 
+  if (!esMedicion(sistolica)) {
+    // Sin sistólica no hay categoría
+    categoriaTensionArterial.value = '';
+    return;
+  }
   if (sistolica <= 120) categoriaSistolica = 'Óptima';
   else if (sistolica >= 121 && sistolica <= 130) categoriaSistolica = 'Normal';
   else if (sistolica >= 131 && sistolica <= 139) categoriaSistolica = 'Alta';
@@ -74,7 +81,8 @@ function setCategoriaTensionArterial() {
   else if (sistolica >= 160 && sistolica <= 179) categoriaSistolica = 'Hipertensión grado 2';
   else categoriaSistolica = 'Hipertensión grado 3';
 
-  if (diastolica <= 80) categoriaDiastolica = 'Óptima';
+  if (!esMedicion(diastolica)) categoriaDiastolica = '';
+  else if (diastolica <= 80) categoriaDiastolica = 'Óptima';
   else if (diastolica >= 81 && diastolica <= 85) categoriaDiastolica = 'Normal';
   else if (diastolica >= 86 && diastolica <= 89) categoriaDiastolica = 'Alta';
   else if (diastolica >= 90 && diastolica <= 99) categoriaDiastolica = 'Hipertensión grado 1';
@@ -106,7 +114,8 @@ function setCategoriaTensionArterial() {
 function setCategoriaFrecuenciaCardiaca() {
   const frecuencia = frecuenciaCardiaca.value;
   let categoria = '';
-  if (frecuencia < 60) categoria = 'Excelente';
+  if (!esMedicion(frecuencia)) categoria = '';
+  else if (frecuencia < 60) categoria = 'Excelente';
   else if (frecuencia >= 60 && frecuencia <= 80) categoria = 'Buena';
   else if (frecuencia >= 81 && frecuencia <= 100) categoria = 'Normal';
   else if (frecuencia >= 101 && frecuencia <= 120) categoria = 'Elevada';
@@ -119,16 +128,19 @@ function setCategoriaFrecuenciaCardiaca() {
 /** Coinciden con límites de `SignosVitalesCardiometabolicoDto` (envío API). */
 const mensajeErrorTensionSistolica = computed(() => {
   const v = tensionArterialSistolica.value;
+  if (!esMedicion(v)) return '';
   return v < 60 ? 'Debe ser mínimo 60' : v > 200 ? 'Debe ser máximo 200' : '';
 });
 
 const mensajeErrorTensionDiastolica = computed(() => {
   const v = tensionArterialDiastolica.value;
+  if (!esMedicion(v)) return '';
   return v < 40 ? 'Debe ser mínimo 40' : v > 150 ? 'Debe ser máximo 150' : '';
 });
 
 const mensajeErrorFrecuenciaCardiaca = computed(() => {
   const v = frecuenciaCardiaca.value;
+  if (!esMedicion(v)) return '';
   return v < 40 ? 'Debe ser mínimo 40' : v > 220 ? 'Debe ser máximo 220' : '';
 });
 

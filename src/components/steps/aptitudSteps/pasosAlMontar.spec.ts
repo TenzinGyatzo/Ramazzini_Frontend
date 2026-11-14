@@ -30,9 +30,19 @@ describe('Aptitud: lo que se ve llega al formulario al abrir el paso', () => {
     expect(datos.fechaAptitudPuesto).toBe('2026-11-02');
   });
 
-  it('paso 8: la aptitud marcada por defecto', () => {
+  it('paso 8: sin aptitud preseleccionada (se elige de forma explícita)', () => {
     const datos = useFormDataStore().formDataAptitud as Record<string, unknown>;
-    mount(Step8);
-    expect(datos.aptitudPuesto).toBe('Apto Sin Restricciones');
+    const wrapper = mount(Step8);
+    expect(datos.aptitudPuesto).toBeUndefined();
+    expect(wrapper.findAll('input[type="radio"]:checked')).toHaveLength(0);
+  });
+
+  it('paso 8: al editar o volver, muestra la aptitud ya elegida', async () => {
+    const datos = useFormDataStore().formDataAptitud as Record<string, unknown>;
+    datos.aptitudPuesto = 'No Apto';
+    const wrapper = mount(Step8);
+    expect((wrapper.find('input[value="No Apto"]').element as HTMLInputElement).checked).toBe(true);
+    await wrapper.find('input[value="Apto Con Precaución"]').setValue(true);
+    expect(datos.aptitudPuesto).toBe('Apto Con Precaución');
   });
 });

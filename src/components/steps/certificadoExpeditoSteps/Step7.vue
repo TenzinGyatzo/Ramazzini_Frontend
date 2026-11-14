@@ -1,23 +1,18 @@
 <script setup>
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 
 const { formDataCertificadoExpedito } = useFormDataStore();
 
-// Valor local para la aptitudPuesto principal, inicializado con el valor actual del store
-const aptitudPuesto = ref(formDataCertificadoExpedito.aptitudPuesto || 'Apto Sin Restricciones');
+// Sin opción preseleccionada: la aptitud se elige de forma explícita (es obligatoria y al
+// guardar se pide si falta). Al editar se muestra la guardada.
+const aptitudPuesto = ref(formDataCertificadoExpedito.aptitudPuesto || '');
 
 // Sincronizar el valor seleccionado con formDataCertificadoExpedito.aptitudPuesto
 watch(aptitudPuesto, (newValue) => {
     formDataCertificadoExpedito.aptitudPuesto = newValue;
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para aptitudPuesto
-    if (!formDataCertificadoExpedito.aptitudPuesto) {
-        formDataCertificadoExpedito.aptitudPuesto = 'Apto Sin Restricciones';
-    }
-});
 </script>
 
 <template>

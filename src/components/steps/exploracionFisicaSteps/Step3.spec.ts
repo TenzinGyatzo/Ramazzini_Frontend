@@ -9,18 +9,34 @@ describe('Exploración física, paso 3 (signos vitales)', () => {
     setActivePinia(createPinia());
   });
 
-  it('al montarse copia al formulario los valores que muestra (por defecto)', () => {
+  it('documento nuevo: abre vacío, sin valores por defecto ni categorías', () => {
     const { formDataExploracionFisica } = useFormDataStore();
-    mount(Step3);
-    // Sin esto, al guardar se pedían datos que sí se ven en pantalla
+    const wrapper = mount(Step3);
+    // Antes abría con 120/80, 80, 17 y 97: se guardaban aunque nadie los midiera
     expect(formDataExploracionFisica).toMatchObject({
-      tensionArterialSistolica: 120,
-      tensionArterialDiastolica: 80,
-      frecuenciaCardiaca: 80,
-      frecuenciaRespiratoria: 17,
-      saturacionOxigeno: 97,
-      categoriaTensionArterial: 'Óptima',
+      tensionArterialSistolica: null,
+      tensionArterialDiastolica: null,
+      frecuenciaCardiaca: null,
+      frecuenciaRespiratoria: null,
+      saturacionOxigeno: null,
+      categoriaTensionArterial: '',
+      categoriaFrecuenciaCardiaca: '',
+      categoriaFrecuenciaRespiratoria: '',
+      categoriaSaturacionOxigeno: '',
     });
+    for (const input of wrapper.findAll('input[type="number"]')) {
+      expect((input.element as HTMLInputElement).value).toBe('');
+    }
+  });
+
+  it('sin diastólica, la categoría sale de la sistólica (antes caía en grado 3)', () => {
+    const { formDataExploracionFisica } = useFormDataStore();
+    Object.assign(formDataExploracionFisica, {
+      tensionArterialSistolica: 118,
+      tensionArterialDiastolica: null,
+    });
+    mount(Step3);
+    expect((formDataExploracionFisica as Record<string, unknown>).categoriaTensionArterial).toBe('Óptima');
   });
 
   it('con datos previos en el formulario los conserva', () => {

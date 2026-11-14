@@ -72,20 +72,20 @@ function asegurarSomatometriaMinimaParaImc() {
   const fd = formDataEventoSeguimientoCardiometabolico;
   if (!fd.somatometria) fd.somatometria = {};
   const s = fd.somatometria;
-  const esHombre = trabajadores.currentTrabajador?.sexo !== 'Femenino';
+  // Solo mediciones reales: las de la última exploración física, si las hay (sin valores
+  // por sexo). Sin altura, el diagnóstico avisa que falta completar la somatometría.
   const ef = obtenerSomatometriaUltimaExploracionFisica(
     documentos.documentsByYear,
     trabajadores.currentTrabajador?._id,
   );
   if (!(typeof s.altura === 'number') || s.altura <= 0) {
-    s.altura = ef?.altura != null ? ef.altura : esHombre ? 1.7 : 1.6;
+    if (ef?.altura != null) s.altura = ef.altura;
   }
   if (!(typeof s.peso === 'number') || s.peso <= 0) {
-    s.peso = ef?.peso != null ? ef.peso : esHombre ? 80 : 70;
+    if (ef?.peso != null) s.peso = ef.peso;
   }
   if (!(typeof s.circunferenciaCintura === 'number') || s.circunferenciaCintura <= 0) {
-    s.circunferenciaCintura =
-      ef?.circunferenciaCintura != null ? ef.circunferenciaCintura : esHombre ? 93 : 79;
+    if (ef?.circunferenciaCintura != null) s.circunferenciaCintura = ef.circunferenciaCintura;
   }
 }
 
