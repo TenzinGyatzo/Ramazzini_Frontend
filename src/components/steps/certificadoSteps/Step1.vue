@@ -1,6 +1,6 @@
 <script setup>
 import CampoFecha from '@/components/fecha/CampoFecha.vue';
-import { ref, watch, onMounted, onUnmounted, toRefs } from 'vue';
+import { ref, watch, onMounted, onUnmounted, toRefs, computed } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -10,6 +10,10 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
+import {
+  MODALIDADES_CERTIFICADO,
+  normalizarModalidadCertificado,
+} from '@/helpers/certificadoModalidad';
 
 const props = defineProps({
   variant: {
@@ -29,6 +33,16 @@ const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
 const today = format(new Date(), 'yyyy-MM-dd');
 const fechaCertificado = ref(today);
+/** Con resultados clínicos (predeterminado) o por interrogatorio médico; se guarda con el documento. */
+const modalidad = ref(
+  normalizarModalidadCertificado(
+    formDataStore.formDataCertificado.modalidadCertificado ??
+      documentos.currentDocument?.modalidadCertificado,
+  ),
+);
+const ayudaModalidad = computed(
+  () => MODALIDADES_CERTIFICADO.find((m) => m.value === modalidad.value)?.ayuda ?? '',
+);
 
 onMounted(() => {
   if (documentos.currentDocument) {
@@ -57,6 +71,14 @@ onMounted(() => {
   formDataStore.formDataCertificado = {
     ...formDataStore.formDataCertificado,
     fechaCertificado: fechaCertificado.value,
+    modalidadCertificado: modalidad.value,
+  };
+});
+
+watch(modalidad, (valor) => {
+  formDataStore.formDataCertificado = {
+    ...formDataStore.formDataCertificado,
+    modalidadCertificado: valor,
   };
 });
 
@@ -111,6 +133,38 @@ watch(fechaCertificado, (newValue) => {
         :max="fechaDocumentoMax"
         v-model="fechaCertificado"
       />
+    </div>
+
+    <div :class="variant === 'compact' ? 'mt-3' : 'mt-6'" data-campo="modalidadCertificado">
+      <h2
+        :class="
+          variant === 'compact'
+            ? 'text-sm font-medium mb-1.5 text-gray-800'
+            : 'text-lg font-medium mb-3 text-gray-800'
+        "
+      >
+        Contenido del certificado
+      </h2>
+      <div class="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Contenido del certificado">
+        <button
+          v-for="opcion in MODALIDADES_CERTIFICADO"
+          :key="opcion.value"
+          type="button"
+          role="radio"
+          :aria-checked="modalidad === opcion.value"
+          :data-modalidad="opcion.value"
+          :class="[
+            'rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors',
+            modalidad === opcion.value
+              ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+              : 'border-gray-300 bg-white text-gray-700 hover:border-emerald-400',
+          ]"
+          @click="modalidad = opcion.value"
+        >
+          {{ opcion.etiqueta }}
+        </button>
+      </div>
+      <p class="mt-1.5 text-xs text-gray-500" data-ayuda-modalidad>{{ ayudaModalidad }}</p>
     </div>
   </div>
 </template>

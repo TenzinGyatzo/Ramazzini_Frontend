@@ -1,4 +1,9 @@
 <script setup>
+import {
+  normalizarModalidadCertificado,
+  textoConclusionInterrogatorio,
+  textoImpedimentosCertificado,
+} from '@/helpers/certificadoModalidad';
 import { ref, watch, computed, onMounted } from 'vue';
 import { formatDateDDMMYYYY } from '@/helpers/dates';
 import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
@@ -23,6 +28,9 @@ import { toTitleCase } from '@/helpers/toTitleCase';
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
 const formData = useFormDataStore();
+const esPorInterrogatorio = computed(
+  () => normalizarModalidadCertificado(formData.formDataCertificado?.modalidadCertificado) === 'interrogatorio',
+);
 const { edad, antiguedad } = useEdadAntiguedadDocumento(() => formData.formDataCertificado.fechaCertificado);
 const steps = useStepsStore();
 const medicoFirmanteStore = useMedicoFirmanteStore();
@@ -385,7 +393,16 @@ function formatearCampo(campo) {
 
     <div v-if="formData.formDataCertificado.fechaCertificado" class="w-full mb-4">
        <p class="text-justify">
-         <template v-if="proveedorSalud.pais === 'PA'">
+         <!-- Por interrogatorio: sin resultados clínicos, siempre con su conclusión (punto 33) -->
+         <template v-if="esPorInterrogatorio">
+           Que, habiendo practicado reconocimiento médico en esta fecha, {{ proveedorSalud.pais === 'GT'
+             ? 'a '
+             : (trabajadores.currentTrabajador.sexo === 'Femenino' ? 'a la' : 'al') + ' C. ' }}
+           <strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong>
+           de <strong>{{ edad }}</strong> años de edad
+           <span :class="[sectionOutlineClass('certificado'), rowOutlineClass(1), rowPinpointClass(1)]" data-conclusion-interrogatorio>{{ textoConclusionInterrogatorio(trabajadores.currentTrabajador.sexo) }}</span>
+         </template>
+         <template v-else-if="proveedorSalud.pais === 'PA'">
            Que, habiendo practicado reconocimiento médico en esta fecha, {{ trabajadores.currentTrabajador.sexo === 'Femenino' ? 'a la' : 'al' }} C. 
            <strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido }}</strong>, 
            de <strong>{{ edad }}</strong> años de edad, se hace constar la práctica del examen médico conforme a los procedimientos establecidos.
@@ -449,7 +466,7 @@ function formatearCampo(campo) {
 
      <div class="w-full mb-4">
         <p class="text-justify">
-            Por lo anterior, se establece que <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido  + ' ' }}</strong><span v-if="proveedorSalud.pais === 'GT' && trabajadores.currentTrabajador.sexo === 'Femenino'"> </span><span class="cursor-pointer" :class="[sectionOutlineClass('certificado'), rowOutlineClass(2), rowPinpointClass(2)]" @click="goToStep(2)">{{ formData.formDataCertificado.impedimentosFisicos ? formData.formDataCertificado.impedimentosFisicos : '[DESCRIPCIÓN DE IMPEDIMENTOS FÍSICOS]' }}.</span> Este certificado de salud no implica ningún tipo de garantía de que <span>{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el trabajador' : 'la trabajadora' }}</span> no se lesionará o enfermará en el futuro.
+            Por lo anterior, se establece que <span v-if="proveedorSalud.pais !== 'GT'">{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el' : 'la' }} C. </span><strong>{{ trabajadores.currentTrabajador.nombre + ' ' + trabajadores.currentTrabajador.primerApellido + ' ' + trabajadores.currentTrabajador.segundoApellido  + ' ' }}</strong><span v-if="proveedorSalud.pais === 'GT' && trabajadores.currentTrabajador.sexo === 'Femenino'"> </span><span class="cursor-pointer" :class="[sectionOutlineClass('certificado'), rowOutlineClass(2), rowPinpointClass(2)]" @click="goToStep(2)">{{ formData.formDataCertificado.impedimentosFisicos ? textoImpedimentosCertificado(formData.formDataCertificado.modalidadCertificado, formData.formDataCertificado.impedimentosFisicos, trabajadores.currentTrabajador.puesto) : '[DESCRIPCIÓN DE IMPEDIMENTOS FÍSICOS]' }}.</span> Este certificado de salud no implica ningún tipo de garantía de que <span>{{ trabajadores.currentTrabajador.sexo === 'Masculino' ? 'el trabajador' : 'la trabajadora' }}</span> no se lesionará o enfermará en el futuro.
         </p>
      </div>
      
