@@ -16,7 +16,7 @@ export const MODALIDADES_CERTIFICADO: { value: ModalidadCertificado; etiqueta: s
   },
   {
     value: 'interrogatorio',
-    etiqueta: 'Sin resultados clínicos (por interrogatorio)',
+    etiqueta: 'Sin resultados clínicos',
     ayuda: 'No incluye resultados: se basa en las respuestas del interrogatorio médico.',
   },
 ];
