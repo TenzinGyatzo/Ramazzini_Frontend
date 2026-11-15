@@ -116,11 +116,16 @@ export const CAMPOS_POR_TIPO: Record<TipoPruebaAntidoping, AntidopingParametro[]
   '12': [...ANTIDOPING_PARAMETROS_ORDEN],
 };
 
-/** «5 parámetros · THC, COC, AMP, MET, OPI»: cada opción dice qué analitos incluye. */
+/**
+ * Etiquetas cortas (la lista no debe crecer): solo las dos de 5 dicen su diferencia, el quinto
+ * analito. Los analitos completos se leen en «Se reportan» debajo de la lista.
+ */
 function etiquetaTipo(tipo: TipoPruebaAntidoping): string {
   const campos = CAMPOS_POR_TIPO[tipo];
-  const abreviaturas = campos.map((c) => ANTIDOPING_PARAMETRO_ABREVIATURAS[c]).join(', ');
-  return `${campos.length} parámetros · ${abreviaturas}`;
+  if (tipo === '5' || tipo === '5BZO') {
+    return `${campos.length} parámetros (${ANTIDOPING_PARAMETRO_ABREVIATURAS[campos[4]]})`;
+  }
+  return `${campos.length} parámetros`;
 }
 
 /** En este orden en la lista; las dos de 5 quedan juntas (la de OPI sigue siendo la predeterminada). */

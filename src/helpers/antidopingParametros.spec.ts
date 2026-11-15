@@ -69,11 +69,17 @@ describe('5 parámetros con BZO (otra marca de prueba)', () => {
     expect(normalizeTipoPrueba(undefined)).toBe('5');
   });
 
-  it('cada opción de la lista dice qué analitos incluye; las dos de 5 quedan juntas', () => {
+  it('etiquetas cortas: solo las dos de 5 dicen su quinto analito, y quedan juntas', () => {
     const etiquetas = TIPOS_PRUEBA_OPCIONES.map((o) => o.label);
-    expect(etiquetas[2]).toBe('5 parámetros · THC, COC, AMP, MET, OPI');
-    expect(etiquetas[3]).toBe('5 parámetros · THC, COC, AMP, MET, BZO');
-    expect(etiquetas[0]).toBe('2 parámetros · THC, COC');
+    expect(etiquetas).toEqual([
+      '2 parámetros',
+      '3 parámetros',
+      '5 parámetros (OPI)',
+      '5 parámetros (BZO)',
+      '6 parámetros',
+      '10 parámetros',
+      '12 parámetros',
+    ]);
     expect(nombresDelTipo('5BZO')).toBe('Marihuana, Cocaína, Anfetaminas, Metanfetaminas, Benzodiacepinas');
   });
 
