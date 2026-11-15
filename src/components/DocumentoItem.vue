@@ -2659,11 +2659,11 @@ const mensajeDetalladoAntidoping = computed(() => {
 
   // Si hay algún positivo, construir el mensaje con las sustancias correspondientes
   const sustanciasPositivas = [
-    antidoping.marihuana !== 'Negativo' ? 'Marihuana' : null,
-    antidoping.cocaina !== 'Negativo' ? 'Cocaína' : null,
-    antidoping.anfetaminas !== 'Negativo' ? 'Anfetaminas' : null,
-    antidoping.metanfetaminas !== 'Negativo' ? 'Metanfetaminas' : null,
-    antidoping.opiaceos !== 'Negativo' ? 'Opiáceos' : null,
+    antidoping.marihuana && antidoping.marihuana !== 'Negativo' ? 'Marihuana' : null,
+    antidoping.cocaina && antidoping.cocaina !== 'Negativo' ? 'Cocaína' : null,
+    antidoping.anfetaminas && antidoping.anfetaminas !== 'Negativo' ? 'Anfetaminas' : null,
+    antidoping.metanfetaminas && antidoping.metanfetaminas !== 'Negativo' ? 'Metanfetaminas' : null,
+    antidoping.opiaceos && antidoping.opiaceos !== 'Negativo' ? 'Opiáceos' : null,
     antidoping.benzodiacepinas && antidoping.benzodiacepinas !== 'Negativo' ? 'Benzodiazepinas' : null,
     antidoping.fenciclidina && antidoping.fenciclidina !== 'Negativo' ? 'Fenciclidina' : null,
     antidoping.metadona && antidoping.metadona !== 'Negativo' ? 'Metadona' : null,

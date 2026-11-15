@@ -8,8 +8,26 @@ import {
   getCamposVisibles,
   formatoNombreParametro,
   inferTipoPruebaFromDoc,
+  nombresDelTipo,
   normalizeTipoPrueba,
 } from '@/helpers/antidopingParametros';
+
+/** Último tipo de prueba usado en este navegador: una clínica que siempre usa la misma marca ya la tiene elegida. */
+const CLAVE_ULTIMO_TIPO = 'ramazzini.antidoping.ultimoTipoPrueba';
+const leerUltimoTipo = () => {
+  try {
+    return localStorage.getItem(CLAVE_ULTIMO_TIPO);
+  } catch {
+    return null;
+  }
+};
+const guardarUltimoTipo = (tipo) => {
+  try {
+    localStorage.setItem(CLAVE_ULTIMO_TIPO, tipo);
+  } catch {
+    // Sin almacenamiento disponible (modo privado): se usa el predeterminado
+  }
+};
 import SiNoChips from './SiNoChips.vue';
 
 const props = defineProps({
@@ -69,7 +87,10 @@ onMounted(() => {
 
     antidopingResult.value = 'Si';
   } else {
-    tipoPrueba.value = normalizeTipoPrueba(tipoPrueba.value || '5');
+    // Documento nuevo: el tipo ya elegido (al volver al paso) o el último que se usó
+    tipoPrueba.value = normalizeTipoPrueba(
+      formDataStore.formDataAntidoping.tipoPrueba || leerUltimoTipo() || '5',
+    );
   }
 
   syncToStore();
@@ -87,8 +108,10 @@ watch(
   { deep: true },
 );
 
-watch(tipoPrueba, () => {
+watch(tipoPrueba, (tipo) => {
   syncToStore();
+  // Solo al elegirlo en un documento nuevo (abrir uno guardado no cambia la preferencia)
+  if (!documentos.currentDocument) guardarUltimoTipo(tipo);
 });
 
 watch(antidopingResult, (val) => {
@@ -143,6 +166,9 @@ function toggleParametro(parametro) {
           {{ opt.label }}
         </option>
       </select>
+      <p class="mt-1 text-xs text-gray-500" data-se-reportan>
+        Se reportan: {{ nombresDelTipo(tipoPrueba) }}
+      </p>
     </div>
 
     <SiNoChips

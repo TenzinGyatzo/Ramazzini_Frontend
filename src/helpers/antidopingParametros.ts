@@ -17,7 +17,8 @@ export type AntidopingParametro =
   | 'metilendioximetanfetamina'
   | 'ketamina';
 
-export type TipoPruebaAntidoping = '2' | '3' | '5' | '6' | '10' | '12';
+/** '5BZO': 5 parámetros con Benzodiacepinas en lugar de Opiáceos (otra marca de prueba). */
+export type TipoPruebaAntidoping = '2' | '3' | '5' | '5BZO' | '6' | '10' | '12';
 
 export const ANTIDOPING_PARAMETROS_ORDEN: AntidopingParametro[] = [
   'marihuana',
@@ -55,6 +56,22 @@ export const ANTIDOPING_PARAMETRO_LABELS_FORM: Record<AntidopingParametro, strin
   ketamina: 'Ketamina',
 };
 
+/** Abreviatura de cada analito (como aparece en la prueba física). */
+export const ANTIDOPING_PARAMETRO_ABREVIATURAS: Record<AntidopingParametro, string> = {
+  marihuana: 'THC',
+  cocaina: 'COC',
+  anfetaminas: 'AMP',
+  metanfetaminas: 'MET',
+  opiaceos: 'OPI',
+  benzodiacepinas: 'BZO',
+  fenciclidina: 'PCP',
+  metadona: 'MTD',
+  barbituricos: 'BAR',
+  antidepresivosTriciclicos: 'TCA',
+  metilendioximetanfetamina: 'MDMA',
+  ketamina: 'KET',
+};
+
 /** Labels con abreviatura para el visualizador. */
 export const ANTIDOPING_PARAMETRO_LABELS_VISTA: Record<AntidopingParametro, string> = {
   marihuana: 'Marihuana (THC)',
@@ -75,6 +92,7 @@ export const CAMPOS_POR_TIPO: Record<TipoPruebaAntidoping, AntidopingParametro[]
   '2': ['marihuana', 'cocaina'],
   '3': ['marihuana', 'cocaina', 'anfetaminas'],
   '5': ['marihuana', 'cocaina', 'anfetaminas', 'metanfetaminas', 'opiaceos'],
+  '5BZO': ['marihuana', 'cocaina', 'anfetaminas', 'metanfetaminas', 'benzodiacepinas'],
   '6': [
     'marihuana',
     'cocaina',
@@ -98,14 +116,24 @@ export const CAMPOS_POR_TIPO: Record<TipoPruebaAntidoping, AntidopingParametro[]
   '12': [...ANTIDOPING_PARAMETROS_ORDEN],
 };
 
-export const TIPOS_PRUEBA_OPCIONES: Array<{ value: TipoPruebaAntidoping; label: string }> = [
-  { value: '2', label: '2 parámetros' },
-  { value: '3', label: '3 parámetros' },
-  { value: '5', label: '5 parámetros' },
-  { value: '6', label: '6 parámetros' },
-  { value: '10', label: '10 parámetros' },
-  { value: '12', label: '12 parámetros' },
-];
+/** «5 parámetros · THC, COC, AMP, MET, OPI»: cada opción dice qué analitos incluye. */
+function etiquetaTipo(tipo: TipoPruebaAntidoping): string {
+  const campos = CAMPOS_POR_TIPO[tipo];
+  const abreviaturas = campos.map((c) => ANTIDOPING_PARAMETRO_ABREVIATURAS[c]).join(', ');
+  return `${campos.length} parámetros · ${abreviaturas}`;
+}
+
+/** En este orden en la lista; las dos de 5 quedan juntas (la de OPI sigue siendo la predeterminada). */
+export const TIPOS_PRUEBA_OPCIONES: Array<{ value: TipoPruebaAntidoping; label: string }> = (
+  ['2', '3', '5', '5BZO', '6', '10', '12'] as TipoPruebaAntidoping[]
+).map((value) => ({ value, label: etiquetaTipo(value) }));
+
+/** «Marihuana, Cocaína, …»: los analitos que se reportan con un tipo de prueba. */
+export function nombresDelTipo(tipoPrueba?: string | null): string {
+  return getCamposVisibles(tipoPrueba)
+    .map((c) => ANTIDOPING_PARAMETRO_LABELS_FORM[c])
+    .join(', ');
+}
 
 export function normalizeTipoPrueba(
   tipoPrueba?: string | null,
@@ -153,6 +181,15 @@ export function inferTipoPruebaFromDoc(
 
   if (camposPresentes.length >= 12) return '12';
   if (camposPresentes.length >= 10) return '10';
+  // 5 con Benzodiacepinas y sin Opiáceos: el set de BZO (antes se tomaba por el de 6 y, al
+  // editar, se agregaba un Opiáceos «Negativo» que nunca se probó)
+  if (
+    camposPresentes.length === 5 &&
+    camposPresentes.includes('benzodiacepinas') &&
+    !camposPresentes.includes('opiaceos')
+  ) {
+    return '5BZO';
+  }
   if (camposPresentes.includes('benzodiacepinas')) return '6';
   if (
     camposPresentes.length === 5 &&

@@ -5,6 +5,8 @@ import {
   inferTipoPruebaFromDoc,
   normalizeTipoPrueba,
   CAMPOS_POR_TIPO,
+  TIPOS_PRUEBA_OPCIONES,
+  nombresDelTipo,
 } from '@/helpers/antidopingParametros';
 
 describe('antidopingParametros', () => {
@@ -51,5 +53,35 @@ describe('antidopingParametros', () => {
         benzodiacepinas: 'Negativo',
       }),
     ).toBe('6');
+  });
+});
+
+describe('5 parámetros con BZO (otra marca de prueba)', () => {
+  it('mismo set que el de 5 con Benzodiacepinas en lugar de Opiáceos', () => {
+    expect(getCamposVisibles('5BZO')).toEqual([
+      'marihuana',
+      'cocaina',
+      'anfetaminas',
+      'metanfetaminas',
+      'benzodiacepinas',
+    ]);
+    // El de OPI sigue siendo el predeterminado
+    expect(normalizeTipoPrueba(undefined)).toBe('5');
+  });
+
+  it('cada opción de la lista dice qué analitos incluye; las dos de 5 quedan juntas', () => {
+    const etiquetas = TIPOS_PRUEBA_OPCIONES.map((o) => o.label);
+    expect(etiquetas[2]).toBe('5 parámetros · THC, COC, AMP, MET, OPI');
+    expect(etiquetas[3]).toBe('5 parámetros · THC, COC, AMP, MET, BZO');
+    expect(etiquetas[0]).toBe('2 parámetros · THC, COC');
+    expect(nombresDelTipo('5BZO')).toBe('Marihuana, Cocaína, Anfetaminas, Metanfetaminas, Benzodiacepinas');
+  });
+
+  it('al reabrir se reconoce por sus analitos (antes se tomaba por el de 6)', () => {
+    const conBzo = { marihuana: 'Negativo', cocaina: 'Negativo', anfetaminas: 'Negativo', metanfetaminas: 'Negativo', benzodiacepinas: 'Positivo' };
+    expect(inferTipoPruebaFromDoc(conBzo)).toBe('5BZO');
+    expect(inferTipoPruebaFromDoc({ ...conBzo, opiaceos: 'Negativo' })).toBe('6');
+    const conOpi = { marihuana: 'Negativo', cocaina: 'Negativo', anfetaminas: 'Negativo', metanfetaminas: 'Negativo', opiaceos: 'Negativo' };
+    expect(inferTipoPruebaFromDoc(conOpi)).toBe('5');
   });
 });

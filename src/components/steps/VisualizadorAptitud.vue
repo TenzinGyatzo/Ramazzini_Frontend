@@ -415,11 +415,11 @@ const antidopingResumen = computed(() => {
 
   // Si hay algún positivo, construir el mensaje con las sustancias correspondientes
   const sustanciasPositivas = [
-    nearestAntidoping.value.marihuana !== 'Negativo' ? 'Marihuana' : null,
-    nearestAntidoping.value.cocaina !== 'Negativo' ? 'Cocaína' : null,
-    nearestAntidoping.value.anfetaminas !== 'Negativo' ? 'Anfetaminas' : null,
-    nearestAntidoping.value.metanfetaminas !== 'Negativo' ? 'Metanfetaminas' : null,
-    nearestAntidoping.value.opiaceos !== 'Negativo' ? 'Opiáceos' : null,
+    nearestAntidoping.value.marihuana && nearestAntidoping.value.marihuana !== 'Negativo' ? 'Marihuana' : null,
+    nearestAntidoping.value.cocaina && nearestAntidoping.value.cocaina !== 'Negativo' ? 'Cocaína' : null,
+    nearestAntidoping.value.anfetaminas && nearestAntidoping.value.anfetaminas !== 'Negativo' ? 'Anfetaminas' : null,
+    nearestAntidoping.value.metanfetaminas && nearestAntidoping.value.metanfetaminas !== 'Negativo' ? 'Metanfetaminas' : null,
+    nearestAntidoping.value.opiaceos && nearestAntidoping.value.opiaceos !== 'Negativo' ? 'Opiáceos' : null,
     nearestAntidoping.value.benzodiacepinas && nearestAntidoping.value.benzodiacepinas !== 'Negativo' ? 'Benzodiazepinas' : null,
     nearestAntidoping.value.fenciclidina && nearestAntidoping.value.fenciclidina !== 'Negativo' ? 'Fenciclidina' : null,
     nearestAntidoping.value.metadona && nearestAntidoping.value.metadona !== 'Negativo' ? 'Metadona' : null,

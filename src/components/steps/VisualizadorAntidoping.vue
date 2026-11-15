@@ -11,7 +11,7 @@ import {
   legacyStepToSectionIndex,
 } from '@/helpers/antidopingSections';
 import { shouldShowPinpointVisual } from '@/helpers/sectionPinpointVisual';
-import {
+import { inferTipoPruebaFromDoc,
   ANTIDOPING_PARAMETROS_ORDEN,
   ANTIDOPING_PARAMETRO_LABELS_VISTA,
   isCampoVisible,
@@ -75,7 +75,8 @@ const rowPinpointClass = (legacyStep) =>
 const filasParametros = computed(() => {
   const data = formData.formDataAntidoping || {};
   return ANTIDOPING_PARAMETROS_ORDEN.filter((campo) =>
-    isCampoVisible(campo, data.tipoPrueba || '5'),
+    // Sin tipo guardado (el servidor no lo guarda) se reconoce por los analitos presentes
+    isCampoVisible(campo, data.tipoPrueba || inferTipoPruebaFromDoc(data)),
   ).map((campo) => ({
     campo,
     label: ANTIDOPING_PARAMETRO_LABELS_VISTA[campo],
