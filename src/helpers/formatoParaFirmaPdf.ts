@@ -16,7 +16,7 @@ import type {
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { setupPdfMakeKanitFonts } from '@/helpers/setupPdfMakeKanitFonts';
 import { toTitleCase } from '@/helpers/toTitleCase';
-import { encabezadoConCodigoFormato, type CodigoFormato } from '@/helpers/codigosFormato';
+import { conCodigoFormato, type CodigoFormato } from '@/helpers/codigosFormato';
 
 export interface TrabajadorFormatoFirma {
   nombre?: string;
@@ -363,10 +363,7 @@ export async function descargarFormatoParaFirmaPdf(
     proveedorSalud,
     construir: (logo) => {
       const definicion = buildDocDefinitionFormato({
-        header: encabezadoConCodigoFormato(
-          buildHeaderFormato(logo, `${diseno.sangria}${texto.titulo}\n`),
-          codigoFormato,
-        ),
+        header: buildHeaderFormato(logo, `${diseno.sangria}${texto.titulo}\n`),
         footer: buildFooterFormato(proveedorSalud),
         content: buildCuerpoFormato(
           texto.bloques,
@@ -378,8 +375,8 @@ export async function descargarFormatoParaFirmaPdf(
           diseno.etiquetaFirma,
         ),
       });
-      if (diseno.tamanoTitulo === 15 && diseno.tamanoTexto === 11) return definicion;
-      return {
+      if (diseno.tamanoTitulo === 15 && diseno.tamanoTexto === 11) return conCodigoFormato(definicion, codigoFormato);
+      return conCodigoFormato({
         ...definicion,
         defaultStyle: { ...definicion.defaultStyle, fontSize: diseno.tamanoTexto },
         styles: {
@@ -387,7 +384,7 @@ export async function descargarFormatoParaFirmaPdf(
           header: { ...definicion.styles?.header, fontSize: diseno.tamanoTitulo },
           paragraph: { ...definicion.styles?.paragraph, fontSize: diseno.tamanoTexto },
         },
-      };
+      }, codigoFormato);
     },
   });
 }

@@ -95,15 +95,15 @@ export function codigoFormatoVigente(
 const MARGEN_DERECHO = 50;
 const POSICION_Y = 12;
 
+/** Las dos líneas del código, medidas desde la esquina de la hoja, o null si no lleva código. */
 export function bloqueCodigoFormato(codigoFormato: CodigoFormato | null | undefined): Content | null {
   const codigo = limpiarTextoCodigo(codigoFormato?.codigo);
   if (!codigo) return null;
   const lineaAdicional = limpiarTextoCodigo(codigoFormato?.lineaAdicional);
-  // pdfmake ignora el margen de un bloque en posición absoluta: va en cada línea
   const linea = (text: string) => ({ text, margin: [0, 0, MARGEN_DERECHO, 0] });
   return {
-    absolutePosition: { x: 0, y: POSICION_Y },
     stack: [linea(codigo), ...(lineaAdicional ? [linea(lineaAdicional)] : [])],
+    margin: [0, POSICION_Y, 0, 0],
     fontSize: 8,
     color: '#6C757D',
     alignment: 'right',
@@ -111,19 +111,24 @@ export function bloqueCodigoFormato(codigoFormato: CodigoFormato | null | undefi
   } as Content;
 }
 
-/** El encabezado fijo con el código encima; sin código, el mismo encabezado. */
-export function encabezadoConCodigoFormato(
-  header: TDocumentDefinitions['header'],
+/**
+ * La misma definición con el código en cada página. Va en el fondo de la página, no en el
+ * encabezado: el logotipo ocupa casi todo el alto del encabezado y, con otro bloque ahí,
+ * pdfmake dejaba de dibujarlo. Sin código, la misma definición.
+ */
+export function conCodigoFormato(
+  definicion: TDocumentDefinitions,
   codigoFormato: CodigoFormato | null | undefined,
-): TDocumentDefinitions['header'] {
-  const bloque = bloqueCodigoFormato(codigoFormato);
-  if (!bloque) return header;
-  if (typeof header === 'function') {
-    return (pagina, total, tamano) => {
-      const base = header(pagina, total, tamano);
+): TDocumentDefinitions {
+  if (!bloqueCodigoFormato(codigoFormato)) return definicion;
+  const original = definicion.background;
+  return {
+    ...definicion,
+    // Un bloque nuevo en cada página (pdfmake modifica los nodos que procesa)
+    background: (pagina, tamano) => {
       const propio = bloqueCodigoFormato(codigoFormato) as Content;
-      return base ? [propio, base] : [propio];
-    };
-  }
-  return header ? [bloque, header] : [bloque];
+      const base = typeof original === 'function' ? original(pagina, tamano) : original;
+      return base ? [base as Content, propio] : propio;
+    },
+  };
 }

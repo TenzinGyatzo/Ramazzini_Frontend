@@ -459,7 +459,8 @@ onMounted(cargar);
           <div class="min-w-0">
             <h3 class="modulos-funciones__titulo">Códigos de formato</h3>
             <p class="modulos-funciones__texto">
-              El código y la revisión de cada formato en tu sistema de gestión, arriba a la derecha de los PDF.
+              Puedes configurar el código de identificación de cada formato para documentarlo en tu sistema de gestión,
+              el código se muestra en el encabezado de los PDF.
             </p>
             <p v-if="estado.codigosFormatoHabilitado" class="modulos-funciones__enlaces">
               <span

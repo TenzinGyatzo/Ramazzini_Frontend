@@ -4,7 +4,7 @@ import {
   bloqueCodigoFormato,
   codigoFormatoVigente,
   codigosParaGuardar,
-  encabezadoConCodigoFormato,
+  conCodigoFormato,
 } from './codigosFormato';
 
 describe('códigos de formato (punto 34)', () => {
@@ -34,12 +34,13 @@ describe('códigos de formato (punto 34)', () => {
     ).toEqual({ receta: { codigo: 'FCPE-030' }, aptitud: { codigo: 'FCPE 010', lineaAdicional: 'Revisión: 03' } });
   });
 
-  it('encabezado del formato impreso: el código va encima, sin quitar logo ni título', () => {
-    const header = { columns: [{ text: 'logo' }, { text: 'TÍTULO' }] };
-    expect(encabezadoConCodigoFormato(header as any, null)).toBe(header);
-    const r = encabezadoConCodigoFormato(header as any, { codigo: 'FCPE-040', lineaAdicional: 'Rev. 01' }) as any[];
-    expect(r[1]).toBe(header);
-    expect(r[0]).toMatchObject({ absolutePosition: { x: 0, y: 12 }, fontSize: 8, alignment: 'right' });
+  it('formato impreso: el código va en el fondo de la página y el encabezado (logotipo) no se toca', () => {
+    const definicion = { header: { columns: [{ text: 'logo' }, { text: 'TÍTULO' }] }, content: [] } as any;
+    expect(conCodigoFormato(definicion, null)).toBe(definicion);
+    const r = conCodigoFormato(definicion, { codigo: 'FCPE-040', lineaAdicional: 'Rev. 01' });
+    expect(r.header).toBe(definicion.header);
+    const fondo = (r.background as any)(1, { width: 612, height: 792 });
+    expect(fondo).toMatchObject({ margin: [0, 12, 0, 0], fontSize: 8, alignment: 'right' });
     expect((bloqueCodigoFormato({ codigo: 'FCPE-040' }) as any).stack).toEqual([
       { text: 'FCPE-040', margin: [0, 0, 50, 0] },
     ]);
