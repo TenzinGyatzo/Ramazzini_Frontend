@@ -8,8 +8,8 @@ import {
 } from './codigosFormato';
 
 describe('códigos de formato (punto 34)', () => {
-  it('los 25 documentos con PDF, sin el documento externo', () => {
-    expect(DOCUMENTOS_CON_CODIGO_FORMATO.length).toBe(25);
+  it('los 26 documentos con PDF, sin el documento externo', () => {
+    expect(DOCUMENTOS_CON_CODIGO_FORMATO.length).toBe(26);
     expect(DOCUMENTOS_CON_CODIGO_FORMATO as readonly string[]).not.toContain('documentoExterno');
   });
 

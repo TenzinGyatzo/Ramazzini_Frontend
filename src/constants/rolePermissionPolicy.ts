@@ -167,6 +167,7 @@ export const DOCUMENT_TYPES_BY_PERMISSION: Record<
   gestionarDocumentosDiagnostico: [
     'aptitud',
     'constanciaAptitud',
+    'constanciaExamenAdmision',
     'certificado',
     'certificadoExpedito',
     'receta',
@@ -240,6 +241,7 @@ const TIPO_POR_NOMBRE_ALTERNO: Record<string, string> = {
   certificados: 'certificado',
   certificadosExpedito: 'certificadoExpedito',
   constanciasAptitud: 'constanciaAptitud',
+  constanciasExamenAdmision: 'constanciaExamenAdmision',
   documentosExternos: 'documentoExterno',
   'Documento Externo': 'documentoExterno',
   entrevistasPsicologicas: 'entrevistaPsicologica',
@@ -289,7 +291,7 @@ export const GRUPOS_PERMISOS_DOCUMENTOS: readonly GrupoPermisosDocumentos[] = [
     id: 'dictamenes',
     titulo: 'Dictámenes y certificados',
     descripcion: 'Aptitud para el puesto, constancias y certificados médicos.',
-    tipos: ['aptitud', 'constanciaAptitud', 'certificado', 'certificadoExpedito'],
+    tipos: ['aptitud', 'constanciaAptitud', 'constanciaExamenAdmision', 'certificado', 'certificadoExpedito'],
   },
   {
     id: 'consulta',
@@ -471,12 +473,24 @@ export function resolveFirmanteTipo(
  */
 export const DOCUMENT_TYPES_SOLO_ENFERMERIA: readonly string[] = ['notaEnfermeria'];
 
+/**
+ * Documentos que elabora quien firma como médico o como enfermera (punto 35, igual que el
+ * servidor): sin candado de médico, pero los técnicos evaluadores quedan fuera.
+ */
+export const DOCUMENT_TYPES_MEDICO_O_ENFERMERIA: readonly string[] = ['constanciaExamenAdmision'];
+
+export const MENSAJE_SOLO_MEDICO_O_ENFERMERIA =
+  'La Constancia de examen médico de admisión la expide personal médico o de enfermería.';
+
 export function isDocumentBlockedForFirmante(
   role: string | undefined | null,
   perfilProfesional: string | null | undefined,
   documentType: string,
 ): boolean {
   const firmante = resolveFirmanteTipo(role, perfilProfesional);
+  if (DOCUMENT_TYPES_MEDICO_O_ENFERMERIA.includes(documentType)) {
+    return firmante !== 'medico' && firmante !== 'enfermera';
+  }
   if (DOCUMENT_TYPES_SOLO_ENFERMERIA.includes(documentType)) {
     return firmante !== 'enfermera';
   }
@@ -490,6 +504,7 @@ export function mensajeBloqueoPorPerfil(
   documentType: string,
 ): string {
   if (!isDocumentBlockedForFirmante(role, perfilProfesional, documentType)) return '';
+  if (DOCUMENT_TYPES_MEDICO_O_ENFERMERIA.includes(documentType)) return MENSAJE_SOLO_MEDICO_O_ENFERMERIA;
   if (DOCUMENT_TYPES_SOLO_ENFERMERIA.includes(documentType)) {
     return resolveFirmanteTipo(role, perfilProfesional) === 'medico'
       ? 'La Nota de enfermería es exclusiva del personal de enfermería. Para registrar esta atención usa la Nota médica.'
@@ -688,6 +703,7 @@ export function canCreateDocumentType(
 export const DOCUMENT_DISPLAY_NAMES: Record<string, string> = {
   aptitud: 'Aptitud para el Puesto',
   constanciaAptitud: 'Constancia de Aptitud',
+  constanciaExamenAdmision: 'Constancia de examen médico de admisión',
   certificado: 'Certificado Médico',
   certificadoExpedito: 'Certificado Expedito',
   receta: 'Receta',

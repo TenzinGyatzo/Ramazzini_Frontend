@@ -1338,6 +1338,7 @@ export const DOCUMENT_TYPE_DATE_FIELDS: Record<string, string> = {
   previoEspirometria: 'fechaPrevioEspirometria',
   receta: 'fechaReceta',
   constanciaAptitud: 'fechaConstanciaAptitud',
+  constanciaExamenAdmision: 'fechaConstanciaExamenAdmision',
   entrevistaPsicologica: 'fechaEntrevistaPsicologica',
   trastornosEstadoAnimo: 'fechaTrastornosEstadoAnimo',
   cuestionarioProdromalBreve: 'fechaCuestionarioProdromalBreve',

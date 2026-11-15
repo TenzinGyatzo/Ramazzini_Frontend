@@ -173,6 +173,7 @@ const obtenerNombreTipoDocumento = (tipo) => {
     'previoEspirometria': 'Previo Espirometría',
     'receta': 'Receta',
     'constanciaAptitud': 'Constancia de Aptitud',
+    'constanciaExamenAdmision': 'Constancia de Examen Médico de Admisión',
     'documentoExterno': 'Documento Externo',
     'notaAclaratoria': 'Nota Aclaratoria',
     'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
@@ -193,6 +194,7 @@ const obtenerNombreTipoDocumento = (tipo) => {
     'previoEspirometria': 'Previo Espirometría',
     'recetas': 'Receta',
     'constanciasAptitud': 'Constancia de Aptitud',
+    'constanciasExamenAdmision': 'Constancia de Examen Médico de Admisión',
     'documentosExternos': 'Documento Externo',
     'notasAclaratorias': 'Nota Aclaratoria',
     // Variantes con espacios
@@ -206,7 +208,8 @@ const obtenerNombreTipoDocumento = (tipo) => {
     'Nota Medica': 'Nota Médica',
     'Control Prenatal': 'Control Prenatal',
     'Certificado Expedito': 'Certificado Expedito',
-    'Constancia de Aptitud': 'Constancia de Aptitud'
+    'Constancia de Aptitud': 'Constancia de Aptitud',
+    'Constancia Examen Admision': 'Constancia de Examen Médico de Admisión'
   };
 
   return nombres[tipo] || tipo;
@@ -1642,6 +1645,10 @@ const descargarPdfActual = async () => {
                     documento = props.constanciaAptitud;
                     tipoDocumento = 'Constancia de Aptitud';
                     break;
+                case 'constanciaexamenadmision':
+                    documento = props.constanciaExamenAdmision;
+                    tipoDocumento = 'Constancia Examen Admision';
+                    break;
                 case 'audiometria':
                     documento = props.audiometria;
                     tipoDocumento = 'Audiometria';
@@ -1870,6 +1877,7 @@ const props = defineProps({
     aptitud: [Object, String],
     audiometria: [Object, String],
     constanciaAptitud: [Object, String],
+    constanciaExamenAdmision: [Object, String],
     certificado: [Object, String],
     certificadoExpedito: [Object, String],
     receta: [Object, String],
@@ -1935,7 +1943,7 @@ const archivoNotaEnfermeria = computed(() => {
 });
 
 const currentDocumentData = computed(() => {
-    return props.antidoping || props.aptitud || props.audiometria || props.constanciaAptitud ||
+    return props.antidoping || props.aptitud || props.audiometria || props.constanciaAptitud || props.constanciaExamenAdmision ||
            props.certificado || props.certificadoExpedito || props.receta || props.documentoExterno ||
            props.examenVista || props.exploracionFisica || props.historiaClinica || props.notaMedica || props.notaEnfermeria ||
            props.notaAclaratoria || props.controlPrenatal || props.historiaOtologica || props.previoEspirometria ||
@@ -2085,6 +2093,7 @@ const fechaCamposOrigen = {
     'previoEspirometria': 'fechaPrevioEspirometria',
     'recetas': 'fechaReceta',
     'constanciasAptitud': 'fechaConstanciaAptitud',
+    'constanciasExamenAdmision': 'fechaConstanciaExamenAdmision',
     'entrevistasPsicologicas': 'fechaEntrevistaPsicologica',
     'trastornosEstadoAnimo': 'fechaTrastornosEstadoAnimo',
     'cuestionarioProdromalBreve': 'fechaCuestionarioProdromalBreve',
@@ -2114,6 +2123,7 @@ const tipoSingularAPlural = {
     'previoEspirometria': 'previoEspirometria',
     'receta': 'recetas',
     'constanciaAptitud': 'constanciasAptitud',
+    'constanciaExamenAdmision': 'constanciasExamenAdmision',
     'entrevistaPsicologica': 'entrevistasPsicologicas',
     'trastornosEstadoAnimo': 'trastornosEstadoAnimo',
     'cuestionarioProdromalBreve': 'cuestionarioProdromalBreve',
@@ -2355,6 +2365,7 @@ const documentoNombre = computed(() => {
     if (props.aptitud) return 'Aptitud al Puesto';
     if (props.audiometria) return 'Audiometría';
     if (props.constanciaAptitud) return 'Constancia de Aptitud';
+    if (props.constanciaExamenAdmision) return 'Constancia de examen médico de admisión';
     if (props.certificado) return 'Certificado';
     if (props.certificadoExpedito) return 'Certificado Expedito';
     if (props.receta) return 'Receta';
@@ -2978,6 +2989,7 @@ const construirRutaYNombrePDF = () => {
   const tipoSinEspacios = props.documentoTipo.toLowerCase().replace(/\s+/g, '');
   const doc = {
     'constanciaaptitud': props.constanciaAptitud,
+    'constanciaexamenadmision': props.constanciaExamenAdmision,
     'antidoping': props.antidoping,
     'aptitud': props.aptitud,
     'audiometria': props.audiometria,
@@ -3010,11 +3022,12 @@ const construirRutaYNombrePDF = () => {
     return { ruta: null, nombre: null, updatedAt: null };
   }
 
-  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaEnfermeria || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaCuestionarioNordico || doc?.fechaEvaluacionSuenoVigilia || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
+  const fecha = doc?.fechaAntidoping || doc?.fechaAptitudPuesto || doc?.fechaConstanciaAptitud || doc?.fechaConstanciaExamenAdmision || doc?.fechaAudiometria || doc?.fechaCertificado || doc?.fechaCertificadoExpedito || doc?.fechaReceta || doc?.fechaExamenVista || doc?.fechaExploracionFisica || doc?.fechaHistoriaClinica || doc?.fechaNotaMedica || doc?.fechaNotaEnfermeria || doc?.fechaNotaAclaratoria || doc?.fechaInicioControlPrenatal || doc?.fechaHistoriaOtologica || doc?.fechaPrevioEspirometria || doc?.fechaEntrevistaPsicologica || doc?.fechaTrastornosEstadoAnimo || doc?.fechaCuestionarioProdromalBreve || doc?.fechaTrastornoLimitePersonalidad || doc?.fechaCuestionarioNordico || doc?.fechaEvaluacionSuenoVigilia || doc?.fechaEventoSeguimientoCardiometabolico || doc?.fechaInformeLongitudinalCardiometabolico || doc?.fechaInformeLongitudinalAudiometrico;
 
   // Nombres de documentos (DEBEN coincidir con los del backend para construir rutas correctas)
   const tiposDocumentos = {
     'constanciaaptitud': 'Constancia de Aptitud',
+    'constanciaexamenadmision': 'Constancia Examen Admision',
     'antidoping': 'Antidoping',
     'aptitud': 'Aptitud',
     'audiometria': 'Audiometria',
@@ -3594,6 +3607,68 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                                     :fechaAnulacion="constanciaAptitud.fechaAnulacion"
                                     :anuladoPor="constanciaAptitud.anuladoPor"
                                     :razonAnulacion="constanciaAptitud.razonAnulacion"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Constancia de examen médico de admisión (punto 35) -->
+                <div v-if="typeof constanciaExamenAdmision === 'object'" class="flex items-center w-full h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3">
+                    <!-- Checkbox mejorado -->
+                    <div class="mr-4 flex-shrink-0 flex items-center gap-1">
+                        <input
+                            class="w-5 h-5 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 transition-all duration-200 ease-in-out"
+                            :class="[
+                                isDeletionMode ? 'accent-red-600 text-red-600 focus:ring-red-500' : 'accent-teal-600 text-emerald-600 focus:ring-emerald-500',
+                                isDeletableInBulkMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                            ]"
+                            type="checkbox" :checked="isSelected"
+                            :disabled="!isDeletableInBulkMode"
+                            @change="(event) => handleCheckboxChange(event, constanciaExamenAdmision, 'Constancia Examen Admision')">
+                        <i v-if="isDeletionMode && !isDeletableInBulkMode" class="fas fa-lock text-gray-400 text-xs" title="Documento finalizado o anulado - no eliminable"></i>
+                    </div>
+
+                    <!-- Contenido principal -->
+                    <div
+                        class="flex items-center flex-1 h-full max-[390px]:flex-col max-[390px]:items-start max-[390px]:gap-3" data-abrir-documento
+                        @click="abrirPdf(
+                            `${constanciaExamenAdmision.rutaPDF}`,
+                            `Constancia Examen Admision ${convertirFechaISOaDDMMYYYY(constanciaExamenAdmision.fechaConstanciaExamenAdmision)}.pdf`,
+                            constanciaExamenAdmision.updatedAt ? new Date(constanciaExamenAdmision.updatedAt).getTime() : null)"
+                        @mouseenter="schedulePdfHover(
+                            $event,
+                            `${constanciaExamenAdmision.rutaPDF}`,
+                            `Constancia Examen Admision ${convertirFechaISOaDDMMYYYY(constanciaExamenAdmision.fechaConstanciaExamenAdmision)}.pdf`,
+                            constanciaExamenAdmision.updatedAt ? new Date(constanciaExamenAdmision.updatedAt).getTime() : null,
+                            'Constancia Examen Admision')"
+                        @mouseleave="handleHoverLeave">
+
+                        <!-- Icono del documento -->
+                        <div class="hidden md:flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg mr-3 group-hover:bg-green-200 transition-colors duration-200 flex-shrink-0">
+                            <i class="fas fa-clipboard-check text-green-600 text-lg"></i>
+                        </div>
+
+                        <!-- Información del documento -->
+                        <div class="sm:w-80 min-w-0 max-w-xs w-full max-[390px]:max-w-full">
+                            <div class="flex items-center mb-1">
+                                <h3 class="text-base font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors duración-200 flex items-center max-[390px]:text-base">
+                                    Constancia de examen médico de admisión
+                                </h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm text-gray-500 flex items-center">
+                                    <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
+                                    {{ convertirFechaISOaDDMMYYYY(constanciaExamenAdmision.fechaConstanciaExamenAdmision) }}
+                                </p>
+                                <EstadoDocumentoBadge
+                                    v-if="isMX && documentImmutabilityEnabled"
+                                    :estado="constanciaExamenAdmision.estado"
+                                    :fechaFinalizacion="constanciaExamenAdmision.fechaFinalizacion"
+                                    :finalizadoPor="constanciaExamenAdmision.finalizadoPor"
+                                    :fechaAnulacion="constanciaExamenAdmision.fechaAnulacion"
+                                    :anuladoPor="constanciaExamenAdmision.anuladoPor"
+                                    :razonAnulacion="constanciaExamenAdmision.razonAnulacion"
                                 />
                             </div>
                         </div>
@@ -5738,6 +5813,7 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                     'Antidoping': antidoping,
                     'Aptitud': aptitud,
                     'Constancia de Aptitud': constanciaAptitud,
+                    'Constancia Examen Admision': constanciaExamenAdmision,
                     'Audiometria': audiometria,
                     'Certificado': certificado,
                     'Certificado Expedito': certificadoExpedito,

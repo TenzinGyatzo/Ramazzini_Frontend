@@ -26,6 +26,7 @@ export type CodigosFormato = Record<string, CodigoFormato>;
 export const DOCUMENTOS_CON_CODIGO_FORMATO = [
   'notaAclaratoria',
   'constanciaAptitud',
+  'constanciaExamenAdmision',
   'aptitud',
   'historiaClinica',
   'exploracionFisica',

@@ -33,6 +33,7 @@ import VisualizadorHistoriaOtologica from '@/components/steps/VisualizadorHistor
 import VisualizadorPrevioEspirometria from '@/components/steps/VisualizadorPrevioEspirometria.vue';
 import VisualizadorReceta from '@/components/steps/VisualizadorReceta.vue';
 import VisualizadorConstanciaAptitud from '@/components/steps/VisualizadorConstanciaAptitud.vue';
+import VisualizadorConstanciaExamenAdmision from '@/components/steps/VisualizadorConstanciaExamenAdmision.vue';
 import VisualizadorEntrevistaPsicologica from '@/components/steps/VisualizadorEntrevistaPsicologica.vue';
 import VisualizadorTrastornosEstadoAnimo from '@/components/steps/VisualizadorTrastornosEstadoAnimo.vue';
 import VisualizadorCuestionarioProdromalBreve from '@/components/steps/VisualizadorCuestionarioProdromalBreve.vue';
@@ -168,6 +169,7 @@ const formularioPorTipo = (tipo) => ({
   previoEspirometria: formData.formDataPrevioEspirometria,
   receta: formData.formDataReceta,
   constanciaAptitud: formData.formDataConstanciaAptitud,
+  constanciaExamenAdmision: formData.formDataConstanciaExamenAdmision,
   entrevistaPsicologica: formData.formDataEntrevistaPsicologica,
   trastornosEstadoAnimo: formData.formDataTrastornosEstadoAnimo,
   cuestionarioProdromalBreve: formData.formDataCuestionarioProdromalBreve,
@@ -881,6 +883,18 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           </div>
           <div class="w-full xl:w-2/3 max-w-3xl mx-auto">
             <VisualizadorConstanciaAptitud />
+          </div>
+        </div>
+      </Transition>
+
+      <Transition appear mode="out-in" name="slide-up">
+        <div v-if="datosListos && documentos.currentTypeOfDocument === 'constanciaExamenAdmision'"
+          class="max-w-6xl mx-auto flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          <div class="w-full xl:w-1/3">
+            <FormStepper />
+          </div>
+          <div class="w-full xl:w-2/3 max-w-3xl mx-auto">
+            <VisualizadorConstanciaExamenAdmision />
           </div>
         </div>
       </Transition>

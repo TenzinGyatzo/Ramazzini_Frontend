@@ -1030,6 +1030,7 @@ const totalDocumentosCreados = computed(() => {
     return total + (
       (yearData.notasAclaratorias?.length || 0) +
       (yearData.constanciasAptitud?.length || 0) +
+      (yearData.constanciasExamenAdmision?.length || 0) +
       (yearData.aptitudes?.length || 0) +
       (yearData.historiasClinicas?.length || 0) +
       (yearData.exploracionesFisicas?.length || 0) +

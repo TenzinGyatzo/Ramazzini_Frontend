@@ -69,6 +69,13 @@ const SECCIONES = [
         icono: 'fas fa-file-circle-check',
       },
       {
+        tipoDocumento: 'constanciaExamenAdmision',
+        titulo: 'Constancia de examen de admisión',
+        descripcion: 'Clínicamente sano y apto para el puesto',
+        icono: 'fas fa-clipboard-check',
+        claves: 'admision ingreso examen medico',
+      },
+      {
         tipoDocumento: 'certificadoExpedito',
         titulo: 'Certificado expedito',
         descripcion: 'Certificado médico breve',

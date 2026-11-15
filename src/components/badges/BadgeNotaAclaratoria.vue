@@ -32,7 +32,8 @@ const tipoSingularAPlural: Record<string, string> = {
   'historiaOtologica': 'historiaOtologica',
   'previoEspirometria': 'previoEspirometria',
   'receta': 'recetas',
-  'constanciaAptitud': 'constanciasAptitud'
+  'constanciaAptitud': 'constanciasAptitud',
+  'constanciaExamenAdmision': 'constanciasExamenAdmision'
 };
 
 // Función para normalizar tipo de documento a plural

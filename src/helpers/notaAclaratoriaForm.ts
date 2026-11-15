@@ -19,6 +19,7 @@ export const fechaCamposDocumentoOrigen: Record<string, string> = {
   previoEspirometria: 'fechaPrevioEspirometria',
   recetas: 'fechaReceta',
   constanciasAptitud: 'fechaConstanciaAptitud',
+  constanciasExamenAdmision: 'fechaConstanciaExamenAdmision',
   eventoSeguimientoCardiometabolico: 'fechaEventoSeguimientoCardiometabolico',
   informeLongitudinalCardiometabolico: 'fechaInformeLongitudinalCardiometabolico',
 };

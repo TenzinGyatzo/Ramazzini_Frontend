@@ -90,6 +90,10 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/constanciaAptitud`);
     },
 
+    getConstanciasExamenAdmision(trabajadorId: string) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/constanciaExamenAdmision`);
+    },
+
     getEntrevistaPsicologica(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/entrevistaPsicologica`);
     },

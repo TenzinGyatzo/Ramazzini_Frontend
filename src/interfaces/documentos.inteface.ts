@@ -748,6 +748,21 @@ export interface ConstanciaAptitud {
     finalizadoPor?: string;
 }
 
+/** Constancia de examen médico de admisión (punto 35): solo la fecha. */
+export interface ConstanciaExamenAdmision {
+    _id: string;
+    fechaConstanciaExamenAdmision: string;
+    idTrabajador: string;
+    rutaPDF: string;
+    pdfStatus?: PdfStatus;
+    createdBy: string;
+    updatedBy: string;
+    // NOM-024 Fields
+    estado?: DocumentoEstado;
+    fechaFinalizacion?: string;
+    finalizadoPor?: string;
+}
+
 export interface EntrevistaPsicologica {
     _id: string;
     fechaEntrevistaPsicologica: string;

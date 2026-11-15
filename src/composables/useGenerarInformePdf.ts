@@ -30,6 +30,7 @@ const TIPO_INFORME_API: Record<string, string> = {
   historiaotologica: 'historiaOtologica',
   previoespirometria: 'previoEspirometria',
   constanciaaptitud: 'constanciaAptitud',
+  constanciaexamenadmision: 'constanciaExamenAdmision',
   entrevistapsicologica: 'entrevistaPsicologica',
   trastornosestadoanimo: 'trastornosEstadoAnimo',
   cuestionarioprodromalbreve: 'cuestionarioProdromalBreve',

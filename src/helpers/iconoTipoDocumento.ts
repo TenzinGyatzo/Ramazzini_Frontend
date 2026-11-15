@@ -21,6 +21,7 @@ const ICONOS: Record<string, IconoTipoDocumento> = {
   notaAclaratoria: { icono: 'fas fa-exclamation-triangle', clases: amarillo },
   antidoping: { icono: 'fas fa-flask', clases: 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-300' },
   constanciaAptitud: { icono: 'fas fa-user-check', clases: verde },
+  constanciaExamenAdmision: { icono: 'fas fa-clipboard-check', clases: verde },
   aptitud: { icono: 'fas fa-user-check', clases: verde },
   audiometria: { icono: 'fas fa-volume-up', clases: morado },
   certificado: { icono: 'fas fa-certificate', clases: azul },

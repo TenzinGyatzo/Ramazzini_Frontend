@@ -11,6 +11,7 @@ export interface FusionDocumentoDisplay {
 export const FUSION_DOCUMENTO_DISPLAY: FusionDocumentoDisplay[] = [
   { modelName: 'NotaAclaratoria', labelSingular: 'Nota Aclaratoria', labelPlural: 'Notas Aclaratorias', icon: 'fas fa-exclamation-triangle', iconClass: 'text-orange-600', section: 'expediente' },
   { modelName: 'ConstanciaAptitud', labelSingular: 'Constancia de Aptitud', labelPlural: 'Constancias de Aptitud', icon: 'fas fa-user-check', iconClass: 'text-green-600', section: 'expediente' },
+  { modelName: 'ConstanciaExamenAdmision', labelSingular: 'Constancia de examen médico de admisión', labelPlural: 'Constancias de examen médico de admisión', icon: 'fas fa-clipboard-check', iconClass: 'text-green-600', section: 'expediente' },
   { modelName: 'AptitudPuesto', labelSingular: 'Aptitud', labelPlural: 'Aptitudes', icon: 'fas fa-user-check', iconClass: 'text-green-600', section: 'expediente' },
   { modelName: 'HistoriaClinica', labelSingular: 'Historia Clínica', labelPlural: 'Historias Clínicas', icon: 'fas fa-notes-medical', iconClass: 'text-teal-600', section: 'expediente' },
   { modelName: 'ExploracionFisica', labelSingular: 'Exploración Física', labelPlural: 'Exploraciones Físicas', icon: 'fas fa-person', iconClass: 'text-indigo-600', section: 'expediente' },

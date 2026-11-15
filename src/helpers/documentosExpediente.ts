@@ -20,6 +20,7 @@ export interface TipoDocumentoExpediente {
 export const TIPOS_DOCUMENTO_EXPEDIENTE: readonly TipoDocumentoExpediente[] = [
   { clave: 'notasAclaratorias', tipo: 'notaAclaratoria', etiquetaRuta: 'Nota Aclaratoria', campoFecha: 'fechaNotaAclaratoria', rutaConStore: true },
   { clave: 'constanciasAptitud', tipo: 'constanciaAptitud', etiquetaRuta: 'Constancia de Aptitud', campoFecha: 'fechaConstanciaAptitud' },
+  { clave: 'constanciasExamenAdmision', tipo: 'constanciaExamenAdmision', etiquetaRuta: 'Constancia Examen Admision', campoFecha: 'fechaConstanciaExamenAdmision' },
   { clave: 'aptitudes', tipo: 'aptitud', etiquetaRuta: 'Aptitud', campoFecha: 'fechaAptitudPuesto' },
   { clave: 'historiasClinicas', tipo: 'historiaClinica', etiquetaRuta: 'Historia Clinica', campoFecha: 'fechaHistoriaClinica' },
   { clave: 'exploracionesFisicas', tipo: 'exploracionFisica', etiquetaRuta: 'Exploracion Fisica', campoFecha: 'fechaExploracionFisica' },

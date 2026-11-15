@@ -97,6 +97,7 @@ onUnmounted(() => {
 
 const documentTypeLabels = {
   constanciaAptitud: "Constancia de Aptitud",
+  constanciaExamenAdmision: "Constancia de Examen Médico de Admisión",
   aptitud: "Aptitud al Puesto",
   historiaClinica: "Historia Clínica",
   exploracionFisica: "Exploración Física",

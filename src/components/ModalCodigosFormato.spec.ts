@@ -30,8 +30,8 @@ describe('ModalCodigosFormato (punto 34)', () => {
 
   it('una fila por documento con PDF y por formato para firma, con los códigos guardados', () => {
     const w = montar({ notaMedica: { codigo: 'FCPE-022', lineaAdicional: 'Revisión: 01' } });
-    // 25 documentos con PDF + 3 formatos para firma
-    expect(w.findAll('[data-tipo]').length).toBe(28);
+    // 26 documentos con PDF + 3 formatos para firma
+    expect(w.findAll('[data-tipo]').length).toBe(29);
     expect(fila(w, 'documentoExterno').exists()).toBe(false);
     expect(fila(w, 'DECLARACION_VERACIDAD').exists()).toBe(true);
     expect((campo(w, 'notaMedica', 'codigo').element as HTMLInputElement).value).toBe('FCPE-022');

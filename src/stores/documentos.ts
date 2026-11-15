@@ -22,6 +22,7 @@ import type {
   PrevioEspirometria,
   Receta,
   ConstanciaAptitud,
+  ConstanciaExamenAdmision,
   EntrevistaPsicologica,
   TrastornosEstadoAnimo,
   CuestionarioProdromalBreve,
@@ -53,6 +54,7 @@ export type DocumentsByYear = {
     previoEspirometria?: PrevioEspirometria[];
     recetas?: Receta[];
     constanciasAptitud?: ConstanciaAptitud[];
+    constanciasExamenAdmision?: ConstanciaExamenAdmision[];
     entrevistasPsicologicas?: EntrevistaPsicologica[];
     trastornosEstadoAnimo?: TrastornosEstadoAnimo[];
     cuestionarioProdromalBreve?: CuestionarioProdromalBreve[];
@@ -152,6 +154,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     notaAclaratoria: 'notasAclaratorias',
     receta: 'recetas',
     constanciaAptitud: 'constanciasAptitud',
+    constanciaExamenAdmision: 'constanciasExamenAdmision',
     entrevistaPsicologica: 'entrevistasPsicologicas',
   };
 
@@ -207,6 +210,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
     'previoEspirometria',
     'recetas',
     'constanciasAptitud',
+    'constanciasExamenAdmision',
     'entrevistasPsicologicas',
     'trastornosEstadoAnimo',
     'cuestionarioProdromalBreve',
@@ -325,6 +329,7 @@ export const useDocumentosStore = defineStore("documentos", () => {
       previoEspirometria: "fechaPrevioEspirometria",
       recetas: "fechaReceta",
       constanciasAptitud: "fechaConstanciaAptitud",
+      constanciasExamenAdmision: "fechaConstanciaExamenAdmision",
       entrevistasPsicologicas: "fechaEntrevistaPsicologica",
       trastornosEstadoAnimo: "fechaTrastornosEstadoAnimo",
       cuestionarioProdromalBreve: "fechaCuestionarioProdromalBreve",

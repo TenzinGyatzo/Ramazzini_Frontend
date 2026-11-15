@@ -49,6 +49,7 @@ const tipoNombres = {
   'previoEspirometria': 'Previo Espirometría',
   'recetas': 'Receta',
   'constanciasAptitud': 'Constancia de Aptitud',
+  'constanciasExamenAdmision': 'Constancia de Examen Médico de Admisión',
   'eventoSeguimientoCardiometabolico': 'Evento de Seguimiento Cardiometabólico',
   'informeLongitudinalCardiometabolico': 'Informe Longitudinal Cardiometabólico',
 };
@@ -71,6 +72,7 @@ const fechaCampos = {
   previoEspirometria: "fechaPrevioEspirometria",
   recetas: "fechaReceta",
   constanciasAptitud: "fechaConstanciaAptitud",
+  constanciasExamenAdmision: "fechaConstanciaExamenAdmision",
   eventoSeguimientoCardiometabolico: "fechaEventoSeguimientoCardiometabolico",
   informeLongitudinalCardiometabolico: "fechaInformeLongitudinalCardiometabolico",
 };
