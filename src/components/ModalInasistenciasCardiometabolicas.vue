@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 /**
  * Inasistencias a seguimientos cardiometabólicos: el trabajador tenía programado un
  * seguimiento y no acudió. Se registran para la línea de tiempo del informe
@@ -273,13 +274,11 @@ async function removeRecord(item: SeguimientoProgramadoCardiometabolico): Promis
                   <label class="block text-xs font-medium text-gray-700 mb-1.5" for="inasistencia-fecha">
                     Fecha del seguimiento
                   </label>
-                  <input
+                  <CampoFecha
                     id="inasistencia-fecha"
                     v-model="formFechaLocal"
-                    type="date"
                     :max="hoyYmd()"
-                    class="seguimiento-form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                  >
+                    class="seguimiento-form-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white" />
                 </div>
                 <div class="min-w-0">
                   <label class="block text-xs font-medium text-gray-700 mb-1.5" for="inasistencia-observaciones">

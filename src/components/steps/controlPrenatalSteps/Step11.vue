@@ -1,4 +1,5 @@
 <script setup>
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { watch, ref, onMounted, onUnmounted, computed } from 'vue';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -143,10 +144,10 @@ const fppModificada = computed(() => {
 
             <p class="font-medium my-4 text-gray-800">Modificar Fecha Probable de Parto:</p>
             <div class="font-light">
-                <input type="date"
+                <CampoFecha
                     class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     v-model="fpp"
-                    :placeholder="puedeCalcularFPP ? 'Puede usar la calculada o modificar manualmente' : 'Requiere FUM válida del paso anterior'">
+                    :placeholder="puedeCalcularFPP ? 'Puede usar la calculada o modificar manualmente' : 'Requiere FUM válida del paso anterior'" />
             </div>
             
             <p v-if="puedeCalcularFPP" class="text-xs text-gray-500 mt-1">

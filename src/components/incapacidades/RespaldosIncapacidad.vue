@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { computed, inject, onBeforeUnmount, ref, watch } from 'vue';
 import ZonaDeArchivos from './ZonaDeArchivos.vue';
 import { useCurrentUser } from '@/composables/useCurrentUser';
@@ -172,7 +173,7 @@ const campo =
         </label>
         <label class="block">
           <span class="mb-0.5 block text-[11px] font-medium text-gray-500 dark:text-slate-400">Fecha del documento</span>
-          <input v-model="fecha" type="date" :max="hoyISO()" :class="campo" data-test="fecha" />
+          <CampoFecha v-model="fecha" :max="hoyISO()" :class="campo" data-test="fecha" />
         </label>
       </div>
       <ZonaDeArchivos

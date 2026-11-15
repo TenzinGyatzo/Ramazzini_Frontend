@@ -1,4 +1,5 @@
 <script setup>
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 /**
  * Subida de documentos externos en un solo paso: cada archivo con su nombre y su fecha antes de
  * subir. Las fotos que pasan del límite se reducen solas; cada archivo muestra su estado y, si
@@ -464,10 +465,9 @@ const handleSubmit = async () => {
                 </div>
                 <div>
                   <label :for="`fecha-${entrada.id}`" class="sr-only">Fecha del documento</label>
-                  <input
+                  <CampoFecha
                     :id="`fecha-${entrada.id}`"
                     v-model="entrada.fecha"
-                    type="date"
                     :min="fechaDocumentoMin"
                     :max="fechaDocumentoMax"
                     class="carga-externo__campo w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"

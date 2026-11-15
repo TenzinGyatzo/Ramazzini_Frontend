@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { computed, inject, reactive, ref, watch } from 'vue';
 import { useDirtySnapshot } from '@/composables/useDirtySnapshot';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
@@ -143,7 +144,7 @@ const etiqueta = 'mb-1 block text-xs font-medium text-gray-600 dark:text-slate-4
           </div>
           <div>
             <label :class="etiqueta" for="seg-fecha-riesgo">Fecha del riesgo</label>
-            <input id="seg-fecha-riesgo" v-model="form.fechaRiesgo" type="date" :class="campo" />
+            <CampoFecha id="seg-fecha-riesgo" v-model="form.fechaRiesgo" :class="campo" />
           </div>
           <div>
             <label :class="etiqueta" for="seg-naturaleza">Naturaleza de la lesión</label>
@@ -186,7 +187,7 @@ const etiqueta = 'mb-1 block text-xs font-medium text-gray-600 dark:text-slate-4
           </div>
           <div>
             <label :class="etiqueta" for="seg-fecha-alta">Fecha del alta</label>
-            <input id="seg-fecha-alta" v-model="form.fechaAlta" type="date" :class="campo" />
+            <CampoFecha id="seg-fecha-alta" v-model="form.fechaAlta" :class="campo" />
             <p v-if="error('fechaAlta')" class="mt-1 text-xs text-red-600">{{ error('fechaAlta') }}</p>
           </div>
           <div>
@@ -221,7 +222,7 @@ const etiqueta = 'mb-1 block text-xs font-medium text-gray-600 dark:text-slate-4
           </label>
           <div v-if="form.defuncion">
             <label :class="etiqueta" for="seg-fecha-defuncion">Fecha de la defunción</label>
-            <input id="seg-fecha-defuncion" v-model="form.fechaDefuncion" type="date" :class="campo" />
+            <CampoFecha id="seg-fecha-defuncion" v-model="form.fechaDefuncion" :class="campo" />
             <p v-if="error('fechaDefuncion')" class="mt-1 text-xs text-red-600">{{ error('fechaDefuncion') }}</p>
           </div>
         </div>

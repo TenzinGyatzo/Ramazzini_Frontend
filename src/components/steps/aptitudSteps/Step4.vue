@@ -1,4 +1,5 @@
 <script setup>
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { onMounted, toRefs, computed } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
@@ -91,8 +92,7 @@ onMounted(() => {
         <label :class="labelClass">
           Fecha de resultados
         </label>
-        <input
-          type="date"
+        <CampoFecha
           name="fechaEvaluacion3"
           :class="inputClass"
           v-model="formDataAptitud.fechaEvaluacionAdicional3"

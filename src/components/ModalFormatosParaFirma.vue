@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 /**
  * Formatos que firma el trabajador, en un solo lugar (docs/firma-en-pantalla-especificacion.md):
  * explica los dos caminos con el mismo peso (en papel o en pantalla), pide una fecha para todos y
@@ -209,10 +210,9 @@ async function alFirmar(resultado: FormatoFirmadoCreado) {
         <label for="fecha-formatos-firma" class="text-sm font-semibold text-gray-700 dark:text-slate-200">
           Fecha de los formatos
         </label>
-        <input
+        <CampoFecha
           id="fecha-formatos-firma"
           v-model="fecha"
-          type="date"
           :disabled="ocupado"
           class="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-60 dark:bg-slate-900 dark:border-slate-600 dark:text-slate-100 dark:[color-scheme:dark]"
         />

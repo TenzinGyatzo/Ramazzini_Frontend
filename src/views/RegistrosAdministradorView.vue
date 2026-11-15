@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
@@ -218,8 +219,8 @@ const campo =
         </button>
       </div>
       <template v-if="periodo === 'rango'">
-        <input v-model="desde" type="date" aria-label="Desde" data-testid="registros-desde" :class="campo" />
-        <input v-model="hasta" type="date" aria-label="Hasta" data-testid="registros-hasta" :class="campo" />
+        <CampoFecha v-model="desde" aria-label="Desde" data-testid="registros-desde" :class="campo" />
+        <CampoFecha v-model="hasta" aria-label="Hasta" data-testid="registros-hasta" :class="campo" />
       </template>
       <select v-model="tenantId" aria-label="Proveedor" data-testid="registros-tenant" :class="campo">
         <option value="">Todos los proveedores</option>

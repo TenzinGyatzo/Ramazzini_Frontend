@@ -1,4 +1,5 @@
 <script setup>
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { ref, watch, onMounted, onUnmounted, toRefs } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
@@ -95,9 +96,8 @@ watch(fechaAntidoping, (newValue) => {
       >
         Fecha de realización de la prueba
       </h2>
-      <input
+      <CampoFecha
         v-if="variant === 'compact'"
-        type="date"
         v-model="fechaAntidoping"
         :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"

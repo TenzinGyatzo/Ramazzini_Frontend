@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { computed, inject, reactive, ref, watch } from 'vue';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
 import { useCurrentUser } from '@/composables/useCurrentUser';
@@ -381,7 +382,7 @@ const opcionInactiva =
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label :class="etiqueta" for="inc-inicio">A partir del</label>
-            <input id="inc-inicio" v-model="form.fechaInicio" type="date" :class="campo" />
+            <CampoFecha id="inc-inicio" v-model="form.fechaInicio" :class="campo" />
             <p v-if="error('fechaInicio')" class="mt-1 text-xs text-red-600">{{ error('fechaInicio') }}</p>
           </div>
           <div>
@@ -400,7 +401,7 @@ const opcionInactiva =
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div v-if="form.origen === 'imss'">
             <label :class="etiqueta" for="inc-expedicion">Fecha de expedición (opcional)</label>
-            <input id="inc-expedicion" v-model="form.fechaExpedicion" type="date" :class="campo" />
+            <CampoFecha id="inc-expedicion" v-model="form.fechaExpedicion" :class="campo" />
           </div>
           <label
             v-if="form.origen === 'empresa'"
@@ -442,7 +443,7 @@ const opcionInactiva =
             <label :class="etiqueta" for="caso-fecha-riesgo">
               Fecha del riesgo{{ form.sinIncapacidad ? '' : ' (si es distinta al inicio)' }}
             </label>
-            <input id="caso-fecha-riesgo" v-model="form.fechaRiesgo" type="date" :class="campo" />
+            <CampoFecha id="caso-fecha-riesgo" v-model="form.fechaRiesgo" :class="campo" />
             <p v-if="error('fechaRiesgo')" class="mt-1 text-xs text-red-600">{{ error('fechaRiesgo') }}</p>
           </div>
           <div>

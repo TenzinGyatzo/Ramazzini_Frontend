@@ -1,4 +1,5 @@
 <script setup>
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { watch, ref, onMounted, onUnmounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
@@ -90,11 +91,11 @@ const estadoFUM = computed(() => {
         <div v-if="recuerdaFum === 'Si'" class="my-4">
             <p class="font-medium mb-2 text-gray-800">Especifique:</p>
             <div class="font-light">
-                <input type="date"
+                <CampoFecha
                     class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     v-model="fum"
                     :placeholder="'Seleccione fecha o deje en blanco'"
-                    required>
+                    required />
 
             </div>
             <p class="text-sm text-gray-500 mt-1">

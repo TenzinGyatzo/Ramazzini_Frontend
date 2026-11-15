@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { computed, ref, watch } from "vue";
 import PlataformaAPI, {
   type TenantSettingsChanges,
@@ -187,11 +188,10 @@ function cancelar() {
           Fin del periodo gratuito
         </label>
         <div class="mt-1 flex flex-wrap items-center gap-2">
-          <input
+          <CampoFecha
             :id="`fin-${proveedorId}`"
             v-model="fechaFin"
             data-testid="tenant-settings-fin"
-            type="date"
             class="rounded-lg border px-2 py-1"
           />
           <button

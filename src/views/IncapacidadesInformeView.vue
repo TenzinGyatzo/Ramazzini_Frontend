@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import IncapacidadesAPI from '@/api/IncapacidadesAPI';
@@ -247,9 +248,9 @@ const cifra = 'mt-0.5 text-2xl font-semibold tabular-nums text-gray-900 dark:tex
             </option>
           </select>
           <template v-if="periodo === 'personalizado'">
-            <input v-model="desde" type="date" :class="campo" aria-label="Desde" data-test="desde" />
+            <CampoFecha v-model="desde" :class="campo" aria-label="Desde" data-test="desde" />
             <span class="text-sm text-gray-500 dark:text-slate-400">al</span>
-            <input v-model="hasta" type="date" :class="campo" aria-label="Hasta" data-test="hasta" />
+            <CampoFecha v-model="hasta" :class="campo" aria-label="Hasta" data-test="hasta" />
           </template>
           <button
             type="button"

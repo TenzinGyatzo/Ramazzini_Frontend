@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import InventarioAPI from '@/api/InventarioAPI';
@@ -714,8 +715,8 @@ const botonSecundario =
             <option value="">Todos los tipos</option>
             <option v-for="tipo in TIPOS" :key="tipo" :value="tipo">{{ etiquetaMovimiento(tipo) }}</option>
           </select>
-          <input v-model="filtrosMovimientos.desde" type="date" :class="campo" aria-label="Desde" />
-          <input v-model="filtrosMovimientos.hasta" type="date" :class="campo" aria-label="Hasta" />
+          <CampoFecha v-model="filtrosMovimientos.desde" :class="campo" aria-label="Desde" />
+          <CampoFecha v-model="filtrosMovimientos.hasta" :class="campo" aria-label="Hasta" />
           <button type="submit" :class="botonSecundario">
             <i class="fas fa-filter"></i> Filtrar
           </button>
@@ -797,11 +798,11 @@ const botonSecundario =
         <form class="mb-3 flex flex-wrap items-end gap-3" @submit.prevent="cargarConsumo">
           <div>
             <label :class="etiqueta" for="consumo-desde">Desde</label>
-            <input id="consumo-desde" v-model="periodo.desde" type="date" :class="campo" required />
+            <CampoFecha id="consumo-desde" v-model="periodo.desde" :class="campo" required />
           </div>
           <div>
             <label :class="etiqueta" for="consumo-hasta">Hasta</label>
-            <input id="consumo-hasta" v-model="periodo.hasta" type="date" :class="campo" required />
+            <CampoFecha id="consumo-hasta" v-model="periodo.hasta" :class="campo" required />
           </div>
           <button type="submit" :class="botonSecundario" :disabled="cargandoConsumo">
             <i class="fas fa-rotate"></i> Consultar
@@ -1149,7 +1150,7 @@ const botonSecundario =
           </div>
           <div v-if="insumoEntrada.controlaCaducidad">
             <label :class="etiqueta" for="entrada-caducidad">Caducidad</label>
-            <input id="entrada-caducidad" v-model="formEntrada.caducidad" type="date" :class="campo" required />
+            <CampoFecha id="entrada-caducidad" v-model="formEntrada.caducidad" :class="campo" required />
           </div>
         </template>
       </form>

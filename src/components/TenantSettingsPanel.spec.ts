@@ -184,7 +184,8 @@ describe('TenantSettingsPanel', () => {
     await wrapper.find('[data-testid="tenant-settings-extender-15"]').trigger('click');
     const esperado = new Date();
     esperado.setDate(esperado.getDate() + 15);
-    expect((wrapper.find('[data-testid="tenant-settings-fin"]').element as HTMLInputElement).value).toBe(
+    // El campo muestra DD/MM/AAAA; el dato (AAAA-MM-DD) está en data-fecha-iso
+    expect(wrapper.find('[data-testid="tenant-settings-fin"]').attributes('data-fecha-iso')).toBe(
       aFechaYmd(esperado),
     );
     await wrapper.find('form').trigger('submit');

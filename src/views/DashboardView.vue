@@ -1,4 +1,5 @@
 <script setup>
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { ref, reactive, watch, computed, inject, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTituloPagina } from '@/composables/useTituloPagina';
@@ -4178,9 +4179,8 @@ const tablaCintura = computed(() => {
               <!-- Fecha inicio -->
               <div class="flex flex-col w-full sm:w-auto">
                 <label for="fechaInicio" class="text-[11px] text-gray-500 mb-0.5">Inicio</label>
-                <input
+                <CampoFecha
                   id="fechaInicio"
-                  type="date"
                   v-model="fechaInicio"
                   class="border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white transition w-full"
                 />
@@ -4188,9 +4188,8 @@ const tablaCintura = computed(() => {
               <!-- Fecha fin -->
               <div class="flex flex-col w-full sm:w-auto">
                 <label for="fechaFin" class="text-[11px] text-gray-500 mb-0.5">Final</label>
-                <input
+                <CampoFecha
                   id="fechaFin"
-                  type="date"
                   v-model="fechaFin"
                   class="border border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none px-2 py-2 sm:py-1 rounded-md shadow-sm text-xs text-gray-700 bg-white transition w-full"
                 />

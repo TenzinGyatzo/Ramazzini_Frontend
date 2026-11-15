@@ -127,7 +127,8 @@ describe("PlatformContratacionPanel", () => {
         const hasta = wrapper.find('[data-testid="pago-hasta"]');
         // addMonths, como el componente y el servidor: un 31 pasa al último día del mes siguiente
         const pagado = addMonths(new Date(enDias(20)), 1);
-        expect((hasta.element as HTMLInputElement).value).toBe(
+        // El campo muestra DD/MM/AAAA; el dato (AAAA-MM-DD) está en data-fecha-iso
+        expect(hasta.attributes("data-fecha-iso")).toBe(
             `${pagado.getFullYear()}-${String(pagado.getMonth() + 1).padStart(2, "0")}-${String(pagado.getDate()).padStart(2, "0")}`,
         );
         await hasta.setValue("2030-01-31");

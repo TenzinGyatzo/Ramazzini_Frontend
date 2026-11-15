@@ -31,7 +31,8 @@ import {
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps({
-  modelValue: { type: String, default: '' },
+  /** AAAA-MM-DD (algunos formularios declaran Date; como el campo del navegador, solo se muestra el texto ISO). */
+  modelValue: { type: [String, Date], default: '' },
   min: { type: String, default: '' },
   max: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
@@ -146,6 +147,19 @@ const alAntesDeEscribir = (e) => {
     default:
       break;
   }
+};
+
+/**
+ * Un valor puesto directamente en el cuadro (autollenado del navegador, herramientas o
+ * pruebas): si es una fecha (AAAA-MM-DD o DD/MM/AAAA) se toma; si no, se regresa la plantilla.
+ * Al teclear esto no ocurre: todo pasa antes por alAntesDeEscribir.
+ */
+const alCambiarDirecto = (e) => {
+  const el = e.target;
+  if (el.value === texto.value) return;
+  const directo = estadoDesdeTextoPegado(el.value);
+  if (directo) aplicar(directo);
+  else el.value = texto.value;
 };
 
 // Pegar en navegadores que no avisan el pegado antes de escribir
@@ -310,6 +324,7 @@ defineExpose({ focus: () => campo.value?.focus() });
       v-bind="$attrs"
       :class="[inputClass, 'campo-fecha-texto', marcada && 'campo-fecha-invalida']"
       @beforeinput="alAntesDeEscribir"
+      @input="alCambiarDirecto"
       @paste="alPegar"
       @mouseup="alSoltarClic"
       @blur="alSalir"
@@ -381,6 +396,16 @@ defineExpose({ focus: () => campo.value?.focus() });
 </template>
 
 <style scoped>
+.campo-fecha {
+  /* Como el campo de fecha que reemplaza: en línea, salvo que ocupe todo el ancho */
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.campo-fecha:has(> input.w-full) {
+  display: block;
+  width: 100%;
+}
 .campo-fecha-texto {
   padding-right: 2.25rem;
   font-variant-numeric: tabular-nums;

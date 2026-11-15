@@ -147,7 +147,8 @@ describe('ModalIncapacidades', () => {
     expect(wrapper.text()).toContain('Se agrega al caso de');
     expect(wrapper.text()).toContain('su última incapacidad terminó el 15-03-2026');
     // Propone el día siguiente al fin de la anterior
-    expect((wrapper.find('#inc-inicio').element as HTMLInputElement).value).toBe('2026-03-16');
+    // El campo muestra DD/MM/AAAA; el dato (AAAA-MM-DD) está en data-fecha-iso
+    expect(wrapper.find('#inc-inicio').attributes('data-fecha-iso')).toBe('2026-03-16');
   });
 
   it('registra un subsecuente en el caso elegido', async () => {
@@ -336,7 +337,7 @@ describe('ModalIncapacidades', () => {
       const { wrapper } = await montar([fractura()]);
       // Primer botón: la incapacidad inicial
       await wrapper.findAll('[data-test="adjuntar"]')[0].trigger('click');
-      expect((wrapper.find('[data-test="fecha"]').element as HTMLInputElement).value).toBe('2026-03-02');
+      expect(wrapper.find('[data-test="fecha"]').attributes('data-fecha-iso')).toBe('2026-03-02');
       // El tipo no se pregunta: es el certificado
       expect(wrapper.find('[data-test="tipo"]').exists()).toBe(false);
 

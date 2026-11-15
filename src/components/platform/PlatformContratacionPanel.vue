@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { computed, reactive, ref, watch } from "vue";
 import { addMonths, format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -393,7 +394,7 @@ const etiqueta = "block text-xs font-medium text-gray-500 dark:text-slate-400";
           </label>
           <label>
             <span :class="etiqueta">Inicio</span>
-            <input v-model="form.fechaInicio" type="date" :class="campo" />
+            <CampoFecha v-model="form.fechaInicio" :class="campo" />
           </label>
           <label class="col-span-2 flex items-center gap-2 text-sm">
             <input v-model="form.requiereFactura" data-testid="contrato-factura" type="checkbox" class="h-4 w-4" />
@@ -405,7 +406,7 @@ const etiqueta = "block text-xs font-medium text-gray-500 dark:text-slate-400";
           </label>
           <label v-if="!form.renovacionAutomatica" class="col-span-2">
             <span :class="etiqueta">Pagado hasta</span>
-            <input v-model="form.pagadoHasta" data-testid="contrato-pagado-hasta" type="date" :class="campo" />
+            <CampoFecha v-model="form.pagadoHasta" data-testid="contrato-pagado-hasta" :class="campo" />
             <span class="mt-0.5 block text-xs text-gray-500 dark:text-slate-400">Al registrar pagos se extiende sola.</span>
           </label>
           <label class="col-span-2">
@@ -439,7 +440,7 @@ const etiqueta = "block text-xs font-medium text-gray-500 dark:text-slate-400";
       >
         <label>
           <span :class="etiqueta">Conserva el acceso hasta</span>
-          <input v-model="accesoHasta" type="date" :class="campo" />
+          <CampoFecha v-model="accesoHasta" :class="campo" />
         </label>
         <p class="text-xs text-gray-600 dark:text-slate-400">
           Por defecto, hasta lo ya pagado. Para bloquear de inmediato usa la restricción en «Ajustes de plataforma».
@@ -462,7 +463,7 @@ const etiqueta = "block text-xs font-medium text-gray-500 dark:text-slate-400";
         <div class="grid grid-cols-2 gap-2">
           <label>
             <span :class="etiqueta">Fecha de pago</span>
-            <input v-model="pago.fechaPago" data-testid="pago-fecha" type="date" :class="campo" />
+            <CampoFecha v-model="pago.fechaPago" data-testid="pago-fecha" :class="campo" />
           </label>
           <label>
             <span :class="etiqueta">Monto (MXN)</span>
@@ -470,11 +471,11 @@ const etiqueta = "block text-xs font-medium text-gray-500 dark:text-slate-400";
           </label>
           <label>
             <span :class="etiqueta">Cubre desde</span>
-            <input v-model="pago.desde" type="date" :class="campo" @input="pago.periodoEditado = true" />
+            <CampoFecha v-model="pago.desde" :class="campo" @update:model-value="pago.periodoEditado = true" />
           </label>
           <label>
             <span :class="etiqueta">Hasta</span>
-            <input v-model="pago.hasta" data-testid="pago-hasta" type="date" :class="campo" @input="pago.periodoEditado = true" />
+            <CampoFecha v-model="pago.hasta" data-testid="pago-hasta" :class="campo" @update:model-value="pago.periodoEditado = true" />
           </label>
           <label class="col-span-2">
             <span :class="etiqueta">Notas</span>

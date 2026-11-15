@@ -276,9 +276,8 @@
               </label>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 items-end">
                   <div class="sm:col-span-1">
-                    <input
+                    <CampoFecha
                       v-model="formData.fechaEstudio"
-                      type="date"
                       :min="fechaDocumentoMin"
                       :max="fechaDocumentoMax"
                       required
@@ -977,6 +976,7 @@
 </template>
 
 <script setup lang="ts">
+import CampoFecha from '@/components/fecha/CampoFecha.vue';
 import { fechaLocalHoy } from '@/helpers/dates';
 import { ref, watch, computed, inject, nextTick, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
