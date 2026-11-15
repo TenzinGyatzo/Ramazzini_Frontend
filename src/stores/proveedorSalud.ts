@@ -93,6 +93,9 @@ interface ProveedorSalud {
     semaforizacionActivada?: boolean;
     /** Vista «Vigencias» en el menú; se activa en «Módulos y funciones». */
     vigenciasHabilitadas?: boolean;
+    /** Códigos de formato en el encabezado de los PDF (punto 34); se cambian en «Módulos y funciones». */
+    codigosFormatoHabilitado?: boolean;
+    codigosFormato?: Record<string, { codigo: string; lineaAdicional?: string }>;
     regimenRegulatorio?: 'SIRES_NOM024' | 'SIN_REGIMEN';
     regulatoryPolicy?: RegulatoryPolicy;
 }

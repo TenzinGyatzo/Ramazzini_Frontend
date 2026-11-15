@@ -48,6 +48,7 @@ export const GRUPOS_EVENTOS_AUDITORIA: GrupoEventosAuditoria[] = [
       { valor: "DISABILITY_CONFIG_UPDATED", etiqueta: "Configuración de incapacidades modificada" },
       { valor: "VIGENCIAS_CONFIG_UPDATED", etiqueta: "Vigencias activadas o desactivadas" },
       { valor: "REPORT_COLOR_UPDATED", etiqueta: "Color de los informes modificado" },
+      { valor: "FORMAT_CODES_UPDATED", etiqueta: "Códigos de formato modificados" },
     ],
   },
   {

@@ -16,6 +16,7 @@ import type {
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { setupPdfMakeKanitFonts } from '@/helpers/setupPdfMakeKanitFonts';
 import { toTitleCase } from '@/helpers/toTitleCase';
+import { encabezadoConCodigoFormato, type CodigoFormato } from '@/helpers/codigosFormato';
 
 export interface TrabajadorFormatoFirma {
   nombre?: string;
@@ -345,9 +346,11 @@ export async function descargarFormatoParaFirmaPdf(
     trabajador: TrabajadorFormatoFirma;
     fecha: string;
     proveedorSalud: ProveedorSaludFormatoFirma | null;
+    /** Código vigente de este formato (punto 34); sin él, el encabezado de siempre. */
+    codigoFormato?: CodigoFormato | null;
   },
 ): Promise<void> {
-  const { trabajador, fecha, proveedorSalud } = params;
+  const { trabajador, fecha, proveedorSalud, codigoFormato } = params;
   const texto = await obtenerTextoFormato(tipoFormato);
   if (!texto.disponible) {
     throw new Error('Este formato todavía no tiene su texto definitivo');
@@ -360,7 +363,10 @@ export async function descargarFormatoParaFirmaPdf(
     proveedorSalud,
     construir: (logo) => {
       const definicion = buildDocDefinitionFormato({
-        header: buildHeaderFormato(logo, `${diseno.sangria}${texto.titulo}\n`),
+        header: encabezadoConCodigoFormato(
+          buildHeaderFormato(logo, `${diseno.sangria}${texto.titulo}\n`),
+          codigoFormato,
+        ),
         footer: buildFooterFormato(proveedorSalud),
         content: buildCuerpoFormato(
           texto.bloques,

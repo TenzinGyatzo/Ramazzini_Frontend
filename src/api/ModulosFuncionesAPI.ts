@@ -13,6 +13,10 @@ export interface EstadoModulosFunciones {
   colorInforme: string;
   /** Vista «Vigencias» (aptitudes de las empresas en seguimiento); apagada por defecto. */
   vigenciasHabilitadas: boolean;
+  /** Códigos de formato en el encabezado de los PDF (punto 34); apagados por defecto. */
+  codigosFormatoHabilitado: boolean;
+  /** Tipo de documento → código y línea adicional. */
+  codigosFormato: Record<string, { codigo: string; lineaAdicional?: string }>;
 }
 
 /** Si el módulo de incapacidades está encendido y en qué empresas (cualquier usuario). */
@@ -40,6 +44,14 @@ export default {
 
   actualizarColorInforme(colorInforme: string): Promise<{ data: EstadoModulosFunciones }> {
     return api.patch('/modulos-funciones/color-informe', { colorInforme });
+  },
+
+  /** Encender o apagar la función y/o guardar los códigos (solo el Principal). */
+  actualizarCodigosFormato(cambios: {
+    codigosFormatoHabilitado?: boolean;
+    codigosFormato?: Record<string, { codigo: string; lineaAdicional?: string }>;
+  }): Promise<{ data: EstadoModulosFunciones }> {
+    return api.patch('/modulos-funciones/codigos-formato', cambios);
   },
 
   getIncapacidades(): Promise<{ data: ConfiguracionIncapacidades }> {

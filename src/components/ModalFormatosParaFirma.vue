@@ -20,6 +20,7 @@ import {
   type TrabajadorFormatoFirma,
 } from '@/helpers/formatoParaFirmaPdf';
 import { useFirmaEnPantallaStore } from '@/stores/firmaEnPantalla';
+import { codigoFormatoVigente } from '@/helpers/codigosFormato';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import type { FormatoFirmadoEnFecha, TipoFormatoFirma } from '@/types/formatoFirma';
 
@@ -135,6 +136,7 @@ async function descargar(tipo: TipoFormatoFirma) {
             logotipoEmpresa: proveedor.logotipoEmpresa,
           }
         : null,
+      codigoFormato: codigoFormatoVigente(proveedor, tipo),
     });
     toast?.open?.({ message: 'Inicia descarga correctamente.', type: 'success' });
   } catch (error) {

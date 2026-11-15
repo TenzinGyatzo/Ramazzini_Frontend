@@ -20,6 +20,7 @@ const {
   getIncapacidades,
   actualizarColorInforme,
   actualizarVigencias,
+  actualizarCodigosFormato,
 } = vi.hoisted(() => ({
   getEstado: vi.fn(),
   actualizarSemaforizacion: vi.fn(),
@@ -34,6 +35,7 @@ const {
   getIncapacidades: vi.fn(),
   actualizarColorInforme: vi.fn(),
   actualizarVigencias: vi.fn(),
+  actualizarCodigosFormato: vi.fn(),
 }));
 vi.mock('@/api/ModulosFuncionesAPI', () => ({
   default: {
@@ -45,6 +47,7 @@ vi.mock('@/api/ModulosFuncionesAPI', () => ({
     getIncapacidades,
     actualizarColorInforme,
     actualizarVigencias,
+    actualizarCodigosFormato,
   },
 }));
 vi.mock('@/api/FormatosFirmadosAPI', () => ({ default: { actualizarConfiguracion: actualizarConfiguracionFirma } }));
@@ -85,6 +88,8 @@ const ESTADO = {
   incapacidadesHabilitado: false,
   colorInforme: '#343A40',
   vigenciasHabilitadas: false,
+  codigosFormatoHabilitado: false,
+  codigosFormato: {},
 };
 
 /** Dos empresas; solo Bimbo gestiona incapacidades. */
@@ -101,6 +106,12 @@ function montar() {
       stubs: {
         RouterLink: { template: '<a><slot /></a>' },
         ModalOrdenDocumentos: { props: ['visible'], template: '<div data-modal-orden :data-visible="visible"></div>' },
+        ModalCodigosFormato: {
+          name: 'ModalCodigosFormato',
+          props: ['visible', 'codigos'],
+          emits: ['close', 'guardado'],
+          template: '<div data-modal-codigos :data-visible="visible"></div>',
+        },
       },
     },
   });
@@ -127,6 +138,7 @@ describe('ModulosFuncionesView', () => {
     expect(w.findAll('[data-interruptor]').map((t) => t.attributes('data-interruptor'))).toEqual([
       'firma',
       'semaforizacion',
+      'codigos',
       'inventario',
       'vigencias',
     ]);
@@ -433,6 +445,57 @@ describe('ModulosFuncionesView', () => {
       const w = montar();
       await flushPromises();
       expect(w.find('[data-color="#1E7E34"]').attributes('disabled')).toBeDefined();
+    });
+
+    describe('códigos de formato (punto 34)', () => {
+      it('apagados por defecto, sin resumen ni botón', async () => {
+        const w = montar();
+        await flushPromises();
+        expect(interruptor(w, 'codigos').attributes('aria-checked')).toBe('false');
+        expect(w.find('[data-configurar-codigos]').exists()).toBe(false);
+        expect(w.find('[data-modal-codigos]').attributes('data-visible')).toBe('false');
+      });
+
+      it('al encenderlos sin códigos abre la configuración y lo guarda en el resto de la sesión', async () => {
+        useProveedorSaludStore().proveedorSalud = { _id: 'p1' } as any;
+        actualizarCodigosFormato.mockResolvedValue({ data: { ...ESTADO, codigosFormatoHabilitado: true } });
+        const w = montar();
+        await flushPromises();
+        await interruptor(w, 'codigos').trigger('click');
+        await flushPromises();
+        expect(actualizarCodigosFormato).toHaveBeenCalledWith({ codigosFormatoHabilitado: true });
+        expect(interruptor(w, 'codigos').attributes('aria-checked')).toBe('true');
+        expect(w.find('[data-codigos-resumen]').text()).toBe('Escribe los códigos');
+        expect(w.find('[data-modal-codigos]').attributes('data-visible')).toBe('true');
+        expect((useProveedorSaludStore().proveedorSalud as any).codigosFormatoHabilitado).toBe(true);
+      });
+
+      it('resume cuántos formatos tienen código y aplica lo que guarda el modal', async () => {
+        useProveedorSaludStore().proveedorSalud = { _id: 'p1' } as any;
+        getEstado.mockResolvedValue({
+          data: { ...ESTADO, codigosFormatoHabilitado: true, codigosFormato: { notaMedica: { codigo: 'FCPE-022' } } },
+        });
+        const w = montar();
+        await flushPromises();
+        expect(w.find('[data-codigos-resumen]').text()).toBe('1 formato con código');
+        await w.find('[data-configurar-codigos]').trigger('click');
+        const modal = w.findComponent({ name: 'ModalCodigosFormato' });
+        expect(modal.props('codigos')).toEqual({ notaMedica: { codigo: 'FCPE-022' } });
+        const nuevos = { notaMedica: { codigo: 'FCPE-022' }, receta: { codigo: 'FCPE-030', lineaAdicional: 'Rev. 02' } };
+        modal.vm.$emit('guardado', { ...ESTADO, codigosFormatoHabilitado: true, codigosFormato: nuevos });
+        await flushPromises();
+        expect(w.find('[data-codigos-resumen]').text()).toBe('2 formatos con código');
+        expect((useProveedorSaludStore().proveedorSalud as any).codigosFormato).toEqual(nuevos);
+      });
+
+      it('quien no es Principal los ve, pero no los cambia', async () => {
+        useUserStore().user = { _id: 'u2', role: 'Médico' } as any;
+        getEstado.mockResolvedValue({ data: { ...ESTADO, codigosFormatoHabilitado: true } });
+        const w = montar();
+        await flushPromises();
+        expect(interruptor(w, 'codigos').attributes('disabled')).toBeDefined();
+        expect(w.find('[data-configurar-codigos]').exists()).toBe(false);
+      });
     });
 
     it('resume el orden de los documentos y abre el mismo modal del expediente', async () => {

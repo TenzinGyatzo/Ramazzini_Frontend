@@ -18,6 +18,7 @@ import { nombreTipoDocumento } from '@/helpers/documentosExpediente';
 import { useRolePermissions } from '@/composables/useRolePermissions';
 import { useCambiosAgrupados, type CambioAgrupado } from '@/composables/useCambiosAgrupados';
 import ModalOrdenDocumentos from '@/components/ModalOrdenDocumentos.vue';
+import ModalCodigosFormato from '@/components/ModalCodigosFormato.vue';
 import { useInventarioStore } from '@/stores/inventario';
 import { useIncapacidadesStore } from '@/stores/incapacidades';
 import { useFirmaEnPantallaStore } from '@/stores/firmaEnPantalla';
@@ -25,7 +26,7 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useUserStore } from '@/stores/user';
 import type { EmpresaCentrosInventario } from '@/interfaces/inventario.interface';
 
-type Interruptor = 'firma' | 'semaforizacion' | 'inventario' | 'incapacidades' | 'vigencias';
+type Interruptor = 'firma' | 'semaforizacion' | 'inventario' | 'incapacidades' | 'vigencias' | 'codigos';
 
 const toast: any = inject('toast');
 const userStore = useUserStore();
@@ -167,6 +168,21 @@ const ordenVisible = computed(() =>
 );
 const primerosTipos = computed(() => ordenVisible.value.slice(0, 3));
 
+// ---- Códigos de formato en el encabezado de los PDF (punto 34)
+const modalCodigos = ref(false);
+const tiposConCodigo = computed(() => Object.keys(estado.value?.codigosFormato ?? {}).length);
+
+/** El perfil y los formatos para firma leen el proveedor del store: así usan lo nuevo sin recargar. */
+function aplicarCodigosFormato(data: EstadoModulosFunciones) {
+  if (!estado.value) return;
+  estado.value.codigosFormatoHabilitado = data.codigosFormatoHabilitado;
+  estado.value.codigosFormato = data.codigosFormato ?? {};
+  if (proveedorSaludStore.proveedorSalud) {
+    proveedorSaludStore.proveedorSalud.codigosFormatoHabilitado = data.codigosFormatoHabilitado;
+    proveedorSaludStore.proveedorSalud.codigosFormato = data.codigosFormato ?? {};
+  }
+}
+
 // ---- Incapacidades por empresa (docs/modulos-y-funciones-especificacion.md, 4)
 const empresasIncapacidades = ref<EmpresaIncapacidades[]>([]);
 const panelEmpresas = ref(false);
@@ -255,6 +271,13 @@ async function cambiar(cual: Interruptor) {
         message: activar ? 'Semaforización de resultados activada' : 'Semaforización de resultados desactivada',
         type: 'success',
       });
+    } else if (cual === 'codigos') {
+      const activar = !estado.value.codigosFormatoHabilitado;
+      const { data } = await ModulosFuncionesAPI.actualizarCodigosFormato({ codigosFormatoHabilitado: activar });
+      aplicarCodigosFormato(data);
+      toast?.open?.({ message: activar ? 'Códigos de formato activados' : 'Códigos de formato desactivados', type: 'success' });
+      // Encendida sin códigos no se ve en ningún PDF: se abre la configuración
+      if (activar && tiposConCodigo.value === 0) modalCodigos.value = true;
     } else if (cual === 'vigencias') {
       const activar = !estado.value.vigenciasHabilitadas;
       const { data } = await ModulosFuncionesAPI.actualizarVigencias(activar);
@@ -429,6 +452,48 @@ onMounted(cargar);
             </p>
             </div>
           </div>
+        </article>
+
+        <article class="modulos-funciones__tarjeta" data-interruptor="codigos">
+          <div class="modulos-funciones__icono"><i class="fa-solid fa-barcode" aria-hidden="true"></i></div>
+          <div class="min-w-0">
+            <h3 class="modulos-funciones__titulo">Códigos de formato</h3>
+            <p class="modulos-funciones__texto">
+              El código y la revisión de cada formato en tu sistema de gestión, arriba a la derecha de los PDF.
+            </p>
+            <p v-if="estado.codigosFormatoHabilitado" class="modulos-funciones__enlaces">
+              <span
+                class="modulos-funciones__chip"
+                :class="tiposConCodigo ? 'modulos-funciones__chip--ok' : 'modulos-funciones__chip--pendiente'"
+                data-codigos-resumen
+              >
+                {{
+                  tiposConCodigo
+                    ? `${tiposConCodigo} ${tiposConCodigo === 1 ? 'formato' : 'formatos'} con código`
+                    : 'Escribe los códigos'
+                }}
+              </span>
+              <button
+                v-if="puedeConfigurar"
+                type="button"
+                class="modulos-funciones__enlace"
+                data-configurar-codigos
+                @click="modalCodigos = true"
+              >
+                Configurar códigos
+              </button>
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="modulos-funciones__switch"
+            :class="{ 'modulos-funciones__switch--on': estado.codigosFormatoHabilitado }"
+            :aria-checked="estado.codigosFormatoHabilitado"
+            aria-label="Códigos de formato"
+            :disabled="!puedeConfigurar || guardando !== null"
+            @click="cambiar('codigos')"
+          ></button>
         </article>
 
         <article class="modulos-funciones__tarjeta modulos-funciones__tarjeta--sin-switch" data-ajuste="orden">
@@ -647,6 +712,12 @@ onMounted(cargar);
     </template>
 
     <ModalOrdenDocumentos :visible="modalOrden" @close="modalOrden = false" />
+    <ModalCodigosFormato
+      :visible="modalCodigos && !!estado"
+      :codigos="estado?.codigosFormato ?? {}"
+      @close="modalCodigos = false"
+      @guardado="aplicarCodigosFormato"
+    />
   </div>
 </template>
 
