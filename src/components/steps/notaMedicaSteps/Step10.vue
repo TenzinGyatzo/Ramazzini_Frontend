@@ -7,7 +7,7 @@ import CIE10Autocomplete from '@/components/selectors/CIE10Autocomplete.vue';
 import { validateCIE10Duplicates } from '@/helpers/cie10';
 import {
   validateDiagnostico2Sis,
-  fetchMedicoEnfermeraFirmantes,
+  fetchFirmantesDelPrestador,
   tieneComorbilidadDiagRegistrada,
 } from '@/helpers/notaMedicaDiagnosticosSis';
 import { useConfirmacionDiagnostica } from '@/composables/useConfirmacionDiagnostica';
@@ -234,7 +234,12 @@ let diag2SisDebounceTimer = null;
 const loadFirmantes = async () => {
   const userId = userStore.user?._id;
   if (!userId) return;
-  const { medicoFirmante, enfermeraFirmante } = await fetchMedicoEnfermeraFirmantes(userId);
+  // Punto 37: el tipo de personal es el de quien registró la nota, no el de quien la edita
+  const { medicoFirmante, enfermeraFirmante } = await fetchFirmantesDelPrestador(
+    trabajadores.currentTrabajadorId,
+    documentos.currentDocument ?? formDataNotaMedica,
+    userId,
+  );
   medicoFirmanteRef.value = medicoFirmante;
   enfermeraFirmanteRef.value = enfermeraFirmante;
 };

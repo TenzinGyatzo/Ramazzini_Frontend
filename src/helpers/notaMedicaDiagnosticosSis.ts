@@ -3,6 +3,7 @@
  * Bloqueo en submit (frontend).
  */
 
+import DocumentosAPI from '@/api/DocumentosAPI';
 import MedicoFirmanteAPI from '@/api/MedicoFirmanteAPI';
 import EnfermeraFirmanteAPI from '@/api/EnfermeraFirmanteAPI';
 import { getCexCatalogCodes } from '@/helpers/cexCatalogCodes';
@@ -144,6 +145,66 @@ export async function precargarValidacionesNotaMedica(formData: {
     getCexCatalogCodes().catch(() => null),
     ...[...new Set(codigos)].map((codigo) => findCIE10Rule(codigo).catch(() => null)),
   ]);
+}
+
+/** Id del documento (puede venir poblado como objeto). */
+const idDe = (valor: unknown): string | null => {
+  if (!valor) return null;
+  if (typeof valor === 'object') return String((valor as { _id?: unknown })._id ?? '') || null;
+  return String(valor);
+};
+
+/**
+ * Firmantes del PRESTADOR de la nota médica (punto 37): quien la registró, aunque otra persona
+ * la edite o la finalice; en una nota nueva, el usuario actual. Pregunta al servidor quién es y
+ * si atiende como médico o como enfermera, así la pantalla valida el tipo de personal con la
+ * misma regla que el servidor y la exportación. Si el servidor no responde, usa al usuario actual.
+ */
+export async function fetchFirmantesDelPrestador(
+  trabajadorId: string | null | undefined,
+  nota: { _id?: unknown } | null | undefined,
+  usuarioActualId: string | undefined,
+): Promise<{
+  medicoFirmante: MedicoFirmanteLike;
+  enfermeraFirmante: EnfermeraFirmanteLike;
+}> {
+  if (!trabajadorId) return fetchMedicoEnfermeraFirmantes(usuarioActualId);
+  let prestador: { userId: string | null; tipo: 'medico' | 'enfermera' | null; tipoPersonal: number | null };
+  try {
+    const { data } = await DocumentosAPI.getPrestadorNotaMedica(trabajadorId, idDe(nota?._id));
+    prestador = data;
+  } catch {
+    return fetchMedicoEnfermeraFirmantes(usuarioActualId);
+  }
+  if (!prestador?.userId || !prestador.tipo) {
+    return { medicoFirmante: null, enfermeraFirmante: null };
+  }
+  if (prestador.tipo === 'enfermera') {
+    let enfermeraFirmante: EnfermeraFirmanteLike = null;
+    try {
+      const { data } = await EnfermeraFirmanteAPI.getEnfermeraFirmanteByUserId(prestador.userId);
+      enfermeraFirmante = normalizeFirmanteApi(data) as EnfermeraFirmanteLike;
+    } catch {
+      enfermeraFirmante = null;
+    }
+    return { medicoFirmante: null, enfermeraFirmante: enfermeraFirmante ?? {} };
+  }
+  let medico: Record<string, unknown> | null = null;
+  try {
+    const { data } = await MedicoFirmanteAPI.getMedicoFirmanteByUserId(prestador.userId);
+    medico = normalizeFirmanteApi(data);
+  } catch {
+    medico = null;
+  }
+  // General o especialista: lo decide el servidor
+  const codes = await getCexCatalogCodes();
+  return {
+    medicoFirmante: {
+      ...(medico ?? {}),
+      especialistaSaludTrabajo: prestador.tipoPersonal === codes.tipoPersonal.medicoEspecialista ? 'Si' : 'No',
+    } as MedicoFirmanteLike,
+    enfermeraFirmante: null,
+  };
 }
 
 export async function fetchMedicoEnfermeraFirmantes(userId: string | undefined): Promise<{

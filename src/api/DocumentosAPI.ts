@@ -86,6 +86,13 @@ export default {
         return api.get(`/expedientes/${trabajadorId}/documentos/receta`);
     },
 
+    /** Quién otorgó la atención de una nota médica (punto 37): su creador; sin nota, el usuario actual. */
+    getPrestadorNotaMedica(trabajadorId: string, notaId?: string | null) {
+        return api.get(`/expedientes/${trabajadorId}/documentos/notaMedica-prestador`, {
+            params: notaId ? { notaId } : {},
+        });
+    },
+
     getConstanciasAptitud(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/constanciaAptitud`);
     },

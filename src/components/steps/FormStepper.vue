@@ -424,7 +424,7 @@ import { esLimiteHistoriasAlcanzado } from '@/helpers/limiteHistoriasDelMes';
 import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaRamazziniScope, validarNotaMedicaPreSubmit, validarNotaMedicaEmbarazo, validarFechaDocumentoPreSubmit, DOCUMENT_TYPE_DATE_FIELDS } from '@/helpers/validacionCampos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { validateCIE10Duplicates, generateBlockingToastMessage } from '@/helpers/cie10';
-import { validateNotaMedicaDiagnosticos2Y3, fetchMedicoEnfermeraFirmantes, normalizeNotaMedicaDiagnosticosPv, precargarValidacionesNotaMedica } from '@/helpers/notaMedicaDiagnosticosSis';
+import { validateNotaMedicaDiagnosticos2Y3, fetchFirmantesDelPrestador, normalizeNotaMedicaDiagnosticosPv, precargarValidacionesNotaMedica } from '@/helpers/notaMedicaDiagnosticosSis';
 import { aplicarSeDesconocePesoTalla } from '@/helpers/notaMedicaCexRanges';
 import {
   normalizeNotaMedicaConfirmacionDiagnostica,
@@ -2157,7 +2157,12 @@ export default {
         // Firmante, catálogo CEX y reglas CIE-10 a la vez; las validaciones de abajo ya los encuentran
         const [{ medicoFirmante: medicoFirmanteConf, enfermeraFirmante: enfermeraFirmanteConf }] =
           await Promise.all([
-            fetchMedicoEnfermeraFirmantes(user.value?._id),
+            // Punto 37: quien registró la nota (en una nueva, el usuario actual)
+            fetchFirmantesDelPrestador(
+              trabajadores.currentTrabajadorId,
+              documentos.currentDocument ?? formData.formDataNotaMedica,
+              user.value?._id,
+            ),
             precargarValidacionesNotaMedica(formData.formDataNotaMedica),
           ]);
         const fechaNotaConf = formData.formDataNotaMedica.fechaNotaMedica
