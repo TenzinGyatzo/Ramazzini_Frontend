@@ -4538,8 +4538,9 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                                     <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
                                     {{ convertirFechaISOaDDMMYYYY(notaMedica.fechaNotaMedica) }}
                                 </p>
+                                <!-- Un borrador pendiente muestra solo su aviso (punto 36): ya dice que es borrador -->
                                 <EstadoDocumentoBadge
-                                    v-if="isMX && documentImmutabilityEnabled"
+                                    v-if="isMX && documentImmutabilityEnabled && !notaMedicaBorradorPendiente"
                                     :estado="notaMedica.estado"
                                     :fechaFinalizacion="notaMedica.fechaFinalizacion"
                                     :finalizadoPor="notaMedica.finalizadoPor"
@@ -4549,9 +4550,11 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
                                 />
                                 <span
                                     v-if="notaMedicaBorradorPendiente"
-                                    class="px-2 py-1 text-xs font-medium rounded-full border"
+                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border"
                                     :class="getBadgeClass(notaMedicaBorradorPendiente.nivelUrgencia)"
+                                    data-borrador-pendiente
                                 >
+                                    <i class="fas fa-edit" aria-hidden="true"></i>
                                     {{ getBadgeLabel(notaMedicaBorradorPendiente.nivelUrgencia) }}
                                 </span>
                             </div>
