@@ -2,24 +2,10 @@ import api from '@/lib/axios'
 
 export default {
     /**
-     * Search CIE-10 codes by query string
-     * @param query Search term (code or description)
-     * @param limit Optional result limit (default 50, max 100)
-     * @param sexo Optional sex filter (1=Hombre, 2=Mujer) for pre-filtering results
-     * @param edad Optional age filter for pre-filtering results
-     */
-    searchCIE10(query: string, limit?: number, sexo?: number, edad?: number) {
-        const params: any = { q: query };
-        if (limit !== undefined) params.limit = limit;
-        if (sexo !== undefined) params.sexo = sexo;
-        if (edad !== undefined) params.edad = edad;
-        return api.get(`/catalogs/cie10/search`, { params });
-    },
-
-    /**
      * Buscador de diagnósticos de la nota médica: sin acentos, por relevancia y, con el
-     * trabajador, solo diagnósticos válidos para su sexo y edad a la fecha de la consulta.
-     * Responde { resultados, ocultosPorSexoEdad }.
+     * trabajador, solo diagnósticos válidos para su sexo y edad a la fecha de la consulta; sin
+     * O240–O249 ni MT/CP y, en el principal, solo los autorizados al tipo de personal (punto 37).
+     * Responde { resultados, ocultosPorSexoEdad, ocultosPorPersonal, ocultosNoPermitidos }.
      */
     buscarDiagnosticosCIE10(
         query: string,

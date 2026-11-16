@@ -44,9 +44,10 @@ export function calcularEdadAnios(
   const fn = new Date(fechaNacimiento);
   const fr = new Date(fechaReferencia);
   if (isNaN(fn.getTime()) || isNaN(fr.getTime())) return null;
-  let edad = fr.getFullYear() - fn.getFullYear();
-  const m = fr.getMonth() - fn.getMonth();
-  if (m < 0 || (m === 0 && fr.getDate() < fn.getDate())) edad--;
+  // Día UTC, igual que el servidor (punto 37)
+  let edad = fr.getUTCFullYear() - fn.getUTCFullYear();
+  const m = fr.getUTCMonth() - fn.getUTCMonth();
+  if (m < 0 || (m === 0 && fr.getUTCDate() < fn.getUTCDate())) edad--;
   return edad;
 }
 

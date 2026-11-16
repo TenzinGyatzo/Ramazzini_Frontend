@@ -500,22 +500,15 @@ export function calculateAge(fechaNacimiento: Date, fechaReferencia: Date): numb
     return 0;
   }
 
-  let edad = fechaReferencia.getFullYear() - fechaNacimiento.getFullYear();
-  const monthDiff = fechaReferencia.getMonth() - fechaNacimiento.getMonth();
-  const dayDiff = fechaReferencia.getDate() - fechaNacimiento.getDate();
-
-  // Ajustar si aún no ha cumplido años
+  // Edad cumplida en día UTC, igual que el servidor (punto 37); antes era una fracción por
+  // 365.25 días que podía decir un año menos en la víspera del cumpleaños
+  let edad = fechaReferencia.getUTCFullYear() - fechaNacimiento.getUTCFullYear();
+  const monthDiff = fechaReferencia.getUTCMonth() - fechaNacimiento.getUTCMonth();
+  const dayDiff = fechaReferencia.getUTCDate() - fechaNacimiento.getUTCDate();
   if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
     edad--;
   }
-
-  // Calcular fracción del año para mayor precisión
-  // Diferencia en milisegundos
-  const diffMs = fechaReferencia.getTime() - fechaNacimiento.getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  const edadExacta = diffDays / 365.25;
-
-  return Math.max(0, edadExacta);
+  return Math.max(0, edad);
 }
 
 /**
