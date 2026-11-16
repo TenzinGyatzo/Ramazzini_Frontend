@@ -8,6 +8,7 @@ import CIE10Autocomplete from '@/components/selectors/CIE10Autocomplete.vue';
 import {
   validateDiagnosticoPrincipalSis,
   fetchFirmantesDelPrestador,
+  resolveEffectiveTipoPersonalDgis,
 } from '@/helpers/notaMedicaDiagnosticosSis';
 import { useConfirmacionDiagnostica } from '@/composables/useConfirmacionDiagnostica';
 import { useNom024Fields } from '@/composables/useNom024Fields';
@@ -94,6 +95,23 @@ const edadTrabajador = computed(() => {
 
 const medicoFirmanteRef = ref(null);
 const enfermeraFirmanteRef = ref(null);
+
+// Punto 37: tipo de personal de quien registra la nota, para que el buscador solo ofrezca
+// diagnósticos principales que el catálogo le autoriza
+const tipoPersonalPrestador = ref(null);
+const personalEtiqueta = ref('');
+watch([medicoFirmanteRef, enfermeraFirmanteRef], async ([medico, enfermera]) => {
+  const res = await resolveEffectiveTipoPersonalDgis(medico, enfermera);
+  tipoPersonalPrestador.value = res.value;
+  personalEtiqueta.value =
+    res.source === 'enfermera_infer'
+      ? 'enfermería'
+      : medico?.especialistaSaludTrabajo === 'Si' || medico?.especialistaSaludTrabajo === true
+        ? 'médicos especialistas'
+        : res.source === 'medico_infer'
+          ? 'médicos generales'
+          : '';
+});
 
 const { muestraConfirmacion: muestraConfirmacionDiagnostica1 } = useConfirmacionDiagnostica({
   slot: 1,
@@ -521,6 +539,9 @@ watch(
                     :trabajadorId="trabajadores.currentTrabajadorId"
                     :fechaConsulta="fechaNotaMedica"
                     :dense="variant === 'compact'"
+                    :tipoPersonal="tipoPersonalPrestador"
+                    :relacionTemporal="relacionTemporal"
+                    :personalEtiqueta="personalEtiqueta"
                     placeholder="Buscar código diagnóstico principal..."
                 />
                 <!-- Mensaje de error DIAGNOSTICO_SIS / sexo-edad para diagnóstico principal -->

@@ -16,6 +16,14 @@ interface Props {
   fechaConsulta?: Date | string; // Para calcular edad
   /** Etiqueta más densa (p. ej. stepper compacto) */
   dense?: boolean;
+  /**
+   * Solo diagnóstico principal (punto 37): tipo de personal de quien registra la nota, primera
+   * vez (0) o subsecuente (1) y cómo nombrarlo («enfermería»). Con ellos se ocultan los
+   * diagnósticos que el catálogo no le autoriza.
+   */
+  tipoPersonal?: number | null;
+  relacionTemporal?: number | null;
+  personalEtiqueta?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -43,6 +51,9 @@ let busquedaActual = 0;
 let controlador: AbortController | null = null;
 /** Coincidencias ocultas por no aplicar al sexo o la edad del trabajador. */
 const ocultosPorSexoEdad = ref(0);
+/** Ocultas porque el catálogo no las autoriza a ese personal, y las que nunca van en la nota (punto 37). */
+const ocultosPorPersonal = ref(0);
+const ocultosNoPermitidos = ref(0);
 /** Lo que se buscó en la última respuesta (para resaltar). */
 const consultaMostrada = ref('');
 
@@ -68,8 +79,32 @@ const filtroTrabajador = computed(() => {
   };
 });
 
+/**
+ * Lo que se ocultó y por qué, en una línea: «3 diagnósticos no aplican a hombres de 41 años ·
+ * 5 no los autoriza el catálogo a enfermería en primera vez · 2 no se registran en la nota médica».
+ */
+const textoOcultos = computed(() =>
+  [textoOcultosSexoEdad.value, textoOcultosPersonal.value, textoOcultosNoPermitidos.value]
+    .filter(Boolean)
+    .join(' · '),
+);
+
+const textoOcultosPersonal = computed(() => {
+  const n = ocultosPorPersonal.value;
+  if (!n) return '';
+  const quien = props.personalEtiqueta ? ` a ${props.personalEtiqueta}` : '';
+  const cuando = props.relacionTemporal === 1 ? 'subsecuente' : 'primera vez';
+  return `${n} no ${n === 1 ? 'lo autoriza' : 'los autoriza'} el catálogo${quien} en ${cuando}`;
+});
+
+const textoOcultosNoPermitidos = computed(() => {
+  const n = ocultosNoPermitidos.value;
+  if (!n) return '';
+  return `${n} no se ${n === 1 ? 'registra' : 'registran'} en la nota médica`;
+});
+
 /** «3 diagnósticos no aplican a hombres de 41 años» (o «… a la edad de 2 años»). */
-const textoOcultos = computed(() => {
+const textoOcultosSexoEdad = computed(() => {
   const n = ocultosPorSexoEdad.value;
   if (!n) return '';
   const t: any = trabajadores.currentTrabajador;
@@ -96,6 +131,8 @@ const performSearch = async (query: string) => {
   if (query.length < 2) {
     results.value = [];
     ocultosPorSexoEdad.value = 0;
+    ocultosPorPersonal.value = 0;
+    ocultosNoPermitidos.value = 0;
     showDropdown.value = false;
     isLoading.value = false;
     return;
@@ -109,12 +146,19 @@ const performSearch = async (query: string) => {
     const limit = 50;
     const { data } = await CatalogsAPI.buscarDiagnosticosCIE10(
       query,
-      { limit, ...(filtroTrabajador.value ?? {}) },
+      {
+        limit,
+        ...(filtroTrabajador.value ?? {}),
+        tipoPersonal: props.tipoPersonal ?? null,
+        relacionTemporal: props.relacionTemporal ?? null,
+      },
       controlador.signal,
     );
     if (numero !== busquedaActual) return;
     results.value = data?.resultados || [];
     ocultosPorSexoEdad.value = data?.ocultosPorSexoEdad || 0;
+    ocultosPorPersonal.value = data?.ocultosPorPersonal || 0;
+    ocultosNoPermitidos.value = data?.ocultosNoPermitidos || 0;
     consultaMostrada.value = query;
     showDropdown.value = true;
     selectedIndex.value = -1;
@@ -214,6 +258,13 @@ onUnmounted(() => {
 });
 
 // Watch modelValue for external changes
+watch(
+  () => [props.tipoPersonal, props.relacionTemporal],
+  () => {
+    if (showDropdown.value && searchTerm.value.length >= 2) performSearch(searchTerm.value);
+  },
+);
+
 watch(() => props.modelValue, async (newVal) => {
   if (!newVal) {
     searchTerm.value = '';
@@ -329,7 +380,7 @@ watch(() => props.modelValue, async (newVal) => {
         No se encontraron códigos para "{{ searchTerm }}"
       </div>
 
-      <!-- Coincidencias que no aplican al sexo o la edad del trabajador -->
+      <!-- Lo que se ocultó y por qué (sexo o edad, tipo de personal, no se registra en la nota) -->
       <p
         v-if="!errorMessage && textoOcultos"
         class="cie10-ocultos border-t border-gray-100 px-3 py-1.5 text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400"

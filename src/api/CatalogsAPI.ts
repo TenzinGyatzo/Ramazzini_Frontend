@@ -23,7 +23,15 @@ export default {
      */
     buscarDiagnosticosCIE10(
         query: string,
-        opciones: { limit?: number; sexoTrabajador?: string; fechaNacimiento?: string; fecha?: string } = {},
+        opciones: {
+            limit?: number;
+            sexoTrabajador?: string;
+            fechaNacimiento?: string;
+            fecha?: string;
+            /** Diagnóstico principal (punto 37): tipo de personal y primera vez (0) o subsecuente (1). */
+            tipoPersonal?: number | null;
+            relacionTemporal?: number | null;
+        } = {},
         signal?: AbortSignal,
     ) {
         const params: Record<string, string | number> = { q: query, detalle: '1' };
@@ -31,6 +39,10 @@ export default {
         if (opciones.sexoTrabajador) params.sexoTrabajador = opciones.sexoTrabajador;
         if (opciones.fechaNacimiento) params.fechaNacimiento = opciones.fechaNacimiento;
         if (opciones.fecha) params.fecha = opciones.fecha;
+        if (opciones.tipoPersonal != null) params.tipoPersonal = opciones.tipoPersonal;
+        if (opciones.relacionTemporal === 0 || opciones.relacionTemporal === 1) {
+            params.relacionTemporal = opciones.relacionTemporal;
+        }
         return api.get(`/catalogs/cie10/search`, { params, signal });
     },
 
