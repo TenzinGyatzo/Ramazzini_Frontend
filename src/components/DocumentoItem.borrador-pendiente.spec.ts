@@ -18,7 +18,10 @@ vi.mock('@/composables/usePdfGenerationTracker', () => ({
 }));
 
 // Borradores de nota médica: la nota «nm-vieja» es un borrador antiguo
-const pendientes: Record<string, { nivelUrgencia: string }> = { 'nm-vieja': { nivelUrgencia: 'warning' } };
+const pendientes: Record<string, { nivelUrgencia: string }> = {
+  'nm-vieja': { nivelUrgencia: 'warning' },
+  'nm-muy-vieja': { nivelUrgencia: 'critical' },
+};
 vi.mock('@/composables/useBorradoresNotaMedica', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/composables/useBorradoresNotaMedica')>();
   return {
@@ -93,6 +96,13 @@ describe('DocumentoItem — insignias de la nota médica en borrador (punto 36)'
     const w = montar('nm-vieja');
     await flushPromises();
     expect(w.find('[data-borrador-pendiente]').text()).toBe('Borrador antiguo');
+    expect(w.find('[data-estado-documento]').exists()).toBe(false);
+  });
+
+  it('14 días o más: «Borrador sin finalizar» (sigue diciendo que es borrador)', async () => {
+    const w = montar('nm-muy-vieja');
+    await flushPromises();
+    expect(w.find('[data-borrador-pendiente]').text()).toBe('Borrador sin finalizar');
     expect(w.find('[data-estado-documento]').exists()).toBe(false);
   });
 

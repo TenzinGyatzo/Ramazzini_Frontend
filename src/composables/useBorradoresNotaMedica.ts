@@ -226,7 +226,7 @@ export function useBorradoresNotaMedica() {
   function getBadgeLabel(nivel: BorradorPendienteNivelUrgencia) {
     switch (nivel) {
       case 'critical':
-        return 'Atención requerida';
+        return 'Borrador sin finalizar';
       case 'warning':
         return 'Borrador antiguo';
       default:
