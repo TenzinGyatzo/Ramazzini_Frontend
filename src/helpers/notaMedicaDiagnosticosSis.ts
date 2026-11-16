@@ -171,6 +171,16 @@ export async function fetchMedicoEnfermeraFirmantes(userId: string | undefined):
   return { medicoFirmante, enfermeraFirmante };
 }
 
+/**
+ * Claves que la consulta externa no admite en ningún diagnóstico: diabetes mellitus en el
+ * embarazo (punto 37). Igual que el servidor (cie10-diagnostico-sis.util.ts).
+ */
+export const CIE10_EXCLUIDOS_CONSULTA_EXTERNA: readonly string[] = ['O240', 'O241', 'O242', 'O243', 'O244', 'O249'];
+
+export function mensajeCie10ExcluidoConsultaExterna(catalogKey: string, contexto: string): string {
+  return `${contexto}: el código ${catalogKey} (diabetes mellitus en el embarazo) no se puede registrar en la nota médica.`;
+}
+
 function fail(
   paso: number,
   messageToast: string,
@@ -491,6 +501,11 @@ async function validateDiagnostico23Core(
     );
   }
 
+  if (CIE10_EXCLUIDOS_CONSULTA_EXTERNA.includes(norm)) {
+    const mensaje = mensajeCie10ExcluidoConsultaExterna(norm, `Diagnóstico ${label}`);
+    return fail(paso, mensaje, mensaje);
+  }
+
   const exists = await catalogEntryExists(codeRaw);
   if (!exists) {
     return fail(
@@ -590,6 +605,11 @@ async function validateDiagnosticoPrincipal(
       'Diagnóstico principal: el código CIE-10 debe tener exactamente 4 caracteres.',
       'El código CIE-10 debe tener exactamente 4 caracteres.',
     );
+  }
+
+  if (CIE10_EXCLUIDOS_CONSULTA_EXTERNA.includes(norm)) {
+    const mensaje = mensajeCie10ExcluidoConsultaExterna(norm, 'Diagnóstico principal');
+    return failPrincipal(pasoPrinc, mensaje, mensaje);
   }
 
   const exists = await catalogEntryExists(codeRaw);

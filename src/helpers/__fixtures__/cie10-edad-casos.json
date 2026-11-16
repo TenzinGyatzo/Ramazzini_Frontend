@@ -1,0 +1,4466 @@
+[
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 004A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 004A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 004A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 004A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 004A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "004A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 004A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "1990-06-15",
+    "nota": "1991-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 011M"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "1990-06-15",
+    "nota": "1991-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 011M"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "2000-02-29",
+    "nota": "2001-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 011M"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "2000-02-29",
+    "nota": "2001-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 011M"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "1999-01-31",
+    "nota": "2000-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 011M"
+  },
+  {
+    "linf": "000H",
+    "lsup": "011M",
+    "nacimiento": "1999-01-31",
+    "nota": "2000-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 011M"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "1990-06-15",
+    "nota": "2005-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 014A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "1990-06-15",
+    "nota": "2005-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 014A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "2000-02-29",
+    "nota": "2015-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 014A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "2000-02-29",
+    "nota": "2015-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 014A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "1999-01-31",
+    "nota": "2014-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 014A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "014A",
+    "nacimiento": "1999-01-31",
+    "nota": "2014-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 014A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "1990-06-15",
+    "nota": "2009-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 018A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "1990-06-15",
+    "nota": "2009-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 018A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "2000-02-29",
+    "nota": "2019-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 018A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "2000-02-29",
+    "nota": "2019-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 018A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "1999-01-31",
+    "nota": "2018-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 018A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "018A",
+    "nacimiento": "1999-01-31",
+    "nota": "2018-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 018A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "1990-06-15",
+    "nota": "2012-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 021A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "1990-06-15",
+    "nota": "2012-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 021A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "2000-02-29",
+    "nota": "2022-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 021A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "2000-02-29",
+    "nota": "2022-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 021A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "1999-01-31",
+    "nota": "2021-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 021A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "021A",
+    "nacimiento": "1999-01-31",
+    "nota": "2021-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 021A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "1990-06-15",
+    "nota": "2016-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 025A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "1990-06-15",
+    "nota": "2016-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 025A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "2000-02-29",
+    "nota": "2026-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 025A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "2000-02-29",
+    "nota": "2026-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 025A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "1999-01-31",
+    "nota": "2025-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 025A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "025A",
+    "nacimiento": "1999-01-31",
+    "nota": "2025-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 025A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-07-12",
+    "permitido": true,
+    "descripcion": "último día dentro de 027D"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-07-13",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 027D"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-03-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 027D"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-03-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 027D"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 027D"
+  },
+  {
+    "linf": "000H",
+    "lsup": "027D",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 027D"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "1990-06-15",
+    "nota": "2055-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 064A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "1990-06-15",
+    "nota": "2055-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 064A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "2000-02-29",
+    "nota": "2065-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 064A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "2000-02-29",
+    "nota": "2065-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 064A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "1999-01-31",
+    "nota": "2064-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 064A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "064A",
+    "nacimiento": "1999-01-31",
+    "nota": "2064-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 064A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 000H"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "000H",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "1991-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "1991-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2001-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2001-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2000-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2000-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "1991-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "1991-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2001-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2001-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2000-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2000-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1991-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1991-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2001-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2001-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2000-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2000-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 001A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "001A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1992-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 002A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1992-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 002A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2002-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 002A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2002-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 002A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2001-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 002A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2001-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 002A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "002A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-08-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 002M"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-08-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 002M"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-04-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 002M"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-04-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 002M"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-03-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 002M"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-03-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 002M"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "002M",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "1990-06-15",
+    "nota": "2003-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 012A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "1990-06-15",
+    "nota": "2003-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 012A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "2000-02-29",
+    "nota": "2013-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 012A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "2000-02-29",
+    "nota": "2013-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 012A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "1999-01-31",
+    "nota": "2012-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 012A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "012A",
+    "nacimiento": "1999-01-31",
+    "nota": "2012-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 012A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1995-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2005-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2004-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 005A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "005A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "1990-06-15",
+    "nota": "1996-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 006A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "1990-06-15",
+    "nota": "1996-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 006A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "1990-06-15",
+    "nota": "1999-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 008A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "1990-06-15",
+    "nota": "1999-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 008A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "2000-02-29",
+    "nota": "2006-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 006A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "2000-02-29",
+    "nota": "2006-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 006A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "2000-02-29",
+    "nota": "2009-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 008A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "2000-02-29",
+    "nota": "2009-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 008A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "1999-01-31",
+    "nota": "2005-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 006A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "1999-01-31",
+    "nota": "2005-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 006A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "1999-01-31",
+    "nota": "2008-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 008A"
+  },
+  {
+    "linf": "006A",
+    "lsup": "008A",
+    "nacimiento": "1999-01-31",
+    "nota": "2008-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 008A"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-12-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 006M"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-12-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 006M"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-08-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 006M"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-08-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 006M"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-07-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 006M"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-07-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 006M"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "006M",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1998-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 008A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1998-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 008A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2008-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 008A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2008-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 008A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2007-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 008A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2007-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 008A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "008A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "1990-06-15",
+    "nota": "1999-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 009A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "1990-06-15",
+    "nota": "1999-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 009A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "1990-06-15",
+    "nota": "2050-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 059A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "1990-06-15",
+    "nota": "2050-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 059A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "2000-02-29",
+    "nota": "2009-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 009A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "2000-02-29",
+    "nota": "2009-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 009A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "2000-02-29",
+    "nota": "2060-02-28",
+    "permitido": true,
+    "descripcion": "último día dentro de 059A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "2000-02-29",
+    "nota": "2060-02-29",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 059A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "1999-01-31",
+    "nota": "2008-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 009A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "1999-01-31",
+    "nota": "2008-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 009A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "1999-01-31",
+    "nota": "2059-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 059A"
+  },
+  {
+    "linf": "009A",
+    "lsup": "059A",
+    "nacimiento": "1999-01-31",
+    "nota": "2059-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 059A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "1990-06-15",
+    "nota": "2005-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 014A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "1990-06-15",
+    "nota": "2005-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 014A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "2000-02-29",
+    "nota": "2015-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 014A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "2000-02-29",
+    "nota": "2015-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 014A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "1999-01-31",
+    "nota": "2014-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 014A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "014A",
+    "nacimiento": "1999-01-31",
+    "nota": "2014-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 014A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 017A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "017A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 017A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 019A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 019A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-28",
+    "permitido": true,
+    "descripcion": "último día dentro de 019A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-29",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 019A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 019A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "019A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 019A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "1990-06-15",
+    "nota": "2045-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 054A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "1990-06-15",
+    "nota": "2045-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 054A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "2000-02-29",
+    "nota": "2055-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 054A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "2000-02-29",
+    "nota": "2055-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 054A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "1999-01-31",
+    "nota": "2054-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 054A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "054A",
+    "nacimiento": "1999-01-31",
+    "nota": "2054-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 054A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2071-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2071-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2081-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2081-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2080-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2080-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2076-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2076-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2086-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2086-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2085-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2085-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 010A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "010A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2002-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2002-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2071-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2071-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2012-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2012-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2081-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2081-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2011-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2011-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2080-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2080-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2002-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2002-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2076-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2076-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2012-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2012-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2086-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2086-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2011-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2011-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2085-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2085-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2002-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2002-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2012-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2012-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2011-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2011-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 012A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "012A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2005-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2005-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2071-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "1990-06-15",
+    "nota": "2071-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2015-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2015-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2081-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "2000-02-29",
+    "nota": "2081-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2014-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2014-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2080-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 080A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "080A",
+    "nacimiento": "1999-01-31",
+    "nota": "2080-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 080A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2005-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2005-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2015-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2015-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2014-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2014-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 015A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "015A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "1990-06-15",
+    "nota": "2006-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 016A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "1990-06-15",
+    "nota": "2006-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 016A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "1990-06-15",
+    "nota": "2009-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 018A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "1990-06-15",
+    "nota": "2009-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 018A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "2000-02-29",
+    "nota": "2016-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 016A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "2000-02-29",
+    "nota": "2016-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 016A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "2000-02-29",
+    "nota": "2019-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 018A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "2000-02-29",
+    "nota": "2019-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 018A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "1999-01-31",
+    "nota": "2015-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 016A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "1999-01-31",
+    "nota": "2015-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 016A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "1999-01-31",
+    "nota": "2018-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 018A"
+  },
+  {
+    "linf": "016A",
+    "lsup": "018A",
+    "nacimiento": "1999-01-31",
+    "nota": "2018-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2076-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2076-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2086-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2086-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2085-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2085-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2008-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2018-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2017-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 018A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "018A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "1990-06-15",
+    "nota": "2026-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 035A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "1990-06-15",
+    "nota": "2026-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 035A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "2000-02-29",
+    "nota": "2036-02-28",
+    "permitido": true,
+    "descripcion": "último día dentro de 035A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "2000-02-29",
+    "nota": "2036-02-29",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 035A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "1999-01-31",
+    "nota": "2035-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 035A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "035A",
+    "nacimiento": "1999-01-31",
+    "nota": "2035-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 035A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "1990-06-15",
+    "nota": "2041-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 050A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "1990-06-15",
+    "nota": "2041-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 050A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "2000-02-29",
+    "nota": "2051-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 050A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "2000-02-29",
+    "nota": "2051-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 050A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "1999-01-31",
+    "nota": "2050-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 050A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "050A",
+    "nacimiento": "1999-01-31",
+    "nota": "2050-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 050A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2076-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "1990-06-15",
+    "nota": "2076-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2086-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "2000-02-29",
+    "nota": "2086-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2085-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 085A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "085A",
+    "nacimiento": "1999-01-31",
+    "nota": "2085-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 085A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2010-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-28",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2020-02-29",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2019-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 020A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "020A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2015-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 025A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2015-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 025A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2025-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 025A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2025-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 025A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2024-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 025A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2024-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 025A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "025A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-07-12",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-07-13",
+    "permitido": true,
+    "descripcion": "día en que cumple 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "1990-06-15",
+    "nota": "2000-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-03-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-03-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "2000-02-29",
+    "nota": "2010-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 009A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "009A",
+    "nacimiento": "1999-01-31",
+    "nota": "2009-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 009A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-07-12",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "1990-07-13",
+    "permitido": true,
+    "descripcion": "día en que cumple 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-03-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2000-03-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "1999-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 028D"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "028D",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2020-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 030A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2020-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 030A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2030-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 030A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2030-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 030A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2029-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 030A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2029-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 030A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "030A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2040-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 050A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2040-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 050A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2050-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 050A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2050-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 050A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2049-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 050A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2049-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 050A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "050A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2045-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 055A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2045-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 055A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2055-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 055A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2055-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 055A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2054-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 055A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2054-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 055A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "055A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2055-06-14",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 065A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2055-06-15",
+    "permitido": true,
+    "descripcion": "día en que cumple 065A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-14",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "1990-06-15",
+    "nota": "2111-06-15",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2065-02-27",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 065A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2065-02-28",
+    "permitido": true,
+    "descripcion": "día en que cumple 065A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-27",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "2000-02-29",
+    "nota": "2121-02-28",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2064-01-30",
+    "permitido": false,
+    "descripcion": "víspera de cumplir 065A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2064-01-31",
+    "permitido": true,
+    "descripcion": "día en que cumple 065A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-30",
+    "permitido": true,
+    "descripcion": "último día dentro de 120A"
+  },
+  {
+    "linf": "065A",
+    "lsup": "120A",
+    "nacimiento": "1999-01-31",
+    "nota": "2120-01-31",
+    "permitido": false,
+    "descripcion": "día siguiente al tope 120A"
+  }
+]

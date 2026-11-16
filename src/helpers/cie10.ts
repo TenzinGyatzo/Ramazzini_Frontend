@@ -319,7 +319,7 @@ export interface CIE10Rule {
   diaCaInfantil?: boolean;
 }
 
-export type CatalogAgeUnit = 'D' | 'M' | 'A';
+export type CatalogAgeUnit = 'H' | 'D' | 'M' | 'A';
 
 export interface CatalogAgeLimit {
   value: number;
@@ -339,7 +339,7 @@ export function parseCatalogAgeLimit(
     return null;
   }
 
-  const match = trimmed.match(/^(\d{3})([ADMY])$/);
+  const match = trimmed.match(/^(\d{3})([HADMY])$/);
   if (!match) {
     return null;
   }
@@ -354,22 +354,50 @@ export function parseCatalogAgeLimit(
   return { value: numericValue, unit };
 }
 
+/**
+ * Día de calendario en UTC: las fechas se guardan a medianoche UTC, así el resultado no
+ * depende de la zona horaria del navegador (punto 37). Igual que el servidor
+ * (backend/src/utils/cie10-age-parser.util.ts).
+ */
 function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
+/** Suma meses sin desbordar: 31 de enero + 1 mes = fin de febrero; 29 de febrero + 1 año = 28 de febrero. */
+function addMonthsClamped(date: Date, months: number): Date {
+  const total = date.getUTCMonth() + months;
+  const year = date.getUTCFullYear() + Math.floor(total / 12);
+  const month = ((total % 12) + 12) % 12;
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(date.getUTCDate(), lastDay)));
+}
+
+/** Fecha en que se cumple el límite. Horas: días completos (000H = el mismo día). */
 export function addCatalogAgeLimit(birthDate: Date, limit: CatalogAgeLimit): Date {
   const result = startOfDay(birthDate);
+  if (limit.unit === 'H') {
+    result.setUTCDate(result.getUTCDate() + Math.floor(limit.value / 24));
+    return result;
+  }
   if (limit.unit === 'D') {
-    result.setDate(result.getDate() + limit.value);
+    result.setUTCDate(result.getUTCDate() + limit.value);
     return result;
   }
-  if (limit.unit === 'M') {
-    result.setMonth(result.getMonth() + limit.value);
-    return result;
+  if (limit.unit === 'M') return addMonthsClamped(result, limit.value);
+  return addMonthsClamped(result, limit.value * 12);
+}
+
+/**
+ * Último día en que la edad todavía cumple el límite superior: edad cumplida, así que «059A»
+ * vale hasta la víspera de cumplir 60 y «011M» hasta la víspera de cumplir 12 meses (punto 37).
+ */
+export function lastDayWithinUpperLimit(birthDate: Date, limit: CatalogAgeLimit): Date {
+  if (limit.unit === 'A' || limit.unit === 'M') {
+    const siguiente = addCatalogAgeLimit(birthDate, { value: limit.value + 1, unit: limit.unit });
+    siguiente.setUTCDate(siguiente.getUTCDate() - 1);
+    return siguiente;
   }
-  result.setFullYear(result.getFullYear() + limit.value);
-  return result;
+  return addCatalogAgeLimit(birthDate, limit);
 }
 
 /**
@@ -400,6 +428,8 @@ export function parseAgeLimit(value: string | null | undefined): number | null {
       return parsed.value / 365.25;
     case 'M':
       return parsed.value / 12;
+    case 'H':
+      return parsed.value / 8760;
     default:
       return parsed.value;
   }
@@ -427,8 +457,9 @@ export function isSexAllowedForLsex(
 }
 
 /**
- * Valida LINF/LSUP por fechas de calendario (unidad D/M/A).
- * Intervalo cerrado: el día exacto del límite es válido.
+ * Valida la edad a la FECHA DE LA NOTA (no la de hoy: hay notas extemporáneas) contra
+ * LINF/LSUP (H/D/M/A): desde el día en que se cumple el inferior y, en el superior, edad
+ * cumplida hasta la víspera de la siguiente unidad (punto 37).
  */
 export function isAgeAllowedForLinfLsup(
   linf: string | null | undefined,
@@ -451,7 +482,7 @@ export function isAgeAllowedForLinfLsup(
     if (ref.getTime() < minDate.getTime()) return false;
   }
   if (lsupParsed) {
-    const maxDate = addCatalogAgeLimit(birth, lsupParsed);
+    const maxDate = lastDayWithinUpperLimit(birth, lsupParsed);
     if (ref.getTime() > maxDate.getTime()) return false;
   }
   return true;
