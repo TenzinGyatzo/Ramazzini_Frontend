@@ -496,7 +496,10 @@ import InterruptorModoCaptura from '@/components/steps/InterruptorModoCaptura.vu
 import { useModoCaptura, CAPTURA_RAPIDA_KEY } from '@/composables/useModoCaptura';
 import AtajoTeclado from '@/components/steps/AtajoTeclado.vue';
 import { useTecladoAsistente } from '@/composables/useTecladoAsistente';
-import { enfocarCampo, limpiarAtencionCampo } from '@/helpers/enfocarCampo';
+import { enfocarCampo, limpiarAtencionCampo, hayAtencionEnCurso, selectorCampo } from '@/helpers/enfocarCampo';
+import IndiceCaptura from '@/components/steps/IndiceCaptura.vue';
+import { estadoIndiceCaptura, seccionIncompletaVecina, atajoDeSeccion } from '@/helpers/indiceCaptura';
+import { esComputadora, primerCampoParaEnfocar } from '@/composables/useAutofocoPrimerVacio';
 import { quitarMedicionesVacias } from '@/helpers/medicionesClinicas';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
 import {
@@ -514,7 +517,7 @@ import {
 } from '@/helpers/problemasDocumento';
 
 export default {
-  components: { Step1Antidoping, Step2Antidoping, Step1Aptitud, Step2Aptitud, Step3Aptitud, Step4Aptitud, Step5Aptitud, Step6Aptitud, Step7Aptitud, Step8Aptitud, Step9Aptitud, Step10Aptitud, Step11Aptitud, Step1Audiometria, Step2Audiometria, Step3Audiometria, Step4Audiometria, Step5Audiometria, Step6Audiometria, Step7Audiometria, Step1Certificado, Step2Certificado, Step1CertificadoExpedito, Step2CertificadoExpedito, Step3CertificadoExpedito, Step4CertificadoExpedito, Step5CertificadoExpedito, Step6CertificadoExpedito, Step7CertificadoExpedito, Step8CertificadoExpedito, Step1ExamenVista, Step2ExamenVista, Step3ExamenVista, Step4ExamenVista, Step5ExamenVista, Step6ExamenVista, Step7ExamenVista, Step8ExamenVista, Step9ExamenVista, Step1ExploracionFisica, Step2ExploracionFisica, Step3ExploracionFisica, Step4ExploracionFisica, Step5ExploracionFisica, Step6ExploracionFisica, Step7ExploracionFisica, Step8ExploracionFisica, Step9ExploracionFisica, Step10ExploracionFisica, Step11ExploracionFisica, Step12ExploracionFisica, Step13ExploracionFisica, Step14ExploracionFisica, Step15ExploracionFisica, Step16ExploracionFisica, Step17ExploracionFisica, Step18ExploracionFisica, Step19ExploracionFisica, Step20ExploracionFisica, Step21ExploracionFisica, Step22ExploracionFisica, Step23ExploracionFisica, Step24ExploracionFisica, Step25ExploracionFisica, Step26ExploracionFisica, Step27ExploracionFisica, Step28ExploracionFisica, Step29ExploracionFisica, Step30ExploracionFisica, Step31ExploracionFisica, Step1HistoriaClinica, Step2HistoriaClinica, Step3HistoriaClinica, Step4HistoriaClinica, Step5HistoriaClinica, Step6HistoriaClinica, Step7HistoriaClinica, Step8HistoriaClinica, Step9HistoriaClinica, Step10HistoriaClinica, Step11HistoriaClinica, Step12HistoriaClinica, Step13HistoriaClinica, Step14HistoriaClinica, Step15HistoriaClinica, Step16HistoriaClinica, Step17HistoriaClinica, Step18HistoriaClinica, Step19HistoriaClinica, Step20HistoriaClinica, Step21HistoriaClinica, Step22HistoriaClinica, Step23HistoriaClinica, Step24HistoriaClinica, Step25HistoriaClinica, Step26HistoriaClinica, Step27HistoriaClinica, Step28HistoriaClinica, Step29HistoriaClinica, Step30HistoriaClinica, Step31HistoriaClinica, Step32HistoriaClinica, Step33HistoriaClinica, Step34HistoriaClinica, Step35HistoriaClinica, Step36HistoriaClinica, Step37HistoriaClinica, Step38HistoriaClinica, Step39HistoriaClinica, Step40HistoriaClinica, Step41HistoriaClinica, Step42HistoriaClinica, Step43HistoriaClinica, Step44HistoriaClinica, Step45HistoriaClinica, Step46HistoriaClinica, Step1NotaMedica, Step2NotaMedica, Step3NotaMedica, Step4NotaMedica, Step5NotaMedica, Step6NotaMedica, Step7NotaMedica, Step8NotaMedica, Step9NotaMedica, Step10NotaMedica, Step11NotaMedica, Step12NotaMedica, Step13NotaMedica, Step14NotaMedica, Step1NotaAclaratoria, Step1ControlPrenatal, Step2ControlPrenatal, Step3ControlPrenatal, Step4ControlPrenatal, Step5ControlPrenatal, Step6ControlPrenatal, Step7ControlPrenatal, Step8ControlPrenatal, Step9ControlPrenatal, Step10ControlPrenatal, Step11ControlPrenatal, Step12ControlPrenatal, Step13ControlPrenatal, Step14ControlPrenatal, Step15ControlPrenatal, Step16ControlPrenatal, Step17ControlPrenatal, Step18ControlPrenatal, Step19ControlPrenatal, Step20ControlPrenatal, Step21ControlPrenatal, Step22ControlPrenatal, Step23ControlPrenatal, Step24ControlPrenatal, Step25ControlPrenatal, Step26ControlPrenatal, Step27ControlPrenatal, Step28ControlPrenatal, Step29ControlPrenatal, Step30ControlPrenatal, Step31ControlPrenatal, Step32ControlPrenatal, Step33ControlPrenatal, Step34ControlPrenatal, Step35ControlPrenatal, Step36ControlPrenatal, Step37ControlPrenatal, Step38ControlPrenatal, Step39ControlPrenatal, Step40ControlPrenatal, Step41ControlPrenatal, Step42ControlPrenatal, Step43ControlPrenatal, Step44ControlPrenatal, Step45ControlPrenatal, Step46ControlPrenatal, Step47ControlPrenatal, Step48ControlPrenatal, Step49ControlPrenatal, Step50ControlPrenatal, Step51ControlPrenatal, Step52ControlPrenatal, Step53ControlPrenatal, Step54ControlPrenatal, Step55ControlPrenatal, Step56ControlPrenatal, Step57ControlPrenatal, Step58ControlPrenatal, Step59ControlPrenatal, Step60ControlPrenatal, Step61ControlPrenatal, Step62ControlPrenatal, Step63ControlPrenatal, Step64ControlPrenatal, Step65ControlPrenatal, Step66ControlPrenatal, Step67ControlPrenatal, Step68ControlPrenatal, Step69ControlPrenatal, Step70ControlPrenatal, Step71ControlPrenatal, Step72ControlPrenatal, Step73ControlPrenatal, Step74ControlPrenatal, Step75ControlPrenatal, Step76ControlPrenatal, Step77ControlPrenatal, Step78ControlPrenatal, Step79ControlPrenatal, Step80ControlPrenatal, Step81ControlPrenatal, Step82ControlPrenatal, Step83ControlPrenatal, Step84ControlPrenatal, Step85ControlPrenatal, Step86ControlPrenatal, Step87ControlPrenatal, Step88ControlPrenatal, Step89ControlPrenatal, Step1HistoriaOtologica, Step2HistoriaOtologica, Step3HistoriaOtologica, Step4HistoriaOtologica, Step5HistoriaOtologica, Step6HistoriaOtologica, Step7HistoriaOtologica, Step8HistoriaOtologica, Step9HistoriaOtologica, Step10HistoriaOtologica, Step11HistoriaOtologica, Step12HistoriaOtologica, Step13HistoriaOtologica, Step14HistoriaOtologica, Step15HistoriaOtologica, Step16HistoriaOtologica, Step17HistoriaOtologica, Step18HistoriaOtologica, Step19HistoriaOtologica, Step20HistoriaOtologica, Step21HistoriaOtologica, Step22HistoriaOtologica, Step23HistoriaOtologica, Step24HistoriaOtologica, Step25HistoriaOtologica, Step1PrevioEspirometria, Step2PrevioEspirometria, Step3PrevioEspirometria, Step4PrevioEspirometria, Step5PrevioEspirometria, Step6PrevioEspirometria, Step7PrevioEspirometria, Step8PrevioEspirometria, Step9PrevioEspirometria, Step10PrevioEspirometria, Step11PrevioEspirometria, Step12PrevioEspirometria, Step13PrevioEspirometria, Step14PrevioEspirometria, Step15PrevioEspirometria, Step16PrevioEspirometria, Step17PrevioEspirometria, Step18PrevioEspirometria, Step19PrevioEspirometria, Step20PrevioEspirometria, Step21PrevioEspirometria, Step22PrevioEspirometria, Step23PrevioEspirometria, Step24PrevioEspirometria, Step25PrevioEspirometria, Step26PrevioEspirometria, Step27PrevioEspirometria, Step28PrevioEspirometria, Step1Receta, Step2Receta, Step3Receta, Step4Receta, Step1ConstanciaAptitud, Step1ConstanciaExamenAdmision, Step1EntrevistaPsicologica, Step2EntrevistaPsicologica, Step3EntrevistaPsicologica, Step4EntrevistaPsicologica, Step5EntrevistaPsicologica, Step6EntrevistaPsicologica, Step7EntrevistaPsicologica, Step8EntrevistaPsicologica, Step9EntrevistaPsicologica, Step10EntrevistaPsicologica, Step11EntrevistaPsicologica, Step12EntrevistaPsicologica, Step13EntrevistaPsicologica, Step14EntrevistaPsicologica, Step15EntrevistaPsicologica, Step16EntrevistaPsicologica, Step17EntrevistaPsicologica, Step18EntrevistaPsicologica, Step19EntrevistaPsicologica, Step20EntrevistaPsicologica, Step21EntrevistaPsicologica, Step22EntrevistaPsicologica, Step1TrastornosEstadoAnimo, Step2TrastornosEstadoAnimo, Step3TrastornosEstadoAnimo, Step4TrastornosEstadoAnimo, Step5TrastornosEstadoAnimo, Step6TrastornosEstadoAnimo, Step7TrastornosEstadoAnimo, Step8TrastornosEstadoAnimo, Step9TrastornosEstadoAnimo, Step10TrastornosEstadoAnimo, Step11TrastornosEstadoAnimo, Step12TrastornosEstadoAnimo, Step13TrastornosEstadoAnimo, Step14TrastornosEstadoAnimo, Step15TrastornosEstadoAnimo, Step16TrastornosEstadoAnimo, Step17TrastornosEstadoAnimo, Step18TrastornosEstadoAnimo, Step1CuestionarioProdromalBreve, Step2CuestionarioProdromalBreve, Step3CuestionarioProdromalBreve, Step4CuestionarioProdromalBreve, Step5CuestionarioProdromalBreve, Step6CuestionarioProdromalBreve, Step7CuestionarioProdromalBreve, Step8CuestionarioProdromalBreve, Step9CuestionarioProdromalBreve, Step10CuestionarioProdromalBreve, Step11CuestionarioProdromalBreve, Step12CuestionarioProdromalBreve, Step13CuestionarioProdromalBreve, Step14CuestionarioProdromalBreve, Step15CuestionarioProdromalBreve, Step16CuestionarioProdromalBreve, Step17CuestionarioProdromalBreve, Step18CuestionarioProdromalBreve, Step19CuestionarioProdromalBreve, Step20CuestionarioProdromalBreve, Step21CuestionarioProdromalBreve, Step22CuestionarioProdromalBreve, Step1TrastornoLimitePersonalidad, Step2TrastornoLimitePersonalidad, Step3TrastornoLimitePersonalidad, Step4TrastornoLimitePersonalidad, Step5TrastornoLimitePersonalidad, Step6TrastornoLimitePersonalidad, Step7TrastornoLimitePersonalidad, Step8TrastornoLimitePersonalidad, Step9TrastornoLimitePersonalidad, Step10TrastornoLimitePersonalidad, Step11TrastornoLimitePersonalidad, Step1CuestionarioNordico, Step2CuestionarioNordico, Step3CuestionarioNordico, Step4CuestionarioNordico, Step5CuestionarioNordico, Step6CuestionarioNordico, Step1EvaluacionSuenoVigilia, Step2EvaluacionSuenoVigilia, Step3EvaluacionSuenoVigilia, Step4EvaluacionSuenoVigilia, Step5EvaluacionSuenoVigilia, Step6EvaluacionSuenoVigilia, Step7EvaluacionSuenoVigilia, Step8EvaluacionSuenoVigilia, Step1EventoSeguimientoCardiometabolico, Step2EventoSeguimientoCardiometabolico, Step3EventoSeguimientoCardiometabolico, Step4EventoSeguimientoCardiometabolico, Step5EventoSeguimientoCardiometabolico, Step6EventoSeguimientoCardiometabolico, Step7EventoSeguimientoCardiometabolico, Step8EventoSeguimientoCardiometabolico, Step9EventoSeguimientoCardiometabolico, Step1InformeLongitudinalCardiometabolico, Step2InformeLongitudinalCardiometabolico, Step3InformeLongitudinalCardiometabolico, Step1InformeLongitudinalAudiometrico, Step2InformeLongitudinalAudiometrico, Step3InformeLongitudinalAudiometrico, Step5DecisionesConclusionIla, Step6RecomendacionesIla, ModalFaltanCampos, ModalCamposFaltantes, TreatmentConsentModal, ModalSuscripcion, AvisoConexionGuardado, AvisoAtencionCampos, AtajoTeclado, InterruptorModoCaptura },
+  components: { Step1Antidoping, Step2Antidoping, Step1Aptitud, Step2Aptitud, Step3Aptitud, Step4Aptitud, Step5Aptitud, Step6Aptitud, Step7Aptitud, Step8Aptitud, Step9Aptitud, Step10Aptitud, Step11Aptitud, Step1Audiometria, Step2Audiometria, Step3Audiometria, Step4Audiometria, Step5Audiometria, Step6Audiometria, Step7Audiometria, Step1Certificado, Step2Certificado, Step1CertificadoExpedito, Step2CertificadoExpedito, Step3CertificadoExpedito, Step4CertificadoExpedito, Step5CertificadoExpedito, Step6CertificadoExpedito, Step7CertificadoExpedito, Step8CertificadoExpedito, Step1ExamenVista, Step2ExamenVista, Step3ExamenVista, Step4ExamenVista, Step5ExamenVista, Step6ExamenVista, Step7ExamenVista, Step8ExamenVista, Step9ExamenVista, Step1ExploracionFisica, Step2ExploracionFisica, Step3ExploracionFisica, Step4ExploracionFisica, Step5ExploracionFisica, Step6ExploracionFisica, Step7ExploracionFisica, Step8ExploracionFisica, Step9ExploracionFisica, Step10ExploracionFisica, Step11ExploracionFisica, Step12ExploracionFisica, Step13ExploracionFisica, Step14ExploracionFisica, Step15ExploracionFisica, Step16ExploracionFisica, Step17ExploracionFisica, Step18ExploracionFisica, Step19ExploracionFisica, Step20ExploracionFisica, Step21ExploracionFisica, Step22ExploracionFisica, Step23ExploracionFisica, Step24ExploracionFisica, Step25ExploracionFisica, Step26ExploracionFisica, Step27ExploracionFisica, Step28ExploracionFisica, Step29ExploracionFisica, Step30ExploracionFisica, Step31ExploracionFisica, Step1HistoriaClinica, Step2HistoriaClinica, Step3HistoriaClinica, Step4HistoriaClinica, Step5HistoriaClinica, Step6HistoriaClinica, Step7HistoriaClinica, Step8HistoriaClinica, Step9HistoriaClinica, Step10HistoriaClinica, Step11HistoriaClinica, Step12HistoriaClinica, Step13HistoriaClinica, Step14HistoriaClinica, Step15HistoriaClinica, Step16HistoriaClinica, Step17HistoriaClinica, Step18HistoriaClinica, Step19HistoriaClinica, Step20HistoriaClinica, Step21HistoriaClinica, Step22HistoriaClinica, Step23HistoriaClinica, Step24HistoriaClinica, Step25HistoriaClinica, Step26HistoriaClinica, Step27HistoriaClinica, Step28HistoriaClinica, Step29HistoriaClinica, Step30HistoriaClinica, Step31HistoriaClinica, Step32HistoriaClinica, Step33HistoriaClinica, Step34HistoriaClinica, Step35HistoriaClinica, Step36HistoriaClinica, Step37HistoriaClinica, Step38HistoriaClinica, Step39HistoriaClinica, Step40HistoriaClinica, Step41HistoriaClinica, Step42HistoriaClinica, Step43HistoriaClinica, Step44HistoriaClinica, Step45HistoriaClinica, Step46HistoriaClinica, Step1NotaMedica, Step2NotaMedica, Step3NotaMedica, Step4NotaMedica, Step5NotaMedica, Step6NotaMedica, Step7NotaMedica, Step8NotaMedica, Step9NotaMedica, Step10NotaMedica, Step11NotaMedica, Step12NotaMedica, Step13NotaMedica, Step14NotaMedica, Step1NotaAclaratoria, Step1ControlPrenatal, Step2ControlPrenatal, Step3ControlPrenatal, Step4ControlPrenatal, Step5ControlPrenatal, Step6ControlPrenatal, Step7ControlPrenatal, Step8ControlPrenatal, Step9ControlPrenatal, Step10ControlPrenatal, Step11ControlPrenatal, Step12ControlPrenatal, Step13ControlPrenatal, Step14ControlPrenatal, Step15ControlPrenatal, Step16ControlPrenatal, Step17ControlPrenatal, Step18ControlPrenatal, Step19ControlPrenatal, Step20ControlPrenatal, Step21ControlPrenatal, Step22ControlPrenatal, Step23ControlPrenatal, Step24ControlPrenatal, Step25ControlPrenatal, Step26ControlPrenatal, Step27ControlPrenatal, Step28ControlPrenatal, Step29ControlPrenatal, Step30ControlPrenatal, Step31ControlPrenatal, Step32ControlPrenatal, Step33ControlPrenatal, Step34ControlPrenatal, Step35ControlPrenatal, Step36ControlPrenatal, Step37ControlPrenatal, Step38ControlPrenatal, Step39ControlPrenatal, Step40ControlPrenatal, Step41ControlPrenatal, Step42ControlPrenatal, Step43ControlPrenatal, Step44ControlPrenatal, Step45ControlPrenatal, Step46ControlPrenatal, Step47ControlPrenatal, Step48ControlPrenatal, Step49ControlPrenatal, Step50ControlPrenatal, Step51ControlPrenatal, Step52ControlPrenatal, Step53ControlPrenatal, Step54ControlPrenatal, Step55ControlPrenatal, Step56ControlPrenatal, Step57ControlPrenatal, Step58ControlPrenatal, Step59ControlPrenatal, Step60ControlPrenatal, Step61ControlPrenatal, Step62ControlPrenatal, Step63ControlPrenatal, Step64ControlPrenatal, Step65ControlPrenatal, Step66ControlPrenatal, Step67ControlPrenatal, Step68ControlPrenatal, Step69ControlPrenatal, Step70ControlPrenatal, Step71ControlPrenatal, Step72ControlPrenatal, Step73ControlPrenatal, Step74ControlPrenatal, Step75ControlPrenatal, Step76ControlPrenatal, Step77ControlPrenatal, Step78ControlPrenatal, Step79ControlPrenatal, Step80ControlPrenatal, Step81ControlPrenatal, Step82ControlPrenatal, Step83ControlPrenatal, Step84ControlPrenatal, Step85ControlPrenatal, Step86ControlPrenatal, Step87ControlPrenatal, Step88ControlPrenatal, Step89ControlPrenatal, Step1HistoriaOtologica, Step2HistoriaOtologica, Step3HistoriaOtologica, Step4HistoriaOtologica, Step5HistoriaOtologica, Step6HistoriaOtologica, Step7HistoriaOtologica, Step8HistoriaOtologica, Step9HistoriaOtologica, Step10HistoriaOtologica, Step11HistoriaOtologica, Step12HistoriaOtologica, Step13HistoriaOtologica, Step14HistoriaOtologica, Step15HistoriaOtologica, Step16HistoriaOtologica, Step17HistoriaOtologica, Step18HistoriaOtologica, Step19HistoriaOtologica, Step20HistoriaOtologica, Step21HistoriaOtologica, Step22HistoriaOtologica, Step23HistoriaOtologica, Step24HistoriaOtologica, Step25HistoriaOtologica, Step1PrevioEspirometria, Step2PrevioEspirometria, Step3PrevioEspirometria, Step4PrevioEspirometria, Step5PrevioEspirometria, Step6PrevioEspirometria, Step7PrevioEspirometria, Step8PrevioEspirometria, Step9PrevioEspirometria, Step10PrevioEspirometria, Step11PrevioEspirometria, Step12PrevioEspirometria, Step13PrevioEspirometria, Step14PrevioEspirometria, Step15PrevioEspirometria, Step16PrevioEspirometria, Step17PrevioEspirometria, Step18PrevioEspirometria, Step19PrevioEspirometria, Step20PrevioEspirometria, Step21PrevioEspirometria, Step22PrevioEspirometria, Step23PrevioEspirometria, Step24PrevioEspirometria, Step25PrevioEspirometria, Step26PrevioEspirometria, Step27PrevioEspirometria, Step28PrevioEspirometria, Step1Receta, Step2Receta, Step3Receta, Step4Receta, Step1ConstanciaAptitud, Step1ConstanciaExamenAdmision, Step1EntrevistaPsicologica, Step2EntrevistaPsicologica, Step3EntrevistaPsicologica, Step4EntrevistaPsicologica, Step5EntrevistaPsicologica, Step6EntrevistaPsicologica, Step7EntrevistaPsicologica, Step8EntrevistaPsicologica, Step9EntrevistaPsicologica, Step10EntrevistaPsicologica, Step11EntrevistaPsicologica, Step12EntrevistaPsicologica, Step13EntrevistaPsicologica, Step14EntrevistaPsicologica, Step15EntrevistaPsicologica, Step16EntrevistaPsicologica, Step17EntrevistaPsicologica, Step18EntrevistaPsicologica, Step19EntrevistaPsicologica, Step20EntrevistaPsicologica, Step21EntrevistaPsicologica, Step22EntrevistaPsicologica, Step1TrastornosEstadoAnimo, Step2TrastornosEstadoAnimo, Step3TrastornosEstadoAnimo, Step4TrastornosEstadoAnimo, Step5TrastornosEstadoAnimo, Step6TrastornosEstadoAnimo, Step7TrastornosEstadoAnimo, Step8TrastornosEstadoAnimo, Step9TrastornosEstadoAnimo, Step10TrastornosEstadoAnimo, Step11TrastornosEstadoAnimo, Step12TrastornosEstadoAnimo, Step13TrastornosEstadoAnimo, Step14TrastornosEstadoAnimo, Step15TrastornosEstadoAnimo, Step16TrastornosEstadoAnimo, Step17TrastornosEstadoAnimo, Step18TrastornosEstadoAnimo, Step1CuestionarioProdromalBreve, Step2CuestionarioProdromalBreve, Step3CuestionarioProdromalBreve, Step4CuestionarioProdromalBreve, Step5CuestionarioProdromalBreve, Step6CuestionarioProdromalBreve, Step7CuestionarioProdromalBreve, Step8CuestionarioProdromalBreve, Step9CuestionarioProdromalBreve, Step10CuestionarioProdromalBreve, Step11CuestionarioProdromalBreve, Step12CuestionarioProdromalBreve, Step13CuestionarioProdromalBreve, Step14CuestionarioProdromalBreve, Step15CuestionarioProdromalBreve, Step16CuestionarioProdromalBreve, Step17CuestionarioProdromalBreve, Step18CuestionarioProdromalBreve, Step19CuestionarioProdromalBreve, Step20CuestionarioProdromalBreve, Step21CuestionarioProdromalBreve, Step22CuestionarioProdromalBreve, Step1TrastornoLimitePersonalidad, Step2TrastornoLimitePersonalidad, Step3TrastornoLimitePersonalidad, Step4TrastornoLimitePersonalidad, Step5TrastornoLimitePersonalidad, Step6TrastornoLimitePersonalidad, Step7TrastornoLimitePersonalidad, Step8TrastornoLimitePersonalidad, Step9TrastornoLimitePersonalidad, Step10TrastornoLimitePersonalidad, Step11TrastornoLimitePersonalidad, Step1CuestionarioNordico, Step2CuestionarioNordico, Step3CuestionarioNordico, Step4CuestionarioNordico, Step5CuestionarioNordico, Step6CuestionarioNordico, Step1EvaluacionSuenoVigilia, Step2EvaluacionSuenoVigilia, Step3EvaluacionSuenoVigilia, Step4EvaluacionSuenoVigilia, Step5EvaluacionSuenoVigilia, Step6EvaluacionSuenoVigilia, Step7EvaluacionSuenoVigilia, Step8EvaluacionSuenoVigilia, Step1EventoSeguimientoCardiometabolico, Step2EventoSeguimientoCardiometabolico, Step3EventoSeguimientoCardiometabolico, Step4EventoSeguimientoCardiometabolico, Step5EventoSeguimientoCardiometabolico, Step6EventoSeguimientoCardiometabolico, Step7EventoSeguimientoCardiometabolico, Step8EventoSeguimientoCardiometabolico, Step9EventoSeguimientoCardiometabolico, Step1InformeLongitudinalCardiometabolico, Step2InformeLongitudinalCardiometabolico, Step3InformeLongitudinalCardiometabolico, Step1InformeLongitudinalAudiometrico, Step2InformeLongitudinalAudiometrico, Step3InformeLongitudinalAudiometrico, Step5DecisionesConclusionIla, Step6RecomendacionesIla, ModalFaltanCampos, ModalCamposFaltantes, TreatmentConsentModal, ModalSuscripcion, AvisoConexionGuardado, AvisoAtencionCampos, AtajoTeclado, InterruptorModoCaptura, IndiceCaptura },
   setup() {
     const empresas = useEmpresasStore();
     const trabajadores = useTrabajadoresStore();
@@ -1933,6 +1936,130 @@ export default {
         stepsStore.currentStep <= stepsStore.steps.length,
     });
 
+    // Punto 38, índice de la captura rápida: el estado de cada sección sale de los mismos
+    // problemas que se revisan al guardar (recolectarProblemasDocumento).
+    const seccionesTocadas = ref(new Set());
+    const problemasIndice = ref([]);
+    const seccionActualCaptura = ref(null);
+
+    const seccionDeElemento = (el) => {
+      const s = el?.closest?.('[data-seccion-captura]');
+      return s ? Number(s.getAttribute('data-seccion-captura')) : null;
+    };
+    // Por el campo en pantalla; si no está marcado, por su paso
+    const seccionDeProblema = (p) => {
+      const enPantalla = p.campo ? seccionDeElemento(document.querySelector(selectorCampo(p.campo))) : null;
+      return enPantalla ?? (p.paso != null ? pasoEnAsistente(p.paso) : null);
+    };
+    const recalcularIndice = () => {
+      if (!capturaRapida.value) return;
+      try {
+        problemasIndice.value = recolectarProblemasDocumento().map((p) => ({
+          ...p,
+          seccion: seccionDeProblema(p),
+        }));
+      } catch (e) {
+        console.warn('[captura rápida] no se pudo calcular el índice', e);
+      }
+    };
+    const indiceCaptura = computed(() =>
+      estadoIndiceCaptura(
+        stepsStore.steps.map((s) => s.name ?? ''),
+        problemasIndice.value,
+        seccionesTocadas.value,
+      ),
+    );
+
+    let temporizadorIndice = null;
+    watch(
+      () => (capturaRapida.value ? datosDelDocumentoActual() : null),
+      () => {
+        clearTimeout(temporizadorIndice);
+        temporizadorIndice = setTimeout(recalcularIndice, 300);
+      },
+      { deep: true },
+    );
+
+    const alEnfocarCaptura = (e) => {
+      const s = seccionDeElemento(e.target);
+      if (!s) return;
+      seccionActualCaptura.value = s;
+      if (!seccionesTocadas.value.has(s)) seccionesTocadas.value.add(s);
+    };
+
+    /** Clic en el índice (o Alt + ↓/↑): a la sección y a su primer campo pendiente. */
+    const irASeccion = async (numero) => {
+      seccionActualCaptura.value = numero;
+      const problema = indiceCaptura.value.secciones[numero - 1]?.problema;
+      if (problema?.campo && (await enfocarCampo(problema.campo, problema.mensaje))) return;
+      const seccion = document.querySelector(`[data-seccion-captura="${numero}"]`);
+      if (!seccion) return;
+      seccion.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      seccion
+        .querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])')
+        ?.focus({ preventScroll: true });
+    };
+
+    const alTeclaCaptura = (e) => {
+      if (!capturaRapida.value) return;
+      const atajo = atajoDeSeccion(e);
+      if (!atajo) return;
+      e.preventDefault();
+      recalcularIndice();
+      const actual = seccionDeElemento(document.activeElement) ?? seccionActualCaptura.value;
+      const destino = seccionIncompletaVecina(
+        indiceCaptura.value.secciones,
+        actual,
+        atajo === 'siguiente' ? 1 : -1,
+      );
+      if (destino) irASeccion(destino.numero);
+    };
+    onMounted(() => window.addEventListener('keydown', alTeclaCaptura));
+    onUnmounted(() => {
+      window.removeEventListener('keydown', alTeclaCaptura);
+      clearTimeout(temporizadorIndice);
+    });
+
+    // Al abrir: índice y cursor en el primer obligatorio vacío de todo el documento (solo en
+    // laptop o PC, y si el usuario no se ha puesto ya en algún campo)
+    let capturaPreparada = false;
+    watch(
+      () => capturaRapida.value && stepsStore.steps.length > 0,
+      async (lista) => {
+        if (!lista) {
+          capturaPreparada = false;
+          return;
+        }
+        if (capturaPreparada) return;
+        capturaPreparada = true;
+        // Los pasos se montan después: se espera a que haya campos en pantalla
+        for (let i = 0; i < 30 && !document.querySelector('[data-seccion-captura] [data-campo]'); i++) {
+          await new Promise((r) => setTimeout(r, 50));
+        }
+        await nextTick();
+        recalcularIndice();
+        if (!capturaRapida.value || !esComputadora() || hayAtencionEnCurso()) return;
+        const libre = !document.activeElement || document.activeElement === document.body;
+        if (!libre) return;
+        const el = primerCampoParaEnfocar(
+          problemasIndice.value.filter((p) => p.falta && p.campo).map((p) => p.campo),
+        );
+        if (!el) return;
+        el.focus({ preventScroll: true });
+        const r = el.getBoundingClientRect();
+        if (r.top < 0 || r.bottom > window.innerHeight) el.scrollIntoView({ block: 'center' });
+        alEnfocarCaptura({ target: el });
+      },
+      { immediate: true },
+    );
+
+    /** «Guardar» de la captura rápida: cuenta todo como visto para que el índice marque lo que falte. */
+    const guardarDesdeCaptura = async () => {
+      stepsStore.steps.forEach((_, i) => seccionesTocadas.value.add(i + 1));
+      await handleSubmit();
+      recalcularIndice();
+    };
+
     // Guardar sin conexión: aviso en el formulario con «Reintentar» (AvisoConexionGuardado)
     const { enLinea, restablecida: conexionRestablecida } = useEstadoConexion();
     const errorConexion = ref(false);
@@ -2543,6 +2670,11 @@ export default {
       capturaRapidaDisponible,
       capturaRapida,
       cambiarModoCaptura,
+      indiceCaptura,
+      seccionActualCaptura,
+      alEnfocarCaptura,
+      irASeccion,
+      guardarDesdeCaptura,
       handleSubmit,
       isSubmitting,
       errorConexion,
@@ -2638,7 +2770,7 @@ export default {
   <div
     :class="[
       'border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg p-7 2xl:p-7 transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto',
-      capturaRapida ? 'max-w-3xl' : 'max-w-md',
+      capturaRapida ? 'max-w-5xl' : 'max-w-md',
     ]">
 
     <!-- Modo de captura (solo en los documentos que tienen captura rápida) -->
@@ -2646,19 +2778,46 @@ export default {
       <InterruptorModoCaptura :modo="modoCaptura" @cambiar="cambiarModoCaptura" />
     </div>
 
-    <!-- Captura rápida: todas las secciones en una sola página -->
+    <!-- Captura rápida: todas las secciones en una sola página, con su índice -->
     <template v-if="capturaRapida">
+    <div class="lg:flex lg:items-start lg:gap-6">
+      <aside
+        v-if="!disableEdit && stepsStore.steps.length > 0"
+        class="hidden lg:block w-52 shrink-0 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto"
+      >
+        <IndiceCaptura
+          :indice="indiceCaptura"
+          :actual="seccionActualCaptura"
+          variante="lateral"
+          @ir="irASeccion"
+        />
+      </aside>
+      <div
+        v-if="!disableEdit && stepsStore.steps.length > 0"
+        class="lg:hidden sticky top-0 z-10 mb-4"
+      >
+        <IndiceCaptura
+          :indice="indiceCaptura"
+          :actual="seccionActualCaptura"
+          variante="barra"
+          @ir="irASeccion"
+        />
+      </div>
+
+    <div class="flex-1 min-w-0">
       <div
         v-if="stepsStore.steps.length > 0"
         data-captura-documento
         data-captura-rapida
         class="space-y-6"
         :class="{ 'pointer-events-none opacity-80 select-none': disableEdit }"
+        @focusin="alEnfocarCaptura"
       >
         <section
           v-for="(paso, i) in stepsStore.steps"
           :key="'captura-' + i"
           :data-seccion-captura="i + 1"
+          class="scroll-mt-4"
         >
           <component :is="paso.component" />
         </section>
@@ -2677,7 +2836,7 @@ export default {
         />
         <button
           v-if="!disableEdit"
-          @click="handleSubmit"
+          @click="guardarDesdeCaptura"
           :disabled="isSubmitting || isValidating"
           :aria-busy="isSubmitting || isValidating"
           class="self-center px-5 py-2 text-sm md:text-base rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2710,6 +2869,8 @@ export default {
           </div>
         </template>
       </div>
+    </div>
+    </div>
     </template>
 
     <template v-else>

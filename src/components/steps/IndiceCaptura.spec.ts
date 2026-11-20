@@ -1,0 +1,32 @@
+// @vitest-environment jsdom
+import { describe, expect, it } from 'vitest';
+import { mount } from '@vue/test-utils';
+import IndiceCaptura from './IndiceCaptura.vue';
+import { estadoIndiceCaptura } from '@/helpers/indiceCaptura';
+
+const indice = estadoIndiceCaptura(
+  ['Consulta', 'Somatometría', 'Plan'],
+  [{ seccion: 2, paso: 2, campo: 'talla', nombre: 'Talla', falta: true, mensaje: 'Falta: Talla.' }],
+  new Set([2]),
+);
+
+describe('IndiceCaptura (punto 38)', () => {
+  it('lateral: resumen, qué falta y clic a la sección', async () => {
+    const w = mount(IndiceCaptura, { props: { indice, actual: 2, variante: 'lateral' } });
+    expect(w.text()).toContain('2 de 3 completas');
+    expect(w.text()).toContain('Falta talla');
+    expect(w.find('[data-indice-seccion="2"]').attributes('aria-current')).toBe('location');
+    await w.find('[data-indice-seccion="2"]').trigger('click');
+    expect(w.emitted('ir')).toEqual([[2]]);
+  });
+
+  it('barra: se despliega y se cierra al elegir', async () => {
+    const w = mount(IndiceCaptura, { props: { indice, actual: null, variante: 'barra' }, attachTo: document.body });
+    expect(w.find('ol').isVisible()).toBe(false);
+    await w.find('button[aria-expanded]').trigger('click');
+    expect(w.find('ol').isVisible()).toBe(true);
+    await w.find('[data-indice-seccion="3"]').trigger('click');
+    expect(w.emitted('ir')).toEqual([[3]]);
+    expect(w.find('ol').isVisible()).toBe(false);
+  });
+});
