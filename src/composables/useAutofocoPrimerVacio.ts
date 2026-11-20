@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, nextTick } from 'vue';
+import { enCapturaRapida as dentroDeCapturaRapida } from '@/composables/capturaRapidaKey';
 import { hayAtencionEnCurso, selectorCampo } from '@/helpers/enfocarCampo';
 
 /**
@@ -69,8 +70,11 @@ export function useAutofocoPrimerVacio(
     interactuo = true;
   };
 
+  // En la captura rápida todos los pasos se montan a la vez: ninguno pone el cursor por su cuenta
+  const enCapturaRapida = dentroDeCapturaRapida();
+
   onMounted(async () => {
-    if (!esComputadora()) return;
+    if (enCapturaRapida || !esComputadora()) return;
     document.addEventListener('pointerdown', marcar, true);
     document.addEventListener('keydown', marcar, true);
     // Espera a que el paso termine de pintarse (y a que la vista por secciones ponga su cursor)

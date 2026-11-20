@@ -50,6 +50,7 @@ import { NO as NORDICO_NO, asegurarRegionesNordico, limpiarDetalleRegionNordico 
 import VisualizadorEventoSeguimientoCardiometabolico from '@/components/steps/VisualizadorEventoSeguimientoCardiometabolico.vue';
 import VisualizadorInformeLongitudinalCardiometabolico from '@/components/steps/VisualizadorInformeLongitudinalCardiometabolico.vue';
 import VisualizadorInformeLongitudinalAudiometrico from '@/components/steps/VisualizadorInformeLongitudinalAudiometrico.vue';
+import { useModoCaptura } from '@/composables/useModoCaptura';
 import {
   ORIENTACION_SIN_HALLAZGO,
   CONCLUSION_SIN_HALLAZGOS,
@@ -65,6 +66,8 @@ const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const formData = useFormDataStore();
+// Punto 38: en «Captura rápida» el formulario va a todo lo ancho, sin el documento al lado
+const { capturaRapida } = useModoCaptura();
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
@@ -701,10 +704,10 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       <Transition appear mode="out-in" name="slide-up">  
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'notaMedica'"
           class="max-w-6xl mx-auto flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
-          <div class="w-full xl:w-1/3">
+          <div :class="capturaRapida ? 'w-full' : 'w-full xl:w-1/3'">
             <FormStepper />
           </div>
-          <div class="w-full xl:w-2/3 max-w-3xl mx-auto">
+          <div v-if="!capturaRapida" class="w-full xl:w-2/3 max-w-3xl mx-auto">
             <VisualizadorNotaMedica />
           </div>
         </div>
