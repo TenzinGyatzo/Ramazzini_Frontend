@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -143,7 +143,9 @@ onMounted(async () => {
   // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
   // aviso al guardar); antes solo al cambiarla o salir del paso.
   formDataNotaMedica.fechaNotaMedica = fechaNotaMedica.value;
-  
+  // El tipo de nota también: antes solo llegaba al formulario al salir del paso
+  formDataNotaMedica.tipoNota = tipoNota.value;
+
   
   // Establece rutaPDF en formData
   const empresa = empresas.currentEmpresa.nombreComercial;
@@ -153,12 +155,6 @@ onMounted(async () => {
   formDataNotaMedica.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 
   await refreshContextoCex();
-});
-
-onUnmounted(() => {
-  // Guardar valores en formData antes de desmontar
-  formDataNotaMedica.tipoNota = tipoNota.value;
-  formDataNotaMedica.fechaNotaMedica = fechaNotaMedica.value;
 });
 
 // Sincronizar tipoNota con formData

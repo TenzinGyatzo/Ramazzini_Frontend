@@ -1,7 +1,7 @@
 <script setup>
 import { vValorDePartida } from '@/directives/valorDePartida';
 import { useValorDePartida } from '@/composables/useValorDePartida';
-import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -172,12 +172,6 @@ function syncFormData() {
   formDataNotaMedica.categoriaCircunferenciaCintura = categoriaCircunferenciaCintura.value;
 }
 
-/** Al salir del paso: peso, talla y cintura se eligen a propósito (nada se da por desconocido). */
-function finalizeEmptyAsUnknown() {
-  calcularIMC();
-  setCategoriaCircunferencia();
-}
-
 onMounted(() => {
   const initPeso = resolveInitial('peso', getValFromSource('peso'));
   const initTalla = resolveInitial('talla', getValFromSource('talla'));
@@ -247,11 +241,6 @@ watch(
     syncFormData();
   },
 );
-
-onUnmounted(() => {
-  finalizeEmptyAsUnknown();
-  syncFormData();
-});
 
 const mensajeErrorPeso = computed(() =>
   mensajeErrorCexField('peso', peso.value, seDesconocePeso.value),

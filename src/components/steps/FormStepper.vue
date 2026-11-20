@@ -424,8 +424,9 @@ import { esLimiteHistoriasAlcanzado } from '@/helpers/limiteHistoriasDelMes';
 import { validarCamposRequeridos, validarNotaMedicaCIEExact4Chars, validarNotaMedicaRamazziniScope, validarNotaMedicaPreSubmit, validarNotaMedicaEmbarazo, validarFechaDocumentoPreSubmit, DOCUMENT_TYPE_DATE_FIELDS } from '@/helpers/validacionCampos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { validateCIE10Duplicates, generateBlockingToastMessage } from '@/helpers/cie10';
-import { validateNotaMedicaDiagnosticos2Y3, fetchFirmantesDelPrestador, normalizeNotaMedicaDiagnosticosPv, precargarValidacionesNotaMedica } from '@/helpers/notaMedicaDiagnosticosSis';
+import { validateNotaMedicaDiagnosticos2Y3, fetchFirmantesDelPrestador, precargarValidacionesNotaMedica } from '@/helpers/notaMedicaDiagnosticosSis';
 import { aplicarSeDesconocePesoTalla } from '@/helpers/notaMedicaCexRanges';
+import { prepararNotaMedicaParaGuardar } from '@/helpers/notaMedicaGuardado';
 import {
   normalizeNotaMedicaConfirmacionDiagnostica,
   validateNotaMedicaConfirmacionDiagnostica,
@@ -2026,25 +2027,12 @@ export default {
         const esMujerNotaMedica =
           trabajadores.currentTrabajador?.sexo === 'Femenino';
 
-        if (!showSiresUI.value || !esMujerNotaMedica) {
-          formData.formDataNotaMedica.relacionTemporalEmbarazo = -1;
-          formData.formDataNotaMedica.trimestreGestacional = -1;
-        }
-
-        if (!showSiresUI.value) {
-          delete formData.formDataNotaMedica.relacionTemporal;
-        }
-
-        if (formData.formDataNotaMedica.primeraVezUnemeAplica !== true) {
-          delete formData.formDataNotaMedica.primeraVezUneme;
-        }
-        delete formData.formDataNotaMedica.esPrimeraVezAnioPreview;
-        delete formData.formDataNotaMedica.primeraVezAnio;
-
-        normalizeNotaMedicaDiagnosticosPv(
-          formData.formDataNotaMedica,
-          showSiresUI.value,
-        );
+        // Reglas de guardado (vacíos, «Se desconoce», lo que no aplica): las mismas en
+        // cualquier modo de captura; los pasos ya no las aplican al cerrarse
+        prepararNotaMedicaParaGuardar(formData.formDataNotaMedica, {
+          showSires: showSiresUI.value,
+          esMujer: esMujerNotaMedica,
+        });
 
         // Todo lo que impide guardar (vacíos e inválidos): se lleva al primero, sin lista
         cerrarAvisoProblemas();

@@ -135,11 +135,17 @@ onMounted(async () => {
   if (diagnosticoTexto.value && !formDataNotaMedica.diagnosticoTexto) {
     formDataNotaMedica.diagnosticoTexto = diagnosticoTexto.value;
   }
+  escribirEnFormulario();
   scheduleValidateDiag2Sis();
 });
 
+// Al cerrarse solo se limpia el temporizador; nada se escribe en el formulario
 onUnmounted(() => {
   if (diag2SisDebounceTimer) clearTimeout(diag2SisDebounceTimer);
+});
+
+/** Lo que está en pantalla, al formulario (al abrir; después lo copian los watch). */
+function escribirEnFormulario() {
   if (registrarComorbilidad.value === 0) {
     limpiarComorbilidad2EnStore();
   } else {
@@ -157,7 +163,7 @@ onUnmounted(() => {
     }
     formDataNotaMedica.diagnosticoTexto = diagnosticoTexto.value || '';
   }
-});
+}
 
 watch(registrarComorbilidad, (val) => {
   if (val === 0) {

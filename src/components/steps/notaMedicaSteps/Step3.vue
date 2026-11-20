@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import CatalogsAPI from '@/api/CatalogsAPI';
@@ -151,9 +151,6 @@ onMounted(async () => {
 watch(genero, () => syncFormData());
 watch(derechohabienciaSeleccion, () => syncFormData(), { deep: true });
 
-onUnmounted(() => {
-  syncFormData();
-});
 </script>
 
 <template>

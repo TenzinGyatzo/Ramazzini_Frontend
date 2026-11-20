@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -105,7 +105,6 @@ watch(edadFueraDeRango, (fuera) => {
   if (fuera) aplicarNoAplicaPorEdad();
 });
 
-onUnmounted(syncFormData);
 </script>
 
 <template>

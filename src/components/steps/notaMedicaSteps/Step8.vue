@@ -1,7 +1,7 @@
 <script setup>
 import { vValorDePartida } from '@/directives/valorDePartida';
 import { useValorDePartida } from '@/composables/useValorDePartida';
-import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import {
@@ -90,13 +90,16 @@ function syncFormData() {
   }
 }
 
-function finalizeEmptyAsUnknown() {
-  if (!seDesconoceGlucemia.value && isBlankOrZero(glucemia.value)) {
-    seDesconoceGlucemia.value = true;
-    glucemia.value = null;
-    resetConditionalFields();
-  }
-}
+// Vacío → «Se desconoce» ya no se aplica al salir del paso, sino al guardar
+// (prepararNotaMedicaParaGuardar). Si eso ocurre con el paso a la vista, la casilla lo refleja.
+watch(
+  () => formDataNotaMedica.glucemia,
+  (valor) => {
+    if (valor === NOTA_MEDICA_CEX_SENTINEL.glucemia && !seDesconoceGlucemia.value) {
+      seDesconoceGlucemia.value = true;
+    }
+  },
+);
 
 onMounted(() => {
   const init = resolveInitialGlucemia(getValFromSource('glucemia'));
@@ -131,11 +134,6 @@ watch(glucemia, () => {
 });
 
 watch([tipoMedicion, resultadoObtenidoaTravesde], () => {
-  syncFormData();
-});
-
-onUnmounted(() => {
-  finalizeEmptyAsUnknown();
   syncFormData();
 });
 

@@ -1,7 +1,7 @@
 <script setup>
 import { vValorDePartida } from '@/directives/valorDePartida';
 import { useValorDePartida } from '@/composables/useValorDePartida';
-import { ref, watch, onMounted, onUnmounted, computed, toRefs, nextTick } from 'vue';
+import { ref, watch, onMounted, computed, toRefs, nextTick } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import {
@@ -115,28 +115,23 @@ function syncFormData() {
   );
 }
 
-/** Al salir del paso: vacío o 0 → “Se desconoce”. */
-function finalizeEmptyAsUnknown() {
-  const fields = [
-    { seDesconoce: seDesconoceSistolica, display: tensionArterialSistolica },
-    { seDesconoce: seDesconoceDiastolica, display: tensionArterialDiastolica },
-    { seDesconoce: seDesconoceFrecuenciaCardiaca, display: frecuenciaCardiaca },
-    { seDesconoce: seDesconoceFrecuenciaRespiratoria, display: frecuenciaRespiratoria },
-    { seDesconoce: seDesconoceTemperatura, display: temperatura },
-    { seDesconoce: seDesconoceSaturacionOxigeno, display: saturacionOxigeno },
-  ];
-  for (const { seDesconoce, display } of fields) {
-    if (!seDesconoce.value && isBlankOrZero(display.value)) {
-      seDesconoce.value = true;
-      display.value = null;
-    }
-  }
-  if (seDesconoceSistolica.value || seDesconoceDiastolica.value) {
-    seDesconoceSistolica.value = true;
-    seDesconoceDiastolica.value = true;
-    tensionArterialSistolica.value = null;
-    tensionArterialDiastolica.value = null;
-  }
+// Vacío → «Se desconoce» ya no se aplica al salir del paso, sino al guardar
+// (prepararNotaMedicaParaGuardar). Si eso ocurre con el paso a la vista, la casilla lo refleja.
+const casillaPorCampo = {
+  tensionArterialSistolica: seDesconoceSistolica,
+  tensionArterialDiastolica: seDesconoceDiastolica,
+  frecuenciaCardiaca: seDesconoceFrecuenciaCardiaca,
+  frecuenciaRespiratoria: seDesconoceFrecuenciaRespiratoria,
+  temperatura: seDesconoceTemperatura,
+  saturacionOxigeno: seDesconoceSaturacionOxigeno,
+};
+for (const [campo, casilla] of Object.entries(casillaPorCampo)) {
+  watch(
+    () => formDataNotaMedica[campo],
+    (valor) => {
+      if (valor === NOTA_MEDICA_CEX_SENTINEL[campo] && !casilla.value) casilla.value = true;
+    },
+  );
 }
 
 onMounted(() => {
@@ -159,11 +154,6 @@ onMounted(() => {
     tensionArterialSistolica.value = null;
     tensionArterialDiastolica.value = null;
   }
-  syncFormData();
-});
-
-onUnmounted(() => {
-  finalizeEmptyAsUnknown();
   syncFormData();
 });
 

@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
+import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import InsumosSuministrados from '@/components/inventario/InsumosSuministrados.vue';
@@ -29,12 +29,6 @@ onMounted(() => {
     tratamiento.value = Array.isArray(formDataNotaMedica.tratamiento)
       ? formDataNotaMedica.tratamiento
       : [formDataNotaMedica.tratamiento];
-  }
-});
-
-onUnmounted(() => {
-  if (!formDataNotaMedica.tratamiento || tratamiento.value.length === 0) {
-    formDataNotaMedica.tratamiento = [];
   }
 });
 

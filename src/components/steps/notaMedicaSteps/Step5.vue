@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
+import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
@@ -24,12 +24,6 @@ onMounted(() => {
 
     if (formDataNotaMedica.exploracionFisica) {
         exploracionFisica.value = formDataNotaMedica.exploracionFisica;
-    }
-});
-
-onUnmounted(() => {
-    if (!formDataNotaMedica.exploracionFisica) {
-        formDataNotaMedica.exploracionFisica = '';
     }
 });
 

@@ -171,12 +171,12 @@ onMounted(async () => {
     document.addEventListener('click', relacionTemporalClickOutsideHandler);
     document.addEventListener('keydown', relacionTemporalEscapeKeyHandler);
 
+    escribirEnFormulario();
     scheduleValidatePrincipalSis();
 });
 
-onUnmounted(() => {
-    if (principalSisDebounceTimer) clearTimeout(principalSisDebounceTimer);
-    // Guardar en formData
+/** Lo que está en pantalla, al formulario (al abrir; después lo copian los watch). */
+function escribirEnFormulario() {
     formDataNotaMedica.codigoCIE10Principal = codigoCIE10Principal.value || '';
     formDataNotaMedica.diagnosticoTextoPrincipal = diagnosticoTextoPrincipal.value || '';
     if (showSiresUI.value) {
@@ -184,12 +184,17 @@ onUnmounted(() => {
     } else {
         delete formDataNotaMedica.relacionTemporal;
     }
-    // Guardar confirmacionDiagnostica solo si aplica (Fe de Erratas)
+    // confirmacionDiagnostica solo si aplica (Fe de Erratas)
     if (muestraConfirmacionDiagnostica1.value) {
         formDataNotaMedica.confirmacionDiagnostica = confirmacionDiagnostica.value;
     } else {
         formDataNotaMedica.confirmacionDiagnostica = undefined;
     }
+}
+
+// Al cerrarse solo se limpian temporizadores y escuchas; nada se escribe en el formulario
+onUnmounted(() => {
+    if (principalSisDebounceTimer) clearTimeout(principalSisDebounceTimer);
 
     // Limpiar event handlers del tooltip de relación temporal
     if (relacionTemporalClickOutsideHandler) {
