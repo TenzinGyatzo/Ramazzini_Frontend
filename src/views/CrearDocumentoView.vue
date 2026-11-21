@@ -85,6 +85,10 @@ const historiaLadoALado = computed(() => !capturaRapida.value && anchoHistoriaCl
 const contenedorExploracionFisica = ref(null);
 const anchoExploracionFisica = useAnchoElemento(contenedorExploracionFisica);
 const exploracionLadoALado = computed(() => !capturaRapida.value && anchoExploracionFisica.value >= 960);
+// Examen de la vista (punto 43): igual
+const contenedorExamenVista = ref(null);
+const anchoExamenVista = useAnchoElemento(contenedorExamenVista);
+const examenVistaLadoALado = computed(() => !capturaRapida.value && anchoExamenVista.value >= 960);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
@@ -707,13 +711,28 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">  
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'examenVista'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
-          <div class="w-full xl:w-1/4">
+          ref="contenedorExamenVista"
+          :class="['flex gap-3 md:gap-6', examenVistaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          <div :class="capturaRapida ? 'w-full' : examenVistaLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div class="w-full xl:w-3/4">
+          <div
+            v-if="!capturaRapida"
+            :class="examenVistaLadoALado ? 'flex-1 min-w-0' : 'w-full'"
+            :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
+          >
             <VisualizadorExamenVista />
           </div>
+          <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
+          <PanelVistaPrevia
+            v-else
+            amplio
+            :abierta="vistaPreviaAbierta"
+            titulo="Vista previa del examen de la vista"
+            @cerrar="vistaPreviaAbierta = false"
+          >
+            <VisualizadorExamenVista />
+          </PanelVistaPrevia>
         </div>
       </Transition>
 

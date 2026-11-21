@@ -52,7 +52,9 @@ describe('preferencia de modo de captura (punto 38)', () => {
     expect(documentoAdmiteCapturaRapida('historiaClinica', { hcLegacy: '1' })).toBe(false);
     expect(documentoAdmiteCapturaRapida('exploracionFisica')).toBe(true);
     expect(documentoAdmiteCapturaRapida('exploracionFisica', { efLegacy: '1' })).toBe(false);
-    expect(documentoAdmiteCapturaRapida('examenVista')).toBe(false);
+    expect(documentoAdmiteCapturaRapida('examenVista')).toBe(true);
+    expect(documentoAdmiteCapturaRapida('examenVista', { evLegacy: '1' })).toBe(false);
+    expect(documentoAdmiteCapturaRapida('audiometria')).toBe(false);
     expect(documentoAdmiteCapturaRapida(null)).toBe(false);
   });
 });
