@@ -1701,13 +1701,16 @@ const {
                     <span class="font-medium text-lg text-gray-700">Fecha de Ingreso</span>
                   </template>
                 </FormKit>
+                <!-- autocomplete="off": Chrome tomaba «Número…» como número de tarjeta y, sin HTTPS, mostraba un aviso de pagos -->
                 <FormKit type="text" label="Número de Empleado" name="numeroEmpleado" placeholder="Sólo números"
+                  autocomplete="off" inputmode="numeric"
                   validation="optional|matches:/^[0-9]*$/"
                   :validation-messages="{
                     matches: 'El número de empleado debe estar vacío o contener solo números entre 1 y 7 dígitos'
                   }"
                   maxlength="7" :value="trabajadores.currentTrabajador?.numeroEmpleado || ''" />
                 <FormKit type="text" label="NSS" name="nss" placeholder="Número de Seguro Social"
+                  autocomplete="off"
                   validation="optional|nssValidation"
                   :validation-messages="{
                     nssValidation: 'Debe tener 4-30 caracteres alfanuméricos'
