@@ -2789,7 +2789,7 @@ export default {
     ]">
 
     <!-- Modo de captura (solo en los documentos que tienen captura rápida) -->
-    <div v-if="capturaRapidaDisponible && !capturaRapida" class="flex justify-end mb-3">
+    <div v-if="capturaRapidaDisponible && !capturaRapida" class="flex justify-center mb-3">
       <InterruptorModoCaptura :modo="modoCaptura" @cambiar="cambiarModoCaptura" />
     </div>
 
