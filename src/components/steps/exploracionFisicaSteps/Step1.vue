@@ -9,6 +9,12 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import { CLASE_ETIQUETA } from '@/components/steps/captura/estiloCaptura';
+
+// Punto 41: en captura rápida la fecha es un campo angosto alineado a la izquierda (a todo lo
+// ancho quedaba desproporcionada); en el asistente angosto ocupa su ancho
+const capturaRapida = enCapturaRapida();
 
 const props = defineProps({
   variant: {
@@ -67,10 +73,11 @@ watch(fechaExploracionFisica, (newValue) => {
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Exploración Física</h1>
     
-    <div data-campo="fechaExploracionFisica" :class="variant === 'compact' ? 'mt-1' : 'mt-6'">
-      <h2 :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
-        Fecha de Exploración Física
-      </h2>
+    <div
+      data-campo="fechaExploracionFisica"
+      :class="['captura-fecha', variant === 'compact' ? 'mt-1' : 'mt-6', capturaRapida ? 'w-full sm:w-56' : '']"
+    >
+      <p :class="[CLASE_ETIQUETA, 'mb-1']">Fecha de la exploración física <span class="text-red-500">*</span></p>
       <FormKit 
         type="date" 
         name="fechaExploracionFisica" 

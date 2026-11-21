@@ -1,4 +1,5 @@
 <script setup>
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import MicrostepAnchor from '../MicrostepAnchor.vue';
 import EfSectionStep from './EfSectionStep.vue';
 import EfMicroseccion from './EfMicroseccion.vue';
@@ -29,6 +30,9 @@ import Step27 from './Step27.vue';
 import Step28 from './Step28.vue';
 import Step29 from './Step29.vue';
 import Step30 from './Step30.vue';
+
+// Punto 41: en captura rápida, Tórax y Abdomen (una pregunta cada una) lado a lado
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
@@ -70,16 +74,18 @@ import Step30 from './Step30.vue';
         <Step14 variant="compact" />
       </MicrostepAnchor>
     </EfMicroseccion>
-    <EfMicroseccion title="Tórax" show-divider>
+    <div :class="capturaRapida ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-8' : ''">
+    <EfMicroseccion title="Tórax" show-divider una-columna>
       <MicrostepAnchor :legacy-step="15">
         <Step15 variant="compact" />
       </MicrostepAnchor>
     </EfMicroseccion>
-    <EfMicroseccion title="Abdomen" show-divider>
+    <EfMicroseccion title="Abdomen" show-divider una-columna>
       <MicrostepAnchor :legacy-step="16">
         <Step16 variant="compact" />
       </MicrostepAnchor>
     </EfMicroseccion>
+    </div>
     <EfMicroseccion title="Extremidades inferiores" show-divider>
       <MicrostepAnchor :legacy-step="17">
         <Step17 variant="compact" />

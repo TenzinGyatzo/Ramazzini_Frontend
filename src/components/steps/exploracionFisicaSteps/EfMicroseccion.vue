@@ -9,6 +9,8 @@ withDefaults(
     title: string;
     /** Si true, muestra borde superior sutil (divisor respecto a la microsección anterior). */
     showDivider?: boolean;
+    /** Una sola columna aunque sea captura rápida (región que ya va en media fila). */
+    unaColumna?: boolean;
   }>(),
   { showDivider: false },
 );
@@ -29,7 +31,7 @@ withDefaults(
     <div
       :class="[
         'ef-microseccion-body',
-        capturaRapida ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 [&>*]:min-w-0' : '',
+        capturaRapida && !unaColumna ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 [&>*]:min-w-0' : '',
       ]"
     >
       <slot />
