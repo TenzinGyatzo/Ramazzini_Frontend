@@ -236,7 +236,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
         </div>
         <span
           v-if="categoriaIMC"
-          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(categoriaIMC)]"
+          :class="['shrink-0 px-2 py-0.5 rounded-md text-sm font-medium text-white', colorCategoria(categoriaIMC)]"
         >{{ categoriaIMC }}</span>
         <span v-else class="text-xs text-gray-400">Se calcula con peso y altura</span>
       </div>
@@ -252,7 +252,7 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
         </div>
         <span
           v-if="categoriaCircunferenciaCintura"
-          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(categoriaCircunferenciaCintura)]"
+          :class="['shrink-0 px-2 py-0.5 rounded-md text-sm font-medium text-white', colorCategoria(categoriaCircunferenciaCintura)]"
         >{{ categoriaCircunferenciaCintura }}</span>
         <span v-else class="text-xs text-gray-400">Se calcula con la cintura</span>
       </div>

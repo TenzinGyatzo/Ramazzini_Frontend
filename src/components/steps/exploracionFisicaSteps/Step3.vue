@@ -313,7 +313,7 @@ const categorias = computed(() => [
         </div>
         <span
           v-if="c.categoria"
-          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(c.categoria)]"
+          :class="['shrink-0 px-2 py-0.5 rounded-md text-sm font-medium text-white', colorCategoria(c.categoria)]"
         >{{ c.categoria }}</span>
         <!-- En el asistente angosto basta el guion: la ayuda partía la tarjeta en dos renglones -->
         <span v-else-if="capturaRapida" class="text-xs text-gray-400">Se calcula con el dato</span>
