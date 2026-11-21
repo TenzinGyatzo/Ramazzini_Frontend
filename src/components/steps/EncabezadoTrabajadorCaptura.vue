@@ -26,7 +26,8 @@ const trabajador = computed(() => trabajadores.currentTrabajador as Record<strin
 const iniciales = computed(() => {
   const t = trabajador.value;
   if (!t) return '';
-  return [t.nombre, t.primerApellido]
+  // Como el nombre completo: primero el apellido y luego el nombre
+  return [t.primerApellido, t.nombre]
     .map((p: unknown) => (typeof p === 'string' ? p.trim().charAt(0) : ''))
     .join('')
     .toUpperCase();

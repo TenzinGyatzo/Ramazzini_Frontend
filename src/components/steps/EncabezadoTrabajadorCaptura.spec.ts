@@ -24,7 +24,7 @@ describe('datos del trabajador en la captura rápida (punto 38)', () => {
     useEmpresasStore().currentEmpresa = { nombreComercial: 'Aceros del Norte' } as any;
     const w = mount(EncabezadoTrabajadorCaptura, { props: { fechaDocumento: '2026-05-09' } });
     const texto = w.text();
-    expect(texto).toContain('AL');
+    expect(w.find('[data-encabezado-trabajador] [aria-hidden="true"]').text()).toBe('LA');
     expect(texto).toContain('López Ruiz Ana');
     expect(texto).toContain('Mujer · 35 años');
     expect(texto).toContain('Soldadora');
