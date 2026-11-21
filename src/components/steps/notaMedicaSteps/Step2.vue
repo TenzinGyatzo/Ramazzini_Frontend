@@ -4,6 +4,17 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import { CLASE_ETIQUETA, CLASE_TEXTAREA } from '@/components/steps/captura/estiloCaptura';
+
+// Captura rápida (punto 38): los consejos de redacción se abren a petición
+const capturaRapida = enCapturaRapida();
+const verConsejos = ref(false);
+const PLACEHOLDER_MOTIVO = `Consulta médica por motivo de...
+El trabajador presenta...
+Solicita evaluación médica debido a...
+Acude para seguimiento de...
+`;
 
 // Al abrir el paso, si el motivo de consulta está vacío, el cursor va a él
 useAutofocoPrimerVacio(['motivoConsulta']);
@@ -38,7 +49,41 @@ watch(motivoConsulta, (newValue) => {
 </script>
 
 <template>
-    <div class="nota-medica-dark-inputs">
+    <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+        <div data-campo="motivoConsulta">
+            <div class="flex items-baseline justify-between gap-3 mb-1">
+                <label for="motivoConsulta" :class="CLASE_ETIQUETA">
+                    Motivo de consulta <span class="text-red-500">*</span>
+                </label>
+                <button
+                    type="button"
+                    tabindex="-1"
+                    class="text-xs text-emerald-700 hover:underline inline-flex items-center gap-1"
+                    :aria-expanded="verConsejos"
+                    @click="verConsejos = !verConsejos"
+                >
+                    <i class="fas fa-lightbulb" aria-hidden="true"></i>
+                    Consejos de redacción
+                </button>
+            </div>
+            <ul v-if="verConsejos" class="mb-2 text-xs text-gray-600 list-disc pl-5 space-y-0.5">
+                <li>Sea específico y detallado en la descripción.</li>
+                <li>Incluya síntomas, duración y gravedad.</li>
+                <li>Evite abreviaciones médicas complejas.</li>
+            </ul>
+            <textarea
+                id="motivoConsulta"
+                v-model="motivoConsulta"
+                rows="4"
+                :class="CLASE_TEXTAREA"
+                :placeholder="PLACEHOLDER_MOTIVO"
+                required
+                data-skip-validation
+            ></textarea>
+        </div>
+    </div>
+
+    <div v-else class="nota-medica-dark-inputs">
         <h1
             v-if="variant !== 'compact'"
             class="text-2xl font-bold mb-4 text-gray-900"

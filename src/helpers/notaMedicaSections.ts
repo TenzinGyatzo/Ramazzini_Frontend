@@ -30,10 +30,10 @@ export interface NmSectionDef {
 
 /** Definición canónica de secciones (orden de navegación V2, SIRES mujer). */
 export const NM_SECTION_DEFS: NmSectionDef[] = [
-  { id: 'consulta', name: 'Consulta', legacyFrom: 1, legacyTo: 2 },
+  { id: 'consulta', name: 'Datos de la consulta', legacyFrom: 1, legacyTo: 2 },
   {
     id: 'identificacionCex',
-    name: 'Identificación CEX',
+    name: 'Género y derechohabiencia',
     legacyFrom: 3,
     legacyTo: 3,
     siresOnly: true,
@@ -68,7 +68,7 @@ export const NM_SECTION_DEFS: NmSectionDef[] = [
     mujerOnly: true,
   },
   { id: 'diagnosticos', name: 'Diagnósticos', legacyFrom: 10, legacyTo: 12 },
-  { id: 'plan', name: 'Plan', legacyFrom: 13, legacyTo: 15 },
+  { id: 'plan', name: 'Tratamiento y recomendaciones', legacyFrom: 13, legacyTo: 15 },
 ];
 
 export function getNmSectionDefs(

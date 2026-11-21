@@ -12,6 +12,9 @@ import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import NotasMedicasAPI from '@/api/NotasMedicasAPI';
 import { DocumentoEstado } from '@/interfaces/nom024.interface';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
+import { CLASE_ETIQUETA, CLASE_AYUDA } from '@/components/steps/captura/estiloCaptura';
 
 const props = defineProps({
   variant: {
@@ -21,6 +24,18 @@ const props = defineProps({
   },
 });
 const { variant } = toRefs(props);
+
+// Captura rápida (punto 38): mismo paso y mismos datos, acomodados a lo ancho
+const capturaRapida = enCapturaRapida();
+const OPCIONES_TIPO_NOTA = [
+  { valor: 'Inicial', etiqueta: 'Inicial' },
+  { valor: 'Seguimiento', etiqueta: 'Seguimiento' },
+  { valor: 'Alta', etiqueta: 'Alta' },
+];
+const OPCIONES_NO_SI = [
+  { valor: 0, etiqueta: 'No' },
+  { valor: 1, etiqueta: 'Sí' },
+];
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -188,7 +203,57 @@ watch(primeraVezUneme, (newValue) => {
 </script>
 
 <template>
-  <div class="nota-medica-dark-inputs">
+  <!-- Captura rápida: tipo y fecha en una fila; lo que calcula el sistema, en una línea -->
+  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+    <div class="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,15rem)] gap-x-8 gap-y-4 items-start">
+      <div data-campo="tipoNota">
+        <p :class="[CLASE_ETIQUETA, 'mb-1']">Tipo de consulta <span class="text-red-500">*</span></p>
+        <OpcionesSegmentadas
+          v-model="tipoNota"
+          name="tipoNota"
+          etiqueta="Tipo de consulta"
+          :opciones="OPCIONES_TIPO_NOTA"
+        />
+      </div>
+      <div data-campo="fechaNotaMedica" class="captura-fecha">
+        <p :class="[CLASE_ETIQUETA, 'mb-1']">Fecha de consulta <span class="text-red-500">*</span></p>
+        <FormKit
+          type="date"
+          name="fechaNotaMedica"
+          :min="fechaDocumentoMin"
+          :max="fechaDocumentoMax"
+          v-model="fechaNotaMedica"
+        />
+        <p v-if="mensajeErrorFechaConsulta" class="text-red-500 text-xs mt-1 flex items-start gap-1.5">
+          <i class="fas fa-exclamation-triangle mt-0.5" aria-hidden="true"></i>
+          <span>{{ mensajeErrorFechaConsulta }}</span>
+        </p>
+      </div>
+    </div>
+
+    <p v-if="showSiresUI" :class="[CLASE_AYUDA, 'mt-3 flex items-start gap-1.5']">
+      <i class="fas fa-info-circle text-emerald-600 mt-0.5" aria-hidden="true"></i>
+      <span>
+        Primera consulta del año en este establecimiento:
+        <span class="font-semibold text-gray-700">{{ etiquetaPrimeraVezAnio }}</span>
+        ({{ etiquetaPrimeraVezAnio === 'Sí' ? 'primera atención del año' : 'ya existía otra consulta finalizada en el año' }}).
+        Lo determina el sistema al concluir la nota.
+      </span>
+    </p>
+
+    <div v-if="muestraPrimeraVezUneme" data-campo="primeraVezUneme" class="mt-4">
+      <p :class="CLASE_ETIQUETA">Primera vez UNEME <span class="text-red-500">*</span></p>
+      <p :class="[CLASE_AYUDA, 'mb-1.5']">¿Es la primera consulta del año en una Unidad de Especialidades Médicas?</p>
+      <OpcionesSegmentadas
+        v-model="primeraVezUneme"
+        name="primeraVezUneme"
+        etiqueta="Primera vez UNEME"
+        :opciones="OPCIONES_NO_SI"
+      />
+    </div>
+  </div>
+
+  <div v-else class="nota-medica-dark-inputs">
     <h1
       v-if="variant !== 'compact'"
       class="text-2xl font-bold mb-4 text-gray-900"

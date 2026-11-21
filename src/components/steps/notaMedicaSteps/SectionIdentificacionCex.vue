@@ -14,7 +14,7 @@ const stepMap = computed(() => getNotaMedicaStepMap(isSIRES.value, esMujer.value
 </script>
 
 <template>
-  <NotaMedicaSectionStep title="Identificación CEX">
+  <NotaMedicaSectionStep title="Género y derechohabiencia" icono="fa-id-card">
     <MicrostepAnchor :legacy-step="stepMap.genero">
       <Step3 variant="compact" />
     </MicrostepAnchor>

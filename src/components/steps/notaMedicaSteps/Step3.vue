@@ -161,12 +161,7 @@ watch(derechohabienciaSeleccion, () => syncFormData(), { deep: true });
     >
       Género y Derechohabiencia
     </h2>
-    <p
-      v-else
-      class="text-sm font-semibold text-gray-800 mb-2"
-    >
-      Género y derechohabiencia
-    </p>
+    <!-- En secciones, el título «Género y derechohabiencia» lo pone la sección -->
 
     <div data-campo="genero" :class="variant === 'compact' ? 'mb-4' : 'mb-6'">
       <label for="genero" class="block text-base font-medium text-gray-800 mb-2">

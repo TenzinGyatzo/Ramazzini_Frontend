@@ -429,6 +429,10 @@ html.dark-mode .inicio-nav--enlace:focus-visible {
 [data-captura-rapida] [data-campo] {
   scroll-margin-top: 1rem;
 }
+/* La fecha (FormKit) alineada con los demás campos de su fila */
+[data-captura-rapida] .captura-fecha .formkit-outer {
+  margin-bottom: 0;
+}
 
 .campo-atencion {
   position: relative;

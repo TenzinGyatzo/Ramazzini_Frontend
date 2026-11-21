@@ -16,7 +16,7 @@ const stepMap = computed(() => getNotaMedicaStepMap(isSIRES.value, esMujer.value
 </script>
 
 <template>
-  <NotaMedicaSectionStep title="Plan">
+  <NotaMedicaSectionStep title="Tratamiento y recomendaciones" icono="fa-prescription-bottle-medical">
     <MicrostepAnchor :legacy-step="stepMap.tratamiento">
       <Step12 variant="compact" />
     </MicrostepAnchor>

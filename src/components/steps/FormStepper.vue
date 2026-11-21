@@ -2877,7 +2877,7 @@ export default {
         v-if="stepsStore.steps.length > 0"
         data-captura-documento
         data-captura-rapida
-        class="space-y-6"
+        class="space-y-4"
         :class="{ 'pointer-events-none opacity-80 select-none': disableEdit }"
         @focusin="alEnfocarCaptura"
       >
@@ -2885,7 +2885,7 @@ export default {
           v-for="(paso, i) in stepsStore.steps"
           :key="'captura-' + i"
           :data-seccion-captura="i + 1"
-          class="scroll-mt-2"
+          class="scroll-mt-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white p-4 sm:p-5"
         >
           <component :is="paso.component" />
         </section>

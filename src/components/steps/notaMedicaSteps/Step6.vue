@@ -15,6 +15,14 @@ import {
 } from '@/helpers/notaMedicaCexRanges';
 
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import {
+  CLASE_ETIQUETA,
+  CLASE_AYUDA,
+  CLASE_ERROR,
+  CLASE_INPUT,
+  CLASE_CASILLA_LATERAL,
+} from '@/components/steps/captura/estiloCaptura';
 
 // Al abrir el paso, el cursor va al primer signo vital vacío (los marcados «Se desconoce»
 // quedan desactivados y se saltan)
@@ -296,10 +304,59 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
 );
 
 const ranges = NOTA_MEDICA_CEX_RANGES;
+
+// Captura rápida (punto 38): los mismos seis campos (mismos valores, casillas y avisos),
+// en pares a lo ancho y con la unidad dentro del campo
+const capturaRapida = enCapturaRapida();
+const signosCaptura = [
+  { campo: 'tensionArterialSistolica', etiqueta: 'Presión sistólica', unidad: 'mmHg', step: '1', placeholder: '50-300', valor: tensionArterialSistolica, seDesconoce: seDesconoceSistolica, error: mensajeErrorTensionSistolica },
+  { campo: 'tensionArterialDiastolica', etiqueta: 'Presión diastólica', unidad: 'mmHg', step: '1', placeholder: '20-200', valor: tensionArterialDiastolica, seDesconoce: seDesconoceDiastolica, error: mensajeErrorTensionDiastolica },
+  { campo: 'frecuenciaCardiaca', etiqueta: 'Frecuencia cardiaca', unidad: 'lpm', step: '1', placeholder: '40-220', valor: frecuenciaCardiaca, seDesconoce: seDesconoceFrecuenciaCardiaca, error: mensajeErrorFrecuenciaCardiaca },
+  { campo: 'frecuenciaRespiratoria', etiqueta: 'Frecuencia respiratoria', unidad: 'rpm', step: '1', placeholder: '10-99', valor: frecuenciaRespiratoria, seDesconoce: seDesconoceFrecuenciaRespiratoria, error: mensajeErrorFrecuenciaRespiratoria },
+  { campo: 'temperatura', etiqueta: 'Temperatura', unidad: '°C', step: '0.1', placeholder: '30-44', valor: temperatura, seDesconoce: seDesconoceTemperatura, error: mensajeErrorTempertura },
+  { campo: 'saturacionOxigeno', etiqueta: 'Saturación de oxígeno', unidad: '%', step: '1', placeholder: '1-100', valor: saturacionOxigeno, seDesconoce: seDesconoceSaturacionOxigeno, error: mensajeErrorSaturacionOxigeno },
+];
 </script>
 
 <template>
-  <div class="nota-medica-dark-inputs">
+  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+    <p :class="[CLASE_AYUDA, 'mb-3']">Marque «Se desconoce» si no se registró el dato.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+      <div v-for="s in signosCaptura" :key="s.campo" :data-campo="s.campo">
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <label :for="s.campo" :class="CLASE_ETIQUETA">{{ s.etiqueta }} <span class="text-red-500">*</span></label>
+          <label :class="CLASE_CASILLA_LATERAL">
+            <input
+              type="checkbox"
+              class="rounded"
+              tabindex="-1"
+              :checked="s.seDesconoce.value"
+              @change="s.seDesconoce.value = $event.target.checked"
+            >
+            Se desconoce
+          </label>
+        </div>
+        <div class="relative">
+          <input
+            type="number"
+            :id="s.campo"
+            :class="[CLASE_INPUT, 'pr-14']"
+            :value="s.valor.value ?? ''" v-valor-de-partida="partida(s.campo)"
+            @input="s.valor.value = parseOptionalNumber($event.target.value)"
+            :min="ranges[s.campo].min"
+            :max="ranges[s.campo].max"
+            :step="s.step"
+            :placeholder="s.placeholder"
+            :disabled="s.seDesconoce.value"
+          >
+          <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">{{ s.unidad }}</span>
+        </div>
+        <p v-if="s.error.value" :class="CLASE_ERROR">{{ s.error.value }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"
