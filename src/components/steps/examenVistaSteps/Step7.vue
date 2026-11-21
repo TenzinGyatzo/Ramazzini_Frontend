@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
@@ -18,11 +18,6 @@ onMounted(() => {
   }
 });
 
-onUnmounted(() => {
-  formDataExamenVista.testEstereopsis = testEstereopsis.value || undefined;
-  formDataExamenVista.testCampoVisual = testCampoVisual.value || undefined;
-  formDataExamenVista.coverTest = coverTest.value || undefined;
-});
 
 // Observa los cambios y actualiza el store
 watch([testEstereopsis, testCampoVisual, coverTest], () => {

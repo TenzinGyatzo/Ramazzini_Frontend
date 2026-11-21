@@ -475,6 +475,13 @@ import { isHcSectionsV2Enabled } from '@/composables/useHcSectionsV2';
 import { pasoHistoriaClinicaEnAsistente } from '@/helpers/historiaClinicaSections';
 import { buildHistoriaClinicaSectionSteps } from '@/helpers/buildHistoriaClinicaSectionSteps';
 import { isEfSectionsV2Enabled } from '@/composables/useEfSectionsV2';
+import { isEvSectionsV2Enabled } from '@/composables/useEvSectionsV2';
+import { buildExamenVistaSectionSteps } from '@/helpers/buildExamenVistaSectionSteps';
+import { pasoExamenVistaEnAsistente } from '@/helpers/examenVistaSections';
+import {
+  completarRespuestasPorDefecto as completarExamenVistaPorDefecto,
+  prepararExamenVistaParaGuardar,
+} from '@/helpers/examenVistaGuardado';
 import { legacyStepToSectionIndex as efLegacyStepToSectionIndex } from '@/helpers/exploracionFisicaSections';
 import { validateSomatometriaSignosField } from '@/helpers/somatometriaSignosRanges';
 import { buildExploracionFisicaSectionSteps } from '@/helpers/buildExploracionFisicaSectionSteps';
@@ -928,7 +935,10 @@ export default {
         ];
         
         let examenVistaSteps;
-        if (paisProveedor === 'GT') {
+        if (isEvSectionsV2Enabled(route.query)) {
+          // Punto 43: por secciones (general 4, Guatemala 8)
+          examenVistaSteps = buildExamenVistaSectionSteps(paisProveedor === 'GT');
+        } else if (paisProveedor === 'GT') {
           // Guatemala: Fecha primero; luego Antecedentes, Anamnesis, Utiliza anteojos; luego AV e Ishihara; luego 7, 8, 9
           examenVistaSteps = [
             { component: Step1ExamenVista, name: 'Paso 1', id: 'evFecha' },
@@ -1642,7 +1652,7 @@ export default {
         if (capturaRapida.value) return;
         // Historia clínica y exploración física también en el asistente clásico (pasos sueltos)
         if (
-          ['historiaClinica', 'exploracionFisica'].includes(documentos.currentTypeOfDocument) ||
+          ['historiaClinica', 'exploracionFisica', 'examenVista'].includes(documentos.currentTypeOfDocument) ||
           capturaRapidaDisponible.value
         ) {
           seccionesTocadas.value.add(stepsStore.currentStep);
@@ -1708,6 +1718,31 @@ export default {
     watch(
       () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
       completarExploracionFisica,
+    );
+
+    // Punto 43: el examen de la vista, igual (20/20 con sus interpretaciones, Ishihara 14, …)
+    const esGuatemalaProveedor = () => proveedorSaludStore.proveedorSalud?.pais === 'GT';
+    const completarExamenVista = () => {
+      if (documentos.currentTypeOfDocument !== 'examenVista') return;
+      const df = formData.formDataExamenVista;
+      if (!df) return;
+      const esGuatemala = esGuatemalaProveedor();
+      const conSecciones = isEvSectionsV2Enabled(route.query);
+      completarExamenVistaPorDefecto(df, {
+        esGuatemala,
+        visitado: documentos.currentDocument
+          ? undefined
+          : (paso) => seccionesTocadas.value.has(pasoExamenVistaEnAsistente(paso, esGuatemala, conSecciones)),
+      });
+    };
+    watch(
+      () => (documentos.currentTypeOfDocument === 'examenVista' ? formData.formDataExamenVista : null),
+      completarExamenVista,
+      { deep: true, immediate: true },
+    );
+    watch(
+      () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
+      completarExamenVista,
     );
 
     const recolectarProblemasNotaMedica = (esMujer) => {
@@ -1899,7 +1934,11 @@ export default {
         return recolectarProblemasExploracionFisica();
       }
       if (documentos.currentTypeOfDocument === 'examenVista') {
-        return recolectarProblemasObligatoriosYFecha('examenVista', formData.formDataExamenVista);
+        // Lo que se guardaría (lo no revisado se completa al guardar): copia, sin llenar aquí
+        return recolectarProblemasObligatoriosYFecha(
+          'examenVista',
+          prepararExamenVistaParaGuardar({ ...formData.formDataExamenVista }, { esGuatemala: esGuatemalaProveedor() }),
+        );
       }
       if (documentos.currentTypeOfDocument === 'audiometria') {
         return recolectarProblemasObligatoriosYFecha('audiometria', formData.formDataAudiometria);
@@ -1934,7 +1973,8 @@ export default {
       if (documentos.currentTypeOfDocument === 'examenVista') {
         // Los pasos cambian de lugar según el país: se busca el paso por su identificador
         const id = ID_PASO_EXAMEN_VISTA[paso];
-        const indice = id ? stepsStore.steps.findIndex((s) => s.id === id) : -1;
+        // Con secciones (punto 43) el paso está dentro de una sección
+        const indice = id ? stepsStore.steps.findIndex((s) => s.id === id || s.pasos?.includes(id)) : -1;
         return indice >= 0 ? indice + 1 : paso;
       }
       if (documentos.currentTypeOfDocument === 'aptitud') {
@@ -2422,6 +2462,12 @@ export default {
           esMujer: esMujerTrabajadorActual(),
         });
         datosLimpios = limpiarValoresUndefined(formData.formDataHistoriaClinica);
+      }
+
+      // EXAMEN DE LA VISTA (punto 43): lo mismo
+      if (documentos.currentTypeOfDocument === 'examenVista') {
+        prepararExamenVistaParaGuardar(formData.formDataExamenVista, { esGuatemala: esGuatemalaProveedor() });
+        datosLimpios = limpiarValoresUndefined(formData.formDataExamenVista);
       }
 
       // EXPLORACIÓN FÍSICA (punto 41): lo mismo; los pasos ya no lo escriben al cerrarse

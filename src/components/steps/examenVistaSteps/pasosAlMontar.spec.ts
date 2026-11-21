@@ -4,15 +4,21 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useFormDataStore } from '@/stores/formDataStore';
 import Step6 from './Step6.vue';
 import { format } from 'date-fns';
+import { completarRespuestasPorDefecto } from '@/helpers/examenVistaGuardado';
+import { PASO_EV } from '@/helpers/examenVistaSections';
 
-describe('Examen de la vista: lo que se ve llega al formulario al montar el paso', () => {
+describe('Examen de la vista: lo que se ve es lo que se guarda (punto 43)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
 
-  it('paso 6 (Ishihara) con valores por defecto', () => {
+  it('paso 6 (Ishihara): muestra 14 sin escribir; al revisar la sección se guarda lo mismo', () => {
     const formDataExamenVista = useFormDataStore().formDataExamenVista as Record<string, unknown>;
-    mount(Step6);
+    const w = mount(Step6);
+    // El paso ya no escribe al abrirse (en la captura rápida está abierto desde el principio)
+    expect(formDataExamenVista.placasCorrectas).toBeUndefined();
+    expect((w.find('input[type="number"]').element as HTMLInputElement).value).toBe('14');
+    completarRespuestasPorDefecto(formDataExamenVista, { esGuatemala: false, visitado: (p) => p === PASO_EV.evIshihara });
     expect(formDataExamenVista).toMatchObject({
       placasCorrectas: 14,
       porcentajeIshihara: 100,

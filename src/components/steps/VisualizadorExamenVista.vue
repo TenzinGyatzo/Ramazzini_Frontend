@@ -10,6 +10,9 @@ import { formatDateDDMMYYYY } from '@/helpers/dates';
 import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
 import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import EstadoDocumentoBadgeAlt from '../badges/EstadoDocumentoBadgeAlt.vue';
+import { useRoute } from 'vue-router';
+import { isEvSectionsV2Enabled } from '@/composables/useEvSectionsV2';
+import { PASO_EV, pasoExamenVistaEnAsistente } from '@/helpers/examenVistaSections';
 
 const empresas = useEmpresasStore();
 const trabajadores = useTrabajadoresStore();
@@ -47,19 +50,23 @@ const avLejanaConOD = computed(() => formatearAgudezaVisual(formData.formDataExa
 const avCercanaConOI = computed(() => formatearAgudezaVisual(formData.formDataExamenVista.ojoIzquierdoCercanaConCorreccion, ciegaOI.value));
 const avCercanaConOD = computed(() => formatearAgudezaVisual(formData.formDataExamenVista.ojoDerechoCercanaConCorreccion, ciegaOD.value));
 
-// Mapping de steps según país: Guatemala tiene Fecha primero, luego 3 steps GT, luego el resto
-const stepFecha = computed(() => 1);
-const stepAntecedentes = computed(() => 2);
-const stepAnamnesis = computed(() => 3);
-const stepUtilizaAnteojos = computed(() => 4);
-const stepAVLejana = computed(() => (esGuatemala.value ? 5 : 2));
-const stepAVCercana = computed(() => (esGuatemala.value ? 6 : 3));
-const stepAVConLejana = computed(() => (esGuatemala.value ? 7 : 4));
-const stepAVConCercana = computed(() => (esGuatemala.value ? 8 : 5));
-const stepIshihara = computed(() => (esGuatemala.value ? 9 : 6));
-const stepFuncionOcular = computed(() => 10);
-const stepReceta = computed(() => 11);
-const stepDiagnostico = computed(() => 12);
+// Lugar de cada dato en el asistente: con secciones (punto 43), la sección que lo contiene; sin
+// ellas, el paso suelto según el país (Guatemala: fecha, 3 pasos propios y luego el resto)
+const route = useRoute();
+const enAsistente = (id) =>
+  pasoExamenVistaEnAsistente(PASO_EV[id], esGuatemala.value, isEvSectionsV2Enabled(route?.query));
+const stepFecha = computed(() => enAsistente('evFecha'));
+const stepAntecedentes = computed(() => enAsistente('evAntecedentesGT'));
+const stepAnamnesis = computed(() => enAsistente('evAnamnesisGT'));
+const stepUtilizaAnteojos = computed(() => enAsistente('evUtilizaAnteojosGT'));
+const stepAVLejana = computed(() => enAsistente('evAvLejanaSin'));
+const stepAVCercana = computed(() => enAsistente('evAvCercanaSin'));
+const stepAVConLejana = computed(() => enAsistente('evAvLejanaCon'));
+const stepAVConCercana = computed(() => enAsistente('evAvCercanaCon'));
+const stepIshihara = computed(() => enAsistente('evIshihara'));
+const stepFuncionOcular = computed(() => enAsistente('evFuncionOcular'));
+const stepReceta = computed(() => enAsistente('evReceta'));
+const stepDiagnostico = computed(() => enAsistente('evDiagnostico'));
 </script>
 
 <template>

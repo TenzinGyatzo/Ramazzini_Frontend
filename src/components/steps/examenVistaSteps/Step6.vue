@@ -1,11 +1,13 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
 const { formDataExamenVista } = useFormDataStore();
 const documentos = useDocumentosStore();
 
+// Punto 43: el paso no escribe al abrirse ni al cerrarse (en la captura rápida está abierto
+// desde el principio); lo preseleccionado lo escribe examenVistaGuardado al revisar la sección.
 // Lo ya capturado en esta sesión; los valores por defecto solo aplican la primera vez
 const placasCorrectas = ref(formDataExamenVista.placasCorrectas ?? 14);
 const porcentajeIshihara = ref(formDataExamenVista.porcentajeIshihara ?? 100);
@@ -40,18 +42,8 @@ onMounted(() => {
     porcentajeIshihara.value = documentos.currentDocument.porcentajeIshihara;
     interpretacionIshihara.value = documentos.currentDocument.interpretacionIshihara;
   }
-  // Lo que se ve llega al formulario desde el inicio (con los valores por defecto no se
-  // copiaba hasta cambiar algo o salir del paso)
-  formDataExamenVista.placasCorrectas = placasCorrectas.value;
-  formDataExamenVista.porcentajeIshihara = porcentajeIshihara.value;
-  formDataExamenVista.interpretacionIshihara = interpretacionIshihara.value;
 });
 
-onUnmounted(() => {
-  formDataExamenVista.placasCorrectas = placasCorrectas.value;
-  formDataExamenVista.porcentajeIshihara = porcentajeIshihara.value;
-  formDataExamenVista.interpretacionIshihara = interpretacionIshihara.value;
-})
 
 // Observa los cambios y actualiza el store y los campos relacionados
 watch([placasCorrectas], () => {

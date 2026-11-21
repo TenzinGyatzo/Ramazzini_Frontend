@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, computed, nextTick } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
@@ -20,6 +20,10 @@ const ojoDerechoLejanaConCorreccion = ref(
   ciegaOD.value ? undefined : (formDataExamenVista.ojoDerechoLejanaConCorreccion ?? 20)
 );
 const conCorreccionLejanaInterpretacion = ref(formDataExamenVista.conCorreccionLejanaInterpretacion ?? 'Visión normal');
+
+// Punto 43: el paso no escribe al abrirse ni al cerrarse (en la captura rápida está abierto
+// desde el principio); lo preseleccionado lo escribe examenVistaGuardado al revisar la sección.
+let montado = false;
 
 onMounted(() => {
   if (documentos.currentDocument?.conCorreccionLejanaInterpretacion) {
@@ -43,7 +47,7 @@ onMounted(() => {
     ojoIzquierdoLejanaConCorreccion.value = ciegaOI.value ? undefined : (formDataExamenVista.ojoIzquierdoLejanaConCorreccion ?? 20);
     ojoDerechoLejanaConCorreccion.value = ciegaOD.value ? undefined : (formDataExamenVista.ojoDerechoLejanaConCorreccion ?? 20);
     conCorreccionLejanaInterpretacion.value = formDataExamenVista.conCorreccionLejanaInterpretacion || 'Visión normal';
-    interpretarAgudezaVisualLejana();
+    interpretarAgudezaVisualLejana(false);
   }
   // Lentes de contacto: AV sin corrección no evaluable → debe capturar con corrección
   if (
@@ -54,49 +58,47 @@ onMounted(() => {
     ojoIzquierdoLejanaConCorreccion.value = ciegaOI.value ? undefined : (formDataExamenVista.ojoIzquierdoLejanaConCorreccion ?? 20);
     ojoDerechoLejanaConCorreccion.value = ciegaOD.value ? undefined : (formDataExamenVista.ojoDerechoLejanaConCorreccion ?? 20);
     conCorreccionLejanaInterpretacion.value = formDataExamenVista.conCorreccionLejanaInterpretacion || 'Visión normal';
-    interpretarAgudezaVisualLejana();
+    interpretarAgudezaVisualLejana(false);
   }
+  if (usaLentes.value === 'Si') interpretarAgudezaVisualLejana(false);
+  nextTick(() => {
+    montado = true;
+  });
 });
 
-onUnmounted(() => {
-  if (usaLentes.value === 'No') {
-    formDataExamenVista.ojoIzquierdoLejanaConCorreccion = undefined;
-    formDataExamenVista.ojoDerechoLejanaConCorreccion = undefined;
-    formDataExamenVista.conCorreccionLejanaInterpretacion = undefined;
-  } else {
-    formDataExamenVista.ojoIzquierdoLejanaConCorreccion = ciegaOI.value ? undefined : ojoIzquierdoLejanaConCorreccion.value;
-    formDataExamenVista.ojoDerechoLejanaConCorreccion = ciegaOD.value ? undefined : ojoDerechoLejanaConCorreccion.value;
-    formDataExamenVista.conCorreccionLejanaInterpretacion = conCorreccionLejanaInterpretacion.value;
-  }
-});
 
 // Observa el cambio de usaLentes
 watch(usaLentes, (newVal) => {
   if (newVal === 'Si') {
     ojoIzquierdoLejanaConCorreccion.value = ciegaOI.value ? undefined : (formDataExamenVista.ojoIzquierdoLejanaConCorreccion ?? 20);
     ojoDerechoLejanaConCorreccion.value = ciegaOD.value ? undefined : (formDataExamenVista.ojoDerechoLejanaConCorreccion ?? 20);
-    formDataExamenVista.ojoIzquierdoLejanaConCorreccion = ciegaOI.value ? undefined : ojoIzquierdoLejanaConCorreccion.value;
-    formDataExamenVista.ojoDerechoLejanaConCorreccion = ciegaOD.value ? undefined : ojoDerechoLejanaConCorreccion.value;
+    if (montado) formDataExamenVista.ojoIzquierdoLejanaConCorreccion = ciegaOI.value ? undefined : ojoIzquierdoLejanaConCorreccion.value;
+    if (montado) formDataExamenVista.ojoDerechoLejanaConCorreccion = ciegaOD.value ? undefined : ojoDerechoLejanaConCorreccion.value;
     conCorreccionLejanaInterpretacion.value = formDataExamenVista.conCorreccionLejanaInterpretacion || 'Visión normal';
-    interpretarAgudezaVisualLejana();
+    interpretarAgudezaVisualLejana(montado);
   } else {
     // Limpia los valores si no usa lentes
     ojoIzquierdoLejanaConCorreccion.value = undefined;
     ojoDerechoLejanaConCorreccion.value = undefined;
     conCorreccionLejanaInterpretacion.value = undefined;
-    formDataExamenVista.ojoIzquierdoLejanaConCorreccion = undefined;
-    formDataExamenVista.ojoDerechoLejanaConCorreccion = undefined;
-    formDataExamenVista.conCorreccionLejanaInterpretacion = undefined;
+    if (montado) formDataExamenVista.ojoIzquierdoLejanaConCorreccion = undefined;
+    if (montado) formDataExamenVista.ojoDerechoLejanaConCorreccion = undefined;
+    if (montado) formDataExamenVista.conCorreccionLejanaInterpretacion = undefined;
   }
 });
 
 watch([ojoIzquierdoLejanaConCorreccion, ojoDerechoLejanaConCorreccion], () => {
+  // Al abrir (precarga de Guatemala o lentes de contacto) solo se muestra
+  if (!montado) {
+    interpretarAgudezaVisualLejana(false);
+    return;
+  }
   formDataExamenVista.ojoIzquierdoLejanaConCorreccion = ciegaOI.value ? undefined : ojoIzquierdoLejanaConCorreccion.value;
   formDataExamenVista.ojoDerechoLejanaConCorreccion = ciegaOD.value ? undefined : ojoDerechoLejanaConCorreccion.value;
   interpretarAgudezaVisualLejana();
 });
 
-function interpretarAgudezaVisualLejana() {
+function interpretarAgudezaVisualLejana(escribir = true) {
   const oiCiega = ciegaOI.value;
   const odCiega = ciegaOD.value;
   if (oiCiega && odCiega) {
@@ -114,7 +116,7 @@ function interpretarAgudezaVisualLejana() {
     const valOD = ojoDerechoLejanaConCorreccion.value != null ? Number(ojoDerechoLejanaConCorreccion.value) : 0;
     conCorreccionLejanaInterpretacion.value = valOI > valOD ? (interpOI ?? 'NA') : (interpOD ?? 'NA');
   }
-  formDataExamenVista.conCorreccionLejanaInterpretacion = conCorreccionLejanaInterpretacion.value;
+  if (escribir) formDataExamenVista.conCorreccionLejanaInterpretacion = conCorreccionLejanaInterpretacion.value;
 }
 
 function obtenerInterpretacion(valor) {
@@ -173,6 +175,17 @@ const colorInterpretacion = computed(() => {
   }
   return 'bg-gray-50 text-gray-800';
 });
+
+// En la captura rápida las otras secciones están abiertas a la vez: si se marcan lentes de
+// contacto o (Guatemala) «Utiliza anteojos: Sí», aquí se pasa a «usa lentes» en el momento
+watch(
+  () => [formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto, formDataExamenVista.utilizaAnteojos],
+  ([noEvaluable, utiliza]) => {
+    if (!montado || usaLentes.value === 'Si') return;
+    const esGuatemala = proveedorSaludStore.proveedorSalud?.pais === 'GT';
+    if (noEvaluable || (esGuatemala && utiliza === 'Si')) usaLentes.value = 'Si';
+  },
+);
 </script>
 
 <template>

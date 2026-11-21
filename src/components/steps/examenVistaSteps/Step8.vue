@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
@@ -24,14 +24,6 @@ onMounted(() => {
   }
 });
 
-onUnmounted(() => {
-  formDataExamenVista.esferaOjoIzquierdo = esferaOjoIzquierdo.value || undefined;
-  formDataExamenVista.cilindroOjoIzquierdo = cilindroOjoIzquierdo.value || undefined;
-  formDataExamenVista.adicionOjoIzquierdo = adicionOjoIzquierdo.value || undefined;
-  formDataExamenVista.esferaOjoDerecho = esferaOjoDerecho.value || undefined;
-  formDataExamenVista.cilindroOjoDerecho = cilindroOjoDerecho.value || undefined;
-  formDataExamenVista.adicionOjoDerecho = adicionOjoDerecho.value || undefined;
-});
 
 // Observa los cambios y actualiza el store
 watch([esferaOjoIzquierdo, cilindroOjoIzquierdo, adicionOjoIzquierdo, esferaOjoDerecho, cilindroOjoDerecho, adicionOjoDerecho], () => {

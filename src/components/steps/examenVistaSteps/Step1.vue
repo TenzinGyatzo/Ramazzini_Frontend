@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -41,12 +41,6 @@ onMounted(() => {
   formDataExamenVista.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 });
 
-onUnmounted(() => {
-  // Asegurar que formData tenga un valor inicial para fechaExamenVista
-  if (!formDataExamenVista.fechaExamenVista) {
-    formDataExamenVista.fechaExamenVista = today;
-  }
-})
 
 // Inicializar la referencia local sincronizada con formData (al volver al paso se conserva
 // la fecha ya elegida; antes siempre mostraba la de hoy)

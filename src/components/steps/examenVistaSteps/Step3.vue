@@ -1,8 +1,10 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
+// Punto 43: el paso no escribe al abrirse ni al cerrarse (en la captura rápida está abierto
+// desde el principio); lo preseleccionado lo escribe examenVistaGuardado al revisar la sección.
 const INTERPRETACION_LENTES_CONTACTO = 'No evaluable (lentes de contacto)';
 
 const formDataStore = useFormDataStore();
@@ -44,22 +46,10 @@ onMounted(() => {
     : (documentos.currentDocument?.ojoDerechoCercanaSinCorreccion ?? formDataExamenVista.ojoDerechoCercanaSinCorreccion ?? 20);
   sinCorreccionCercanaInterpretacion.value = documentos.currentDocument?.sinCorreccionCercanaInterpretacion ?? formDataExamenVista.sinCorreccionCercanaInterpretacion ?? 'Visión normal';
   requiereLentesParaLectura.value = documentos.currentDocument?.requiereLentesParaLectura ?? formDataExamenVista.requiereLentesParaLectura ?? 'No';
-  formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
-  formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto = noEvaluable;
-  formDataExamenVista.ojoIzquierdoCercanaSinCorreccion = (ojoIzquierdoCegueraTotal.value || noEvaluable) ? null : ojoIzquierdoCercanaSinCorreccion.value;
-  formDataExamenVista.ojoDerechoCercanaSinCorreccion = (ojoDerechoCegueraTotal.value || noEvaluable) ? null : ojoDerechoCercanaSinCorreccion.value;
-  interpretarAgudezaVisualCercana();
+  // Solo lo que se muestra (sin escribir en el formulario)
+  interpretarAgudezaVisualCercana(false);
 });
 
-onUnmounted(() => {
-  const noEvaluable = sinCorreccionNoEvaluablePorLentesContacto.value;
-  formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto = noEvaluable;
-  formDataExamenVista.ojoIzquierdoCercanaSinCorreccion = (ojoIzquierdoCegueraTotal.value || noEvaluable) ? null : ojoIzquierdoCercanaSinCorreccion.value;
-  formDataExamenVista.ojoDerechoCercanaSinCorreccion = (ojoDerechoCegueraTotal.value || noEvaluable) ? null : ojoDerechoCercanaSinCorreccion.value;
-  formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
-  formDataExamenVista.sinCorreccionCercanaInterpretacion = sinCorreccionCercanaInterpretacion.value;
-  formDataExamenVista.requiereLentesParaLectura = requiereLentesParaLectura.value;
-});
 
 watch([ojoIzquierdoCegueraTotal, ojoDerechoCegueraTotal], () => {
   formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
@@ -72,7 +62,7 @@ watch([ojoIzquierdoCegueraTotal, ojoDerechoCegueraTotal], () => {
     formDataExamenVista.ojoDerechoCercanaSinCorreccion = null;
   }
   interpretarAgudezaVisualCercana();
-}, { immediate: true });
+});
 
 // Si se marcó en Step2 mientras este step está montado (poco común), o al entrar ya viene en store
 watch(
@@ -120,7 +110,7 @@ function obtenerInterpretacion(valor) {
   return "Valor fuera de rango";
 }
 
-function interpretarAgudezaVisualCercana() {
+function interpretarAgudezaVisualCercana(escribir = true) {
   const ciegaOI = ojoIzquierdoCegueraTotal.value;
   const ciegaOD = ojoDerechoCegueraTotal.value;
 
@@ -142,14 +132,14 @@ function interpretarAgudezaVisualCercana() {
     sinCorreccionCercanaInterpretacion.value = valOI > valOD ? (interpOI ?? 'Valor fuera de rango') : (interpOD ?? 'Valor fuera de rango');
   }
 
-  formDataExamenVista.sinCorreccionCercanaInterpretacion = sinCorreccionCercanaInterpretacion.value;
-  requiereLentesLectura();
+  if (escribir) formDataExamenVista.sinCorreccionCercanaInterpretacion = sinCorreccionCercanaInterpretacion.value;
+  requiereLentesLectura(escribir);
 }
 
-function requiereLentesLectura() {
+function requiereLentesLectura(escribir = true) {
   if (sinCorreccionNoEvaluablePorLentesContacto.value) {
     requiereLentesParaLectura.value = "No";
-    formDataExamenVista.requiereLentesParaLectura = requiereLentesParaLectura.value;
+    if (escribir) formDataExamenVista.requiereLentesParaLectura = requiereLentesParaLectura.value;
     return;
   }
   const valOI = ojoIzquierdoCegueraTotal.value ? null : (ojoIzquierdoCercanaSinCorreccion.value != null ? Number(ojoIzquierdoCercanaSinCorreccion.value) : null);
@@ -162,7 +152,7 @@ function requiereLentesLectura() {
   } else {
     requiereLentesParaLectura.value = "Si";
   }
-  formDataExamenVista.requiereLentesParaLectura = requiereLentesParaLectura.value;
+  if (escribir) formDataExamenVista.requiereLentesParaLectura = requiereLentesParaLectura.value;
 }
 
 function toggleCegueraOjoIzquierdo() {

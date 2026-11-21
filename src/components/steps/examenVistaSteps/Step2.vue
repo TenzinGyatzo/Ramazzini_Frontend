@@ -1,8 +1,10 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
+// Punto 43: el paso no escribe al abrirse ni al cerrarse (en la captura rápida está abierto
+// desde el principio); lo preseleccionado lo escribe examenVistaGuardado al revisar la sección.
 const INTERPRETACION_LENTES_CONTACTO = 'No evaluable (lentes de contacto)';
 
 const formDataStore = useFormDataStore();
@@ -71,36 +73,10 @@ onMounted(() => {
     sinCorreccionLejanaInterpretacion.value = formDataExamenVista.sinCorreccionLejanaInterpretacion ?? 'Visión normal';
     requiereLentesUsoGeneral.value = formDataExamenVista.requiereLentesUsoGeneral ?? 'No';
   }
-  formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
-  formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto = sinCorreccionNoEvaluablePorLentesContacto.value;
-  formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = (ojoIzquierdoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
-    ? null
-    : ojoIzquierdoLejanaSinCorreccion.value;
-  formDataExamenVista.ojoDerechoLejanaSinCorreccion = (ojoDerechoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
-    ? null
-    : ojoDerechoLejanaSinCorreccion.value;
-  if (sinCorreccionNoEvaluablePorLentesContacto.value) {
-    aplicarNoEvaluableLentesContacto();
-  }
-  interpretarAgudezaVisualLejana();
+  // Solo lo que se muestra (sin escribir en el formulario)
+  interpretarAgudezaVisualLejana(false);
 });
 
-onUnmounted(() => {
-  const noEvaluable = sinCorreccionNoEvaluablePorLentesContacto.value;
-  formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto = noEvaluable;
-  formDataExamenVista.ojoIzquierdoLejanaSinCorreccion = (ojoIzquierdoCegueraTotal.value || noEvaluable)
-    ? null
-    : ojoIzquierdoLejanaSinCorreccion.value;
-  formDataExamenVista.ojoDerechoLejanaSinCorreccion = (ojoDerechoCegueraTotal.value || noEvaluable)
-    ? null
-    : ojoDerechoLejanaSinCorreccion.value;
-  formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
-  formDataExamenVista.sinCorreccionLejanaInterpretacion = sinCorreccionLejanaInterpretacion.value;
-  formDataExamenVista.requiereLentesUsoGeneral = requiereLentesUsoGeneral.value;
-  if (noEvaluable) {
-    aplicarNoEvaluableLentesContacto();
-  }
-});
 
 watch([ojoIzquierdoCegueraTotal, ojoDerechoCegueraTotal], () => {
   formDataStore.setExamenVistaCeguera(ojoIzquierdoCegueraTotal.value, ojoDerechoCegueraTotal.value);
@@ -113,7 +89,7 @@ watch([ojoIzquierdoCegueraTotal, ojoDerechoCegueraTotal], () => {
     formDataExamenVista.ojoDerechoLejanaSinCorreccion = null;
   }
   interpretarAgudezaVisualLejana();
-}, { immediate: true });
+});
 
 watch(sinCorreccionNoEvaluablePorLentesContacto, (noEvaluable) => {
   formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto = noEvaluable;
@@ -159,7 +135,7 @@ function obtenerInterpretacion(valor) {
   return "Valor fuera de rango";
 }
 
-function interpretarAgudezaVisualLejana() {
+function interpretarAgudezaVisualLejana(escribir = true) {
   const ciegaOI = ojoIzquierdoCegueraTotal.value;
   const ciegaOD = ojoDerechoCegueraTotal.value;
 
@@ -181,15 +157,15 @@ function interpretarAgudezaVisualLejana() {
     sinCorreccionLejanaInterpretacion.value = valOI > valOD ? (interpOI ?? 'Valor fuera de rango') : (interpOD ?? 'Valor fuera de rango');
   }
 
-  formDataExamenVista.sinCorreccionLejanaInterpretacion = sinCorreccionLejanaInterpretacion.value;
-  requiereLentes();
+  if (escribir) formDataExamenVista.sinCorreccionLejanaInterpretacion = sinCorreccionLejanaInterpretacion.value;
+  requiereLentes(escribir);
 }
 
-function requiereLentes() {
+function requiereLentes(escribir = true) {
   if (sinCorreccionNoEvaluablePorLentesContacto.value) {
     // Ya usa corrección óptica (lentes de contacto); no inventar a partir de Snellen
     requiereLentesUsoGeneral.value = "Si";
-    formDataExamenVista.requiereLentesUsoGeneral = requiereLentesUsoGeneral.value;
+    if (escribir) formDataExamenVista.requiereLentesUsoGeneral = requiereLentesUsoGeneral.value;
     return;
   }
   const valOI = ojoIzquierdoCegueraTotal.value ? null : (ojoIzquierdoLejanaSinCorreccion.value != null ? Number(ojoIzquierdoLejanaSinCorreccion.value) : null);
@@ -202,7 +178,7 @@ function requiereLentes() {
   } else {
     requiereLentesUsoGeneral.value = "Si";
   }
-  formDataExamenVista.requiereLentesUsoGeneral = requiereLentesUsoGeneral.value;
+  if (escribir) formDataExamenVista.requiereLentesUsoGeneral = requiereLentesUsoGeneral.value;
 }
 
 function toggleCegueraOjoIzquierdo() {

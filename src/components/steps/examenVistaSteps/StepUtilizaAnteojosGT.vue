@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
@@ -15,9 +15,6 @@ onMounted(() => {
   utilizaAnteojos.value = (local != null && local !== '') ? local : (fromDb || 'No');
 });
 
-onUnmounted(() => {
-  formDataExamenVista.utilizaAnteojos = utilizaAnteojos.value;
-});
 
 watch(utilizaAnteojos, () => {
   formDataExamenVista.utilizaAnteojos = utilizaAnteojos.value;

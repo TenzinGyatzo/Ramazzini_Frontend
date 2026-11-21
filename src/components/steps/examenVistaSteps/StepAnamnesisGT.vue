@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
@@ -15,9 +15,6 @@ onMounted(() => {
   anamnesis.value = (local != null && local !== '') ? local : (fromDb || '');
 });
 
-onUnmounted(() => {
-  formDataExamenVista.anamnesis = anamnesis.value?.trim() || undefined;
-});
 
 watch(anamnesis, () => {
   formDataExamenVista.anamnesis = anamnesis.value?.trim() || undefined;
