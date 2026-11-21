@@ -239,9 +239,17 @@ export function problemasEspecificarHistoriaClinica(
   }
   // Riesgo de trabajo con «Sí»: los tres datos se exigen igual (descripción, daño y secuelas)
   if (df.accidenteLaboral === 'Si') {
-    if (vacio(df.accidenteLaboralEspecificar)) falta(45, 'accidenteLaboralEspecificar', 'el accidente laboral');
-    if (vacio(df.descripcionDelDano)) falta(45, 'descripcionDelDano', 'el daño del riesgo de trabajo');
-    if (vacio(df.secuelas)) falta(45, 'secuelas', 'las secuelas del riesgo de trabajo');
+    const faltaRT = (campo: string, nombre: string, mensaje: string) =>
+      problemas.push({ paso: 45, campo, nombre, falta: true, mensaje });
+    if (vacio(df.accidenteLaboralEspecificar)) {
+      faltaRT('accidenteLaboralEspecificar', 'Especificar riesgo de trabajo', 'Falta describir el RT.');
+    }
+    if (vacio(df.descripcionDelDano)) {
+      faltaRT('descripcionDelDano', 'Especificar el daño del RT', 'Falta describir el daño del RT.');
+    }
+    if (vacio(df.secuelas)) {
+      faltaRT('secuelas', 'Especificar las secuelas del RT', 'Falta describir las secuelas del RT.');
+    }
   }
   return problemas;
 }

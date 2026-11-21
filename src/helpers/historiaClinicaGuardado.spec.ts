@@ -136,7 +136,14 @@ describe('historia clínica: «Especifique» obligatorio con «Sí»', () => {
   it('riesgo de trabajo: daño y secuelas se exigen igual que la descripción («Sin secuelas» vale)', () => {
     const base = { accidenteLaboral: 'Si', accidenteLaboralEspecificar: 'Caída', descripcionDelDano: 'Fractura' };
     expect(problemasEspecificarHistoriaClinica({ ...base, secuelas: '  ' }, { esMujer: false }).map((p) => p.mensaje)).toEqual([
-      'Falta especificar las secuelas del riesgo de trabajo.',
+      'Falta describir las secuelas del RT.',
+    ]);
+    expect(
+      problemasEspecificarHistoriaClinica({ accidenteLaboral: 'Si' }, { esMujer: false }).map((p) => [p.nombre, p.mensaje]),
+    ).toEqual([
+      ['Especificar riesgo de trabajo', 'Falta describir el RT.'],
+      ['Especificar el daño del RT', 'Falta describir el daño del RT.'],
+      ['Especificar las secuelas del RT', 'Falta describir las secuelas del RT.'],
     ]);
     expect(problemasEspecificarHistoriaClinica({ ...base, secuelas: 'Sin secuelas' }, { esMujer: false })).toEqual([]);
     expect(
