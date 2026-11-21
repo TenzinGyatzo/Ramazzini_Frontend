@@ -237,8 +237,11 @@ export function problemasEspecificarHistoriaClinica(
       if (df[p.campo] === '') falta(p.paso, p.campo, p.nombre);
     }
   }
-  if (df.accidenteLaboral === 'Si' && vacio(df.accidenteLaboralEspecificar)) {
-    falta(45, 'accidenteLaboralEspecificar', 'el accidente laboral');
+  // Riesgo de trabajo con «Sí»: los tres datos se exigen igual (descripción, daño y secuelas)
+  if (df.accidenteLaboral === 'Si') {
+    if (vacio(df.accidenteLaboralEspecificar)) falta(45, 'accidenteLaboralEspecificar', 'el accidente laboral');
+    if (vacio(df.descripcionDelDano)) falta(45, 'descripcionDelDano', 'el daño del riesgo de trabajo');
+    if (vacio(df.secuelas)) falta(45, 'secuelas', 'las secuelas del riesgo de trabajo');
   }
   return problemas;
 }

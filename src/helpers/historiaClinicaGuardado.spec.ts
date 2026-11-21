@@ -126,9 +126,22 @@ describe('historia clínica: «Especifique» obligatorio con «Sí»', () => {
       'alergicosEspecificar',
       'embarazoActual',
       'accidenteLaboralEspecificar',
+      'descripcionDelDano',
+      'secuelas',
     ]);
     expect(problemas[0].mensaje).toBe('Falta especificar diabetes (heredofamiliares).');
     expect(problemas[0].paso).toBe(3);
+  });
+
+  it('riesgo de trabajo: daño y secuelas se exigen igual que la descripción («Sin secuelas» vale)', () => {
+    const base = { accidenteLaboral: 'Si', accidenteLaboralEspecificar: 'Caída', descripcionDelDano: 'Fractura' };
+    expect(problemasEspecificarHistoriaClinica({ ...base, secuelas: '  ' }, { esMujer: false }).map((p) => p.mensaje)).toEqual([
+      'Falta especificar las secuelas del riesgo de trabajo.',
+    ]);
+    expect(problemasEspecificarHistoriaClinica({ ...base, secuelas: 'Sin secuelas' }, { esMujer: false })).toEqual([]);
+    expect(
+      problemasEspecificarHistoriaClinica({ accidenteLaboral: 'No', descripcionDelDano: '' }, { esMujer: false }),
+    ).toEqual([]);
   });
 
   it('sin «Sí», nada pendiente; a un hombre no se le revisa lo ginecoobstétrico', () => {

@@ -106,13 +106,14 @@ const OPCIONES_NO_SI = [
           v-model="formDataHistoriaClinica.accidenteLaboralEspecificar"
           type="text"
           :class="CLASE_INPUT"
-          placeholder="Caída en planta, lumbalgia por esfuerzo…"
+          placeholder="Descripción de accidente o enfermedad"
         />
       </div>
       <div>
-        <label for="descripcionDelDano" :class="[CLASE_ETIQUETA, 'mb-1']">Daño</label>
+        <label for="descripcionDelDano" :class="[CLASE_ETIQUETA, 'mb-1']">Daño <span class="text-red-500">*</span></label>
         <input
           id="descripcionDelDano"
+          data-campo="descripcionDelDano"
           v-model="formDataHistoriaClinica.descripcionDelDano"
           type="text"
           :class="CLASE_INPUT"
@@ -120,9 +121,10 @@ const OPCIONES_NO_SI = [
         />
       </div>
       <div>
-        <label for="secuelas" :class="[CLASE_ETIQUETA, 'mb-1']">Secuelas</label>
+        <label for="secuelas" :class="[CLASE_ETIQUETA, 'mb-1']">Secuelas <span class="text-red-500">*</span></label>
         <input
           id="secuelas"
+          data-campo="secuelas"
           v-model="formDataHistoriaClinica.secuelas"
           type="text"
           :class="CLASE_INPUT"
