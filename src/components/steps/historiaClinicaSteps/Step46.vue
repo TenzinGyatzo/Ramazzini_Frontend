@@ -27,6 +27,12 @@ const { variant } = toRefs(props);
     // Referencia al textarea
     const textareaEspecificar = ref(null);
     
+    // Con «No» se guarda siempre este texto (prepararHistoriaClinicaParaGuardar): es lo que se
+    // muestra, aunque la sección todavía no se haya revisado y el formulario siga vacío
+    const textoPorDefecto = computed(() =>
+        textoResumenPorDefecto(trabajadores.currentTrabajador?.sexo === 'Femenino'),
+    );
+
     // Hallazgos de los antecedentes personales y del accidente laboral (mismo cálculo que al guardar)
     const resumenAutomatico = computed(() => resumenAutomaticoHistoriaClinica(formDataHistoriaClinica));
     
@@ -181,7 +187,7 @@ const { variant } = toRefs(props);
                 />
             </div>
             <p v-if="resumenHistoriaClinicaPregunta === 'No'" :class="[CLASE_AYUDA, 'mt-2']">
-                Se registrará: «{{ resumenHistoriaClinica }}».
+                Se registrará: «{{ textoPorDefecto }}».
             </p>
             <div v-else class="mt-3">
                 <label for="resumenHistoriaClinica" :class="[CLASE_ETIQUETA, 'mb-1']">
