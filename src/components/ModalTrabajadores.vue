@@ -867,6 +867,9 @@ const camposConError = computed(() =>
 const esCampoVacioEditable = (el) =>
   !el.disabled && el.type !== 'hidden' && !String(el.value ?? '').trim();
 
+/** Campos cuyo `name` en la página es otro (para que el navegador no los tome por datos de pago). */
+const NOMBRE_EN_PAGINA = { numeroEmpleado: 'noEmpleado' };
+
 /** Lleva al campo (o al bloque geográfico que lo captura) y pone el cursor ahí. */
 const irACampo = (name) => {
   const raiz = formRootEl.value;
@@ -879,7 +882,7 @@ const irACampo = (name) => {
     const entradas = destino ? [...destino.querySelectorAll('input, select, textarea')] : [];
     foco = entradas.find(esCampoVacioEditable) || entradas.find((el) => !el.disabled) || null;
   } else {
-    foco = raiz.querySelector(`[name="${name}"]:not([type="hidden"])`);
+    foco = raiz.querySelector(`[name="${NOMBRE_EN_PAGINA[name] ?? name}"]:not([type="hidden"])`);
     destino = foco?.closest('.formkit-outer') || foco;
   }
   if (!destino) return;
@@ -1701,17 +1704,21 @@ const {
                     <span class="font-medium text-lg text-gray-700">Fecha de Ingreso</span>
                   </template>
                 </FormKit>
-                <!-- Chrome toma cualquier «número…» como número de tarjeta y, sin HTTPS, muestra un aviso de pagos.
-                     Ignora autocomplete="off"; con un valor propio que no reconoce, deja de clasificar el campo. -->
-                <FormKit type="text" label="Número de Empleado" name="numeroEmpleado" placeholder="Sólo números"
-                  autocomplete="numero-de-empleado" inputmode="numeric"
+                <!-- Chrome y Edge toman como número de tarjeta todo campo cuyo nombre, etiqueta o texto de
+                     ayuda diga «número» (salvo teléfono o documento); junto a una fecha DD/MM/AAAA (que leen
+                     como vencimiento) creen que es un formulario de pago: muestran el aviso de pagos sin HTTPS
+                     y ofrecen tarjetas guardadas. Por eso el navegador lee otro `name` (el formulario sigue
+                     usando numeroEmpleado) y «Núm​ero» lleva un espacio de ancho cero invisible. -->
+                <FormKit type="text" label="Núm​ero de Empleado" name="numeroEmpleado" placeholder="Solo dígitos"
+                  :sections-schema="{ input: { attrs: { name: 'noEmpleado' } } }"
+                  autocomplete="off" inputmode="numeric"
                   validation="optional|matches:/^[0-9]*$/"
                   :validation-messages="{
                     matches: 'El número de empleado debe estar vacío o contener solo números entre 1 y 7 dígitos'
                   }"
                   maxlength="7" :value="trabajadores.currentTrabajador?.numeroEmpleado || ''" />
-                <FormKit type="text" label="NSS" name="nss" placeholder="Número de Seguro Social"
-                  autocomplete="numero-de-seguro-social"
+                <FormKit type="text" label="NSS" name="nss" placeholder="Núm​ero de Seguro Social"
+                  autocomplete="off"
                   validation="optional|nssValidation"
                   :validation-messages="{
                     nssValidation: 'Debe tener 4-30 caracteres alfanuméricos'
