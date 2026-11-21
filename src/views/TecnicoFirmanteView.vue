@@ -816,10 +816,14 @@ const firmaSrc = computed(() => {
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <!-- Chrome y Edge toman como número de tarjeta todo campo cuyo name, etiqueta o texto de ayuda diga
+                   «número»; junto a la fecha DD/MM/AAAA (que leen como vencimiento) creen que es un formulario
+                   de pago. Por eso los campos numero* se presentan al navegador con otro name (sections-schema;
+                   el v-model no cambia) y «Núm​ero» lleva un espacio de ancho cero invisible. -->
               <FormKit
                 type="text"
                 :label="proveedorSaludStore.proveedorSalud?.pais === 'MX' ? 'Cédula Profesional' : 'Registro Profesional'"
-                name="numeroCedulaProfesional"
+                name="numeroCedulaProfesional" :sections-schema="{ input: { attrs: { name: 'cedulaProfesional' } } }"
                 placeholder="Ej. 142988, REG-123456, CRM 123456"
                 validation="cedulaProfesionalValidation"
                 v-model="formularioTecnicoFirmante.numeroCedulaProfesional"
@@ -837,8 +841,8 @@ const firmaSrc = computed(() => {
               />
               <FormKit
                 type="text"
-                label="Número de Credencial Adicional"
-                name="numeroCredencialAdicional"
+                label="Núm​ero de Credencial Adicional"
+                name="numeroCredencialAdicional" :sections-schema="{ input: { attrs: { name: 'credencialAdicional' } } }"
                 placeholder="Ej. 924"
                 v-model="formularioTecnicoFirmante.numeroCredencialAdicional"
               />

@@ -915,7 +915,11 @@ const firmaSrc = computed(() => {
                                 v-model="formularioMedicoFirmante.universidad"
                             />
 
-                            <FormKit type="text" :label="proveedorSaludStore.proveedorSalud?.pais === 'MX' ? 'Cédula Profesional' : (proveedorSaludStore.proveedorSalud?.pais === 'GT' ? 'Colegiado Activo' : 'Registro Profesional')" name="numeroCedulaProfesional"
+                            <!-- Chrome y Edge toman como número de tarjeta todo campo cuyo name, etiqueta o texto de ayuda diga
+                                 «número»; junto a la fecha DD/MM/AAAA (que leen como vencimiento) creen que es un formulario
+                                 de pago. Por eso los campos numero* se presentan al navegador con otro name (sections-schema;
+                                 el v-model no cambia) y «Núm​ero» lleva un espacio de ancho cero invisible. -->
+                            <FormKit type="text" :label="proveedorSaludStore.proveedorSalud?.pais === 'MX' ? 'Cédula Profesional' : (proveedorSaludStore.proveedorSalud?.pais === 'GT' ? 'Colegiado Activo' : 'Registro Profesional')" name="numeroCedulaProfesional" :sections-schema="{ input: { attrs: { name: 'cedulaProfesional' } } }"
                                 placeholder="Ej. 142988, REG-123456, CRM 123456" validation="cedulaProfesionalValidation" v-model="formularioMedicoFirmante.numeroCedulaProfesional"
                                 :validation-messages="{ cedulaProfesionalValidation: 'El registro debe tener entre 3 y 20 caracteres (letras, números, guiones o espacios).' }" />
                         </div>
@@ -926,7 +930,7 @@ const firmaSrc = computed(() => {
                                 :options="siONo" v-model="formularioMedicoFirmante.especialistaSaludTrabajo" />
 
                             <FormKit type="text" :label="proveedorSaludStore.proveedorSalud?.pais === 'MX' ? 'Cédula de Especialidad' : (proveedorSaludStore.proveedorSalud?.pais === 'GT' ? 'Número de Registro de Especialidad' : 'Número de Registro')"
-                                name="numeroCedulaEspecialista" placeholder="Ej. 3425572, ESP-789012, RQE 456789" validation="cedulaEspecialistaValidation"
+                                name="numeroCedulaEspecialista" :sections-schema="{ input: { attrs: { name: 'cedulaEspecialista' } } }" placeholder="Ej. 3425572, ESP-789012, RQE 456789" validation="cedulaEspecialistaValidation"
                                 :disabled="formularioMedicoFirmante.especialistaSaludTrabajo !== 'Si'"
                                 v-model="formularioMedicoFirmante.numeroCedulaEspecialista"
                                 :validation-messages="{ cedulaEspecialistaValidation: 'El registro de especialidad debe tener entre 3 y 20 caracteres (letras, números, guiones o espacios).' }" />
@@ -937,7 +941,7 @@ const firmaSrc = computed(() => {
                                 placeholder="Ej. Registro Estatal de SSA"
                                 v-model="formularioMedicoFirmante.nombreCredencialAdicional" />
 
-                            <FormKit type="text" label="Número de Credencial Adicional" name="numeroCredencialAdicional"
+                            <FormKit type="text" label="Núm​ero de Credencial Adicional" name="numeroCredencialAdicional" :sections-schema="{ input: { attrs: { name: 'credencialAdicional' } } }"
                                 placeholder="Ej. 924"
                                 v-model="formularioMedicoFirmante.numeroCredencialAdicional" />
                         </div>
@@ -947,7 +951,7 @@ const firmaSrc = computed(() => {
                                 placeholder="Ej. Certificado ante Consejo de Medicina del Trabajo, Certificación Internacional"
                                 v-model="formularioMedicoFirmante.nombreCredencialAdicional2" />
 
-                            <FormKit type="text" label="Número de Credencial Adicional 2" name="numeroCredencialAdicional2"
+                            <FormKit type="text" label="Núm​ero de Credencial Adicional 2" name="numeroCredencialAdicional2" :sections-schema="{ input: { attrs: { name: 'credencialAdicional2' } } }"
                                 placeholder="Ej. 114254"
                                 v-model="formularioMedicoFirmante.numeroCredencialAdicional2" />
                         </div>
