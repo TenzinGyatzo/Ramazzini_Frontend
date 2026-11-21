@@ -39,5 +39,17 @@ describe('IndiceCaptura (punto 38)', () => {
     expect(w.find('[data-indice-seccion="2"]').attributes('title')).toBe('Tiene las respuestas por defecto y nadie la ha revisado');
     expect(w.find('[data-indice-seccion="2"] .fa-eye').exists()).toBe(true);
   });
-});
 
+  it('obligatorios sin tocar: anillo ámbar; ya trabajada: punto relleno', () => {
+    const faltan = [{ seccion: 1, paso: 1, campo: 'fecha', nombre: 'Fecha', falta: true, mensaje: 'Falta: Fecha.' }];
+    const sinTocar = mount(IndiceCaptura, {
+      props: { indice: estadoIndiceCaptura(['Consulta'], faltan, new Set()), actual: null, variante: 'lateral' },
+    });
+    expect(sinTocar.find('[data-indice-seccion="1"] i').classes()).toEqual(expect.arrayContaining(['far', 'fa-circle', 'text-amber-500']));
+    expect(sinTocar.text()).toContain('Por capturar');
+    const tocada = mount(IndiceCaptura, {
+      props: { indice: estadoIndiceCaptura(['Consulta'], faltan, new Set([1])), actual: null, variante: 'lateral' },
+    });
+    expect(tocada.find('[data-indice-seccion="1"] i').classes()).toEqual(expect.arrayContaining(['fas', 'fa-circle', 'text-amber-500']));
+  });
+});

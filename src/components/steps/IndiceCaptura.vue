@@ -20,14 +20,15 @@ const ICONO: Record<EstadoSeccion, string> = {
   completa: 'fas fa-circle-check text-emerald-600 dark:text-emerald-400',
   pendiente: 'fas fa-circle text-amber-500 text-[0.55rem]',
   error: 'fas fa-triangle-exclamation text-rose-600 dark:text-rose-400',
-  sinEmpezar: 'far fa-circle text-gray-400 dark:text-slate-500',
+  // Tiene obligatorios y nadie la ha tocado: anillo ámbar; ya trabajada y aún incompleta: relleno
+  sinEmpezar: 'far fa-circle text-amber-500 dark:text-amber-400 text-[0.7rem]',
   sinRevisar: 'far fa-eye text-sky-600 dark:text-sky-400',
 };
 const LEYENDA: Record<EstadoSeccion, string> = {
   completa: 'Completa',
   pendiente: 'Con algo pendiente',
   error: 'Con algo que corregir',
-  sinEmpezar: 'Sin empezar',
+  sinEmpezar: 'Por capturar',
   sinRevisar: 'Sin revisar',
 };
 
