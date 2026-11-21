@@ -68,7 +68,9 @@ export async function conTransicionDeModo(
     actualizar();
     await nextTick();
     await esperarAcomodo();
-  }) as { updateCallbackDone: Promise<void>; finished?: Promise<void> };
+  }) as { updateCallbackDone: Promise<void>; finished?: Promise<void>; ready?: Promise<void> };
+  // Si otra transición empieza antes (clics seguidos), esta se salta: no es un error
+  transicion.ready?.catch(() => {});
   transicion.finished?.finally(() => raiz?.classList.remove(clase)).catch(() => {});
   try {
     await transicion.updateCallbackDone;

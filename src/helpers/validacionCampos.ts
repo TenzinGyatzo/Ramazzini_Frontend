@@ -336,7 +336,7 @@ const camposRequeridosPorTipo: Record<string, Array<{
   ],
 
   examenVista: [
-    { campo: 'fechaExamenVista', nombre: 'Fecha de examen de vista', tipo: 'fecha', paso: 1, validacion: validarFecha },
+    { campo: 'fechaExamenVista', nombre: 'Fecha del examen de la vista', tipo: 'fecha', paso: 1, validacion: validarFecha },
     { campo: 'sinCorreccionLejanaInterpretacion', nombre: 'Agudeza visual lejana sin lentes', tipo: 'seleccion', paso: 2, validacion: validarSeleccion },
     { campo: 'sinCorreccionCercanaInterpretacion', nombre: 'Agudeza visual cercana sin lentes', tipo: 'seleccion', paso: 3, validacion: validarSeleccion },
     { campo: 'interpretacionIshihara', nombre: 'Prueba de Ishihara', tipo: 'seleccion', paso: 6, validacion: validarSeleccion },
