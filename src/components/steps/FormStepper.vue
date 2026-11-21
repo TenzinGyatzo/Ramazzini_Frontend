@@ -537,6 +537,7 @@ export default {
       disponible: capturaRapidaDisponible,
       capturaRapida,
       setModo: cambiarModoCaptura,
+      vistaPreviaAbierta,
     } = useModoCaptura();
     provide(CAPTURA_RAPIDA_KEY, capturaRapida);
 
@@ -2670,6 +2671,7 @@ export default {
       capturaRapidaDisponible,
       capturaRapida,
       cambiarModoCaptura,
+      vistaPreviaAbierta,
       indiceCaptura,
       seccionActualCaptura,
       alEnfocarCaptura,
@@ -2769,21 +2771,76 @@ export default {
 
   <div
     :class="[
-      'border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg p-7 2xl:p-7 transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto',
-      capturaRapida ? 'max-w-5xl' : 'max-w-md',
+      'border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto',
+      capturaRapida ? 'max-w-5xl p-4 sm:p-7' : 'max-w-md p-7',
     ]">
 
     <!-- Modo de captura (solo en los documentos que tienen captura rápida) -->
-    <div v-if="capturaRapidaDisponible" class="flex justify-end mb-3">
+    <div v-if="capturaRapidaDisponible && !capturaRapida" class="flex justify-end mb-3">
       <InterruptorModoCaptura :modo="modoCaptura" @cambiar="cambiarModoCaptura" />
     </div>
 
     <!-- Captura rápida: todas las secciones en una sola página, con su índice -->
     <template v-if="capturaRapida">
+    <!-- Barra fija: modo, vista previa y «Guardar» siempre a la mano -->
+    <div
+      data-barra-captura
+      class="sticky top-0 z-20 -mx-4 sm:-mx-7 -mt-4 sm:-mt-7 mb-4 px-4 sm:px-7 py-2 bg-white border-b border-gray-200 dark:border-slate-700 rounded-t-lg"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <InterruptorModoCaptura :modo="modoCaptura" @cambiar="cambiarModoCaptura" />
+        <div class="flex items-center gap-2 ml-auto">
+          <button
+            type="button"
+            tabindex="-1"
+            :aria-pressed="vistaPreviaAbierta"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
+            @click="vistaPreviaAbierta = !vistaPreviaAbierta"
+          >
+            <i class="fas fa-eye" aria-hidden="true"></i>
+            Vista previa
+          </button>
+          <button
+            v-if="!disableEdit"
+            type="button"
+            tabindex="-1"
+            data-guardar-captura
+            :disabled="isSubmitting || isValidating"
+            :aria-busy="isSubmitting || isValidating"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="guardarDesdeCaptura"
+          >
+            <i class="fas fa-save" aria-hidden="true"></i>
+            {{ isSubmitting ? 'Guardando…' : isValidating ? 'Validando…' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+      <AvisoConexionGuardado
+        v-if="!disableEdit"
+        class="mt-2"
+        :error-conexion="errorConexion"
+        :en-linea="enLinea"
+        :restablecida="conexionRestablecida"
+        :ocupado="isSubmitting || isValidating"
+        :servidor-disponible="servidorDisponible"
+        :lento="guardadoLento"
+        @reintentar="handleSubmit"
+      />
+      <!-- En celular y tableta, el índice va en la barra y se despliega -->
+      <div v-if="!disableEdit && stepsStore.steps.length > 0" class="lg:hidden mt-2">
+        <IndiceCaptura
+          :indice="indiceCaptura"
+          :actual="seccionActualCaptura"
+          variante="barra"
+          @ir="irASeccion"
+        />
+      </div>
+    </div>
+
     <div class="lg:flex lg:items-start lg:gap-6">
       <aside
         v-if="!disableEdit && stepsStore.steps.length > 0"
-        class="hidden lg:block w-52 shrink-0 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto"
+        class="hidden lg:block w-52 shrink-0 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto"
       >
         <IndiceCaptura
           :indice="indiceCaptura"
@@ -2792,17 +2849,6 @@ export default {
           @ir="irASeccion"
         />
       </aside>
-      <div
-        v-if="!disableEdit && stepsStore.steps.length > 0"
-        class="lg:hidden sticky top-0 z-10 mb-4"
-      >
-        <IndiceCaptura
-          :indice="indiceCaptura"
-          :actual="seccionActualCaptura"
-          variante="barra"
-          @ir="irASeccion"
-        />
-      </div>
 
     <div class="flex-1 min-w-0">
       <div
@@ -2817,23 +2863,13 @@ export default {
           v-for="(paso, i) in stepsStore.steps"
           :key="'captura-' + i"
           :data-seccion-captura="i + 1"
-          class="scroll-mt-4"
+          class="scroll-mt-24"
         >
           <component :is="paso.component" />
         </section>
       </div>
 
       <div class="flex flex-col mt-6">
-        <AvisoConexionGuardado
-          v-if="!disableEdit"
-          :error-conexion="errorConexion"
-          :en-linea="enLinea"
-          :restablecida="conexionRestablecida"
-          :ocupado="isSubmitting || isValidating"
-          :servidor-disponible="servidorDisponible"
-          :lento="guardadoLento"
-          @reintentar="handleSubmit"
-        />
         <button
           v-if="!disableEdit"
           @click="guardarDesdeCaptura"

@@ -27,6 +27,7 @@ import VisualizadorExamenVista from '@/components/steps/VisualizadorExamenVista.
 import VisualizadorExploracionFisica from '@/components/steps/VisualizadorExploracionFisica.vue';
 import VisualizadorHistoriaClinica from '@/components/steps/VisualizadorHistoriaClinica.vue';
 import VisualizadorNotaMedica from '@/components/steps/VisualizadorNotaMedica.vue';
+import PanelVistaPrevia from '@/components/steps/PanelVistaPrevia.vue';
 import VisualizadorNotaAclaratoria from '@/components/steps/VisualizadorNotaAclaratoria.vue';
 import VisualizadorControlPrenatal from '@/components/steps/VisualizadorControlPrenatal.vue';
 import VisualizadorHistoriaOtologica from '@/components/steps/VisualizadorHistoriaOtologica.vue';
@@ -67,7 +68,7 @@ const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
 const formData = useFormDataStore();
 // Punto 38: en «Captura rápida» el formulario va a todo lo ancho, sin el documento al lado
-const { capturaRapida } = useModoCaptura();
+const { capturaRapida, vistaPreviaAbierta } = useModoCaptura();
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
@@ -710,6 +711,15 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div v-if="!capturaRapida" class="w-full xl:w-2/3 max-w-3xl mx-auto">
             <VisualizadorNotaMedica />
           </div>
+          <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral -->
+          <PanelVistaPrevia
+            v-else
+            :abierta="vistaPreviaAbierta"
+            titulo="Vista previa de la nota médica"
+            @cerrar="vistaPreviaAbierta = false"
+          >
+            <VisualizadorNotaMedica />
+          </PanelVistaPrevia>
         </div>
       </Transition> 
 

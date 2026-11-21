@@ -75,6 +75,9 @@ let usuarioLeido: string | null | undefined;
 
 export { CAPTURA_RAPIDA_KEY } from '@/composables/capturaRapidaKey';
 
+/** Captura rápida: la vista previa se abre a petición en un panel lateral (la comparten la barra y la vista). */
+const vistaPreviaAbierta = ref(false);
+
 export function useModoCaptura() {
   const userStore = useUserStore();
   const documentos = useDocumentosStore();
@@ -105,8 +108,9 @@ export function useModoCaptura() {
   const setModo = (nuevo: ModoCaptura) => {
     usuarioLeido = userId.value;
     modoActual.value = nuevo;
+    if (nuevo !== 'capturaRapida') vistaPreviaAbierta.value = false;
     guardarModoCaptura(userId.value, nuevo);
   };
 
-  return { modo, disponible, capturaRapida, setModo };
+  return { modo, disponible, capturaRapida, setModo, vistaPreviaAbierta };
 }

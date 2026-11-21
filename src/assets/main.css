@@ -425,6 +425,12 @@ html.dark-mode .inicio-nav--enlace:focus-visible {
 [data-campo] {
   scroll-margin-top: 6rem;
 }
+/* Captura rápida en celular y tableta: la barra fija también lleva el índice */
+@media (max-width: 1023px) {
+  [data-captura-rapida] [data-campo] {
+    scroll-margin-top: 9rem;
+  }
+}
 
 .campo-atencion {
   position: relative;
