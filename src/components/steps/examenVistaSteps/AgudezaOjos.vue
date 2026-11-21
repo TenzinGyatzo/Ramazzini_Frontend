@@ -164,7 +164,7 @@ const interpretacionParaMostrar = computed(() => {
       <span
         v-if="interpretacion"
         :class="[
-          'ml-auto max-w-full px-2.5 py-1 rounded-md text-sm font-semibold text-white text-right whitespace-pre-line',
+          'ml-auto max-w-full px-2 py-0.5 rounded-md text-sm font-medium text-white text-right whitespace-pre-line',
           colorAgudeza(interpretacion),
         ]"
       >{{ interpretacionParaMostrar }}</span>

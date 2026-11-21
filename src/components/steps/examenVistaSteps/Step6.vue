@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import NumeroCaptura from '../captura/NumeroCaptura.vue';
+import { CLASE_ETIQUETA } from '../captura/estiloCaptura';
 import { colorAgudeza } from './colorAgudeza';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -62,7 +63,12 @@ function interpretarIshihara() {
 <template>
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Visión cromática</h1>
-    <div data-campo="interpretacionIshihara" :class="['grid gap-3', capturaRapida ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1']">
+    <!-- Campo y resultado en un renglón, cada uno con su etiqueta y a la misma altura; en el
+         asistente angosto el campo va a su medida (dos dígitos) y el resultado ocupa el resto -->
+    <div
+      data-campo="interpretacionIshihara"
+      :class="['grid gap-3 items-start', capturaRapida ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-[8rem_minmax(0,1fr)]']"
+    >
       <NumeroCaptura
         id="placasCorrectas"
         v-model="placasCorrectas"
@@ -74,18 +80,20 @@ function interpretarIshihara() {
         placeholder="14"
         :error="mensajeErrorPlacas"
       />
-      <div
-        data-calculado
-        :class="['flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2', capturaRapida ? 'sm:mt-6' : '']"
-      >
-        <div class="min-w-0">
-          <p class="text-xs text-gray-500">Porcentaje</p>
-          <p class="text-base font-bold text-gray-900 leading-tight">{{ porcentajeIshihara != null ? `${porcentajeIshihara} %` : '—' }}</p>
+      <div class="min-w-0">
+        <p :class="[CLASE_ETIQUETA, 'mb-1']">Resultado</p>
+        <div
+          data-calculado
+          class="flex items-center justify-between gap-2 h-10 rounded-lg border border-gray-200 bg-gray-50 px-3"
+        >
+          <span class="text-sm font-bold text-gray-900 whitespace-nowrap" title="Porcentaje de placas correctas">
+            {{ porcentajeIshihara != null ? `${porcentajeIshihara} %` : '—' }}
+          </span>
+          <span
+            v-if="interpretacionIshihara"
+            :class="['shrink-0 px-2 py-0.5 rounded-md text-sm font-medium text-white', colorAgudeza(interpretacionIshihara)]"
+          >{{ interpretacionIshihara }}</span>
         </div>
-        <span
-          v-if="interpretacionIshihara"
-          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorAgudeza(interpretacionIshihara)]"
-        >{{ interpretacionIshihara }}</span>
       </div>
     </div>
   </div>
