@@ -15,6 +15,10 @@ import {
 } from '@/helpers/notaMedicaCexRanges';
 
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import NumeroCaptura from '@/components/steps/captura/NumeroCaptura.vue';
+import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
+import { CLASE_AYUDA, CLASE_ERROR, CLASE_ETIQUETA } from '@/components/steps/captura/estiloCaptura';
 
 // Al abrir el paso, si la glucemia está vacía, el cursor va a ella
 useAutofocoPrimerVacio(['glucemia']);
@@ -41,6 +45,18 @@ const opcionesAyunas = [
   { value: -1, label: 'Se desconoce' },
 ];
 const resultadoObtenidoaTravesde = ref(-1);
+
+// Captura rápida (punto 38): el valor y, al capturarlo, las dos preguntas a su lado
+const capturaRapida = enCapturaRapida();
+const OPCIONES_AYUNAS_CAPTURA = [
+  { valor: 1, etiqueta: 'Sí' },
+  { valor: 0, etiqueta: 'No' },
+  { valor: -1, etiqueta: 'Se desconoce' },
+];
+const OPCIONES_RESULTADO_CAPTURA = [
+  { valor: 1, etiqueta: 'Laboratorio' },
+  { valor: 2, etiqueta: 'Tira capilar' },
+];
 const seDesconoceGlucemia = ref(false);
 
 function getValFromSource(field) {
@@ -166,7 +182,50 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
 </script>
 
 <template>
-  <div class="nota-medica-dark-inputs">
+  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+    <p :class="[CLASE_AYUDA, 'mb-3']">Marque «Se desconoce» si no se registró el dato.</p>
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,14rem)_auto_auto] gap-x-6 gap-y-4 items-start">
+      <NumeroCaptura
+        id="glucemia"
+        data-campo="glucemia"
+        v-model="glucemia"
+        v-model:se-desconoce="seDesconoceGlucemia"
+        etiqueta="Glucemia"
+        unidad="mg/dl"
+        obligatorio
+        con-se-desconoce
+        placeholder="20-999"
+        :min="ranges.glucemia.min"
+        :max="ranges.glucemia.max"
+        :error="mensajeErrorGlucemia"
+        :partida="partida('glucosa')"
+      />
+      <template v-if="showConditionalFields">
+        <div data-campo="tipoMedicion">
+          <p :class="[CLASE_ETIQUETA, 'mb-1']">¿Fue en ayunas? <span class="text-red-500">*</span></p>
+          <OpcionesSegmentadas
+            v-model="tipoMedicion"
+            name="tipoMedicion"
+            etiqueta="¿Fue en ayunas?"
+            :opciones="OPCIONES_AYUNAS_CAPTURA"
+          />
+          <p v-if="mensajeErrorTipoMedicion" :class="CLASE_ERROR">{{ mensajeErrorTipoMedicion }}</p>
+        </div>
+        <div data-campo="resultadoObtenidoaTravesde">
+          <p :class="[CLASE_ETIQUETA, 'mb-1']">Obtenido por <span class="text-red-500">*</span></p>
+          <OpcionesSegmentadas
+            v-model="resultadoObtenidoaTravesde"
+            name="resultadoObtenidoaTravesde"
+            etiqueta="Resultado obtenido a través de"
+            :opciones="OPCIONES_RESULTADO_CAPTURA"
+          />
+          <p v-if="mensajeErrorResultado" :class="CLASE_ERROR">{{ mensajeErrorResultado }}</p>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <div v-else class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"

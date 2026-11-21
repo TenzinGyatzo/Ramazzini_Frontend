@@ -2,6 +2,15 @@
 import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import TextoCaptura from '@/components/steps/captura/TextoCaptura.vue';
+
+// Captura rápida (punto 38): mismo dato, con el estilo común de los cuadros de texto
+const capturaRapida = enCapturaRapida();
+const CONSEJOS_EXPLORACION = [
+  'Describa hallazgos normales y anormales.',
+  'Sea objetivo y específico en las observaciones.',
+];
 
 const props = defineProps({
   variant: {
@@ -33,7 +42,17 @@ watch(exploracionFisica, (newValue) => {
 </script>
 
 <template>
-    <div class="nota-medica-dark-inputs">
+    <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+        <TextoCaptura
+            id="exploracionFisica"
+            v-model="exploracionFisica"
+            etiqueta="Exploración física"
+            :filas="4"
+            :consejos="CONSEJOS_EXPLORACION"
+            placeholder="Estado general del paciente y hallazgos relevantes observados"
+        />
+    </div>
+    <div v-else class="nota-medica-dark-inputs">
         <h1
             v-if="variant !== 'compact'"
             class="text-2xl font-bold mb-4 text-gray-900"

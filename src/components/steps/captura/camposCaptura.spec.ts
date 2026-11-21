@@ -59,3 +59,23 @@ describe('signos vitales en captura rápida', () => {
     expect((w.find('#tensionArterialDiastolica').element as HTMLInputElement).disabled).toBe(true);
   });
 });
+
+describe('las marcas de los campos se conservan en captura rápida', () => {
+  it('el aviso al guardar y el índice encuentran cada dato obligatorio', async () => {
+    setActivePinia(createPinia());
+    const { default: Step7 } = await import('../notaMedicaSteps/Step7.vue');
+    const { default: Step8 } = await import('../notaMedicaSteps/Step8.vue');
+    const { default: Step3 } = await import('../notaMedicaSteps/Step3.vue');
+    const global = { provide: { [CAPTURA_RAPIDA_KEY as symbol]: true } };
+    const somatometria = mount(Step7, { props: { variant: 'compact' }, global });
+    const glucemia = mount(Step8, { props: { variant: 'compact' }, global });
+    const genero = mount(Step3, { props: { variant: 'compact' }, global });
+    await flushPromises();
+    for (const campo of ['peso', 'talla', 'circunferenciaCintura']) {
+      expect(somatometria.find(`[data-campo="${campo}"] input#${campo}`).exists()).toBe(true);
+    }
+    expect(glucemia.find('[data-campo="glucemia"] input#glucemia').exists()).toBe(true);
+    expect(genero.find('[data-campo="genero"] select#genero').exists()).toBe(true);
+    expect(genero.find('[data-campo="derechohabiencia"]').exists()).toBe(true);
+  });
+});

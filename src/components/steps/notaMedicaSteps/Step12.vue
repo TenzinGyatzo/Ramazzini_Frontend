@@ -3,6 +3,11 @@ import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import InsumosSuministrados from '@/components/inventario/InsumosSuministrados.vue';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import ListaCaptura from '@/components/steps/captura/ListaCaptura.vue';
+
+// Captura rápida (punto 38): mismos renglones, con el estilo común
+const capturaRapida = enCapturaRapida();
 
 const props = defineProps({
   variant: {
@@ -40,7 +45,8 @@ watch(tratamiento, (newValue) => {
 function addTratamiento() {
   tratamiento.value.push('');
   // Esperar a que el DOM se actualice y luego establecer el focus
-  setTimeout(() => {
+  // En la captura rápida, ListaCaptura pone el cursor en el renglón nuevo de su lista
+  if (!capturaRapida) setTimeout(() => {
     const inputs = document.querySelectorAll('input');
     const lastInput = inputs[inputs.length - 1];
     lastInput.focus();
@@ -53,7 +59,20 @@ function removeTratamiento(index) {
 </script>
 
 <template>
-  <div class="nota-medica-dark-inputs">
+  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+    <ListaCaptura
+      id="tratamiento"
+      v-model="tratamiento"
+      etiqueta="Tratamiento"
+      nombre-renglon="Tratamiento"
+      texto-agregar="Agregar tratamiento"
+      @agregar="addTratamiento"
+      @quitar="removeTratamiento"
+    />
+    <InsumosSuministrados />
+  </div>
+
+  <div v-else class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"

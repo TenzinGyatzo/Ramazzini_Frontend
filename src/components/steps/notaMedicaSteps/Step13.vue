@@ -2,6 +2,11 @@
 import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import ListaCaptura from '@/components/steps/captura/ListaCaptura.vue';
+
+// Captura rápida (punto 38): mismos renglones, con el estilo común
+const capturaRapida = enCapturaRapida();
 
 const props = defineProps({
   variant: {
@@ -39,7 +44,8 @@ watch(recomendaciones, (newValue) => {
 function addRecomendacion() {
   recomendaciones.value.push('');
   // Esperar a que el DOM se actualice y luego establecer el focus
-  setTimeout(() => {
+  // En la captura rápida, ListaCaptura pone el cursor en el renglón nuevo de su lista
+  if (!capturaRapida) setTimeout(() => {
     const inputs = document.querySelectorAll('input');
     const lastInput = inputs[inputs.length - 1];
     lastInput.focus();
@@ -52,7 +58,19 @@ function removeRecomendacion(index) {
 </script>
 
 <template>
-  <div class="nota-medica-dark-inputs">
+  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+    <ListaCaptura
+      id="recomendaciones"
+      v-model="recomendaciones"
+      etiqueta="Recomendaciones"
+      nombre-renglon="Recomendación"
+      texto-agregar="Agregar recomendación"
+      @agregar="addRecomendacion"
+      @quitar="removeRecomendacion"
+    />
+  </div>
+
+  <div v-else class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"

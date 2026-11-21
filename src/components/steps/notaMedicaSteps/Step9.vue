@@ -5,6 +5,9 @@ import { useDocumentosStore } from '@/stores/documentos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import CIE10Autocomplete from '@/components/selectors/CIE10Autocomplete.vue';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
+import { CLASE_INPUT } from '@/components/steps/captura/estiloCaptura';
 import {
   validateDiagnosticoPrincipalSis,
   fetchFirmantesDelPrestador,
@@ -22,6 +25,9 @@ const props = defineProps({
   },
 });
 const { variant } = toRefs(props);
+
+// Captura rápida (punto 38): preguntas como botones juntos y campos con el estilo común
+const capturaRapida = enCapturaRapida();
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -458,7 +464,13 @@ watch(
             </Teleport>
             
             <!-- Diseño de Radio Buttons más Visual tipo Card -->
-            <div class="grid grid-cols-2 gap-3 mb-1">
+            <OpcionesSegmentadas
+              v-if="capturaRapida"
+              v-model="relacionTemporal"
+              name="relacionTemporal"
+              :opciones="[{ valor: 0, etiqueta: 'Primera vez' }, { valor: 1, etiqueta: 'Subsecuente' }]"
+            />
+            <div v-else class="grid grid-cols-2 gap-3 mb-1">
                 <!-- Opción Primera Vez -->
                 <label 
                     :class="[
@@ -590,7 +602,7 @@ watch(
                 Descripción complementaria
             </label>
             <input
-                class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                :class="capturaRapida ? CLASE_INPUT : 'w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'"
                 v-model="diagnosticoTextoPrincipal"
                 placeholder="Descripción del diagnóstico..."
                 data-skip-validation

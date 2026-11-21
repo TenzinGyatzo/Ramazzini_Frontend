@@ -4,6 +4,9 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import CIE10Autocomplete from '@/components/selectors/CIE10Autocomplete.vue';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
+import { CLASE_INPUT } from '@/components/steps/captura/estiloCaptura';
 import { validateCIE10Duplicates } from '@/helpers/cie10';
 import {
   validateDiagnostico2Sis,
@@ -22,6 +25,9 @@ const props = defineProps({
   },
 });
 const { variant } = toRefs(props);
+
+// Captura rápida (punto 38): preguntas como botones juntos y campos con el estilo común
+const capturaRapida = enCapturaRapida();
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -335,7 +341,13 @@ watch(() => userStore.user?._id, () => {
       >
         ¿Registrar una comorbilidad?
       </h3>
-      <div class="grid grid-cols-2 gap-3 mb-1">
+      <OpcionesSegmentadas
+        v-if="capturaRapida"
+        v-model="registrarComorbilidad"
+        name="registrarComorbilidad2"
+        :opciones="[{ valor: 0, etiqueta: 'No' }, { valor: 1, etiqueta: 'Sí' }]"
+      />
+      <div v-else class="grid grid-cols-2 gap-3 mb-1">
         <label
           :class="[
             'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -386,7 +398,13 @@ watch(() => userStore.user?._id, () => {
         >
           Primera vez diagnóstico 2 <span class="text-red-500">*</span>
         </h3>
-        <div class="grid grid-cols-2 gap-3 mb-1">
+        <OpcionesSegmentadas
+          v-if="capturaRapida"
+          v-model="primeraVezDiagnostico2"
+          name="primeraVezDiagnostico2"
+          :opciones="[{ valor: 0, etiqueta: 'No' }, { valor: 1, etiqueta: 'Sí' }]"
+        />
+        <div v-else class="grid grid-cols-2 gap-3 mb-1">
           <label
             :class="[
               'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
@@ -493,7 +511,7 @@ watch(() => userStore.user?._id, () => {
           Descripción complementaria
         </label>
         <input
-          class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+          :class="capturaRapida ? CLASE_INPUT : 'w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'"
           v-model="diagnosticoTexto"
           placeholder="Descripción del diagnóstico..."
           data-skip-validation

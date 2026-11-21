@@ -4,6 +4,22 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { calcularEdad } from '@/helpers/dates';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
+import { CLASE_ERROR, CLASE_ETIQUETA } from '@/components/steps/captura/estiloCaptura';
+
+// Captura rápida (punto 38): las dos preguntas en una fila
+const capturaRapida = enCapturaRapida();
+const OPCIONES_RELACION = [
+  { valor: -1, etiqueta: 'No aplica' },
+  { valor: 0, etiqueta: 'Primera vez' },
+  { valor: 1, etiqueta: 'Subsecuente' },
+];
+const OPCIONES_TRIMESTRE = [
+  { valor: 1, etiqueta: 'Primero' },
+  { valor: 2, etiqueta: 'Segundo' },
+  { valor: 3, etiqueta: 'Tercero' },
+];
 
 const props = defineProps({
   variant: {
@@ -108,7 +124,37 @@ watch(edadFueraDeRango, (fuera) => {
 </script>
 
 <template>
-  <div class="nota-medica-dark-inputs">
+  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+    <p v-if="edadFueraDeRango" class="text-xs text-amber-700 mb-3 flex items-start gap-1.5">
+      <i class="fas fa-info-circle mt-0.5" aria-hidden="true"></i>
+      La edad de la trabajadora está fuera del rango 9–59 años. Se registrará como «No aplica».
+    </p>
+    <div class="flex flex-wrap gap-x-8 gap-y-4">
+      <div data-campo="relacionTemporalEmbarazo">
+        <p :class="[CLASE_ETIQUETA, 'mb-1']">Relación temporal del embarazo</p>
+        <fieldset :disabled="edadFueraDeRango" :class="['border-0 p-0 m-0 min-w-0', edadFueraDeRango ? 'opacity-60' : '']">
+          <OpcionesSegmentadas
+            v-model="relacionTemporalEmbarazo"
+            name="relacionTemporalEmbarazo"
+            etiqueta="Relación temporal del embarazo"
+            :opciones="OPCIONES_RELACION"
+          />
+        </fieldset>
+      </div>
+      <div v-if="muestraTrimestre" data-campo="trimestreGestacional">
+        <p :class="[CLASE_ETIQUETA, 'mb-1']">Trimestre gestacional <span class="text-red-500">*</span></p>
+        <OpcionesSegmentadas
+          v-model="trimestreGestacional"
+          name="trimestreGestacional"
+          etiqueta="Trimestre gestacional"
+          :opciones="OPCIONES_TRIMESTRE"
+        />
+        <p v-if="trimestreIncompleto" :class="CLASE_ERROR">Seleccione el trimestre gestacional.</p>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"

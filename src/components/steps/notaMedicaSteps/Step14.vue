@@ -2,6 +2,11 @@
 import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import TextoCaptura from '@/components/steps/captura/TextoCaptura.vue';
+
+// Captura rápida (punto 38): mismo dato, con el estilo común de los cuadros de texto
+const capturaRapida = enCapturaRapida();
 
 const props = defineProps({
   variant: {
@@ -33,7 +38,11 @@ watch(observaciones, (newValue) => {
 </script>
 
 <template>
-    <div class="nota-medica-dark-inputs">
+    <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+        <TextoCaptura id="observaciones" v-model="observaciones" etiqueta="Observaciones" :filas="3" />
+    </div>
+
+    <div v-else class="nota-medica-dark-inputs">
         <h2
             v-if="variant !== 'compact'"
             class="text-2xl font-bold text-gray-900 mb-4 uppercase"

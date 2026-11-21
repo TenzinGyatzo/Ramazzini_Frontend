@@ -14,6 +14,12 @@ import {
 } from '@/helpers/notaMedicaCexRanges';
 
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import NumeroCaptura from '@/components/steps/captura/NumeroCaptura.vue';
+import { CLASE_AYUDA, CLASE_ETIQUETA } from '@/components/steps/captura/estiloCaptura';
+
+// Captura rápida (punto 38): peso, talla y cintura en una fila; IMC y categorías como resultado
+const capturaRapida = enCapturaRapida();
 
 // Al abrir el paso, el cursor va al primer dato vacío (los marcados «Se desconoce» se saltan)
 useAutofocoPrimerVacio(['peso', 'talla', 'circunferenciaCintura']);
@@ -262,7 +268,89 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
 </script>
 
 <template>
-  <div class="nota-medica-dark-inputs">
+  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+    <p :class="[CLASE_AYUDA, 'mb-3']">Marque «Se desconoce» si no se registró el dato.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+      <NumeroCaptura
+        id="peso"
+        data-campo="peso"
+        v-model="peso"
+        v-model:se-desconoce="seDesconocePeso"
+        etiqueta="Peso"
+        unidad="kg"
+        obligatorio
+        con-se-desconoce
+        step="0.001"
+        placeholder="1-400"
+        :min="ranges.peso.min"
+        :max="ranges.peso.max"
+        :error="mensajeErrorPeso"
+        :partida="partida('peso')"
+      />
+      <NumeroCaptura
+        id="talla"
+        data-campo="talla"
+        v-model="talla"
+        v-model:se-desconoce="seDesconoceTalla"
+        etiqueta="Talla"
+        unidad="cm"
+        obligatorio
+        con-se-desconoce
+        placeholder="30-220"
+        :min="ranges.talla.min"
+        :max="ranges.talla.max"
+        :error="mensajeErrorTalla"
+        :partida="partida('tallaCm')"
+      />
+      <NumeroCaptura
+        id="circunferenciaCintura"
+        data-campo="circunferenciaCintura"
+        v-model="circunferenciaCintura"
+        v-model:se-desconoce="seDesconoceCircunferencia"
+        etiqueta="Cintura"
+        unidad="cm"
+        obligatorio
+        con-se-desconoce
+        placeholder="20-300"
+        :min="ranges.circunferenciaCintura.min"
+        :max="ranges.circunferenciaCintura.max"
+        :error="mensajeErrorCircunferencia"
+        :partida="partida('circunferenciaCintura')"
+      />
+    </div>
+
+    <!-- Lo que se calcula solo -->
+    <div class="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+      <div class="flex items-center gap-2" data-calculado>
+        <span :class="CLASE_ETIQUETA">Índice de masa corporal:</span>
+        <span class="font-semibold text-gray-800">{{ indiceMasaCorporal ?? '—' }}</span>
+        <span
+          v-if="categoriaIMC"
+          :class="[
+            'px-2 py-0.5 rounded-md text-xs font-semibold',
+            categoriaIMC === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
+            categoriaIMC === 'Bajo peso' || categoriaIMC === 'Sobrepeso' ? 'bg-yellow-50 text-yellow-800' : '',
+            categoriaIMC.startsWith('Obesidad') ? 'bg-red-50 text-red-900' : '',
+          ]"
+        >{{ categoriaIMC }}</span>
+      </div>
+      <div class="flex items-center gap-2" data-calculado>
+        <span :class="CLASE_ETIQUETA">Cintura:</span>
+        <span
+          v-if="categoriaCircunferenciaCintura"
+          :class="[
+            'px-2 py-0.5 rounded-md text-xs font-semibold',
+            categoriaCircunferenciaCintura === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
+            categoriaCircunferenciaCintura === 'Riesgo elevado' ? 'bg-yellow-50 text-yellow-800' : '',
+            categoriaCircunferenciaCintura === 'Riesgo muy elevado' ? 'bg-red-50 text-red-900' : '',
+          ]"
+        >{{ categoriaCircunferenciaCintura }}</span>
+        <span v-else class="text-gray-400">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"
