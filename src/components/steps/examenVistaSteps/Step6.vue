@@ -91,7 +91,7 @@ function interpretarIshihara() {
           </span>
           <span
             v-if="interpretacionIshihara"
-            :class="['shrink-0 px-2 py-0.5 rounded-md text-sm font-medium text-white', colorAgudeza(interpretacionIshihara)]"
+            :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-medium text-white', colorAgudeza(interpretacionIshihara)]"
           >{{ interpretacionIshihara }}</span>
         </div>
       </div>
