@@ -5,7 +5,7 @@ import Step46 from './Step46.vue';
 </script>
 
 <template>
-  <HcSectionStep title="Resumen">
+  <HcSectionStep title="Resumen" icono="fa-file-medical">
     <MicrostepAnchor :legacy-step="46">
       <Step46 variant="compact" />
     </MicrostepAnchor>

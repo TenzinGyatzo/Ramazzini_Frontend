@@ -6,7 +6,12 @@
  */
 import { nextTick, onUnmounted, ref, watch } from 'vue';
 
-const props = defineProps<{ abierta: boolean; titulo?: string }>();
+const props = defineProps<{
+  abierta: boolean;
+  titulo?: string;
+  /** Para documentos anchos (la tabla de la historia clínica). */
+  amplio?: boolean;
+}>();
 const emit = defineEmits<{ (e: 'cerrar'): void }>();
 
 const botonCerrar = ref<HTMLButtonElement | null>(null);
@@ -49,7 +54,10 @@ onUnmounted(() => document.removeEventListener('keydown', alTecla, true));
           role="dialog"
           aria-modal="true"
           :aria-label="titulo || 'Vista previa'"
-          class="panel relative h-full w-full sm:w-[min(52rem,92vw)] bg-gray-100 dark:bg-slate-900 shadow-2xl flex flex-col"
+          :class="[
+            'panel relative h-full w-full bg-gray-100 dark:bg-slate-900 shadow-2xl flex flex-col',
+            amplio ? 'sm:w-[min(76rem,96vw)]' : 'sm:w-[min(52rem,92vw)]',
+          ]"
         >
           <header
             class="shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800"

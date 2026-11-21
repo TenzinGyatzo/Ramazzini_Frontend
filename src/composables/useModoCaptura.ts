@@ -11,11 +11,12 @@ import { useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useDocumentosStore } from '@/stores/documentos';
 import { isNotaMedicaSectionsV2Enabled } from '@/composables/useNotaMedicaSectionsV2';
+import { isHcSectionsV2Enabled } from '@/composables/useHcSectionsV2';
 
 export type ModoCaptura = 'vistaPrevia' | 'capturaRapida';
 
 /** Documentos que ya tienen captura rápida (piloto: la nota médica). */
-export const DOCUMENTOS_CAPTURA_RAPIDA = ['notaMedica'] as const;
+export const DOCUMENTOS_CAPTURA_RAPIDA = ['notaMedica', 'historiaClinica'] as const;
 
 const PREFIJO_CLAVE = 'ramazzini:modoCaptura:';
 
@@ -66,6 +67,7 @@ export function documentoAdmiteCapturaRapida(
   if (!tipo || !(DOCUMENTOS_CAPTURA_RAPIDA as readonly string[]).includes(tipo)) return false;
   // La captura rápida acomoda las secciones; sin ellas (opt-out por query) no aplica
   if (tipo === 'notaMedica') return isNotaMedicaSectionsV2Enabled(query);
+  if (tipo === 'historiaClinica') return isHcSectionsV2Enabled(query);
   return true;
 }
 

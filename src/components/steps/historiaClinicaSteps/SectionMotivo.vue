@@ -5,7 +5,7 @@ import Step1 from './Step1.vue';
 </script>
 
 <template>
-  <HcSectionStep title="Motivo del examen">
+  <HcSectionStep title="Motivo del examen" icono="fa-clipboard-list">
     <MicrostepAnchor :legacy-step="1">
       <Step1 variant="compact" />
     </MicrostepAnchor>

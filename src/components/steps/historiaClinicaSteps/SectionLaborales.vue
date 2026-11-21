@@ -54,7 +54,7 @@ function quitarUltimoTrabajo() {
 </script>
 
 <template>
-  <HcSectionStep title="Antecedentes laborales">
+  <HcSectionStep title="Antecedentes laborales" icono="fa-hard-hat">
     <div class="space-y-3">
       <MicrostepAnchor :legacy-step="45">
         <Step45 variant="compact" />

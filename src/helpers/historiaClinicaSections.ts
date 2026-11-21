@@ -23,10 +23,10 @@ export interface HcSectionDef {
 
 /** Definición canónica de secciones (orden de navegación V2). */
 export const HC_SECTION_DEFS: HcSectionDef[] = [
-  { id: 'motivo', name: 'Motivo', legacyFrom: 1, legacyTo: 1 },
+  { id: 'motivo', name: 'Motivo del examen', legacyFrom: 1, legacyTo: 1 },
   { id: 'heredofamiliares', name: 'Heredofamiliares', legacyFrom: 2, legacyTo: 11 },
-  { id: 'patologicos', name: 'Patológicos', legacyFrom: 12, legacyTo: 21 },
-  { id: 'noPatologicos', name: 'No patológicos', legacyFrom: 22, legacyTo: 27 },
+  { id: 'patologicos', name: 'Personales patológicos', legacyFrom: 12, legacyTo: 21 },
+  { id: 'noPatologicos', name: 'Personales no patológicos', legacyFrom: 22, legacyTo: 27 },
   {
     id: 'ginecoObstetricos',
     name: 'Gineco-obstétricos',

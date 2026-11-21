@@ -14,7 +14,7 @@ import Step21 from './Step21.vue';
 </script>
 
 <template>
-  <HcSectionStep title="Antecedentes personales patológicos">
+  <HcSectionStep title="Antecedentes personales patológicos" icono="fa-notes-medical">
     <MicrostepAnchor :legacy-step="12">
       <Step12 variant="compact" />
     </MicrostepAnchor>

@@ -76,6 +76,10 @@ const { capturaRapida, vistaPreviaAbierta } = useModoCaptura();
 const contenedorNotaMedica = ref(null);
 const anchoNotaMedica = useAnchoElemento(contenedorNotaMedica);
 const notaLadoALado = computed(() => !capturaRapida.value && anchoNotaMedica.value >= 820);
+// Historia clínica (punto 39): igual, con más espacio para la tabla del documento
+const contenedorHistoriaClinica = ref(null);
+const anchoHistoriaClinica = useAnchoElemento(contenedorHistoriaClinica);
+const historiaLadoALado = computed(() => !capturaRapida.value && anchoHistoriaClinica.value >= 960);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
@@ -699,13 +703,24 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'historiaClinica'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
-          <div class="w-full xl:w-1/4">
+          ref="contenedorHistoriaClinica"
+          :class="['flex gap-3 md:gap-6', historiaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          <div :class="capturaRapida ? 'w-full' : historiaLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div class="w-full xl:w-3/4">
+          <div v-if="!capturaRapida" :class="historiaLadoALado ? 'flex-1 min-w-0' : 'w-full'">
             <VisualizadorHistoriaClinica />
           </div>
+          <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
+          <PanelVistaPrevia
+            v-else
+            amplio
+            :abierta="vistaPreviaAbierta"
+            titulo="Vista previa de la historia clínica"
+            @cerrar="vistaPreviaAbierta = false"
+          >
+            <VisualizadorHistoriaClinica />
+          </PanelVistaPrevia>
         </div>
       </Transition>
 

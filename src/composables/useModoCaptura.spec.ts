@@ -45,10 +45,12 @@ describe('preferencia de modo de captura (punto 38)', () => {
     expect(leerModoCaptura('u1', null)).toBe('vistaPrevia');
   });
 
-  it('solo la nota médica tiene captura rápida (y con sus secciones)', () => {
+  it('nota médica e historia clínica tienen captura rápida (y con sus secciones)', () => {
     expect(documentoAdmiteCapturaRapida('notaMedica')).toBe(true);
     expect(documentoAdmiteCapturaRapida('notaMedica', { nmLegacy: '1' })).toBe(false);
-    expect(documentoAdmiteCapturaRapida('historiaClinica')).toBe(false);
+    expect(documentoAdmiteCapturaRapida('historiaClinica')).toBe(true);
+    expect(documentoAdmiteCapturaRapida('historiaClinica', { hcLegacy: '1' })).toBe(false);
+    expect(documentoAdmiteCapturaRapida('exploracionFisica')).toBe(false);
     expect(documentoAdmiteCapturaRapida(null)).toBe(false);
   });
 });

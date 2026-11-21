@@ -10,7 +10,7 @@ import Step27 from './Step27.vue';
 </script>
 
 <template>
-  <HcSectionStep title="Antecedentes personales no patológicos">
+  <HcSectionStep title="Antecedentes personales no patológicos" icono="fa-heartbeat">
     <MicrostepAnchor :legacy-step="22">
       <Step22 variant="compact" />
     </MicrostepAnchor>

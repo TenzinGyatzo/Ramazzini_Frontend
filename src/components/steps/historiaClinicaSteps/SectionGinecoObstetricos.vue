@@ -18,7 +18,7 @@ import Step41 from './Step41.vue';
 </script>
 
 <template>
-  <HcSectionStep title="Antecedentes gineco-obstétricos">
+  <HcSectionStep title="Antecedentes gineco-obstétricos" icono="fa-venus">
     <MicrostepAnchor :legacy-step="28">
       <Step28 variant="compact" />
     </MicrostepAnchor>

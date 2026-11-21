@@ -14,7 +14,7 @@ import Step11 from './Step11.vue';
 </script>
 
 <template>
-  <HcSectionStep title="Antecedentes heredofamiliares">
+  <HcSectionStep title="Antecedentes heredofamiliares" icono="fa-users">
     <MicrostepAnchor :legacy-step="2">
       <Step2 variant="compact" />
     </MicrostepAnchor>
