@@ -19,7 +19,7 @@ const props = defineProps({
 });
 const { variant } = toRefs(props);
 
-// Captura rápida (punto 38): género en una línea y derechohabiencia en tres columnas
+// Punto 38, un solo diseño para los dos modos (acomodo según el modo): género en una línea y derechohabiencia en tres columnas
 const capturaRapida = enCapturaRapida();
 
 const { formDataNotaMedica } = useFormDataStore();
@@ -159,7 +159,13 @@ watch(derechohabienciaSeleccion, () => syncFormData(), { deep: true });
 </script>
 
 <template>
-  <div v-if="capturaRapida" class="nota-medica-dark-inputs space-y-4">
+  <div class="nota-medica-dark-inputs space-y-4">
+    <h2
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
+    >
+      Género y Derechohabiencia
+    </h2>
     <div data-campo="genero" class="max-w-xs">
       <label for="genero" :class="[CLASE_ETIQUETA, 'mb-1']">Género <span class="text-red-500">*</span></label>
       <select id="genero" v-model="genero" :class="CLASE_INPUT">
@@ -175,7 +181,10 @@ watch(derechohabienciaSeleccion, () => syncFormData(), { deep: true });
       </p>
       <p v-if="catalogLoading" class="text-sm text-gray-500">Cargando catálogo de afiliación…</p>
       <p v-else-if="catalogError" class="text-sm text-red-600">{{ catalogError }}</p>
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1">
+      <div
+        v-else
+        :class="['grid gap-x-4 gap-y-1', capturaRapida ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2']"
+      >
         <label
           v-for="opt in afiliacionOptions"
           :key="opt.value"
@@ -186,67 +195,6 @@ watch(derechohabienciaSeleccion, () => syncFormData(), { deep: true });
               : 'text-gray-700 hover:bg-gray-50',
             { 'opacity-70': opt.legacy },
           ]"
-        >
-          <input
-            type="checkbox"
-            :value="opt.value"
-            v-model="derechohabienciaSeleccion"
-            class="rounded text-emerald-600 focus:ring-emerald-500"
-            @change="handleDerechohabienciaChange(opt.value)"
-          />
-          <span>
-            {{ opt.label }}
-            <span v-if="opt.legacy" class="text-xs text-amber-700">(ya no vigente)</span>
-          </span>
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <div v-else class="nota-medica-dark-inputs">
-    <h2
-      v-if="variant !== 'compact'"
-      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
-    >
-      Género y Derechohabiencia
-    </h2>
-    <!-- En secciones, el título «Género y derechohabiencia» lo pone la sección -->
-
-    <div data-campo="genero" :class="variant === 'compact' ? 'mb-4' : 'mb-6'">
-      <label for="genero" class="block text-base font-medium text-gray-800 mb-2">
-        Género <span class="text-red-500">*</span>
-      </label>
-      <select
-        id="genero"
-        v-model="genero"
-        class="w-full p-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-      >
-        <option :value="null" disabled>
-          -Seleccionar-
-        </option>
-        <option v-for="opt in generoOptions" :key="opt.value" :value="opt.value">
-          {{ opt.label }}
-        </option>
-      </select>
-    </div>
-
-    <div data-campo="derechohabiencia" class="mb-4">
-      <label class="block text-base font-medium text-gray-800 mb-2">
-        Derechohabiencia <span class="text-red-500">*</span>
-      </label>
-      <p class="text-sm text-gray-600 mb-3">
-        Seleccione una o más opciones (máx. 9). Las opciones “No especificado”, “Ninguna” y “Se ignora” (según etiqueta del catálogo) son exclusivas.
-      </p>
-
-      <p v-if="catalogLoading" class="text-sm text-gray-500 mb-2">Cargando catálogo de afiliación…</p>
-      <p v-else-if="catalogError" class="text-sm text-red-600 mb-2">{{ catalogError }}</p>
-
-      <div v-else class="grid grid-cols-2 gap-2">
-        <label
-          v-for="opt in afiliacionOptions"
-          :key="opt.value"
-          class="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer text-sm"
-          :class="{ 'opacity-70': opt.legacy }"
         >
           <input
             type="checkbox"

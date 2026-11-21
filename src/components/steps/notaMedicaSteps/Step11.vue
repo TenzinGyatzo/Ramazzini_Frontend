@@ -4,7 +4,6 @@ import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import CIE10Autocomplete from '@/components/selectors/CIE10Autocomplete.vue';
-import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
 import { CLASE_INPUT } from '@/components/steps/captura/estiloCaptura';
 import { validateCIE10Duplicates } from '@/helpers/cie10';
@@ -27,8 +26,6 @@ const props = defineProps({
 });
 const { variant } = toRefs(props);
 
-// Captura rápida (punto 38): preguntas como botones juntos y campos con el estilo común
-const capturaRapida = enCapturaRapida();
 
 const { formDataNotaMedica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -354,49 +351,10 @@ watch(() => userStore.user?._id, () => {
         ¿Registrar una tercera comorbilidad?
       </h3>
       <OpcionesSegmentadas
-        v-if="capturaRapida"
         v-model="registrarComorbilidad"
         name="registrarComorbilidad3"
         :opciones="[{ valor: 0, etiqueta: 'No' }, { valor: 1, etiqueta: 'Sí' }]"
       />
-      <div v-else class="grid grid-cols-2 gap-3 mb-1">
-        <label
-          :class="[
-            'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-            registrarComorbilidad === 0
-              ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
-          ]"
-        >
-          <input type="radio" :value="0" v-model="registrarComorbilidad" class="sr-only" />
-          <span :class="['text-sm transition-colors duration-200', registrarComorbilidad === 0 ? 'text-emerald-700 font-semibold' : 'text-gray-700']">
-            No
-          </span>
-          <div v-if="registrarComorbilidad === 0" class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </label>
-        <label
-          :class="[
-            'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-            registrarComorbilidad === 1
-              ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
-          ]"
-        >
-          <input type="radio" :value="1" v-model="registrarComorbilidad" class="sr-only" />
-          <span :class="['text-sm transition-colors duration-200', registrarComorbilidad === 1 ? 'text-emerald-700 font-semibold' : 'text-gray-700']">
-            Sí
-          </span>
-          <div v-if="registrarComorbilidad === 1" class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </label>
-      </div>
     </div>
 
     <!-- Bloques visibles solo cuando registrarComorbilidad === Sí -->
@@ -411,49 +369,10 @@ watch(() => userStore.user?._id, () => {
           Primera vez diagnóstico 3 <span class="text-red-500">*</span>
         </h3>
         <OpcionesSegmentadas
-          v-if="capturaRapida"
           v-model="primeraVezDiagnostico3"
           name="primeraVezDiagnostico3"
           :opciones="[{ valor: 0, etiqueta: 'No' }, { valor: 1, etiqueta: 'Sí' }]"
         />
-        <div v-else class="grid grid-cols-2 gap-3 mb-1">
-          <label
-            :class="[
-              'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-              primeraVezDiagnostico3 === 0
-                ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
-                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
-            ]"
-          >
-            <input type="radio" :value="0" v-model="primeraVezDiagnostico3" class="sr-only" />
-            <span :class="['text-sm transition-colors duration-200', primeraVezDiagnostico3 === 0 ? 'text-emerald-700 font-semibold' : 'text-gray-700']">
-              No
-            </span>
-            <div v-if="primeraVezDiagnostico3 === 0" class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-            </div>
-          </label>
-          <label
-            :class="[
-              'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-              primeraVezDiagnostico3 === 1
-                ? 'border-emerald-600 bg-emerald-50 shadow-md dark:bg-emerald-950/50 dark:border-emerald-500'
-                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-emerald-500 dark:hover:bg-emerald-950/30'
-            ]"
-          >
-            <input type="radio" :value="1" v-model="primeraVezDiagnostico3" class="sr-only" />
-            <span :class="['text-sm transition-colors duration-200', primeraVezDiagnostico3 === 1 ? 'text-emerald-700 font-semibold' : 'text-gray-700']">
-              Sí
-            </span>
-            <div v-if="primeraVezDiagnostico3 === 1" class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-            </div>
-          </label>
-        </div>
       </div>
 
       <!-- 2. Código CIE-10 Diagnóstico 3 (obligatorio cuando comorbilidad=Sí) -->
@@ -476,7 +395,7 @@ watch(() => userStore.user?._id, () => {
         </p>
         <Transition name="fade">
           <div v-if="diagnostico3SisError" class="mt-2">
-            <div class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
+            <div class="text-red-600 text-xs flex items-start gap-1.5">
               <i class="fas fa-exclamation-triangle mt-0.5"></i>
               <span class="flex-1 font-medium">{{ diagnostico3SisError }}</span>
             </div>
@@ -484,19 +403,19 @@ watch(() => userStore.user?._id, () => {
         </Transition>
         <div v-if="diagnostico3EqualsPrincipalError || diagnostico3EqualsComplementaryError || diagnostico3EqualsDiagnostico2Error" class="mt-2 space-y-2">
           <Transition name="fade">
-            <div v-if="diagnostico3EqualsPrincipalError" class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
+            <div v-if="diagnostico3EqualsPrincipalError" class="text-red-600 text-xs flex items-start gap-1.5">
               <i class="fas fa-exclamation-triangle mt-0.5"></i>
               <span class="flex-1 font-medium">{{ diagnostico3EqualsPrincipalError }}</span>
             </div>
           </Transition>
           <Transition name="fade">
-            <div v-if="diagnostico3EqualsComplementaryError" class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
+            <div v-if="diagnostico3EqualsComplementaryError" class="text-red-600 text-xs flex items-start gap-1.5">
               <i class="fas fa-exclamation-triangle mt-0.5"></i>
               <span class="flex-1 font-medium">{{ diagnostico3EqualsComplementaryError }}</span>
             </div>
           </Transition>
           <Transition name="fade">
-            <div v-if="diagnostico3EqualsDiagnostico2Error" class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2 shadow-sm">
+            <div v-if="diagnostico3EqualsDiagnostico2Error" class="text-red-600 text-xs flex items-start gap-1.5">
               <i class="fas fa-exclamation-triangle mt-0.5"></i>
               <span class="flex-1 font-medium">{{ diagnostico3EqualsDiagnostico2Error }}</span>
             </div>
@@ -529,7 +448,7 @@ watch(() => userStore.user?._id, () => {
           Descripción complementaria
         </label>
         <input
-          :class="capturaRapida ? CLASE_INPUT : 'w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'"
+          :class="CLASE_INPUT"
           v-model="diagnosticoTexto3"
           placeholder="Descripción del diagnóstico..."
           data-skip-validation

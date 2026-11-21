@@ -97,3 +97,31 @@ describe('signos vitales con vista previa (mismo diseño, acomodo angosto)', () 
     expect(formDataNotaMedica.frecuenciaCardiaca).toBe(NOTA_MEDICA_CEX_SENTINEL.frecuenciaCardiaca);
   });
 });
+
+describe('listas de tratamiento y recomendaciones', () => {
+  it('al agregar, el cursor va al renglón nuevo de su propia lista', async () => {
+    const { default: ListaCaptura } = await import('./ListaCaptura.vue');
+    const renglones = ref<string[]>(['Paracetamol']);
+    const w = mount(ListaCaptura, {
+      attachTo: document.body,
+      props: {
+        id: 'tratamiento',
+        etiqueta: 'Tratamiento',
+        nombreRenglon: 'Tratamiento',
+        textoAgregar: 'Agregar tratamiento',
+        modelValue: renglones.value,
+        onAgregar: () => renglones.value.push(''),
+      },
+    });
+    // Otro campo después en la página (antes, el cursor se iba al último campo de la página)
+    const otro = document.createElement('input');
+    document.body.appendChild(otro);
+    await w.find('button.mt-2').trigger('click');
+    await flushPromises();
+    const campos = w.findAll('input');
+    expect(campos).toHaveLength(2);
+    expect(document.activeElement).toBe(campos[1].element);
+    w.unmount();
+    otro.remove();
+  });
+});

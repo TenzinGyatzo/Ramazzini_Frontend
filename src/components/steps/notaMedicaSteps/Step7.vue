@@ -18,7 +18,7 @@ import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import NumeroCaptura from '@/components/steps/captura/NumeroCaptura.vue';
 import { CLASE_AYUDA, CLASE_ETIQUETA } from '@/components/steps/captura/estiloCaptura';
 
-// Captura rápida (punto 38): peso, talla y cintura en una fila; IMC y categorías como resultado
+// Punto 38, un solo diseño para los dos modos (acomodo según el modo): peso, talla y cintura en una fila; IMC y categorías como resultado
 const capturaRapida = enCapturaRapida();
 /** Color sólido de la categoría: verde normal, ámbar a vigilar, rojo de riesgo. */
 function colorCategoria(categoria) {
@@ -276,9 +276,20 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
 </script>
 
 <template>
-  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
+  <div class="nota-medica-dark-inputs">
+    <h2
+      v-if="variant !== 'compact'"
+      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
+    >
+      Somatometría
+    </h2>
     <p :class="[CLASE_AYUDA, 'mb-3']">Marque «Se desconoce» si no se registró el dato.</p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+    <div
+      :class="[
+        'grid',
+        capturaRapida ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4' : 'grid-cols-2 gap-x-3 gap-y-3',
+      ]"
+    >
       <NumeroCaptura
         id="peso"
         data-campo="peso"
@@ -328,13 +339,13 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
     </div>
 
     <!-- Lo que se calcula solo: valor grande y la categoría en una etiqueta de color sólido -->
-    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div :class="['mt-4 grid gap-3', capturaRapida ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1']">
       <div
         data-calculado
         class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
       >
         <div class="min-w-0">
-          <p class="text-xs text-gray-500">Índice de masa corporal</p>
+          <p class="text-xs text-gray-500">{{ capturaRapida ? 'Índice de masa corporal' : 'IMC' }}</p>
           <p class="text-base font-bold text-gray-900 leading-tight">{{ indiceMasaCorporal ?? '—' }}</p>
         </div>
         <span
@@ -358,137 +369,6 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
           :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(categoriaCircunferenciaCintura)]"
         >{{ categoriaCircunferenciaCintura }}</span>
         <span v-else class="text-xs text-gray-400">Se calcula con la cintura</span>
-      </div>
-    </div>
-  </div>
-
-  <div v-else class="nota-medica-dark-inputs">
-    <h2
-      v-if="variant !== 'compact'"
-      class="text-2xl font-bold text-gray-900 mb-4 uppercase"
-    >
-      Somatometría
-    </h2>
-    <p
-      v-if="variant !== 'compact'"
-      class="text-sm text-gray-600 mb-4"
-    >
-      Marque "Se desconoce" si no se registró el dato.
-    </p>
-    <p
-      v-else
-      class="text-xs text-gray-600 mb-2"
-    >
-      Marque "Se desconoce" si no se registró el dato.
-    </p>
-
-    <div class="flex gap-4 mb-4 flex-wrap">
-      <div data-campo="peso" class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="peso">Peso (kg) <span class="text-red-500">*</span></label>
-        <div class="mt-1">
-          <input
-            type="number"
-            id="peso"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="peso ?? ''" v-valor-de-partida="partida('peso')"
-            @input="peso = parseOptionalNumber($event.target.value)"
-            :min="ranges.peso.min"
-            :max="ranges.peso.max"
-            step="0.001"
-            placeholder="1-400"
-            :disabled="seDesconocePeso"
-          />
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconocePeso" class="rounded" />
-            Se desconoce
-          </label>
-        </div>
-        <p v-if="mensajeErrorPeso" class="text-red-500 text-sm mt-1">{{ mensajeErrorPeso }}</p>
-      </div>
-
-      <div data-campo="talla" class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="talla">Talla (cm) <span class="text-red-500">*</span></label>
-        <div class="mt-1">
-          <input
-            type="number"
-            id="talla"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="talla ?? ''" v-valor-de-partida="partida('tallaCm')"
-            @input="talla = parseOptionalNumber($event.target.value)"
-            :min="ranges.talla.min"
-            :max="ranges.talla.max"
-            step="1"
-            placeholder="30-220"
-            :disabled="seDesconoceTalla"
-          />
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconoceTalla" class="rounded" />
-            Se desconoce
-          </label>
-        </div>
-        <p v-if="mensajeErrorTalla" class="text-red-500 text-sm mt-1">{{ mensajeErrorTalla }}</p>
-      </div>
-    </div>
-
-    <div class="mb-4">
-      <label class="block text-base font-medium text-gray-800 mb-2">Índice de Masa Corporal</label>
-      <div class="grid grid-cols-2 gap-4">
-        <input
-          type="number"
-          class="w-full p-2 text-center border border-gray-200 rounded-lg text-gray-700 bg-gray-50 cursor-not-allowed font-semibold"
-          :value="indiceMasaCorporal" placeholder="Se calcula solo" data-calculado
-          readonly
-          title="Calculado automáticamente"
-        />
-        <input
-          type="text"
-          :class="[
-            'w-full py-2 px-2 text-center border border-gray-200 rounded-lg cursor-not-allowed font-semibold',
-            categoriaIMC === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-            categoriaIMC === 'Bajo peso' ? 'bg-yellow-50 text-yellow-800' : '',
-            categoriaIMC === 'Sobrepeso' ? 'bg-yellow-50 text-yellow-800' : '',
-            categoriaIMC === 'Obesidad clase I' ? 'bg-red-50 text-red-900' : '',
-            categoriaIMC === 'Obesidad clase II' ? 'bg-red-100 text-red-900' : '',
-            categoriaIMC === 'Obesidad clase III' ? 'bg-red-200 text-red-950' : '',
-          ]"
-          :value="categoriaIMC" placeholder="Según el IMC" data-calculado
-          readonly
-        />
-      </div>
-    </div>
-
-    <div data-campo="circunferenciaCintura" class="mb-4">
-      <label>Circunferencia de Cintura (cm) <span class="text-red-500">*</span></label>
-      <div class="grid grid-cols-2 gap-4 mt-1">
-        <div>
-          <input
-            type="number"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="circunferenciaCintura ?? ''" v-valor-de-partida="partida('circunferenciaCintura')"
-            @input="circunferenciaCintura = parseOptionalNumber($event.target.value)"
-            :min="ranges.circunferenciaCintura.min"
-            :max="ranges.circunferenciaCintura.max"
-            step="1"
-            placeholder="20-300"
-            :disabled="seDesconoceCircunferencia"
-          />
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconoceCircunferencia" class="rounded" />
-            Se desconoce
-          </label>
-          <p v-if="mensajeErrorCircunferencia" class="text-red-500 text-sm mt-1">{{ mensajeErrorCircunferencia }}</p>
-        </div>
-        <input
-          type="text"
-          :class="[
-            'h-10 w-full py-1.5 px-2 text-center border border-gray-200 rounded-lg cursor-not-allowed font-semibold',
-            categoriaCircunferenciaCintura === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-            categoriaCircunferenciaCintura === 'Riesgo elevado' ? 'bg-yellow-50 text-yellow-800' : '',
-            categoriaCircunferenciaCintura === 'Riesgo muy elevado' ? 'bg-red-100 text-red-900' : '',
-          ]"
-          :value="categoriaCircunferenciaCintura" placeholder="Según la cintura" data-calculado
-          readonly
-        />
       </div>
     </div>
   </div>
