@@ -15,6 +15,8 @@ export interface CampoRecordado {
   campo: string;
   /** Sub-paso (pregunta) donde está, para que el asistente apunte ahí y no a la primera. */
   legacyStep: number | null;
+  /** Lugar del control dentro de su pregunta (-1 sin control): para casillas sin id ni nombre. */
+  indice: number;
 }
 
 const CONTROLES = 'input:not([type="hidden"]), select, textarea';
@@ -34,8 +36,30 @@ export function controlDelClic(objetivo: EventTarget | null): HTMLElement | null
   return esControlDeCaptura(control) ? control : null;
 }
 
+/** Los controles de una pregunta, en orden de pantalla. */
+const controlesDe = (raiz: ParentNode): HTMLElement[] =>
+  Array.from(raiz.querySelectorAll<HTMLElement>(CONTROLES)).filter((c) => !c.matches('[disabled]'));
+
+/**
+ * Lo que se recuerda de un clic o del cursor: la pregunta (sub-paso) y, si lo hay, el control
+ * exacto. Un clic en el texto de la pregunta (sin control) también cuenta: es lo que el
+ * asistente resalta en azul. Sin pregunta ni control, null.
+ */
+export function recordarDesde(objetivo: EventTarget | null, seccion: number): CampoRecordado | null {
+  if (!(objetivo instanceof Element)) return null;
+  const control = controlDelClic(objetivo);
+  const pregunta = (control ?? objetivo).closest('[data-legacy-step]');
+  if (!control && !pregunta) return null;
+  const legacyStep = Number(pregunta?.getAttribute('data-legacy-step')) || null;
+  if (!control) {
+    return { seccion, legacyStep, indice: -1, id: '', name: '', value: '', type: '', campo: '' };
+  }
+  return recordarCampo(control, seccion);
+}
+
 export function recordarCampo(el: HTMLElement, seccion: number): CampoRecordado {
   const input = el as HTMLInputElement;
+  const pregunta = el.closest('[data-legacy-step]');
   return {
     seccion,
     id: el.id || '',
@@ -43,7 +67,8 @@ export function recordarCampo(el: HTMLElement, seccion: number): CampoRecordado 
     value: input.value ?? '',
     type: input.type || el.tagName.toLowerCase(),
     campo: el.closest('[data-campo]')?.getAttribute('data-campo')?.split(/\s+/)[0] ?? '',
-    legacyStep: Number(el.closest('[data-legacy-step]')?.getAttribute('data-legacy-step')) || null,
+    legacyStep: Number(pregunta?.getAttribute('data-legacy-step')) || null,
+    indice: pregunta ? controlesDe(pregunta).indexOf(el) : -1,
   };
 }
 
@@ -73,7 +98,19 @@ export function buscarCampo(r: CampoRecordado, raiz: ParentNode = document): HTM
       if (visible(control)) return control;
     }
   }
+  if (r.indice >= 0) {
+    const pregunta = buscarPregunta(r, raiz);
+    const control = pregunta ? controlesDe(pregunta)[r.indice] ?? null : null;
+    if (visible(control)) return control;
+  }
   return null;
+}
+
+/** La pregunta (sub-paso) recordada en la pantalla actual, o null. */
+export function buscarPregunta(r: CampoRecordado, raiz: ParentNode = document): HTMLElement | null {
+  if (!r.legacyStep) return null;
+  const pregunta = raiz.querySelector(`[data-legacy-step="${r.legacyStep}"]`);
+  return visible(pregunta) ? pregunta : null;
 }
 
 /** El primer contenedor con desplazamiento propio que tiene al elemento, o null (la página). */

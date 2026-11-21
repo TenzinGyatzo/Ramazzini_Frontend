@@ -499,6 +499,7 @@ import AvisoConexionGuardado from '@/components/steps/AvisoConexionGuardado.vue'
 import AvisoAtencionCampos from '@/components/steps/AvisoAtencionCampos.vue';
 import InterruptorModoCaptura from '@/components/steps/InterruptorModoCaptura.vue';
 import { useModoCaptura, CAPTURA_RAPIDA_KEY } from '@/composables/useModoCaptura';
+import { ESTADO_SECCIONES_KEY } from '@/composables/capturaRapidaKey';
 import AtajoTeclado from '@/components/steps/AtajoTeclado.vue';
 import { useTecladoAsistente } from '@/composables/useTecladoAsistente';
 import { enfocarCampo, limpiarAtencionCampo, hayAtencionEnCurso, selectorCampo } from '@/helpers/enfocarCampo';
@@ -506,7 +507,7 @@ import IndiceCaptura from '@/components/steps/IndiceCaptura.vue';
 import EncabezadoTrabajadorCaptura from '@/components/steps/EncabezadoTrabajadorCaptura.vue';
 import { useAlturaHastaElFondo } from '@/composables/useAlturaHastaElFondo';
 import { estadoIndiceCaptura, seccionIncompletaVecina, atajoDeSeccion } from '@/helpers/indiceCaptura';
-import { acomodarCampo, buscarCampo, campoALaVista, controlDelClic, recordarCampo } from '@/helpers/campoEntreModos';
+import { acomodarCampo, buscarCampo, buscarPregunta, campoALaVista, recordarDesde } from '@/helpers/campoEntreModos';
 import { esComputadora, primerCampoParaEnfocar } from '@/composables/useAutofocoPrimerVacio';
 import { quitarMedicionesVacias } from '@/helpers/medicionesClinicas';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
@@ -548,6 +549,8 @@ export default {
       vistaPreviaAbierta,
     } = useModoCaptura();
     provide(CAPTURA_RAPIDA_KEY, capturaRapida);
+    // Estado de pantalla de las secciones que sobrevive al cambio de modo (p. ej. trabajos anteriores abiertos)
+    provide(ESTADO_SECCIONES_KEY, {});
 
     const toast = inject('toast');
 
@@ -2142,10 +2145,21 @@ export default {
     onMounted(() => EVENTOS_GESTO.forEach((ev) => document.addEventListener(ev, alGesto, true)));
     onUnmounted(() => EVENTOS_GESTO.forEach((ev) => document.removeEventListener(ev, alGesto, true)));
     const alUsarCampo = (e) => {
-      const el = controlDelClic(e.target);
-      if (!el || !el.closest('[data-form-stepper]')) return;
-      const seccion = capturaRapida.value ? seccionDeElemento(el) : stepsStore.currentStep;
-      if (seccion) ultimoCampo = recordarCampo(el, seccion);
+      if (!(e.target instanceof Element) || !e.target.closest('[data-form-stepper]')) return;
+      const seccion = capturaRapida.value ? seccionDeElemento(e.target) : stepsStore.currentStep;
+      if (!seccion) return;
+      const nuevo = recordarDesde(e.target, seccion);
+      if (!nuevo) return;
+      // Un clic en el texto de la misma pregunta no olvida el control exacto que ya se usaba
+      if (
+        nuevo.indice < 0 &&
+        ultimoCampo &&
+        ultimoCampo.seccion === nuevo.seccion &&
+        ultimoCampo.legacyStep === nuevo.legacyStep
+      ) {
+        return;
+      }
+      ultimoCampo = nuevo;
     };
     onMounted(() => EVENTOS_CAMPO.forEach((ev) => document.addEventListener(ev, alUsarCampo, true)));
     onUnmounted(() => EVENTOS_CAMPO.forEach((ev) => document.removeEventListener(ev, alUsarCampo, true)));
@@ -2155,26 +2169,43 @@ export default {
       const inicio = performance.now();
       // Si el usuario ya hizo clic o tecleó en la pantalla nueva, se queda donde él eligió
       const intervino = () => ultimoGesto > inicio;
+      // El control exacto o, si no lo hay (clic en el texto de la pregunta), su pregunta
+      const buscar = () => buscarCampo(recordado) ?? (recordado.indice < 0 ? buscarPregunta(recordado) : null);
       let el = null;
-      for (let i = 0; i < 40 && !(el = buscarCampo(recordado)); i++) await esperar(50);
+      for (let i = 0; i < 40 && !(el = buscar()); i++) await esperar(50);
+      // La pregunta queda resaltada; el asistente la acomoda antes de que se ponga el cursor
+      if (recordado.legacyStep && stepsStore.focusedLegacyStep !== recordado.legacyStep) {
+        stepsStore.setPinpoint(recordado.legacyStep);
+      }
       // Que termine de acomodarse (lado a lado, altura del área) y de poner su propio cursor
       await esperar(150);
+      // En captura rápida en pantalla ancha, el área de captura fija su alto después de montarse
+      for (
+        let i = 0;
+        i < 20 && capturaRapida.value && window.innerWidth >= 1024 && !alturaAreaCaptura.value;
+        i++
+      ) {
+        await esperar(50);
+      }
       if (campoPorRestaurar !== recordado) return;
       campoPorRestaurar = null;
       if (intervino()) return;
-      el = buscarCampo(recordado) ?? el;
+      el = buscar() ?? el;
       if (!el) return;
+      const esPregunta = el.hasAttribute('data-legacy-step');
       const acomodar = () => {
-        if (esComputadora()) el.focus({ preventScroll: true });
+        if (!esPregunta && esComputadora()) el.focus({ preventScroll: true });
         acomodarCampo(el);
       };
       acomodar();
       if (capturaRapida.value) alEnfocarCaptura({ target: el });
       // Si algo más movió el cursor o la vista al abrir el paso (el asistente lleva su sección
       // a la pregunta con un desplazamiento suave), se vuelve al campo
-      await esperar(500);
-      if (!el.isConnected || campoPorRestaurar || hayAtencionEnCurso() || intervino()) return;
-      if ((esComputadora() && document.activeElement !== el) || !campoALaVista(el)) acomodar();
+      for (const pausa of [500, 700]) {
+        await esperar(pausa);
+        if (!el.isConnected || campoPorRestaurar || hayAtencionEnCurso() || intervino()) return;
+        if ((!esPregunta && esComputadora() && document.activeElement !== el) || !campoALaVista(el)) acomodar();
+      }
     };
 
     const cambiarModoConservandoCampo = (nuevo) => {

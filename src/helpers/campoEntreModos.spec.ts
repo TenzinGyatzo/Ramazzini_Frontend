@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buscarCampo, controlDelClic, esControlDeCaptura, recordarCampo } from './campoEntreModos';
+import { buscarCampo, buscarPregunta, controlDelClic, esControlDeCaptura, recordarCampo, recordarDesde } from './campoEntreModos';
 
 // jsdom no calcula cajas: todo elemento conectado cuenta como visible
 beforeEach(() => {
@@ -59,5 +59,25 @@ describe('campo entre modos de captura (punto 39)', () => {
   it('recuerda la pregunta (sub-paso) del campo', () => {
     pantalla('<div data-legacy-step="26"><input id="a" /></div>');
     expect(recordarCampo(document.getElementById('a')!, 4).legacyStep).toBe(26);
+  });
+
+  it('casilla sin id ni nombre: por su lugar dentro de la pregunta', () => {
+    const html =
+      '<div data-legacy-step="42"><input id="empresaAnterior1" />' +
+      '<label><input type="checkbox" value="Ruido" />Ruido</label><label><input type="checkbox" value="Polvos" />Polvos</label></div>';
+    pantalla(html);
+    const r = recordarCampo(document.querySelectorAll('input[type=checkbox]')[1] as HTMLElement, 6);
+    expect(r.indice).toBe(2);
+    pantalla(html);
+    expect((buscarCampo(r) as HTMLInputElement).value).toBe('Polvos');
+  });
+
+  it('clic en el texto de la pregunta: se recuerda la pregunta, sin control', () => {
+    pantalla('<div data-legacy-step="19"><p>Accidentes</p><input type="radio" name="sino-accidentes" value="No" /></div>');
+    const r = recordarDesde(document.querySelector('p'), 3)!;
+    expect(r).toMatchObject({ seccion: 3, legacyStep: 19, indice: -1 });
+    expect(buscarCampo(r)).toBeNull();
+    expect(buscarPregunta(r)).toBe(document.querySelector('[data-legacy-step="19"]'));
+    expect(recordarDesde(document.body, 3)).toBeNull();
   });
 });

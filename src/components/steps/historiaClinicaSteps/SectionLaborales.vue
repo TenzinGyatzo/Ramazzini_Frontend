@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, inject, watch } from 'vue';
+import { ESTADO_SECCIONES_KEY } from '@/composables/capturaRapidaKey';
 import MicrostepAnchor from '../MicrostepAnchor.vue';
 import HcSectionStep from './HcSectionStep.vue';
 import Step42 from './Step42.vue';
@@ -26,7 +27,14 @@ function contarTrabajosIniciales() {
   return 0;
 }
 
-const trabajosVisibles = ref(contarTrabajosIniciales());
+// Se conserva al cambiar de modo (un trabajo recién abierto y aún vacío no desaparece)
+const estadoSecciones = inject(ESTADO_SECCIONES_KEY, null);
+const trabajosVisibles = ref(
+  Math.max(contarTrabajosIniciales(), Number(estadoSecciones?.trabajosAnteriorVisibles) || 0),
+);
+if (estadoSecciones) {
+  watch(trabajosVisibles, (n) => (estadoSecciones.trabajosAnteriorVisibles = n), { immediate: true });
+}
 
 const puedeAgregar = computed(() => trabajosVisibles.value < 3);
 const puedeQuitar = computed(() => trabajosVisibles.value > 0);

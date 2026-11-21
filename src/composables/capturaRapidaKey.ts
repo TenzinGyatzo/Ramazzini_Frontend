@@ -11,3 +11,10 @@ export const CAPTURA_RAPIDA_KEY: InjectionKey<Readonly<Ref<boolean>> | boolean> 
 export function enCapturaRapida(): boolean {
   return unref(inject(CAPTURA_RAPIDA_KEY, false)) === true;
 }
+
+/**
+ * Estado de pantalla de una sección que debe sobrevivir al cambio de modo (los pasos se vuelven
+ * a montar), p. ej. cuántos trabajos anteriores están abiertos aunque sigan vacíos. Lo provee
+ * FormStepper; fuera de él no hay nada que conservar.
+ */
+export const ESTADO_SECCIONES_KEY: InjectionKey<Record<string, unknown>> = Symbol('estadoSecciones');

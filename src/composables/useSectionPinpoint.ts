@@ -46,6 +46,17 @@ async function focusBestControl(
   for (let attempt = 0; attempt < 6; attempt++) {
     if (isStale()) return;
 
+    // Punto 39: el usuario eligió una casilla o una lista de esta pregunta (p. ej. los agentes
+    // de un trabajo anterior): el cursor se queda ahí, no salta al primer campo de texto
+    const elegido = document.activeElement;
+    if (
+      elegido instanceof HTMLElement &&
+      anchor.contains(elegido) &&
+      elegido.matches('input[type="checkbox"], select')
+    ) {
+      return;
+    }
+
     const text = anchor.querySelector(
       TEXT_FOCUS_SELECTOR,
     ) as HTMLElement | null;
