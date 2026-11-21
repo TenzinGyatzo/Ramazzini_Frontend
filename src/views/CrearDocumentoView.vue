@@ -73,7 +73,7 @@ const { capturaRapida, vistaPreviaAbierta } = useModoCaptura();
 // Con vista previa, asistente y documento lado a lado en cuanto caben (antes solo desde
 // 1280 px de ventana: entre 1024 y 1279 el documento quedaba debajo). Se mide el espacio
 // real porque depende también de si el menú lateral está abierto.
-const contenedorNotaMedica = ref<HTMLElement | null>(null);
+const contenedorNotaMedica = ref(null);
 const anchoNotaMedica = useAnchoElemento(contenedorNotaMedica);
 const notaLadoALado = computed(() => !capturaRapida.value && anchoNotaMedica.value >= 820);
 const steps = useStepsStore();
