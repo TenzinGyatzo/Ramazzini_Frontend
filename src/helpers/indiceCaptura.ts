@@ -4,7 +4,11 @@
  */
 import type { ProblemaCampo } from '@/helpers/problemasDocumento';
 
-export type EstadoSeccion = 'completa' | 'pendiente' | 'error' | 'sinEmpezar';
+/**
+ * `sinRevisar` (punto 39): sin pendientes, pero con las respuestas preseleccionadas y sin que
+ * nadie haya entrado a la sección. Solo es un aviso: no impide guardar ni cambia lo guardado.
+ */
+export type EstadoSeccion = 'completa' | 'pendiente' | 'error' | 'sinEmpezar' | 'sinRevisar';
 
 /** Un problema del documento con la sección (1-based) en que está su campo. */
 export type ProblemaEnSeccion = ProblemaCampo & { seccion: number | null };
@@ -21,7 +25,9 @@ export interface SeccionIndice {
 
 export interface IndiceCaptura {
   secciones: SeccionIndice[];
+  /** Sin pendientes (incluye las que están sin revisar). */
   completas: number;
+  sinRevisar: number;
   total: number;
 }
 
@@ -42,11 +48,14 @@ function detalleFaltantes(faltan: ProblemaEnSeccion[]): string {
  * @param nombres nombres de las secciones, en orden
  * @param problemas lista ya ordenada (como al guardar)
  * @param tocadas secciones donde el usuario ya entró a algún campo
+ * @param opciones.marcarSinRevisar documento con respuestas preseleccionadas (historia clínica
+ *   nueva): las secciones sin pendientes que nadie ha tocado se marcan «sin revisar»
  */
 export function estadoIndiceCaptura(
   nombres: string[],
   problemas: ProblemaEnSeccion[],
   tocadas: ReadonlySet<number>,
+  opciones: { marcarSinRevisar?: boolean } = {},
 ): IndiceCaptura {
   const secciones = nombres.map((nombre, i): SeccionIndice => {
     const numero = i + 1;
@@ -65,18 +74,22 @@ export function estadoIndiceCaptura(
         problema: propios[0],
       };
     }
+    if (opciones.marcarSinRevisar && !tocadas.has(numero)) {
+      return { numero, nombre, estado: 'sinRevisar', detalle: 'Sin revisar', problema: null };
+    }
     return { numero, nombre, estado: 'completa', detalle: '', problema: null };
   });
   return {
     secciones,
-    completas: secciones.filter((s) => s.estado === 'completa').length,
+    completas: secciones.filter((s) => s.estado === 'completa' || s.estado === 'sinRevisar').length,
+    sinRevisar: secciones.filter((s) => s.estado === 'sinRevisar').length,
     total: secciones.length,
   };
 }
 
 /**
- * La sección incompleta que sigue (1) o la anterior (-1) a la actual; null si no queda.
- * Sin sección actual, la primera incompleta (o la última, hacia arriba).
+ * La sección incompleta (o sin revisar) que sigue (1) o la anterior (-1) a la actual; null si
+ * no queda. Sin sección actual, la primera (o la última, hacia arriba).
  */
 export function seccionIncompletaVecina(
   secciones: SeccionIndice[],

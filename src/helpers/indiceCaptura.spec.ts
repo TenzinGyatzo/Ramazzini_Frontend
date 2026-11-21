@@ -102,4 +102,30 @@ describe('índice de la captura rápida (punto 38)', () => {
     ventana.appendChild(boton);
     expect(atajoDeSeccion(tecla('ArrowDown', boton), false)).toBeNull();
   });
+
+  it('«sin revisar»: sin pendientes y sin tocar, solo si el documento trae respuestas preseleccionadas', () => {
+    const nombres = ['Motivo del examen', 'Heredofamiliares', 'Resumen'];
+    const conDefectos = estadoIndiceCaptura(nombres, [], new Set([2]), { marcarSinRevisar: true });
+    expect(conDefectos.secciones.map((s) => s.estado)).toEqual(['sinRevisar', 'completa', 'sinRevisar']);
+    expect(conDefectos.secciones[0].detalle).toBe('Sin revisar');
+    // Cuentan como completas (no falta nada), y se dice cuántas están sin revisar
+    expect(conDefectos.completas).toBe(3);
+    expect(conDefectos.sinRevisar).toBe(2);
+    // Alt + ↓ también se detiene en ellas
+    expect(seccionIncompletaVecina(conDefectos.secciones, 1, 1)?.numero).toBe(3);
+    // Sin la opción (nota médica, documento existente), todo completo
+    const sin = estadoIndiceCaptura(nombres, [], new Set());
+    expect(sin.secciones.every((s) => s.estado === 'completa')).toBe(true);
+    expect(sin.sinRevisar).toBe(0);
+  });
+
+  it('un pendiente gana sobre «sin revisar»', () => {
+    const r = estadoIndiceCaptura(
+      ['Heredofamiliares'],
+      [falta(1, 'diabeticosEspecificar', 'Especificar diabetes')],
+      new Set(),
+      { marcarSinRevisar: true },
+    );
+    expect(r.secciones[0].estado).toBe('sinEmpezar');
+  });
 });

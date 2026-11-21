@@ -1996,6 +1996,12 @@ export default {
         stepsStore.steps.map((s) => s.name ?? ''),
         problemasIndice.value,
         seccionesTocadas.value,
+        // Punto 39: en una historia clínica nueva, lo que nadie ha tocado está «sin revisar»
+        // (son las respuestas preseleccionadas); al editar, las respuestas son las guardadas
+        {
+          marcarSinRevisar:
+            documentos.currentTypeOfDocument === 'historiaClinica' && !documentos.currentDocument,
+        },
       ),
     );
 
@@ -2915,6 +2921,7 @@ export default {
         class="space-y-4"
         :class="{ 'pointer-events-none opacity-80 select-none': disableEdit }"
         @focusin="alEnfocarCaptura"
+        @pointerdown="alEnfocarCaptura"
       >
         <section
           v-for="(paso, i) in stepsStore.steps"

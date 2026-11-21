@@ -21,12 +21,14 @@ const ICONO: Record<EstadoSeccion, string> = {
   pendiente: 'fas fa-circle text-amber-500 text-[0.55rem]',
   error: 'fas fa-triangle-exclamation text-rose-600 dark:text-rose-400',
   sinEmpezar: 'far fa-circle text-gray-400 dark:text-slate-500',
+  sinRevisar: 'far fa-eye text-sky-600 dark:text-sky-400',
 };
 const LEYENDA: Record<EstadoSeccion, string> = {
   completa: 'Completa',
   pendiente: 'Con algo pendiente',
   error: 'Con algo que corregir',
   sinEmpezar: 'Sin empezar',
+  sinRevisar: 'Sin revisar',
 };
 
 const ir = (numero: number) => {
@@ -34,7 +36,9 @@ const ir = (numero: number) => {
   emit('ir', numero);
 };
 
-const resumen = () => `${props.indice.completas} de ${props.indice.total} completas`;
+const resumen = () =>
+  `${props.indice.completas} de ${props.indice.total} completas` +
+  (props.indice.sinRevisar ? ` · ${props.indice.sinRevisar} sin revisar` : '');
 </script>
 
 <template>
@@ -66,7 +70,7 @@ const resumen = () => `${props.indice.completas} de ${props.indice.total} comple
           tabindex="-1"
           :data-indice-seccion="s.numero"
           :aria-current="actual === s.numero ? 'location' : undefined"
-          :title="s.detalle || LEYENDA[s.estado]"
+          :title="s.estado === 'sinRevisar' ? 'Tiene las respuestas por defecto y nadie la ha revisado' : s.detalle || LEYENDA[s.estado]"
           :class="[
             'w-full text-left flex items-start gap-2 px-2 py-1.5 rounded-md transition-colors',
             actual === s.numero

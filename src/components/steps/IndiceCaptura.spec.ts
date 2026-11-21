@@ -29,4 +29,15 @@ describe('IndiceCaptura (punto 38)', () => {
     expect(w.emitted('ir')).toEqual([[3]]);
     expect(w.find('ol').isVisible()).toBe(false);
   });
+
+  it('«sin revisar»: lo dice en el resumen y en la sección', () => {
+    const conDefectos = estadoIndiceCaptura(['Motivo del examen', 'Heredofamiliares'], [], new Set([1]), {
+      marcarSinRevisar: true,
+    });
+    const w = mount(IndiceCaptura, { props: { indice: conDefectos, actual: null, variante: 'lateral' } });
+    expect(w.text()).toContain('2 de 2 completas · 1 sin revisar');
+    expect(w.find('[data-indice-seccion="2"]').attributes('title')).toBe('Tiene las respuestas por defecto y nadie la ha revisado');
+    expect(w.find('[data-indice-seccion="2"] .fa-eye').exists()).toBe(true);
+  });
 });
+
