@@ -5,7 +5,7 @@ import Step31 from './Step31.vue';
 </script>
 
 <template>
-  <EfSectionStep title="Resumen">
+  <EfSectionStep title="Resumen" icono="fa-file-medical">
     <MicrostepAnchor :legacy-step="31">
       <Step31 variant="compact" />
     </MicrostepAnchor>

@@ -5,7 +5,7 @@ import Step1 from './Step1.vue';
 </script>
 
 <template>
-  <EfSectionStep title="Fecha">
+  <EfSectionStep title="Fecha" icono="fa-calendar-day">
     <MicrostepAnchor :legacy-step="1">
       <Step1 variant="compact" />
     </MicrostepAnchor>

@@ -32,7 +32,7 @@ import Step30 from './Step30.vue';
 </script>
 
 <template>
-  <EfSectionStep title="Exploración física">
+  <EfSectionStep title="Exploración física" icono="fa-stethoscope">
     <EfMicroseccion title="Cabeza y cuello">
       <MicrostepAnchor :legacy-step="4">
         <Step4 variant="compact" />

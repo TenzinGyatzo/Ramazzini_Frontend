@@ -5,7 +5,7 @@ import Step2 from './Step2.vue';
 </script>
 
 <template>
-  <EfSectionStep title="Somatometría">
+  <EfSectionStep title="Somatometría" icono="fa-weight">
     <MicrostepAnchor :legacy-step="2">
       <Step2 variant="compact" />
     </MicrostepAnchor>
