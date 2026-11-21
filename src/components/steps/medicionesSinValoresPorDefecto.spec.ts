@@ -105,12 +105,10 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
         'Se calcula con peso y altura',
         'Se calcula con la cintura',
       ]);
-      expect(ayudasTarjetas(await montar('./exploracionFisicaSteps/Step3.vue'))).toEqual([
-        'Se calcula con el dato',
-        'Se calcula con el dato',
-        'Se calcula con el dato',
-        'Se calcula con el dato',
-      ]);
+      // Signos vitales en el asistente angosto: sin medición, solo el guion (sin ayuda)
+      const signos = await montar('./exploracionFisicaSteps/Step3.vue');
+      expect(ayudasTarjetas(signos)).toEqual([]);
+      expect(signos.findAll('[data-calculado] p.font-bold').map((p) => p.text())).toEqual(['—', '—', '—', '—']);
     });
 
     it('con medición, el campo muestra el valor y no la ayuda', async () => {

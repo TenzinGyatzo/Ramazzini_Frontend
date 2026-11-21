@@ -249,10 +249,10 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
 
 /** Los cinco signos, en el orden de captura (mismo componente que la nota médica). */
 const signos = [
-  { campo: 'tensionArterialSistolica', etiqueta: 'Tensión arterial sistólica', corta: 'T.A. sistólica', unidad: 'mmHg', valor: tensionArterialSistolica, error: mensajeErrorTensionSistolica },
-  { campo: 'tensionArterialDiastolica', etiqueta: 'Tensión arterial diastólica', corta: 'T.A. diastólica', unidad: 'mmHg', valor: tensionArterialDiastolica, error: mensajeErrorTensionDiastolica },
+  { campo: 'tensionArterialSistolica', etiqueta: 'Tensión arterial sistólica', corta: 'Sistólica', unidad: 'mmHg', valor: tensionArterialSistolica, error: mensajeErrorTensionSistolica },
+  { campo: 'tensionArterialDiastolica', etiqueta: 'Tensión arterial diastólica', corta: 'Diastólica', unidad: 'mmHg', valor: tensionArterialDiastolica, error: mensajeErrorTensionDiastolica },
   { campo: 'frecuenciaCardiaca', etiqueta: 'Frecuencia cardiaca', corta: 'Frec. cardiaca', unidad: 'lpm', valor: frecuenciaCardiaca, error: mensajeErrorFrecuenciaCardiaca },
-  { campo: 'frecuenciaRespiratoria', etiqueta: 'Frecuencia respiratoria', corta: 'Frec. respiratoria', unidad: 'rpm', valor: frecuenciaRespiratoria, error: mensajeErrorFrecuenciaRespiratoria },
+  { campo: 'frecuenciaRespiratoria', etiqueta: 'Frecuencia respiratoria', corta: 'Frec. resp.', unidad: 'rpm', valor: frecuenciaRespiratoria, error: mensajeErrorFrecuenciaRespiratoria },
   { campo: 'saturacionOxigeno', etiqueta: 'Saturación de oxígeno', corta: 'Saturación O₂', unidad: '%', valor: saturacionOxigeno, error: mensajeErrorSaturacionOxigeno },
 ];
 
@@ -315,7 +315,8 @@ const categorias = computed(() => [
           v-if="c.categoria"
           :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(c.categoria)]"
         >{{ c.categoria }}</span>
-        <span v-else class="text-xs text-gray-400">Se calcula con el dato</span>
+        <!-- En el asistente angosto basta el guion: la ayuda partía la tarjeta en dos renglones -->
+        <span v-else-if="capturaRapida" class="text-xs text-gray-400">Se calcula con el dato</span>
       </div>
     </div>
   </div>
