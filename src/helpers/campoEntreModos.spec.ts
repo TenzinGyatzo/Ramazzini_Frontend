@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buscarCampo, esControlDeCaptura, recordarCampo } from './campoEntreModos';
+import { buscarCampo, controlDelClic, esControlDeCaptura, recordarCampo } from './campoEntreModos';
 
 // jsdom no calcula cajas: todo elemento conectado cuenta como visible
 beforeEach(() => {
@@ -48,5 +48,16 @@ describe('campo entre modos de captura (punto 39)', () => {
     expect(esControlDeCaptura(document.querySelector('button'))).toBe(false);
     expect(esControlDeCaptura(document.querySelector('select'))).toBe(true);
     expect(esControlDeCaptura(document.querySelector('input'))).toBe(false);
+  });
+
+  it('el clic en la etiqueta de un botón No/Sí cuenta como su radio', () => {
+    pantalla('<label><input type="radio" name="sino-x" value="Si" class="sr-only" /><span>Sí</span></label><p>texto</p>');
+    expect(controlDelClic(document.querySelector('span'))).toBe(document.querySelector('input'));
+    expect(controlDelClic(document.querySelector('p'))).toBeNull();
+  });
+
+  it('recuerda la pregunta (sub-paso) del campo', () => {
+    pantalla('<div data-legacy-step="26"><input id="a" /></div>');
+    expect(recordarCampo(document.getElementById('a')!, 4).legacyStep).toBe(26);
   });
 });

@@ -506,7 +506,7 @@ import IndiceCaptura from '@/components/steps/IndiceCaptura.vue';
 import EncabezadoTrabajadorCaptura from '@/components/steps/EncabezadoTrabajadorCaptura.vue';
 import { useAlturaHastaElFondo } from '@/composables/useAlturaHastaElFondo';
 import { estadoIndiceCaptura, seccionIncompletaVecina, atajoDeSeccion } from '@/helpers/indiceCaptura';
-import { buscarCampo, esControlDeCaptura, recordarCampo } from '@/helpers/campoEntreModos';
+import { acomodarCampo, buscarCampo, campoALaVista, controlDelClic, recordarCampo } from '@/helpers/campoEntreModos';
 import { esComputadora, primerCampoParaEnfocar } from '@/composables/useAutofocoPrimerVacio';
 import { quitarMedicionesVacias } from '@/helpers/medicionesClinicas';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
@@ -2131,13 +2131,16 @@ export default {
     // «Con vista previa» se abre su sección; en los dos modos se enfoca y se acomoda en pantalla.
     let ultimoCampo = null;
     let campoPorRestaurar = null;
-    const alEnfocarDocumento = (e) => {
-      if (!esControlDeCaptura(e.target) || !e.target.closest('[data-form-stepper]')) return;
-      const seccion = capturaRapida.value ? seccionDeElemento(e.target) : stepsStore.currentStep;
-      if (seccion) ultimoCampo = recordarCampo(e.target, seccion);
+    // Con el cursor, el clic (los botones No/Sí no siempre reciben el cursor) o el cambio de valor
+    const EVENTOS_CAMPO = ['focusin', 'pointerdown', 'change'];
+    const alUsarCampo = (e) => {
+      const el = controlDelClic(e.target);
+      if (!el || !el.closest('[data-form-stepper]')) return;
+      const seccion = capturaRapida.value ? seccionDeElemento(el) : stepsStore.currentStep;
+      if (seccion) ultimoCampo = recordarCampo(el, seccion);
     };
-    onMounted(() => document.addEventListener('focusin', alEnfocarDocumento, true));
-    onUnmounted(() => document.removeEventListener('focusin', alEnfocarDocumento, true));
+    onMounted(() => EVENTOS_CAMPO.forEach((ev) => document.addEventListener(ev, alUsarCampo, true)));
+    onUnmounted(() => EVENTOS_CAMPO.forEach((ev) => document.removeEventListener(ev, alUsarCampo, true)));
 
     const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
     const restaurarCampo = async (recordado) => {
@@ -2149,9 +2152,17 @@ export default {
       campoPorRestaurar = null;
       el = buscarCampo(recordado) ?? el;
       if (!el) return;
-      if (esComputadora()) el.focus({ preventScroll: true });
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      const acomodar = () => {
+        if (esComputadora()) el.focus({ preventScroll: true });
+        acomodarCampo(el);
+      };
+      acomodar();
       if (capturaRapida.value) alEnfocarCaptura({ target: el });
+      // Si algo más movió el cursor o la vista al abrir el paso (el asistente lleva su sección
+      // a la pregunta con un desplazamiento suave), se vuelve al campo
+      await esperar(500);
+      if (!el.isConnected || campoPorRestaurar || hayAtencionEnCurso()) return;
+      if ((esComputadora() && document.activeElement !== el) || !campoALaVista(el)) acomodar();
     };
 
     const cambiarModoConservandoCampo = (nuevo) => {
@@ -2163,8 +2174,10 @@ export default {
       cambiarModoCaptura(nuevo);
       if (!recordado) return;
       campoPorRestaurar = recordado;
-      if (nuevo === 'vistaPrevia' && recordado.seccion !== stepsStore.currentStep) {
-        stepsStore.goToStep(recordado.seccion);
+      if (nuevo === 'vistaPrevia') {
+        // La sección se abre apuntando a la pregunta del campo (si no, el asistente lleva el
+        // cursor y la vista a la primera pregunta de la sección)
+        stepsStore.goToSection(recordado.seccion, recordado.legacyStep);
       }
       restaurarCampo(recordado);
     };
