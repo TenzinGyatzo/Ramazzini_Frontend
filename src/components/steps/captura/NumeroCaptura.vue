@@ -1,9 +1,13 @@
 <script setup lang="ts">
 /**
- * Captura rápida (punto 38): campo numérico con la unidad dentro y, si aplica, «Se desconoce»
- * junto a la etiqueta (fuera del recorrido con Tab, para pasar de un número al siguiente).
- * Solo acomoda: el valor, la casilla y el aviso los lleva el paso, igual que en el asistente.
+ * Campo numérico de la nota médica (punto 38), el mismo en los dos modos: unidad dentro del
+ * campo y «Se desconoce» fuera del recorrido con Tab (para pasar de un número al siguiente).
+ * - Captura rápida (ancho): la casilla va junto a la etiqueta.
+ * - Con vista previa (asistente angosto, dos columnas): la casilla va debajo del campo y, si
+ *   se da, se usa la etiqueta corta.
+ * Solo acomoda: el valor, la casilla y el aviso los lleva el paso.
  */
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import { vValorDePartida } from '@/directives/valorDePartida';
 import { parseOptionalNumber } from '@/helpers/notaMedicaCexRanges';
 import {
@@ -16,6 +20,8 @@ import {
 defineProps<{
   id: string;
   etiqueta: string;
+  /** Para el asistente angosto («Frec. cardiaca»). */
+  etiquetaCorta?: string;
   unidad?: string;
   obligatorio?: boolean;
   min?: number;
@@ -30,15 +36,17 @@ defineProps<{
 }>();
 const valor = defineModel<number | null>({ default: null });
 const seDesconoce = defineModel<boolean>('seDesconoce', { default: false });
+
+const ancho = enCapturaRapida();
 </script>
 
 <template>
   <div>
     <div class="flex items-center justify-between gap-2 mb-1">
       <label :for="id" :class="CLASE_ETIQUETA">
-        {{ etiqueta }} <span v-if="obligatorio" class="text-red-500">*</span>
+        {{ ancho ? etiqueta : (etiquetaCorta ?? etiqueta) }} <span v-if="obligatorio" class="text-red-500">*</span>
       </label>
-      <label v-if="conSeDesconoce" :class="CLASE_CASILLA_LATERAL">
+      <label v-if="conSeDesconoce && ancho" :class="CLASE_CASILLA_LATERAL">
         <input v-model="seDesconoce" type="checkbox" class="rounded" tabindex="-1" />
         Se desconoce
       </label>
@@ -62,6 +70,10 @@ const seDesconoce = defineModel<boolean>('seDesconoce', { default: false });
         class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-gray-400"
       >{{ unidad }}</span>
     </div>
+    <label v-if="conSeDesconoce && !ancho" :class="[CLASE_CASILLA_LATERAL, 'mt-1']">
+      <input v-model="seDesconoce" type="checkbox" class="rounded" tabindex="-1" />
+      Se desconoce
+    </label>
     <p v-if="error" :class="CLASE_ERROR">{{ error }}</p>
   </div>
 </template>

@@ -79,3 +79,21 @@ describe('las marcas de los campos se conservan en captura rápida', () => {
     expect(genero.find('[data-campo="derechohabiencia"]').exists()).toBe(true);
   });
 });
+
+describe('signos vitales con vista previa (mismo diseño, acomodo angosto)', () => {
+  it('etiqueta corta, unidad dentro y «Se desconoce» debajo, con las mismas reglas', async () => {
+    setActivePinia(createPinia());
+    const formDataNotaMedica = useFormDataStore().formDataNotaMedica as Record<string, unknown>;
+    const w = mount(Step6, { props: { variant: 'compact' } });
+    await flushPromises();
+    const fc = w.find('[data-campo="frecuenciaCardiaca"]');
+    expect(fc.find('label').text()).toContain('Frec. cardiaca');
+    expect(fc.text()).toContain('lpm');
+    // La casilla va después del campo
+    const html = fc.html();
+    expect(html.indexOf('type="number"')).toBeLessThan(html.indexOf('type="checkbox"'));
+    await fc.find('input[type="checkbox"]').setValue(true);
+    await nextTick();
+    expect(formDataNotaMedica.frecuenciaCardiaca).toBe(NOTA_MEDICA_CEX_SENTINEL.frecuenciaCardiaca);
+  });
+});

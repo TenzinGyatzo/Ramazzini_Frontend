@@ -1,5 +1,4 @@
 <script setup>
-import { vValorDePartida } from '@/directives/valorDePartida';
 import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, computed, toRefs, nextTick } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -10,19 +9,13 @@ import {
   NOTA_MEDICA_CEX_MESSAGES,
   isBlankOrZero,
   isExplicitCexUnknown,
-  parseOptionalNumber,
   mensajeErrorCexField,
 } from '@/helpers/notaMedicaCexRanges';
 
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
-import {
-  CLASE_ETIQUETA,
-  CLASE_AYUDA,
-  CLASE_ERROR,
-  CLASE_INPUT,
-  CLASE_CASILLA_LATERAL,
-} from '@/components/steps/captura/estiloCaptura';
+import { CLASE_AYUDA } from '@/components/steps/captura/estiloCaptura';
+import NumeroCaptura from '@/components/steps/captura/NumeroCaptura.vue';
 
 // Al abrir el paso, el cursor va al primer signo vital vacío (los marcados «Se desconoce»
 // quedan desactivados y se saltan)
@@ -305,230 +298,54 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
 
 const ranges = NOTA_MEDICA_CEX_RANGES;
 
-// Captura rápida (punto 38): los mismos seis campos (mismos valores, casillas y avisos),
-// en pares a lo ancho y con la unidad dentro del campo
+// Punto 38: los seis campos con el mismo diseño en los dos modos (unidad dentro del campo).
+// En captura rápida van en pares a lo ancho; en el asistente, en dos columnas angostas con
+// la etiqueta corta y «Se desconoce» debajo.
 const capturaRapida = enCapturaRapida();
-const signosCaptura = [
-  { campo: 'tensionArterialSistolica', etiqueta: 'Presión sistólica', unidad: 'mmHg', step: '1', placeholder: '50-300', valor: tensionArterialSistolica, seDesconoce: seDesconoceSistolica, error: mensajeErrorTensionSistolica },
-  { campo: 'tensionArterialDiastolica', etiqueta: 'Presión diastólica', unidad: 'mmHg', step: '1', placeholder: '20-200', valor: tensionArterialDiastolica, seDesconoce: seDesconoceDiastolica, error: mensajeErrorTensionDiastolica },
-  { campo: 'frecuenciaCardiaca', etiqueta: 'Frecuencia cardiaca', unidad: 'lpm', step: '1', placeholder: '40-220', valor: frecuenciaCardiaca, seDesconoce: seDesconoceFrecuenciaCardiaca, error: mensajeErrorFrecuenciaCardiaca },
-  { campo: 'frecuenciaRespiratoria', etiqueta: 'Frecuencia respiratoria', unidad: 'rpm', step: '1', placeholder: '10-99', valor: frecuenciaRespiratoria, seDesconoce: seDesconoceFrecuenciaRespiratoria, error: mensajeErrorFrecuenciaRespiratoria },
-  { campo: 'temperatura', etiqueta: 'Temperatura', unidad: '°C', step: '0.1', placeholder: '30-44', valor: temperatura, seDesconoce: seDesconoceTemperatura, error: mensajeErrorTempertura },
-  { campo: 'saturacionOxigeno', etiqueta: 'Saturación de oxígeno', unidad: '%', step: '1', placeholder: '1-100', valor: saturacionOxigeno, seDesconoce: seDesconoceSaturacionOxigeno, error: mensajeErrorSaturacionOxigeno },
+const signos = [
+  { campo: 'tensionArterialSistolica', etiqueta: 'Presión sistólica', corta: 'Sistólica', unidad: 'mmHg', step: '1', placeholder: '50-300', valor: tensionArterialSistolica, seDesconoce: seDesconoceSistolica, error: mensajeErrorTensionSistolica },
+  { campo: 'tensionArterialDiastolica', etiqueta: 'Presión diastólica', corta: 'Diastólica', unidad: 'mmHg', step: '1', placeholder: '20-200', valor: tensionArterialDiastolica, seDesconoce: seDesconoceDiastolica, error: mensajeErrorTensionDiastolica },
+  { campo: 'frecuenciaCardiaca', etiqueta: 'Frecuencia cardiaca', corta: 'Frec. cardiaca', unidad: 'lpm', step: '1', placeholder: '40-220', valor: frecuenciaCardiaca, seDesconoce: seDesconoceFrecuenciaCardiaca, error: mensajeErrorFrecuenciaCardiaca },
+  { campo: 'frecuenciaRespiratoria', etiqueta: 'Frecuencia respiratoria', corta: 'Frec. respiratoria', unidad: 'rpm', step: '1', placeholder: '10-99', valor: frecuenciaRespiratoria, seDesconoce: seDesconoceFrecuenciaRespiratoria, error: mensajeErrorFrecuenciaRespiratoria },
+  { campo: 'temperatura', etiqueta: 'Temperatura', corta: 'Temperatura', unidad: '°C', step: '0.1', placeholder: '30-44', valor: temperatura, seDesconoce: seDesconoceTemperatura, error: mensajeErrorTempertura },
+  { campo: 'saturacionOxigeno', etiqueta: 'Saturación de oxígeno', corta: 'Saturación O₂', unidad: '%', step: '1', placeholder: '1-100', valor: saturacionOxigeno, seDesconoce: seDesconoceSaturacionOxigeno, error: mensajeErrorSaturacionOxigeno },
 ];
 </script>
 
 <template>
-  <div v-if="capturaRapida" class="nota-medica-dark-inputs">
-    <p :class="[CLASE_AYUDA, 'mb-3']">Marque «Se desconoce» si no se registró el dato.</p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-      <div v-for="s in signosCaptura" :key="s.campo" :data-campo="s.campo">
-        <div class="flex items-center justify-between gap-2 mb-1">
-          <label :for="s.campo" :class="CLASE_ETIQUETA">{{ s.etiqueta }} <span class="text-red-500">*</span></label>
-          <label :class="CLASE_CASILLA_LATERAL">
-            <input
-              type="checkbox"
-              class="rounded"
-              tabindex="-1"
-              :checked="s.seDesconoce.value"
-              @change="s.seDesconoce.value = $event.target.checked"
-            >
-            Se desconoce
-          </label>
-        </div>
-        <div class="relative">
-          <input
-            type="number"
-            :id="s.campo"
-            :class="[CLASE_INPUT, 'pr-14']"
-            :value="s.valor.value ?? ''" v-valor-de-partida="partida(s.campo)"
-            @input="s.valor.value = parseOptionalNumber($event.target.value)"
-            :min="ranges[s.campo].min"
-            :max="ranges[s.campo].max"
-            :step="s.step"
-            :placeholder="s.placeholder"
-            :disabled="s.seDesconoce.value"
-          >
-          <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">{{ s.unidad }}</span>
-        </div>
-        <p v-if="s.error.value" :class="CLASE_ERROR">{{ s.error.value }}</p>
-      </div>
-    </div>
-  </div>
-
-  <div v-else class="nota-medica-dark-inputs">
+  <div class="nota-medica-dark-inputs">
     <h2
       v-if="variant !== 'compact'"
       class="text-2xl font-bold text-gray-900 mb-4 uppercase"
     >
       Signos Vitales
     </h2>
-    <p
-      v-if="variant !== 'compact'"
-      class="text-sm text-gray-600 mb-4"
+    <p :class="[CLASE_AYUDA, 'mb-3']">Marque «Se desconoce» si no se registró el dato.</p>
+    <div
+      :class="[
+        'grid',
+        capturaRapida ? 'grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4' : 'grid-cols-2 gap-x-3 gap-y-3',
+      ]"
     >
-      Marque "Se desconoce" si no se registró el dato.
-    </p>
-    <p
-      v-else
-      class="text-xs text-gray-600 mb-2"
-    >
-      Marque "Se desconoce" si no se registró el dato.
-    </p>
-
-    <h2 :class="variant === 'compact' ? 'text-sm font-semibold text-gray-800 mb-2' : ''">Tensión Arterial</h2>
-    <div class="flex gap-4 mb-4 flex-wrap">
-      <div data-campo="tensionArterialSistolica" class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="tensionArterialSistolica">Sistólica (mmHg) <span class="text-red-500">*</span></label>
-        <div class="mt-1">
-          <input
-            type="number"
-            id="tensionArterialSistolica"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="tensionArterialSistolica ?? ''" v-valor-de-partida="partida('tensionArterialSistolica')"
-            @input="tensionArterialSistolica = parseOptionalNumber($event.target.value)"
-            :min="ranges.tensionArterialSistolica.min"
-            :max="ranges.tensionArterialSistolica.max"
-            step="1"
-            placeholder="50-300"
-            :disabled="seDesconoceSistolica"
-          >
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconoceSistolica" class="rounded">
-            Se desconoce
-          </label>
-        </div>
-        <p v-if="mensajeErrorTensionSistolica" class="text-red-500 text-sm mt-1">
-          {{ mensajeErrorTensionSistolica }}
-        </p>
-      </div>
-      <div data-campo="tensionArterialDiastolica" class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="tensionArterialDiastolica">Diastólica (mmHg)<span class="text-red-500">*</span></label>
-        <div class="mt-1">
-          <input
-            type="number"
-            id="tensionArterialDiastolica"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="tensionArterialDiastolica ?? ''" v-valor-de-partida="partida('tensionArterialDiastolica')"
-            @input="tensionArterialDiastolica = parseOptionalNumber($event.target.value)"
-            :min="ranges.tensionArterialDiastolica.min"
-            :max="ranges.tensionArterialDiastolica.max"
-            step="1"
-            placeholder="20-200"
-            :disabled="seDesconoceDiastolica"
-          >
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconoceDiastolica" class="rounded">
-            Se desconoce
-          </label>
-        </div>
-        <p v-if="mensajeErrorTensionDiastolica" class="text-red-500 text-sm mt-1">
-          {{ mensajeErrorTensionDiastolica }}
-        </p>
-      </div>
+      <NumeroCaptura
+        v-for="s in signos"
+        :id="s.campo"
+        :key="s.campo"
+        v-model="s.valor.value"
+        v-model:se-desconoce="s.seDesconoce.value"
+        :data-campo="s.campo"
+        :etiqueta="s.etiqueta"
+        :etiqueta-corta="s.corta"
+        :unidad="s.unidad"
+        obligatorio
+        con-se-desconoce
+        :step="s.step"
+        :placeholder="s.placeholder"
+        :min="ranges[s.campo].min"
+        :max="ranges[s.campo].max"
+        :error="s.error.value"
+        :partida="partida(s.campo)"
+      />
     </div>
-
-    <div class="flex gap-4 mb-4 flex-wrap">
-      <div data-campo="frecuenciaCardiaca" class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="frecuenciaCardiaca">F. Cardíaca (lpm) <span class="text-red-500">*</span></label>
-        <div class="mt-1">
-          <input
-            type="number"
-            id="frecuenciaCardiaca"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="frecuenciaCardiaca ?? ''" v-valor-de-partida="partida('frecuenciaCardiaca')"
-            @input="frecuenciaCardiaca = parseOptionalNumber($event.target.value)"
-            :min="ranges.frecuenciaCardiaca.min"
-            :max="ranges.frecuenciaCardiaca.max"
-            step="1"
-            placeholder="40-220"
-            :disabled="seDesconoceFrecuenciaCardiaca"
-          >
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconoceFrecuenciaCardiaca" class="rounded">
-            Se desconoce
-          </label>
-        </div>
-        <p v-if="mensajeErrorFrecuenciaCardiaca" class="text-red-500 text-sm mt-1">
-          {{ mensajeErrorFrecuenciaCardiaca }}
-        </p>
-      </div>
-      <div data-campo="frecuenciaRespiratoria" class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="frecuenciaRespiratoria">F. Resp. (rpm) <span class="text-red-500">*</span></label>
-        <div class="mt-1">
-          <input
-            type="number"
-            id="frecuenciaRespiratoria"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="frecuenciaRespiratoria ?? ''" v-valor-de-partida="partida('frecuenciaRespiratoria')"
-            @input="frecuenciaRespiratoria = parseOptionalNumber($event.target.value)"
-            :min="ranges.frecuenciaRespiratoria.min"
-            :max="ranges.frecuenciaRespiratoria.max"
-            step="1"
-            placeholder="10-99"
-            :disabled="seDesconoceFrecuenciaRespiratoria"
-          >
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconoceFrecuenciaRespiratoria" class="rounded">
-            Se desconoce
-          </label>
-        </div>
-        <p v-if="mensajeErrorFrecuenciaRespiratoria" class="text-red-500 text-sm mt-1">
-          {{ mensajeErrorFrecuenciaRespiratoria }}
-        </p>
-      </div>
-    </div>
-
-    <div class="flex gap-4 mb-4 flex-wrap">
-      <div data-campo="temperatura" class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="temperatura">Temperatura (°C) <span class="text-red-500">*</span></label>
-        <div class="mt-1">
-          <input
-            type="number"
-            id="temperatura"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="temperatura ?? ''" v-valor-de-partida="partida('temperatura')"
-            @input="temperatura = parseOptionalNumber($event.target.value)"
-            step="0.1"
-            :min="ranges.temperatura.min"
-            :max="ranges.temperatura.max"
-            placeholder="30-44"
-            :disabled="seDesconoceTemperatura"
-          >
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconoceTemperatura" class="rounded">
-            Se desconoce
-          </label>
-        </div>
-        <p v-if="mensajeErrorTempertura" class="text-red-500 text-sm mt-1">
-          {{ mensajeErrorTempertura }}
-        </p>
-      </div>
-      <div data-campo="saturacionOxigeno" class="w-full sm:w-[calc(50%-0.5rem)]">
-        <label for="saturacionOxigeno">Sat. Oxígeno (%) <span class="text-red-500">*</span></label>
-        <div class="mt-1">
-          <input
-            type="number"
-            id="saturacionOxigeno"
-            class="w-full p-1.5 text-center border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            :value="saturacionOxigeno ?? ''" v-valor-de-partida="partida('saturacionOxigeno')"
-            @input="saturacionOxigeno = parseOptionalNumber($event.target.value)"
-            :min="ranges.saturacionOxigeno.min"
-            :max="ranges.saturacionOxigeno.max"
-            step="1"
-            placeholder="1-100"
-            :disabled="seDesconoceSaturacionOxigeno"
-          >
-          <label class="flex items-center gap-1.5 text-sm mt-1">
-            <input type="checkbox" v-model="seDesconoceSaturacionOxigeno" class="rounded">
-            Se desconoce
-          </label>
-        </div>
-        <p v-if="mensajeErrorSaturacionOxigeno" class="text-red-500 text-sm mt-1">
-          {{ mensajeErrorSaturacionOxigeno }}
-        </p>
-      </div>
-    </div>
-
   </div>
 </template>
