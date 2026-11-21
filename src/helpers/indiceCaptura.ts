@@ -48,8 +48,8 @@ function detalleFaltantes(faltan: ProblemaEnSeccion[]): string {
  * @param nombres nombres de las secciones, en orden
  * @param problemas lista ya ordenada (como al guardar)
  * @param tocadas secciones donde el usuario ya entró a algún campo
- * @param opciones.marcarSinRevisar documento con respuestas preseleccionadas (historia clínica
- *   nueva): las secciones sin pendientes que nadie ha tocado se marcan «sin revisar»
+ * @param opciones.marcarSinRevisar documento nuevo con respuestas preseleccionadas o secciones
+ *   opcionales (historia clínica y nota médica): las secciones sin pendientes que nadie ha tocado se marcan «sin revisar»
  */
 export function estadoIndiceCaptura(
   nombres: string[],

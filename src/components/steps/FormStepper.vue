@@ -2016,11 +2016,13 @@ export default {
         stepsStore.steps.map((s) => s.name ?? ''),
         problemasIndice.value,
         seccionesTocadas.value,
-        // Punto 39: en una historia clínica nueva, lo que nadie ha tocado está «sin revisar»
-        // (son las respuestas preseleccionadas); al editar, las respuestas son las guardadas
+        // Punto 39: en una historia clínica o nota médica nueva, lo que nadie ha tocado está
+        // «sin revisar» (respuestas preseleccionadas o secciones opcionales que nadie abrió);
+        // al editar, las respuestas son las guardadas
         {
           marcarSinRevisar:
-            documentos.currentTypeOfDocument === 'historiaClinica' && !documentos.currentDocument,
+            ['historiaClinica', 'notaMedica'].includes(documentos.currentTypeOfDocument) &&
+            !documentos.currentDocument,
         },
       ),
     );
