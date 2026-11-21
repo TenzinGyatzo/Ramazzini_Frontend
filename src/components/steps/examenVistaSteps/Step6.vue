@@ -63,13 +63,15 @@ function interpretarIshihara() {
 <template>
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Visión cromática</h1>
-    <!-- Campo y resultado en un renglón, cada uno con su etiqueta y a la misma altura; en el
-         asistente angosto el campo va a su medida (dos dígitos) y el resultado ocupa el resto -->
+    <!-- Campo y resultado, cada uno con su etiqueta y a la misma altura. En el asistente angosto
+         el campo va a su medida (dos dígitos) y el resultado se pone al lado si cabe; si no
+         (ventana o menú lateral que angostan el asistente), baja a su propio renglón -->
     <div
       data-campo="interpretacionIshihara"
-      :class="['grid gap-3 items-start', capturaRapida ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-[8rem_minmax(0,1fr)]']"
+      :class="capturaRapida ? 'grid gap-3 items-start grid-cols-1 sm:grid-cols-2' : 'flex flex-wrap gap-3 items-start'"
     >
       <NumeroCaptura
+        :class="capturaRapida ? '' : 'w-32 shrink-0'"
         id="placasCorrectas"
         v-model="placasCorrectas"
         etiqueta="Placas correctas (prueba de Ishihara)"
@@ -80,7 +82,7 @@ function interpretarIshihara() {
         placeholder="14"
         :error="mensajeErrorPlacas"
       />
-      <div class="min-w-0">
+      <div :class="capturaRapida ? 'min-w-0' : 'flex-1 min-w-[11.5rem]'">
         <p :class="[CLASE_ETIQUETA, 'mb-1']">Resultado</p>
         <div
           data-calculado
