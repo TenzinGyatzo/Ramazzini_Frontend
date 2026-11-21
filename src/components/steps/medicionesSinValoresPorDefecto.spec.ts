@@ -37,6 +37,19 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
       expect(wrapper.find('[data-ultima-exploracion]').exists()).toBe(false);
     });
 
+    it('riesgo por cintura con los tres sexos (Intersexual con los cortes de hombre)', async () => {
+      const riesgo = async (sexo: string, cintura: string) => {
+        useTrabajadoresStore().currentTrabajador = { _id: 't1', sexo, nombre: 'X' } as never;
+        const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
+        await wrapper.find('#circunferenciaCintura').setValue(cintura);
+        await flushPromises();
+        return fd.formDataExploracionFisica.categoriaCircunferenciaCintura;
+      };
+      expect(await riesgo('Femenino', '85')).toBe('Riesgo Aumentado');
+      expect(await riesgo('Masculino', '85')).toBe('Bajo Riesgo');
+      expect(await riesgo('Intersexual', '98')).toBe('Riesgo Aumentado');
+    });
+
     it('copia de la última exploración física solo al pulsar el botón', async () => {
       useDocumentosStore().documentsByYear = { 2026: { exploracionesFisicas: [ultimaExploracion] } } as never;
       const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');

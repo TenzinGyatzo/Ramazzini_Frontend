@@ -129,7 +129,7 @@ function setCategoriaCircunferenciaCintura() {
   let categoria = '';
   if (!esMedicion(circunferencia)) {
     categoria = '';
-  } else if (trabajadores.currentTrabajador.sexo === 'Femenino') {
+  } else if (trabajadores.currentTrabajador?.sexo === 'Femenino') {
     if (circunferencia < 80) {
       categoria = 'Bajo Riesgo';
     } else if (circunferencia >= 80 && circunferencia <= 89) {
@@ -137,7 +137,9 @@ function setCategoriaCircunferenciaCintura() {
     } else {
       categoria = 'Alto Riesgo';
     }
-  } else if (trabajadores.currentTrabajador.sexo === 'Masculino') {
+  } else {
+    // Masculino, Intersexual o sin sexo registrado: cortes de hombre, como la nota médica
+    // (antes con Intersexual no se calculaba el riesgo)
     if (circunferencia < 94) {
       categoria = 'Bajo Riesgo';
     } else if (circunferencia >= 94 && circunferencia <= 103) {
