@@ -63,7 +63,7 @@ function reestablecerRecomendacionesDefault() {
     />
     <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
       <button type="button" class="text-emerald-700 hover:underline" @click="reestablecerRecomendacionesDefault">
-        Restablecer las de siempre
+        Usar las sugeridas
       </button>
       <button type="button" class="text-gray-500 hover:text-red-600 hover:underline" @click="limpiarRecomendaciones">
         Quitar todas

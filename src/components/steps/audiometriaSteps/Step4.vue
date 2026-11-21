@@ -129,26 +129,50 @@ const alEscribirAnios = (texto) => {
         </div>
       </div>
 
-      <div>
-        <p :class="[CLASE_ETIQUETA, 'mb-1']">Síntomas</p>
-        <OpcionesMultiples
-          name="sintomasAudiologicos"
-          etiqueta="Síntomas"
-          :opciones="OPCIONES_SINTOMAS"
-          :seleccion="respuestas.sintomas"
-          @alternar="(v) => (respuestas.sintomas = alternar(respuestas.sintomas, v, 'asintomatico'))"
-        />
+      <!-- Síntomas: «No» es «Audiológicamente asintomático»; con «Sí», cuáles -->
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <p :class="CLASE_ETIQUETA">Síntomas auditivos</p>
+          <OpcionesSegmentadas
+            v-model="respuestas.conSintomas"
+            name="conSintomasAuditivos"
+            etiqueta="Síntomas auditivos"
+            compacto
+            :opciones="OPCIONES_NO_SI"
+          />
+        </div>
+        <div v-if="respuestas.conSintomas === 'Si'" class="pl-3 border-l-2 border-gray-200">
+          <OpcionesMultiples
+            name="sintomasAudiologicos"
+            etiqueta="Síntomas"
+            :opciones="OPCIONES_SINTOMAS"
+            :seleccion="respuestas.sintomas"
+            @alternar="(v) => (respuestas.sintomas = alternar(respuestas.sintomas, v))"
+          />
+        </div>
       </div>
 
-      <div>
-        <p :class="[CLASE_ETIQUETA, 'mb-1']">Otoscopia</p>
-        <OpcionesMultiples
-          name="otoscopia"
-          etiqueta="Otoscopia"
-          :opciones="OPCIONES_OTOSCOPIA"
-          :seleccion="respuestas.otoscopia"
-          @alternar="(v) => (respuestas.otoscopia = alternar(respuestas.otoscopia, v, 'normal'))"
-        />
+      <!-- Otoscopia: primero si se hizo; con «Sí», lo que se encontró -->
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <p :class="CLASE_ETIQUETA">¿Se realizó otoscopia?</p>
+          <OpcionesSegmentadas
+            v-model="respuestas.otoscopiaRealizada"
+            name="otoscopiaRealizada"
+            etiqueta="¿Se realizó otoscopia?"
+            compacto
+            :opciones="OPCIONES_NO_SI"
+          />
+        </div>
+        <div v-if="respuestas.otoscopiaRealizada === 'Si'" class="pl-3 border-l-2 border-gray-200">
+          <OpcionesMultiples
+            name="otoscopia"
+            etiqueta="Hallazgos de la otoscopia"
+            :opciones="OPCIONES_OTOSCOPIA"
+            :seleccion="respuestas.otoscopia"
+            @alternar="(v) => (respuestas.otoscopia = alternar(respuestas.otoscopia, v, 'normal'))"
+          />
+        </div>
       </div>
 
       <div>

@@ -10,19 +10,19 @@ describe('observaciones de la audiometría (punto 44)', () => {
 
   it('las plantillas de antes se arman con las respuestas', () => {
     // «Sin exposición; otoscopia normal»
-    expect(redactarObservacionesAudiometria(r({ exposicion: 'No', sintomas: ['asintomatico'], otoscopia: ['normal'] }))).toBe(
+    expect(redactarObservacionesAudiometria(r({ exposicion: 'No', conSintomas: 'No', otoscopiaRealizada: 'Si', otoscopia: ['normal'] }))).toBe(
       'Niega antecedente de exposición a ruido de tipo industrial. Audiológicamente asintomático. Conductos auditivos permeables, membranas timpánicas íntegras.',
     );
     // «Exposición con EPP irregular»
     expect(
       redactarObservacionesAudiometria(
-        r({ exposicion: 'Si', anios: 5, proteccion: 'intermitente', sintomas: ['asintomatico'], otoscopia: ['normal'] }),
+        r({ exposicion: 'Si', anios: 5, proteccion: 'intermitente', conSintomas: 'No', otoscopiaRealizada: 'Si', otoscopia: ['normal'] }),
       ),
     ).toBe(
       'Refiere antecedente de exposición a ruido de tipo industrial durante 5 años, con uso intermitente de EPP. Audiológicamente asintomático. Conductos auditivos permeables, membranas timpánicas íntegras.',
     );
     // «Exposición con cerumen impactado»
-    expect(redactarObservacionesAudiometria(r({ exposicion: 'Si', anios: 1, otoscopia: ['cerumen'] }))).toBe(
+    expect(redactarObservacionesAudiometria(r({ exposicion: 'Si', anios: 1, otoscopiaRealizada: 'Si', otoscopia: ['cerumen'] }))).toBe(
       'Refiere antecedente de exposición a ruido de tipo industrial durante 1 año. Conductos auditivos con cerumen impactado, membranas timpánicas no visibles.',
     );
   });
@@ -30,16 +30,21 @@ describe('observaciones de la audiometría (punto 44)', () => {
   it('antecedentes y varios síntomas', () => {
     expect(
       redactarObservacionesAudiometria(
-        r({ antecedentes: ['otitisMedia', 'traumaOD', 'traumaOI'], sintomas: ['hipoacusia', 'acufenos'], otoscopia: ['cicatrices'] }),
+        r({ antecedentes: ['otitisMedia', 'traumaOD', 'traumaOI'], conSintomas: 'Si', sintomas: ['hipoacusia', 'acufenos'], otoscopiaRealizada: 'Si', otoscopia: ['cicatrices'] }),
       ),
     ).toBe(
       'Refiere antecedente de otitis media previa, trauma acústico en oído derecho y trauma acústico en oído izquierdo. Refiere hipoacusia. Refiere acúfenos/tinnitus. Conductos auditivos permeables, membranas timpánicas con cambios cicatriciales.',
     );
   });
 
-  it('«Asintomático» y «Normal» excluyen a las demás', () => {
-    expect(alternar(['hipoacusia', 'otalgia'], 'asintomatico', 'asintomatico')).toEqual(['asintomatico']);
-    expect(alternar(['asintomatico'], 'hipoacusia', 'asintomatico')).toEqual(['hipoacusia']);
+  it('síntomas y otoscopia con «No»: asintomático y nada de otoscopia; lo marcado con «Sí» no cuenta', () => {
+    expect(
+      redactarObservacionesAudiometria(r({ conSintomas: 'No', sintomas: ['otalgia'], otoscopiaRealizada: 'No', otoscopia: ['cerumen'] })),
+    ).toBe('Audiológicamente asintomático.');
+    expect(redactarObservacionesAudiometria(r({ conSintomas: 'Si', otoscopiaRealizada: 'Si' }))).toBe('');
+  });
+
+  it('«Normal» excluye a las demás en la otoscopia', () => {
     expect(alternar(['normal'], 'cerumen', 'normal')).toEqual(['cerumen']);
     expect(alternar(['cerumen'], 'cerumen', 'normal')).toEqual([]);
   });
