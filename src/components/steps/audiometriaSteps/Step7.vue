@@ -1,76 +1,66 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
-import { useDocumentosStore } from '@/stores/documentos';
+import { RECOMENDACIONES_POR_DEFECTO } from '@/helpers/audiometriaGuardado';
 
-const { formDataAudiometria } = useFormDataStore();
-const documentos = useDocumentosStore();
+defineProps({ variant: { type: String, default: '' } });
 
-const recomendacionesDefault = [
-  'Vigilancia audiométrica periódica',
-  'Control en Programa de Conservación de la Audición',
-  'Uso de equipo adecuado de protección auditiva'
-];
+const formDataStore = useFormDataStore();
+// Por el store (al editar, el documento puede llegar después del primer dibujo)
+const df = () => formDataStore.formDataAudiometria;
 
-const recomendacionesAudiometria = ref([...recomendacionesDefault]);
+// Punto 44: el paso no escribe al abrirse ni al cerrarse. Sin recomendaciones en el formulario
+// muestra las de siempre, que escribe audiometriaGuardado al revisar la sección; lo que el
+// usuario cambia se escribe en el momento (la lista y el formulario son el mismo arreglo).
+const recomendacionesAudiometria = ref(
+  Array.isArray(df().recomendacionesAudiometria) ? df().recomendacionesAudiometria : [...RECOMENDACIONES_POR_DEFECTO],
+);
+watch(
+  () => df().recomendacionesAudiometria,
+  (lista) => {
+    if (Array.isArray(lista) && lista !== recomendacionesAudiometria.value) recomendacionesAudiometria.value = lista;
+  },
+);
+const escribir = () => {
+  df().recomendacionesAudiometria = recomendacionesAudiometria.value;
+};
 
-onMounted(() => {
-  if (documentos.currentDocument && documentos.currentDocument.recomendacionesAudiometria) {
-    recomendacionesAudiometria.value = Array.isArray(documentos.currentDocument.recomendacionesAudiometria)
-      ? documentos.currentDocument.recomendacionesAudiometria
-      : [documentos.currentDocument.recomendacionesAudiometria];
-  } else if (formDataAudiometria.recomendacionesAudiometria && formDataAudiometria.recomendacionesAudiometria.length > 0) {
-    recomendacionesAudiometria.value = Array.isArray(formDataAudiometria.recomendacionesAudiometria)
-      ? formDataAudiometria.recomendacionesAudiometria
-      : [formDataAudiometria.recomendacionesAudiometria];
-  } else {
-    // Si no hay datos guardados, establecer las recomendaciones por defecto
-    formDataAudiometria.recomendacionesAudiometria = [...recomendacionesDefault];
-  }
-});
+const lista = ref(null);
 
-onUnmounted(() => {
-  if (!formDataAudiometria.recomendacionesAudiometria || recomendacionesAudiometria.value.length === 0) {
-    formDataAudiometria.recomendacionesAudiometria = [];
-  }
-});
-
-watch(recomendacionesAudiometria, (newValue) => {
-  formDataAudiometria.recomendacionesAudiometria = newValue;
-}, { deep: true });
-
-// Funciones para agregar o eliminar entradas
-function addRecomendacion() {
+async function addRecomendacion() {
   recomendacionesAudiometria.value.push('');
-  // Esperar a que el DOM se actualice y luego establecer el focus
-  setTimeout(() => {
-    const inputs = document.querySelectorAll('input');
-    const lastInput = inputs[inputs.length - 1];
-    lastInput.focus();
-  }, 0);
+  escribir();
+  await nextTick();
+  // El renglón nuevo de esta lista (en la captura rápida hay más campos en la página)
+  const campos = lista.value?.querySelectorAll('input');
+  campos?.[campos.length - 1]?.focus();
 }
 
 function removeRecomendacion(index) {
   recomendacionesAudiometria.value.splice(index, 1);
+  escribir();
 }
 
 function limpiarRecomendaciones() {
   recomendacionesAudiometria.value = [];
+  escribir();
 }
 
 function reestablecerRecomendacionesDefault() {
-  recomendacionesAudiometria.value = [...recomendacionesDefault];
+  recomendacionesAudiometria.value = [...RECOMENDACIONES_POR_DEFECTO];
+  escribir();
 }
 </script>
 
 <template>
   <div>
-    <h2 class="font-bold mb-4 text-gray-800 leading-5">Recomendaciones:</h2>
-    <div class="space-y-2">
+    <h2 v-if="variant !== 'compact'" class="font-bold mb-4 text-gray-800 leading-5">Recomendaciones:</h2>
+    <div ref="lista" class="space-y-2">
       <div v-for="(item, index) in recomendacionesAudiometria" :key="index" class="flex gap-2 items-center">
         <input
           class="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-100 bg-white dark:bg-slate-700 placeholder-gray-400 dark:placeholder-slate-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           v-model="recomendacionesAudiometria[index]"
+          @input="escribir"
           :placeholder="`Recomendación #${index + 1}`"
         />
         <button

@@ -1,5 +1,7 @@
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
+
+defineProps({ variant: { type: String, default: '' } });
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import DocumentosAPI from '@/api/DocumentosAPI';
@@ -350,7 +352,7 @@ const insertarDiagnostico = (texto) => {
 
 
 <template>
-    <h1 class="font-bold mb-4 text-gray-800 leading-5">Diagnóstico Audiométrico</h1>
+    <h1 v-if="variant !== 'compact'" class="font-bold mb-4 text-gray-800 leading-5">Diagnóstico Audiométrico</h1>
     
     <div data-campo="diagnosticoAudiometria" class="mb-4">
         <h2 class="text-lg font-semibold mb-2 text-gray-800">Diagnóstico:</h2>

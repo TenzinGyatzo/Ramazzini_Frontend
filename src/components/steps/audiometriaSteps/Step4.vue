@@ -1,5 +1,7 @@
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
+
+defineProps({ variant: { type: String, default: '' } });
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
@@ -297,7 +299,7 @@ const insertarDesdeConstructor = () => {
 </script>
 
 <template>
-  <h1 class="font-bold mb-4 text-gray-800 leading-5">Audiometría</h1>
+  <h1 v-if="variant !== 'compact'" class="font-bold mb-4 text-gray-800 leading-5">Audiometría</h1>
 
   <div class="mb-4">
     <h2 class="text-lg font-semibold mb-2 text-gray-800">Observaciones</h2>

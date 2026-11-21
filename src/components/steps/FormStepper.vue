@@ -476,6 +476,14 @@ import { pasoHistoriaClinicaEnAsistente } from '@/helpers/historiaClinicaSection
 import { buildHistoriaClinicaSectionSteps } from '@/helpers/buildHistoriaClinicaSectionSteps';
 import { isEfSectionsV2Enabled } from '@/composables/useEfSectionsV2';
 import { isEvSectionsV2Enabled } from '@/composables/useEvSectionsV2';
+import { isAuSectionsV2Enabled } from '@/composables/useAuSectionsV2';
+import { buildAudiometriaSectionSteps } from '@/helpers/buildAudiometriaSectionSteps';
+import { pasoAudiometriaEnAsistente } from '@/helpers/audiometriaSections';
+import {
+  completarRespuestasPorDefecto as completarAudiometriaPorDefecto,
+  prepararAudiometriaParaGuardar,
+  problemasUmbralesAudiometria,
+} from '@/helpers/audiometriaGuardado';
 import { buildExamenVistaSectionSteps } from '@/helpers/buildExamenVistaSectionSteps';
 import { pasoExamenVistaEnAsistente } from '@/helpers/examenVistaSections';
 import {
@@ -891,7 +899,10 @@ export default {
           ]);
         }
       } else if (documentos.currentTypeOfDocument === 'audiometria') {
-        stepsStore.setSteps([
+        // Punto 44: 5 secciones (con ?auLegacy=1, los 7 pasos de antes)
+        if (isAuSectionsV2Enabled(route.query)) {
+          stepsStore.setSteps(buildAudiometriaSectionSteps());
+        } else stepsStore.setSteps([
           { component: Step1Audiometria, name: 'Fecha' },
           { component: Step2Audiometria, name: 'Oído derecho' },
           { component: Step3Audiometria, name: 'Oído izquierdo' },
@@ -1652,7 +1663,7 @@ export default {
         if (capturaRapida.value) return;
         // Historia clínica y exploración física también en el asistente clásico (pasos sueltos)
         if (
-          ['historiaClinica', 'exploracionFisica', 'examenVista'].includes(documentos.currentTypeOfDocument) ||
+          ['historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria'].includes(documentos.currentTypeOfDocument) ||
           capturaRapidaDisponible.value
         ) {
           seccionesTocadas.value.add(stepsStore.currentStep);
@@ -1743,6 +1754,31 @@ export default {
     watch(
       () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
       completarExamenVista,
+    );
+
+    // Punto 44: la audiometría, igual (método y fecha, recomendaciones al revisar su sección; los
+    // resultados de los umbrales y la interpretación generada, siempre)
+    const paisProveedor = () => proveedorSaludStore.proveedorSalud?.pais;
+    const completarAudiometria = () => {
+      if (documentos.currentTypeOfDocument !== 'audiometria') return;
+      const df = formData.formDataAudiometria;
+      if (!df) return;
+      const conSecciones = isAuSectionsV2Enabled(route.query);
+      completarAudiometriaPorDefecto(df, {
+        pais: paisProveedor(),
+        visitado: documentos.currentDocument
+          ? undefined
+          : (paso) => seccionesTocadas.value.has(pasoAudiometriaEnAsistente(paso, conSecciones)),
+      });
+    };
+    watch(
+      () => (documentos.currentTypeOfDocument === 'audiometria' ? formData.formDataAudiometria : null),
+      completarAudiometria,
+      { deep: true, immediate: true },
+    );
+    watch(
+      () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
+      completarAudiometria,
     );
 
     const recolectarProblemasNotaMedica = (esMujer) => {
@@ -1941,7 +1977,15 @@ export default {
         );
       }
       if (documentos.currentTypeOfDocument === 'audiometria') {
-        return recolectarProblemasObligatoriosYFecha('audiometria', formData.formDataAudiometria);
+        // Lo que se guardaría (copia); los umbrales, un aviso por oído con lo que falta (la lista
+        // de obligatorios solo revisa 125 Hz)
+        const df = prepararAudiometriaParaGuardar({ ...formData.formDataAudiometria }, { pais: paisProveedor() });
+        return ordenarProblemas([
+          ...recolectarProblemasObligatoriosYFecha('audiometria', df).filter(
+            (p) => p.campo !== 'oidoDerecho125' && p.campo !== 'oidoIzquierdo125',
+          ),
+          ...problemasUmbralesAudiometria(df),
+        ]);
       }
       if (documentos.currentTypeOfDocument === 'aptitud') {
         return recolectarProblemasObligatoriosYFecha('aptitud', formData.formDataAptitud);
@@ -1979,6 +2023,9 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'aptitud') {
         return isAptitudSectionsV2Enabled(route.query) ? aptLegacyStepToSectionIndex(paso) : paso;
+      }
+      if (documentos.currentTypeOfDocument === 'audiometria') {
+        return pasoAudiometriaEnAsistente(paso, isAuSectionsV2Enabled(route.query));
       }
       return paso;
     };
@@ -2122,7 +2169,7 @@ export default {
         // al editar, las respuestas son las guardadas
         {
           marcarSinRevisar:
-            ['historiaClinica', 'notaMedica', 'exploracionFisica', 'examenVista'].includes(documentos.currentTypeOfDocument) &&
+            ['historiaClinica', 'notaMedica', 'exploracionFisica', 'examenVista', 'audiometria'].includes(documentos.currentTypeOfDocument) &&
             !documentos.currentDocument,
         },
       ),
@@ -2462,6 +2509,12 @@ export default {
           esMujer: esMujerTrabajadorActual(),
         });
         datosLimpios = limpiarValoresUndefined(formData.formDataHistoriaClinica);
+      }
+
+      // AUDIOMETRÍA (punto 44): lo mismo
+      if (documentos.currentTypeOfDocument === 'audiometria') {
+        prepararAudiometriaParaGuardar(formData.formDataAudiometria, { pais: paisProveedor() });
+        datosLimpios = limpiarValoresUndefined(formData.formDataAudiometria);
       }
 
       // EXAMEN DE LA VISTA (punto 43): lo mismo

@@ -1,79 +1,62 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
+import { metodoDe } from '@/helpers/audiometriaGuardado';
 import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
-import { useDocumentosStore } from '@/stores/documentos';
+import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
+
+defineProps({ variant: { type: String, default: '' } });
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
-const { formDataAudiometria } = useFormDataStore();
-const documentos = useDocumentosStore();
+const formDataStore = useFormDataStore();
+const proveedorSaludStore = useProveedorSaludStore();
 const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 
-// Valor local para el método de audiometría
-const metodoAudiometria = ref('LFT');
+// Por el store (al editar, el documento puede llegar después del primer dibujo)
+const df = () => formDataStore.formDataAudiometria;
 const today = format(new Date(), 'yyyy-MM-dd');
 
-// Inicializar la referencia local sincronizada con formData
-const fechaAudiometria = ref(today);
+// Punto 44: el paso no escribe al abrirse ni al cerrarse. Muestra el método y la fecha del
+// formulario o los preseleccionados (LFT en México, AMA en otro país; hoy), que escribe
+// audiometriaGuardado al revisar la sección; aquí solo se escribe lo que el usuario cambia.
+const metodoAudiometria = computed({
+  get: () => metodoDe(df(), proveedorSaludStore.proveedorSalud?.pais),
+  set: (valor) => {
+    df().metodoAudiometria = valor;
+  },
+});
+const fechaAudiometria = computed({
+  get: () => (df().fechaAudiometria ? formatDateYYYYMMDD(df().fechaAudiometria) : today),
+  set: (valor) => {
+    // El campo devuelve la fecha que se ve al montarse: eso no es un cambio del usuario
+    if (!df().fechaAudiometria && valor === today) return;
+    if (valor && valor !== formatDateYYYYMMDD(df().fechaAudiometria || '')) df().fechaAudiometria = valor;
+  },
+});
 
 onMounted(() => {
-  if (documentos.currentDocument) {
-    // Si se está editando un documento, usa los valores existentes
-    metodoAudiometria.value = documentos.currentDocument.metodoAudiometria || 'LFT';
-    fechaAudiometria.value = formatDateYYYYMMDD(documentos.currentDocument.fechaAudiometria || today);
-  } else {
-    // Si es un documento nuevo, usa valores predeterminados o lo que ya exista en formData
-    metodoAudiometria.value = formDataAudiometria.metodoAudiometria || 'LFT';
-    fechaAudiometria.value = formatDateYYYYMMDD(formDataAudiometria.fechaAudiometria || today);
-
-    // Configurar valores iniciales en formData si no existen
-    if (!formDataAudiometria.idTrabajador) {
-      formDataAudiometria.idTrabajador = trabajadores.currentTrabajadorId;
-    }
-  }
-
-  // Establece rutaPDF en formData
+  // Datos del expediente (no son respuestas): el trabajador y la carpeta del PDF
+  if (!df().idTrabajador) df().idTrabajador = trabajadores.currentTrabajadorId;
   const empresa = empresas.currentEmpresa.nombreComercial;
   const centroTrabajo = centrosTrabajo.currentCentroTrabajo.nombreCentro;
   const trabajadorNombre = trabajadores.currentTrabajador.nombre;
   const trabajadorId = trabajadores.currentTrabajadorId;
-  formDataAudiometria.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
-
-  // Lo que se ve (método y fecha) llega al formulario desde el inicio; con los valores por
-  // defecto no se copiaba hasta cambiar algo o salir del paso
-  formDataAudiometria.metodoAudiometria = metodoAudiometria.value;
-  formDataAudiometria.fechaAudiometria = fechaAudiometria.value;
-});
-
-onUnmounted(() => {
-  // Guardar valores en formData antes de desmontar
-  formDataAudiometria.metodoAudiometria = metodoAudiometria.value;
-  formDataAudiometria.fechaAudiometria = fechaAudiometria.value;
-});
-
-// Sincronizar metodoAudiometria con formData
-watch(metodoAudiometria, (newValue) => {
-  formDataAudiometria.metodoAudiometria = newValue;
-});
-
-// Mantener sincronizados los valores
-watch(fechaAudiometria, (newValue) => {
-  formDataAudiometria.fechaAudiometria = newValue;
+  df().rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 });
 </script>
 
 <template>
   <div>
     <!-- Jerarquía Visual Mejorada -->
-    <div class="flex items-center justify-between mb-4">
+    <div v-if="variant !== 'compact'" class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-bold text-gray-900">Audiometría</h1>
       <!-- Badge del método seleccionado -->
       <div 
@@ -152,7 +135,7 @@ watch(fechaAudiometria, (newValue) => {
           >
             LFT
           </span>
-          <span class="text-xs text-center text-gray-500">Ley Federal de Trabajo (México)</span>
+          <span class="text-xs text-center text-gray-500">Ley Federal del Trabajo (México)</span>
           <!-- Indicador de selección -->
           <div 
             v-if="metodoAudiometria === 'LFT'"

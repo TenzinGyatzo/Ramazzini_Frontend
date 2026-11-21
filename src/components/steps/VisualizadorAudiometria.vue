@@ -4,6 +4,9 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useStepsStore } from '@/stores/steps';
+import { useRoute } from 'vue-router';
+import { pasoAudiometriaEnAsistente } from '@/helpers/audiometriaSections';
+import { isAuSectionsV2Enabled } from '@/composables/useAuSectionsV2';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
 import { useEdadAntiguedadDocumento } from '@/composables/useEdadAntiguedadDocumento';
@@ -33,8 +36,11 @@ const refGraficaAudiometria = ref(null);
 const isHtmlDark = useHtmlDarkMode();
 
 // Ir a un paso específico
+// Punto 44: con secciones, los pasos de siempre (1–7) están dentro de una sección
+const route = useRoute();
+const enAsistente = (paso) => pasoAudiometriaEnAsistente(paso, isAuSectionsV2Enabled(route?.query));
 const goToStep = (stepNumber) => {
-  steps.goToStep(stepNumber);
+  steps.goToStep(enAsistente(stepNumber));
 };
 
 // Computed para asegurar reactividad completa
@@ -271,7 +277,7 @@ defineExpose({
 
       <!-- Fecha -->
       <div class="w-full md:w-auto md:flex-1 flex flex-wrap gap-2 justify-start md:justify-end text-sm sm:text-base cursor-pointer"
-        data-paso="1" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 1 }"
+        :data-paso="enAsistente(1)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(1) }"
         @click="goToStep(1)">
         <p class="w-full md:w-auto text-right">Fecha: <span class="font-medium">{{
           formatDateDDMMYYYY(formDataAudiometria.fechaAudiometria) }}</span></p>
@@ -375,7 +381,7 @@ defineExpose({
           </tr>
         </thead>
         <tbody>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="2" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 2 }"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="enAsistente(2)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(2) }"
           @click="goToStep(2)">
             <td class="w-32 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">OIDO DERECHO</td>
             <td class="w-12 text-xs sm:text-sm px-2 py-0 border border-gray-300 text-center">
@@ -409,7 +415,7 @@ defineExpose({
               {{ calcularPorcentajePorOido('Derecho').porcentaje ?? '' }}
             </td>
           </tr>
-          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" data-paso="3" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 3 }"
+          <tr class="odd:bg-white even:bg-gray-50 cursor-pointer" :data-paso="enAsistente(3)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(3) }"
           @click="goToStep(3)">
             <td class="w-32 text-xs sm:text-sm px-2 py-0 border border-gray-300 font-medium">OIDO IZQUIERDO</td>
             <td class="w-12 text-xs sm:text-sm px-2 py-0 border border-gray-300 text-center">
@@ -480,14 +486,14 @@ defineExpose({
     <!-- Observaciones -->
     <div v-if="formDataAudiometria.observacionesAudiometria" 
       class="w-full cursor-pointer"
-      data-paso="4" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 4 }"
+      :data-paso="enAsistente(4)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(4) }"
       @click="goToStep(4)"
     >
       <p class="text-justify font-medium">OBSERVACIONES: <span class="font-light">{{ formDataAudiometria.observacionesAudiometria }}</span></p>
     </div>
     <div v-else 
       class="w-full text-center cursor-pointer text-gray-500 italic" 
-      data-paso="4" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 4 }" 
+      :data-paso="enAsistente(4)" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(4) }" 
       @click="goToStep(4)">
       + Agregar observaciones
     </div>
@@ -495,14 +501,14 @@ defineExpose({
     <!-- Interpretación Audiométrica -->
     <div v-if="formDataAudiometria.interpretacionAudiometrica" 
       class="w-full cursor-pointer"
-      data-paso="5" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 5 }"
+      :data-paso="enAsistente(5)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(5) }"
       @click="goToStep(5)"
     >
       <p class="text-justify font-medium">INTERPRETACIÓN AUDIOMÉTRICA: <span class="font-light">{{ formDataAudiometria.interpretacionAudiometrica }}</span></p>
     </div>
     <div v-else 
       class="w-full text-center cursor-pointer text-gray-500 italic" 
-      data-paso="5" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 5 }" 
+      :data-paso="enAsistente(5)" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(5) }" 
       @click="goToStep(5)">
       + Agregar interpretación
     </div>
@@ -510,14 +516,14 @@ defineExpose({
     <!-- Diagnóstico -->
     <div v-if="formDataAudiometria.diagnosticoAudiometria" 
       class="w-full cursor-pointer"
-      data-paso="6" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 6 }"
+      :data-paso="enAsistente(6)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(6) }"
       @click="goToStep(6)"
     >
       <p class="text-justify font-medium">DIAGNÓSTICO: <span class="font-semibold text-lg text-gray-900">{{ formDataAudiometria.diagnosticoAudiometria.toUpperCase() }} {{ (formDataAudiometria.metodoAudiometria || 'AMA') === 'AMA' ? 'PA' : 'HBC' }} DE {{ resultadoBinaural.porcentaje }}%</span></p>
     </div>
     <div v-else 
       class="w-full text-center cursor-pointer text-gray-500 italic" 
-      data-paso="6" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 6 }" 
+      :data-paso="enAsistente(6)" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(6) }" 
       @click="goToStep(6)">
       + Agregar diagnóstico
     </div>
@@ -526,7 +532,7 @@ defineExpose({
     <div 
       v-if="formData.formDataAudiometria.recomendacionesAudiometria && formData.formDataAudiometria.recomendacionesAudiometria.length > 0"
       class="w-full mb-1 cursor-pointer"
-      data-paso="7" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === 7 }"
+      :data-paso="enAsistente(7)" :class="{ 'outline outline-2 outline-offset-2 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(7) }"
       @click="goToStep(7)"
     >
       <p class="text-justify font-medium">
@@ -543,7 +549,7 @@ defineExpose({
       </span>
       </p>
     </div>
-    <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" data-paso="7" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === 7 }" @click="goToStep(7)">+ Agregar Recomendaciones</div>
+    <div v-else class="w-full text-center cursor-pointer text-gray-500 italic" :data-paso="enAsistente(7)" :class="{ 'outline outline-1 outline-offset-1 outline-yellow-500 rounded-md': steps.currentStep === enAsistente(7) }" @click="goToStep(7)">+ Agregar Recomendaciones</div>
 
   </div>
 </template>
