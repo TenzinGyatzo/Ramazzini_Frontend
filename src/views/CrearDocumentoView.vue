@@ -89,6 +89,10 @@ const exploracionLadoALado = computed(() => !capturaRapida.value && anchoExplora
 const contenedorExamenVista = ref(null);
 const anchoExamenVista = useAnchoElemento(contenedorExamenVista);
 const examenVistaLadoALado = computed(() => !capturaRapida.value && anchoExamenVista.value >= 960);
+// Audiometría (punto 44): igual
+const contenedorAudiometria = ref(null);
+const anchoAudiometria = useAnchoElemento(contenedorAudiometria);
+const audiometriaLadoALado = computed(() => !capturaRapida.value && anchoAudiometria.value >= 960);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
@@ -652,13 +656,28 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'audiometria'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
-          <div class="w-full xl:w-1/4">
+          ref="contenedorAudiometria"
+          :class="['flex gap-3 md:gap-6', audiometriaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          <div :class="capturaRapida ? 'w-full' : audiometriaLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div class="w-full xl:w-3/4">
+          <div
+            v-if="!capturaRapida"
+            :class="audiometriaLadoALado ? 'flex-1 min-w-0' : 'w-full'"
+            :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
+          >
             <VisualizadorAudiometria />
           </div>
+          <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
+          <PanelVistaPrevia
+            v-else
+            amplio
+            :abierta="vistaPreviaAbierta"
+            titulo="Vista previa de la audiometría"
+            @cerrar="vistaPreviaAbierta = false"
+          >
+            <VisualizadorAudiometria />
+          </PanelVistaPrevia>
         </div>
       </Transition>
 

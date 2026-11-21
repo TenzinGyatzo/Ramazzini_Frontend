@@ -14,11 +14,12 @@ import { isNotaMedicaSectionsV2Enabled } from '@/composables/useNotaMedicaSectio
 import { isHcSectionsV2Enabled } from '@/composables/useHcSectionsV2';
 import { isEfSectionsV2Enabled } from '@/composables/useEfSectionsV2';
 import { isEvSectionsV2Enabled } from '@/composables/useEvSectionsV2';
+import { isAuSectionsV2Enabled } from '@/composables/useAuSectionsV2';
 
 export type ModoCaptura = 'vistaPrevia' | 'capturaRapida';
 
 /** Documentos que ya tienen captura rápida (piloto: la nota médica). */
-export const DOCUMENTOS_CAPTURA_RAPIDA = ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista'] as const;
+export const DOCUMENTOS_CAPTURA_RAPIDA = ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria'] as const;
 
 const PREFIJO_CLAVE = 'ramazzini:modoCaptura:';
 
@@ -72,6 +73,7 @@ export function documentoAdmiteCapturaRapida(
   if (tipo === 'historiaClinica') return isHcSectionsV2Enabled(query);
   if (tipo === 'exploracionFisica') return isEfSectionsV2Enabled(query);
   if (tipo === 'examenVista') return isEvSectionsV2Enabled(query);
+  if (tipo === 'audiometria') return isAuSectionsV2Enabled(query);
   return true;
 }
 

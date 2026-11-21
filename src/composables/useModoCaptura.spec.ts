@@ -54,7 +54,8 @@ describe('preferencia de modo de captura (punto 38)', () => {
     expect(documentoAdmiteCapturaRapida('exploracionFisica', { efLegacy: '1' })).toBe(false);
     expect(documentoAdmiteCapturaRapida('examenVista')).toBe(true);
     expect(documentoAdmiteCapturaRapida('examenVista', { evLegacy: '1' })).toBe(false);
-    expect(documentoAdmiteCapturaRapida('audiometria')).toBe(false);
+    expect(documentoAdmiteCapturaRapida('audiometria')).toBe(true);
+    expect(documentoAdmiteCapturaRapida('audiometria', { auLegacy: '1' })).toBe(false);
     expect(documentoAdmiteCapturaRapida(null)).toBe(false);
   });
 });
