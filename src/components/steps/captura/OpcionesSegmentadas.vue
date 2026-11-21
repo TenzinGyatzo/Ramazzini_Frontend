@@ -15,6 +15,11 @@ defineProps<{
    * 39), igual en los dos modos.
    */
   compacto?: boolean;
+  /**
+   * Botones separados que bajan de renglón si no caben (punto 44: en el asistente angosto, las
+   * preguntas con 3 o 4 opciones largas se cortaban).
+   */
+  separadas?: boolean;
 }>();
 const modelo = defineModel<T | null>();
 
@@ -28,23 +33,27 @@ const ancho = enCapturaRapida();
     role="radiogroup"
     :aria-label="etiqueta"
     :class="[
-      'rounded-lg border border-gray-300 bg-white overflow-hidden',
-      compacto ? 'inline-flex' : ancho ? 'flex w-full sm:inline-flex sm:w-auto' : 'flex w-full',
+      separadas
+        ? 'flex flex-wrap gap-1.5'
+        : 'rounded-lg border border-gray-300 bg-white overflow-hidden',
+      separadas ? '' : compacto ? 'inline-flex' : ancho ? 'flex w-full sm:inline-flex sm:w-auto' : 'flex w-full',
     ]"
   >
     <label
       v-for="(op, i) in opciones"
       :key="String(op.valor)"
       :class="[
-        compacto
+        separadas
+          ? 'justify-center px-3 h-8 whitespace-nowrap rounded-lg border border-gray-300 bg-white'
+          : compacto
           ? 'justify-center min-w-[2.75rem] px-3 h-8 whitespace-nowrap'
           : ancho
             ? 'flex-auto justify-center px-2 whitespace-nowrap sm:flex-none sm:px-4 h-10'
             : 'flex-auto justify-center px-2 whitespace-nowrap h-10',
         'relative inline-flex items-center gap-1.5 text-sm cursor-pointer select-none transition-colors duration-150 focus-within:z-10 focus-within:ring-2 focus-within:ring-inset focus-within:ring-emerald-500',
-        i > 0 ? 'border-l border-gray-300' : '',
+        i > 0 && !separadas ? 'border-l border-gray-300' : '',
         modelo === op.valor
-          ? 'bg-emerald-50 text-emerald-700 font-semibold'
+          ? ['bg-emerald-50 text-emerald-700 font-semibold', separadas ? '!border-emerald-500' : '']
           : 'text-gray-700 hover:bg-gray-50',
       ]"
     >

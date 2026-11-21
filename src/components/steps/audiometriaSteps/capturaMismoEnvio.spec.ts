@@ -147,7 +147,7 @@ describe('audiometría: los dos modos mandan lo mismo (punto 44)', () => {
       ...BASE,
       1: metodo('AMA'),
       7: async (w) => {
-        const limpiar = w.findAll('button').find((b) => b.text().includes('Limpiar todas'));
+        const limpiar = w.findAll('button').find((b) => b.text().includes('Quitar todas'));
         await limpiar!.trigger('click');
       },
     };

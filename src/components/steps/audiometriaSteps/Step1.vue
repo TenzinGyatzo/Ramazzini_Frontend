@@ -10,6 +10,9 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import OpcionesSegmentadas from '../captura/OpcionesSegmentadas.vue';
+import { CLASE_AYUDA, CLASE_ETIQUETA } from '../captura/estiloCaptura';
 
 defineProps({ variant: { type: String, default: '' } });
 
@@ -23,6 +26,16 @@ const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 // Por el store (al editar, el documento puede llegar después del primer dibujo)
 const df = () => formDataStore.formDataAudiometria;
 const today = format(new Date(), 'yyyy-MM-dd');
+const capturaRapida = enCapturaRapida();
+
+const OPCIONES_METODO = [
+  { valor: 'AMA', etiqueta: 'AMA' },
+  { valor: 'LFT', etiqueta: 'LFT' },
+];
+const DESCRIPCION_METODO = {
+  AMA: 'American Medical Association',
+  LFT: 'Ley Federal del Trabajo (México)',
+};
 
 // Punto 44: el paso no escribe al abrirse ni al cerrarse. Muestra el método y la fecha del
 // formulario o los preseleccionados (LFT en México, AMA en otro país; hoy), que escribe
@@ -55,111 +68,34 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- Jerarquía Visual Mejorada -->
     <div v-if="variant !== 'compact'" class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-bold text-gray-900">Audiometría</h1>
-      <!-- Badge del método seleccionado -->
-      <div 
-        :class="[
-          'px-3 py-1 rounded-full text-sm font-semibold transition-all duration-200',
-          metodoAudiometria === 'AMA' 
-            ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-            : 'bg-green-100 text-green-800 border border-green-200'
-        ]"
-      >
-        {{ metodoAudiometria }}
-      </div>
-    </div>
-    
-    <!-- Pregunta principal con mejor jerarquía -->
-    <div data-campo="metodoAudiometria" class="mb-8">
-      <p class="text-lg font-medium mb-4 text-gray-800">¿Método de audiometría?</p>
-      
-      <!-- Diseño de Radio Buttons más Visual tipo Card -->
-      <div class="grid grid-cols-2 gap-3">
-        <!-- Opción AMA -->
-        <label 
-          :class="[
-            'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-            metodoAudiometria === 'AMA' 
-              ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-          ]"
-        >
-          <input 
-            type="radio" 
-            value="AMA" 
-            v-model="metodoAudiometria" 
-            class="sr-only" 
-          />
-          <span 
-            :class="[
-              'text-base font-semibold transition-colors duration-200',
-              metodoAudiometria === 'AMA' ? 'text-emerald-700' : 'text-gray-700'
-            ]"
-          >
-            AMA
-          </span>
-          <span class="text-xs text-center text-gray-500">American Medical Association</span>
-          <!-- Indicador de selección -->
-          <div 
-            v-if="metodoAudiometria === 'AMA'"
-            class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </label>
-
-        <!-- Opción LFT -->
-        <label 
-          :class="[
-            'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-            metodoAudiometria === 'LFT' 
-              ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-              : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-          ]"
-        >
-          <input 
-            type="radio" 
-            value="LFT" 
-            v-model="metodoAudiometria" 
-            class="sr-only" 
-          />
-          <span 
-            :class="[
-              'text-base font-semibold transition-colors duration-200',
-              metodoAudiometria === 'LFT' ? 'text-emerald-700' : 'text-gray-700'
-            ]"
-          >
-            LFT
-          </span>
-          <span class="text-xs text-center text-gray-500">Ley Federal del Trabajo (México)</span>
-          <!-- Indicador de selección -->
-          <div 
-            v-if="metodoAudiometria === 'LFT'"
-            class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </label>
-      </div>
     </div>
 
-    <!-- Sección de fecha con mejor espaciado -->
-    <div data-campo="fechaAudiometria" class="mt-8">
-      <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de realización</h2>
-      <FormKit 
-        type="date" 
-        name="fechaAudiometria" 
-        placeholder="Seleccione una fecha"
-        :min="fechaDocumentoMin"
-        :max="fechaDocumentoMax"
-        v-model="fechaAudiometria" 
-      />
+    <!-- Método y fecha (punto 44): botones juntos y fecha angosta; en captura rápida, en un renglón -->
+    <div :class="['grid gap-4', capturaRapida ? 'grid-cols-1 sm:grid-cols-[auto_14rem] sm:items-start' : 'grid-cols-1']">
+      <div data-campo="metodoAudiometria" class="min-w-0">
+        <p :class="[CLASE_ETIQUETA, 'mb-1']">Método <span class="text-red-500">*</span></p>
+        <OpcionesSegmentadas
+          v-model="metodoAudiometria"
+          name="metodoAudiometria"
+          etiqueta="Método de audiometría"
+          :opciones="OPCIONES_METODO"
+        />
+        <p :class="[CLASE_AYUDA, 'mt-1']">{{ DESCRIPCION_METODO[metodoAudiometria] }}</p>
+      </div>
+
+      <div data-campo="fechaAudiometria" :class="['captura-fecha', capturaRapida ? 'w-full sm:w-56' : '']">
+        <p :class="[CLASE_ETIQUETA, 'mb-1']">Fecha de realización <span class="text-red-500">*</span></p>
+        <FormKit
+          type="date"
+          name="fechaAudiometria"
+          placeholder="Seleccione una fecha"
+          :min="fechaDocumentoMin"
+          :max="fechaDocumentoMax"
+          v-model="fechaAudiometria"
+        />
+      </div>
     </div>
   </div>
 </template>

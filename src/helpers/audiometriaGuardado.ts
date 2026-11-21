@@ -141,10 +141,10 @@ export function completarRespuestasPorDefecto(
   { pais, hoy = fechaLocalHoy(), visitado }: { pais?: string | null; hoy?: string; visitado?: (paso: number) => boolean } = {},
 ): Datos {
   const revisado = (paso: number) => !visitado || visitado(paso);
-  if (revisado(PASO_AU.metodoFecha)) {
-    if (vacio(df.metodoAudiometria)) df.metodoAudiometria = metodoAudiometriaPorDefecto(pais);
-    if (vacio(df.fechaAudiometria)) df.fechaAudiometria = hoy;
-  }
+  // El método va desde el principio: de él dependen los porcentajes y lo que muestra la vista
+  // previa (sin método, el documento suponía AMA aunque el proveedor fuera de México)
+  if (vacio(df.metodoAudiometria)) df.metodoAudiometria = metodoAudiometriaPorDefecto(pais);
+  if (revisado(PASO_AU.metodoFecha) && vacio(df.fechaAudiometria)) df.fechaAudiometria = hoy;
   if (revisado(PASO_AU.recomendaciones) && df.recomendacionesAudiometria === undefined) {
     df.recomendacionesAudiometria = [...RECOMENDACIONES_POR_DEFECTO];
   }

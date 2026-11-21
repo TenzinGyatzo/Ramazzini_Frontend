@@ -72,6 +72,12 @@ describe('audiometría: resultados de los umbrales', () => {
 });
 
 describe('audiometría: respuestas por defecto', () => {
+  it('el método va desde el principio (de él dependen los cálculos); la fecha, al revisar', () => {
+    const df = completarRespuestasPorDefecto({}, { pais: 'MX', hoy: '2026-11-21', visitado: () => false });
+    expect(df.metodoAudiometria).toBe('LFT');
+    expect(df.fechaAudiometria).toBeUndefined();
+  });
+
   it('por sección revisada: método y fecha, recomendaciones', () => {
     const df = completarRespuestasPorDefecto({}, { pais: 'GT', hoy: '2026-11-21', visitado: (p) => p === PASO_AU.metodoFecha });
     expect(df).toMatchObject({ metodoAudiometria: 'AMA', fechaAudiometria: '2026-11-21' });

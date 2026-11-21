@@ -9,6 +9,7 @@ import { computed, ref } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import { vValorDePartida } from '@/directives/valorDePartida';
 import IndicacionTab from '../IndicacionTab.vue';
 import {
@@ -25,13 +26,13 @@ const props = defineProps<{ lado: Lado; variant?: string }>();
 const formDataStore = useFormDataStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const df = () => formDataStore.formDataAudiometria as Record<string, any>;
+const capturaRapida = enCapturaRapida();
 
 // Al abrir el paso, el cursor queda en 125 Hz: se escribe y se avanza con Tab (en la captura
 // rápida no se mueve el cursor al abrir)
 useAutofocoPrimerVacio([campoUmbral(props.lado, 125)], { siempreElPrimero: true });
 
 const titulo = computed(() => (props.lado === 'Derecho' ? 'Oído derecho' : 'Oído izquierdo'));
-const siglas = computed(() => (props.lado === 'Derecho' ? 'OD' : 'OI'));
 
 const valor = (f: number) => df()[campoUmbral(props.lado, f)] ?? '';
 
@@ -60,80 +61,99 @@ const metodo = computed(() => metodoDe(df(), proveedorSaludStore.proveedorSalud?
 const resultado = computed(() =>
   oidoConUmbrales(df(), props.lado) ? porcentajePerdidaOido(df(), props.lado, metodo.value) : null,
 );
+const nombreResultado = computed(() => (metodo.value === 'AMA' ? 'Pérdida monoaural' : 'Índice de Fletcher'));
+const ayudaResultado = computed(() =>
+  metodo.value === 'AMA'
+    ? 'Pérdida monoaural (%) = max(0, PTA − 25) × 1.5, con 500–3000 Hz.'
+    : 'Índice de Fletcher (%) = PTA × 0.8, con el rango A (250–2000 Hz) o B (2000–6000 Hz) de mayor pérdida.',
+);
+// Con el oído izquierdo (el segundo) va también el resultado de los dos oídos
+const binaural = computed(() => {
+  if (props.lado !== 'Izquierdo' || !oidoConUmbrales(df(), 'Derecho') || !oidoConUmbrales(df(), 'Izquierdo')) {
+    return null;
+  }
+  return metodo.value === 'AMA'
+    ? { nombre: 'Pérdida auditiva bilateral', valor: df().perdidaAuditivaBilateralAMA }
+    : { nombre: 'Hipoacusia bilateral combinada', valor: df().hipoacusiaBilateralCombinada };
+});
 </script>
 
 <template>
   <div>
-    <h1 v-if="variant !== 'compact'" class="mb-4 text-sm text-gray-800 leading-5">
-      <span class="text-xl font-bold uppercase">{{ titulo }}</span> - Valores Audiométricos
-    </h1>
-    <p v-else class="text-sm font-semibold text-gray-800 mb-2">{{ titulo }}</p>
-
-    <div class="mb-4">
-      <p v-if="variant !== 'compact'" class="font-medium mb-3 text-gray-700 leading-5">
+    <template v-if="variant !== 'compact'">
+      <h1 class="mb-4 text-sm text-gray-800 leading-5">
+        <span class="text-xl font-bold uppercase">{{ titulo }}</span> - Valores Audiométricos
+      </h1>
+      <p class="font-medium mb-3 text-gray-700 leading-5">
         Ingrese los umbrales auditivos en decibeles (dB) para cada frecuencia:
       </p>
-      <IndicacionTab v-if="variant !== 'compact'" class="mb-3" />
+      <IndicacionTab class="mb-3" />
+    </template>
 
-      <!-- Tantas columnas como quepan (en el asistente angosto, 2) -->
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-2">
-        <div
-          v-for="f in FRECUENCIAS_AUDIOMETRIA"
-          :key="f"
-          :data-campo="campoUmbral(lado, f)"
-          class="bg-gray-50 border border-gray-300 rounded p-2"
-        >
-          <div class="text-center">
-            <label :for="campoUmbral(lado, f)" class="block text-sm font-semibold text-gray-800 mb-1">{{ f }} Hz</label>
-            <div class="flex items-center justify-center gap-1.5">
-              <input
-                :id="campoUmbral(lado, f)"
-                v-valor-de-partida="0"
-                type="number"
-                :name="campoUmbral(lado, f)"
-                :value="valor(f)"
-                :class="[
-                  'w-full p-1 text-center border rounded text-base text-emerald-700 focus:outline-none focus:ring-1 transition-all duration-300',
-                  corregidos[f]
-                    ? 'border-yellow-400 bg-yellow-50 focus:border-yellow-500 focus:ring-yellow-500'
-                    : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500',
-                ]"
-                min="-10"
-                max="110"
-                step="5"
-                @input="alEscribir(f, ($event.target as HTMLInputElement).value)"
-                @focus="seleccionar"
-                @blur="alSalir(f)"
-              />
-              <span class="text-sm text-gray-500">dB</span>
-            </div>
-          </div>
-        </div>
+    <!-- Un renglón por oído, con el color y el símbolo de la gráfica (○ derecho, × izquierdo) -->
+    <p class="flex items-center gap-2 mb-1.5 text-sm font-semibold text-gray-800">
+      <span
+        :class="['inline-flex w-4 justify-center text-base leading-none font-bold', lado === 'Derecho' ? 'text-red-600' : 'text-blue-600']"
+        aria-hidden="true"
+      >{{ lado === 'Derecho' ? '○' : '×' }}</span>
+      {{ titulo }} <span class="font-normal text-gray-500">· dB</span>
+    </p>
+    <!-- En captura rápida, tantas frecuencias por renglón como quepan (las 9 en pantalla ancha);
+         en el asistente angosto, 5 + 4 -->
+    <div
+      :class="[
+        'grid gap-1.5',
+        capturaRapida ? 'grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))]' : 'grid-cols-5',
+      ]"
+    >
+      <div v-for="f in FRECUENCIAS_AUDIOMETRIA" :key="f" :data-campo="campoUmbral(lado, f)" class="min-w-0">
+        <label :for="campoUmbral(lado, f)" class="block text-center text-[11px] text-gray-500 mb-0.5">
+          {{ f >= 1000 ? `${f / 1000}k` : f }}<span class="sr-only"> Hz</span>
+        </label>
+        <input
+          :id="campoUmbral(lado, f)"
+          v-valor-de-partida="0"
+          type="number"
+          :name="campoUmbral(lado, f)"
+          :value="valor(f)"
+          :aria-label="`${titulo}, ${f} Hz`"
+          :class="[
+            'w-full h-10 px-1 text-center text-sm rounded-lg border bg-white text-gray-800 focus:outline-none focus:ring-1 transition-colors duration-300 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+            corregidos[f]
+              ? 'border-amber-400 bg-amber-50 focus:border-amber-500 focus:ring-amber-500'
+              : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500',
+          ]"
+          min="-10"
+          max="110"
+          step="5"
+          @input="alEscribir(f, ($event.target as HTMLInputElement).value)"
+          @focus="seleccionar"
+          @blur="alSalir(f)"
+        />
       </div>
+    </div>
 
-      <!-- Porcentaje de pérdida de este oído -->
-      <div class="w-1/2 mx-auto mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-        <div class="flex items-center justify-evenly">
-          <p class="text-sm font-medium text-emerald-800">
-            {{ metodo === 'AMA' ? 'Pérdida Monoaural' : 'Índice de Fletcher' }} <br />({{ metodo }})
-          </p>
-          <span
-            class="text-xl font-bold text-emerald-800"
-            :title="
-              metodo === 'AMA'
-                ? 'Pérdida monaural (%) = max(0,(PTA-25))*1.5. Frecuencias 500–3000 Hz.'
-                : 'Índice de Fletcher (%) = PTA*0.8. Se elige Rango A (250–2000) o B (2000–6000) que produzca mayor pérdida.'
-            "
-          >
-            {{ resultado ? `${resultado.porcentaje}%` : '—' }}
-          </span>
+    <!-- Lo que se calcula solo, como las tarjetas de la exploración física -->
+    <div class="mt-2 grid gap-2 grid-cols-[repeat(auto-fill,minmax(12rem,1fr))]">
+      <div
+        data-calculado
+        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+        :title="ayudaResultado"
+      >
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500">{{ nombreResultado }} ({{ metodo }})</p>
+          <p v-if="resultado?.rango" class="text-[11px] text-gray-400">Rango {{ resultado.rango }}</p>
         </div>
+        <p class="text-base font-bold text-gray-900 whitespace-nowrap">{{ resultado ? `${resultado.porcentaje} %` : '—' }}</p>
       </div>
-      <p v-if="resultado" class="w-full mt-2 text-center text-xs text-gray-600">
-        Frecuencias usadas {{ siglas }}: [{{ resultado.frecuencias.join(', ') }}] Hz{{
-          resultado.rango ? ` (Rango ${resultado.rango})` : ''
-        }}
-      </p>
+      <div
+        v-if="binaural"
+        data-calculado
+        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+      >
+        <p class="text-xs text-gray-500 min-w-0">{{ binaural.nombre }} ({{ metodo }})</p>
+        <p class="text-base font-bold text-gray-900 whitespace-nowrap">{{ binaural.valor ?? '—' }} %</p>
+      </div>
     </div>
   </div>
 </template>
