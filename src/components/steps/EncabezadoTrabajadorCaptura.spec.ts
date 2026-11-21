@@ -5,12 +5,13 @@ import { createPinia, setActivePinia } from 'pinia';
 import EncabezadoTrabajadorCaptura from './EncabezadoTrabajadorCaptura.vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useEmpresasStore } from '@/stores/empresas';
+import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { alturaHastaElFondo } from '@/composables/useAlturaHastaElFondo';
 
 describe('datos del trabajador en la captura rápida (punto 38)', () => {
   beforeEach(() => setActivePinia(createPinia()));
 
-  it('muestra nombre, sexo, edad a la fecha del documento, puesto y empresa', () => {
+  it('iniciales, nombre, «Mujer · 35 años» a la fecha del documento, puesto y empresa', () => {
     const trabajadores = useTrabajadoresStore();
     trabajadores.currentTrabajador = {
       primerApellido: 'López',
@@ -23,15 +24,32 @@ describe('datos del trabajador en la captura rápida (punto 38)', () => {
     useEmpresasStore().currentEmpresa = { nombreComercial: 'Aceros del Norte' } as any;
     const w = mount(EncabezadoTrabajadorCaptura, { props: { fechaDocumento: '2026-05-09' } });
     const texto = w.text();
-    expect(texto).toContain('Ana');
-    expect(texto).toContain('López');
-    expect(texto).toContain('Femenino');
-    expect(texto).toContain('35 años');
+    expect(texto).toContain('AL');
+    expect(texto).toContain('López Ruiz Ana');
+    expect(texto).toContain('Mujer · 35 años');
     expect(texto).toContain('Soldadora');
     expect(texto).toContain('Aceros del Norte');
     // Sin número de empleado ni antigüedad, no se muestran vacíos
-    expect(texto).not.toContain('No. de empleado');
+    expect(texto).not.toContain('No.');
     expect(texto).not.toContain('Antigüedad');
+  });
+
+  it('con antigüedad, centro de trabajo y número de empleado', () => {
+    useTrabajadoresStore().currentTrabajador = {
+      primerApellido: 'Pérez',
+      nombre: 'Luis',
+      sexo: 'Masculino',
+      fechaNacimiento: '1980-01-01',
+      fechaIngreso: '2020-01-01',
+      numeroEmpleado: '1027',
+    } as any;
+    useEmpresasStore().currentEmpresa = { nombreComercial: 'Aceros del Norte' } as any;
+    useCentrosTrabajoStore().currentCentroTrabajo = { nombreCentro: 'Planta Norte' } as any;
+    const texto = mount(EncabezadoTrabajadorCaptura, { props: { fechaDocumento: '2026-06-15' } }).text();
+    expect(texto).toContain('Hombre · 46 años');
+    expect(texto).toMatch(/6 años.* en la empresa/);
+    expect(texto).toContain('Aceros del Norte · Planta Norte');
+    expect(texto).toContain('No. 1027');
   });
 
   it('sin trabajador cargado, no muestra nada', () => {
