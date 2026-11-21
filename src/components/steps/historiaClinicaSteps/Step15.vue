@@ -60,7 +60,8 @@ watch(alergicos, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="alergicos alergicosEspecificar"
+                campo="alergicos"
+                campo-especificar="alergicosEspecificar"
                 label="ALERGIAS"
                 question="¿Existen alergias conocidas en el historial del trabajador?"
                 v-model="alergicos"

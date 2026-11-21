@@ -60,7 +60,8 @@ watch(lumbalgias, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="lumbalgias lumbalgiasEspecificar"
+                campo="lumbalgias"
+                campo-especificar="lumbalgiasEspecificar"
                 label="LUMBALGIAS"
                 question="¿Historial de lumbalgias en el trabajador?"
                 v-model="lumbalgias"

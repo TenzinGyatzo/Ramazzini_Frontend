@@ -60,7 +60,8 @@ watch(neoplasicos, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="neoplasicos neoplasicosEspecificar"
+                campo="neoplasicos"
+                campo-especificar="neoplasicosEspecificar"
                 label="NEOPLÁSICOS"
                 question="¿Presencia de casos de cáncer en la familia?"
                 v-model="neoplasicos"

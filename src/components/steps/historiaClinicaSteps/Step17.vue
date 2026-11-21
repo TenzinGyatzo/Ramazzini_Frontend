@@ -60,7 +60,8 @@ watch(respiratorios, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="respiratorios respiratoriosEspecificar"
+                campo="respiratorios"
+                campo-especificar="respiratoriosEspecificar"
                 label="RESPIRATORIOS"
                 question="¿Historial de enfermedades respiratorias en el trabajador?"
                 v-model="respiratorios"

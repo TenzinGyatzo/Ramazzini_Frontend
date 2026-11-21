@@ -60,7 +60,8 @@ watch(accidentes, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="accidentes accidentesEspecificar"
+                campo="accidentes"
+                campo-especificar="accidentesEspecificar"
                 label="ACCIDENTES"
                 question="¿Ha experimentado el trabajador algún accidente significativo?"
                 v-model="accidentes"

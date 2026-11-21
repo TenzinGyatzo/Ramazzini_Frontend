@@ -60,7 +60,8 @@ watch(epilepticosPP, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="epilepticosPP epilepticosPPEspecificar"
+                campo="epilepticosPP"
+                campo-especificar="epilepticosPPEspecificar"
                 label="EPILÉPTICOS"
                 question="¿El trabajador tiene antecedentes de epilepsia?"
                 v-model="epilepticosPP"

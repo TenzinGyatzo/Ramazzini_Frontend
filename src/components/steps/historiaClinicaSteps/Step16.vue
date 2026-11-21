@@ -60,7 +60,8 @@ watch(hipertensivosPP, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="hipertensivosPP hipertensivosPPEspecificar"
+                campo="hipertensivosPP"
+                campo-especificar="hipertensivosPPEspecificar"
                 label="HIPERTENSIVOS"
                 question="¿El trabajador tiene antecedentes de hipertensión arterial?"
                 v-model="hipertensivosPP"

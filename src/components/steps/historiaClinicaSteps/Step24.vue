@@ -60,7 +60,8 @@ watch(toxicomanias, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="toxicomanias toxicomaniasEspecificar"
+                campo="toxicomanias"
+                campo-especificar="toxicomaniasEspecificar"
                 label="TOXICOMANIAS"
                 question="¿El trabajador tiene historial de adicciones por consumo compulsivo de sustancias psicoactivas?"
                 v-model="toxicomanias"

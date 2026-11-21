@@ -46,7 +46,7 @@ watch(vidaSexualActivaPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
-        data-campo="vidaSexualActiva"
+        campo-especificar="vidaSexualActiva"
         label="VIDA SEXUAL ACTIVA"
         question="¿Ha iniciado vida sexual? Si sí, indique edad de inicio."
         v-model="vidaSexualActivaPregunta"

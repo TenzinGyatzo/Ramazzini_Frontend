@@ -46,7 +46,7 @@ watch(recuerdaFechaUltimaRegla, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
-        data-campo="fechaUltimaRegla"
+        campo-especificar="fechaUltimaRegla"
         label="FECHA DE ÚLTIMA MENSTRUACIÓN"
         question="¿Recuerda la fecha del primer día de su última menstruación?"
         v-model="recuerdaFechaUltimaRegla"

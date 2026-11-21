@@ -11,39 +11,45 @@ import Step18 from './Step18.vue';
 import Step19 from './Step19.vue';
 import Step20 from './Step20.vue';
 import Step21 from './Step21.vue';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+
+// Punto 39: en la captura rápida, las preguntas en dos columnas (la mitad del alto)
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
   <HcSectionStep title="Antecedentes personales patológicos" icono="fa-notes-medical">
-    <MicrostepAnchor :legacy-step="12">
-      <Step12 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="13">
-      <Step13 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="14">
-      <Step14 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="15">
-      <Step15 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="16">
-      <Step16 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="17">
-      <Step17 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="18">
-      <Step18 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="19">
-      <Step19 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="20">
-      <Step20 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="21">
-      <Step21 variant="compact" />
-    </MicrostepAnchor>
+    <div :class="capturaRapida ? 'grid sm:grid-cols-2 gap-x-8' : ''">
+      <MicrostepAnchor :legacy-step="12">
+        <Step12 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="13">
+        <Step13 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="14">
+        <Step14 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="15">
+        <Step15 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="16">
+        <Step16 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="17">
+        <Step17 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="18">
+        <Step18 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="19">
+        <Step19 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="20">
+        <Step20 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="21">
+        <Step21 variant="compact" />
+      </MicrostepAnchor>
+    </div>
   </HcSectionStep>
 </template>

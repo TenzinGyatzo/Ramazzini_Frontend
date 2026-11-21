@@ -61,7 +61,8 @@ watch(cardiopaticos, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="cardiopaticos cardiopaticosEspecificar"
+                campo="cardiopaticos"
+                campo-especificar="cardiopaticosEspecificar"
                 label="CARDIOPÁTICOS"
                 question="¿Casos de problemas cardíacos en la familia?"
                 v-model="cardiopaticos"

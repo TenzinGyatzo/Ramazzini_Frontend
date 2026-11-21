@@ -61,7 +61,8 @@ watch(actividadFisicaDeficiente, async (newValue) => {
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
                 especificar-cuando-no="Adecuada"
-                data-campo="actividadFisicaDeficiente actividadFisicaDeficienteEspecificar"
+                campo="actividadFisicaDeficiente"
+                campo-especificar="actividadFisicaDeficienteEspecificar"
                 label="ACTIVIDAD FÍSICA"
                 question="¿La actividad física del trabajador es deficiente?"
                 v-model="actividadFisicaDeficiente"

@@ -61,7 +61,8 @@ watch(alimentacionDeficiente, async (newValue) => {
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
                 especificar-cuando-no="Adecuada"
-                data-campo="alimentacionDeficiente alimentacionDeficienteEspecificar"
+                campo="alimentacionDeficiente"
+                campo-especificar="alimentacionDeficienteEspecificar"
                 label="ALIMENTACIÓN"
                 question="¿La alimentación del trabajador es deficiente?"
                 v-model="alimentacionDeficiente"

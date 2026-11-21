@@ -46,7 +46,7 @@ watch(fechaUltimoPapanicolaouPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
-        data-campo="fechaUltimoPapanicolaou"
+        campo-especificar="fechaUltimoPapanicolaou"
         label="ÚLTIMO PAPANICOLAOU"
         question="¿Recuerda la fecha exacta o aproximada del último papanicolaou?"
         v-model="fechaUltimoPapanicolaouPregunta"

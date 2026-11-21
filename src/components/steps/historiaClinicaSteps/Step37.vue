@@ -46,7 +46,7 @@ watch(embarazoActualPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
-        data-campo="embarazoActual"
+        campo-especificar="embarazoActual"
         label="EMBARAZO ACTUAL"
         question="¿La trabajadora está actualmente embarazada?"
         v-model="embarazoActualPregunta"

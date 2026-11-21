@@ -60,7 +60,8 @@ watch(otros, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="otros otrosEspecificar"
+                campo="otros"
+                campo-especificar="otrosEspecificar"
                 label="OTROS"
                 question="¿Existen otros antecedentes relevantes en la historia del trabajador?"
                 v-model="otros"

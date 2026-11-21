@@ -60,7 +60,8 @@ watch(alcoholismo, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="alcoholismo alcoholismoEspecificar"
+                campo="alcoholismo"
+                campo-especificar="alcoholismoEspecificar"
                 label="ALCOHOLISMO"
                 question="¿El trabajador consume alcohol o cuenta con antecedentes de consumo de alcohol?"
                 v-model="alcoholismo"

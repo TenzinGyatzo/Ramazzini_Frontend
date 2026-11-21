@@ -60,7 +60,8 @@ watch(quirurgicos, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="quirurgicos quirurgicosEspecificar"
+                campo="quirurgicos"
+                campo-especificar="quirurgicosEspecificar"
                 label="QUIRÚRGICOS"
                 question="¿El trabajador ha pasado por procedimientos quirúrgicos en el pasado?"
                 v-model="quirurgicos"

@@ -46,7 +46,7 @@ watch(fechaUltimaMastografiaPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
-        data-campo="fechaUltimaMastografia"
+        campo-especificar="fechaUltimaMastografia"
         label="ÚLTIMA MASTOGRAFÍA"
         question="¿Recuerda la fecha exacta o aproximada de la última mastografía?"
         v-model="fechaUltimaMastografiaPregunta"

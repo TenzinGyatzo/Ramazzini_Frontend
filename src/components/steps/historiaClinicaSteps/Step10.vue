@@ -60,7 +60,8 @@ watch(tuberculosis, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="tuberculosis tuberculosisEspecificar"
+                campo="tuberculosis"
+                campo-especificar="tuberculosisEspecificar"
                 label="TUBERCULOSIS"
                 question="¿Antecedentes de tuberculosis en la familia?"
                 v-model="tuberculosis"

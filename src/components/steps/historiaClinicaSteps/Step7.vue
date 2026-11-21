@@ -60,7 +60,8 @@ watch(psiquiatricos, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="psiquiatricos psiquiatricosEspecificar"
+                campo="psiquiatricos"
+                campo-especificar="psiquiatricosEspecificar"
                 label="PSIQUIÁTRICOS"
                 question="¿Antecedentes de trastornos psiquiátricos en la familia?"
                 v-model="psiquiatricos"

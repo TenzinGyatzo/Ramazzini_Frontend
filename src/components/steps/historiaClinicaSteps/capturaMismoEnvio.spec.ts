@@ -31,18 +31,20 @@ type Accion = (w: VueWrapper) => Promise<void>;
 const nada: Accion = async () => {};
 
 /** Marca «Sí» en los botones de la pregunta y escribe el detalle. */
-const siCon = (texto: string): Accion => async (w) => {
-  const si = w.findAll('button').find((b) => b.text() === 'Sí');
-  await si!.trigger('click');
+/** Elige «Sí» en los botones juntos de la pregunta (son radios). */
+const marcarSi = async (w: VueWrapper) => {
+  await w.find('input[type="radio"][value="Si"]').setValue(true);
   await flushPromises();
+};
+
+const siCon = (texto: string): Accion => async (w) => {
+  await marcarSi(w);
   await w.find('input[type="text"]').setValue(texto);
 };
 
 /** Marca «Sí» y deja «Especifique» vacío. */
 const siSinDetalle: Accion = async (w) => {
-  const si = w.findAll('button').find((b) => b.text() === 'Sí');
-  await si!.trigger('click');
-  await flushPromises();
+  await marcarSi(w);
 };
 
 type Captura = Array<[Component, Accion]>;

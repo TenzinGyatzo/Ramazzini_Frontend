@@ -60,7 +60,8 @@ watch(diabeticosPP, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="diabeticosPP diabeticosPPEspecificar"
+                campo="diabeticosPP"
+                campo-especificar="diabeticosPPEspecificar"
                 label="DIABÉTICOS"
                 question="¿Presenta el trabajador antecedentes de diabetes?"
                 v-model="diabeticosPP"

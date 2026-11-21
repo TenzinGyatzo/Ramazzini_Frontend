@@ -46,7 +46,7 @@ watch(planificacionFamiliarPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
-        data-campo="planificacionFamiliar"
+        campo-especificar="planificacionFamiliar"
         label="PLANIFICACIÓN FAMILIAR"
         question="¿Ha utilizado métodos de planificación familiar?"
         v-model="planificacionFamiliarPregunta"

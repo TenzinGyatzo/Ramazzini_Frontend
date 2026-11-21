@@ -60,7 +60,8 @@ watch(hepatopatias, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="hepatopatias hepatopatiasEspecificar"
+                campo="hepatopatias"
+                campo-especificar="hepatopatiasEspecificar"
                 label="HEPATOPATÍAS"
                 question="¿Historial de enfermedades hepáticas en la familia?"
                 v-model="hepatopatias"

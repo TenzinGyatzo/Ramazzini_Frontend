@@ -61,7 +61,8 @@ watch(higienePersonalDeficiente, async (newValue) => {
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
                 especificar-cuando-no="Adecuada"
-                data-campo="higienePersonalDeficiente higienePersonalDeficienteEspecificar"
+                campo="higienePersonalDeficiente"
+                campo-especificar="higienePersonalDeficienteEspecificar"
                 label="HIGIENE PERSONAL"
                 question="¿La higiene personal del trabajador es deficiente?"
                 v-model="higienePersonalDeficiente"

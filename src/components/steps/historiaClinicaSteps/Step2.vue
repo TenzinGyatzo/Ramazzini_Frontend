@@ -61,7 +61,8 @@ watch(nefropatias, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="nefropatias nefropatiasEspecificar"
+                campo="nefropatias"
+                campo-especificar="nefropatiasEspecificar"
                 label="NEFROPATÍAS"
                 question="¿Problemas de riñones en la familia?"
                 v-model="nefropatias"

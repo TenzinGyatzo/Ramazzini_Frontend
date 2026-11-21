@@ -61,7 +61,8 @@ watch(hipertensivos, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="hipertensivos hipertensivosEspecificar"
+                campo="hipertensivos"
+                campo-especificar="hipertensivosEspecificar"
                 label="HIPERTENSIVOS"
                 question="¿Casos de hipertensión en la familia?"
                 v-model="hipertensivos"

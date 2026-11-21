@@ -60,7 +60,8 @@ watch(tabaquismo, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="tabaquismo tabaquismoEspecificar"
+                campo="tabaquismo"
+                campo-especificar="tabaquismoEspecificar"
                 label="TABAQUISMO"
                 question="¿El trabajador consume tabaco o cuenta con antecedentes de consumo de tabaco?"
                 v-model="tabaquismo"

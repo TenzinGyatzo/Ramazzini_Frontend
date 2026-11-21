@@ -55,7 +55,8 @@ watch(autoinmunes, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
-                data-campo="autoinmunes autoinmunesEspecificar"
+                campo="autoinmunes"
+                campo-especificar="autoinmunesEspecificar"
                 label="AUTOINMUNES"
                 question="¿Antecedentes de enfermedades autoinmunes en la familia?"
                 v-model="autoinmunes"
