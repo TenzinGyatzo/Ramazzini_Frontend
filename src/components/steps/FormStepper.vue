@@ -2133,6 +2133,14 @@ export default {
     let campoPorRestaurar = null;
     // Con el cursor, el clic (los botones No/Sí no siempre reciben el cursor) o el cambio de valor
     const EVENTOS_CAMPO = ['focusin', 'pointerdown', 'change'];
+    // Último clic o tecla del usuario: la restauración nunca le quita un campo que ya eligió
+    let ultimoGesto = 0;
+    const alGesto = (e) => {
+      if (e.isTrusted) ultimoGesto = performance.now();
+    };
+    const EVENTOS_GESTO = ['pointerdown', 'keydown'];
+    onMounted(() => EVENTOS_GESTO.forEach((ev) => document.addEventListener(ev, alGesto, true)));
+    onUnmounted(() => EVENTOS_GESTO.forEach((ev) => document.removeEventListener(ev, alGesto, true)));
     const alUsarCampo = (e) => {
       const el = controlDelClic(e.target);
       if (!el || !el.closest('[data-form-stepper]')) return;
@@ -2144,12 +2152,16 @@ export default {
 
     const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
     const restaurarCampo = async (recordado) => {
+      const inicio = performance.now();
+      // Si el usuario ya hizo clic o tecleó en la pantalla nueva, se queda donde él eligió
+      const intervino = () => ultimoGesto > inicio;
       let el = null;
       for (let i = 0; i < 40 && !(el = buscarCampo(recordado)); i++) await esperar(50);
       // Que termine de acomodarse (lado a lado, altura del área) y de poner su propio cursor
       await esperar(150);
       if (campoPorRestaurar !== recordado) return;
       campoPorRestaurar = null;
+      if (intervino()) return;
       el = buscarCampo(recordado) ?? el;
       if (!el) return;
       const acomodar = () => {
@@ -2161,7 +2173,7 @@ export default {
       // Si algo más movió el cursor o la vista al abrir el paso (el asistente lleva su sección
       // a la pregunta con un desplazamiento suave), se vuelve al campo
       await esperar(500);
-      if (!el.isConnected || campoPorRestaurar || hayAtencionEnCurso()) return;
+      if (!el.isConnected || campoPorRestaurar || hayAtencionEnCurso() || intervino()) return;
       if ((esComputadora() && document.activeElement !== el) || !campoALaVista(el)) acomodar();
     };
 
