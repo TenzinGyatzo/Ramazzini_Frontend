@@ -1,5 +1,7 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import { CLASE_ETIQUETA } from '../captura/estiloCaptura';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -9,6 +11,11 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
+
+const capturaRapida = enCapturaRapida();
+
+// En la sección (variant compact) el título lo pone la sección; solo en el asistente anterior
+const { variant } = defineProps({ variant: { type: String, default: '' } });
 
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
@@ -41,7 +48,6 @@ onMounted(() => {
   formDataExamenVista.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 });
 
-
 // Inicializar la referencia local sincronizada con formData (al volver al paso se conserva
 // la fecha ya elegida; antes siempre mostraba la de hoy)
 const fechaExamenVista = ref(formDataExamenVista.fechaExamenVista || today);
@@ -54,16 +60,19 @@ watch(fechaExamenVista, (newValue) => {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-4 text-gray-900">Examen de Vista</h1>
-    <div data-campo="fechaExamenVista" class="mt-6">
-      <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de valoración</h2>
-      <FormKit 
-        type="date" 
-        name="fechaExamenVista" 
+    <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Examen de la vista</h1>
+    <div
+      data-campo="fechaExamenVista"
+      :class="['captura-fecha', variant === 'compact' ? 'mt-1' : 'mt-6', capturaRapida ? 'w-full sm:w-56' : '']"
+    >
+      <p :class="[CLASE_ETIQUETA, 'mb-1']">Fecha del examen <span class="text-red-500">*</span></p>
+      <FormKit
+        type="date"
+        name="fechaExamenVista"
         placeholder="Seleccione una fecha"
         :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
-        v-model="fechaExamenVista" 
+        v-model="fechaExamenVista"
       />
     </div>
   </div>

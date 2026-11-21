@@ -3,6 +3,11 @@ import { ref, watch, onMounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 
+import TextoCaptura from '../captura/TextoCaptura.vue';
+
+// En la sección (variant compact) el título lo pone la sección; solo en el asistente anterior
+const { variant } = defineProps({ variant: { type: String, default: '' } });
+
 const { formDataExamenVista } = useFormDataStore();
 const documentos = useDocumentosStore();
 
@@ -15,7 +20,6 @@ onMounted(() => {
   antecedentes.value = (local != null && local !== '') ? local : (fromDb || '');
 });
 
-
 watch(antecedentes, () => {
   formDataExamenVista.antecedentes = antecedentes.value?.trim() || undefined;
 });
@@ -23,18 +27,7 @@ watch(antecedentes, () => {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-4 text-gray-900">ANTECEDENTES</h1>
-
-    <div class="mb-4">
-      <label for="antecedentes" class="block text-lg font-normal text-gray-800 mb-3">
-        Antecedentes (opcional)
-      </label>
-      <textarea
-        id="antecedentes"
-        class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-48"
-        v-model="antecedentes"
-        placeholder="Registrar antecedentes relevantes"
-      ></textarea>
-    </div>
+    <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Antecedentes</h1>
+    <TextoCaptura id="antecedentes" v-model="antecedentes" etiqueta="Antecedentes (opcional)" placeholder="Registrar antecedentes relevantes" :filas="3" />
   </div>
 </template>
