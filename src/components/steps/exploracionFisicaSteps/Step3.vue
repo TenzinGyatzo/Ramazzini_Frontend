@@ -1,5 +1,4 @@
 <script setup>
-import { vValorDePartida } from '@/directives/valorDePartida';
 import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -10,6 +9,9 @@ import {
   mensajeErrorSomatometriaSignosField,
 } from '@/helpers/somatometriaSignosRanges';
 import { esMedicion } from '@/helpers/medicionesClinicas';
+import NumeroCaptura from '@/components/steps/captura/NumeroCaptura.vue';
+import { colorCategoria } from '@/components/steps/captura/colorCategoria';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
 
@@ -31,23 +33,8 @@ const props = defineProps({
   },
 });
 const { variant } = toRefs(props);
-const isCompact = computed(() => variant.value === 'compact');
-
-const labelClass = computed(() =>
-  isCompact.value
-    ? 'block text-sm font-medium text-gray-800 mb-1'
-    : 'block text-base font-medium text-gray-800 mb-2',
-);
-const inputClass = computed(() =>
-  isCompact.value
-    ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
-    : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200',
-);
-const categoryClass = computed(() =>
-  isCompact.value
-    ? 'w-full py-2 px-2 text-center border border-gray-200 rounded-md text-sm cursor-not-allowed font-semibold'
-    : 'w-full p-3 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
-);
+// Punto 41: un solo diseño en los dos modos, como los signos vitales de la nota médica
+const capturaRapida = enCapturaRapida();
 
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
@@ -259,263 +246,76 @@ const mensajeErrorSaturacionOxigeno = computed(() =>
   mensajeErrorSomatometriaSignosField('saturacionOxigeno', saturacionOxigeno.value),
 );
 
+
+/** Los cinco signos, en el orden de captura (mismo componente que la nota médica). */
+const signos = [
+  { campo: 'tensionArterialSistolica', etiqueta: 'Tensión arterial sistólica', corta: 'T.A. sistólica', unidad: 'mmHg', valor: tensionArterialSistolica, error: mensajeErrorTensionSistolica },
+  { campo: 'tensionArterialDiastolica', etiqueta: 'Tensión arterial diastólica', corta: 'T.A. diastólica', unidad: 'mmHg', valor: tensionArterialDiastolica, error: mensajeErrorTensionDiastolica },
+  { campo: 'frecuenciaCardiaca', etiqueta: 'Frecuencia cardiaca', corta: 'Frec. cardiaca', unidad: 'lpm', valor: frecuenciaCardiaca, error: mensajeErrorFrecuenciaCardiaca },
+  { campo: 'frecuenciaRespiratoria', etiqueta: 'Frecuencia respiratoria', corta: 'Frec. respiratoria', unidad: 'rpm', valor: frecuenciaRespiratoria, error: mensajeErrorFrecuenciaRespiratoria },
+  { campo: 'saturacionOxigeno', etiqueta: 'Saturación de oxígeno', corta: 'Saturación O₂', unidad: '%', valor: saturacionOxigeno, error: mensajeErrorSaturacionOxigeno },
+];
+
+const conValor = (v, unidad) => (esMedicion(v) ? `${v} ${unidad}` : '');
+/** Categorías que se calculan solas, con su valor. */
+const categorias = computed(() => [
+  {
+    titulo: 'Tensión arterial',
+    valor: esMedicion(tensionArterialSistolica.value)
+      ? `${tensionArterialSistolica.value}/${esMedicion(tensionArterialDiastolica.value) ? tensionArterialDiastolica.value : '—'} mmHg`
+      : '',
+    categoria: categoriaTensionArterial.value,
+  },
+  { titulo: 'Frecuencia cardiaca', valor: conValor(frecuenciaCardiaca.value, 'lpm'), categoria: categoriaFrecuenciaCardiaca.value },
+  { titulo: 'Frecuencia respiratoria', valor: conValor(frecuenciaRespiratoria.value, 'rpm'), categoria: categoriaFrecuenciaRespiratoria.value },
+  { titulo: 'Saturación de oxígeno', valor: conValor(saturacionOxigeno.value, '%'), categoria: categoriaSaturacionOxigeno.value },
+]);
 </script>
 
 <template>
   <div>
-    <h1 v-if="!isCompact" class="text-2xl font-bold mb-4 text-gray-900">SIGNOS VITALES</h1>
-
-    <!-- Tensión Arterial -->
-    <div :class="isCompact ? 'mb-3' : 'mb-6'">
-      <h3 :class="isCompact ? 'text-sm font-semibold text-gray-800 mb-2' : 'text-base font-semibold text-gray-800 mb-3'">
-        Tensión Arterial
-      </h3>
-      <div :class="['grid grid-cols-2 gap-4', isCompact ? 'mb-2' : 'mb-3']">
-        <div data-campo="tensionArterialSistolica">
-          <label for="tensionArterialSistolica" :class="labelClass">
-            Sistólica (mmHg) <span class="text-red-500" aria-hidden="true">*</span>
-          </label>
-          <input 
-            type="number"
-            id="tensionArterialSistolica"
-            :class="inputClass"
-            v-model="tensionArterialSistolica" v-valor-de-partida="partida('tensionArterialSistolica')" 
-            :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min" 
-            :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max"
-            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialSistolica.max}`"
-          >
-          <transition
-            enter-active-class="transition-all duration-200 ease-out"
-            enter-from-class="opacity-0 transform -translate-y-1"
-            enter-to-class="opacity-100 transform translate-y-0"
-            leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 transform translate-y-0"
-            leave-to-class="opacity-0 transform -translate-y-1"
-          >
-            <p v-if="mensajeErrorTensionSistolica" class="text-red-600 text-sm mt-2 font-medium">
-              ⚠️ {{ mensajeErrorTensionSistolica }}
-            </p>
-          </transition>
-        </div>
-        <div data-campo="tensionArterialDiastolica">
-          <label for="tensionArterialDiastolica" :class="labelClass">
-            Diastólica (mmHg) <span class="text-red-500" aria-hidden="true">*</span>
-          </label>
-          <input 
-            type="number"
-            id="tensionArterialDiastolica"
-            :class="inputClass"
-            v-model="tensionArterialDiastolica" v-valor-de-partida="partida('tensionArterialDiastolica')" 
-            :min="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min" 
-            :max="SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max"
-            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.min}-${SOMATOMETRIA_SIGNOS_RANGES.tensionArterialDiastolica.max}`"
-          />
-          <transition
-            enter-active-class="transition-all duration-200 ease-out"
-            enter-from-class="opacity-0 transform -translate-y-1"
-            enter-to-class="opacity-100 transform translate-y-0"
-            leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 transform translate-y-0"
-            leave-to-class="opacity-0 transform -translate-y-1"
-          >
-            <p v-if="mensajeErrorTensionDiastolica" class="text-red-600 text-sm mt-2 font-medium">
-              ⚠️ {{ mensajeErrorTensionDiastolica }}
-            </p>
-          </transition>
-        </div>
-      </div>
-      <div class="relative">
-        <input 
-          type="text"
-          :class="[
-            categoryClass,
-            categoriaTensionArterial === 'Óptima' ? 'bg-emerald-50 text-emerald-800' : '',
-            categoriaTensionArterial === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-            categoriaTensionArterial === 'Alta' ? 'bg-yellow-50 text-yellow-800' : '',
-            categoriaTensionArterial === 'Hipertensión grado 1' ? 'bg-red-50 text-red-900' : '',
-            categoriaTensionArterial === 'Hipertensión grado 2' ? 'bg-red-100 text-red-900' : '',
-            categoriaTensionArterial === 'Hipertensión grado 3' ? 'bg-red-200 text-red-950' : ''
-          ]"
-          v-model="categoriaTensionArterial" placeholder="Según la tensión" data-calculado 
-          readonly 
-          title="Se determina automáticamente según los valores de presión arterial"
-        />
-        <div 
-          v-if="categoriaTensionArterial === 'Óptima' && !isCompact" 
-          class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-      </div>
+    <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Signos vitales</h1>
+    <div
+      :class="[
+        'grid',
+        capturaRapida ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4' : 'grid-cols-2 gap-x-3 gap-y-3',
+      ]"
+    >
+      <NumeroCaptura
+        v-for="s in signos"
+        :id="s.campo"
+        :key="s.campo"
+        v-model="s.valor.value"
+        :data-campo="s.campo"
+        :etiqueta="s.etiqueta"
+        :etiqueta-corta="s.corta"
+        :unidad="s.unidad"
+        obligatorio
+        :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES[s.campo].min}-${SOMATOMETRIA_SIGNOS_RANGES[s.campo].max}`"
+        :min="SOMATOMETRIA_SIGNOS_RANGES[s.campo].min"
+        :max="SOMATOMETRIA_SIGNOS_RANGES[s.campo].max"
+        :error="s.error.value"
+        :partida="partida(s.campo)"
+      />
     </div>
 
-    <!-- Frecuencia Cardíaca -->
-    <div data-campo="frecuenciaCardiaca" :class="isCompact ? 'mb-3' : 'mb-6'">
-      <label for="frecuenciaCardiaca" :class="labelClass">
-        Frecuencia Cardíaca (lpm) <span class="text-red-500" aria-hidden="true">*</span>
-      </label>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <input 
-            type="number"
-            id="frecuenciaCardiaca"
-            :class="inputClass"
-            v-model="frecuenciaCardiaca" v-valor-de-partida="partida('frecuenciaCardiaca')" 
-            :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min" 
-            :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max"
-            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max}`"
-          />
-          <transition
-            enter-active-class="transition-all duration-200 ease-out"
-            enter-from-class="opacity-0 transform -translate-y-1"
-            enter-to-class="opacity-100 transform translate-y-0"
-            leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 transform translate-y-0"
-            leave-to-class="opacity-0 transform -translate-y-1"
-          >
-            <p v-if="mensajeErrorFrecuenciaCardiaca" class="text-red-600 text-sm mt-2 font-medium">
-              ⚠️ {{ mensajeErrorFrecuenciaCardiaca }}
-            </p>
-          </transition>
+    <!-- Categorías que se calculan solas: valor y etiqueta de color sólido -->
+    <div :class="['mt-4 grid gap-2', capturaRapida ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1']">
+      <div
+        v-for="c in categorias"
+        :key="c.titulo"
+        data-calculado
+        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5"
+      >
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500">{{ c.titulo }}</p>
+          <p class="text-sm font-bold text-gray-900 leading-tight">{{ c.valor || '—' }}</p>
         </div>
-        <div class="relative">
-          <input 
-            type="text"
-            :class="[
-              categoryClass,
-              categoriaFrecuenciaCardiaca === 'Excelente' ? 'bg-emerald-50 text-emerald-800' : '',
-              categoriaFrecuenciaCardiaca === 'Buena' ? 'bg-emerald-50 text-emerald-800' : '',
-              categoriaFrecuenciaCardiaca === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-              categoriaFrecuenciaCardiaca === 'Elevada' ? 'bg-yellow-50 text-yellow-800' : '',
-              categoriaFrecuenciaCardiaca === 'Alta' ? 'bg-red-50 text-red-900' : '',
-              categoriaFrecuenciaCardiaca === 'Muy Alta' ? 'bg-red-200 text-red-950' : ''
-            ]"
-            v-model="categoriaFrecuenciaCardiaca" placeholder="Según la F.C." data-calculado 
-            readonly 
-            title="Se determina automáticamente según la frecuencia cardiaca ingresada"
-          />
-          <div 
-            v-if="!isCompact && (categoriaFrecuenciaCardiaca === 'Excelente' || categoriaFrecuenciaCardiaca === 'Buena')" 
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Frecuencia Respiratoria -->
-    <div data-campo="frecuenciaRespiratoria" :class="isCompact ? 'mb-3' : 'mb-6'">
-      <label for="frecuenciaRespiratoria" :class="labelClass">
-        Frecuencia Respiratoria (rpm) <span class="text-red-500" aria-hidden="true">*</span>
-      </label>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <input 
-            type="number"
-            id="frecuenciaRespiratoria"
-            :class="inputClass"
-            v-model="frecuenciaRespiratoria" v-valor-de-partida="partida('frecuenciaRespiratoria')" 
-            :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min" 
-            :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max"
-            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max}`"
-          />
-          <transition
-            enter-active-class="transition-all duration-200 ease-out"
-            enter-from-class="opacity-0 transform -translate-y-1"
-            enter-to-class="opacity-100 transform translate-y-0"
-            leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 transform translate-y-0"
-            leave-to-class="opacity-0 transform -translate-y-1"
-          >
-            <p v-if="mensajeErrorFrecuenciaRespiratoria" class="text-red-600 text-sm mt-2 font-medium">
-              ⚠️ {{ mensajeErrorFrecuenciaRespiratoria }}
-            </p>
-          </transition>
-        </div>
-        <div class="relative">
-          <input 
-            type="text"
-            :class="[
-              categoryClass,
-              categoriaFrecuenciaRespiratoria === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-              categoriaFrecuenciaRespiratoria === 'Bradipnea' ? 'bg-yellow-50 text-yellow-800' : '',
-              categoriaFrecuenciaRespiratoria === 'Taquipnea' ? 'bg-yellow-50 text-yellow-800' : '',
-              categoriaFrecuenciaRespiratoria === 'Hiperventilación' ? 'bg-red-100 text-red-900' : ''
-            ]"
-            v-model="categoriaFrecuenciaRespiratoria" placeholder="Según la F.R." data-calculado 
-            readonly 
-            title="Se determina automáticamente según la frecuencia respiratoria ingresada"
-          />
-          <div 
-            v-if="categoriaFrecuenciaRespiratoria === 'Normal' && !isCompact" 
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Saturación de Oxígeno -->
-    <div data-campo="saturacionOxigeno" :class="isCompact ? 'mb-2' : 'mb-4'">
-      <label for="saturacionOxigeno" :class="labelClass">
-        Saturación de Oxígeno (%) <span class="text-red-500" aria-hidden="true">*</span>
-      </label>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <input 
-            type="number"
-            id="saturacionOxigeno"
-            :class="inputClass"
-            v-model="saturacionOxigeno" v-valor-de-partida="partida('saturacionOxigeno')" 
-            :min="SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.min" 
-            :max="SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.max"
-            :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.min}-${SOMATOMETRIA_SIGNOS_RANGES.saturacionOxigeno.max}`"
-          />
-          <transition
-            enter-active-class="transition-all duration-200 ease-out"
-            enter-from-class="opacity-0 transform -translate-y-1"
-            enter-to-class="opacity-100 transform translate-y-0"
-            leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 transform translate-y-0"
-            leave-to-class="opacity-0 transform -translate-y-1"
-          >
-            <p v-if="mensajeErrorSaturacionOxigeno" class="text-red-600 text-sm mt-2 font-medium">
-              ⚠️ {{ mensajeErrorSaturacionOxigeno }}
-            </p>
-          </transition>
-        </div>
-        <div class="relative">
-          <input 
-            type="text"
-            :class="[
-              categoryClass,
-              categoriaSaturacionOxigeno === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-              categoriaSaturacionOxigeno === 'Aceptable' ? 'bg-emerald-50 text-emerald-800' : '',
-              categoriaSaturacionOxigeno === 'Moderadamente baja' ? 'bg-yellow-50 text-yellow-800' : '',
-              categoriaSaturacionOxigeno === 'Hipoxemia leve' ? 'bg-red-50 text-red-900' : '',
-              categoriaSaturacionOxigeno === 'Hipoxemia grave' ? 'bg-red-100 text-red-950' : ''
-            ]"
-            v-model="categoriaSaturacionOxigeno" placeholder="Según la SpO₂" data-calculado 
-            readonly 
-            title="Se determina automáticamente según la saturación de oxígeno ingresada"
-          />
-          <div 
-            v-if="categoriaSaturacionOxigeno === 'Normal' && !isCompact" 
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
+        <span
+          v-if="c.categoria"
+          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(c.categoria)]"
+        >{{ c.categoria }}</span>
+        <span v-else class="text-xs text-gray-400">Se calcula con el dato</span>
       </div>
     </div>
   </div>

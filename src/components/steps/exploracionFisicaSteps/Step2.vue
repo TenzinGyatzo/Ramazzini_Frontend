@@ -1,5 +1,4 @@
 <script setup>
-import { vValorDePartida } from '@/directives/valorDePartida';
 import { useValorDePartida } from '@/composables/useValorDePartida';
 import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
@@ -11,6 +10,12 @@ import {
 } from '@/helpers/somatometriaSignosRanges';
 import { esMedicion, imcDesdePesoAltura } from '@/helpers/medicionesClinicas';
 import UsarUltimaExploracionFisica from '../UsarUltimaExploracionFisica.vue';
+import NumeroCaptura from '@/components/steps/captura/NumeroCaptura.vue';
+import { colorCategoria } from '@/components/steps/captura/colorCategoria';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+
+// Punto 41: un solo diseño en los dos modos, como la somatometría de la nota médica
+const capturaRapida = enCapturaRapida();
 
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
 
@@ -161,182 +166,93 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
 
 <template>
   <div>
-    <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">SOMATOMETRÍA</h1>
+    <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Somatometría</h1>
 
     <UsarUltimaExploracionFisica :compacto="variant === 'compact'" @usar="usarUltimaExploracion" />
 
-    <!-- Peso y Altura -->
-    <div :class="['grid grid-cols-2 gap-4', variant === 'compact' ? 'mb-3' : 'mb-6']">
-      <div data-campo="peso">
-        <label for="peso" :class="variant === 'compact' ? 'block text-sm font-medium text-gray-800 mb-1' : 'block text-base font-medium text-gray-800 mb-2'">
-          Peso (Kg) <span class="text-red-500" aria-hidden="true">*</span>
-        </label>
-        <input 
-          type="number"
-          id="peso"
-          :class="variant === 'compact'
-            ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
-            : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
-          v-model="peso" v-valor-de-partida="partida('peso')" 
-          :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min" 
-          :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max" 
-          step="0.1"
-          :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.peso.min}-${SOMATOMETRIA_SIGNOS_RANGES.peso.max}`"
-        >
-        <transition
-          enter-active-class="transition-all duration-200 ease-out"
-          enter-from-class="opacity-0 transform -translate-y-1"
-          enter-to-class="opacity-100 transform translate-y-0"
-          leave-active-class="transition-all duration-150 ease-in"
-          leave-from-class="opacity-100 transform translate-y-0"
-          leave-to-class="opacity-0 transform -translate-y-1"
-        >
-          <p v-if="mensajeErrorPeso" class="text-red-600 text-sm mt-2 font-medium">
-            ⚠️ {{ mensajeErrorPeso }}
-          </p>
-        </transition>
-      </div>
-
-      <div data-campo="altura">
-        <label for="altura" :class="variant === 'compact' ? 'block text-sm font-medium text-gray-800 mb-1' : 'block text-base font-medium text-gray-800 mb-2'">
-          Altura (m) <span class="text-red-500" aria-hidden="true">*</span>
-        </label>
-        <input 
-          type="number"
-          id="altura"
-          :class="variant === 'compact'
-            ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
-            : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
-          v-model="altura" v-valor-de-partida="partida('altura')" 
-          step="0.01" 
-          :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min" 
-          :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max"
-          :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.altura.min}-${SOMATOMETRIA_SIGNOS_RANGES.altura.max}`"
-        />
-        <transition
-          enter-active-class="transition-all duration-200 ease-out"
-          enter-from-class="opacity-0 transform -translate-y-1"
-          enter-to-class="opacity-100 transform translate-y-0"
-          leave-active-class="transition-all duration-150 ease-in"
-          leave-from-class="opacity-100 transform translate-y-0"
-          leave-to-class="opacity-0 transform -translate-y-1"
-        >
-          <p v-if="mensajeErrorAltura" class="text-red-600 text-sm mt-2 font-medium">
-            ⚠️ {{ mensajeErrorAltura }}
-          </p>
-        </transition>
-      </div>
+    <div
+      :class="[
+        'grid',
+        capturaRapida ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4' : 'grid-cols-2 gap-x-3 gap-y-3',
+      ]"
+    >
+      <NumeroCaptura
+        id="peso"
+        data-campo="peso"
+        v-model="peso"
+        etiqueta="Peso"
+        unidad="kg"
+        obligatorio
+        step="0.1"
+        :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.peso.min}-${SOMATOMETRIA_SIGNOS_RANGES.peso.max}`"
+        :min="SOMATOMETRIA_SIGNOS_RANGES.peso.min"
+        :max="SOMATOMETRIA_SIGNOS_RANGES.peso.max"
+        :error="mensajeErrorPeso"
+        :partida="partida('peso')"
+      />
+      <NumeroCaptura
+        id="altura"
+        data-campo="altura"
+        v-model="altura"
+        etiqueta="Altura"
+        unidad="m"
+        obligatorio
+        step="0.01"
+        :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.altura.min}-${SOMATOMETRIA_SIGNOS_RANGES.altura.max}`"
+        :min="SOMATOMETRIA_SIGNOS_RANGES.altura.min"
+        :max="SOMATOMETRIA_SIGNOS_RANGES.altura.max"
+        :error="mensajeErrorAltura"
+        :partida="partida('altura')"
+      />
+      <NumeroCaptura
+        id="circunferenciaCintura"
+        data-campo="circunferenciaCintura"
+        v-model="circunferenciaCintura"
+        v-model:se-desconoce="cinturaSeDesconoce"
+        etiqueta="Cintura"
+        unidad="cm"
+        obligatorio
+        con-se-desconoce
+        :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min}-${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max}`"
+        :min="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min"
+        :max="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max"
+        :error="mensajeErrorCircunferenciaCintura"
+        :partida="partida('circunferenciaCintura')"
+      />
     </div>
 
-    <!-- Índice de Masa Corporal -->
-    <div data-campo="indiceMasaCorporal" :class="variant === 'compact' ? 'mb-3' : 'mb-6'">
-      <label :class="variant === 'compact' ? 'block text-sm font-medium text-gray-800 mb-1' : 'block text-base font-medium text-gray-800 mb-2'">
-        Índice de Masa Corporal
-      </label>
-      <div class="grid grid-cols-2 gap-4">
-        <div class="relative">
-          <input 
-            type="number"
-            :class="variant === 'compact'
-              ? 'w-full p-2 text-center border border-gray-200 rounded-md text-sm text-gray-700 bg-gray-50 cursor-not-allowed font-semibold'
-              : 'w-full p-3 text-center border-2 border-gray-200 rounded-lg text-gray-700 bg-gray-50 cursor-not-allowed font-semibold'"
-            v-model="indiceMasaCorporal" placeholder="Se calcula solo" data-calculado 
-            readonly 
-            title="El IMC se calcula automáticamente en función al peso y altura"
-          />
-          <div v-if="variant !== 'compact'" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          </div>
+    <!-- Lo que se calcula solo: valor grande y la categoría en una etiqueta de color sólido -->
+    <div :class="['mt-4 grid gap-3', capturaRapida ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1']">
+      <div
+        data-campo="indiceMasaCorporal"
+        data-calculado
+        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+      >
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500">{{ capturaRapida ? 'Índice de masa corporal' : 'IMC' }}</p>
+          <p class="text-base font-bold text-gray-900 leading-tight">{{ indiceMasaCorporal ?? '—' }}</p>
         </div>
-        <div class="relative">
-          <input 
-            type="text"
-            :class="[
-              variant === 'compact' ? 'w-full py-2 px-2 text-center border border-gray-200 rounded-md text-sm cursor-not-allowed font-semibold' : 'w-full py-3 px-2 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
-              categoriaIMC === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-              categoriaIMC === 'Bajo peso' ? 'bg-yellow-50 text-yellow-800' : '',
-              categoriaIMC === 'Sobrepeso' ? 'bg-yellow-50 text-yellow-800' : '',
-              categoriaIMC === 'Obesidad clase I' ? 'bg-red-50 text-red-900' : '',
-              categoriaIMC === 'Obesidad clase II' ? 'bg-red-100 text-red-900' : '',
-              categoriaIMC === 'Obesidad clase III' ? 'bg-red-200 text-red-950' : ''
-            ]"
-            v-model="categoriaIMC" placeholder="Según el IMC" data-calculado 
-            readonly 
-            title="La categoría se determina automáticamente según su IMC"
-          />
-          <div 
-            v-if="categoriaIMC === 'Normal' && variant !== 'compact'" 
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
+        <span
+          v-if="categoriaIMC"
+          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(categoriaIMC)]"
+        >{{ categoriaIMC }}</span>
+        <span v-else class="text-xs text-gray-400">Se calcula con peso y altura</span>
       </div>
-    </div>
-
-    <!-- Circunferencia de Cintura -->
-    <div data-campo="circunferenciaCintura" :class="variant === 'compact' ? 'mb-2' : 'mb-4'">
-      <label :class="variant === 'compact' ? 'block text-sm font-medium text-gray-800 mb-1' : 'block text-base font-medium text-gray-800 mb-2'">
-        Circunferencia de Cintura (cm) <span class="text-red-500" aria-hidden="true">*</span>
-      </label>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <div class="relative">
-            <input 
-              type="number"
-              :class="variant === 'compact'
-                ? 'w-full p-2 text-center border border-gray-300 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200'
-                : 'w-full p-3 text-center border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200'"
-              v-model="circunferenciaCintura" v-valor-de-partida="partida('circunferenciaCintura')"
-              :disabled="cinturaSeDesconoce" 
-              :min="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min"
-              :max="SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max"
-              :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.min}-${SOMATOMETRIA_SIGNOS_RANGES.circunferenciaCintura.max}`"
-            />
-          </div>
-          <transition
-            enter-active-class="transition-all duration-200 ease-out"
-            enter-from-class="opacity-0 transform -translate-y-1"
-            enter-to-class="opacity-100 transform translate-y-0"
-            leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 transform translate-y-0"
-            leave-to-class="opacity-0 transform -translate-y-1"
-          >
-            <p v-if="mensajeErrorCircunferenciaCintura" class="text-red-600 text-sm mt-2 font-medium">
-              ⚠️ {{ mensajeErrorCircunferenciaCintura }}
-            </p>
-          </transition>
-          <label :class="['flex items-center gap-1.5 text-gray-700', variant === 'compact' ? 'mt-1 text-xs' : 'mt-2 text-sm']">
-            <input type="checkbox" v-model="cinturaSeDesconoce" class="rounded" data-cintura-se-desconoce />
-            Se desconoce
-          </label>
+      <div
+        data-calculado
+        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+      >
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500">Riesgo por cintura</p>
+          <p class="text-base font-bold text-gray-900 leading-tight">
+            {{ circunferenciaCintura != null && !cinturaSeDesconoce ? `${circunferenciaCintura} cm` : '—' }}
+          </p>
         </div>
-        <div class="relative">
-          <input 
-            type="text"
-            :class="[
-              variant === 'compact' ? 'w-full py-2 px-2 text-center border border-gray-200 rounded-md text-sm cursor-not-allowed font-semibold' : 'w-full py-3 px-2 text-center border-2 border-gray-200 rounded-lg cursor-not-allowed font-semibold',
-              categoriaCircunferenciaCintura === 'Bajo Riesgo' ? 'bg-emerald-50 text-emerald-800' : '',
-              categoriaCircunferenciaCintura === 'Riesgo Aumentado' ? 'bg-yellow-50 text-yellow-800 text-sm' : '',
-              categoriaCircunferenciaCintura === 'Alto Riesgo' ? 'bg-red-100 text-red-900' : ''
-            ]"
-            v-model="categoriaCircunferenciaCintura" placeholder="Según la cintura" data-calculado 
-            readonly 
-            title="Clasificación automática según el sexo y la circunferencia de cintura ingresada"
-          />
-          <div 
-            v-if="categoriaCircunferenciaCintura === 'Bajo Riesgo' && variant !== 'compact'" 
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
+        <span
+          v-if="categoriaCircunferenciaCintura"
+          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(categoriaCircunferenciaCintura)]"
+        >{{ categoriaCircunferenciaCintura }}</span>
+        <span v-else class="text-xs text-gray-400">Se calcula con la cintura</span>
       </div>
     </div>
   </div>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue';
+import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
+import { CLASE_AYUDA, CLASE_ETIQUETA, CLASE_TEXTAREA } from '@/components/steps/captura/estiloCaptura';
 
 const props = withDefaults(
   defineProps<{
@@ -14,6 +16,8 @@ const props = withDefaults(
     especificarCuandoNo?: string;
     /** Si true, al elegir Sí limpia el campo especificar. */
     limpiarEspecificarAlSi?: boolean;
+    /** Campo de la descripción (p. ej. «craneoCara»): marcas data-campo y nombre de los radios. */
+    campo?: string;
   }>(),
   {
     especificarCuandoNo: 'Sin hallazgos',
@@ -67,47 +71,44 @@ watch(
   },
 );
 
-function chipClass(option: 'Si' | 'No') {
-  const active = value.value === option;
-  return [
-    'px-3 py-1.5 rounded-md text-sm font-semibold border transition-colors duration-150 cursor-pointer select-none',
-    active
-      ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
-      : 'border-gray-300 bg-white text-gray-600 hover:border-emerald-400',
-  ];
-}
+// Punto 41: mismo diseño que la historia clínica en los dos modos. La etiqueta llega en
+// mayúsculas («CRÁNEO-CARA»); se muestra con mayúscula inicial.
+const etiquetaLegible = computed(() =>
+  props.label ? props.label.charAt(0) + props.label.slice(1).toLocaleLowerCase('es-MX') : '',
+);
+const OPCIONES_NO_SI = [
+  { valor: 'No', etiqueta: 'No' },
+  { valor: 'Si', etiqueta: 'Sí' },
+];
+// Radios con nombre propio por pregunta (las 27 conviven en la captura rápida)
+const nombreGrupo = computed(() => `hallazgo-${props.campo || props.label}`);
 </script>
 
 <template>
-  <div class="border-b border-gray-200/80 py-2.5 last:border-b-0">
-    <div class="flex flex-wrap items-center gap-2 justify-between">
-      <div class="min-w-0 flex-1">
-        <p class="text-sm font-semibold text-gray-800 leading-tight">{{ label }}</p>
-        <p v-if="question" class="text-xs text-gray-500 mt-0.5 leading-snug">{{ question }}</p>
+  <div
+    :data-campo="campo ? `${campo}Pregunta` : undefined"
+    class="border-b border-gray-200/80 dark:border-slate-700/80 py-2.5 last:border-b-0"
+  >
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p :class="[CLASE_ETIQUETA, 'leading-tight']">{{ etiquetaLegible }}</p>
+        <p v-if="question" :class="[CLASE_AYUDA, 'mt-0.5']">{{ question }}</p>
       </div>
-      <div class="flex items-center gap-1.5 shrink-0" role="group" :aria-label="label">
-        <button
-          type="button"
-          :class="chipClass('No')"
-          :aria-pressed="value === 'No'"
-          @click="value = 'No'"
-        >
-          No
-        </button>
-        <button
-          type="button"
-          :class="chipClass('Si')"
-          :aria-pressed="value === 'Si'"
-          @click="value = 'Si'"
-        >
-          Sí
-        </button>
-      </div>
+      <OpcionesSegmentadas
+        v-model="value"
+        compacto
+        class="shrink-0"
+        :name="nombreGrupo"
+        :etiqueta="etiquetaLegible"
+        :opciones="OPCIONES_NO_SI"
+      />
     </div>
     <div v-if="value === 'Si'" class="mt-2">
       <textarea
         ref="inputEspecificar"
-        class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 min-h-[72px] resize-y"
+        rows="2"
+        :data-campo="campo"
+        :class="CLASE_TEXTAREA"
         v-model="especificarLocal"
         :placeholder="placeholder || 'Describa los hallazgos encontrados...'"
         :required="especificarRequired !== false"

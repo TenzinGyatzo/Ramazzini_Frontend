@@ -73,6 +73,7 @@ watch(tobillosPiesPregunta, async (newValue, oldValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <HallazgoSiNoChips
+                campo="tobillosPies"
                 label="TOBILLOS-PIES"
                 question="¿Presencia de hallazgos significativos?"
                 v-model="tobillosPiesPregunta"

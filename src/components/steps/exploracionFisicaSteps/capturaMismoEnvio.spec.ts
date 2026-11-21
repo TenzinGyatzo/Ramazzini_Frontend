@@ -30,8 +30,7 @@ const nada: Accion = async () => {};
 
 /** «Sí» en la pregunta de hallazgos y la descripción. */
 const hallazgo = (texto: string): Accion => async (w) => {
-  const si = w.findAll('button').find((b) => b.text() === 'Sí');
-  await si!.trigger('click');
+  await w.find('input[type="radio"][value="Si"]').setValue(true);
   await flushPromises();
   await w.find('textarea').setValue(texto);
 };

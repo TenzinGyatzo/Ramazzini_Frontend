@@ -73,6 +73,7 @@ watch(marchaPregunta, async (newValue, oldValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <HallazgoSiNoChips
+                campo="marcha"
                 label="MARCHA"
                 question="¿Presencia de hallazgos significativos?"
                 v-model="marchaPregunta"

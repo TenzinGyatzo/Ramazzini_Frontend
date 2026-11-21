@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+
+// Captura rápida (punto 41): las preguntas en dos columnas desde 640 px
+const capturaRapida = enCapturaRapida();
+
 withDefaults(
   defineProps<{
     title: string;
@@ -21,7 +26,12 @@ withDefaults(
     >
       {{ title }}
     </h2>
-    <div class="ef-microseccion-body">
+    <div
+      :class="[
+        'ef-microseccion-body',
+        capturaRapida ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 [&>*]:min-w-0' : '',
+      ]"
+    >
       <slot />
     </div>
   </section>

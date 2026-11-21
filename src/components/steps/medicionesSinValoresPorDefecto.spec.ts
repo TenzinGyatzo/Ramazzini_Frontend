@@ -58,9 +58,10 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
 
     it('cintura «Se desconoce»: borra la medición, desactiva el campo y queda registrado', async () => {
       const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
-      const cintura = wrapper.findAll('input[type="number"]:not([readonly])')[2];
+      const cintura = wrapper.find('#circunferenciaCintura');
       await cintura.setValue('95');
-      await wrapper.find('[data-cintura-se-desconoce]').setValue(true);
+      // Punto 41: la casilla «Se desconoce» del campo común (NumeroCaptura), como en la nota médica
+      await wrapper.find('[data-campo="circunferenciaCintura"] input[type="checkbox"]').setValue(true);
       await flushPromises();
       expect(fd.formDataExploracionFisica).toMatchObject({
         circunferenciaCintura: null,
@@ -73,7 +74,7 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
     it('copiar de la última exploración con cintura quita «Se desconoce»', async () => {
       useDocumentosStore().documentsByYear = { 2026: { exploracionesFisicas: [ultimaExploracion] } } as never;
       const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
-      await wrapper.find('[data-cintura-se-desconoce]').setValue(true);
+      await wrapper.find('[data-campo="circunferenciaCintura"] input[type="checkbox"]').setValue(true);
       await wrapper.find('[data-ultima-exploracion] button').trigger('click');
       await flushPromises();
       expect(fd.formDataExploracionFisica).toMatchObject({
@@ -95,29 +96,31 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
     const ayudas = (wrapper: ReturnType<typeof mount>) =>
       wrapper.findAll('input[data-calculado]').map((i) => i.attributes('placeholder'));
 
+    // Punto 41: la exploración física usa las tarjetas de la nota médica (valor y categoría)
+    const ayudasTarjetas = (wrapper: ReturnType<typeof mount>) =>
+      wrapper.findAll('[data-calculado] span.text-gray-400').map((s) => s.text());
+
     it('exploración física: IMC y categorías', async () => {
-      expect(ayudas(await montar('./exploracionFisicaSteps/Step2.vue'))).toEqual([
-        'Se calcula solo',
-        'Según el IMC',
-        'Según la cintura',
+      expect(ayudasTarjetas(await montar('./exploracionFisicaSteps/Step2.vue'))).toEqual([
+        'Se calcula con peso y altura',
+        'Se calcula con la cintura',
       ]);
-      expect(ayudas(await montar('./exploracionFisicaSteps/Step3.vue'))).toEqual([
-        'Según la tensión',
-        // Abreviados: el texto completo no cabía en el campo
-        'Según la F.C.',
-        'Según la F.R.',
-        'Según la SpO₂',
+      expect(ayudasTarjetas(await montar('./exploracionFisicaSteps/Step3.vue'))).toEqual([
+        'Se calcula con el dato',
+        'Se calcula con el dato',
+        'Se calcula con el dato',
+        'Se calcula con el dato',
       ]);
     });
 
     it('con medición, el campo muestra el valor y no la ayuda', async () => {
       const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
-      const numeros = wrapper.findAll('input[type="number"]:not([readonly])');
-      await numeros[0].setValue('80');
-      await numeros[1].setValue('1.7');
-      const [imc, categoria] = wrapper.findAll('input[data-calculado]');
-      expect((imc.element as HTMLInputElement).value).toBe('27.68');
-      expect((categoria.element as HTMLInputElement).value).toBe('Sobrepeso');
+      await wrapper.find('#peso').setValue('80');
+      await wrapper.find('#altura').setValue('1.7');
+      const imc = wrapper.find('[data-campo="indiceMasaCorporal"]');
+      expect(imc.text()).toContain('27.68');
+      expect(imc.text()).toContain('Sobrepeso');
+      expect(imc.text()).not.toContain('Se calcula');
     });
   });
 
