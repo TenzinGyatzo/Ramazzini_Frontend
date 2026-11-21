@@ -100,7 +100,8 @@ async function conVistaPrevia(captura: Captura, esMujer: boolean) {
 }
 
 async function conCapturaRapida(captura: Captura, esMujer: boolean) {
-  const df = preparar(esMujer);
+  // Todas las secciones montadas, sin lo preseleccionado: se llena al revisarlas o al guardar
+  const df = preparar(esMujer, () => false);
   const montados = captura.map(([paso]) =>
     mount(paso, {
       props: { variant: 'compact' },

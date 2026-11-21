@@ -1622,26 +1622,39 @@ export default {
     const esMujerTrabajadorActual = () =>
       trabajadores.currentTrabajador?.sexo === 'Femenino';
 
+    // Secciones que el usuario ya revisó, una sola lista para los dos modos: con vista previa,
+    // las que abrió en el asistente; en captura rápida, aquellas donde entró a algún campo.
+    // Alimenta el «Sin revisar» del índice y el llenado de lo preseleccionado.
+    const seccionesTocadas = ref(new Set());
+    watch(
+      () => [stepsStore.currentStep, capturaRapida.value],
+      () => {
+        if (capturaRapida.value) return;
+        // La historia clínica también en el asistente clásico (pasos sueltos en lugar de secciones)
+        if (documentos.currentTypeOfDocument === 'historiaClinica' || capturaRapidaDisponible.value) {
+          seccionesTocadas.value.add(stepsStore.currentStep);
+        }
+      },
+      { immediate: true },
+    );
+
     // Punto 39: en la historia clínica lo preseleccionado («No», «Negado», «12-14 años»…) se
-    // escribe en el formulario sin depender de que cada paso se cierre. En captura rápida y al
-    // editar, todo desde que se abre; con vista previa, cada sección al llegar a ella (así el
-    // documento se va llenando conforme se avanza); lo no visitado se completa al guardar.
+    // escribe en el formulario sin depender de que cada paso se cierre: cada sección cuando se
+    // revisa (en los dos modos), así la vista previa muestra lo revisado y deja en blanco lo que
+    // el índice marca «Sin revisar»; lo no revisado se completa al guardar. Al editar, todo.
     // Se vigila el formulario porque la vista lo vacía al montarse y, al editar, lo reemplaza
     // por el documento cuando llega; solo se llenan campos vacíos (idempotente).
-    const pasosVistosHistoriaClinica = new Set();
     const completarHistoriaClinica = () => {
       if (documentos.currentTypeOfDocument !== 'historiaClinica') return;
       const df = formData.formDataHistoriaClinica;
       if (!df) return;
       const sexo = trabajadores.currentTrabajador?.sexo;
       const conSecciones = isHcSectionsV2Enabled(route.query);
-      pasosVistosHistoriaClinica.add(stepsStore.currentStep);
-      const todo = capturaRapida.value || !!documentos.currentDocument;
       completarRespuestasPorDefecto(df, {
         esMujer: esMujerTrabajadorActual(),
-        visitado: todo
+        visitado: documentos.currentDocument
           ? undefined
-          : (paso) => pasosVistosHistoriaClinica.has(pasoHistoriaClinicaEnAsistente(paso, sexo, conSecciones)),
+          : (paso) => seccionesTocadas.value.has(pasoHistoriaClinicaEnAsistente(paso, sexo, conSecciones)),
       });
     };
     watch(
@@ -1652,7 +1665,10 @@ export default {
       completarHistoriaClinica,
       { deep: true, immediate: true },
     );
-    watch(() => [stepsStore.currentStep, capturaRapida.value, documentos.currentDocument], completarHistoriaClinica);
+    watch(
+      () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
+      completarHistoriaClinica,
+    );
 
     const recolectarProblemasNotaMedica = (esMujer) => {
       const df = formData.formDataNotaMedica;
@@ -1987,7 +2003,6 @@ export default {
 
     // Punto 38, índice de la captura rápida: el estado de cada sección sale de los mismos
     // problemas que se revisan al guardar (recolectarProblemasDocumento).
-    const seccionesTocadas = ref(new Set());
     const problemasIndice = ref([]);
     const seccionActualCaptura = ref(null);
 
