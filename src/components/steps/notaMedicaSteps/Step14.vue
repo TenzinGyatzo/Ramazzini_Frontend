@@ -39,7 +39,13 @@ watch(observaciones, (newValue) => {
 
 <template>
     <div v-if="capturaRapida" class="nota-medica-dark-inputs">
-        <TextoCaptura id="observaciones" v-model="observaciones" etiqueta="Observaciones" :filas="3" />
+        <TextoCaptura
+            id="observaciones"
+            v-model="observaciones"
+            etiqueta="Observaciones"
+            :filas="3"
+            placeholder="Información adicional relevante: indicaciones de seguimiento, incapacidad, envío a especialista o pendientes"
+        />
     </div>
 
     <div v-else class="nota-medica-dark-inputs">
