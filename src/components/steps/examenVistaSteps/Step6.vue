@@ -64,14 +64,14 @@ function interpretarIshihara() {
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Visión cromática</h1>
     <!-- Campo y resultado, cada uno con su etiqueta y a la misma altura. En el asistente angosto
-         el campo va a su medida (dos dígitos) y el resultado se pone al lado si cabe; si no
-         (ventana o menú lateral que angostan el asistente), baja a su propio renglón -->
+         van 40 / 60 (el campo solo lleva dos dígitos) para que el resultado quepa al lado; solo
+         si de plano no cabe (celular), baja a su propio renglón -->
     <div
       data-campo="interpretacionIshihara"
-      :class="capturaRapida ? 'grid gap-3 items-start grid-cols-1 sm:grid-cols-2' : 'flex flex-wrap gap-3 items-start'"
+      :class="capturaRapida ? 'grid gap-3 items-start grid-cols-1 sm:grid-cols-2' : 'flex flex-wrap gap-2 items-start'"
     >
       <NumeroCaptura
-        :class="capturaRapida ? '' : 'w-32 shrink-0'"
+        :class="capturaRapida ? '' : 'basis-[40%] grow-0 shrink-0 min-w-[6.5rem]'"
         id="placasCorrectas"
         v-model="placasCorrectas"
         etiqueta="Placas correctas (prueba de Ishihara)"
@@ -82,11 +82,14 @@ function interpretarIshihara() {
         placeholder="14"
         :error="mensajeErrorPlacas"
       />
-      <div :class="capturaRapida ? 'min-w-0' : 'flex-1 min-w-[11.5rem]'">
+      <div :class="capturaRapida ? 'min-w-0' : 'flex-1 min-w-[9.5rem]'">
         <p :class="[CLASE_ETIQUETA, 'mb-1']">Resultado</p>
         <div
           data-calculado
-          class="flex items-center justify-between gap-2 h-10 rounded-lg border border-gray-200 bg-gray-50 px-3"
+          :class="[
+            'flex items-center justify-between h-10 rounded-lg border border-gray-200 bg-gray-50',
+            capturaRapida ? 'gap-2 px-3' : 'gap-1.5 px-2',
+          ]"
         >
           <span class="text-sm font-bold text-gray-900 whitespace-nowrap" title="Porcentaje de placas correctas">
             {{ porcentajeIshihara != null ? `${porcentajeIshihara} %` : '—' }}
