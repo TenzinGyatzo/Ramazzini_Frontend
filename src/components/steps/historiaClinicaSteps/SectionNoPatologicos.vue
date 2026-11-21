@@ -15,7 +15,7 @@ const capturaRapida = enCapturaRapida();
 
 <template>
   <HcSectionStep title="Antecedentes personales no patológicos" icono="fa-heartbeat">
-    <div :class="capturaRapida ? 'grid sm:grid-cols-2 gap-x-8' : ''">
+    <div :class="capturaRapida ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 [&>*]:min-w-0' : ''">
       <MicrostepAnchor :legacy-step="22">
         <Step22 variant="compact" />
       </MicrostepAnchor>

@@ -23,7 +23,7 @@ const capturaRapida = enCapturaRapida();
 
 <template>
   <HcSectionStep title="Antecedentes gineco-obstétricos" icono="fa-venus">
-    <div :class="capturaRapida ? 'grid sm:grid-cols-2 gap-x-8 gap-y-3' : 'space-y-3'">
+    <div :class="capturaRapida ? 'grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 [&>*]:min-w-0' : 'space-y-3'">
       <MicrostepAnchor :legacy-step="28">
         <Step28 variant="compact" />
       </MicrostepAnchor>
