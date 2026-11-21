@@ -1,7 +1,7 @@
 <script setup>
 import { vValorDePartida } from '@/directives/valorDePartida';
 import { useValorDePartida } from '@/composables/useValorDePartida';
-import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -69,15 +69,6 @@ watch(cinturaSeDesconoce, (seDesconoce) => {
   if (seDesconoce) circunferenciaCintura.value = null;
 });
 
-onUnmounted(() => {
-  formDataExploracionFisica.peso = peso.value;
-  formDataExploracionFisica.altura = altura.value;
-  formDataExploracionFisica.indiceMasaCorporal = indiceMasaCorporal.value;
-  formDataExploracionFisica.categoriaIMC = categoriaIMC.value;
-  formDataExploracionFisica.circunferenciaCintura = circunferenciaCintura.value;
-  formDataExploracionFisica.categoriaCircunferenciaCintura = categoriaCircunferenciaCintura.value;
-  formDataExploracionFisica.circunferenciaCinturaSeDesconoce = cinturaSeDesconoce.value;
-})
 
 watch([peso, altura, circunferenciaCintura], () => {
   formDataExploracionFisica.peso = peso.value;

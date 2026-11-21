@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import HallazgoSiNoChips from './HallazgoSiNoChips.vue';
@@ -37,14 +37,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    if (!formDataExploracionFisica.toraxPregunta) {
-        formDataExploracionFisica.toraxPregunta = toraxPregunta.value;
-    }
-    if (!formDataExploracionFisica.torax) {
-        formDataExploracionFisica.torax = 'Sin hallazgos';
-    }
-});
 
 watch(toraxPregunta, (newValue) => {
     formDataExploracionFisica.toraxPregunta = newValue;

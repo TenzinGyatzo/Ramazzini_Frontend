@@ -433,6 +433,11 @@ import {
   problemasEspecificarHistoriaClinica,
 } from '@/helpers/historiaClinicaGuardado';
 import {
+  completarRespuestasPorDefecto as completarExploracionPorDefecto,
+  prepararExploracionFisicaParaGuardar,
+  problemasHallazgosExploracionFisica,
+} from '@/helpers/exploracionFisicaGuardado';
+import {
   normalizeNotaMedicaConfirmacionDiagnostica,
   validateNotaMedicaConfirmacionDiagnostica,
 } from '@/helpers/confirmacionDiagnostica';
@@ -1634,8 +1639,11 @@ export default {
       () => [stepsStore.currentStep, capturaRapida.value],
       () => {
         if (capturaRapida.value) return;
-        // La historia clínica también en el asistente clásico (pasos sueltos en lugar de secciones)
-        if (documentos.currentTypeOfDocument === 'historiaClinica' || capturaRapidaDisponible.value) {
+        // Historia clínica y exploración física también en el asistente clásico (pasos sueltos)
+        if (
+          ['historiaClinica', 'exploracionFisica'].includes(documentos.currentTypeOfDocument) ||
+          capturaRapidaDisponible.value
+        ) {
           seccionesTocadas.value.add(stepsStore.currentStep);
         }
       },
@@ -1672,6 +1680,33 @@ export default {
     watch(
       () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
       completarHistoriaClinica,
+    );
+
+    // Punto 41: la exploración física, igual que la historia clínica («No» / «Sin hallazgos»,
+    // la fecha y el resumen; cada sección al revisarla, todo al guardar o al editar)
+    const completarExploracionFisica = () => {
+      if (documentos.currentTypeOfDocument !== 'exploracionFisica') return;
+      const df = formData.formDataExploracionFisica;
+      if (!df) return;
+      const conSecciones = isEfSectionsV2Enabled(route.query);
+      completarExploracionPorDefecto(df, {
+        esMujer: esMujerTrabajadorActual(),
+        visitado: documentos.currentDocument
+          ? undefined
+          : (paso) => seccionesTocadas.value.has(conSecciones ? efLegacyStepToSectionIndex(paso) : paso),
+      });
+    };
+    watch(
+      () =>
+        documentos.currentTypeOfDocument === 'exploracionFisica'
+          ? formData.formDataExploracionFisica
+          : null,
+      completarExploracionFisica,
+      { deep: true, immediate: true },
+    );
+    watch(
+      () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
+      completarExploracionFisica,
     );
 
     const recolectarProblemasNotaMedica = (esMujer) => {
@@ -1774,8 +1809,12 @@ export default {
 
     // Exploración física: fecha, somatometría y signos. La lista de obligatorios revisa
     // vacío y rango juntos; aquí se separan para decir «escribe…» o el rango que falla.
+    // Se revisa lo que se guardaría (lo no revisado se completa al guardar): copia, sin llenar aquí
     const recolectarProblemasExploracionFisica = () => {
-      const df = formData.formDataExploracionFisica;
+      const df = prepararExploracionFisicaParaGuardar(
+        { ...formData.formDataExploracionFisica },
+        { esMujer: esMujerTrabajadorActual() },
+      );
       const invalidos = [];
       const fecha = validarFechaDocumentoPreSubmit('exploracionFisica', df, showSiresUI.value);
       if (!fecha.valido) {
@@ -1801,6 +1840,8 @@ export default {
       return ordenarProblemas([
         ...problemasExploracionFisica(requeridos.camposFaltantes, df, validateSomatometriaSignosField),
         ...invalidos,
+        // Punto 41: hallazgo «Sí» sin descripción (decisión del usuario)
+        ...problemasHallazgosExploracionFisica(df),
       ]);
     };
 
@@ -2376,6 +2417,14 @@ export default {
           esMujer: esMujerTrabajadorActual(),
         });
         datosLimpios = limpiarValoresUndefined(formData.formDataHistoriaClinica);
+      }
+
+      // EXPLORACIÓN FÍSICA (punto 41): lo mismo; los pasos ya no lo escriben al cerrarse
+      if (documentos.currentTypeOfDocument === 'exploracionFisica') {
+        prepararExploracionFisicaParaGuardar(formData.formDataExploracionFisica, {
+          esMujer: esMujerTrabajadorActual(),
+        });
+        datosLimpios = limpiarValoresUndefined(formData.formDataExploracionFisica);
       }
 
       // Documentos con aviso (salvo la nota médica, que revisa antes): lleva al primer dato

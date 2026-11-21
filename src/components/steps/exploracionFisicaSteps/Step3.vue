@@ -1,7 +1,7 @@
 <script setup>
 import { vValorDePartida } from '@/directives/valorDePartida';
 import { useValorDePartida } from '@/composables/useValorDePartida';
-import { ref, watch, onMounted, onUnmounted, computed, toRefs } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -91,17 +91,6 @@ onMounted(() => {
   guardarEnFormulario();
 });
 
-onUnmounted(() => {
-  formDataExploracionFisica.tensionArterialSistolica = tensionArterialSistolica.value;
-  formDataExploracionFisica.tensionArterialDiastolica = tensionArterialDiastolica.value;
-  formDataExploracionFisica.categoriaTensionArterial = categoriaTensionArterial.value;
-  formDataExploracionFisica.frecuenciaCardiaca = frecuenciaCardiaca.value;
-  formDataExploracionFisica.categoriaFrecuenciaCardiaca = categoriaFrecuenciaCardiaca.value;
-  formDataExploracionFisica.frecuenciaRespiratoria = frecuenciaRespiratoria.value;
-  formDataExploracionFisica.categoriaFrecuenciaRespiratoria = categoriaFrecuenciaRespiratoria.value;
-  formDataExploracionFisica.saturacionOxigeno = saturacionOxigeno.value;
-  formDataExploracionFisica.categoriaSaturacionOxigeno = categoriaSaturacionOxigeno.value;
-});
 
 watch([tensionArterialSistolica, tensionArterialDiastolica, frecuenciaCardiaca, frecuenciaRespiratoria, saturacionOxigeno], () => {
   guardarEnFormulario();

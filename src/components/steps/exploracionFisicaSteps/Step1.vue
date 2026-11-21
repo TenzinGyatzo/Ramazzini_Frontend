@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, toRefs } from 'vue';
+import { ref, watch, onMounted, toRefs } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -56,12 +56,6 @@ onMounted(() => {
   formDataExploracionFisica.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 });
 
-onUnmounted(() => {
-  // Asegurar que formData tenga un valor inicial para fechaExploracionFisica
-  if (!formDataExploracionFisica.fechaExploracionFisica) {
-    formDataExploracionFisica.fechaExploracionFisica = today;
-  }
-})
 
 // Mantener sincronizados los valores
 watch(fechaExploracionFisica, (newValue) => {

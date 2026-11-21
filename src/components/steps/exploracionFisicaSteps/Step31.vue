@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, computed, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, computed, toRefs } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
@@ -128,20 +128,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    // Guardar el estado actual de la pregunta
-    formDataExploracionFisica.resumenExploracionFisicaPregunta = resumenExploracionFisicaPregunta.value;
-
-    // Guardar el resumen según el estado de la pregunta
-    if (resumenExploracionFisicaPregunta.value === 'No') {
-        formDataExploracionFisica.resumenExploracionFisica = trabajadores.currentTrabajador.sexo === 'Femenino'
-            ? 'Se encuentra clínicamente sana'
-            : 'Se encuentra clínicamente sano';
-    } else {
-        // Si es "Si", guardar el resumen actual (ya sea automático o editado por el usuario)
-        formDataExploracionFisica.resumenExploracionFisica = resumenExploracionFisica.value || resumenAutomatico.value || '';
-    }
-});
 
 // Sincronizar resumenExploracionFisicaPregunta con formData
 watch(resumenExploracionFisicaPregunta, (newValue) => {
