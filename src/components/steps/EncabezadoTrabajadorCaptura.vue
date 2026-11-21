@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * Captura rápida (punto 38): a quién se le está capturando, sin abrir la vista previa.
- * Iniciales y nombre; al lado, sexo y edad (lo primero que se revisa); debajo, puesto,
+ * Dos filas: arriba, nombre con sexo y edad (lo primero que se revisa); abajo, puesto,
  * antigüedad y empresa con íconos de color y divisores (los del encabezado del expediente), y
- * el número de empleado al final.
+ * el número de empleado al final. El sexo como se registra: Masculino, Femenino o Intersexual.
  * Edad y antigüedad a la fecha del documento, como en el documento impreso. Lo que el
  * trabajador no tenga capturado no aparece.
  */
@@ -33,10 +33,12 @@ const iniciales = computed(() => {
     .toUpperCase();
 });
 
-/** «Mujer · 35 años» */
+const SEXOS = ['Masculino', 'Femenino', 'Intersexual'];
+
+/** «Femenino · 35 años» */
 const sexoYEdad = computed(() => {
   const t = trabajador.value;
-  const sexo = t?.sexo === 'Femenino' ? 'Mujer' : t?.sexo === 'Masculino' ? 'Hombre' : '';
+  const sexo = SEXOS.includes(t?.sexo) ? t?.sexo : '';
   const anios = edad.value != null ? `${edad.value} años` : '';
   return [sexo, anios].filter(Boolean).join(' · ');
 });
@@ -70,8 +72,8 @@ const datos = computed(() =>
 </script>
 
 <template>
-  <!-- Compacto: en escritorio, nombre y datos en una sola línea si caben; en celular, letra
-       más chica, círculo más chico y datos seguidos (sin divisores) -->
+  <!-- Dos filas en todos los anchos; en celular, letra más chica, círculo más chico y datos
+       seguidos (sin divisores) -->
   <div
     v-if="trabajador"
     data-encabezado-trabajador
@@ -81,12 +83,12 @@ const datos = computed(() =>
       class="shrink-0 w-8 h-8 text-xs sm:w-9 sm:h-9 sm:text-sm rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center font-semibold"
       aria-hidden="true"
     >{{ iniciales }}</div>
-    <div class="min-w-0 flex-1 lg:flex lg:flex-wrap lg:items-center lg:gap-x-4">
-      <p class="flex flex-wrap items-baseline gap-x-2 leading-tight lg:shrink-0">
+    <div class="min-w-0 flex-1">
+      <p class="flex flex-wrap items-baseline gap-x-2 leading-tight">
         <span class="text-sm sm:text-base font-semibold text-gray-900">{{ formatNombreCompleto(trabajador) }}</span>
         <span v-if="sexoYEdad" class="text-xs sm:text-sm text-gray-500">{{ sexoYEdad }}</span>
       </p>
-      <ul class="mt-1 lg:mt-0 flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-x-0 text-xs sm:text-sm text-gray-700">
+      <ul class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-x-0 text-xs sm:text-sm text-gray-700">
         <li
           v-for="(d, i) in datos"
           :key="d.clave"

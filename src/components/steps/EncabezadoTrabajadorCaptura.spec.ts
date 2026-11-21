@@ -11,7 +11,7 @@ import { alturaHastaElFondo } from '@/composables/useAlturaHastaElFondo';
 describe('datos del trabajador en la captura rápida (punto 38)', () => {
   beforeEach(() => setActivePinia(createPinia()));
 
-  it('iniciales, nombre, «Mujer · 35 años» a la fecha del documento, puesto y empresa', () => {
+  it('iniciales, nombre, «Femenino · 35 años» a la fecha del documento, puesto y empresa', () => {
     const trabajadores = useTrabajadoresStore();
     trabajadores.currentTrabajador = {
       primerApellido: 'López',
@@ -26,7 +26,7 @@ describe('datos del trabajador en la captura rápida (punto 38)', () => {
     const texto = w.text();
     expect(w.find('[data-encabezado-trabajador] [aria-hidden="true"]').text()).toBe('LA');
     expect(texto).toContain('López Ruiz Ana');
-    expect(texto).toContain('Mujer · 35 años');
+    expect(texto).toContain('Femenino · 35 años');
     expect(texto).toContain('Soldadora');
     expect(texto).toContain('Aceros del Norte');
     // Sin número de empleado ni antigüedad, no se muestran vacíos
@@ -46,10 +46,37 @@ describe('datos del trabajador en la captura rápida (punto 38)', () => {
     useEmpresasStore().currentEmpresa = { nombreComercial: 'Aceros del Norte' } as any;
     useCentrosTrabajoStore().currentCentroTrabajo = { nombreCentro: 'Planta Norte' } as any;
     const texto = mount(EncabezadoTrabajadorCaptura, { props: { fechaDocumento: '2026-06-15' } }).text();
-    expect(texto).toContain('Hombre · 46 años');
+    expect(texto).toContain('Masculino · 46 años');
     expect(texto).toMatch(/6 años.* en la empresa/);
     expect(texto).toContain('Aceros del Norte · Planta Norte');
     expect(texto).toContain('No. 1027');
+  });
+
+  it('intersexual: se muestra como se registra', () => {
+    useTrabajadoresStore().currentTrabajador = {
+      primerApellido: 'Soto',
+      nombre: 'Alex',
+      sexo: 'Intersexual',
+      fechaNacimiento: '1995-03-01',
+    } as any;
+    expect(mount(EncabezadoTrabajadorCaptura, { props: { fechaDocumento: '2026-03-01' } }).text()).toContain(
+      'Intersexual · 31 años',
+    );
+  });
+
+  it('dos filas: nombre, sexo y edad arriba; los demás datos abajo', () => {
+    useTrabajadoresStore().currentTrabajador = {
+      primerApellido: 'Pérez',
+      nombre: 'Luis',
+      sexo: 'Masculino',
+      puesto: 'Soldador',
+    } as any;
+    const w = mount(EncabezadoTrabajadorCaptura);
+    const columna = w.find('[data-encabezado-trabajador] > div:last-child');
+    expect(columna.classes()).not.toContain('lg:flex');
+    expect(columna.find('p').text()).toContain('Pérez Luis');
+    expect(columna.find('p').text()).toContain('Masculino');
+    expect(columna.find('ul').text()).toContain('Soldador');
   });
 
   it('sin trabajador cargado, no muestra nada', () => {
