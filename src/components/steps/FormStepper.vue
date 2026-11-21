@@ -505,6 +505,7 @@ import AvisoAtencionCampos from '@/components/steps/AvisoAtencionCampos.vue';
 import InterruptorModoCaptura from '@/components/steps/InterruptorModoCaptura.vue';
 import { useModoCaptura, CAPTURA_RAPIDA_KEY } from '@/composables/useModoCaptura';
 import { ESTADO_SECCIONES_KEY } from '@/composables/capturaRapidaKey';
+import { NOMBRES_TRANSICION, conTransicionDeModo } from '@/helpers/transicionModoCaptura';
 import AtajoTeclado from '@/components/steps/AtajoTeclado.vue';
 import { useTecladoAsistente } from '@/composables/useTecladoAsistente';
 import { enfocarCampo, limpiarAtencionCampo, hayAtencionEnCurso, selectorCampo } from '@/helpers/enfocarCampo';
@@ -2255,15 +2256,19 @@ export default {
         // Desde «Con vista previa» la sección es la del paso abierto
         recordado.seccion = stepsStore.currentStep;
       }
-      cambiarModoCaptura(nuevo);
-      if (!recordado) return;
-      campoPorRestaurar = recordado;
-      if (nuevo === 'vistaPrevia') {
-        // La sección se abre apuntando a la pregunta del campo (si no, el asistente lleva el
-        // cursor y la vista a la primera pregunta de la sección)
-        stepsStore.goToSection(recordado.seccion, recordado.legacyStep);
-      }
-      restaurarCampo(recordado);
+      if (recordado) campoPorRestaurar = recordado;
+      // Con animación: el asistente se transforma en el área de captura y el documento se
+      // guarda en «Vista previa» (y al revés); el cursor se acomoda con la pantalla nueva lista
+      conTransicionDeModo(() => {
+        cambiarModoCaptura(nuevo);
+        if (recordado && nuevo === 'vistaPrevia') {
+          // La sección se abre apuntando a la pregunta del campo (si no, el asistente lleva el
+          // cursor y la vista a la primera pregunta de la sección)
+          stepsStore.goToSection(recordado.seccion, recordado.legacyStep);
+        }
+      }, document, nuevo).then(() => {
+        if (recordado) restaurarCampo(recordado);
+      });
     };
 
     // El área de captura ocupa lo que queda de la ventana y se desplaza sola
@@ -2908,6 +2913,7 @@ export default {
       capturaRapidaDisponible,
       capturaRapida,
       cambiarModoCaptura: cambiarModoConservandoCampo,
+      NOMBRES_TRANSICION,
       vistaPreviaAbierta,
       indiceCaptura,
       areaCaptura,
@@ -3011,6 +3017,7 @@ export default {
 
   <div
     data-form-stepper
+    :style="capturaRapidaDisponible ? { viewTransitionName: NOMBRES_TRANSICION.asistente } : undefined"
     :class="[
       'border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto',
       capturaRapida ? 'max-w-5xl p-4 sm:p-7' : 'max-w-md p-4 sm:p-7',
@@ -3035,6 +3042,7 @@ export default {
             type="button"
             tabindex="-1"
             :aria-pressed="vistaPreviaAbierta"
+            :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
             class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
             @click="vistaPreviaAbierta = !vistaPreviaAbierta"
           >

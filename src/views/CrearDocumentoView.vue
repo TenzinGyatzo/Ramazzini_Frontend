@@ -28,6 +28,7 @@ import VisualizadorExploracionFisica from '@/components/steps/VisualizadorExplor
 import VisualizadorHistoriaClinica from '@/components/steps/VisualizadorHistoriaClinica.vue';
 import VisualizadorNotaMedica from '@/components/steps/VisualizadorNotaMedica.vue';
 import PanelVistaPrevia from '@/components/steps/PanelVistaPrevia.vue';
+import { NOMBRES_TRANSICION } from '@/helpers/transicionModoCaptura';
 import VisualizadorNotaAclaratoria from '@/components/steps/VisualizadorNotaAclaratoria.vue';
 import VisualizadorControlPrenatal from '@/components/steps/VisualizadorControlPrenatal.vue';
 import VisualizadorHistoriaOtologica from '@/components/steps/VisualizadorHistoriaOtologica.vue';
@@ -688,7 +689,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div :class="capturaRapida ? 'w-full' : exploracionLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div v-if="!capturaRapida" :class="exploracionLadoALado ? 'flex-1 min-w-0' : 'w-full'">
+          <div v-if="!capturaRapida" :class="exploracionLadoALado ? 'flex-1 min-w-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
             <VisualizadorExploracionFisica />
           </div>
           <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
@@ -723,7 +724,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div :class="capturaRapida ? 'w-full' : historiaLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div v-if="!capturaRapida" :class="historiaLadoALado ? 'flex-1 min-w-0' : 'w-full'">
+          <div v-if="!capturaRapida" :class="historiaLadoALado ? 'flex-1 min-w-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
             <VisualizadorHistoriaClinica />
           </div>
           <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
@@ -749,6 +750,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div
             v-if="!capturaRapida"
             :class="['max-w-3xl', notaLadoALado ? 'flex-1 min-w-0' : 'w-full mx-auto']"
+            :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorNotaMedica />
           </div>

@@ -509,3 +509,64 @@ input[data-calculado]::placeholder {
   font-weight: 400;
   opacity: 1;
 }
+
+/* Cambio de modo de captura (punto 41): el asistente se transforma en el área de captura y el
+   documento se guarda en el botón «Vista previa» (y al revés). Las imágenes conservan su
+   proporción (recortadas desde arriba a la izquierda) para que el texto no se estire. */
+::view-transition-group(captura-asistente),
+::view-transition-group(captura-documento) {
+  animation-duration: 350ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+::view-transition-image-pair(captura-asistente),
+::view-transition-image-pair(captura-documento) {
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+/* El asistente no se escala: la caja crece (o se encoge) y su contenido se revela a tamaño
+   natural, sin letras agrandadas */
+::view-transition-old(captura-asistente),
+::view-transition-new(captura-asistente) {
+  width: auto;
+  height: auto;
+  object-fit: none;
+  object-position: top left;
+  animation-duration: 350ms;
+}
+/* El documento se encoge hacia el botón «Vista previa» (o crece desde él), sin deformarse */
+::view-transition-old(captura-documento),
+::view-transition-new(captura-documento) {
+  height: 100%;
+  animation-duration: 350ms;
+}
+/* El documento se escala sin deformarse; el botón conserva su tamaño (no se agranda) */
+::view-transition-old(captura-documento) {
+  object-fit: contain;
+  object-position: top center;
+}
+::view-transition-new(captura-documento) {
+  object-fit: none;
+  object-position: center;
+}
+/* Al volver (captura rápida → vista previa) se invierte: el botón sale a su tamaño y el
+   documento crece desde él */
+html.transicion-hacia-vista-previa::view-transition-old(captura-documento) {
+  object-fit: none;
+  object-position: center;
+}
+html.transicion-hacia-vista-previa::view-transition-new(captura-documento) {
+  object-fit: contain;
+  object-position: top center;
+}
+/* El resto de la página solo se desvanece, más rápido */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
