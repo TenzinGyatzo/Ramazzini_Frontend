@@ -132,37 +132,62 @@ export function limpiarTextoDeNo(df: Datos, campo: string, textoNo: string): voi
   if (df[campo] === textoNo) df[campo] = '';
 }
 
-/** Escribe lo preseleccionado en los campos vacíos (lo que se ve en pantalla). Idempotente. */
+/** Paso (numeración de 46 pasos) donde se ve cada valor gineco típico. */
+const PASO_GINECO_TIPICO: Record<string, number> = {
+  menarca: 28,
+  duracionPromedio: 29,
+  frecuencia: 30,
+  gestas: 31,
+  partos: 32,
+  cesareas: 33,
+  abortos: 34,
+  dolorMenstrual: 36,
+};
+
+/**
+ * Escribe lo preseleccionado en los campos vacíos (lo que se ve en pantalla). Idempotente.
+ * `visitado` limita el llenado a los pasos que ya se mostraron (con vista previa, para que el
+ * documento no aparezca lleno de respuestas por defecto antes de pasar por ellas); sin él se
+ * llena todo (captura rápida, edición y al guardar).
+ */
 export function completarRespuestasPorDefecto(
   df: Datos,
-  { esMujer, hoy = fechaLocalHoy() }: { esMujer: boolean; hoy?: string },
+  {
+    esMujer,
+    hoy = fechaLocalHoy(),
+    visitado = () => true,
+  }: { esMujer: boolean; hoy?: string; visitado?: (paso: number) => boolean },
 ): Datos {
   // Lo que muestra el paso 1 al abrir (la vista reinicia el formulario después de montarlo)
   if (vacio(df.motivoExamen)) df.motivoExamen = 'Ingreso';
   if (vacio(df.fechaHistoriaClinica)) df.fechaHistoriaClinica = hoy;
 
   for (const p of PREGUNTAS_ANTECEDENTES) {
+    if (!visitado(p.paso)) continue;
     if (vacio(df[p.campo])) df[p.campo] = 'No';
     if (df[p.campo] === 'No' && vacio(df[p.especificar])) df[p.especificar] = p.textoNo;
   }
 
   if (esMujer) {
     for (const [campo, valor] of Object.entries(GINECO_VALORES_TIPICOS)) {
+      if (!visitado(PASO_GINECO_TIPICO[campo])) continue;
       if (vacio(df[campo])) df[campo] = valor;
     }
     // Una pregunta sin responder es «No»; con «Sí» el campo se vacía al marcarla y no se toca
     for (const p of GINECO_PREGUNTAS) {
+      if (!visitado(p.paso)) continue;
       if (df[p.campo] === undefined || df[p.campo] === null) df[p.campo] = p.textoNo;
     }
   }
 
-  if (vacio(df.accidenteLaboral)) df.accidenteLaboral = 'No';
-  if (df.accidenteLaboral === 'No') {
+  if (visitado(45) && vacio(df.accidenteLaboral)) df.accidenteLaboral = 'No';
+  if (visitado(45) && df.accidenteLaboral === 'No') {
     for (const [campo, texto] of Object.entries(ACCIDENTE_LABORAL_NO)) {
       if (vacio(df[campo])) df[campo] = texto;
     }
   }
 
+  if (!visitado(46)) return df;
   if (vacio(df.resumenHistoriaClinicaPregunta)) df.resumenHistoriaClinicaPregunta = 'No';
   if (df.resumenHistoriaClinicaPregunta === 'No' && vacio(df.resumenHistoriaClinica)) {
     df.resumenHistoriaClinica = textoResumenPorDefecto(esMujer);

@@ -49,7 +49,18 @@ const siSinDetalle: Accion = async (w) => {
 
 type Captura = Array<[Component, Accion]>;
 
-function preparar(esMujer: boolean) {
+const PASO = new Map<Component, number>([
+  [Step1, 1],
+  [Step2, 2],
+  [Step15, 15],
+  [Step25, 25],
+  [Step28, 28],
+  [Step37, 37],
+  [Step45, 45],
+  [Step46, 46],
+]);
+
+function preparar(esMujer: boolean, visitado?: (paso: number) => boolean) {
   setActivePinia(createPinia());
   const t = useTrabajadoresStore() as any;
   t.currentTrabajador = { nombre: 'Ana', sexo: esMujer ? 'Femenino' : 'Masculino' };
@@ -57,8 +68,8 @@ function preparar(esMujer: boolean) {
   (useEmpresasStore() as any).currentEmpresa = { nombreComercial: 'Empresa' };
   (useCentrosTrabajoStore() as any).currentCentroTrabajo = { nombreCentro: 'Centro' };
   const { formDataHistoriaClinica } = useFormDataStore() as any;
-  // Como FormStepper al abrir el documento
-  completarRespuestasPorDefecto(formDataHistoriaClinica, { esMujer });
+  // Como FormStepper al abrir el documento (con vista previa, solo lo ya visitado)
+  completarRespuestasPorDefecto(formDataHistoriaClinica, { esMujer, visitado });
   return formDataHistoriaClinica;
 }
 
@@ -72,8 +83,13 @@ function envio(df: Record<string, any>, esMujer: boolean) {
 }
 
 async function conVistaPrevia(captura: Captura, esMujer: boolean) {
-  const df = preparar(esMujer);
+  const vistos = new Set<number>();
+  const visitado = (p: number) => vistos.has(p);
+  const df = preparar(esMujer, visitado);
   for (const [paso, accion] of captura) {
+    // Como FormStepper al llegar a la sección
+    vistos.add(PASO.get(paso)!);
+    completarRespuestasPorDefecto(df, { esMujer, visitado });
     const w = mount(paso, { props: { variant: 'compact' } });
     await flushPromises();
     await accion(w);
@@ -136,6 +152,20 @@ describe('historia clínica: los dos modos mandan lo mismo', () => {
     expect(await conCapturaRapida(sinTocar, false)).toEqual(vista);
     expect(vista.menarca).toBeUndefined();
     expect(vista.resumenHistoriaClinica).toBe('Se refiere actualmente asintomático');
+  });
+
+  it('con vista previa, lo no visitado no aparece hasta guardar', async () => {
+    const vistos = new Set([1, 2]);
+    const df = preparar(true, (p) => vistos.has(p));
+    expect(df.nefropatias).toBe('No');
+    expect(df.alergicos).toBeUndefined();
+    expect(df.menarca).toBeUndefined();
+    expect(df.accidenteLaboral).toBeUndefined();
+    expect(df.resumenHistoriaClinica).toBeUndefined();
+    const datos = envio(df, true);
+    expect(datos.alergicos).toBe('No');
+    expect(datos.menarca).toBe('12-14 años');
+    expect(datos.resumenHistoriaClinica).toBe('Se refiere actualmente asintomática');
   });
 
   it('«Sí» sin detalle queda vacío (no «Negado»), para que se pida al guardar', async () => {

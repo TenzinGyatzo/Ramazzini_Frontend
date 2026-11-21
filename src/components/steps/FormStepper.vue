@@ -1622,20 +1622,37 @@ export default {
     const esMujerTrabajadorActual = () =>
       trabajadores.currentTrabajador?.sexo === 'Femenino';
 
-    // Punto 39: en la historia clínica lo preseleccionado («No», «Negado», «12-14 años»…) está
-    // en el formulario desde que se abre (antes lo escribía cada paso al cerrarse), igual en los
-    // dos modos. Se vigila el formulario porque la vista lo vacía al montarse y, al editar, lo
-    // reemplaza por el documento cuando llega; solo se llenan campos vacíos (idempotente).
+    // Punto 39: en la historia clínica lo preseleccionado («No», «Negado», «12-14 años»…) se
+    // escribe en el formulario sin depender de que cada paso se cierre. En captura rápida y al
+    // editar, todo desde que se abre; con vista previa, cada sección al llegar a ella (así el
+    // documento se va llenando conforme se avanza); lo no visitado se completa al guardar.
+    // Se vigila el formulario porque la vista lo vacía al montarse y, al editar, lo reemplaza
+    // por el documento cuando llega; solo se llenan campos vacíos (idempotente).
+    const pasosVistosHistoriaClinica = new Set();
+    const completarHistoriaClinica = () => {
+      if (documentos.currentTypeOfDocument !== 'historiaClinica') return;
+      const df = formData.formDataHistoriaClinica;
+      if (!df) return;
+      const sexo = trabajadores.currentTrabajador?.sexo;
+      const conSecciones = isHcSectionsV2Enabled(route.query);
+      pasosVistosHistoriaClinica.add(stepsStore.currentStep);
+      const todo = capturaRapida.value || !!documentos.currentDocument;
+      completarRespuestasPorDefecto(df, {
+        esMujer: esMujerTrabajadorActual(),
+        visitado: todo
+          ? undefined
+          : (paso) => pasosVistosHistoriaClinica.has(pasoHistoriaClinicaEnAsistente(paso, sexo, conSecciones)),
+      });
+    };
     watch(
       () =>
         documentos.currentTypeOfDocument === 'historiaClinica'
           ? formData.formDataHistoriaClinica
           : null,
-      (df) => {
-        if (df) completarRespuestasPorDefecto(df, { esMujer: esMujerTrabajadorActual() });
-      },
+      completarHistoriaClinica,
       { deep: true, immediate: true },
     );
+    watch(() => [stepsStore.currentStep, capturaRapida.value, documentos.currentDocument], completarHistoriaClinica);
 
     const recolectarProblemasNotaMedica = (esMujer) => {
       const df = formData.formDataNotaMedica;
@@ -1724,13 +1741,16 @@ export default {
       return ordenarProblemas([...problemasPorFaltantes(requeridos.camposFaltantes), ...invalidos]);
     };
     // Punto 39: además de obligatorios y fecha, «Sí» sin «Especifique» (decisión del usuario)
-    const recolectarProblemasHistoriaClinica = () =>
-      ordenarProblemas([
-        ...recolectarProblemasObligatoriosYFecha('historiaClinica', formData.formDataHistoriaClinica),
-        ...problemasEspecificarHistoriaClinica(formData.formDataHistoriaClinica, {
-          esMujer: esMujerTrabajadorActual(),
-        }),
+    // Se revisa lo que se guardaría: con vista previa, lo no visitado aún no está en el
+    // formulario y al guardar se completa con lo preseleccionado (copia: no se llena aquí).
+    const recolectarProblemasHistoriaClinica = () => {
+      const esMujer = esMujerTrabajadorActual();
+      const df = completarRespuestasPorDefecto({ ...formData.formDataHistoriaClinica }, { esMujer });
+      return ordenarProblemas([
+        ...recolectarProblemasObligatoriosYFecha('historiaClinica', df),
+        ...problemasEspecificarHistoriaClinica(df, { esMujer }),
       ]);
+    };
 
     // Exploración física: fecha, somatometría y signos. La lista de obligatorios revisa
     // vacío y rango juntos; aquí se separan para decir «escribe…» o el rango que falla.
