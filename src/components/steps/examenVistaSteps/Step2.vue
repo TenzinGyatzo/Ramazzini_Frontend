@@ -126,6 +126,22 @@ watch([ojoIzquierdoLejanaSinCorreccion, ojoDerechoLejanaSinCorreccion], () => {
   interpretarAgudezaVisualLejana();
 });
 
+// La ceguera total es del ojo, no de la distancia: si se marca o se quita en la otra
+// distancia (en la misma sección), aquí se refleja sin volver a marcarla
+watch(
+  () => [formDataExamenVista.ojoIzquierdoCegueraTotal, formDataExamenVista.ojoDerechoCegueraTotal],
+  ([oi, od]) => {
+    if (oi != null && !!oi !== ojoIzquierdoCegueraTotal.value) {
+      ojoIzquierdoCegueraTotal.value = !!oi;
+      ojoIzquierdoLejanaSinCorreccion.value = null;
+    }
+    if (od != null && !!od !== ojoDerechoCegueraTotal.value) {
+      ojoDerechoCegueraTotal.value = !!od;
+      ojoDerechoLejanaSinCorreccion.value = null;
+    }
+  },
+);
+
 function obtenerInterpretacion(valor) {
   if (valor == null || valor === '') return null;
   const v = Number(valor);
