@@ -173,6 +173,16 @@ onMounted(async () => {
   await refreshContextoCex();
 });
 
+// Si el formulario se vacía después de abrir el paso (la vista lo reinicia al montarse), lo que
+// se ve vuelve a quedar en el formulario (antes lo reponía el cierre del paso).
+watch(
+  () => [formDataNotaMedica.tipoNota, formDataNotaMedica.fechaNotaMedica],
+  ([tipo, fecha]) => {
+    if (!tipo && tipoNota.value) formDataNotaMedica.tipoNota = tipoNota.value;
+    if (!fecha && fechaNotaMedica.value) formDataNotaMedica.fechaNotaMedica = fechaNotaMedica.value;
+  },
+);
+
 // Sincronizar tipoNota con formData
 watch(tipoNota, (newValue) => {
   formDataNotaMedica.tipoNota = newValue;

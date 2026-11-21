@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
+import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 
 const props = defineProps({
@@ -20,13 +20,6 @@ onMounted(() => {
     // Verificar si formDataHistoriaClinica.frecuencia tiene un valor y establecerlo en frecuencia
     if (formDataHistoriaClinica.frecuencia) {
         frecuencia.value = formDataHistoriaClinica.frecuencia;
-    }
-});
-
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para frecuencia
-    if (!formDataHistoriaClinica.frecuencia) {
-        formDataHistoriaClinica.frecuencia = frecuencia.value;
     }
 });
 

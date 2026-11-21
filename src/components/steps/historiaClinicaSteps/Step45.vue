@@ -1,6 +1,7 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs, computed } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 
 const props = defineProps({
   variant: {
@@ -47,25 +48,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para accidenteLaboral
-    if (!formDataHistoriaClinica.accidenteLaboral) {
-        formDataHistoriaClinica.accidenteLaboral = accidenteLaboral.value;
-    }
-
-    if (!formDataHistoriaClinica.accidenteLaboralEspecificar) {
-        formDataHistoriaClinica.accidenteLaboralEspecificar = 'Niega haber sufrido riesgos de trabajo';
-    }
-
-    if (!formDataHistoriaClinica.descripcionDelDano) {
-        formDataHistoriaClinica.descripcionDelDano = 'Ninguno';
-    }
-
-    if (!formDataHistoriaClinica.secuelas) {
-        formDataHistoriaClinica.secuelas = 'Sin secuelas';
-    }
-});
-
 // Sincronizar valores con formData
 watch(accidenteLaboral, (newValue) => {
     formDataHistoriaClinica.accidenteLaboral = newValue;
@@ -81,6 +63,10 @@ watch(accidenteLaboral, async (newValue, oldValue) => {
         formDataHistoriaClinica.secuelas = 'Sin secuelas';
     }
     if (newValue === 'Si') {
+        // Punto 39: los textos de «No» no se quedan en los campos a especificar
+        limpiarTextoDeNo(formDataHistoriaClinica, 'accidenteLaboralEspecificar', 'Niega haber sufrido riesgos de trabajo');
+        limpiarTextoDeNo(formDataHistoriaClinica, 'descripcionDelDano', 'Ninguno');
+        limpiarTextoDeNo(formDataHistoriaClinica, 'secuelas', 'Sin secuelas');
         // Esperar a que el DOM se actualice y luego enfocar el primer input
         await nextTick();
         if (inputEspecificar.value) {
@@ -208,6 +194,7 @@ watch(accidenteLaboral, async (newValue, oldValue) => {
                     <p :class="detailLabelClass">Describa el riesgo de trabajo (accidente o enfermedad de trabajo):</p>
                     <input 
                         ref="inputEspecificar"
+                        data-campo="accidenteLaboralEspecificar"
                         type="text"
                         :class="detailInputClass"
                         v-model="formDataHistoriaClinica.accidenteLaboralEspecificar"

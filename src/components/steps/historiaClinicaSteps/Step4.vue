@@ -1,7 +1,8 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
 const props = defineProps({
@@ -33,18 +34,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para hipertensivos
-    if (!formDataHistoriaClinica.hipertensivos) {
-        formDataHistoriaClinica.hipertensivos = hipertensivos.value;
-    }
-
-    if (!formDataHistoriaClinica.hipertensivosEspecificar) {
-        formDataHistoriaClinica.hipertensivosEspecificar = 'Negado';
-    }
-});
-
-
 // Sincronizar hipertensivos con formData
 watch(hipertensivos, (newValue) => {
     formDataHistoriaClinica.hipertensivos = newValue;
@@ -56,6 +45,8 @@ watch(hipertensivos, async (newValue) => {
         formDataHistoriaClinica.hipertensivosEspecificar = 'Negado';
     }
     if (newValue === 'Si') {
+        // Punto 39: «Especifique» no trae el texto de «No»
+        limpiarTextoDeNo(formDataHistoriaClinica, 'hipertensivosEspecificar', 'Negado');
         formDataHistoriaClinica.hipertensivosEspecificar = formDataHistoriaClinica.hipertensivosEspecificar;
         // Esperar a que el DOM se actualice y luego enfocar el input
         await nextTick();
@@ -70,6 +61,7 @@ watch(hipertensivos, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
+                data-campo="hipertensivos hipertensivosEspecificar"
                 label="HIPERTENSIVOS"
                 question="¿Casos de hipertensión en la familia?"
                 v-model="hipertensivos"

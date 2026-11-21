@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
@@ -21,12 +21,6 @@ const vidaSexualActivaPregunta = ref(
 );
 const vidaSexualActiva = ref(valorInicial);
 const inputEspecificar = ref(null);
-
-onUnmounted(() => {
-  if (!formDataHistoriaClinica.vidaSexualActiva) {
-    formDataHistoriaClinica.vidaSexualActiva = NEGADO;
-  }
-});
 
 watch(vidaSexualActiva, (newValue) => {
   formDataHistoriaClinica.vidaSexualActiva = newValue;
@@ -52,6 +46,7 @@ watch(vidaSexualActivaPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
+        data-campo="vidaSexualActiva"
         label="VIDA SEXUAL ACTIVA"
         question="¿Ha iniciado vida sexual? Si sí, indique edad de inicio."
         v-model="vidaSexualActivaPregunta"

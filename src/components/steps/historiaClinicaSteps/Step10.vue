@@ -1,7 +1,8 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
 const props = defineProps({
@@ -33,18 +34,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para tuberculosis
-    if (!formDataHistoriaClinica.tuberculosis) {
-        formDataHistoriaClinica.tuberculosis = tuberculosis.value;
-    }
-
-    if (!formDataHistoriaClinica.tuberculosisEspecificar) {
-        formDataHistoriaClinica.tuberculosisEspecificar = 'Negado';
-    }
-});
-
-
 // Sincronizar tuberculosis con formData
 watch(tuberculosis, (newValue) => {
     formDataHistoriaClinica.tuberculosis = newValue;
@@ -56,6 +45,8 @@ watch(tuberculosis, async (newValue) => {
         formDataHistoriaClinica.tuberculosisEspecificar = 'Negado';
     }
     if (newValue === 'Si') {
+        // Punto 39: «Especifique» no trae el texto de «No»
+        limpiarTextoDeNo(formDataHistoriaClinica, 'tuberculosisEspecificar', 'Negado');
         // Esperar a que el DOM se actualice y luego enfocar el input
         await nextTick();
         if (inputEspecificar.value) {
@@ -69,6 +60,7 @@ watch(tuberculosis, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
+                data-campo="tuberculosis tuberculosisEspecificar"
                 label="TUBERCULOSIS"
                 question="¿Antecedentes de tuberculosis en la familia?"
                 v-model="tuberculosis"

@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
@@ -21,12 +21,6 @@ const embarazoActualPregunta = ref(
 );
 const embarazoActual = ref(valorInicial);
 const inputEspecificar = ref(null);
-
-onUnmounted(() => {
-  if (!formDataHistoriaClinica.embarazoActual) {
-    formDataHistoriaClinica.embarazoActual = NEGADO;
-  }
-});
 
 watch(embarazoActual, (newValue) => {
   formDataHistoriaClinica.embarazoActual = newValue;
@@ -52,6 +46,7 @@ watch(embarazoActualPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
+        data-campo="embarazoActual"
         label="EMBARAZO ACTUAL"
         question="¿La trabajadora está actualmente embarazada?"
         v-model="embarazoActualPregunta"

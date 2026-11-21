@@ -1,7 +1,8 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
 const props = defineProps({
@@ -33,18 +34,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para higienePersonalDeficiente
-    if (!formDataHistoriaClinica.higienePersonalDeficiente) {
-        formDataHistoriaClinica.higienePersonalDeficiente = higienePersonalDeficiente.value;
-    }
-
-    if (!formDataHistoriaClinica.higienePersonalDeficienteEspecificar) {
-        formDataHistoriaClinica.higienePersonalDeficienteEspecificar = 'Adecuada';
-    }
-});
-
-
 // Sincronizar higienePersonalDeficiente con formData
 watch(higienePersonalDeficiente, (newValue) => {
     formDataHistoriaClinica.higienePersonalDeficiente = newValue;
@@ -56,6 +45,8 @@ watch(higienePersonalDeficiente, async (newValue) => {
         formDataHistoriaClinica.higienePersonalDeficienteEspecificar = 'Adecuada';
     }
     if (newValue === 'Si') {
+        // Punto 39: «Especifique» no trae el texto de «No»
+        limpiarTextoDeNo(formDataHistoriaClinica, 'higienePersonalDeficienteEspecificar', 'Adecuada');
         // Esperar a que el DOM se actualice y luego enfocar el input
         await nextTick();
         if (inputEspecificar.value) {
@@ -69,6 +60,8 @@ watch(higienePersonalDeficiente, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
+                especificar-cuando-no="Adecuada"
+                data-campo="higienePersonalDeficiente higienePersonalDeficienteEspecificar"
                 label="HIGIENE PERSONAL"
                 question="¿La higiene personal del trabajador es deficiente?"
                 v-model="higienePersonalDeficiente"

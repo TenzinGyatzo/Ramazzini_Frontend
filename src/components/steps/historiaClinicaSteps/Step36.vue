@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
+import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import OpcionChipsRow from './OpcionChipsRow.vue';
 
@@ -23,12 +23,6 @@ const opcionesDolor = [
 onMounted(() => {
   if (formDataHistoriaClinica.dolorMenstrual) {
     dolorMenstrual.value = formDataHistoriaClinica.dolorMenstrual;
-  }
-});
-
-onUnmounted(() => {
-  if (!formDataHistoriaClinica.dolorMenstrual) {
-    formDataHistoriaClinica.dolorMenstrual = dolorMenstrual.value;
   }
 });
 

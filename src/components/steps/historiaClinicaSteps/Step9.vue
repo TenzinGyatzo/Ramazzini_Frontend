@@ -1,7 +1,8 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
 const props = defineProps({
@@ -33,29 +34,14 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-  // Asegurar que formData tenga un valor inicial para autoinmunes
-if (!formDataHistoriaClinica.autoinmunes) {
-    formDataHistoriaClinica.autoinmunes = autoinmunes.value;
-}
-
-if (!formDataHistoriaClinica.autoinmunesEspecificar) {
-    formDataHistoriaClinica.autoinmunesEspecificar = 'Negado';
-}  
-})
-
-
-// Sincronizar autoinmunes con formData
-watch(autoinmunes, (newValue) => {
-    formDataHistoriaClinica.autoinmunes = newValue;
-});
-
 // Watch para establecer 'Negado' cuando autoinmunes sea 'No' y enfocar input cuando sea 'Si'
 watch(autoinmunes, async (newValue) => {
     if (newValue === 'No') {
         formDataHistoriaClinica.autoinmunesEspecificar = 'Negado';
     }
     if (newValue === 'Si') {
+        // Punto 39: «Especifique» no trae el texto de «No»
+        limpiarTextoDeNo(formDataHistoriaClinica, 'autoinmunesEspecificar', 'Negado');
         // Esperar a que el DOM se actualice y luego enfocar el input
         await nextTick();
         if (inputEspecificar.value) {
@@ -69,6 +55,7 @@ watch(autoinmunes, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
+                data-campo="autoinmunes autoinmunesEspecificar"
                 label="AUTOINMUNES"
                 question="¿Antecedentes de enfermedades autoinmunes en la familia?"
                 v-model="autoinmunes"

@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, toRefs } from 'vue';
+import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 
 const props = defineProps({
@@ -20,13 +20,6 @@ onMounted(() => {
     // Verificar si formDataHistoriaClinica.gestas tiene un valor y establecerlo en gestas
     if (formDataHistoriaClinica.gestas) {
         gestas.value = formDataHistoriaClinica.gestas;
-    }
-});
-
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para gestas
-    if (!formDataHistoriaClinica.gestas) {
-        formDataHistoriaClinica.gestas = gestas.value;
     }
 });
 

@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
@@ -21,12 +21,6 @@ const planificacionFamiliarPregunta = ref(
 );
 const planificacionFamiliar = ref(valorInicial);
 const inputEspecificar = ref(null);
-
-onUnmounted(() => {
-  if (!formDataHistoriaClinica.planificacionFamiliar) {
-    formDataHistoriaClinica.planificacionFamiliar = NEGADO;
-  }
-});
 
 watch(planificacionFamiliar, (newValue) => {
   formDataHistoriaClinica.planificacionFamiliar = newValue;
@@ -52,6 +46,7 @@ watch(planificacionFamiliarPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
+        data-campo="planificacionFamiliar"
         label="PLANIFICACIÓN FAMILIAR"
         question="¿Ha utilizado métodos de planificación familiar?"
         v-model="planificacionFamiliarPregunta"

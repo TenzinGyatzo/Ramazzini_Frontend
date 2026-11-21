@@ -428,6 +428,11 @@ import { validateNotaMedicaDiagnosticos2Y3, fetchFirmantesDelPrestador, precarga
 import { aplicarSeDesconocePesoTalla } from '@/helpers/notaMedicaCexRanges';
 import { prepararNotaMedicaParaGuardar } from '@/helpers/notaMedicaGuardado';
 import {
+  completarRespuestasPorDefecto,
+  prepararHistoriaClinicaParaGuardar,
+  problemasEspecificarHistoriaClinica,
+} from '@/helpers/historiaClinicaGuardado';
+import {
   normalizeNotaMedicaConfirmacionDiagnostica,
   validateNotaMedicaConfirmacionDiagnostica,
 } from '@/helpers/confirmacionDiagnostica';
@@ -1617,6 +1622,21 @@ export default {
     const esMujerTrabajadorActual = () =>
       trabajadores.currentTrabajador?.sexo === 'Femenino';
 
+    // Punto 39: en la historia clínica lo preseleccionado («No», «Negado», «12-14 años»…) está
+    // en el formulario desde que se abre (antes lo escribía cada paso al cerrarse), igual en los
+    // dos modos. Se vigila el formulario porque la vista lo vacía al montarse y, al editar, lo
+    // reemplaza por el documento cuando llega; solo se llenan campos vacíos (idempotente).
+    watch(
+      () =>
+        documentos.currentTypeOfDocument === 'historiaClinica'
+          ? formData.formDataHistoriaClinica
+          : null,
+      (df) => {
+        if (df) completarRespuestasPorDefecto(df, { esMujer: esMujerTrabajadorActual() });
+      },
+      { deep: true, immediate: true },
+    );
+
     const recolectarProblemasNotaMedica = (esMujer) => {
       const df = formData.formDataNotaMedica;
       const stepMap = getNotaMedicaStepMap(showSiresUI.value, esMujer);
@@ -1703,8 +1723,14 @@ export default {
       });
       return ordenarProblemas([...problemasPorFaltantes(requeridos.camposFaltantes), ...invalidos]);
     };
+    // Punto 39: además de obligatorios y fecha, «Sí» sin «Especifique» (decisión del usuario)
     const recolectarProblemasHistoriaClinica = () =>
-      recolectarProblemasObligatoriosYFecha('historiaClinica', formData.formDataHistoriaClinica);
+      ordenarProblemas([
+        ...recolectarProblemasObligatoriosYFecha('historiaClinica', formData.formDataHistoriaClinica),
+        ...problemasEspecificarHistoriaClinica(formData.formDataHistoriaClinica, {
+          esMujer: esMujerTrabajadorActual(),
+        }),
+      ]);
 
     // Exploración física: fecha, somatometría y signos. La lista de obligatorios revisa
     // vacío y rango juntos; aquí se separan para decir «escribe…» o el rango que falla.
@@ -2198,6 +2224,15 @@ export default {
         }
 
         datosLimpios = limpiarValoresUndefined(formData.formDataNotaMedica);
+      }
+
+      // HISTORIA CLÍNICA (punto 39): lo preseleccionado en lo vacío y el resumen según su
+      // pregunta, en cualquier modo de captura; los pasos ya no lo escriben al cerrarse
+      if (documentos.currentTypeOfDocument === 'historiaClinica') {
+        prepararHistoriaClinicaParaGuardar(formData.formDataHistoriaClinica, {
+          esMujer: esMujerTrabajadorActual(),
+        });
+        datosLimpios = limpiarValoresUndefined(formData.formDataHistoriaClinica);
       }
 
       // Documentos con aviso (salvo la nota médica, que revisa antes): lleva al primer dato

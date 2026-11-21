@@ -1,7 +1,8 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
 const props = defineProps({
@@ -33,17 +34,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para actividadFisicaDeficiente
-    if (!formDataHistoriaClinica.actividadFisicaDeficiente) {
-        formDataHistoriaClinica.actividadFisicaDeficiente = actividadFisicaDeficiente.value;
-    }
-
-    if (!formDataHistoriaClinica.actividadFisicaDeficienteEspecificar) {
-        formDataHistoriaClinica.actividadFisicaDeficienteEspecificar = 'Adecuada';
-    }
-});
-
 // Sincronizar actividadFisicaDeficiente con formData
 watch(actividadFisicaDeficiente, (newValue) => {
     formDataHistoriaClinica.actividadFisicaDeficiente = newValue;
@@ -55,6 +45,8 @@ watch(actividadFisicaDeficiente, async (newValue) => {
         formDataHistoriaClinica.actividadFisicaDeficienteEspecificar = 'Adecuada';
     }
     if (newValue === 'Si') {
+        // Punto 39: «Especifique» no trae el texto de «No»
+        limpiarTextoDeNo(formDataHistoriaClinica, 'actividadFisicaDeficienteEspecificar', 'Adecuada');
         // Esperar a que el DOM se actualice y luego enfocar el input
         await nextTick();
         if (inputEspecificar.value) {
@@ -68,6 +60,8 @@ watch(actividadFisicaDeficiente, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
+                especificar-cuando-no="Adecuada"
+                data-campo="actividadFisicaDeficiente actividadFisicaDeficienteEspecificar"
                 label="ACTIVIDAD FÍSICA"
                 question="¿La actividad física del trabajador es deficiente?"
                 v-model="actividadFisicaDeficiente"

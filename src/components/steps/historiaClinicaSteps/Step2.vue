@@ -1,7 +1,8 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
 const props = defineProps({
@@ -33,18 +34,6 @@ onMounted(() => {
   }
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para nefropatias
-    if (!formDataHistoriaClinica.nefropatias) {
-        formDataHistoriaClinica.nefropatias = nefropatias.value;
-    }
-
-    if (!formDataHistoriaClinica.nefropatiasEspecificar) {
-        formDataHistoriaClinica.nefropatiasEspecificar = 'Negado';
-    }
-});
-
-
 // Sincronizar nefropatias con formData
 watch(nefropatias, (newValue) => {
     formDataHistoriaClinica.nefropatias = newValue;
@@ -56,6 +45,8 @@ watch(nefropatias, async (newValue) => {
         formDataHistoriaClinica.nefropatiasEspecificar = 'Negado';
     }
     if (newValue === 'Si') {
+        // Punto 39: «Especifique» no trae el texto de «No»
+        limpiarTextoDeNo(formDataHistoriaClinica, 'nefropatiasEspecificar', 'Negado');
         formDataHistoriaClinica.nefropatiasEspecificar = formDataHistoriaClinica.nefropatiasEspecificar;
         // Esperar a que el DOM se actualice y luego enfocar el input
         await nextTick();
@@ -70,6 +61,7 @@ watch(nefropatias, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
+                data-campo="nefropatias nefropatiasEspecificar"
                 label="NEFROPATÍAS"
                 question="¿Problemas de riñones en la familia?"
                 v-model="nefropatias"

@@ -1,7 +1,8 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
 const props = defineProps({
@@ -33,18 +34,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para psiquiatricos
-    if (!formDataHistoriaClinica.psiquiatricos) {
-        formDataHistoriaClinica.psiquiatricos = psiquiatricos.value;
-    }
-
-    if (!formDataHistoriaClinica.psiquiatricosEspecificar) {
-        formDataHistoriaClinica.psiquiatricosEspecificar = 'Negado';
-    }
-});
-
-
 // Sincronizar psiquiatricos con formData
 watch(psiquiatricos, (newValue) => {
     formDataHistoriaClinica.psiquiatricos = newValue;
@@ -56,6 +45,8 @@ watch(psiquiatricos, async (newValue) => {
         formDataHistoriaClinica.psiquiatricosEspecificar = 'Negado';
     }
     if (newValue === 'Si') {
+        // Punto 39: «Especifique» no trae el texto de «No»
+        limpiarTextoDeNo(formDataHistoriaClinica, 'psiquiatricosEspecificar', 'Negado');
         // Esperar a que el DOM se actualice y luego enfocar el input
         await nextTick();
         if (inputEspecificar.value) {
@@ -69,6 +60,7 @@ watch(psiquiatricos, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
+                data-campo="psiquiatricos psiquiatricosEspecificar"
                 label="PSIQUIÁTRICOS"
                 question="¿Antecedentes de trastornos psiquiátricos en la familia?"
                 v-model="psiquiatricos"

@@ -1,5 +1,6 @@
 <script setup>
-    import { watch, ref, onMounted, onUnmounted, nextTick, computed, toRefs } from 'vue';
+    import { watch, ref, onMounted, nextTick, computed, toRefs } from 'vue';
+    import { resumenAutomaticoHistoriaClinica } from '@/helpers/historiaClinicaGuardado';
     import { useTrabajadoresStore } from '@/stores/trabajadores';
     import { useFormDataStore } from '@/stores/formDataStore';
     import { useDocumentosStore } from '@/stores/documentos';
@@ -24,40 +25,8 @@ const { variant } = toRefs(props);
     // Referencia al textarea
     const textareaEspecificar = ref(null);
     
-    // Lista de campos con sufijo "Especificar" de los pasos 12 al 21
-    const camposHallazgos = [
-        'lumbalgiasEspecificar',           // Step 12
-        'diabeticosPPEspecificar',         // Step 13
-        'cardiopaticosPPEspecificar',      // Step 14
-        'alergicosEspecificar',            // Step 15
-        'hipertensivosPPEspecificar',      // Step 16
-        'respiratoriosEspecificar',        // Step 17
-        'epilepticosPPEspecificar',        // Step 18
-        'accidentesEspecificar',           // Step 19
-        'quirurgicosEspecificar',          // Step 20
-        'otrosEspecificar',                // Step 21
-        'secuelas'                         // Step 45
-    ];
-    
-    // Computed para generar el resumen automáticamente
-    const resumenAutomatico = computed(() => {
-        const hallazgosSignificativos = camposHallazgos
-            .filter(campo => {
-                const valor = formDataHistoriaClinica[campo];
-                // Filtrar solo valores que no sean "Negado", "Sin secuelas" o vacíos
-                return valor && 
-                       valor !== 'Negado' && 
-                       valor !== 'Sin secuelas' && 
-                       valor.trim() !== '';
-            })
-            .map(campo => formDataHistoriaClinica[campo]);
-        
-        if (hallazgosSignificativos.length > 0) {
-            return hallazgosSignificativos.join('. ') + '.';
-        }
-        
-        return '';
-    });
+    // Hallazgos de los antecedentes personales y del accidente laboral (mismo cálculo que al guardar)
+    const resumenAutomatico = computed(() => resumenAutomaticoHistoriaClinica(formDataHistoriaClinica));
     
     onMounted(() => {
         const textoDefecto = trabajadores.currentTrabajador.sexo === 'Femenino'
@@ -100,19 +69,34 @@ const { variant } = toRefs(props);
         }
     });
     
-    onUnmounted(() => {
-        // Guardar el estado actual de la pregunta
-        formDataHistoriaClinica.resumenHistoriaClinicaPregunta = resumenHistoriaClinicaPregunta.value;
-    
-        // Guardar el resumen según el estado de la pregunta
+    // Punto 39: en la captura rápida esta sección está abierta desde el principio, antes de
+    // capturar los antecedentes; el resumen sigue a los hallazgos mientras no se escriba uno propio.
+    let usuarioEligioNo = false;
+    let cambioPorHallazgos = false;
+    const cambiarPregunta = (valor) => {
+        cambioPorHallazgos = true;
+        resumenHistoriaClinicaPregunta.value = valor;
+        nextTick(() => {
+            cambioPorHallazgos = false;
+        });
+    };
+    let ultimoAutomatico = '';
+    onMounted(() => {
+        ultimoAutomatico = resumenAutomatico.value;
+    });
+    watch(resumenAutomatico, (nuevo) => {
+        const resumenEsAutomatico =
+            !resumenHistoriaClinica.value || resumenHistoriaClinica.value === ultimoAutomatico;
         if (resumenHistoriaClinicaPregunta.value === 'No') {
-            formDataHistoriaClinica.resumenHistoriaClinica = trabajadores.currentTrabajador.sexo === 'Femenino'
-                ? 'Se refiere actualmente asintomática'
-                : 'Se refiere actualmente asintomático';
-        } else {
-            // Si es "Si", guardar el resumen actual (ya sea automático o editado por el usuario)
-            formDataHistoriaClinica.resumenHistoriaClinica = resumenHistoriaClinica.value || resumenAutomatico.value || '';
+            if (nuevo && !usuarioEligioNo) cambiarPregunta('Si');
+        } else if (resumenEsAutomatico) {
+            if (nuevo) {
+                resumenHistoriaClinica.value = nuevo;
+            } else {
+                cambiarPregunta('No');
+            }
         }
+        ultimoAutomatico = nuevo;
     });
     
     // Sincronizar resumenHistoriaClinicaPregunta con formData
@@ -127,7 +111,10 @@ const { variant } = toRefs(props);
     
     // Watch para establecer 'Default' cuando resumenHistoriaClinica sea 'No' y enfocar textarea cuando sea 'Si'
     watch(resumenHistoriaClinicaPregunta, async (newValue) => {
+        // Si el cambio lo hizo el sistema (siguiendo los hallazgos), no se mueve el cursor
+        const porHallazgos = cambioPorHallazgos;
         if (newValue === 'No') {
+            usuarioEligioNo = !porHallazgos;
             formDataHistoriaClinica.resumenHistoriaClinica =
                 trabajadores.currentTrabajador.sexo === 'Femenino'
                     ? 'Se refiere actualmente asintomática'
@@ -152,7 +139,7 @@ const { variant } = toRefs(props);
             
             // Esperar a que el DOM se actualice y luego enfocar el textarea
             await nextTick();
-            if (textareaEspecificar.value) {
+            if (textareaEspecificar.value && !porHallazgos) {
                 textareaEspecificar.value.focus();
             }
         }

@@ -1,7 +1,8 @@
 <script setup>
-import { watch, ref, onMounted, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, onMounted, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { limpiarTextoDeNo } from '@/helpers/historiaClinicaGuardado';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
 const props = defineProps({
@@ -33,18 +34,6 @@ onMounted(() => {
     }
 });
 
-onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para diabeticosPP
-    if (!formDataHistoriaClinica.diabeticosPP) {
-        formDataHistoriaClinica.diabeticosPP = diabeticosPP.value;
-    }
-
-    if (!formDataHistoriaClinica.diabeticosPPEspecificar) {
-        formDataHistoriaClinica.diabeticosPPEspecificar = 'Negado';
-    }
-});
-
-
 // Sincronizar diabeticosPP con formData
 watch(diabeticosPP, (newValue) => {
     formDataHistoriaClinica.diabeticosPP = newValue;
@@ -56,6 +45,8 @@ watch(diabeticosPP, async (newValue) => {
         formDataHistoriaClinica.diabeticosPPEspecificar = 'Negado';
     }
     if (newValue === 'Si') {
+        // Punto 39: «Especifique» no trae el texto de «No»
+        limpiarTextoDeNo(formDataHistoriaClinica, 'diabeticosPPEspecificar', 'Negado');
         // Esperar a que el DOM se actualice y luego enfocar el input
         await nextTick();
         if (inputEspecificar.value) {
@@ -69,6 +60,7 @@ watch(diabeticosPP, async (newValue) => {
     <div>
         <template v-if="variant === 'compact'">
             <AntecedenteSiNoChips
+                data-campo="diabeticosPP diabeticosPPEspecificar"
                 label="DIABÉTICOS"
                 question="¿Presenta el trabajador antecedentes de diabetes?"
                 v-model="diabeticosPP"

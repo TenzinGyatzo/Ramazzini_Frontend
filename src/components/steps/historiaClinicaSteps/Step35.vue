@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
@@ -21,12 +21,6 @@ const recuerdaFechaUltimaRegla = ref(
 );
 const fechaUltimaRegla = ref(valorInicial);
 const inputEspecificar = ref(null);
-
-onUnmounted(() => {
-  if (!formDataHistoriaClinica.fechaUltimaRegla) {
-    formDataHistoriaClinica.fechaUltimaRegla = NEGADO;
-  }
-});
 
 watch(fechaUltimaRegla, (newValue) => {
   formDataHistoriaClinica.fechaUltimaRegla = newValue;
@@ -52,6 +46,7 @@ watch(recuerdaFechaUltimaRegla, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
+        data-campo="fechaUltimaRegla"
         label="FECHA DE ÚLTIMA MENSTRUACIÓN"
         question="¿Recuerda la fecha del primer día de su última menstruación?"
         v-model="recuerdaFechaUltimaRegla"

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, toRefs } from 'vue';
+import { ref, watch, onMounted, toRefs } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -51,6 +51,8 @@ onMounted(() => {
   // La fecha que se ve cuenta como capturada desde que se abre el paso (vista previa y
   // aviso al guardar); antes solo al cambiarla o salir del paso.
   formDataHistoriaClinica.fechaHistoriaClinica = fechaHistoriaClinica.value;
+  // El motivo también: antes solo llegaba al formulario al salir del paso
+  formDataHistoriaClinica.motivoExamen = motivoExamen.value;
   
   
   // Establece rutaPDF en formData
@@ -61,11 +63,15 @@ onMounted(() => {
   formDataHistoriaClinica.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 });
 
-onUnmounted(() => {
-  // Guardar valores en formData antes de desmontar
-  formDataHistoriaClinica.motivoExamen = motivoExamen.value;
-  formDataHistoriaClinica.fechaHistoriaClinica = fechaHistoriaClinica.value;
-});
+// Si el formulario se vacía después de abrir el paso (la vista lo reinicia al montarse), lo que
+// se ve vuelve a quedar en el formulario; antes lo reponía el cierre del paso.
+watch(
+  () => [formDataHistoriaClinica.motivoExamen, formDataHistoriaClinica.fechaHistoriaClinica],
+  ([motivo, fecha]) => {
+    if (!motivo && motivoExamen.value) formDataHistoriaClinica.motivoExamen = motivoExamen.value;
+    if (!fecha && fechaHistoriaClinica.value) formDataHistoriaClinica.fechaHistoriaClinica = fechaHistoriaClinica.value;
+  },
+);
 
 // Sincronizar motivoExamen con formData
 watch(motivoExamen, (newValue) => {

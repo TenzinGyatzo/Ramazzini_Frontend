@@ -1,5 +1,5 @@
 <script setup>
-import { watch, ref, onUnmounted, nextTick, toRefs } from 'vue';
+import { watch, ref, nextTick, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import AntecedenteSiNoChips from './AntecedenteSiNoChips.vue';
 
@@ -21,12 +21,6 @@ const fechaUltimaMastografiaPregunta = ref(
 );
 const fechaUltimaMastografia = ref(valorInicial);
 const inputEspecificar = ref(null);
-
-onUnmounted(() => {
-  if (!formDataHistoriaClinica.fechaUltimaMastografia) {
-    formDataHistoriaClinica.fechaUltimaMastografia = NEGADO;
-  }
-});
 
 watch(fechaUltimaMastografia, (newValue) => {
   formDataHistoriaClinica.fechaUltimaMastografia = newValue;
@@ -52,6 +46,7 @@ watch(fechaUltimaMastografiaPregunta, async (newValue, oldValue) => {
   <div>
     <template v-if="variant === 'compact'">
       <AntecedenteSiNoChips
+        data-campo="fechaUltimaMastografia"
         label="ÚLTIMA MASTOGRAFÍA"
         question="¿Recuerda la fecha exacta o aproximada de la última mastografía?"
         v-model="fechaUltimaMastografiaPregunta"
