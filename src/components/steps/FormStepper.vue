@@ -2785,7 +2785,7 @@ export default {
   <div
     :class="[
       'border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto',
-      capturaRapida ? 'max-w-5xl p-4 sm:p-7' : 'max-w-md p-7',
+      capturaRapida ? 'max-w-5xl p-4 sm:p-7' : 'max-w-md p-4 sm:p-7',
     ]">
 
     <!-- Modo de captura (solo en los documentos que tienen captura rápida) -->
@@ -2872,7 +2872,7 @@ export default {
         />
       </aside>
 
-    <div data-captura-scroll class="flex-1 min-w-0 h-full overflow-y-auto pr-1">
+    <div data-captura-scroll class="flex-1 min-w-0 lg:h-full lg:overflow-y-auto lg:pr-1">
       <div
         v-if="stepsStore.steps.length > 0"
         data-captura-documento

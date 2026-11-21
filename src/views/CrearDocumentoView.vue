@@ -52,6 +52,7 @@ import VisualizadorEventoSeguimientoCardiometabolico from '@/components/steps/Vi
 import VisualizadorInformeLongitudinalCardiometabolico from '@/components/steps/VisualizadorInformeLongitudinalCardiometabolico.vue';
 import VisualizadorInformeLongitudinalAudiometrico from '@/components/steps/VisualizadorInformeLongitudinalAudiometrico.vue';
 import { useModoCaptura } from '@/composables/useModoCaptura';
+import { useAnchoElemento } from '@/composables/useAnchoElemento';
 import {
   ORIENTACION_SIN_HALLAZGO,
   CONCLUSION_SIN_HALLAZGOS,
@@ -69,6 +70,12 @@ const documentos = useDocumentosStore();
 const formData = useFormDataStore();
 // Punto 38: en «Captura rápida» el formulario va a todo lo ancho, sin el documento al lado
 const { capturaRapida, vistaPreviaAbierta } = useModoCaptura();
+// Con vista previa, asistente y documento lado a lado en cuanto caben (antes solo desde
+// 1280 px de ventana: entre 1024 y 1279 el documento quedaba debajo). Se mide el espacio
+// real porque depende también de si el menú lateral está abierto.
+const contenedorNotaMedica = ref<HTMLElement | null>(null);
+const anchoNotaMedica = useAnchoElemento(contenedorNotaMedica);
+const notaLadoALado = computed(() => !capturaRapida.value && anchoNotaMedica.value >= 820);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
@@ -704,11 +711,15 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">  
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'notaMedica'"
-          class="max-w-6xl mx-auto flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
-          <div :class="capturaRapida ? 'w-full' : 'w-full xl:w-1/3'">
+          ref="contenedorNotaMedica"
+          :class="['max-w-6xl mx-auto flex gap-3 md:gap-6', notaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          <div :class="capturaRapida ? 'w-full' : notaLadoALado ? 'w-[22rem] xl:w-1/3 shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div v-if="!capturaRapida" class="w-full xl:w-2/3 max-w-3xl mx-auto">
+          <div
+            v-if="!capturaRapida"
+            :class="['max-w-3xl', notaLadoALado ? 'flex-1 min-w-0' : 'w-full mx-auto']"
+          >
             <VisualizadorNotaMedica />
           </div>
           <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral -->

@@ -79,3 +79,28 @@ describe('alto del área de captura', () => {
     expect(alturaHastaElFondo(area, 400, 320)).toBe(320);
   });
 });
+
+describe('área de captura según el ancho', () => {
+  it('en celular y tableta no tiene alto fijo: se desplaza la página completa', async () => {
+    const { defineComponent, h, ref, nextTick } = await import('vue');
+    const { useAlturaHastaElFondo } = await import('@/composables/useAlturaHastaElFondo');
+    const medir = async (anchoVentana: number) => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: anchoVentana });
+      let altura: { value: number | null } = { value: -1 };
+      const Prueba = defineComponent({
+        setup() {
+          const el = ref<HTMLElement | null>(null);
+          altura = useAlturaHastaElFondo(el, ref(true)).altura;
+          return () => h('div', { ref: el });
+        },
+      });
+      const w = mount(Prueba, { attachTo: document.body });
+      await nextTick();
+      await new Promise((r) => setTimeout(r, 50));
+      w.unmount();
+      return altura.value;
+    };
+    expect(await medir(800)).toBeNull();
+    expect(await medir(1366)).not.toBeNull();
+  });
+});

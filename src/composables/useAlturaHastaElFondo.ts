@@ -3,8 +3,12 @@ import { onMounted, onUnmounted, ref, watch, type Ref } from 'vue';
 /**
  * Captura rápida (punto 38): el área de captura ocupa lo que queda de la ventana debajo de
  * su principio, para que se desplace solo ella (y el índice se quede quieto) sin que la
- * página tenga scroll propio.
+ * página tenga scroll propio. Solo en pantallas anchas (laptop o PC): en celular y tableta se
+ * desplaza la página completa, como cualquier formulario (un área fija dejaba muy poco espacio).
  */
+
+/** Desde este ancho (lg de Tailwind) el área de captura tiene alto fijo. */
+export const ANCHO_AREA_FIJA = 1024;
 
 const num = (v: string) => parseFloat(v) || 0;
 
@@ -47,7 +51,7 @@ export function useAlturaHastaElFondo(
   const medir = () => {
     cancelAnimationFrame(cuadro);
     cuadro = requestAnimationFrame(() => {
-      if (!activo.value || !el.value) {
+      if (!activo.value || !el.value || window.innerWidth < ANCHO_AREA_FIJA) {
         altura.value = null;
         return;
       }

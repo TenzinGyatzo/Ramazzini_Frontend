@@ -763,15 +763,15 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
   <PlatformTenantBanner />
   <main
     :class="[
-      'flex w-full max-w-full min-w-0 flex-col items-center overflow-x-auto p-4 md:p-10',
+      'relative flex w-full max-w-full min-w-0 flex-col items-center overflow-x-auto p-4 md:p-10',
       showWelcomeHome ? 'home-layout min-h-dvh max-h-dvh overflow-y-auto' : 'min-h-screen',
     ]"
   >
     
-    <!-- Logo de la empresa -->
+    <!-- Logo de la empresa: arriba a la derecha, se va con la página (fijo tapaba campos al desplazarse) -->
     <div v-if="empresas.currentEmpresa?.logotipoEmpresa?.data && 
       ['crear-documento'].includes(route.name as string)"
-      class="fixed top-4 right-4 h-16 w-16 md:h-24 md:w-24 rounded-lg z-[55] flex flex-col items-center justify-center overflow-hidden bg-white shadow-lg border border-gray-200">
+      class="absolute top-4 right-4 h-16 w-16 md:h-24 md:w-24 rounded-lg z-[55] flex flex-col items-center justify-center overflow-hidden bg-white shadow-lg border border-gray-200">
       <img :src="'/uploads/logos/' + empresas.currentEmpresa?.logotipoEmpresa?.data"
       :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial" 
       class="max-h-full max-w-full object-contain p-2">

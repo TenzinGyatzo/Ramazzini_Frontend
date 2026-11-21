@@ -153,7 +153,9 @@ export async function enfocarCampo(
 
   const foco = el.matches(ENFOCABLE) ? el : el.querySelector<HTMLElement>(ENFOCABLE);
   // Captura rápida: el formulario se desplaza dentro de su área, no la página
-  const marco = el.closest<HTMLElement>('[data-captura-scroll]');
+  // (solo si de verdad se desplaza: en celular se desplaza la página completa)
+  const contenedor = el.closest<HTMLElement>('[data-captura-scroll]');
+  const marco = contenedor && contenedor.scrollHeight > contenedor.clientHeight + 1 ? contenedor : null;
   const rectMarco = marco?.getBoundingClientRect();
   const altoPantalla = rectMarco
     ? rectMarco.height

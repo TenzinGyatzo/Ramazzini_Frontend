@@ -28,7 +28,7 @@ const verConsejos = ref(false);
         v-if="consejos?.length"
         type="button"
         tabindex="-1"
-        class="text-xs text-emerald-700 hover:underline inline-flex items-center gap-1"
+        class="shrink-0 whitespace-nowrap text-xs text-emerald-700 hover:underline inline-flex items-center gap-1"
         :aria-expanded="verConsejos"
         @click="verConsejos = !verConsejos"
       >

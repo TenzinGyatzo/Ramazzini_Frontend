@@ -70,26 +70,31 @@ const datos = computed(() =>
 </script>
 
 <template>
+  <!-- Compacto: en escritorio, nombre y datos en una sola línea si caben; en celular, letra
+       más chica, círculo más chico y datos seguidos (sin divisores) -->
   <div
     v-if="trabajador"
     data-encabezado-trabajador
-    class="mb-3 flex items-center gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white px-3 py-2.5"
+    class="mb-3 flex items-center gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white px-3 py-2"
   >
     <div
-      class="shrink-0 w-10 h-10 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center text-sm font-semibold"
+      class="shrink-0 w-8 h-8 text-xs sm:w-9 sm:h-9 sm:text-sm rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center font-semibold"
       aria-hidden="true"
     >{{ iniciales }}</div>
-    <div class="min-w-0 flex-1">
-      <p class="flex flex-wrap items-baseline gap-x-2 leading-tight">
-        <span class="text-base font-semibold text-gray-900">{{ formatNombreCompleto(trabajador) }}</span>
-        <span v-if="sexoYEdad" class="text-sm text-gray-500">{{ sexoYEdad }}</span>
+    <div class="min-w-0 flex-1 lg:flex lg:flex-wrap lg:items-center lg:gap-x-4">
+      <p class="flex flex-wrap items-baseline gap-x-2 leading-tight lg:shrink-0">
+        <span class="text-sm sm:text-base font-semibold text-gray-900">{{ formatNombreCompleto(trabajador) }}</span>
+        <span v-if="sexoYEdad" class="text-xs sm:text-sm text-gray-500">{{ sexoYEdad }}</span>
       </p>
-      <ul class="mt-1 flex flex-wrap items-center gap-y-1 text-sm text-gray-700">
+      <ul class="mt-1 lg:mt-0 flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-x-0 text-xs sm:text-sm text-gray-700">
         <li
           v-for="(d, i) in datos"
           :key="d.clave"
           :title="d.titulo"
-          :class="['flex items-center gap-1.5 pr-2.5', i > 0 ? 'pl-2.5 border-l border-gray-300 dark:border-slate-600' : '']"
+          :class="[
+            'flex items-center gap-1.5 sm:pr-2.5',
+            i > 0 ? 'sm:pl-2.5 sm:border-l sm:border-gray-300 sm:dark:border-slate-600' : '',
+          ]"
         >
           <i :class="['fas', d.icono]" aria-hidden="true"></i>
           <span class="sr-only">{{ d.titulo }}:</span>
@@ -97,7 +102,10 @@ const datos = computed(() =>
         </li>
         <li
           v-if="trabajador.numeroEmpleado"
-          :class="['pl-2.5 text-gray-500', datos.length ? 'border-l border-gray-300 dark:border-slate-600' : '']"
+          :class="[
+            'text-gray-500',
+            datos.length ? 'sm:pl-2.5 sm:border-l sm:border-gray-300 sm:dark:border-slate-600' : '',
+          ]"
           title="Número de empleado"
         >
           <i class="fas fa-id-badge text-purple-500 mr-1" aria-hidden="true"></i>No. {{ trabajador.numeroEmpleado }}

@@ -13,7 +13,8 @@ defineProps<{
 }>();
 const modelo = defineModel<T | null>();
 
-// En el asistente angosto ocupan todo el ancho y se reparten parejo (no se parten en renglones)
+// En el asistente angosto, y en captura rápida en celular, ocupan todo el ancho y se reparten
+// parejo (no se parten en renglones); en captura rápida desde sm, a su medida.
 const ancho = enCapturaRapida();
 </script>
 
@@ -23,14 +24,16 @@ const ancho = enCapturaRapida();
     :aria-label="etiqueta"
     :class="[
       'rounded-lg border border-gray-300 bg-white overflow-hidden',
-      ancho ? 'inline-flex flex-wrap' : 'flex w-full',
+      ancho ? 'flex w-full sm:inline-flex sm:w-auto' : 'flex w-full',
     ]"
   >
     <label
       v-for="(op, i) in opciones"
       :key="String(op.valor)"
       :class="[
-        ancho ? 'px-4' : 'flex-auto justify-center px-2 whitespace-nowrap',
+        ancho
+          ? 'flex-auto justify-center px-2 whitespace-nowrap sm:flex-none sm:px-4'
+          : 'flex-auto justify-center px-2 whitespace-nowrap',
         'relative inline-flex items-center gap-1.5 h-10 text-sm cursor-pointer select-none transition-colors duration-150 focus-within:z-10 focus-within:ring-2 focus-within:ring-inset focus-within:ring-emerald-500',
         i > 0 ? 'border-l border-gray-300' : '',
         modelo === op.valor
@@ -39,7 +42,7 @@ const ancho = enCapturaRapida();
       ]"
     >
       <input v-model="modelo" type="radio" :name="name" :value="op.valor" class="sr-only" />
-      <i v-if="ancho && modelo === op.valor" class="fas fa-check text-xs" aria-hidden="true"></i>
+      <i v-if="ancho && modelo === op.valor" class="fas fa-check text-xs hidden sm:inline" aria-hidden="true"></i>
       {{ op.etiqueta }}
     </label>
   </div>

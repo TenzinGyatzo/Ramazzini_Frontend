@@ -24,7 +24,7 @@ const opciones: { valor: ModoCaptura; etiqueta: string; icono: string }[] = [
       tabindex="-1"
       :aria-pressed="modo === op.valor"
       :class="[
-        'px-2.5 py-1 rounded-md font-medium transition-colors inline-flex items-center gap-1.5',
+        'px-2 sm:px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition-colors inline-flex items-center gap-1.5',
         modo === op.valor
           ? 'bg-emerald-600 text-white'
           : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700',

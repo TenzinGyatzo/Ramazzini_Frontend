@@ -55,18 +55,18 @@ watch(motivoConsulta, (newValue) => {
         </h1>
         <div data-campo="motivoConsulta">
             <div class="flex items-baseline justify-between gap-3 mb-1">
-                <label for="motivoConsulta" :class="CLASE_ETIQUETA">
+                <label for="motivoConsulta" :class="[CLASE_ETIQUETA, 'whitespace-nowrap']">
                     Motivo de consulta <span class="text-red-500">*</span>
                 </label>
                 <button
                     type="button"
                     tabindex="-1"
-                    class="text-xs text-emerald-700 hover:underline inline-flex items-center gap-1"
+                    class="shrink-0 whitespace-nowrap text-xs text-emerald-700 hover:underline inline-flex items-center gap-1"
                     :aria-expanded="verConsejos"
                     @click="verConsejos = !verConsejos"
                 >
                     <i class="fas fa-lightbulb" aria-hidden="true"></i>
-                    Consejos de redacción
+                    Consejos
                 </button>
             </div>
             <ul v-if="verConsejos" class="mb-2 text-xs text-gray-600 list-disc pl-5 space-y-0.5">
