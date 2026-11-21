@@ -32,8 +32,9 @@ const opciones = computed(() => props.options.map((o) => ({ valor: o.value, etiq
 
 <template>
   <div :data-campo="campo" class="border-b border-gray-200/80 dark:border-slate-700/80 py-2.5 last:border-b-0">
-    <div class="flex items-start justify-between gap-3">
-      <div class="min-w-0">
+    <!-- Si los botones no caben junto a la etiqueta, bajan de renglón (no se aplasta el texto) -->
+    <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
+      <div class="min-w-[9rem] flex-1">
         <p :class="[CLASE_ETIQUETA, 'leading-tight']">{{ etiquetaLegible }}</p>
         <p v-if="question" :class="[CLASE_AYUDA, 'mt-0.5']">{{ question }}</p>
       </div>

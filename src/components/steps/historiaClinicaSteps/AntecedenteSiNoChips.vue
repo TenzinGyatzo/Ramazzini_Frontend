@@ -8,7 +8,8 @@ const props = withDefaults(
     label: string;
     question?: string;
     modelValue: string;
-    especificar: string;
+    /** Vacío mientras la sección no se ha revisado (se llena al revisarla o al guardar). */
+    especificar?: string;
     placeholder?: string;
     especificarRequired?: boolean;
     /** Valor escrito en especificar al elegir No (default Negado). */

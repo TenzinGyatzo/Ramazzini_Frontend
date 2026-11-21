@@ -506,6 +506,7 @@ import IndiceCaptura from '@/components/steps/IndiceCaptura.vue';
 import EncabezadoTrabajadorCaptura from '@/components/steps/EncabezadoTrabajadorCaptura.vue';
 import { useAlturaHastaElFondo } from '@/composables/useAlturaHastaElFondo';
 import { estadoIndiceCaptura, seccionIncompletaVecina, atajoDeSeccion } from '@/helpers/indiceCaptura';
+import { buscarCampo, esControlDeCaptura, recordarCampo } from '@/helpers/campoEntreModos';
 import { esComputadora, primerCampoParaEnfocar } from '@/composables/useAutofocoPrimerVacio';
 import { quitarMedicionesVacias } from '@/helpers/medicionesClinicas';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
@@ -2110,7 +2111,7 @@ export default {
         }
         await nextTick();
         recalcularIndice();
-        if (!capturaRapida.value || !esComputadora() || hayAtencionEnCurso()) return;
+        if (!capturaRapida.value || !esComputadora() || hayAtencionEnCurso() || campoPorRestaurar) return;
         const libre = !document.activeElement || document.activeElement === document.body;
         if (!libre) return;
         const el = primerCampoParaEnfocar(
@@ -2124,6 +2125,49 @@ export default {
       },
       { immediate: true },
     );
+
+    // Punto 39: al cambiar de modo se sigue en el mismo campo. Se recuerda el último campo
+    // donde estuvo el cursor (al hacer clic en el interruptor, el cursor sale del campo); en
+    // «Con vista previa» se abre su sección; en los dos modos se enfoca y se acomoda en pantalla.
+    let ultimoCampo = null;
+    let campoPorRestaurar = null;
+    const alEnfocarDocumento = (e) => {
+      if (!esControlDeCaptura(e.target) || !e.target.closest('[data-form-stepper]')) return;
+      const seccion = capturaRapida.value ? seccionDeElemento(e.target) : stepsStore.currentStep;
+      if (seccion) ultimoCampo = recordarCampo(e.target, seccion);
+    };
+    onMounted(() => document.addEventListener('focusin', alEnfocarDocumento, true));
+    onUnmounted(() => document.removeEventListener('focusin', alEnfocarDocumento, true));
+
+    const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+    const restaurarCampo = async (recordado) => {
+      let el = null;
+      for (let i = 0; i < 40 && !(el = buscarCampo(recordado)); i++) await esperar(50);
+      // Que termine de acomodarse (lado a lado, altura del área) y de poner su propio cursor
+      await esperar(150);
+      if (campoPorRestaurar !== recordado) return;
+      campoPorRestaurar = null;
+      el = buscarCampo(recordado) ?? el;
+      if (!el) return;
+      if (esComputadora()) el.focus({ preventScroll: true });
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (capturaRapida.value) alEnfocarCaptura({ target: el });
+    };
+
+    const cambiarModoConservandoCampo = (nuevo) => {
+      const recordado = ultimoCampo;
+      if (recordado && !capturaRapida.value) {
+        // Desde «Con vista previa» la sección es la del paso abierto
+        recordado.seccion = stepsStore.currentStep;
+      }
+      cambiarModoCaptura(nuevo);
+      if (!recordado) return;
+      campoPorRestaurar = recordado;
+      if (nuevo === 'vistaPrevia' && recordado.seccion !== stepsStore.currentStep) {
+        stepsStore.goToStep(recordado.seccion);
+      }
+      restaurarCampo(recordado);
+    };
 
     // El área de captura ocupa lo que queda de la ventana y se desplaza sola
     const areaCaptura = ref(null);
@@ -2758,7 +2802,7 @@ export default {
       modoCaptura,
       capturaRapidaDisponible,
       capturaRapida,
-      cambiarModoCaptura,
+      cambiarModoCaptura: cambiarModoConservandoCampo,
       vistaPreviaAbierta,
       indiceCaptura,
       areaCaptura,
@@ -2861,6 +2905,7 @@ export default {
   />
 
   <div
+    data-form-stepper
     :class="[
       'border-shadow w-full col-span-1 2xl:col-span-9 text-left rounded-lg transition-all duration-300 ease-in-out transform shadow-md bg-white mx-auto',
       capturaRapida ? 'max-w-5xl p-4 sm:p-7' : 'max-w-md p-4 sm:p-7',
@@ -2933,7 +2978,7 @@ export default {
 
     <!-- Ocupa lo que queda de la ventana: se desplaza el formulario; el índice se queda quieto -->
     <div
-      ref="areaCaptura"
+      :ref="(el) => (areaCaptura = el)"
       data-area-captura
       class="flex gap-6"
       :style="alturaAreaCaptura ? { height: alturaAreaCaptura + 'px' } : undefined"
