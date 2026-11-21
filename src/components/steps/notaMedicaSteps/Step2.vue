@@ -10,11 +10,8 @@ import { CLASE_ETIQUETA, CLASE_TEXTAREA } from '@/components/steps/captura/estil
 // Captura rápida (punto 38): los consejos de redacción se abren a petición
 const capturaRapida = enCapturaRapida();
 const verConsejos = ref(false);
-const PLACEHOLDER_MOTIVO = `Consulta médica por motivo de...
-El trabajador presenta...
-Solicita evaluación médica debido a...
-Acude para seguimiento de...
-`;
+const PLACEHOLDER_MOTIVO =
+  'Razón por la que acude: síntoma o molestia principal, desde cuándo y cómo ha evolucionado, o el control o trámite que solicita';
 
 // Al abrir el paso, si el motivo de consulta está vacío, el cursor va a él
 useAutofocoPrimerVacio(['motivoConsulta']);
@@ -74,7 +71,7 @@ watch(motivoConsulta, (newValue) => {
             <textarea
                 id="motivoConsulta"
                 v-model="motivoConsulta"
-                rows="4"
+                rows="3"
                 :class="CLASE_TEXTAREA"
                 :placeholder="PLACEHOLDER_MOTIVO"
                 required

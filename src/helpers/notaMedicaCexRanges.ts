@@ -139,7 +139,7 @@ export const NOTA_MEDICA_CEX_MESSAGES = {
     'Si sistólica o diastólica es 0 (se desconoce), ambas deben ser 0',
   tipoMedicion: 'Seleccione si la medición fue en ayunas',
   resultadoObtenidoaTravesde:
-    'Seleccione cómo se obtuvo el resultado de glucemia',
+    'Seleccione cómo se obtuvo el resultado',
 } as const;
 
 export function isCexUnknown(

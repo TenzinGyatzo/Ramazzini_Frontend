@@ -20,6 +20,14 @@ import { CLASE_AYUDA, CLASE_ETIQUETA } from '@/components/steps/captura/estiloCa
 
 // Captura rápida (punto 38): peso, talla y cintura en una fila; IMC y categorías como resultado
 const capturaRapida = enCapturaRapida();
+/** Color sólido de la categoría: verde normal, ámbar a vigilar, rojo de riesgo. */
+function colorCategoria(categoria) {
+  if (categoria === 'Normal') return 'bg-emerald-600';
+  if (categoria === 'Bajo peso' || categoria === 'Sobrepeso' || categoria === 'Riesgo elevado') return 'bg-amber-600';
+  if (categoria === 'Obesidad clase III') return 'bg-red-800';
+  if (categoria === 'Obesidad clase II') return 'bg-red-700';
+  return 'bg-red-600';
+}
 
 // Al abrir el paso, el cursor va al primer dato vacío (los marcados «Se desconoce» se saltan)
 useAutofocoPrimerVacio(['peso', 'talla', 'circunferenciaCintura']);
@@ -319,33 +327,37 @@ const ranges = NOTA_MEDICA_CEX_RANGES;
       />
     </div>
 
-    <!-- Lo que se calcula solo -->
-    <div class="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-      <div class="flex items-center gap-2" data-calculado>
-        <span :class="CLASE_ETIQUETA">Índice de masa corporal:</span>
-        <span class="font-semibold text-gray-800">{{ indiceMasaCorporal ?? '—' }}</span>
+    <!-- Lo que se calcula solo: valor grande y la categoría en una etiqueta de color sólido -->
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div
+        data-calculado
+        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+      >
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500">Índice de masa corporal</p>
+          <p class="text-base font-bold text-gray-900 leading-tight">{{ indiceMasaCorporal ?? '—' }}</p>
+        </div>
         <span
           v-if="categoriaIMC"
-          :class="[
-            'px-2 py-0.5 rounded-md text-xs font-semibold',
-            categoriaIMC === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-            categoriaIMC === 'Bajo peso' || categoriaIMC === 'Sobrepeso' ? 'bg-yellow-50 text-yellow-800' : '',
-            categoriaIMC.startsWith('Obesidad') ? 'bg-red-50 text-red-900' : '',
-          ]"
+          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(categoriaIMC)]"
         >{{ categoriaIMC }}</span>
+        <span v-else class="text-xs text-gray-400">Se calcula con peso y talla</span>
       </div>
-      <div class="flex items-center gap-2" data-calculado>
-        <span :class="CLASE_ETIQUETA">Cintura:</span>
+      <div
+        data-calculado
+        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+      >
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500">Riesgo por cintura</p>
+          <p class="text-base font-bold text-gray-900 leading-tight">
+            {{ circunferenciaCintura != null && !seDesconoceCircunferencia ? `${circunferenciaCintura} cm` : '—' }}
+          </p>
+        </div>
         <span
           v-if="categoriaCircunferenciaCintura"
-          :class="[
-            'px-2 py-0.5 rounded-md text-xs font-semibold',
-            categoriaCircunferenciaCintura === 'Normal' ? 'bg-emerald-50 text-emerald-800' : '',
-            categoriaCircunferenciaCintura === 'Riesgo elevado' ? 'bg-yellow-50 text-yellow-800' : '',
-            categoriaCircunferenciaCintura === 'Riesgo muy elevado' ? 'bg-red-50 text-red-900' : '',
-          ]"
+          :class="['shrink-0 px-2.5 py-1 rounded-md text-sm font-semibold text-white', colorCategoria(categoriaCircunferenciaCintura)]"
         >{{ categoriaCircunferenciaCintura }}</span>
-        <span v-else class="text-gray-400">—</span>
+        <span v-else class="text-xs text-gray-400">Se calcula con la cintura</span>
       </div>
     </div>
   </div>
