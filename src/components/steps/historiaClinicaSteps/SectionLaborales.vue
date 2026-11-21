@@ -115,18 +115,20 @@ function quitarUltimoTrabajo() {
         <button
           v-if="puedeAgregar"
           type="button"
-          class="flex-1 min-w-[12rem] px-3 py-2 text-sm font-semibold rounded-md border border-emerald-600 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 transition-colors duration-150"
           @click="agregarTrabajo"
         >
+          <i class="fas fa-plus text-xs" aria-hidden="true"></i>
           {{ textoAgregar }}
         </button>
         <button
           v-if="puedeQuitar"
           type="button"
-          class="px-3 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors duration-150"
           @click="quitarUltimoTrabajo"
         >
-          Quitar último
+          <i class="fas fa-trash-alt text-xs" aria-hidden="true"></i>
+          Quitar el último
         </button>
       </div>
     </div>

@@ -15,51 +15,57 @@ import Step38 from './Step38.vue';
 import Step39 from './Step39.vue';
 import Step40 from './Step40.vue';
 import Step41 from './Step41.vue';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+
+// Punto 39: en la captura rápida, en dos columnas (la mitad del alto)
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
   <HcSectionStep title="Antecedentes gineco-obstétricos" icono="fa-venus">
-    <MicrostepAnchor :legacy-step="28">
-      <Step28 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="29">
-      <Step29 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="30">
-      <Step30 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="31">
-      <Step31 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="32">
-      <Step32 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="33">
-      <Step33 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="34">
-      <Step34 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="35">
-      <Step35 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="36">
-      <Step36 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="37">
-      <Step37 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="38">
-      <Step38 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="39">
-      <Step39 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="40">
-      <Step40 variant="compact" />
-    </MicrostepAnchor>
-    <MicrostepAnchor :legacy-step="41">
-      <Step41 variant="compact" />
-    </MicrostepAnchor>
+    <div :class="capturaRapida ? 'grid sm:grid-cols-2 gap-x-8 gap-y-3' : 'space-y-3'">
+      <MicrostepAnchor :legacy-step="28">
+        <Step28 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="29">
+        <Step29 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="30">
+        <Step30 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="31">
+        <Step31 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="32">
+        <Step32 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="33">
+        <Step33 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="34">
+        <Step34 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="35">
+        <Step35 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="36">
+        <Step36 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="37">
+        <Step37 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="38">
+        <Step38 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="39">
+        <Step39 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="40">
+        <Step40 variant="compact" />
+      </MicrostepAnchor>
+      <MicrostepAnchor :legacy-step="41">
+        <Step41 variant="compact" />
+      </MicrostepAnchor>
+    </div>
   </HcSectionStep>
 </template>

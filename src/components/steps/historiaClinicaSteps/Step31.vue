@@ -1,6 +1,7 @@
 <script setup>
 import { watch, ref, onMounted, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
+import OpcionLista from '@/components/steps/captura/OpcionLista.vue';
 
 const props = defineProps({
   variant: {
@@ -28,258 +29,21 @@ watch(gestas, (newValue) => {
     formDataHistoriaClinica.gestas = newValue;
 });
 
+
+// Punto 39: lista con el estilo común, igual en los dos modos
+const OPCIONES = ['0 (Ninguna)', '1 gesta', '2 gestas', '3 gestas', '4 gestas', '5 gestas', 'Más de 5 gestas'];
 </script>
 
 <template>
-    <div>
-        <!-- Jerarquía Visual Mejorada -->
-        <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Antecedentes Gineco Obstétricos</h1>
-        <h2 :class="variant === 'compact' ? 'text-sm font-semibold mb-2 text-gray-700' : 'text-lg font-semibold mb-4 text-gray-700'">GESTAS</h2>
-        
-        <!-- Pregunta principal con mejor jerarquía -->
-        <div :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
-            <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿Cuántos embarazos ha tenido la trabajadora, incluyendo el actual si lo hay?</p>
-            
-            <!-- Diseño de Radio Buttons más Visual tipo Card sin iconos - 2 columnas -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <!-- Opción 0 (Ninguna) -->
-                <label 
-                    :class="[
-                        'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        gestas === '0 (Ninguna)' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="0 (Ninguna)" 
-                        v-model="gestas" 
-                        class="sr-only" 
-                    />
-                    <span 
-                        :class="[
-                            'text-sm transition-colors duration-200',
-                            gestas === '0 (Ninguna)' ? 'text-emerald-700 font-semibold' : 'text-gray-700'
-                        ]"
-                    >
-                        0 (Ninguna)
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="gestas === '0 (Ninguna)'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-
-                <!-- Opción 1 gesta -->
-                <label 
-                    :class="[
-                        'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        gestas === '1 gesta' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="1 gesta" 
-                        v-model="gestas" 
-                        class="sr-only" 
-                    />
-                    <span 
-                        :class="[
-                            'text-sm transition-colors duration-200',
-                            gestas === '1 gesta' ? 'text-emerald-700 font-semibold' : 'text-gray-700'
-                        ]"
-                    >
-                        1 gesta
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="gestas === '1 gesta'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-
-                <!-- Opción 2 gestas -->
-                <label 
-                    :class="[
-                        'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        gestas === '2 gestas' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="2 gestas" 
-                        v-model="gestas" 
-                        class="sr-only" 
-                    />
-                    <span 
-                        :class="[
-                            'text-sm transition-colors duration-200',
-                            gestas === '2 gestas' ? 'text-emerald-700 font-semibold' : 'text-gray-700'
-                        ]"
-                    >
-                        2 gestas
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="gestas === '2 gestas'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-
-                <!-- Opción 3 gestas -->
-                <label 
-                    :class="[
-                        'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        gestas === '3 gestas' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="3 gestas" 
-                        v-model="gestas" 
-                        class="sr-only" 
-                    />
-                    <span 
-                        :class="[
-                            'text-sm transition-colors duration-200',
-                            gestas === '3 gestas' ? 'text-emerald-700 font-semibold' : 'text-gray-700'
-                        ]"
-                    >
-                        3 gestas
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="gestas === '3 gestas'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-
-                <!-- Opción 4 gestas -->
-                <label 
-                    :class="[
-                        'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        gestas === '4 gestas' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="4 gestas" 
-                        v-model="gestas" 
-                        class="sr-only" 
-                    />
-                    <span 
-                        :class="[
-                            'text-sm transition-colors duration-200',
-                            gestas === '4 gestas' ? 'text-emerald-700 font-semibold' : 'text-gray-700'
-                        ]"
-                    >
-                        4 gestas
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="gestas === '4 gestas'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-
-                <!-- Opción 5 gestas -->
-                <label 
-                    :class="[
-                        'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        gestas === '5 gestas' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="5 gestas" 
-                        v-model="gestas" 
-                        class="sr-only" 
-                    />
-                    <span 
-                        :class="[
-                            'text-sm transition-colors duration-200',
-                            gestas === '5 gestas' ? 'text-emerald-700 font-semibold' : 'text-gray-700'
-                        ]"
-                    >
-                        5 gestas
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="gestas === '5 gestas'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-
-                <!-- Opción Más de 5 gestas -->
-                <label 
-                    :class="[
-                        'relative flex items-center justify-center py-2.5 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                        gestas === 'Más de 5 gestas' 
-                            ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                            : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                    ]"
-                >
-                    <input 
-                        type="radio" 
-                        value="Más de 5 gestas" 
-                        v-model="gestas" 
-                        class="sr-only" 
-                    />
-                    <span 
-                        :class="[
-                            'text-sm transition-colors duration-200',
-                            gestas === 'Más de 5 gestas' ? 'text-emerald-700 font-semibold' : 'text-gray-700'
-                        ]"
-                    >
-                        Más de 5 gestas
-                    </span>
-                    <!-- Indicador de selección -->
-                    <div 
-                        v-if="gestas === 'Más de 5 gestas'"
-                        class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </label>
-            </div>
-        </div>
-    </div>
+  <div>
+    <h1 v-if="variant !== 'compact' && false" class="text-2xl font-bold mb-4 text-gray-900">Antecedentes Gineco Obstétricos</h1>
+    <OpcionLista
+      id="gestas"
+      v-model="gestas"
+      data-campo="gestas"
+      etiqueta="Gestas"
+      ayuda="Embarazos, incluido el actual si lo hay"
+      :opciones="OPCIONES"
+    />
+  </div>
 </template>

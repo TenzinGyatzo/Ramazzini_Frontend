@@ -1,6 +1,8 @@
 <script setup>
     import { watch, ref, onMounted, nextTick, computed, toRefs } from 'vue';
-    import { resumenAutomaticoHistoriaClinica } from '@/helpers/historiaClinicaGuardado';
+    import { resumenAutomaticoHistoriaClinica, textoResumenPorDefecto } from '@/helpers/historiaClinicaGuardado';
+    import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
+    import { CLASE_AYUDA, CLASE_ETIQUETA, CLASE_TEXTAREA } from '@/components/steps/captura/estiloCaptura';
     import { useTrabajadoresStore } from '@/stores/trabajadores';
     import { useFormDataStore } from '@/stores/formDataStore';
     import { useDocumentosStore } from '@/stores/documentos';
@@ -84,16 +86,24 @@ const { variant } = toRefs(props);
     onMounted(() => {
         ultimoAutomatico = resumenAutomatico.value;
     });
+    // Pregunta y texto se fijan aquí juntos (no en dos reacciones encadenadas): la segunda
+    // ocurría mientras el paso se redibujaba y la pantalla se quedaba atrasada.
     watch(resumenAutomatico, (nuevo) => {
         const resumenEsAutomatico =
-            !resumenHistoriaClinica.value || resumenHistoriaClinica.value === ultimoAutomatico;
+            !resumenHistoriaClinica.value ||
+            resumenHistoriaClinica.value === ultimoAutomatico ||
+            resumenHistoriaClinica.value === textoResumenPorDefecto(trabajadores.currentTrabajador?.sexo === 'Femenino');
         if (resumenHistoriaClinicaPregunta.value === 'No') {
-            if (nuevo && !usuarioEligioNo) cambiarPregunta('Si');
+            if (nuevo && !usuarioEligioNo) {
+                cambiarPregunta('Si');
+                resumenHistoriaClinica.value = nuevo;
+            }
         } else if (resumenEsAutomatico) {
             if (nuevo) {
                 resumenHistoriaClinica.value = nuevo;
             } else {
                 cambiarPregunta('No');
+                resumenHistoriaClinica.value = textoResumenPorDefecto(trabajadores.currentTrabajador?.sexo === 'Femenino');
             }
         }
         ultimoAutomatico = nuevo;
@@ -144,141 +154,52 @@ const { variant } = toRefs(props);
             }
         }
     });
+    
+    // Punto 39: diseño común, igual en los dos modos
+    const OPCIONES_NO_SI = [
+        { valor: 'No', etiqueta: 'No' },
+        { valor: 'Si', etiqueta: 'Sí' },
+    ];
     </script>
     
-    <template>
-        <div>
-            <!-- Jerarquía Visual Mejorada -->
-            <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Resumen Historia Clínica</h1>
-            
-            <!-- Pregunta principal con mejor jerarquía -->
-            <div data-campo="resumenHistoriaClinica" :class="variant === 'compact' ? 'mb-3' : 'mb-8'">
-                <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-4 text-gray-800'">¿Hay hallazgos significativos por resumir?</p>
-                
-                <!-- Diseño de Radio Buttons más Visual tipo Card -->
-                <div class="grid grid-cols-2 gap-3">
-                    <!-- Opción No -->
-                    <label 
-                        :class="[
-                            'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                            resumenHistoriaClinicaPregunta === 'No' 
-                                ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                        ]"
-                    >
-                        <input 
-                            type="radio" 
-                            value="No" 
-                            v-model="resumenHistoriaClinicaPregunta" 
-                            class="sr-only" 
-                        />
-                        <!-- Icono -->
-                        <div 
-                            :class="[
-                                'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
-                                resumenHistoriaClinicaPregunta === 'No' ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
-                            ]"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </div>
-                        <span 
-                            :class="[
-                                'text-base font-semibold transition-colors duration-200',
-                                resumenHistoriaClinicaPregunta === 'No' ? 'text-emerald-700' : 'text-gray-700'
-                            ]"
-                        >
-                            No
-                        </span>
-                        <!-- Indicador de selección -->
-                        <div 
-                            v-if="resumenHistoriaClinicaPregunta === 'No'"
-                            class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </label>
-    
-                    <!-- Opción Si -->
-                    <label 
-                        :class="[
-                            'relative flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ease-in-out',
-                            resumenHistoriaClinicaPregunta === 'Si' 
-                                ? 'border-emerald-600 bg-emerald-50 shadow-md' 
-                                : 'border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/50 hover:shadow-sm'
-                        ]"
-                    >
-                        <input 
-                            type="radio" 
-                            value="Si" 
-                            v-model="resumenHistoriaClinicaPregunta" 
-                            class="sr-only" 
-                        />
-                        <!-- Icono -->
-                        <div 
-                            :class="[
-                                'w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-200',
-                                resumenHistoriaClinicaPregunta === 'Si' ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-600'
-                            ]"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <span 
-                            :class="[
-                                'text-base font-semibold transition-colors duration-200',
-                                resumenHistoriaClinicaPregunta === 'Si' ? 'text-emerald-700' : 'text-gray-700'
-                            ]"
-                        >
-                            Sí
-                        </span>
-                        <!-- Indicador de selección -->
-                        <div 
-                            v-if="resumenHistoriaClinicaPregunta === 'Si'"
-                            class="absolute top-2 right-2 w-4 h-4 bg-emerald-600 rounded-full flex items-center justify-center"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </label>
+<template>
+    <div>
+        <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Resumen Historia Clínica</h1>
+        <div data-campo="resumenHistoriaClinica">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p :class="[CLASE_ETIQUETA, 'leading-tight']">Hallazgos significativos</p>
+                    <p :class="[CLASE_AYUDA, 'mt-0.5']">¿Hay hallazgos significativos por resumir?</p>
                 </div>
+                <OpcionesSegmentadas
+                    v-model="resumenHistoriaClinicaPregunta"
+                    compacto
+                    class="shrink-0"
+                    name="resumenHistoriaClinicaPregunta"
+                    etiqueta="Hallazgos significativos"
+                    :opciones="OPCIONES_NO_SI"
+                />
             </div>
-    
-            <!-- Opciones adicionales con transición suave -->
-            <transition
-                enter-active-class="transition-all duration-300 ease-out"
-                enter-from-class="opacity-0 transform -translate-y-2"
-                enter-to-class="opacity-100 transform translate-y-0"
-                leave-active-class="transition-all duration-200 ease-in"
-                leave-from-class="opacity-100 transform translate-y-0"
-                leave-to-class="opacity-0 transform -translate-y-2"
-            >
-                <div v-if="resumenHistoriaClinicaPregunta === 'Si'" :class="variant === 'compact' ? 'mt-3' : 'mt-6'">
-                    <p :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
-                        Resumen de hallazgos:
-                    </p>
-                    <!-- Mensaje informativo si hay hallazgos detectados -->
-                    <div v-if="resumenAutomatico" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p class="text-sm text-blue-800">
-                            💡 Se han detectado hallazgos en los antecedentes personales patológicos. El resumen se ha cargado automáticamente, puede editarlo si lo desea.
-                        </p>
-                    </div>
-                    
-                    <div>
-                        <textarea
-                            ref="textareaEspecificar"
-                            class="w-full p-3 border-2 border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200 min-h-[120px] resize-y"
-                            v-model="resumenHistoriaClinica"
-                            placeholder="Describa los hallazgos relevantes..."
-                            required
-                        ></textarea>
-                    </div>
-                </div>
-            </transition>
+            <p v-if="resumenHistoriaClinicaPregunta === 'No'" :class="[CLASE_AYUDA, 'mt-2']">
+                Se registrará: «{{ resumenHistoriaClinica }}».
+            </p>
+            <div v-else class="mt-3">
+                <label for="resumenHistoriaClinica" :class="[CLASE_ETIQUETA, 'mb-1']">
+                    Resumen de hallazgos <span class="text-red-500">*</span>
+                </label>
+                <p v-if="resumenAutomatico" :class="[CLASE_AYUDA, 'mb-1 flex items-start gap-1.5']">
+                    <i class="fas fa-info-circle text-emerald-600 mt-0.5" aria-hidden="true"></i>
+                    Se llenó con los hallazgos de los antecedentes personales; puede editarlo.
+                </p>
+                <textarea
+                    id="resumenHistoriaClinica"
+                    ref="textareaEspecificar"
+                    v-model="resumenHistoriaClinica"
+                    rows="4"
+                    :class="CLASE_TEXTAREA"
+                    placeholder="Hallazgos relevantes de los antecedentes"
+                ></textarea>
+            </div>
         </div>
-    </template>
+    </div>
+</template>

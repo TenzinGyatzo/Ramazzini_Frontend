@@ -38,6 +38,7 @@ watch(dolorMenstrual, (newValue) => {
         label="DOLOR DURANTE LA MENSTRUACIÓN"
         question="¿Cómo clasifica el nivel de dolor menstrual?"
         v-model="dolorMenstrual"
+        campo="dolorMenstrual"
         :options="opcionesDolor"
       />
     </template>
