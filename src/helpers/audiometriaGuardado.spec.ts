@@ -123,7 +123,7 @@ describe('audiometría: respuestas por defecto', () => {
 });
 
 describe('audiometría: umbrales faltantes', () => {
-  it('un aviso por oído, para toda la fila, con sus frecuencias como en el encabezado', () => {
+  it('un aviso por oído, para toda la fila, con sus frecuencias en Hz', () => {
     const df = umbrales(NORMAL, NORMAL);
     df.oidoDerecho3000 = null;
     df.oidoDerecho8000 = '';
@@ -134,7 +134,7 @@ describe('audiometría: umbrales faltantes', () => {
         campo: 'umbralesOidoDerecho',
         nombre: 'Umbrales del oído derecho',
         falta: true,
-        mensaje: 'Faltan los umbrales del oído derecho en 3k y 8k.',
+        mensaje: 'Faltan los umbrales del oído derecho en 3000 y 8000 Hz.',
       },
       {
         paso: 3,
@@ -147,11 +147,11 @@ describe('audiometría: umbrales faltantes', () => {
     expect(problemasUmbralesAudiometria(umbrales(NORMAL, NORMAL))).toEqual([]);
   });
 
-  it('tres o más frecuencias, con «y» al final y las bajas sin k', () => {
+  it('tres o más frecuencias, con «y» al final', () => {
     const df = umbrales(NORMAL, NORMAL);
     df.oidoIzquierdo250 = '';
     df.oidoIzquierdo4000 = '';
     df.oidoIzquierdo6000 = null;
-    expect(problemasUmbralesAudiometria(df)[0].mensaje).toBe('Faltan los umbrales del oído izquierdo en 250, 4k y 6k.');
+    expect(problemasUmbralesAudiometria(df)[0].mensaje).toBe('Faltan los umbrales del oído izquierdo en 250, 4000 y 6000 Hz.');
   });
 });

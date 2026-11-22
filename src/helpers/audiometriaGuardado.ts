@@ -36,8 +36,6 @@ const vacio = (v: unknown) => v === undefined || v === null || String(v).trim() 
 export const campoUmbral = (lado: Lado, frecuencia: number) => `oido${lado}${frecuencia}`;
 /** La fila de los 9 umbrales de un oído (el aviso al guardar la marca completa). */
 export const campoFilaUmbrales = (lado: Lado) => `umbralesOido${lado}`;
-/** Una frecuencia como en el encabezado de la fila: 125, 250, 500, 1k … 8k. */
-export const etiquetaFrecuencia = (f: number) => (f >= 1000 ? `${f / 1000}k` : String(f));
 const enLista = (partes: string[]) =>
   partes.length <= 1 ? partes.join('') : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`;
 
@@ -195,7 +193,7 @@ export function problemasUmbralesAudiometria(df: Datos): ProblemaUmbrales[] {
         mensaje:
           faltan.length === FRECUENCIAS_AUDIOMETRIA.length
             ? `Faltan los umbrales del ${oido}.`
-            : `Faltan los umbrales del ${oido} en ${enLista(faltan.map(etiquetaFrecuencia))}.`,
+            : `Faltan los umbrales del ${oido} en ${enLista(faltan.map(String))} Hz.`,
       },
     ];
   });
