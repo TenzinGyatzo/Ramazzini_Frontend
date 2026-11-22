@@ -29,8 +29,11 @@ const df = () => formDataStore.formDataAudiometria as Record<string, any>;
 const capturaRapida = enCapturaRapida();
 
 // Al abrir el paso, el cursor queda en 125 Hz: se escribe y se avanza con Tab (en la captura
-// rápida no se mueve el cursor al abrir)
-useAutofocoPrimerVacio([campoUmbral(props.lado, 125)], { siempreElPrimero: true });
+// rápida no se mueve el cursor al abrir). En la sección «Umbrales» los dos oídos abren a la vez:
+// solo el derecho pone el cursor (si no, ganaba el izquierdo, que se monta después)
+if (props.lado === 'Derecho' || props.variant !== 'compact') {
+  useAutofocoPrimerVacio([campoUmbral(props.lado, 125)], { siempreElPrimero: true });
+}
 
 const titulo = computed(() => (props.lado === 'Derecho' ? 'Oído derecho' : 'Oído izquierdo'));
 
@@ -118,7 +121,7 @@ const binaural = computed(() => {
           :value="valor(f)"
           :aria-label="`${titulo}, ${f} Hz`"
           :class="[
-            'w-full h-10 px-1 text-center text-sm rounded-lg border bg-white text-gray-800 focus:outline-none focus:ring-1 transition-colors duration-300 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+            'w-full h-10 px-1 text-center text-sm rounded-lg border bg-white text-gray-800 focus:outline-none focus:ring-1 transition-colors duration-300',
             corregidos[f]
               ? 'border-amber-400 bg-amber-50 focus:border-amber-500 focus:ring-amber-500'
               : 'border-gray-300 focus:border-emerald-500 focus:ring-emerald-500',

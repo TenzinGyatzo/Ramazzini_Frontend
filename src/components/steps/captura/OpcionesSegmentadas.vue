@@ -5,7 +5,7 @@
  */
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 
-defineProps<{
+const props = defineProps<{
   name: string;
   opciones: Array<{ valor: T; etiqueta: string }>;
   /** Etiqueta para lectores de pantalla. */
@@ -20,12 +20,19 @@ defineProps<{
    * preguntas con 3 o 4 opciones largas se cortaban).
    */
   separadas?: boolean;
+  /** Un segundo clic en la opción elegida la quita (punto 44: protección auditiva). */
+  deseleccionable?: boolean;
 }>();
 const modelo = defineModel<T | null>();
 
 // En el asistente angosto, y en captura rápida en celular, ocupan todo el ancho y se reparten
 // parejo (no se parten en renglones); en captura rápida desde sm, a su medida.
 const ancho = enCapturaRapida();
+
+// El clic (o la barra espaciadora) en un radio ya marcado no lo cambia: aquí se quita
+function alHacerClic(valor: T) {
+  if (props.deseleccionable && modelo.value === valor) modelo.value = null;
+}
 </script>
 
 <template>
@@ -57,7 +64,14 @@ const ancho = enCapturaRapida();
           : 'text-gray-700 hover:bg-gray-50',
       ]"
     >
-      <input v-model="modelo" type="radio" :name="name" :value="op.valor" class="sr-only" />
+      <input
+        v-model="modelo"
+        type="radio"
+        :name="name"
+        :value="op.valor"
+        class="sr-only"
+        @click="alHacerClic(op.valor)"
+      />
       <i v-if="ancho && !compacto && modelo === op.valor" class="fas fa-check text-xs hidden sm:inline" aria-hidden="true"></i>
       {{ op.etiqueta }}
     </label>

@@ -123,6 +123,7 @@ const alEscribirAnios = (texto) => {
               name="proteccionAuditiva"
               etiqueta="Protección auditiva"
               separadas
+              deseleccionable
               :opciones="OPCIONES_PROTECCION"
             />
           </div>
@@ -216,7 +217,7 @@ const alEscribirAnios = (texto) => {
       <textarea
         id="observacionesAudiometria"
         v-model="observaciones"
-        rows="3"
+        :rows="capturaRapida ? 3 : 6"
         :class="CLASE_TEXTAREA"
         placeholder="Se redacta con las respuestas o escríbelas aquí"
         data-skip-validation
