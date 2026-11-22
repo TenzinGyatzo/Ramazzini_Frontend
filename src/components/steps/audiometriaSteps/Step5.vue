@@ -3,12 +3,15 @@ import { ref, computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { MENSAJE_DATOS_INSUFICIENTES, generarInterpretacionAudiometrica } from '@/helpers/audiometriaInterpretacion';
 import { CLASE_AYUDA, CLASE_ETIQUETA, CLASE_TEXTAREA } from '../captura/estiloCaptura';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 
 defineProps({ variant: { type: String, default: '' } });
 
 const mensajeCopiado = ref(false);
 
 const formDataStore = useFormDataStore();
+// Con vista previa la interpretación tiene su propio paso: el cuadro aprovecha la altura
+const capturaRapida = enCapturaRapida();
 // Por el store (al editar, el documento puede llegar después del primer dibujo)
 const df = () => formDataStore.formDataAudiometria;
 
@@ -85,7 +88,7 @@ const interpretacionEditada = computed(
     <textarea
       id="interpretacionAudiometrica"
       v-model="interpretacionAudiometrica"
-      rows="4"
+      :rows="capturaRapida ? 4 : 9"
       :class="CLASE_TEXTAREA"
       :placeholder="hayInterpretacionAutomatica ? '' : 'Se genera al capturar los umbrales de los dos oídos.'"
       data-skip-validation
