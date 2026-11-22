@@ -1,13 +1,14 @@
 <script setup lang="ts">
-/** «Captura rápida | Con vista previa» (punto 38). Se recuerda por usuario en el navegador. */
+/** «Con vista previa | Captura rápida» (punto 38). Se recuerda por usuario en el navegador. */
 import type { ModoCaptura } from '@/composables/useModoCaptura';
 
 defineProps<{ modo: ModoCaptura }>();
 const emit = defineEmits<{ (e: 'cambiar', modo: ModoCaptura): void }>();
 
+// «Con vista previa» a la izquierda y «Captura rápida» a la derecha (decisión del usuario)
 const opciones: { valor: ModoCaptura; etiqueta: string; icono: string }[] = [
-  { valor: 'capturaRapida', etiqueta: 'Captura rápida', icono: 'fa-keyboard' },
   { valor: 'vistaPrevia', etiqueta: 'Con vista previa', icono: 'fa-file-lines' },
+  { valor: 'capturaRapida', etiqueta: 'Captura rápida', icono: 'fa-keyboard' },
 ];
 </script>
 
