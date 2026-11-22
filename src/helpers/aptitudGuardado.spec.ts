@@ -3,6 +3,7 @@ import type { ContextoAptitud } from './aptitudContexto';
 import {
   INICIO_RESULTADOS,
   completarRespuestasPorDefecto,
+  elegirAptitudPorDefectoAlSalir,
   prepararAptitudParaGuardar,
   redactarAlteraciones,
   redactarMedidas,
@@ -115,5 +116,16 @@ describe('aptitud: escritura en el formulario', () => {
     const deUnaVez = completarRespuestasPorDefecto(base(), { contexto: contexto(), sexo: 'Femenino', hoy: HOY, visitado: () => false });
     prepararAptitudParaGuardar(porSecciones, { contexto: contexto(), sexo: 'Femenino' });
     expect(prepararAptitudParaGuardar(deUnaVez, { contexto: contexto(), sexo: 'Femenino' })).toEqual(porSecciones);
+  });
+});
+
+describe('aptitud por defecto al salir del paso (con vista previa)', () => {
+  it('sin elegir queda «Apto Sin Restricciones»; lo elegido no se toca', () => {
+    const vacia: Record<string, any> = {};
+    expect(elegirAptitudPorDefectoAlSalir(vacia)).toBe(true);
+    expect(vacia.aptitudPuesto).toBe('Apto Sin Restricciones');
+    const elegida: Record<string, any> = { aptitudPuesto: 'No Apto' };
+    expect(elegirAptitudPorDefectoAlSalir(elegida)).toBe(false);
+    expect(elegida.aptitudPuesto).toBe('No Apto');
   });
 });

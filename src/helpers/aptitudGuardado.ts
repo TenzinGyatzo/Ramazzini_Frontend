@@ -385,6 +385,20 @@ export function completarRespuestasPorDefecto(
   return df;
 }
 
+/** La aptitud que se elige sola al salir de su paso con vista previa sin haber elegido. */
+export const APTITUD_POR_DEFECTO = 'Apto Sin Restricciones';
+
+/**
+ * Con vista previa, al salir del paso de aptitud sin elegir (decisión del usuario, 2026-11-21):
+ * queda «Apto Sin Restricciones». En captura rápida no aplica (no hay pasos que se cierren) y
+ * ahí la aptitud se sigue pidiendo al guardar. Devuelve si la escribió.
+ */
+export function elegirAptitudPorDefectoAlSalir(df: Datos | null | undefined): boolean {
+  if (!df || !vacio(df.aptitudPuesto)) return false;
+  df.aptitudPuesto = APTITUD_POR_DEFECTO;
+  return true;
+}
+
 export function prepararAptitudParaGuardar(
   df: Datos,
   opciones: { contexto?: ContextoAptitud | null; sexo?: string } = {},

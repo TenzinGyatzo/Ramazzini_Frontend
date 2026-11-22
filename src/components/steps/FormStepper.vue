@@ -480,6 +480,7 @@ import { isAuSectionsV2Enabled } from '@/composables/useAuSectionsV2';
 import { cargarContextoAptitud, contextoAptitud } from '@/helpers/aptitudContexto';
 import {
   completarRespuestasPorDefecto as completarAptitudPorDefecto,
+  elegirAptitudPorDefectoAlSalir,
   prepararAptitudParaGuardar,
 } from '@/helpers/aptitudGuardado';
 import { buildAudiometriaSectionSteps } from '@/helpers/buildAudiometriaSectionSteps';
@@ -1819,6 +1820,18 @@ export default {
     watch(
       () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size, contextoAptitud.datos],
       completarAptitud,
+    );
+    // Con vista previa, salir del paso de aptitud sin elegir deja «Apto Sin Restricciones»
+    // (decisión del usuario 2026-11-21). Solo al cambiar de paso: cambiar de modo o guardar
+    // desde el mismo paso no la elige; en captura rápida se sigue pidiendo al guardar.
+    watch(
+      () => stepsStore.currentStep,
+      (nuevo, anterior) => {
+        if (documentos.currentTypeOfDocument !== 'aptitud' || capturaRapida.value) return;
+        if (anterior == null || nuevo === anterior) return;
+        const pasoAptitud = isAptitudSectionsV2Enabled(route.query) ? aptLegacyStepToSectionIndex(8) : 8;
+        if (anterior === pasoAptitud) elegirAptitudPorDefectoAlSalir(formData.formDataAptitud);
+      },
     );
 
     const recolectarProblemasNotaMedica = (esMujer) => {
