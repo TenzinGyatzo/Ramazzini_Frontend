@@ -47,7 +47,7 @@ const aviso = computed(() =>
         Los estudios más cercanos a la fecha de evaluación (del mismo año), como aparecen en el documento.
       </p>
       <div class="hidden sm:block overflow-x-auto">
-        <TablaEstudiosAptitud :filas="filas" :cargando="contextoAptitud.cargando" :aviso="aviso" />
+        <TablaEstudiosAptitud :filas="filas" :cargando="contextoAptitud.cargando" :aviso="aviso" estudio-compacto />
       </div>
       <!-- En celular, la tabla no cabe: un estudio por renglón, con su fecha y su resumen debajo -->
       <div class="sm:hidden border border-gray-200 rounded-lg divide-y divide-gray-200 text-sm" data-estudios-celular>

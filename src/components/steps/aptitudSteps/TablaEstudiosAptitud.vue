@@ -12,9 +12,12 @@ defineProps<{
   cargando?: boolean;
   /** Texto en lugar de las filas (p. ej., no se pudo consultar el expediente). */
   aviso?: string | null;
+  /** Captura rápida: el nombre del estudio con letra más chica, para que quepa sin quitarle ancho al resumen. */
+  estudioCompacto?: boolean;
 }>();
 
 const CELDA = 'text-xs sm:text-sm text-center px-2 py-0 border border-gray-300';
+const CELDA_ESTUDIO_COMPACTA = 'text-[0.6875rem] leading-tight text-center px-1.5 py-0.5 border border-gray-300';
 </script>
 
 <template>
@@ -44,7 +47,7 @@ const CELDA = 'text-xs sm:text-sm text-center px-2 py-0 border border-gray-300';
         :data-estudio="fila.clave"
         :data-audiometria-externa="fila.clave === 'audiometriaExterna' || undefined"
       >
-        <td :class="[CELDA, 'font-medium']">{{ fila.estudio }}</td>
+        <td :class="[estudioCompacto ? CELDA_ESTUDIO_COMPACTA : CELDA, 'font-medium']">{{ fila.estudio }}</td>
         <td :class="CELDA">{{ fila.fecha ? convertirFechaISOaDDMMYYYY(fila.fecha) : '-' }}</td>
         <td :class="CELDA">{{ fila.resumen }}</td>
       </tr>
