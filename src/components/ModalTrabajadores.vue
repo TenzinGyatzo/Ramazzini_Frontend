@@ -1453,7 +1453,7 @@ const {
             @submit="handleSubmit" @submit-invalid="onFormSubmitInvalid" @input="formData = $event">
             <section>
               <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3">Identificación</h3>
-              <div class="lg:grid gap-3 lg:grid-cols-2">
+              <div class="grid gap-3 lg:grid-cols-2">
               <div>
                 <!-- México: validación RENAPO según régimen -->
                 <FormKit
@@ -1672,7 +1672,7 @@ const {
 
             <section>
               <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Datos personales</h3>
-              <div class="lg:grid gap-3 lg:grid-cols-2">
+              <div class="grid gap-3 lg:grid-cols-2">
                 <FormKit type="select" name="escolaridad" :options="opcionesEscolaridad"
                   :value="escolaridadDefaultValue">
                   <template #label>
@@ -1690,7 +1690,7 @@ const {
 
             <section>
               <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Datos laborales</h3>
-              <div class="lg:grid gap-3 lg:grid-cols-2">
+              <div class="grid gap-3 lg:grid-cols-2">
                 <FormKit type="text" name="puesto" placeholder="Puesto al que aspira o desempeña" validation="required"
                   :validation-messages="{ required: 'Este campo es obligatorio' }"
                   :value="trabajadores.currentTrabajador?.puesto || ''">
@@ -1729,7 +1729,7 @@ const {
 
             <section>
               <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1 mb-3 mt-5">Contacto</h3>
-              <div class="lg:grid gap-3 lg:grid-cols-2">
+              <div class="grid gap-3 lg:grid-cols-2">
                 <FormKit type="text" label="Teléfono" name="telefono" placeholder="Número de teléfono"
                   validation="optional|phoneValidation" 
                   :validation-messages="{ phoneValidation: 'El número de teléfono debe tener entre 4 y 15 dígitos' }"
