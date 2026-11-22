@@ -11,6 +11,9 @@ import { formatNombreCompleto } from '@/helpers/formatNombreCompleto';
 import { useEditionLabel } from '@/composables/useEditionLabel';
 import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
+import { useIncapacidadesStore } from '@/stores/incapacidades';
+import { useUserPermissions } from '@/composables/useUserPermissions';
+import { INCAPACIDADES_SOLO_ADMINISTRADOR } from '@/helpers/incapacidades';
 
 const route = useRoute();
 const router = useRouter();
@@ -24,6 +27,16 @@ const user = useUserStore();
 const proveedorSalud = useProveedorSaludStore();
 /** «Vigencias» solo aparece con el módulo activado en «Módulos y funciones». */
 const vigenciasHabilitadas = computed(() => proveedorSalud.proveedorSalud?.vigenciasHabilitadas === true);
+/** Incapacidades de la empresa: las mismas condiciones que el botón de la vista de centros de trabajo. */
+const incapacidadesStore = useIncapacidadesStore();
+const { canAccessRiesgosTrabajo } = useUserPermissions();
+const showIncapacidades = computed(
+  () =>
+    !!user.user &&
+    incapacidadesStore.gestionaEnEmpresa(empresas.currentEmpresaId) &&
+    canAccessRiesgosTrabajo.value &&
+    (!INCAPACIDADES_SOLO_ADMINISTRADOR || user.user?.role === 'Administrador'),
+);
 
 const isMounted = ref(false);
 const hasVisitedDashboard = ref(false);
@@ -149,16 +162,15 @@ const nombreDocumento = computed(
 /** Lo único que se conserva del texto chico: si el documento se está creando o editando. */
 const estadoDocumento = computed(() => (documentos.currentDocument ? 'Editando' : 'Creando'));
 
-const { editionLabel, editionVersion, editionVersionPrefixed } = useEditionLabel();
+const { editionVersion, editionVersionPrefixed } = useEditionLabel();
 
+// Punto 50: solo la versión (sin «SIRES» ni «Ramazzini», como pidió el usuario); colapsado en
+// teléfono, sin la «v» para que quepa. Sin versión (sin régimen elegido), no se muestra nada.
 const footerEditionText = computed(() => {
   if (sidebar.collapsed && sidebar.isSmallScreen) {
     return editionVersion.value;
   }
-  if (sidebar.collapsed && editionVersionPrefixed.value) {
-    return editionVersionPrefixed.value;
-  }
-  return editionLabel.value;
+  return editionVersionPrefixed.value;
 });
 
 </script>
@@ -248,6 +260,17 @@ const footerEditionText = computed(() => {
               Estadísticas
             </SidebarLink>
 
+            <SidebarLink v-if="showIncapacidades"
+              :to="{ name: 'incapacidades-empresa', params: { idEmpresa: empresas.currentEmpresaId } }"
+              icon="fas fa-bed"
+              en-ruta
+              :nivel="1"
+              :tooltip="`Incapacidades de ${nombreEmpresa}`"
+              data-testid="sidebar-incapacidades"
+              @click.stop>
+              Incapacidades
+            </SidebarLink>
+
             <SidebarLink v-if="showCentroTrabajoSection"
               :to="{
                 name: 'trabajadores',
@@ -335,7 +358,7 @@ const footerEditionText = computed(() => {
         v-if="footerEditionText"
         class="sidebar-version"
         data-testid="edition-label"
-        :title="editionLabel"
+        :title="`Versión ${editionVersion}`"
       >
         {{ footerEditionText }}
       </p>

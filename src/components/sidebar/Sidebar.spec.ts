@@ -88,15 +88,13 @@ describe('Sidebar — folio de edición', () => {
     });
   });
 
-  it('sin régimen muestra Ramazzini sin número', async () => {
+  it('sin régimen no muestra nada (punto 50: solo la versión, y aquí no hay)', async () => {
     const wrapper = await mountSidebar();
     await expandSidebar(wrapper);
-    const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('Ramazzini');
-    expect(el.attributes('title')).toBe('Ramazzini');
+    expect(wrapper.find('[data-testid="edition-label"]').exists()).toBe(false);
   });
 
-  it('SIRES_NOM024 muestra SIRES y el folio SIRES', async () => {
+  it('SIRES_NOM024 muestra solo el folio, sin la palabra SIRES', async () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const store = useProveedorSaludStore();
@@ -108,13 +106,13 @@ describe('Sidebar — folio de edición', () => {
     const wrapper = await mountSidebar(pinia);
     await expandSidebar(wrapper);
     const el = wrapper.get('[data-testid="edition-label"]');
-    const expected = `SIRES ${__APP_VERSION_SIRES__}`;
-    expect(el.text()).toBe(expected);
-    expect(el.attributes('title')).toBe(expected);
+    expect(el.text()).toBe(__APP_VERSION_SIRES__);
+    expect(el.attributes('title')).toBe(`Versión ${__APP_VERSION_SIRES__.replace(/^v/i, '')}`);
+    expect(el.text()).not.toContain('SIRES');
     expect(el.text()).not.toContain('v2.0.4');
   });
 
-  it('SIN_REGIMEN muestra Ramazzini v2.0.4 sin SIRES', async () => {
+  it('SIN_REGIMEN muestra solo v2.0.4, sin la palabra Ramazzini', async () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const store = useProveedorSaludStore();
@@ -126,8 +124,9 @@ describe('Sidebar — folio de edición', () => {
     const wrapper = await mountSidebar(pinia);
     await expandSidebar(wrapper);
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('Ramazzini v2.0.4');
-    expect(el.attributes('title')).toBe('Ramazzini v2.0.4');
+    expect(el.text()).toBe('v2.0.4');
+    expect(el.attributes('title')).toBe('Versión 2.0.4');
+    expect(el.text()).not.toContain('Ramazzini');
     expect(el.text()).not.toContain('v1.0.3');
     expect(el.text()).not.toContain('SIRES');
   });
@@ -144,9 +143,7 @@ describe('Sidebar — folio de edición', () => {
 
     const wrapper = await mountSidebar(pinia);
     await expandSidebar(wrapper);
-    expect(wrapper.get('[data-testid="edition-label"]').text()).toBe(
-      'Ramazzini v2.0.4',
-    );
+    expect(wrapper.get('[data-testid="edition-label"]').text()).toBe('v2.0.4');
 
     store.proveedorSalud = {
       ...store.proveedorSalud,
@@ -156,8 +153,8 @@ describe('Sidebar — folio de edición', () => {
     await wrapper.vm.$nextTick();
 
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
-    expect(el.attributes('title')).toBe(el.text());
+    expect(el.text()).toBe(__APP_VERSION_SIRES__);
+    expect(el.attributes('title')).toBe(`Versión ${__APP_VERSION_SIRES__.replace(/^v/i, '')}`);
     expect(el.text()).not.toContain('v2.0.4');
   });
 
@@ -181,7 +178,7 @@ describe('Sidebar — folio de edición', () => {
 
     const el = wrapper.get('[data-testid="edition-label"]');
     expect(el.text()).toBe('v2.0.4');
-    expect(el.attributes('title')).toBe('Ramazzini v2.0.4');
+    expect(el.attributes('title')).toBe('Versión 2.0.4');
   });
 
   it('colapsado desde md en SIRES muestra la versión con v', async () => {
@@ -205,7 +202,7 @@ describe('Sidebar — folio de edición', () => {
     const el = wrapper.get('[data-testid="edition-label"]');
     expect(el.text()).toBe(__APP_VERSION_SIRES__);
     expect(el.text().startsWith('v')).toBe(true);
-    expect(el.attributes('title')).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
+    expect(el.attributes('title')).toBe(`Versión ${__APP_VERSION_SIRES__.replace(/^v/i, '')}`);
   });
 
   it('colapsado en smartphone muestra solo el número de versión comercial', async () => {
@@ -228,7 +225,7 @@ describe('Sidebar — folio de edición', () => {
 
     const el = wrapper.get('[data-testid="edition-label"]');
     expect(el.text()).toBe('2.0.4');
-    expect(el.attributes('title')).toBe('Ramazzini v2.0.4');
+    expect(el.attributes('title')).toBe('Versión 2.0.4');
   });
 
   it('colapsado en smartphone SIRES muestra solo el número de versión', async () => {
@@ -251,7 +248,7 @@ describe('Sidebar — folio de edición', () => {
 
     const el = wrapper.get('[data-testid="edition-label"]');
     expect(el.text()).toBe(__APP_VERSION_SIRES__.replace(/^v/i, ''));
-    expect(el.attributes('title')).toBe(`SIRES ${__APP_VERSION_SIRES__}`);
+    expect(el.attributes('title')).toBe(`Versión ${__APP_VERSION_SIRES__.replace(/^v/i, '')}`);
     expect(el.text()).not.toContain('SIRES');
   });
 });
@@ -403,5 +400,39 @@ describe('Sidebar — Inicio', () => {
     expect(ruta.text()).not.toContain('Av. Industrial');
     expect(ruta.text()).not.toContain('Expediente Médico');
     expect(wrapper.get('[data-testid="sidebar-estado-documento"]').text()).toBe('Creando');
+  });
+
+  it('Incapacidades aparece bajo la empresa solo si la empresa las gestiona y el usuario tiene acceso (punto 50)', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const { useUserStore } = await import('@/stores/user');
+    const { useEmpresasStore } = await import('@/stores/empresas');
+    const { useIncapacidadesStore } = await import('@/stores/incapacidades');
+    (useUserStore() as any).user = { _id: 'u1', role: 'Principal', permisos: { accesoRiesgosTrabajo: true } };
+    const empresas = useEmpresasStore() as any;
+    empresas.currentEmpresaId = 'e1';
+    empresas.currentEmpresa = { nombreComercial: 'Delta' };
+    const incapacidades = useIncapacidadesStore();
+    incapacidades.aplicar({ incapacidadesDisponible: true, incapacidadesHabilitado: false, empresasConIncapacidades: ['e1'] } as any);
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/centros', name: 'centros-trabajo', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/incapacidades', name: 'incapacidades-empresa', component: { template: '<div />' } },
+      ],
+    });
+    await router.push('/');
+    await router.isReady();
+    const wrapper = mount(Sidebar, {
+      global: { plugins: [pinia, router], provide: { toast: { open: vi.fn() } }, stubs: { Transition: true } },
+    });
+    useSidebarStore().collapsed = false;
+    await wrapper.vm.$nextTick();
+    // Módulo apagado: no aparece
+    expect(wrapper.find('[data-testid="sidebar-incapacidades"]').exists()).toBe(false);
+    incapacidades.aplicar({ incapacidadesDisponible: true, incapacidadesHabilitado: true, empresasConIncapacidades: ['e1'] } as any);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-testid="sidebar-incapacidades"]').exists()).toBe(true);
   });
 });
