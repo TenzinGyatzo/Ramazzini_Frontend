@@ -94,6 +94,11 @@ describe('datos del documento anterior (punto 54)', () => {
         tensionArterialSistolica: 130,
         craneoCaraPregunta: 'No',
         craneoCara: 'Sin hallazgos',
+        // Documento viejo: solo el texto «Sin hallazgos»
+        ojos: 'Sin hallazgos',
+        // «Sí» sin descripción: no se trae (se capturaría como pendiente)
+        oidosPregunta: 'Si',
+        oidos: '',
         rodillasPregunta: 'Si',
         rodillas: 'Crepitación en rodilla derecha',
         // Documento viejo sin la pregunta
@@ -104,6 +109,10 @@ describe('datos del documento anterior (punto 54)', () => {
     );
     expect(datos).toEqual({
       altura: 1.7,
+      craneoCaraPregunta: 'No',
+      craneoCara: 'Sin hallazgos',
+      ojosPregunta: 'No',
+      ojos: 'Sin hallazgos',
       rodillasPregunta: 'Si',
       rodillas: 'Crepitación en rodilla derecha',
       cicatricesPregunta: 'Si',

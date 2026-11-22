@@ -8,7 +8,7 @@
  * - Historia clínica: antecedentes heredofamiliares, personales y no patológicos; gineco-
  *   obstétricos SIN la FUM ni el embarazo actual (cambian); empleos anteriores y accidente
  *   laboral. No el motivo, la fecha ni el resumen (se arma de nuevo).
- * - Exploración física: la altura y los hallazgos por aparatos y sistemas. Peso, cintura y
+ * - Exploración física: la altura y los hallazgos por aparatos y sistemas (también «Sin hallazgos»). Peso, cintura y
  *   signos vitales no (decisión del usuario: se miden en cada examen).
  */
 import { reactive } from 'vue';
@@ -90,14 +90,18 @@ export function datosATraer(tipo: TipoConAnterior, anterior: Datos, { esMujer }:
   } else {
     const altura = Number(anterior.altura);
     if (Number.isFinite(altura) && altura > 0) datos.altura = altura;
+    // Todos los hallazgos, también los «No» con «Sin hallazgos» (decisión del usuario)
     for (const p of PREGUNTAS_HALLAZGOS) {
       const texto = anterior[p.campo];
-      // Documentos viejos sin la pregunta: el texto distinto de «Sin hallazgos» es un «Sí»
-      const esSi = anterior[p.pregunta] === 'Si' || (!anterior[p.pregunta] && conTexto(texto) && texto !== SIN_HALLAZGOS);
-      if (esSi && conTexto(texto) && texto !== SIN_HALLAZGOS) {
-        datos[p.pregunta] = 'Si';
-        datos[p.campo] = texto;
+      let pregunta = anterior[p.pregunta];
+      // Documentos viejos sin la pregunta: se deduce del texto
+      if (pregunta !== 'Si' && pregunta !== 'No') {
+        if (!conTexto(texto)) continue;
+        pregunta = texto === SIN_HALLAZGOS ? 'No' : 'Si';
       }
+      if (pregunta === 'Si' && (!conTexto(texto) || texto === SIN_HALLAZGOS)) continue;
+      datos[p.pregunta] = pregunta;
+      datos[p.campo] = pregunta === 'No' ? SIN_HALLAZGOS : texto;
     }
   }
   return datos;
