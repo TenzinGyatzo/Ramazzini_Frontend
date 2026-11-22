@@ -38,7 +38,7 @@ watch(alcanceAclaracion, (newValue) => {
         <h1 class="text-2xl font-bold mb-4 text-gray-900">ALCANCE DE LA ACLARACIÓN</h1>
         
         <!-- Pregunta principal con mejor jerarquía -->
-        <div class="mb-8">
+        <div data-campo="alcanceAclaracion" class="mb-8">
             <p class="text-lg font-medium mb-4 text-gray-800">¿Qué tipo de aclaración se realizará?</p>
             
             <!-- Diseño de Radio Buttons más Visual tipo Card -->

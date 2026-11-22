@@ -507,6 +507,8 @@ import { validateSomatometriaSignosField } from '@/helpers/somatometriaSignosRan
 import { buildExploracionFisicaSectionSteps } from '@/helpers/buildExploracionFisicaSectionSteps';
 import { isAptitudSectionsV2Enabled } from '@/composables/useAptitudSectionsV2';
 import { legacyStepToSectionIndex as aptLegacyStepToSectionIndex } from '@/helpers/aptitudSections';
+import { legacyStepToSectionIndex as certLegacyStepToSectionIndex } from '@/helpers/certificadoSections';
+import { legacyStepToSectionIndex as peLegacyStepToSectionIndex } from '@/helpers/peSections';
 import { buildAptitudSectionSteps } from '@/helpers/buildAptitudSectionSteps';
 import { isAntidopingSectionsV2Enabled } from '@/composables/useAntidopingSectionsV2';
 import { buildAntidopingSectionSteps } from '@/helpers/buildAntidopingSectionSteps';
@@ -551,6 +553,8 @@ import {
   campoPorPasoDiagnostico,
   problemasExploracionFisica,
   problemasNotaEnfermeria,
+  problemasPrevioEspirometria,
+  problemasControlPrenatal,
   ID_PASO_EXAMEN_VISTA,
   nombreDeCampo,
   ordenarProblemas,
@@ -2042,6 +2046,12 @@ export default {
       if (documentos.currentTypeOfDocument === 'audiometria') return formData.formDataAudiometria;
       if (documentos.currentTypeOfDocument === 'aptitud') return formData.formDataAptitud;
       if (documentos.currentTypeOfDocument === 'notaEnfermeria') return formData.formDataNotaEnfermeria;
+      if (documentos.currentTypeOfDocument === 'receta') return formData.formDataReceta;
+      if (documentos.currentTypeOfDocument === 'certificado') return formData.formDataCertificado;
+      if (documentos.currentTypeOfDocument === 'certificadoExpedito') return formData.formDataCertificadoExpedito;
+      if (documentos.currentTypeOfDocument === 'notaAclaratoria') return formData.formDataNotaAclaratoria;
+      if (documentos.currentTypeOfDocument === 'previoEspirometria') return formData.formDataPrevioEspirometria;
+      if (documentos.currentTypeOfDocument === 'controlPrenatal') return formData.formDataControlPrenatal;
       return null;
     };
 
@@ -2086,6 +2096,24 @@ export default {
       if (documentos.currentTypeOfDocument === 'notaEnfermeria') {
         return recolectarProblemasNotaEnfermeria();
       }
+      // Punto 52: los seis que antes solo detenía «Siguiente» con el modal genérico
+      if (['receta', 'certificado', 'certificadoExpedito', 'notaAclaratoria'].includes(documentos.currentTypeOfDocument)) {
+        return recolectarProblemasObligatoriosYFecha(documentos.currentTypeOfDocument, { ...datosDelDocumentoActual() });
+      }
+      if (documentos.currentTypeOfDocument === 'previoEspirometria') {
+        const df = { ...formData.formDataPrevioEspirometria };
+        return ordenarProblemas([
+          ...recolectarProblemasObligatoriosYFecha('previoEspirometria', df),
+          ...problemasPrevioEspirometria(df),
+        ]);
+      }
+      if (documentos.currentTypeOfDocument === 'controlPrenatal') {
+        const df = { ...formData.formDataControlPrenatal };
+        return ordenarProblemas([
+          ...recolectarProblemasObligatoriosYFecha('controlPrenatal', df),
+          ...problemasControlPrenatal(df),
+        ]);
+      }
       return [];
     };
 
@@ -2119,6 +2147,13 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'audiometria') {
         return pasoAudiometriaEnAsistente(paso, isAuSectionsV2Enabled(route.query));
+      }
+      // Punto 52: certificado y previo a espirometría van por secciones
+      if (documentos.currentTypeOfDocument === 'certificado') {
+        return isCertificadoSectionsV2Enabled(route.query) ? certLegacyStepToSectionIndex(paso) : paso;
+      }
+      if (documentos.currentTypeOfDocument === 'previoEspirometria') {
+        return isPeSectionsV2Enabled(route.query) ? peLegacyStepToSectionIndex(paso) : paso;
       }
       return paso;
     };

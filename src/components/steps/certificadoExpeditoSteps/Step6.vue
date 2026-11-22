@@ -25,7 +25,7 @@ onUnmounted(() => {
 
     <div class="mb-4">
         <h2 class="text-lg font-semibold mb-4 text-gray-800">Selección de Grado de Salud</h2>
-        <div class="grid grid-cols-1 gap-4">
+        <div data-campo="gradoSalud" class="grid grid-cols-1 gap-4">
 
             <label class="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 transition-colors duration-150 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer shadow-sm">
                 <input type="radio" value="Óptimo" v-model="gradoSalud"

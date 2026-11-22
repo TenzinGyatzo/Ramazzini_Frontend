@@ -51,7 +51,7 @@ function removeTratamiento(index) {
 <template>
   <div class="dark-mode-input-surface">
     <h2 class="font-bold mb-4 text-gray-800 leading-5">Tratamiento:</h2>
-    <div class="space-y-2">
+    <div data-campo="tratamiento" class="space-y-2">
       <div v-for="(item, index) in tratamiento" :key="index" class="flex gap-2 items-center">
         <input
           class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"

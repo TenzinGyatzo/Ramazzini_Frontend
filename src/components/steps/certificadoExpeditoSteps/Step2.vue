@@ -61,7 +61,7 @@ const copiarTexto = (texto) => {
     <div class="mb-4">
         <h2 class="text-lg font-semibold mb-4 text-gray-800">Cuerpo del Certificado</h2>
         <p class="text-sm font-medium mb-1 text-gray-800 leading-4">Ajustar descripción:</p>
-        <div class="font-light mb-4">
+        <div data-campo="cuerpoCertificado" class="font-light mb-4">
             <textarea
                 class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 custom-height"
                 v-model="formDataCertificadoExpedito.cuerpoCertificado" placeholder="Escriba el cuerpo del certificado..." required>

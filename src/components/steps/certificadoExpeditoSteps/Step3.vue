@@ -214,7 +214,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
 
     <h2>Tensión Arterial</h2>
     <div class="flex gap-4 mb-1">
-      <div>
+      <div data-campo="tensionArterialSistolica">
         <label for="tensionArterialSistolica">Sistólica (mmHg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
@@ -223,7 +223,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
         {{ mensajeErrorTensionSistolica }}
         </p>
       </div>
-      <div>
+      <div data-campo="tensionArterialDiastolica">
         <label for="tensionArterialDiastolica">Diastólica (mmHg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
@@ -239,7 +239,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
 
     <label for="frecuenciaCardiaca">Frecuencia Cardiáca (lpm)</label>
     <div class="flex gap-4 mb-4">
-      <div>
+      <div data-campo="frecuenciaCardiaca">
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           v-model="frecuenciaCardiaca" v-valor-de-partida="partida('frecuenciaCardiaca')" :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min" :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaCardiaca.max}`" />
@@ -256,7 +256,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
 
     <label for="frecuenciaRespiratoria">Frecuencia Respiratoria (rpm)</label>
     <div class="flex gap-4 mb-4">
-      <div>
+      <div data-campo="frecuenciaRespiratoria">
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           v-model="frecuenciaRespiratoria" v-valor-de-partida="partida('frecuenciaRespiratoria')" :min="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min" :max="SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.min}-${SOMATOMETRIA_SIGNOS_RANGES.frecuenciaRespiratoria.max}`" />
@@ -273,7 +273,7 @@ const mensajeErrorTemperaturaCorporal = computed(() =>
 
     <label for="temperaturaCorporal">Temperatura Corporal (°C)</label>
     <div class="flex gap-4 mb-4">
-      <div>
+      <div data-campo="temperaturaCorporal">
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           v-model="temperaturaCorporal" v-valor-de-partida="partida('temperatura')" :min="SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.min" :max="SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.max" :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.min}-${SOMATOMETRIA_SIGNOS_RANGES.temperaturaCorporal.max}`" step="0.1" />

@@ -4,8 +4,9 @@
  * genérico de «Campos pendientes» (punto 51): como en la captura rápida, se avanza libremente y
  * el aviso al guardar lleva a lo que falte.
  *
- * Los demás documentos conservan ese modal mientras su revisión al guardar no cubra todos sus
- * campos (previo a espirometría, receta, control prenatal, certificados, nota aclaratoria).
+ * Punto 52: receta, certificados, nota aclaratoria, previo a espirometría y control prenatal se
+ * sumaron con sus propias revisiones; el modal queda solo para documentos sin campos con
+ * `required` en sus pasos (en la práctica, ya no aparece).
  */
 export const DOCUMENTOS_CON_AVISO_CAMPOS = [
   'notaMedica',
@@ -15,6 +16,13 @@ export const DOCUMENTOS_CON_AVISO_CAMPOS = [
   'audiometria',
   'aptitud',
   'notaEnfermeria',
+  // Punto 52: migrados (antes solo los detenía el modal genérico al pulsar «Siguiente»)
+  'receta',
+  'certificado',
+  'certificadoExpedito',
+  'notaAclaratoria',
+  'previoEspirometria',
+  'controlPrenatal',
 ] as const;
 
 export function tieneAvisoCampos(tipo: string | null | undefined): boolean {

@@ -29,28 +29,23 @@ function syncToStore(texto) {
   };
 }
 
+// Punto 52: el «Sí» sin descripción se conserva (antes, al cerrarse el paso, se escribía «no
+// presenta impedimento…» y se guardaba lo contrario de lo contestado); al guardar se pide la
+// descripción. Se lee del formulario (lo capturado en esta sesión) o del documento guardado.
 onMounted(() => {
-  const doc = documentos.currentDocument;
-  if (doc?.impedimentosFisicos) {
-    const texto = doc.impedimentosFisicos;
-    const esDefault = texto === TEXTO_SIN_IMPEDIMENTO;
-    if (!esDefault) {
-      impedimentosFisicos.value = texto;
-      impedimentosFisicosPregunta.value = 'Si';
-      syncToStore(texto);
-    } else {
-      impedimentosFisicosPregunta.value = 'No';
-      syncToStore(TEXTO_SIN_IMPEDIMENTO);
-    }
-  } else {
+  const actual = formDataStore.formDataCertificado?.impedimentosFisicos ?? documentos.currentDocument?.impedimentosFisicos;
+  if (actual === undefined || actual === null || actual === TEXTO_SIN_IMPEDIMENTO) {
+    impedimentosFisicosPregunta.value = 'No';
     syncToStore(TEXTO_SIN_IMPEDIMENTO);
+  } else {
+    impedimentosFisicosPregunta.value = 'Si';
+    impedimentosFisicos.value = actual;
+    syncToStore(actual);
   }
 });
 
 onUnmounted(() => {
-  if (!formDataStore.formDataCertificado.impedimentosFisicos) {
-    syncToStore(TEXTO_SIN_IMPEDIMENTO);
-  }
+  if (impedimentosFisicosPregunta.value === 'No') syncToStore(TEXTO_SIN_IMPEDIMENTO);
 });
 
 watch(impedimentosFisicos, (newValue) => {
@@ -85,7 +80,7 @@ watch(impedimentosFisicosPregunta, (newValue) => {
       borderless
     />
 
-    <div v-if="impedimentosFisicosPregunta === 'Si'" class="mt-2">
+    <div data-campo="impedimentosFisicos" v-if="impedimentosFisicosPregunta === 'Si'" class="mt-2">
       <p class="text-sm font-semibold text-gray-800 mb-1.5">Resumen</p>
       <textarea
         class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 min-h-[96px] resize-y"

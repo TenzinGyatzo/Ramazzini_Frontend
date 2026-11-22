@@ -61,7 +61,97 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   alteracionesSalud: 'Describe las alteraciones de salud encontradas.',
   resultados: 'Escribe los resultados.',
   medidasPreventivas: 'Escribe las medidas preventivas.',
+  // Punto 52: receta, certificados, nota aclaratoria, previo a espirometría, control prenatal
+  fechaReceta: 'Elige la fecha de la receta.',
+  tratamiento: 'Escribe al menos un medicamento del tratamiento.',
+  indicaciones: 'Escribe las indicaciones.',
+  fechaCertificado: 'Elige la fecha del certificado.',
+  fechaCertificadoExpedito: 'Elige la fecha del certificado.',
+  cuerpoCertificado: 'Escribe el cuerpo del certificado.',
+  impedimentosFisicos: 'Describe los impedimentos físicos o elige «No».',
+  gradoSalud: 'Elige el grado de salud.',
+  fechaNotaAclaratoria: 'Elige la fecha de la aclaración.',
+  documentoOrigenId: 'Elige el documento que se aclara.',
+  alcanceAclaracion: 'Elige el alcance de la aclaración.',
+  impactoClinico: 'Elige el impacto clínico.',
+  motivoAclaracion: 'Escribe el motivo de la aclaración.',
+  descripcionAclaracion: 'Escribe la descripción de la aclaración.',
+  fechaPrevioEspirometria: 'Elige la fecha del cuestionario.',
+  fechaInicioControlPrenatal: 'Elige la fecha de inicio del control prenatal.',
 };
+
+/**
+ * Punto 52: lo que antes solo detenía «Siguiente» (campos con `required` en el paso) y la
+ * revisión al guardar no pedía. Se piden en las mismas condiciones en que el paso los muestra.
+ */
+const vacio52 = (v: unknown) => v === undefined || v === null || String(v).trim() === '';
+
+/** Previo a espirometría: «Especifique» de otros síntomas y de medicamentos actuales tras «Sí». */
+export function problemasPrevioEspirometria(df: Record<string, any>): ProblemaCampo[] {
+  const problemas: ProblemaCampo[] = [];
+  if (df.otrosSintomasPregunta === 'SI' && vacio52(df.otrosSintomas)) {
+    problemas.push({
+      paso: 12,
+      campo: 'otrosSintomas',
+      nombre: 'Otros síntomas',
+      falta: true,
+      mensaje: 'Describe los otros síntomas o elige «No».',
+    });
+  }
+  if (df.medicamentosActuales === 'SI' && vacio52(df.medicamentosActualesEspecificar)) {
+    problemas.push({
+      paso: 17,
+      campo: 'medicamentosActualesEspecificar',
+      nombre: 'Medicamentos actuales',
+      falta: true,
+      mensaje: 'Escribe qué medicamentos toma o elige «No».',
+    });
+  }
+  return problemas;
+}
+
+/** Observaciones del control prenatal (pasos 84 a 89), una por gráfica. */
+export const OBSERVACIONES_CONTROL_PRENATAL: Array<{ paso: number; campo: string; nombre: string }> = [
+  { paso: 84, campo: 'observacionesPeso', nombre: 'Observaciones del peso' },
+  { paso: 85, campo: 'observacionesImc', nombre: 'Observaciones del IMC' },
+  { paso: 86, campo: 'observacionesTia', nombre: 'Observaciones de la tensión arterial' },
+  { paso: 87, campo: 'observacionesFcf', nombre: 'Observaciones de la frecuencia cardiaca fetal' },
+  { paso: 88, campo: 'observacionesSdg', nombre: 'Observaciones de las semanas de gestación' },
+  { paso: 89, campo: 'observacionesFondoUterino', nombre: 'Observaciones del fondo uterino' },
+];
+
+/**
+ * Control prenatal. Como antes, solo lo que ya se abrió: la FUM con «Sí la recuerda» y sin
+ * fecha (el paso deja ''); la edad de inicio de vida sexual con «Sí» y sin edad; una
+ * observación que se dejó vacía (el paso deja '' al cerrarse). Lo no abierto no se pide.
+ */
+export function problemasControlPrenatal(df: Record<string, any>): ProblemaCampo[] {
+  const problemas: ProblemaCampo[] = [];
+  if (df.fum === '') {
+    problemas.push({
+      paso: 8,
+      campo: 'fum',
+      nombre: 'Fecha de última menstruación',
+      falta: true,
+      mensaje: 'Elige la fecha de última menstruación o marca que no la recuerda.',
+    });
+  }
+  if (df.ivsaPregunta === 'Si' && vacio52(df.ivsa)) {
+    problemas.push({
+      paso: 9,
+      campo: 'ivsa',
+      nombre: 'Inicio de vida sexual activa',
+      falta: true,
+      mensaje: 'Escribe la edad de inicio de vida sexual activa o elige «No».',
+    });
+  }
+  for (const o of OBSERVACIONES_CONTROL_PRENATAL) {
+    if (df[o.campo] === '') {
+      problemas.push({ paso: o.paso, campo: o.campo, nombre: o.nombre, falta: true, mensaje: `Escribe las ${o.nombre.toLowerCase()}.` });
+    }
+  }
+  return problemas;
+}
 
 /** Nombre corto en la lista para cada dato (si no viene de la validación). */
 const NOMBRE_CAMPO: Record<string, string> = {

@@ -107,7 +107,7 @@ watch(fechaCertificado, (newValue) => {
     >
       Certificado
     </h1>
-    <div :class="variant === 'compact' ? 'mt-0' : 'mt-6'">
+    <div data-campo="fechaCertificado" :class="variant === 'compact' ? 'mt-0' : 'mt-6'">
       <h2
         :class="
           variant === 'compact'

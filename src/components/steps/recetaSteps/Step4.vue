@@ -32,7 +32,7 @@ watch(indicaciones, (newValue) => {
 <template>
     <div>
         <h2 class="font-bold mb-4 text-gray-800 leading-5">INDICACIONES:</h2>
-        <div class="mt-4">
+        <div data-campo="indicaciones" class="mt-4">
             <div class="font-light">
                 <textarea
                     class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-48"

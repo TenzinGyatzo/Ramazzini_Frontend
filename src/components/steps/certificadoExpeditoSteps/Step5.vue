@@ -12,21 +12,25 @@ const documentos = useDocumentosStore();
 const impedimentosFisicosPregunta = ref('No');
 const impedimentosFisicos = ref ('');
 
+const TEXTO_SIN_IMPEDIMENTO = 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita';
+
+// Punto 52: el «Sí» sin descripción se conserva (antes, al cerrarse el paso, se escribía «no
+// presenta impedimento…»); al guardar se pide la descripción. Se lee del formulario o del
+// documento guardado.
 onMounted(() => {
-    if (documentos.currentDocument) {
-        if (documentos.currentDocument.impedimentosFisicos !== 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita')
-        impedimentosFisicos.value = documentos.currentDocument.impedimentosFisicos;
+    const actual = formDataCertificadoExpedito.impedimentosFisicos ?? documentos.currentDocument?.impedimentosFisicos;
+    if (actual === undefined || actual === null || actual === TEXTO_SIN_IMPEDIMENTO) {
+        impedimentosFisicosPregunta.value = 'No';
+        formDataCertificadoExpedito.impedimentosFisicos = TEXTO_SIN_IMPEDIMENTO;
+    } else {
         impedimentosFisicosPregunta.value = 'Si';
+        impedimentosFisicos.value = actual;
     }
 });
 
 onUnmounted(() => {
-    // Asegurar que formData tenga un valor inicial para impedimentosFisicos
-    if (!formDataCertificadoExpedito.impedimentosFisicos) {
-        formDataCertificadoExpedito.impedimentosFisicos =
-            trabajadores.currentTrabajador.sexo === 'Femenino'
-                ? 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita'
-                : 'no presenta impedimento físico para desarrollar el puesto que actualmente solicita';
+    if (impedimentosFisicosPregunta.value === 'No') {
+        formDataCertificadoExpedito.impedimentosFisicos = TEXTO_SIN_IMPEDIMENTO;
     }
 });
 
@@ -73,7 +77,7 @@ watch(impedimentosFisicosPregunta, (newValue) => {
         <!-- Opciones adicionales, solo visibles si el resultado es "Sí" -->
         <div v-if="impedimentosFisicosPregunta === 'Si'" class="mt-4">
             <p class="font-medium mb-2 text-gray-800">Resumen:</p>
-            <div class="font-light">
+            <div data-campo="impedimentosFisicos" class="font-light">
                 <textarea
                     class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     v-model="formDataCertificadoExpedito.impedimentosFisicos"

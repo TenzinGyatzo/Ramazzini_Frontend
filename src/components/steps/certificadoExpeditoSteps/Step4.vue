@@ -102,7 +102,7 @@ const mensajeErrorAltura = computed(() =>
     <UsarUltimaExploracionFisica :con-cintura="false" @usar="usarUltimaExploracion" />
 
     <div class="flex gap-4 mb-4">
-      <div>
+      <div data-campo="peso">
         <label for="peso">Peso (Kg)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
@@ -110,7 +110,7 @@ const mensajeErrorAltura = computed(() =>
           :placeholder="`${SOMATOMETRIA_SIGNOS_RANGES.peso.min}-${SOMATOMETRIA_SIGNOS_RANGES.peso.max}`">
         <p v-if="mensajeErrorPeso" class="text-red-500 text-sm mt-1">{{ mensajeErrorPeso }}</p>
       </div>
-      <div>
+      <div data-campo="altura">
         <label for="altura">Altura (m)</label>
         <input type="number"
           class="w-full p-1.5 text-center mt-1 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"

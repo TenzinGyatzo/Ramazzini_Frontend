@@ -90,7 +90,7 @@ watch(otrosSintomas, (newValue) => {
       question="¿Sufre de otros síntomas?"
       borderless
     />
-    <div v-if="otrosSintomasPregunta === 'SI'" class="mt-2">
+    <div data-campo="otrosSintomas" v-if="otrosSintomasPregunta === 'SI'" class="mt-2">
       <p class="text-sm font-semibold text-gray-800 mb-1.5">Especifique</p>
       <textarea
         ref="textareaHallazgos"

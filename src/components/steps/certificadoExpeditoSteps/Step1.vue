@@ -63,7 +63,7 @@ watch(fechaCertificadoExpedito, (newValue) => {
 <template>
   <div>
     <h1 class="text-2xl font-bold mb-4 text-gray-900">Certificado Expedito</h1>
-    <div class="mt-6">
+    <div data-campo="fechaCertificadoExpedito" class="mt-6">
       <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha del certificado</h2>
       <FormKit 
         type="date" 

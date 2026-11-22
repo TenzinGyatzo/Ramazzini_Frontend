@@ -20,7 +20,7 @@ watch(aptitudPuesto, (newValue) => {
 
     <div class="mb-4">
         <h2 class="text-lg font-semibold mb-4 text-gray-800">Selección de Aptitud</h2>
-        <div class="grid grid-cols-1 gap-2">
+        <div data-campo="aptitudPuesto" class="grid grid-cols-1 gap-2">
             <label class="flex items-center gap-4 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 transition-colors duration-150 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer shadow-sm">
                 <input type="radio" value="Apto Sin Restricciones" v-model="aptitudPuesto"
                     class="form-radio mt-1 accent-emerald-600" />

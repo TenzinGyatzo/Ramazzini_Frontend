@@ -38,7 +38,7 @@ watch(impactoClinico, (newValue) => {
         <h1 class="text-2xl font-bold mb-4 text-gray-900">IMPACTO CLÍNICO</h1>
         
         <!-- Pregunta principal con mejor jerarquía -->
-        <div class="mb-8">
+        <div data-campo="impactoClinico" class="mb-8">
             <p class="text-lg font-medium mb-4 text-gray-800">¿Cuál es el impacto clínico de esta aclaración?</p>
             
             <!-- Diseño de Radio Buttons más Visual tipo Card -->

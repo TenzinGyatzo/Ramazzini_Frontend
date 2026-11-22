@@ -90,7 +90,7 @@ const estadoFUM = computed(() => {
         <!-- Opciones adicionales, solo visibles si el resultado es "Sí" -->
         <div v-if="recuerdaFum === 'Si'" class="my-4">
             <p class="font-medium mb-2 text-gray-800">Especifique:</p>
-            <div class="font-light">
+            <div data-campo="fum" class="font-light">
                 <CampoFecha
                     class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     v-model="fum"

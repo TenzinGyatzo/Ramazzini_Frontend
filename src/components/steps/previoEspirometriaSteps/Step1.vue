@@ -85,7 +85,7 @@ watch(fechaPrevioEspirometria, (newValue) => {
     >
       Previo Espirometria
     </h1>
-    <div :class="variant === 'compact' ? 'mt-0' : 'mt-6'">
+    <div data-campo="fechaPrevioEspirometria" :class="variant === 'compact' ? 'mt-0' : 'mt-6'">
       <h2
         :class="
           variant === 'compact'

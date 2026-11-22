@@ -317,7 +317,7 @@ const hideResults = () => {
   <div>
     <h1 class="text-2xl font-bold mb-4 text-gray-900">DOCUMENTO QUE SE ACLARA</h1>
     
-    <div class="mb-4">
+    <div data-campo="documentoOrigenId" class="mb-4">
       <label class="block text-lg font-medium mb-3 text-gray-800">
         Seleccione el documento que desea aclarar:
       </label>

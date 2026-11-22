@@ -15,8 +15,17 @@ onMounted(() => {
     if (formDataControlPrenatal.ivsa !== undefined && formDataControlPrenatal.ivsa !== null) {
         ivsa.value = formDataControlPrenatal.ivsa;
         ivsaPregunta.value = 'Si';
+    } else if (formDataControlPrenatal.ivsaPregunta === 'No') {
+        // Punto 52: se contestó «No» en esta sesión (sin edad no se distinguía de «Sí» vacío)
+        ivsaPregunta.value = 'No';
     }
 });
+
+// Punto 52: la respuesta va al formulario para que al guardar se pida la edad si es «Sí» (el
+// servidor no la guarda: solo la edad)
+watch(ivsaPregunta, (valor) => {
+    formDataControlPrenatal.ivsaPregunta = valor;
+}, { immediate: true });
 
 onUnmounted(() => {
     // Asegurar que formData tenga un valor inicial para ivsa
@@ -77,7 +86,7 @@ watch(ivsaPregunta, (newValue) => {
         <div v-if="ivsaPregunta === 'Si'" class="my-4">
             <p class="font-medium mb-2 text-gray-800">En caso afirmativo, ¿a qué edad comenzó su vida sexual activa?</p>
             <div class="font-light">
-                <div class="flex items-center gap-3">
+                <div data-campo="ivsa" class="flex items-center gap-3">
                     <input type="number"
                         class="w-24 p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-center"
                         v-model="ivsa"

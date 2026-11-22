@@ -98,7 +98,7 @@ watch(medicamentosActualesEspecificar, (newValue) => {
       question="¿Toma medicamentos actualmente?"
       borderless
     />
-    <div v-if="medicamentosActuales === 'SI'" class="mt-2">
+    <div data-campo="medicamentosActualesEspecificar" v-if="medicamentosActuales === 'SI'" class="mt-2">
       <p class="text-sm font-semibold text-gray-800 mb-1.5">Especifique</p>
       <textarea
         ref="textareaHallazgos"

@@ -257,3 +257,28 @@ describe('aptitud', () => {
     expect([...secciones].sort((a, b) => a - b)).toEqual(secciones);
   });
 });
+
+describe('punto 52: lo que antes solo detenía «Siguiente»', () => {
+  it('previo a espirometría: «Especifique» tras «Sí», no con «No»', async () => {
+    const { problemasPrevioEspirometria } = await import('./problemasDocumento');
+    expect(problemasPrevioEspirometria({ otrosSintomasPregunta: 'NO', medicamentosActuales: 'NO' })).toEqual([]);
+    const p = problemasPrevioEspirometria({ otrosSintomasPregunta: 'SI', otrosSintomas: ' ', medicamentosActuales: 'SI', medicamentosActualesEspecificar: 'Salbutamol' });
+    expect(p.map((x) => [x.paso, x.campo])).toEqual([[12, 'otrosSintomas']]);
+  });
+
+  it('control prenatal: solo lo abierto y vacío (FUM, IVSA con «Sí», observaciones)', async () => {
+    const { problemasControlPrenatal } = await import('./problemasDocumento');
+    // Sin abrir: nada
+    expect(problemasControlPrenatal({})).toEqual([]);
+    // «No recuerda» la FUM e IVSA «No»: nada
+    expect(problemasControlPrenatal({ fum: 'No recuerda', ivsaPregunta: 'No', ivsa: null })).toEqual([]);
+    const p = problemasControlPrenatal({ fum: '', ivsaPregunta: 'Si', ivsa: null, observacionesPeso: '', observacionesImc: 'Normal' });
+    expect(p.map((x) => [x.paso, x.campo])).toEqual([[8, 'fum'], [9, 'ivsa'], [84, 'observacionesPeso']]);
+  });
+
+  it('receta: las indicaciones ya se piden al guardar', async () => {
+    const { validarCamposRequeridos } = await import('./validacionCampos');
+    const r = validarCamposRequeridos('receta', { fechaReceta: '2026-11-22', tratamiento: ['Paracetamol'], indicaciones: '' });
+    expect(r.camposFaltantes.map((c) => c.campo)).toEqual(['indicaciones']);
+  });
+});

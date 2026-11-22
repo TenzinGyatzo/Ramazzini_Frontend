@@ -66,7 +66,7 @@ watch(fechaReceta, (newValue) => {
     <h1 class="text-2xl font-bold mb-4 text-gray-900">Receta Médica</h1>
     
     <!-- Sección de fecha con mejor espaciado -->
-    <div class="mt-8">
+    <div data-campo="fechaReceta" class="mt-8">
       <h2 class="text-lg font-medium mb-3 text-gray-800">Fecha de Prescripción</h2>
       <FormKit 
         type="date" 

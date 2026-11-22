@@ -39,7 +39,7 @@ watch(descripcionAclaracion, (newValue) => {
             <label class="block text-base font-medium leading-5 text-gray-800 mb-3">
                 Describa en detalle la aclaración que se debe realizar al documento:
             </label>
-            <div class="relative">
+            <div data-campo="descripcionAclaracion" class="relative">
                 <textarea
                     class="w-full p-4 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-48 resize-y"
                     v-model="descripcionAclaracion"
