@@ -12,6 +12,7 @@ import { useEditionLabel } from '@/composables/useEditionLabel';
 import { useUserStore } from '@/stores/user';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 import { useIncapacidadesStore } from '@/stores/incapacidades';
+import { useInventarioStore } from '@/stores/inventario';
 import { useUserPermissions } from '@/composables/useUserPermissions';
 import { INCAPACIDADES_SOLO_ADMINISTRADOR } from '@/helpers/incapacidades';
 
@@ -27,19 +28,28 @@ const user = useUserStore();
 const proveedorSalud = useProveedorSaludStore();
 /** «Vigencias» solo aparece con el módulo activado en «Módulos y funciones». */
 const vigenciasHabilitadas = computed(() => proveedorSalud.proveedorSalud?.vigenciasHabilitadas === true);
-/** Incapacidades de la empresa: las mismas condiciones que el botón de la vista de centros de trabajo. */
+/** Incapacidades de la empresa: ya visitada y con las mismas condiciones que el botón de la vista de centros de trabajo. */
 const incapacidadesStore = useIncapacidadesStore();
 const { canAccessRiesgosTrabajo } = useUserPermissions();
 const showIncapacidades = computed(
   () =>
     !!user.user &&
+    hasVisitedIncapacidades.value &&
     incapacidadesStore.gestionaEnEmpresa(empresas.currentEmpresaId) &&
     canAccessRiesgosTrabajo.value &&
     (!INCAPACIDADES_SOLO_ADMINISTRADOR || user.user?.role === 'Administrador'),
 );
+/** Inventario del centro: cuando el centro lleva inventario, como el botón de su tarjeta. */
+const inventarioStore = useInventarioStore();
+const showInventario = computed(
+  () => !!user.user && !!showCentroTrabajoSection.value && inventarioStore.llevaInventario(centrosTrabajo.currentCentroTrabajoId),
+);
 
 const isMounted = ref(false);
 const hasVisitedDashboard = ref(false);
+/** Incapacidades aparece después de visitarla, como Estadísticas (punto 50). */
+const hasVisitedIncapacidades = ref(false);
+const RUTAS_INCAPACIDADES = ['incapacidades-empresa', 'incapacidades-informe', 'incapacidades-prima'];
 
 async function syncRouteState(params: typeof route.params) {
   const { redirectedTrabajadorId } = await sidebar.initializeState(params);
@@ -82,12 +92,16 @@ watch(() => route.name, (newRouteName) => {
   if (newRouteName === 'dashboard-empresa' && empresas.currentEmpresaId) {
     hasVisitedDashboard.value = true;
   }
+  if (RUTAS_INCAPACIDADES.includes(String(newRouteName)) && empresas.currentEmpresaId) {
+    hasVisitedIncapacidades.value = true;
+  }
 });
 
 // Resetear el estado cuando cambia la empresa
 watch(() => empresas.currentEmpresaId, (newEmpresaId, oldEmpresaId) => {
   if (newEmpresaId !== oldEmpresaId) {
     hasVisitedDashboard.value = false;
+    hasVisitedIncapacidades.value = false;
   }
 });
 
@@ -285,6 +299,23 @@ const footerEditionText = computed(() => {
               :titulo="tituloCentro"
               @click.stop>
               {{ nombreCentro }}
+            </SidebarLink>
+
+            <SidebarLink v-if="showInventario"
+              :to="{
+                name: 'inventario',
+                params: {
+                  idEmpresa: empresas.currentEmpresaId || '',
+                  idCentroTrabajo: centrosTrabajo.currentCentroTrabajoId || ''
+                }
+              }"
+              icon="fas fa-boxes-stacked"
+              en-ruta
+              :nivel="1"
+              :tooltip="`Inventario de ${nombreCentro}`"
+              data-testid="sidebar-inventario"
+              @click.stop>
+              Inventario
             </SidebarLink>
 
             <SidebarLink v-if="showTrabajadorSection"

@@ -402,7 +402,7 @@ describe('Sidebar — Inicio', () => {
     expect(wrapper.get('[data-testid="sidebar-estado-documento"]').text()).toBe('Creando');
   });
 
-  it('Incapacidades aparece bajo la empresa solo si la empresa las gestiona y el usuario tiene acceso (punto 50)', async () => {
+  it('Incapacidades aparece bajo la empresa después de visitarla, si la empresa las gestiona (punto 50)', async () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const { useUserStore } = await import('@/stores/user');
@@ -433,6 +433,55 @@ describe('Sidebar — Inicio', () => {
     expect(wrapper.find('[data-testid="sidebar-incapacidades"]').exists()).toBe(false);
     incapacidades.aplicar({ incapacidadesDisponible: true, incapacidadesHabilitado: true, empresasConIncapacidades: ['e1'] } as any);
     await wrapper.vm.$nextTick();
+    // Encendido pero sin visitarla todavía: no aparece (como Estadísticas)
+    expect(wrapper.find('[data-testid="sidebar-incapacidades"]').exists()).toBe(false);
+    await router.push('/e/e1/incapacidades');
+    await wrapper.vm.$nextTick();
     expect(wrapper.find('[data-testid="sidebar-incapacidades"]').exists()).toBe(true);
+    // Otra empresa: vuelve a esconderse hasta visitarla
+    empresas.currentEmpresaId = 'e2';
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-testid="sidebar-incapacidades"]').exists()).toBe(false);
+  });
+
+  it('Inventario aparece bajo el centro cuando el centro lleva inventario (punto 50)', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const { useUserStore } = await import('@/stores/user');
+    const { useEmpresasStore } = await import('@/stores/empresas');
+    const { useCentrosTrabajoStore } = await import('@/stores/centrosTrabajo');
+    const { useInventarioStore } = await import('@/stores/inventario');
+    (useUserStore() as any).user = { _id: 'u1', role: 'Principal' };
+    const empresas = useEmpresasStore() as any;
+    empresas.currentEmpresaId = 'e1';
+    empresas.currentEmpresa = { nombreComercial: 'Delta' };
+    const centros = useCentrosTrabajoStore() as any;
+    centros.currentCentroTrabajoId = 'c1';
+    centros.currentCentroTrabajo = { nombreCentro: 'Planta Norte' };
+    const inventario = useInventarioStore() as any;
+    inventario.habilitado = true;
+    inventario.centrosConInventario = ['c2'];
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/centros', name: 'centros-trabajo', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/c/:idCentroTrabajo', name: 'trabajadores', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/c/:idCentroTrabajo/inventario', name: 'inventario', component: { template: '<div />' } },
+      ],
+    });
+    await router.push('/');
+    await router.isReady();
+    const wrapper = mount(Sidebar, {
+      global: { plugins: [pinia, router], provide: { toast: { open: vi.fn() } }, stubs: { Transition: true } },
+    });
+    useSidebarStore().collapsed = false;
+    await wrapper.vm.$nextTick();
+    // Otro centro lleva inventario, este no
+    expect(wrapper.find('[data-testid="sidebar-inventario"]').exists()).toBe(false);
+    inventario.centrosConInventario = ['c1'];
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-testid="sidebar-inventario"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="sidebar-inventario"]').text()).toContain('Inventario');
   });
 });
