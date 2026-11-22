@@ -14,6 +14,7 @@ import { generarInformePdf } from '@/composables/useGenerarInformePdf';
 import { PASOS_NORDICO } from '@/helpers/cuestionarioNordico';
 import { PASOS_SUENO_VIGILIA, normalizarEvaluacionSuenoVigilia } from '@/helpers/evaluacionSuenoVigilia';
 import { PASOS_NOTA_ENFERMERIA, normalizarNotaEnfermeria } from '@/helpers/notaEnfermeria';
+import { tieneAvisoCampos } from '@/helpers/documentosConAvisoCampos';
 import {
   completarRespuestasPorDefecto as completarNotaEnfermeriaPorDefecto,
   fijarHoraApertura as fijarHoraAperturaNotaEnfermeria,
@@ -2027,16 +2028,7 @@ export default {
     };
 
     // Documentos que, al guardar, llevan al dato pendiente (paso + campo + qué corregir)
-    const tieneAtencionCampos = () =>
-      [
-        'notaMedica',
-        'historiaClinica',
-        'exploracionFisica',
-        'examenVista',
-        'audiometria',
-        'aptitud',
-        'notaEnfermeria',
-      ].includes(documentos.currentTypeOfDocument);
+    const tieneAtencionCampos = () => tieneAvisoCampos(documentos.currentTypeOfDocument);
 
     const datosDelDocumentoActual = () => {
       if (documentos.currentTypeOfDocument === 'notaMedica') return formData.formDataNotaMedica;

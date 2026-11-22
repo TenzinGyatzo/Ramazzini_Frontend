@@ -3,6 +3,7 @@ import { ref, markRaw } from "vue";
 import { useTrabajadoresStore } from "./trabajadores";
 import { useDocumentosStore } from "./documentos";
 import { useFormDataStore } from "./formDataStore";
+import { tieneAvisoCampos } from "@/helpers/documentosConAvisoCampos";
 
 const trabajadores = useTrabajadoresStore();
 const documentos = useDocumentosStore();
@@ -121,7 +122,9 @@ export const useStepsStore = defineStore("steps", () => {
   const nextStep = () => {
     if (isNavigating.value) return;
 
-    if (!validateCurrentStep()) return; // Detener navegación si la validación falla
+    // Punto 51: en los documentos que al guardar llevan campo por campo a lo pendiente, se avanza
+    // sin el modal genérico (no decía cuál campo ni llevaba a él); en los demás, se conserva
+    if (!tieneAvisoCampos(documentos.currentTypeOfDocument) && !validateCurrentStep()) return;
 
     isNavigating.value = true;
     clearPinpoint();
