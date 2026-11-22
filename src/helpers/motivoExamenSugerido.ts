@@ -51,7 +51,11 @@ export function motivoSugeridoConRazon({
 
   const ingreso = fechaIngreso === 'No recuerda' ? '' : formatDateYYYYMMDD(fechaIngreso);
   if (!ingreso) return null;
-  return fechaHC < unMesDespues(ingreso)
-    ? { motivo: 'Ingreso', razon: `Sin aptitud anterior; ingresó hace menos de un mes (${fechaLegible(ingreso)}).` }
-    : { motivo: 'Inicial', razon: `Sin aptitud anterior; ingresó hace un mes o más (${fechaLegible(ingreso)}).` };
+  // La fecha basta para entender el motivo; si el ingreso es posterior a la historia clínica
+  // (examen antes de entrar), en futuro
+  const cuando = ingreso > fechaHC ? `ingresa el ${fechaLegible(ingreso)}` : `ingresó el ${fechaLegible(ingreso)}`;
+  return {
+    motivo: fechaHC < unMesDespues(ingreso) ? 'Ingreso' : 'Inicial',
+    razon: `Sin aptitud anterior; ${cuando}.`,
+  };
 }

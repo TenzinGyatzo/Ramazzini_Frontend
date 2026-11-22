@@ -66,7 +66,7 @@ describe('historia clínica nueva: motivo del examen sugerido', () => {
     const df = preparar(dia(subMonths(hoy, 3)), []);
     const w = mount(Step1, { props: { variant: 'compact' } });
     await flushPromises();
-    expect(w.find('[data-razon-motivo]').text()).toMatch(/^Sin aptitud anterior; ingresó hace un mes o más/);
+    expect(w.find('[data-razon-motivo]').text()).toMatch(/^Sin aptitud anterior; ingresó el /);
     await w.find('input[name="motivoExamen"][value="Periódico"]').setValue(true);
     // Elegido a mano: ya no se explica
     expect(w.find('[data-razon-motivo]').exists()).toBe(false);
