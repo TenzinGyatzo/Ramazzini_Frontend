@@ -1,5 +1,12 @@
 <script lang="ts" setup>
-import { useRoute, useRouter, RouterLink } from 'vue-router';
+/**
+ * Un elemento del sidebar (punto 50): un solo renglón con ícono y nombre (cortado con «…»; el
+ * nombre completo en `title`). Colapsado, solo el ícono y un tooltip a la derecha.
+ * - `nivel`: 1 = cuelga del elemento de arriba (p. ej. Estadísticas bajo la empresa).
+ * - `enRuta`: parte de «Donde estás»; el ícono va sobre la línea que une la ruta.
+ * - Ranura `insignia`: una etiqueta corta al final del renglón (estado del documento).
+ */
+import { useRouter, RouterLink, useRoute } from 'vue-router';
 import { computed, ref } from 'vue';
 import { useSidebarStore } from '../../stores/sidebar';
 
@@ -11,6 +18,10 @@ const props = defineProps({
     icon: { type: String, required: true },
     badge: { type: String, default: '' },
     tooltip: { type: String, default: '' },
+    /** Nombre completo para el `title` cuando se corta con «…». */
+    titulo: { type: String, default: '' },
+    nivel: { type: Number, default: 0 },
+    enRuta: { type: Boolean, default: false },
 });
 
 const route = useRoute();
@@ -36,11 +47,11 @@ const tooltipStyle = computed(() => {
     if (!linkContainerRef.value || !showTooltip.value) {
         return {};
     }
-    
+
     try {
         const rect = linkContainerRef.value.getBoundingClientRect();
         const sidebarWidth = Number.parseInt(sidebar.sidebarWidth, 10) || 80;
-        
+
         return {
             position: 'fixed' as const,
             left: `${sidebarWidth + 12}px`,
@@ -56,27 +67,29 @@ const tooltipStyle = computed(() => {
 
 <template>
     <div class="link-container"
-         :class="{ 'is-icon-only': sidebar.collapsed }"
-         @mouseenter="isHovered = true" 
+         :class="{ 'is-icon-only': sidebar.collapsed, 'en-ruta': enRuta, 'nivel-1': nivel === 1 }"
+         @mouseenter="isHovered = true"
          @mouseleave="isHovered = false"
          ref="linkContainerRef">
-        
-        <RouterLink :to="to" class="link" :class="{ 'active': isActive }" @click.stop="onNavigate">
+
+        <RouterLink
+            :to="to"
+            class="link"
+            :class="{ 'active': isActive }"
+            :title="!sidebar.collapsed && titulo ? titulo : undefined"
+            :aria-label="sidebar.collapsed ? (tooltip || titulo || undefined) : undefined"
+            @click.stop="onNavigate">
             <div class="icon-container">
                 <i class="icon" :class="icon"></i>
                 <div v-if="badge" class="badge">{{ badge }}</div>
             </div>
-            
-            <Transition appear mode="out-in" name="fade" :duration="200">
-                <div v-if="!sidebar.collapsed" class="content">
-                    <slot></slot>
-                </div>
-            </Transition>
-            
-            <!-- Indicador de estado activo -->
-            <div class="active-indicator" :class="{ 'active': isActive }"></div>
+
+            <div v-if="!sidebar.collapsed" class="content">
+                <span class="nombre"><slot></slot></span>
+                <slot name="insignia"></slot>
+            </div>
         </RouterLink>
-        
+
         <!-- Tooltip para modo colapsado -->
         <Transition name="tooltip" :duration="200">
             <div v-if="showTooltip" class="tooltip" :style="tooltipStyle">
@@ -92,75 +105,100 @@ const tooltipStyle = computed(() => {
 <style scoped>
 .link-container {
     position: relative;
-    margin: 0.25rem 0;
 }
 
+/* Un renglón de 40 px; sin moverse al pasar el mouse (dentro de la caja con desplazamiento,
+   el movimiento recortaba el borde derecho) */
 .link {
     display: flex;
     align-items: center;
     position: relative;
     cursor: pointer;
-    font-weight: 500;
     user-select: none;
-    margin: 0.25rem 0;
-    padding: 0.75rem 1rem;
-    border-radius: 0.75rem;
-    min-height: 3.5rem;
-    color: rgba(255, 255, 255, 0.9);
+    margin: 0.125rem 0;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.5rem;
+    min-height: 2.5rem;
+    color: rgba(255, 255, 255, 0.92);
     text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: transparent;
-    border: 1px solid transparent;
-    overflow: hidden;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .link:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    transform: translateX(4px);
-    border-color: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
 }
 
+.link:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: -2px;
+}
+
+/* Activo: fondo suave y barra blanca a la izquierda */
 .link.active {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
-    color: white;
-    border-color: rgba(255, 255, 255, 0.35);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+}
+
+.link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: #ffffff;
 }
 
 .icon-container {
     position: relative;
+    z-index: 1;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    margin-right: 0.75rem;
-    border-radius: 0.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-right: 0.625rem;
+    border-radius: 0.375rem;
     background: rgba(255, 255, 255, 0.15);
-    transition: all 0.3s ease;
+    transition: background-color 0.15s ease;
 }
 
-.link:hover .icon-container {
-    background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.1);
-}
-
+.link:hover .icon-container,
 .link.active .icon-container {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.26);
+}
+
+/* En la ruta, el ícono tapa la línea que la une (fondo opaco del mismo verde) */
+.en-ruta .icon-container {
+    background: #276749;
+    box-shadow: 0 0 0 2px #2b7a52;
+}
+
+.en-ruta .link:hover .icon-container,
+.en-ruta .link.active .icon-container {
+    background: #22543d;
+}
+
+.nivel-1 .link {
+    padding-left: 1.75rem;
+    min-height: 2.25rem;
+}
+
+.nivel-1 .icon-container {
+    width: 1.375rem;
+    height: 1.375rem;
+}
+
+.nivel-1 .icon {
+    font-size: 0.75rem;
 }
 
 .icon {
-    font-size: 1.1rem;
-    transition: all 0.3s ease;
-}
-
-.link:hover .icon {
-    transform: scale(1.1);
+    font-size: 0.95rem;
 }
 
 .badge {
@@ -184,58 +222,50 @@ const tooltipStyle = computed(() => {
 .content {
     flex: 1;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
 }
 
-.content p {
-    margin: 0;
-    line-height: 1.4;
-    transition: all 0.3s ease;
+.nombre {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.content p:first-child {
-    font-weight: 600;
-    font-size: 0.95rem;
+/* Colapsado: solo el ícono, centrado */
+.is-icon-only .link {
+    justify-content: center;
+    padding: 0.375rem 0;
 }
 
-.content p:last-child {
-    font-size: 0.8rem;
-    opacity: 0.85;
-    margin-top: 0.125rem;
-}
-
-.active-indicator {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 0.25rem;
-    height: 0;
-    background: linear-gradient(180deg, #ffffff, #f0fdf4);
-    border-radius: 0 0.125rem 0.125rem 0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-}
-
-.active-indicator.active {
+.is-icon-only .icon-container {
+    width: 2rem;
     height: 2rem;
-    opacity: 1;
+    margin-right: 0;
 }
 
-/* Animaciones */
-.fade-enter-active,
-.fade-leave-active {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.is-icon-only .icon {
+    font-size: 1rem;
 }
 
-.fade-enter-from {
-    opacity: 0;
-    transform: translateX(-10px);
+.is-icon-only.nivel-1 .link {
+    padding-left: 0;
 }
 
-.fade-leave-to {
-    opacity: 0;
-    transform: translateX(-10px);
+.is-icon-only.nivel-1 .icon-container {
+    width: 1.625rem;
+    height: 1.625rem;
+}
+
+.is-icon-only .link.active::before {
+    top: 0.625rem;
+    bottom: 0.625rem;
 }
 
 /* Tooltip */
@@ -246,91 +276,52 @@ const tooltipStyle = computed(() => {
 }
 
 .tooltip-content {
-    background: linear-gradient(135deg, #1f2937, #111827);
+    background: #1f2937;
     color: white;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 500;
     white-space: nowrap;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(8px);
-    min-width: 140px;
-    text-align: center;
-    max-width: 220px;
-    word-wrap: break-word;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     position: relative;
 }
 
 .tooltip-arrow {
     position: absolute;
-    left: -0.5rem;
+    left: -0.4rem;
     top: 50%;
     transform: translateY(-50%);
     width: 0;
     height: 0;
-    border-top: 0.5rem solid transparent;
-    border-bottom: 0.5rem solid transparent;
-    border-right: 0.5rem solid #1f2937;
-    filter: drop-shadow(-2px 0 2px rgba(0, 0, 0, 0.3));
+    border-top: 0.4rem solid transparent;
+    border-bottom: 0.4rem solid transparent;
+    border-right: 0.4rem solid #1f2937;
 }
 
 .tooltip-enter-active,
 .tooltip-leave-active {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .tooltip-enter-from,
 .tooltip-leave-to {
     opacity: 0;
-    transform: translateY(-50%) translateX(-10px);
+    transform: translateY(-50%) translateX(-6px);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-    .link {
-        padding: 0.5rem 0.45rem;
-        min-height: 3rem;
-    }
-    
-    .icon-container {
-        width: 1.75rem;
-        height: 1.75rem;
-        margin-right: 0.5rem;
-    }
-    
-    .icon {
-        font-size: 1rem;
-    }
-    
-    .tooltip-content {
-        font-size: 0.8rem;
-        padding: 0.625rem 0.875rem;
-        min-width: 120px;
-    }
-
     .is-icon-only .link {
-        justify-content: center;
-        padding: 0.375rem 0;
-        min-height: 0;
-        margin: 0.2rem 0;
-    }
-
-    .is-icon-only .link:hover,
-    .is-icon-only .link.active {
-        transform: none;
+        margin: 0.1rem 0;
     }
 
     .is-icon-only .icon-container {
-        width: 2rem;
-        height: 2rem;
-        margin-right: 0;
-    }
-
-    .is-icon-only .link:hover .icon-container,
-    .is-icon-only .link.active .icon-container {
-        transform: none;
+        width: 1.875rem;
+        height: 1.875rem;
     }
 }
 </style>

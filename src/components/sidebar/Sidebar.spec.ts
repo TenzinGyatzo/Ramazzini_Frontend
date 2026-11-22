@@ -304,7 +304,7 @@ describe('Sidebar — anchos móviles', () => {
 });
 
 describe('Sidebar — Inicio', () => {
-  it('muestra el subtítulo Resumen de trabajo', async () => {
+  it('Inicio va en un solo renglón, sin el subtítulo «Resumen de trabajo» (punto 50)', async () => {
     setActivePinia(createPinia());
     const router = createRouter({
       history: createMemoryHistory(),
@@ -324,7 +324,8 @@ describe('Sidebar — Inicio', () => {
         },
       },
     });
-    expect(wrapper.text()).toContain('Resumen de trabajo');
+    expect(wrapper.text()).toContain('Inicio');
+    expect(wrapper.text()).not.toContain('Resumen de trabajo');
   });
 
   it('«Vigencias» solo aparece con el módulo activado', async () => {
@@ -349,6 +350,58 @@ describe('Sidebar — Inicio', () => {
     expect(logout.element.tagName).toBe('BUTTON');
     expect(logout.attributes('aria-label')).toBe('Cerrar sesión');
     expect(logout.attributes('title')).toBe('Cerrar sesión');
-    expect(logout.text()).toContain('Cerrar sesión');
+    expect(logout.text()).toContain('Salir');
+  });
+
+  it('«Donde estás» une la ruta y conserva solo el estado del documento (punto 50)', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const { useUserStore } = await import('@/stores/user');
+    const { useEmpresasStore } = await import('@/stores/empresas');
+    const { useCentrosTrabajoStore } = await import('@/stores/centrosTrabajo');
+    const { useTrabajadoresStore } = await import('@/stores/trabajadores');
+    const { useDocumentosStore } = await import('@/stores/documentos');
+    (useUserStore() as any).user = { _id: 'u1' };
+    const empresas = useEmpresasStore() as any;
+    empresas.currentEmpresaId = 'e1';
+    empresas.currentEmpresa = { nombreComercial: 'Delta', razonSocial: 'Delta S.A. de C.V.' };
+    const centros = useCentrosTrabajoStore() as any;
+    centros.currentCentroTrabajoId = 'c1';
+    centros.currentCentroTrabajo = { nombreCentro: 'Planta Norte', direccionCentro: 'Av. Industrial 450' };
+    const trabajadores = useTrabajadoresStore() as any;
+    trabajadores.currentTrabajadorId = 't1';
+    trabajadores.currentTrabajador = { nombre: 'Fatima', primerApellido: 'González' };
+    (useDocumentosStore() as any).currentTypeOfDocument = 'notaMedica';
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/centros', name: 'centros-trabajo', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/tablero', name: 'dashboard-empresa', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/c/:idCentroTrabajo', name: 'trabajadores', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/c/:idCentroTrabajo/t/:idTrabajador', name: 'expediente-medico', component: { template: '<div />' } },
+        { path: '/e/:idEmpresa/c/:idCentroTrabajo/t/:idTrabajador/:tipoDocumento/:idDocumento?', name: 'crear-documento', component: { template: '<div />' } },
+      ],
+    });
+    await router.push('/');
+    await router.isReady();
+    const wrapper = mount(Sidebar, {
+      global: {
+        plugins: [pinia, router],
+        provide: { toast: { open: vi.fn() } },
+        stubs: { Transition: true },
+      },
+    });
+    useSidebarStore().collapsed = false;
+    await wrapper.vm.$nextTick();
+    const ruta = wrapper.get('[data-testid="sidebar-ruta"]');
+    expect(ruta.text()).toContain('Delta');
+    expect(ruta.text()).toContain('Planta Norte');
+    expect(ruta.text()).toContain('Nota Médica');
+    // Lo que antes iba en letras chicas ya no está a la vista
+    expect(ruta.text()).not.toContain('S.A. de C.V.');
+    expect(ruta.text()).not.toContain('Av. Industrial');
+    expect(ruta.text()).not.toContain('Expediente Médico');
+    expect(wrapper.get('[data-testid="sidebar-estado-documento"]').text()).toBe('Creando');
   });
 });
