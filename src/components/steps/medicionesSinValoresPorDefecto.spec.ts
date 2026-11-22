@@ -33,8 +33,6 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
       const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
       expect(valores(wrapper).every((v) => v === '')).toBe(true);
       expect(fd.formDataExploracionFisica.peso).toBeUndefined();
-      // Sin exploración física previa no se ofrece copiar
-      expect(wrapper.find('[data-ultima-exploracion]').exists()).toBe(false);
     });
 
     it('riesgo por cintura con los tres sexos (Intersexual con los cortes de hombre)', async () => {
@@ -50,7 +48,7 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
       expect(await riesgo('Intersexual', '98')).toBe('Riesgo Aumentado');
     });
 
-    it('punto 54: no se ofrece copiar peso ni cintura aunque haya exploración anterior', async () => {
+    it('punto 54: no hay forma de copiar peso ni cintura aunque haya exploración anterior', async () => {
       useDocumentosStore().documentsByYear = { 2026: { exploracionesFisicas: [ultimaExploracion] } } as never;
       const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
       expect(wrapper.find('[data-ultima-exploracion]').exists()).toBe(false);
@@ -79,14 +77,6 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
         categoriaCircunferenciaCintura: '',
       });
       expect((cintura.element as HTMLInputElement).disabled).toBe(true);
-    });
-
-    it('al editar no se ofrece copiar', async () => {
-      const documentos = useDocumentosStore();
-      documentos.documentsByYear = { 2026: { exploracionesFisicas: [ultimaExploracion] } } as never;
-      documentos.currentDocument = { peso: 90, altura: 1.8 } as never;
-      const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
-      expect(wrapper.find('[data-ultima-exploracion]').exists()).toBe(false);
     });
   });
 

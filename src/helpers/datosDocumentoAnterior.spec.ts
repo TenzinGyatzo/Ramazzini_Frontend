@@ -53,15 +53,17 @@ describe('datos del documento anterior (punto 54)', () => {
     expect(documentoAnterior([], 'historiaClinica', '2026-11-22')).toBeNull();
   });
 
-  it('historia clínica: los «Sí» con su detalle, gineco sin FUM ni embarazo, empleos y accidente', () => {
+  it('historia clínica: los «Sí» con su detalle, gineco completo (también lo típico) sin FUM ni embarazo, empleos y accidente', () => {
     expect(datosATraer('historiaClinica', hcAnterior, { esMujer: true })).toEqual({
       diabeticosPP: 'Si',
       diabeticosPPEspecificar: 'Diabetes tipo 2',
       alcoholismo: 'Si',
       alcoholismoEspecificar: 'Social, fines de semana',
       menarca: '11 años',
+      duracionPromedio: '5 días',
       gestas: '2',
       vidaSexualActiva: '18 años',
+      planificacionFamiliar: 'Ninguno',
       empresaAnterior1: 'Aceros del Norte',
       puestoAnterior1: 'Soldador',
       accidenteLaboral: 'Si',

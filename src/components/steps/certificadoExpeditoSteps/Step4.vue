@@ -5,7 +5,6 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
-import UsarUltimaExploracionFisica from '../UsarUltimaExploracionFisica.vue';
 import {
   SOMATOMETRIA_SIGNOS_RANGES,
   mensajeErrorSomatometriaSignosField,
@@ -16,8 +15,7 @@ const partida = useValorDePartida();
 const { formDataCertificadoExpedito } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Sin valores por defecto: se escribe lo que se midió (o se copia de la última exploración
-// física con el botón). Sin medición no hay IMC ni categoría.
+// Sin valores por defecto: se escribe lo que se midió. Sin medición no hay IMC ni categoría.
 const peso = ref(null);
 const altura = ref(null);
 const indiceMasaCorporal = ref(null);
@@ -36,12 +34,6 @@ onMounted(() => {
     setCategoriaIMC(indiceMasaCorporal.value);
   }
 });
-
-/** Copia de la última exploración física lo que traiga (solo a pedido del usuario). */
-function usarUltimaExploracion(som) {
-  if (som.peso != null) peso.value = som.peso;
-  if (som.altura != null) altura.value = som.altura;
-}
 
 onUnmounted(() => {
   formDataCertificadoExpedito.peso = peso.value;
@@ -98,8 +90,6 @@ const mensajeErrorAltura = computed(() =>
   <div>
     <h1 class="font-bold mb-4 text-gray-800 ">Medidas del cuerpo</h1>
     <h2 class="mb-4">SOMATOMETRÍA</h2>
-
-    <UsarUltimaExploracionFisica :con-cintura="false" @usar="usarUltimaExploracion" />
 
     <div class="flex gap-4 mb-4">
       <div data-campo="peso">

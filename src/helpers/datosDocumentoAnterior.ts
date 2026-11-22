@@ -3,8 +3,8 @@
  * anterior del trabajador (el más reciente con fecha anterior, sin anulados), con un aviso y la
  * opción «Empezar en blanco».
  *
- * Solo se copia lo que no es la respuesta preseleccionada (un «Sí» con su detalle, un valor
- * gineco distinto del típico, un empleo anterior): lo demás ya sale igual por defecto.
+ * De los antecedentes se copian los «Sí» con su detalle (los «No» salen igual por defecto); de
+ * los gineco-obstétricos, todo (también los valores típicos: dejarlos fue una respuesta).
  * - Historia clínica: antecedentes heredofamiliares, personales y no patológicos; gineco-
  *   obstétricos SIN la FUM ni el embarazo actual (cambian); empleos anteriores y accidente
  *   laboral. No el motivo, la fecha ni el resumen (se arma de nuevo).
@@ -65,13 +65,15 @@ export function datosATraer(tipo: TipoConAnterior, anterior: Datos, { esMujer }:
         datos[p.especificar] = anterior[p.especificar];
       }
     }
+    // Gineco: todo lo que tenga, también los valores típicos y los «No» (dejarlos fue una
+    // respuesta, no solo lo preseleccionado; decisión del usuario), salvo FUM y embarazo
     if (esMujer) {
-      for (const [campo, tipico] of Object.entries(GINECO_VALORES_TIPICOS)) {
-        if (conTexto(anterior[campo]) && anterior[campo] !== tipico) datos[campo] = anterior[campo];
+      for (const campo of Object.keys(GINECO_VALORES_TIPICOS)) {
+        if (conTexto(anterior[campo])) datos[campo] = anterior[campo];
       }
       for (const p of GINECO_PREGUNTAS) {
         if (GINECO_NO_SE_TRAE.has(p.campo)) continue;
-        if (conTexto(anterior[p.campo]) && anterior[p.campo] !== p.textoNo) datos[p.campo] = anterior[p.campo];
+        if (conTexto(anterior[p.campo])) datos[p.campo] = anterior[p.campo];
       }
     }
     for (let n = 1; n <= 3; n++) {
