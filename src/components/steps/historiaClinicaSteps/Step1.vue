@@ -12,6 +12,8 @@ import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
 import { CLASE_ETIQUETA } from '@/components/steps/captura/estiloCaptura';
+import DocumentosAPI from '@/api/DocumentosAPI';
+import { sugerirMotivoExamenHC } from '@/helpers/motivoExamenSugerido';
 
 const props = defineProps({
   variant: {
@@ -73,7 +75,39 @@ onMounted(() => {
   const trabajadorNombre = trabajadores.currentTrabajador.nombre;
   const trabajadorId = trabajadores.currentTrabajadorId;
   formDataHistoriaClinica.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
+
+  if (!documentos.currentDocument) pedirAptitudes(trabajadorId);
 });
+
+// Punto 53: en una historia clínica nueva el motivo se preselecciona con las aptitudes
+// anteriores y la antigüedad (helpers/motivoExamenSugerido.ts) mientras el usuario no lo elija.
+// La elección se recuerda en el formulario: al volver al paso no se sobrescribe.
+const fechasAptitudes = ref(null);
+async function pedirAptitudes(trabajadorId) {
+  try {
+    const { data } = await DocumentosAPI.getAptitudes(trabajadorId);
+    fechasAptitudes.value = (Array.isArray(data) ? data : []).map((a) => a?.fechaAptitudPuesto);
+  } catch (error) {
+    // Sin saber si hay aptitud anterior no se sugiere: queda «Ingreso», como antes
+    console.error('Historia clínica: no se pudieron consultar las aptitudes', error);
+  }
+}
+
+function aplicarMotivoSugerido() {
+  if (documentos.currentDocument || formDataHistoriaClinica.motivoExamenElegido) return;
+  if (fechasAptitudes.value === null) return;
+  const sugerido = sugerirMotivoExamenHC({
+    fechaHistoriaClinica: fechaHistoriaClinica.value,
+    fechasAptitudes: fechasAptitudes.value,
+    fechaIngreso: trabajadores.currentTrabajador?.fechaIngreso,
+  });
+  if (sugerido) motivoExamen.value = sugerido;
+}
+watch([fechasAptitudes, fechaHistoriaClinica], aplicarMotivoSugerido);
+
+function alElegirMotivo() {
+  formDataHistoriaClinica.motivoExamenElegido = true;
+}
 
 // Si el formulario se vacía después de abrir el paso (la vista lo reinicia al montarse), lo que
 // se ve vuelve a quedar en el formulario; antes lo reponía el cierre del paso.
@@ -109,6 +143,7 @@ watch(fechaHistoriaClinica, (newValue) => {
         <p :class="[CLASE_ETIQUETA, 'mb-1']">Motivo del examen <span class="text-red-500">*</span></p>
         <OpcionesSegmentadas
           v-model="motivoExamen"
+          @update:model-value="alElegirMotivo"
           name="motivoExamen"
           etiqueta="Motivo del examen"
           :opciones="OPCIONES_MOTIVO"

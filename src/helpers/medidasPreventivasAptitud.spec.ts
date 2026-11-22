@@ -123,7 +123,7 @@ describe('medidas preventivas de la aptitud', () => {
     expect(con({ metodoAudiometria: 'LFT', hipoacusiaBilateralCombinada: 10 })).toEqual(['hipoacusia']);
   });
 
-  it('detecta vista, visión cromática, sueño, tabaco y alcohol', () => {
+  it('detecta vista, visión cromática, sueño y tabaco; el alcohol ya no (punto 53: solo a mano)', () => {
     const docs = {
       ...sano,
       historiaClinica: { ...sano.historiaClinica, tabaquismo: 'Si', alcoholismo: 'Si' },
@@ -134,7 +134,7 @@ describe('medidas preventivas de la aptitud', () => {
       },
       evaluacionSuenoVigilia: { resultado: { prioridad: 'naranja' } },
     };
-    expect(detectarHallazgosAptitud(docs)).toEqual(['vista', 'visionCromatica', 'sueno', 'tabaquismo', 'alcohol']);
+    expect(detectarHallazgosAptitud(docs)).toEqual(['vista', 'visionCromatica', 'sueno', 'tabaquismo']);
   });
 
   it('la agudeza visual ya corregida con lentes no dispara medida', () => {

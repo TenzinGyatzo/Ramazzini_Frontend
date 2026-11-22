@@ -5,7 +5,10 @@
  * manda exactamente lo mismo al servidor. En la captura rápida el resumen está abierto antes de
  * capturar los antecedentes: debe seguir a los hallazgos.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// El paso 1 consulta las aptitudes para sugerir el motivo (punto 53); aquí no hay servidor
+vi.mock('@/api/DocumentosAPI', () => ({ default: { getAptitudes: vi.fn().mockResolvedValue({ data: [] }) } }));
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick, type Component } from 'vue';

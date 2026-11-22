@@ -240,7 +240,7 @@ export function detectarHallazgosAptitud(docs: DocumentosCercanosAptitud): Clave
 
   if (tamizajePsicologicoConHallazgos(docs)) claves.add('saludMental');
   if (esSi(hc?.tabaquismo)) claves.add('tabaquismo');
-  if (esSi(hc?.alcoholismo)) claves.add('alcohol');
+  // Punto 53: el consumo de alcohol ya no dispara su medida; se agrega a mano desde el catálogo
 
   return MEDIDAS_PREVENTIVAS.map((medida) => medida.clave).filter((clave) => claves.has(clave));
 }

@@ -201,6 +201,8 @@ export function completarRespuestasPorDefecto(
  */
 export function prepararHistoriaClinicaParaGuardar(df: Datos, { esMujer }: { esMujer: boolean }): Datos {
   completarRespuestasPorDefecto(df, { esMujer });
+  // Solo de la pantalla: si el usuario eligió el motivo (punto 53)
+  delete df.motivoExamenElegido;
   if (df.resumenHistoriaClinicaPregunta === 'No') {
     df.resumenHistoriaClinica = textoResumenPorDefecto(esMujer);
   } else if (vacio(df.resumenHistoriaClinica)) {
