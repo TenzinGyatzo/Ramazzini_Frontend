@@ -4826,8 +4826,12 @@ html.dark-mode .campo-fecha-calendario button.bg-emerald-600 {
   background: #059669;
   color: #fff;
 }
+/* Fuera de rango: apagados y tachados, para que no se confundan con los que se pueden elegir
+   (las clases de color de Tailwind llevan !important en modo oscuro) */
 html.dark-mode .campo-fecha-calendario button:disabled {
-  color: #4b5563;
+  color: #4b5563 !important;
+  text-decoration: line-through;
+  text-decoration-color: #4b5563;
 }
 html.dark-mode .campo-fecha-boton {
   color: #9ca3af;

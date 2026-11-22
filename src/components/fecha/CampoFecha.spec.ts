@@ -114,6 +114,32 @@ describe('CampoFecha: DD/MM/AAAA, se teclea como el campo del navegador', () => 
     expect((w.find('input').element as HTMLInputElement).value).toBe('10/11/2026');
   });
 
+  it('los días fuera de rango no llevan el color de los que se pueden elegir (punto 48: modo oscuro)', async () => {
+    const w = montar({ modelValue: '2026-11-05', min: '2026-11-03', max: '2026-11-20' });
+    await w.find('input').trigger('keydown', { key: 'ArrowDown', altKey: true });
+    expect(w.find('[data-dia="2"]').classes()).toContain('campo-fecha-dia-fuera');
+    expect(w.find('[data-dia="2"]').classes()).not.toContain('text-gray-700');
+    expect(w.find('[data-dia="10"]').classes()).toContain('text-gray-700');
+  });
+
+  it('dentro de una caja que recorta, el calendario se abre sobre la página y sigue funcionando (punto 48)', async () => {
+    const caja = document.createElement('div');
+    caja.style.overflowY = 'auto';
+    document.body.appendChild(caja);
+    const w = mount(CampoFecha, { props: { modelValue: '2026-11-05' }, attachTo: caja });
+    await w.find('input').trigger('keydown', { key: 'ArrowDown', altKey: true });
+    const cal = document.body.querySelector<HTMLElement>(':scope > [data-calendario-fecha]');
+    expect(cal).not.toBeNull();
+    expect(cal!.className).toContain('fixed');
+    expect(caja.querySelector('[data-calendario-fecha]')).toBeNull();
+    // Un clic dentro del calendario no lo cierra como «clic fuera»
+    cal!.querySelector<HTMLElement>('[data-dia="12"]')!.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    cal!.querySelector<HTMLElement>('[data-dia="12"]')!.click();
+    await nextTick();
+    expect(w.emitted('update:modelValue')?.at(-1)).toEqual(['2026-11-12']);
+    expect(document.body.querySelector('[data-calendario-fecha]')).toBeNull();
+  });
+
   it('el botón del calendario no recibe Tab; desactivado no hay botón', () => {
     expect(montar().find('button').attributes('tabindex')).toBe('-1');
     expect(montar({ disabled: true }).find('button').exists()).toBe(false);

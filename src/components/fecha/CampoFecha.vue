@@ -8,7 +8,9 @@
  * - El dato (v-model) sigue siendo AAAA-MM-DD; solo se entrega completo y existente. Si se sale
  *   del campo con la fecha a medias, se entrega vacía y queda marcada.
  * - Fuera de min/max se entrega igual que antes y se marca; el calendario no deja elegirla.
- * - Calendario en español con el botón (no recibe Tab) o Alt + ↓.
+ * - Calendario en español con el botón (no recibe Tab) o Alt + ↓. Si el campo está dentro de una
+ *   caja que recorta lo que sobresale (p. ej. el paso del asistente), el calendario se abre por
+ *   encima de la página, junto al campo (punto 48).
  */
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { MESES, dentroDeRango, diasDelMes, esFechaIsoValida, hoyIso } from '@/helpers/fechaDDMMAAAA';
@@ -52,6 +54,7 @@ const DIAS_SEMANA = ['L', 'M', 'Mi', 'J', 'V', 'S', 'D'];
 const campo = ref(null);
 const raiz = ref(null);
 const abierto = ref(false);
+const calendario = ref(null);
 /** Ya se salió del campo: desde entonces una fecha a medias se marca. */
 const salio = ref(false);
 
@@ -201,7 +204,38 @@ const abrir = () => {
   if (!isoActual.value && esFechaIsoValida(props.min) && base < props.min) base = props.min;
   anioVista.value = Number(base.slice(0, 4));
   mesVista.value = Number(base.slice(5, 7));
+  flotante.value = dentroDeCajaQueRecorta();
+  if (flotante.value) colocar();
   abierto.value = true;
+};
+
+// ── Calendario sobre la página (punto 48) ─────────────────────────────────────
+/** El calendario va fuera del campo, encima de todo (la caja donde está lo recortaría). */
+const flotante = ref(false);
+const posicion = ref({});
+const ALTO_CALENDARIO = 300;
+
+function dentroDeCajaQueRecorta() {
+  for (let el = raiz.value?.parentElement; el && el !== document.body; el = el.parentElement) {
+    const s = getComputedStyle(el);
+    if (/(auto|scroll|hidden|clip)/.test(`${s.overflow}${s.overflowX}${s.overflowY}`)) return true;
+  }
+  return false;
+}
+
+/** Debajo del campo; arriba si abajo no cabe y arriba sí. */
+function colocar() {
+  const r = raiz.value?.getBoundingClientRect();
+  if (!r) return;
+  const alto = window.innerHeight;
+  const arriba = r.bottom + 4 + ALTO_CALENDARIO > alto && r.top - 4 - ALTO_CALENDARIO > 0;
+  const left = Math.max(8, Math.min(r.left, window.innerWidth - 256 - 8));
+  posicion.value = arriba
+    ? { left: `${left}px`, bottom: `${alto - r.top + 4}px` }
+    : { left: `${left}px`, top: `${r.bottom + 4}px` };
+}
+const recolocar = () => {
+  if (abierto.value && flotante.value) colocar();
 };
 const cerrar = (devolverFoco = true) => {
   abierto.value = false;
@@ -292,13 +326,27 @@ const alTeclear = (e) => {
 
 // Clic fuera: se cierra sin robar el foco
 const alClicFuera = (e) => {
-  if (abierto.value && raiz.value && !raiz.value.contains(e.target)) cerrar(false);
+  if (!abierto.value || !raiz.value || raiz.value.contains(e.target)) return;
+  if (calendario.value?.contains(e.target)) return;
+  cerrar(false);
 };
 watch(abierto, (v) => {
-  if (v) document.addEventListener('mousedown', alClicFuera, true);
-  else document.removeEventListener('mousedown', alClicFuera, true);
+  if (v) {
+    document.addEventListener('mousedown', alClicFuera, true);
+    // Sobre la página, sigue al campo si se desplaza la caja o cambia la ventana
+    window.addEventListener('scroll', recolocar, true);
+    window.addEventListener('resize', recolocar);
+  } else {
+    document.removeEventListener('mousedown', alClicFuera, true);
+    window.removeEventListener('scroll', recolocar, true);
+    window.removeEventListener('resize', recolocar);
+  }
 });
-onBeforeUnmount(() => document.removeEventListener('mousedown', alClicFuera, true));
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', alClicFuera, true);
+  window.removeEventListener('scroll', recolocar, true);
+  window.removeEventListener('resize', recolocar);
+});
 
 defineExpose({ focus: () => campo.value?.focus() });
 </script>
@@ -344,9 +392,15 @@ defineExpose({ focus: () => campo.value?.focus() });
       <i class="far fa-calendar-alt" aria-hidden="true"></i>
     </button>
 
+    <Teleport to="body" :disabled="!flotante">
     <div
       v-if="abierto"
-      class="campo-fecha-calendario absolute left-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white p-2 shadow-lg"
+      ref="calendario"
+      :class="[
+        'campo-fecha-calendario w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white p-2 shadow-lg',
+        flotante ? 'fixed z-[70]' : 'absolute left-0 top-full z-50 mt-1',
+      ]"
+      :style="flotante ? posicion : undefined"
       role="dialog"
       aria-label="Calendario"
       data-calendario-fecha
@@ -377,7 +431,11 @@ defineExpose({ focus: () => campo.value?.focus() });
             :data-dia="dia"
             :class="[
               'rounded py-1 disabled:cursor-not-allowed disabled:text-gray-300',
-              isoDelDia(dia) === isoActual ? 'bg-emerald-600 text-white' : 'text-gray-700 hover:bg-emerald-50',
+              !dentroDeRango(isoDelDia(dia), min, max)
+                ? 'campo-fecha-dia-fuera'
+                : isoDelDia(dia) === isoActual
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-gray-700 hover:bg-emerald-50',
               isoDelDia(dia) === hoy && isoDelDia(dia) !== isoActual ? 'font-semibold text-emerald-700' : '',
             ]"
             @mousedown.prevent
@@ -392,6 +450,7 @@ defineExpose({ focus: () => campo.value?.focus() });
         <button type="button" tabindex="-1" class="text-gray-500 hover:underline" @mousedown.prevent @click="cerrar()">Cerrar</button>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 
