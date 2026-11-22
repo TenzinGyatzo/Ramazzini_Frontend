@@ -35,6 +35,12 @@ const hallazgo = (texto: string): Accion => async (w) => {
   await w.find('textarea').setValue(texto);
 };
 
+/** Punto 55: contesta la pregunta del resumen. */
+const elegir = (valor: 'Si' | 'No'): Accion => async (w) => {
+  await w.find(`input[type="radio"][value="${valor}"]`).setValue(true);
+  await flushPromises();
+};
+
 const medir = (valores: Record<string, number>): Accion => async (w) => {
   for (const [id, valor] of Object.entries(valores)) {
     await w.find(`#${id}`).setValue(String(valor));
@@ -107,7 +113,7 @@ describe('exploración física: los dos modos mandan lo mismo', () => {
     [Step3, 3, nada],
     [Step4, 4, hallazgo('Cicatriz frontal')],
     [Step15, 15, nada],
-    [Step31, 31, nada],
+    [Step31, 31, elegir('Si')],
   ];
 
   it('con mediciones, un hallazgo y el resto por defecto', async () => {
@@ -119,7 +125,7 @@ describe('exploración física: los dos modos mandan lo mismo', () => {
     expect(vista.craneoCara).toBe('Cicatriz frontal');
     expect(vista.torax).toBe('Sin hallazgos');
     expect(vista.marcha).toBe('Sin hallazgos');
-    // El resumen sigue a los hallazgos
+    // Punto 55: al elegir «Sí», el borrador con los hallazgos
     expect(vista.resumenExploracionFisicaPregunta).toBe('Si');
     expect(vista.resumenExploracionFisica).toBe('Cicatriz frontal.');
   });
@@ -128,7 +134,15 @@ describe('exploración física: los dos modos mandan lo mismo', () => {
     const sinTocar: Captura = captura.map(([p, n]) => [p, n, nada]);
     const vista = await conVistaPrevia(sinTocar, false);
     expect(await conCapturaRapida(sinTocar, false)).toEqual(vista);
-    expect(vista.resumenExploracionFisica).toBe('Se encuentra clínicamente sano');
+    // Punto 55: sin contestar no se escribe resumen (el aviso lo pide al guardar)
+    expect(vista.resumenExploracionFisica ?? '').toBe('');
     expect(vista.ojos).toBe('Sin hallazgos');
+  });
+
+  it('punto 55: con «No» en el resumen, su texto', async () => {
+    const conNo: Captura = captura.map(([p, n]) => [p, n, p === Step31 ? elegir('No') : nada]);
+    const vista = await conVistaPrevia(conNo, false);
+    expect(await conCapturaRapida(conNo, false)).toEqual(vista);
+    expect(vista.resumenExploracionFisica).toBe('Se encuentra clínicamente sano');
   });
 });

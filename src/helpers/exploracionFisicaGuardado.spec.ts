@@ -5,6 +5,7 @@ import {
   completarRespuestasPorDefecto,
   prepararExploracionFisicaParaGuardar,
   problemasHallazgosExploracionFisica,
+  problemasResumenExploracionFisica,
   resumenAutomaticoExploracionFisica,
 } from './exploracionFisicaGuardado';
 
@@ -17,8 +18,9 @@ describe('exploración física: respuestas por defecto (punto 41)', () => {
       expect(df[p.pregunta]).toBe('No');
       expect(df[p.campo]).toBe(SIN_HALLAZGOS);
     }
-    expect(df.resumenExploracionFisicaPregunta).toBe('No');
-    expect(df.resumenExploracionFisica).toBe('Se encuentra clínicamente sana');
+    // Punto 55: el resumen no se preselecciona
+    expect(df.resumenExploracionFisicaPregunta).toBeUndefined();
+    expect(df.resumenExploracionFisica).toBeUndefined();
   });
 
   it('solo lo revisado, y no pisa lo capturado (idempotente)', () => {
@@ -39,12 +41,12 @@ describe('exploración física: respuestas por defecto (punto 41)', () => {
     expect(df.abdomenPregunta).toBe('No');
   });
 
-  it('el resumen sigue a los hallazgos', () => {
+  it('el borrador del resumen junta los hallazgos; punto 55: completar no contesta la pregunta', () => {
     const df = { craneoCara: 'Cicatriz frontal', ojos: SIN_HALLAZGOS, rodillas: 'Crepitación' };
     expect(resumenAutomaticoExploracionFisica(df)).toBe('Cicatriz frontal. Crepitación.');
     const completo = completarRespuestasPorDefecto({ ...df, craneoCaraPregunta: 'Si', rodillasPregunta: 'Si' }, { esMujer: false });
-    expect(completo.resumenExploracionFisicaPregunta).toBe('Si');
-    expect(completo.resumenExploracionFisica).toBe('Cicatriz frontal. Crepitación.');
+    expect(completo.resumenExploracionFisicaPregunta).toBeUndefined();
+    expect(completo.resumenExploracionFisica).toBeUndefined();
   });
 });
 
@@ -61,12 +63,24 @@ describe('exploración física: lo que se guarda', () => {
     expect(df.circunferenciaCinturaSeDesconoce).toBe(false);
   });
 
-  it('con «Sí» y resumen vacío, los hallazgos', () => {
+  it('punto 55: con «Sí» y resumen vacío no se genera nada; el aviso lo pide', () => {
     const df = prepararExploracionFisicaParaGuardar(
       { resumenExploracionFisicaPregunta: 'Si', resumenExploracionFisica: '', nevosPregunta: 'Si', nevos: 'Nevo dorsal' },
       { esMujer: true },
     );
-    expect(df.resumenExploracionFisica).toBe('Nevo dorsal.');
+    expect(df.resumenExploracionFisica).toBe('');
+    expect(problemasResumenExploracionFisica(df, true)).toHaveLength(1);
+  });
+
+  it('punto 55: sin contestar se pide; con «No» o con texto, no', () => {
+    expect(problemasResumenExploracionFisica({}, false)[0]).toMatchObject({
+      paso: 31,
+      campo: 'resumenExploracionFisica',
+      mensaje: 'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
+    });
+    expect(problemasResumenExploracionFisica({ resumenExploracionFisicaPregunta: 'No' }, false)).toEqual([]);
+    // Documento guardado (sin la pregunta): el texto basta
+    expect(problemasResumenExploracionFisica({ resumenExploracionFisica: 'Nevo dorsal.' }, false)).toEqual([]);
   });
 });
 

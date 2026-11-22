@@ -130,7 +130,7 @@ describe('historia clínica: los dos modos mandan lo mismo', () => {
     [Step28, nada],
     [Step37, nada],
     [Step45, nada],
-    [Step46, nada],
+    [Step46, marcarSi],
   ];
 
   it('mujer, con antecedentes capturados y el resto por defecto', async () => {
@@ -144,7 +144,7 @@ describe('historia clínica: los dos modos mandan lo mismo', () => {
     expect(vista.menarca).toBe('12-14 años');
     expect(vista.embarazoActual).toBe('Negado');
     expect(vista.secuelas).toBe('Sin secuelas');
-    // El resumen sigue a los hallazgos aunque estuviera abierto desde el principio
+    // Punto 55: al elegir «Sí», el borrador con los hallazgos (aunque estuviera abierto antes)
     expect(vista.resumenHistoriaClinicaPregunta).toBe('Si');
     expect(vista.resumenHistoriaClinica).toBe('Penicilina.');
     expect(vista.motivoExamen).toBe('Ingreso');
@@ -155,6 +155,17 @@ describe('historia clínica: los dos modos mandan lo mismo', () => {
     const vista = await conVistaPrevia(sinTocar, false);
     expect(await conCapturaRapida(sinTocar, false)).toEqual(vista);
     expect(vista.menarca).toBeUndefined();
+    // Punto 55: sin contestar no se escribe resumen (el aviso lo pide al guardar)
+    expect(vista.resumenHistoriaClinica ?? '').toBe('');
+  });
+
+  it('punto 55: con «No» en el resumen, su texto', async () => {
+    const conNo: Captura = [[Step1, nada], [Step46, async (w) => {
+      await w.find('input[type="radio"][value="No"]').setValue(true);
+      await flushPromises();
+    }]];
+    const vista = await conVistaPrevia(conNo, false);
+    expect(await conCapturaRapida(conNo, false)).toEqual(vista);
     expect(vista.resumenHistoriaClinica).toBe('Se refiere actualmente asintomático');
   });
 
@@ -169,7 +180,8 @@ describe('historia clínica: los dos modos mandan lo mismo', () => {
     const datos = envio(df, true);
     expect(datos.alergicos).toBe('No');
     expect(datos.menarca).toBe('12-14 años');
-    expect(datos.resumenHistoriaClinica).toBe('Se refiere actualmente asintomática');
+    // Punto 55: el resumen no se completa solo
+    expect(datos.resumenHistoriaClinica).toBeUndefined();
   });
 
   it('«Sí» sin detalle queda vacío (no «Negado»), para que se pida al guardar', async () => {

@@ -126,14 +126,37 @@ export function completarRespuestasPorDefecto(
     if (df[p.pregunta] === 'No' && vacio(df[p.campo])) df[p.campo] = SIN_HALLAZGOS;
   }
 
-  if (visitado(31) && vacio(df.resumenExploracionFisicaPregunta)) {
-    const automatico = resumenAutomaticoExploracionFisica(df);
-    df.resumenExploracionFisicaPregunta = automatico ? 'Si' : 'No';
-    if (vacio(df.resumenExploracionFisica)) {
-      df.resumenExploracionFisica = automatico || textoResumenPorDefecto(esMujer);
-    }
+  // Punto 55: el resumen no se preselecciona; con «No» elegido, su texto
+  if (visitado(31) && df.resumenExploracionFisicaPregunta === 'No' && vacio(df.resumenExploracionFisica)) {
+    df.resumenExploracionFisica = textoResumenPorDefecto(esMujer);
   }
   return df;
+}
+
+/**
+ * Punto 55: la respuesta a «¿Hay hallazgos significativos por resumir?». El servidor no la
+ * guarda: al editar se deduce del texto (el de «No» o uno escrito). '' = sin contestar.
+ */
+export function preguntaResumenExploracionFisica(df: Datos, esMujer: boolean): 'Si' | 'No' | '' {
+  const p = df.resumenExploracionFisicaPregunta;
+  if (p === 'Si' || p === 'No') return p;
+  if (vacio(df.resumenExploracionFisica)) return '';
+  return df.resumenExploracionFisica === textoResumenPorDefecto(esMujer) ? 'No' : 'Si';
+}
+
+/** Punto 55: sin contestar, o «Sí» sin texto, se pide al guardar. */
+export function problemasResumenExploracionFisica(df: Datos, esMujer: boolean): ProblemaHallazgo[] {
+  const pregunta = preguntaResumenExploracionFisica(df, esMujer);
+  if (pregunta === 'No' || (pregunta === 'Si' && !vacio(df.resumenExploracionFisica))) return [];
+  return [
+    {
+      paso: 31,
+      campo: 'resumenExploracionFisica',
+      nombre: 'Resumen de la exploración física',
+      falta: true,
+      mensaje: 'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
+    },
+  ];
 }
 
 /**
@@ -143,10 +166,9 @@ export function completarRespuestasPorDefecto(
  */
 export function prepararExploracionFisicaParaGuardar(df: Datos, { esMujer }: { esMujer: boolean }): Datos {
   completarRespuestasPorDefecto(df, { esMujer });
-  if (df.resumenExploracionFisicaPregunta === 'No') {
+  // Punto 55: nada se genera al guardar; sin contestar o «Sí» sin texto lo pide el aviso
+  if (preguntaResumenExploracionFisica(df, esMujer) === 'No') {
     df.resumenExploracionFisica = textoResumenPorDefecto(esMujer);
-  } else if (vacio(df.resumenExploracionFisica)) {
-    df.resumenExploracionFisica = resumenAutomaticoExploracionFisica(df);
   }
   for (const campo of MEDICIONES) if (df[campo] === undefined) df[campo] = null;
   for (const campo of CATEGORIAS) if (df[campo] === undefined || df[campo] === null) df[campo] = '';

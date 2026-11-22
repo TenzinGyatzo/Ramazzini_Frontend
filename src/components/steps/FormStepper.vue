@@ -442,6 +442,7 @@ import {
   completarRespuestasPorDefecto as completarExploracionPorDefecto,
   prepararExploracionFisicaParaGuardar,
   problemasHallazgosExploracionFisica,
+  problemasResumenExploracionFisica,
 } from '@/helpers/exploracionFisicaGuardado';
 import {
   normalizeNotaMedicaConfirmacionDiagnostica,
@@ -2058,6 +2059,8 @@ export default {
         ...invalidos,
         // Punto 41: hallazgo «Sí» sin descripción (decisión del usuario)
         ...problemasHallazgosExploracionFisica(df),
+        // Punto 55: el resumen se contesta explícitamente
+        ...problemasResumenExploracionFisica(df, esMujerTrabajadorActual()),
       ]);
     };
 

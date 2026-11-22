@@ -25,15 +25,18 @@ describe('historia clínica: respuestas preseleccionadas (punto 39)', () => {
     expect(df.accidenteLaboral).toBe('No');
     expect(df.accidenteLaboralEspecificar).toBe('Niega haber sufrido riesgos de trabajo');
     expect(df.secuelas).toBe('Sin secuelas');
-    expect(df.resumenHistoriaClinicaPregunta).toBe('No');
-    expect(df.resumenHistoriaClinica).toBe('Se refiere actualmente asintomática');
+    // Punto 55: el resumen no se preselecciona
+    expect(df.resumenHistoriaClinicaPregunta).toBeUndefined();
+    expect(df.resumenHistoriaClinica).toBeUndefined();
+    // Con «No» elegido, su texto
+    const conNo = completarRespuestasPorDefecto({ resumenHistoriaClinicaPregunta: 'No' }, { esMujer: true });
+    expect(conNo.resumenHistoriaClinica).toBe('Se refiere actualmente asintomática');
   });
 
   it('a un hombre no se le escribe nada ginecoobstétrico', () => {
     const df = completarRespuestasPorDefecto({}, { esMujer: false });
     expect(df.menarca).toBeUndefined();
     expect(df.embarazoActual).toBeUndefined();
-    expect(df.resumenHistoriaClinica).toBe('Se refiere actualmente asintomático');
   });
 
   it('no toca lo que ya tiene respuesta (documento existente o capturado)', () => {
@@ -82,7 +85,7 @@ describe('historia clínica: resumen al guardar', () => {
     expect(df.resumenHistoriaClinica).toBe(textoResumenPorDefecto(false));
   });
 
-  it('«Sí» → lo escrito o, si está vacío, los hallazgos', () => {
+  it('punto 55: «Sí» → lo escrito; vacío o sin contestar no se genera nada (lo pide el aviso)', () => {
     const conTexto = prepararHistoriaClinicaParaGuardar(
       { resumenHistoriaClinicaPregunta: 'Si', resumenHistoriaClinica: 'Propio' },
       { esMujer: false },
@@ -92,7 +95,20 @@ describe('historia clínica: resumen al guardar', () => {
       { resumenHistoriaClinicaPregunta: 'Si', alergicos: 'Si', alergicosEspecificar: 'Penicilina' },
       { esMujer: false },
     );
-    expect(vacio.resumenHistoriaClinica).toBe('Penicilina.');
+    expect(vacio.resumenHistoriaClinica).toBeUndefined();
+    const sinContestar = prepararHistoriaClinicaParaGuardar({ alergicos: 'Si', alergicosEspecificar: 'Penicilina' }, { esMujer: false });
+    expect(sinContestar.resumenHistoriaClinica).toBeUndefined();
+  });
+
+  it('punto 55: al editar un documento sin la pregunta guardada, se deduce del texto', () => {
+    // El texto de «No» se reescribe (por si cambió el sexo); uno propio se conserva
+    expect(
+      prepararHistoriaClinicaParaGuardar({ resumenHistoriaClinica: 'Se refiere actualmente asintomático' }, { esMujer: false })
+        .resumenHistoriaClinica,
+    ).toBe('Se refiere actualmente asintomático');
+    expect(
+      prepararHistoriaClinicaParaGuardar({ resumenHistoriaClinica: 'Diabetes tipo 2.' }, { esMujer: false }).resumenHistoriaClinica,
+    ).toBe('Diabetes tipo 2.');
   });
 
   it('el resumen automático ignora «Negado» y «Sin secuelas»', () => {

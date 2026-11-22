@@ -187,12 +187,22 @@ export function completarRespuestasPorDefecto(
     }
   }
 
-  if (!visitado(46)) return df;
-  if (vacio(df.resumenHistoriaClinicaPregunta)) df.resumenHistoriaClinicaPregunta = 'No';
-  if (df.resumenHistoriaClinicaPregunta === 'No' && vacio(df.resumenHistoriaClinica)) {
+  // Punto 55: el resumen no se preselecciona; con «No» elegido, su texto
+  if (visitado(46) && df.resumenHistoriaClinicaPregunta === 'No' && vacio(df.resumenHistoriaClinica)) {
     df.resumenHistoriaClinica = textoResumenPorDefecto(esMujer);
   }
   return df;
+}
+
+/**
+ * Punto 55: la respuesta a «¿Hay hallazgos significativos por resumir?». El servidor no la
+ * guarda: al editar se deduce del texto (el de «No» o uno escrito). '' = sin contestar.
+ */
+export function preguntaResumenHistoriaClinica(df: Datos, esMujer: boolean): 'Si' | 'No' | '' {
+  const p = df.resumenHistoriaClinicaPregunta;
+  if (p === 'Si' || p === 'No') return p;
+  if (vacio(df.resumenHistoriaClinica)) return '';
+  return df.resumenHistoriaClinica === textoResumenPorDefecto(esMujer) ? 'No' : 'Si';
 }
 
 /**
@@ -203,10 +213,9 @@ export function prepararHistoriaClinicaParaGuardar(df: Datos, { esMujer }: { esM
   completarRespuestasPorDefecto(df, { esMujer });
   // Solo de la pantalla: si el usuario eligió el motivo (punto 53)
   delete df.motivoExamenElegido;
-  if (df.resumenHistoriaClinicaPregunta === 'No') {
+  // Punto 55: nada se genera al guardar; sin contestar o «Sí» sin texto lo pide el aviso
+  if (preguntaResumenHistoriaClinica(df, esMujer) === 'No') {
     df.resumenHistoriaClinica = textoResumenPorDefecto(esMujer);
-  } else if (vacio(df.resumenHistoriaClinica)) {
-    df.resumenHistoriaClinica = resumenAutomaticoHistoriaClinica(df);
   }
   return df;
 }
