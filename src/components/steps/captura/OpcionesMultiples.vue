@@ -22,7 +22,7 @@ const emit = defineEmits<{ alternar: [valor: T] }>();
       :key="op.valor"
       :title="op.titulo"
       :class="[
-        'relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-sm cursor-pointer select-none whitespace-nowrap transition-colors duration-150 focus-within:ring-2 focus-within:ring-emerald-500',
+        'relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-sm cursor-pointer select-none whitespace-nowrap transition-colors duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-500',
         seleccion.includes(op.valor)
           ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold'
           : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50',

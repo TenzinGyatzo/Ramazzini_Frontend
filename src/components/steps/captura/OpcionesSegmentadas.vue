@@ -2,6 +2,7 @@
 /**
  * Punto 38: opciones excluyentes como botones juntos (en lugar de tarjetas grandes), en los
  * dos modos. Son radios de verdad: se recorren con Tab y flechas, y se eligen con espacio.
+ * El anillo de enfoque sale solo con el teclado (con el ratón parecía que seguía elegida).
  */
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 
@@ -57,7 +58,7 @@ function alHacerClic(valor: T) {
           : ancho
             ? 'flex-auto justify-center px-2 whitespace-nowrap sm:flex-none sm:px-4 h-10'
             : 'flex-auto justify-center px-2 whitespace-nowrap h-10',
-        'relative inline-flex items-center gap-1.5 text-sm cursor-pointer select-none transition-colors duration-150 focus-within:z-10 focus-within:ring-2 focus-within:ring-inset focus-within:ring-emerald-500',
+        'relative inline-flex items-center gap-1.5 text-sm cursor-pointer select-none transition-colors duration-150 has-[:focus-visible]:z-10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-emerald-500',
         i > 0 && !separadas ? 'border-l border-gray-300' : '',
         modelo === op.valor
           ? ['bg-emerald-50 text-emerald-700 font-semibold', separadas ? '!border-emerald-500' : '']
