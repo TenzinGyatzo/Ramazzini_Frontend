@@ -114,8 +114,9 @@ describe('aptitud: escritura en el formulario', () => {
       completarRespuestasPorDefecto(porSecciones, { contexto: contexto(), sexo: 'Femenino', hoy: HOY, visitado: (p) => vistos.has(p) });
     }
     const deUnaVez = completarRespuestasPorDefecto(base(), { contexto: contexto(), sexo: 'Femenino', hoy: HOY, visitado: () => false });
-    prepararAptitudParaGuardar(porSecciones, { contexto: contexto(), sexo: 'Femenino' });
-    expect(prepararAptitudParaGuardar(deUnaVez, { contexto: contexto(), sexo: 'Femenino' })).toEqual(porSecciones);
+    // Con la misma fecha de hoy (antes tomaba la del reloj y fallaba al cambiar el día)
+    prepararAptitudParaGuardar(porSecciones, { contexto: contexto(), sexo: 'Femenino', hoy: HOY });
+    expect(prepararAptitudParaGuardar(deUnaVez, { contexto: contexto(), sexo: 'Femenino', hoy: HOY })).toEqual(porSecciones);
   });
 });
 

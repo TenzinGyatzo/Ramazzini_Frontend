@@ -401,7 +401,7 @@ export function elegirAptitudPorDefectoAlSalir(df: Datos | null | undefined): bo
 
 export function prepararAptitudParaGuardar(
   df: Datos,
-  opciones: { contexto?: ContextoAptitud | null; sexo?: string } = {},
+  opciones: { contexto?: ContextoAptitud | null; sexo?: string; hoy?: string } = {},
 ): Datos {
   return completarRespuestasPorDefecto(df, opciones);
 }
