@@ -3,8 +3,8 @@
  * anterior del trabajador (el más reciente con fecha anterior, sin anulados), con un aviso y la
  * opción «Empezar en blanco».
  *
- * De los antecedentes se copian los «Sí» con su detalle (los «No» salen igual por defecto); de
- * los gineco-obstétricos, todo (también los valores típicos: dejarlos fue una respuesta).
+ * Se copian todas las respuestas, también los «No» y los valores típicos: dejarlos así fue una
+ * respuesta (decisión del usuario).
  * - Historia clínica: antecedentes heredofamiliares, personales y no patológicos; gineco-
  *   obstétricos SIN la FUM ni el embarazo actual (cambian); empleos anteriores y accidente
  *   laboral. No el motivo, la fecha ni el resumen (se arma de nuevo).
@@ -58,12 +58,11 @@ export function documentoAnterior(docs: Datos[], tipo: TipoConAnterior, fecha: s
 export function datosATraer(tipo: TipoConAnterior, anterior: Datos, { esMujer }: { esMujer: boolean }): Datos {
   const datos: Datos = {};
   if (tipo === 'historiaClinica') {
+    // Todas las respuestas, «No» incluidos («Negado», «Adecuada»): también fueron respuestas
     for (const p of PREGUNTAS_ANTECEDENTES) {
-      if (anterior[p.campo] !== 'Si') continue;
-      datos[p.campo] = 'Si';
-      if (conTexto(anterior[p.especificar]) && anterior[p.especificar] !== p.textoNo) {
-        datos[p.especificar] = anterior[p.especificar];
-      }
+      if (anterior[p.campo] !== 'Si' && anterior[p.campo] !== 'No') continue;
+      datos[p.campo] = anterior[p.campo];
+      if (conTexto(anterior[p.especificar])) datos[p.especificar] = anterior[p.especificar];
     }
     // Gineco: todo lo que tenga, también los valores típicos y los «No» (dejarlos fue una
     // respuesta, no solo lo preseleccionado; decisión del usuario), salvo FUM y embarazo
@@ -82,9 +81,8 @@ export function datosATraer(tipo: TipoConAnterior, anterior: Datos, { esMujer }:
         if (conTexto(anterior[campo])) datos[campo] = anterior[campo];
       }
     }
-    if (anterior.accidenteLaboral === 'Si') {
-      datos.accidenteLaboral = 'Si';
-      // Con «Sí», «Ninguno» y «Sin secuelas» son respuestas (no los textos de «No»)
+    if (anterior.accidenteLaboral === 'Si' || anterior.accidenteLaboral === 'No') {
+      datos.accidenteLaboral = anterior.accidenteLaboral;
       for (const campo of Object.keys(ACCIDENTE_LABORAL_NO)) {
         if (conTexto(anterior[campo])) datos[campo] = anterior[campo];
       }

@@ -53,12 +53,16 @@ describe('datos del documento anterior (punto 54)', () => {
     expect(documentoAnterior([], 'historiaClinica', '2026-11-22')).toBeNull();
   });
 
-  it('historia clínica: los «Sí» con su detalle, gineco completo (también lo típico) sin FUM ni embarazo, empleos y accidente', () => {
+  it('historia clínica: todas las respuestas (también «No»), gineco completo (también lo típico) sin FUM ni embarazo, empleos y accidente', () => {
     expect(datosATraer('historiaClinica', hcAnterior, { esMujer: true })).toEqual({
       diabeticosPP: 'Si',
       diabeticosPPEspecificar: 'Diabetes tipo 2',
+      hipertensivosPP: 'No',
+      hipertensivosPPEspecificar: 'Negado',
       alcoholismo: 'Si',
       alcoholismoEspecificar: 'Social, fines de semana',
+      alimentacionDeficiente: 'No',
+      alimentacionDeficienteEspecificar: 'Adecuada',
       menarca: '11 años',
       duracionPromedio: '5 días',
       gestas: '2',
@@ -144,6 +148,21 @@ describe('datos del documento anterior (punto 54)', () => {
       await cargarDatosAnteriores('historiaClinica', 't1', () => df, { esMujer: false, hoy: '2026-11-22' });
       expect(datosAnteriores.cargando).toBe(false);
       expect(datosAnteriores.fecha).toBeNull();
+    });
+  });
+
+  it('accidente laboral con «No» también se trae, con sus textos', () => {
+    expect(
+      datosATraer(
+        'historiaClinica',
+        { accidenteLaboral: 'No', accidenteLaboralEspecificar: 'Niega haber sufrido riesgos de trabajo', descripcionDelDano: 'Ninguno', secuelas: 'Sin secuelas' },
+        { esMujer: false },
+      ),
+    ).toEqual({
+      accidenteLaboral: 'No',
+      accidenteLaboralEspecificar: 'Niega haber sufrido riesgos de trabajo',
+      descripcionDelDano: 'Ninguno',
+      secuelas: 'Sin secuelas',
     });
   });
 });
