@@ -61,7 +61,7 @@ onUnmounted(() => {
   <Teleport to="body">
     <div
       v-if="open"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/75 backdrop-blur-sm"
+      class="fixed inset-0 z-[var(--z-bloqueo)] flex items-center justify-center bg-gray-900/75 backdrop-blur-sm"
       @click="handleOverlayClick"
     >
       <div

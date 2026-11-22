@@ -2216,7 +2216,7 @@ a.nombre-expediente .folio-tooltip {
 
 .folio-tooltip-floating {
   position: fixed;
-  z-index: 10000;
+  z-index: var(--z-tooltip);
   display: none;
   max-width: 280px;
   padding: 3px 8px;
@@ -2234,7 +2234,7 @@ a.nombre-expediente .folio-tooltip {
 
 .expediente-tooltip-floating {
   position: fixed;
-  z-index: 10001;
+  z-index: calc(var(--z-tooltip) + 1);
   display: none;
   max-width: 360px;
   padding: 10px 12px;

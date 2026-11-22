@@ -373,7 +373,7 @@ const {
       :id="listboxId"
       ref="listRef"
       role="listbox"
-      class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+      class="absolute z-[var(--z-tooltip)] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
     >
       <li
         v-for="(result, index) in results"
@@ -397,7 +397,7 @@ const {
     </ul>
 
     <div v-else-if="showResults && query.length >= 2 && !loading"
-         class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
+         class="absolute z-[var(--z-tooltip)] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
       No se encontraron estados para "{{ query }}"
     </div>
 

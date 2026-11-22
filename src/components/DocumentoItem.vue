@@ -6129,7 +6129,7 @@ watch(firmaDisponibilidadPdf, (actual, anterior) => {
         <Transition name="tooltip-fade">
             <div
                 v-if="showTooltip"
-                class="fixed z-[9999] pointer-events-none"
+                class="fixed z-[var(--z-tooltip)] pointer-events-none"
                 :style="{
                     top: `${tooltipPosition.top}px`,
                     left: `${tooltipPosition.left}px`,

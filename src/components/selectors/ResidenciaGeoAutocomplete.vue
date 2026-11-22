@@ -716,7 +716,7 @@ const {
         :id="municipioListboxId"
         ref="municipioListRef"
         role="listbox"
-        class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+        class="absolute z-[var(--z-tooltip)] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
       >
         <li
           v-for="(result, index) in municipioResults"
@@ -740,7 +740,7 @@ const {
       </ul>
 
       <div v-else-if="municipioShowResults && municipioQuery.length >= 2 && !municipioLoading" 
-           class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
+           class="absolute z-[var(--z-tooltip)] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
         No se encontraron municipios para "{{ municipioQuery }}"
       </div>
 
@@ -797,7 +797,7 @@ const {
         :id="localidadListboxId"
         ref="localidadListRef"
         role="listbox"
-        class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+        class="absolute z-[var(--z-tooltip)] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-y-auto"
       >
         <li
           v-for="(result, index) in localidadResults"
@@ -821,7 +821,7 @@ const {
       </ul>
 
       <div v-else-if="localidadShowResults && localidadQuery.length >= 2 && !localidadLoading" 
-           class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
+           class="absolute z-[var(--z-tooltip)] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
         No se encontraron localidades para "{{ localidadQuery }}"
       </div>
 

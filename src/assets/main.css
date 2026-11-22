@@ -7,8 +7,29 @@
   --sidebar-width: 80px;
   --content-margin: 80px;
   --sidebar-difference: 0px; /* Diferencia adicional cuando está expandido */
+  /*
+   * Capas de la pantalla (punto 49): de abajo hacia arriba. Usar estas variables en lugar de
+   * números sueltos (z-[var(--z-…)]).
+   * 0-20   dentro de la página (encabezados pegajosos, menús de un campo)
+   * 30     barra lateral
+   * 35     botones globales (engrane, buscador, guías) y sus menús
+   * 38     logo de la empresa en la captura (tapa el engrane en esa esquina)
+   * 40     avisos fijos de la página y fondos de las hojas en teléfono
+   * 50     modales, visor de imágenes, panel de vista previa
+   * 60-100 modales sobre modales, cajón de resultados, buscador global
+   * 110    calendario del campo de fecha (encima de cualquier modal)
+   * 1090   avisos emergentes (avisos.css)
+   * 1100   tooltips y listas flotantes
+   * 9999   pantalla de bloqueo, acuerdo de confidencialidad (encima de todo)
+   */
   --z-sidebar: 30;
+  --z-botones-globales: 35;
+  --z-logo-empresa: 38;
+  --z-avisos-pagina: 40;
   --z-modal: 50;
+  --z-calendario: 110;
+  --z-tooltip: 1100;
+  --z-bloqueo: 9999;
 }
 
 @media (max-width: 768px) {

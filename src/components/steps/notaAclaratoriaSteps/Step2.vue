@@ -335,7 +335,7 @@ const hideResults = () => {
         
         <!-- Dropdown con resultados -->
         <ul v-if="showResults && filteredDocumentos.length > 0" 
-            class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-96 overflow-y-auto">
+            class="absolute z-[var(--z-tooltip)] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-96 overflow-y-auto">
           <li 
             v-for="opcion in filteredDocumentos" 
             :key="opcion.value"
@@ -385,7 +385,7 @@ const hideResults = () => {
         </ul>
 
         <div v-else-if="showResults && query.length >= 1 && filteredDocumentos.length === 0" 
-             class="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
+             class="absolute z-[var(--z-tooltip)] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-gray-500 text-center text-sm italic">
           No se encontraron documentos para "{{ query }}"
         </div>
       </div>

@@ -771,7 +771,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
     <!-- Logo de la empresa: arriba a la derecha, se va con la página (fijo tapaba campos al desplazarse) -->
     <div v-if="empresas.currentEmpresa?.logotipoEmpresa?.data && 
       ['crear-documento'].includes(route.name as string)"
-      class="absolute top-4 right-4 h-16 w-16 md:h-24 md:w-24 rounded-lg z-[55] flex flex-col items-center justify-center overflow-hidden bg-white shadow-lg border border-gray-200">
+      class="absolute top-4 right-4 h-16 w-16 md:h-24 md:w-24 rounded-lg z-[var(--z-logo-empresa)] flex flex-col items-center justify-center overflow-hidden bg-white shadow-lg border border-gray-200">
       <img :src="'/uploads/logos/' + empresas.currentEmpresa?.logotipoEmpresa?.data"
       :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial" 
       class="max-h-full max-w-full object-contain p-2">
@@ -833,7 +833,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
     <!-- Primera notificación: campos pendientes -->
     <Transition name="slide-up">
       <div v-if="datosCargados && mostrarMensajePendiente && isNotificationVisible" 
-            class="hidden sm:block fixed bottom-6 right-6 z-50 bg-white text-gray-700 border-l-4 border-red-500 rounded-xl shadow-lg p-4 max-w-sm transform hover:scale-105 transition-transform duration-500 ease-in-out">
+            class="hidden sm:block fixed bottom-6 right-6 z-[var(--z-avisos-pagina)] bg-white text-gray-700 border-l-4 border-red-500 rounded-xl shadow-lg p-4 max-w-sm transform hover:scale-105 transition-transform duration-500 ease-in-out">
         <div class="flex items-start gap-3">
           <i :class="[iconoNotificacion, colorNotificacion, 'text-xl mt-1']"></i>
           <div class="flex-1">
@@ -861,7 +861,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       <div
         v-if="datosCargados && proveedorSaludStore.isSIRES && mostrarBannerBorradores && isNotificationBorradoresVisible && inicioLayout.showNmBanner"
         data-testid="layout-nm-banner"
-        class="hidden sm:block fixed bottom-6 right-6 z-50 bg-white text-gray-700 rounded-xl shadow-lg p-4 max-w-sm transform hover:scale-105 transition-transform duration-500 ease-in-out border-l-4"
+        class="hidden sm:block fixed bottom-6 right-6 z-[var(--z-avisos-pagina)] bg-white text-gray-700 rounded-xl shadow-lg p-4 max-w-sm transform hover:scale-105 transition-transform duration-500 ease-in-out border-l-4"
         :class="getBannerBorderClass(borradoresNivelMaximo)"
         :style="{ bottom: borradoresBannerBottom }"
       >
@@ -906,7 +906,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       <button 
         v-if="isVisible"
         @click="toggleMenu"
-        class="fixed top-6 right-6 p-4 bg-white text-gray-700 rounded-full hover:bg-gray-50 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl border border-gray-200 z-50 transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-200"
+        class="fixed top-4 right-4 sm:top-6 sm:right-6 p-4 bg-white text-gray-700 rounded-full hover:bg-gray-50 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl border border-gray-200 z-[var(--z-botones-globales)] transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-200"
         :aria-label="isMenuOpen ? 'Cerrar menú de configuración' : 'Abrir menú de configuración'"
         >
         <svg 
@@ -935,7 +935,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       <div 
         v-if="isMenuOpen"
         ref="menuRef"
-        class="fixed top-20 right-6 bg-white rounded-2xl shadow-2xl p-6 w-72 z-40 border border-gray-100 backdrop-blur-sm bg-white/95 overflow-visible">
+        class="fixed top-20 right-4 sm:right-6 bg-white rounded-2xl shadow-2xl p-6 w-72 z-[var(--z-botones-globales)] border border-gray-100 backdrop-blur-sm bg-white/95 overflow-visible">
 
         <div class="max-h-[70vh] overflow-y-auto pr-3">
           <div class="space-y-4">
@@ -999,7 +999,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                 <div v-if="logotipoPendiente" class="relative group" ref="tooltipLogotipoRef" @mouseenter="showTooltipLogotipoHandler" @mouseleave="showTooltipLogotipo = false">
                   <i :class="['fa-solid fa-triangle-exclamation text-red-500 text-lg cursor-pointer', animacionTooltipProveedor]"></i>
                   <Teleport to="body">
-                    <div v-if="showTooltipLogotipo" class="fixed z-[9999] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipLogotipoStyle">
+                    <div v-if="showTooltipLogotipo" class="fixed z-[var(--z-tooltip)] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipLogotipoStyle">
                       <p class="font-semibold mb-1 text-base">Se requiere un logotipo para el encabezado del informe</p>
                     </div>
                   </Teleport>
@@ -1009,7 +1009,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                 <div v-if="mostrarTooltipProveedor" class="relative group" ref="tooltipProveedorRef" @mouseenter="showTooltipProveedorHandler" @mouseleave="showTooltipProveedor = false">
                   <i :class="['fa-solid fa-exclamation-circle text-yellow-500 text-lg cursor-pointer', animacionTooltipProveedor]"></i>
                   <Teleport to="body">
-                    <div v-if="showTooltipProveedor" class="fixed z-[9999] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipProveedorStyle">
+                    <div v-if="showTooltipProveedor" class="fixed z-[var(--z-tooltip)] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipProveedorStyle">
                       <p class="font-semibold mb-1 text-base">Para un mejor pie de página, se recomienda guardar:</p>
                       <ul class="list-disc pl-4 mt-2 text-gray-300">
                         <li v-for="item in camposPendientesProveedor" :key="item">{{ item }}</li>
@@ -1046,7 +1046,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                 <div v-if="mostrarTooltipMedico" class="relative group" ref="tooltipMedicoRef" @mouseenter="showTooltipMedicoHandler" @mouseleave="showTooltipMedico = false">
                   <i :class="['fa-solid fa-exclamation-circle text-yellow-500 text-lg cursor-pointer', animacionTooltipMedico]"></i>
                   <Teleport to="body">
-                    <div v-if="showTooltipMedico" class="fixed z-[9999] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipMedicoStyle">
+                    <div v-if="showTooltipMedico" class="fixed z-[var(--z-tooltip)] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipMedicoStyle">
                       <p class="font-semibold mb-1 text-base">Para un mejor pie de página, se recomienda guardar:</p>
                       <ul class="list-disc pl-4 mt-2 text-gray-300">
                         <li v-for="item in camposPendientesMedico" :key="item">{{ item }}</li>
@@ -1080,7 +1080,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                 <div v-if="mostrarTooltipEnfermera" class="relative group" ref="tooltipEnfermeraRef" @mouseenter="showTooltipEnfermeraHandler" @mouseleave="showTooltipEnfermera = false">
                   <i :class="['fa-solid fa-exclamation-circle text-yellow-500 text-lg cursor-pointer', animacionTooltipEnfermera]"></i>
                   <Teleport to="body">
-                    <div v-if="showTooltipEnfermera" class="fixed z-[9999] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipEnfermeraStyle">
+                    <div v-if="showTooltipEnfermera" class="fixed z-[var(--z-tooltip)] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipEnfermeraStyle">
                       <p class="font-semibold mb-1 text-base">Para un mejor pie de página, se recomienda guardar:</p>
                       <ul class="list-disc pl-4 mt-2 text-gray-300">
                         <li v-for="item in camposPendientesEnfermera" :key="item">{{ item }}</li>
@@ -1114,7 +1114,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
                 <div v-if="mostrarTooltipTecnicoEvaluador" class="relative group" ref="tooltipTecnicoEvaluadorRef" @mouseenter="showTooltipTecnicoEvaluadorHandler" @mouseleave="showTooltipTecnicoEvaluador = false">
                   <i :class="['fa-solid fa-exclamation-circle text-yellow-500 text-lg cursor-pointer', animacionTooltipTecnicoEvaluador]"></i>
                   <Teleport to="body">
-                    <div v-if="showTooltipTecnicoEvaluador" class="fixed z-[9999] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipTecnicoEvaluadorStyle">
+                    <div v-if="showTooltipTecnicoEvaluador" class="fixed z-[var(--z-tooltip)] bg-black bg-opacity-90 text-white border border-gray-700 rounded-md shadow-lg p-3 text-sm w-64" :style="tooltipTecnicoEvaluadorStyle">
                       <p class="font-semibold mb-1 text-base">Para un mejor pie de página, se recomienda guardar:</p>
                       <ul class="list-disc pl-4 mt-2 text-gray-300">
                         <li v-for="item in camposPendientesTecnicoEvaluador" :key="item">{{ item }}</li>
@@ -1280,7 +1280,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       <button 
         v-if="GUIAS_DE_USO.length > 0 && isVisible &&['inicio', 'add-user', 'remove-users', 'perfil-proveedor', 'medico-firmante', 'subscription', 'suscripcion-activa', 'subscription-success', 'panel-administrador'].includes(route.name as string)"
         @click="toggleGuideMenu($event)"
-        class="fixed top-24 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300 z-30 flex items-center justify-center group"
+        class="fixed top-24 right-4 sm:right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300 z-[var(--z-botones-globales)] flex items-center justify-center group"
         :aria-label="isGuideMenuOpen ? 'Cerrar guías de uso' : 'Abrir guías de uso'">
         <i class="fa-solid fa-book text-lg group-hover:rotate-12 transition-transform duration-300"></i>
       </button>
@@ -1291,7 +1291,7 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
       <div 
         v-if="isGuideMenuOpen"
         ref="guideMenuRef"
-        class="fixed top-40 right-6 bg-white rounded-2xl shadow-2xl p-6 w-82 z-20 border border-gray-100 backdrop-blur-sm bg-white/95 transition-all duration-300 ease-in-out">
+        class="fixed top-40 right-4 sm:right-6 bg-white rounded-2xl shadow-2xl p-6 w-82 z-[var(--z-botones-globales)] border border-gray-100 backdrop-blur-sm bg-white/95 transition-all duration-300 ease-in-out">
         <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
           <i class="fa-solid fa-graduation-cap mr-2 text-blue-500"></i>
           Guías de Uso
@@ -1617,24 +1617,8 @@ const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
   animation: shimmer 1.5s infinite;
 }
 
-/* Responsive improvements */
-@media (max-width: 640px) {
-  .fixed {
-    position: fixed;
-  }
-  
-  .top-6 {
-    top: 1rem;
-  }
-  
-  .right-6 {
-    right: 1rem;
-  }
-  
-  .bottom-6 {
-    bottom: 1rem;
-  }
-}
+/* Punto 49: la posición en teléfono va en las clases de cada botón (sm:), igual para el engrane
+   y el buscador; antes esta regla solo movía los de este componente y se desalineaban */
 
 /* Accessibility improvements */
 @media (prefers-reduced-motion: reduce) {

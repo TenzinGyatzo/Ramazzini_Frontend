@@ -398,7 +398,7 @@ defineExpose({ focus: () => campo.value?.focus() });
       ref="calendario"
       :class="[
         'campo-fecha-calendario w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white p-2 shadow-lg',
-        flotante ? 'fixed z-[70]' : 'absolute left-0 top-full z-50 mt-1',
+        flotante ? 'fixed z-[var(--z-calendario)]' : 'absolute left-0 top-full z-50 mt-1',
       ]"
       :style="flotante ? posicion : undefined"
       role="dialog"

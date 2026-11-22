@@ -46,7 +46,7 @@ const tooltipStyle = computed(() => {
             left: `${sidebarWidth + 12}px`,
             top: `${rect.top + rect.height / 2}px`,
             transform: 'translateY(-50%)',
-            zIndex: 9999
+            zIndex: 'var(--z-tooltip)'
         };
     } catch (error) {
         return {};
@@ -241,7 +241,7 @@ const tooltipStyle = computed(() => {
 /* Tooltip */
 .tooltip {
     position: fixed;
-    z-index: 9999;
+    z-index: var(--z-tooltip);
     pointer-events: none;
 }
 

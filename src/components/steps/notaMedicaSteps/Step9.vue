@@ -444,7 +444,7 @@ watch(
                         v-if="showRelacionTemporalTooltip"
                         ref="relacionTemporalTooltipRef"
                         role="tooltip"
-                        class="fixed z-50 bg-gray-900 text-white rounded-lg shadow-2xl p-4 max-w-sm text-sm border border-gray-700"
+                        class="fixed z-[var(--z-tooltip)] bg-gray-900 text-white rounded-lg shadow-2xl p-4 max-w-sm text-sm border border-gray-700"
                         :style="getRelacionTemporalTooltipPosition()"
                         @click.stop
                     >

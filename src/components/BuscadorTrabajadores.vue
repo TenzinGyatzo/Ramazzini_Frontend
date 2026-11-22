@@ -151,7 +151,7 @@ function detalle(trabajador: ResultadoBusquedaTrabajador): string {
   <button
     v-if="mostrarBoton"
     type="button"
-    class="fixed top-6 right-24 z-50 p-4 bg-white text-gray-700 rounded-full border border-gray-200 shadow-lg hover:bg-gray-50 hover:shadow-xl transform hover:scale-110 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-200"
+    class="fixed top-4 right-[5.5rem] sm:top-6 sm:right-24 z-[var(--z-botones-globales)] p-4 bg-white text-gray-700 rounded-full border border-gray-200 shadow-lg hover:bg-gray-50 hover:shadow-xl transform hover:scale-110 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-200"
     title="Buscar trabajador (Ctrl+K)"
     aria-label="Buscar trabajador"
     @click="abrir"
