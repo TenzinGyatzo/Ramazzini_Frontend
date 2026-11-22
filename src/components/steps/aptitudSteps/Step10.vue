@@ -1,13 +1,11 @@
 <script setup>
-import { ref, watch, onMounted, toRefs } from 'vue';
+// Punto 45: el texto de resultados lo genera helpers/aptitudGuardado (mismas frases que antes)
+// y lo escribe el guardado en los dos modos, también al cambiar la aptitud, sin pisar lo editado.
+// Aquí quedan el cuadro y las guías para copiar.
+import { ref, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
-import { useDocumentosStore } from '@/stores/documentos';
-import DocumentosAPI from '@/api/DocumentosAPI';
-import {
-    obtenerCuatroTamizajesPsicologicosCercanos,
-    construirTextoPaso4TamizajePsi,
-} from '@/helpers/tamizajePsicologicoPaso4Resultados';
+import TextoGeneradoAptitud from './TextoGeneradoAptitud.vue';
 
 const props = defineProps({
   variant: {
@@ -21,12 +19,11 @@ const { variant } = toRefs(props);
 const mensajeCopiado = ref(false);
 
 const trabajadores = useTrabajadoresStore();
-const { formDataAptitud } = useFormDataStore();
-const documentos = useDocumentosStore();
+const formDataStore = useFormDataStore();
 
 // Función para determinar qué guía mostrar basada en el valor de aptitudPuesto
 const getGuiaRecomendada = () => {
-    const aptitudPuesto = formDataAptitud.aptitudPuesto;
+    const aptitudPuesto = formDataStore.formDataAptitud.aptitudPuesto;
     
     if (!aptitudPuesto) {
         return null; // No hay valor seleccionado, mostrar todas las opciones
@@ -60,7 +57,7 @@ const shouldShowSection = (sectionName) => {
 
 // Función para obtener el mensaje de guía recomendada
 const getMensajeGuiaRecomendada = () => {
-    const aptitudPuesto = formDataAptitud.aptitudPuesto;
+    const aptitudPuesto = formDataStore.formDataAptitud.aptitudPuesto;
     
     if (!aptitudPuesto) {
         return null;
@@ -68,126 +65,6 @@ const getMensajeGuiaRecomendada = () => {
     
     return `Guía recomendada para: ${aptitudPuesto}`;
 };
-
-// Valor local para la resultados principal, inicializado con el valor actual del store
-const resultados = ref(formDataAptitud.resultados || '');
-
-// Texto inicial sugerido
-const inicioSugerido = "Posterior a efectuar el examen integral de salud ocupacional, se determina que actualmente "
-
-// Variable para rastrear si el componente ya está montado
-const isMounted = ref(false);
-
-// Función auxiliar para obtener/establecer el aptitudPuesto que generó el texto
-// Lo guardamos en formDataAptitud para que persista entre montajes del componente
-const getAptitudPuestoQueGeneroTexto = () => {
-    return formDataAptitud.aptitudPuestoQueGeneroTexto || null;
-};
-
-const setAptitudPuestoQueGeneroTexto = (valor) => {
-    formDataAptitud.aptitudPuestoQueGeneroTexto = valor;
-};
-
-// Función para regenerar el texto automáticamente
-const regenerarTextoAutomatico = async () => {
-    // Solo regenerar si aptitudPuesto existe
-    if (!formDataAptitud.aptitudPuesto) {
-        return;
-    }
-    
-    try {
-        const textoPrecargado = await generarTextoPrecargado();
-        formDataAptitud.resultados = textoPrecargado;
-        resultados.value = textoPrecargado;
-        // Guardar el aptitudPuesto que generó este texto en el store para persistencia
-        setAptitudPuestoQueGeneroTexto(formDataAptitud.aptitudPuesto);
-    } catch (error) {
-        console.error('Error al regenerar texto automáticamente:', error);
-    }
-};
-
-// Sincronizar el valor seleccionado con formDataAptitud.resultados
-watch(resultados, (newValue) => {
-    formDataAptitud.resultados = newValue;
-});
-
-// Watch para regenerar automáticamente cuando cambie aptitudPuesto
-watch(() => formDataAptitud.aptitudPuesto, async (newAptitudPuesto) => {
-    // Solo ejecutar después de que el componente esté montado
-    if (!isMounted.value) {
-        return;
-    }
-    
-    // No regenerar si estamos editando un documento existente y la aptitud no ha cambiado
-    if (documentos.currentDocument && newAptitudPuesto === documentos.currentDocument.aptitudPuesto) {
-        return;
-    }
-    
-    // Si aptitudPuesto existe y es diferente al que generó el texto actual, regenerar
-    const aptitudPuestoAnterior = getAptitudPuestoQueGeneroTexto();
-    if (newAptitudPuesto && newAptitudPuesto !== aptitudPuestoAnterior) {
-        await regenerarTextoAutomatico();
-    }
-});
-
-onMounted(async () => {
-    if (documentos.currentDocument) {
-        // Si la aptitud local ha cambiado respecto a la del documento guardado, regenerar automáticamente
-        if (formDataAptitud.aptitudPuesto && formDataAptitud.aptitudPuesto !== documentos.currentDocument.aptitudPuesto) {
-            await regenerarTextoAutomatico();
-        } else {
-            resultados.value = documentos.currentDocument.resultados;
-            // Registrar qué aptitud generó este texto para evitar regeneraciones innecesarias
-            setAptitudPuestoQueGeneroTexto(formDataAptitud.aptitudPuesto);
-        }
-    } else {
-        const textoActual = formDataAptitud.resultados || '';
-        const textoEstaVacio = !textoActual || textoActual.trim() === '' || textoActual === inicioSugerido;
-        const aptitudPuestoAnterior = getAptitudPuestoQueGeneroTexto();
-        
-        // Si no hay aptitudPuesto, solo cargar el texto existente
-        if (!formDataAptitud.aptitudPuesto) {
-            resultados.value = textoActual;
-        } else {
-            // Si tenemos guardado qué aptitudPuesto generó el texto
-            if (aptitudPuestoAnterior !== null) {
-                // Si aptitudPuesto es igual al que generó el texto → conservar el texto tal cual
-                if (formDataAptitud.aptitudPuesto === aptitudPuestoAnterior) {
-                    resultados.value = textoActual;
-                } else {
-                    // Si aptitudPuesto cambió → regenerar
-                    await regenerarTextoAutomatico();
-                }
-            } else {
-                // Primera vez o no sabemos qué aptitudPuesto generó el texto
-                if (textoEstaVacio) {
-                    // Texto vacío → generar
-                    await regenerarTextoAutomatico();
-                } else {
-                    // Hay texto guardado → intentar detectar si fue generado con el aptitudPuesto actual
-                    try {
-                        const textoQueSeGeneraria = await generarTextoPrecargado();
-                        if (textoActual === textoQueSeGeneraria) {
-                            // El texto coincide con el que se generaría → fue generado automáticamente
-                            setAptitudPuestoQueGeneroTexto(formDataAptitud.aptitudPuesto);
-                            resultados.value = textoActual;
-                        } else {
-                            // El texto no coincide → fue modificado manualmente o con otro aptitudPuesto
-                            // Como no sabemos el aptitudPuesto original, regenerar con el actual
-                            await regenerarTextoAutomatico();
-                        }
-                    } catch (error) {
-                        // Si hay error al generar, conservar el texto actual
-                        resultados.value = textoActual;
-                    }
-                }
-            }
-        }
-    }
-    
-    // Marcar como montado
-    isMounted.value = true;
-});
 
 const openSections = ref({});
 
@@ -212,195 +89,6 @@ const copiarTexto = (texto) => {
     });
 };
 
-// Función para determinar tipo de evaluación (MÉDICAMENTE vs CLÍNICAMENTE)
-const determinarTipoEvaluacion = () => {
-    const evaluacionesMedicas = [
-        'Audiometría',
-        'Espirometría',
-        'Estudios de laboratorio',
-        'Rx simple de tórax',
-        'Rx columna lumbar',
-        'Rx rodillas',
-        'Electrocardiograma',
-        'EKG',
-        'Rayos X',
-        'RX'
-    ];
-
-    const evaluacionesAdicionales = [
-        formDataAptitud.evaluacionAdicional1,
-        formDataAptitud.evaluacionAdicional2,
-        formDataAptitud.evaluacionAdicional3,
-        formDataAptitud.evaluacionAdicional4,
-        formDataAptitud.evaluacionAdicional5,
-        formDataAptitud.evaluacionAdicional6
-    ].filter(evaluacion => evaluacion && evaluacion.trim() !== '');
-
-    // Verificar si alguna evaluación adicional coincide con las evaluaciones médicas
-    const tieneEvaluacionMedica = evaluacionesAdicionales.some(evaluacion => {
-        const evalNormalizada = evaluacion.trim();
-        return evaluacionesMedicas.some(medica => 
-            evalNormalizada.toLowerCase().includes(medica.toLowerCase())
-        );
-    });
-
-    return tieneEvaluacionMedica ? 'MÉDICAMENTE' : 'CLÍNICAMENTE';
-};
-
-// Función para obtener texto del paso 2 según motivoExamen
-const obtenerTextoPaso2 = async () => {
-    try {
-        const response = await DocumentosAPI.getMotivoExamenReciente(trabajadores.currentTrabajadorId);
-        const motivoExamen = response.data?.data?.motivoExamen;
-
-        if (motivoExamen === 'Ingreso') {
-            return 'en las actividades del puesto al que aspira. ';
-        } else if (motivoExamen === 'Inicial' || motivoExamen === 'Periódico') {
-            return 'en las actividades del puesto que desempeña. ';
-        }
-
-        return ''; // Si no hay motivoExamen o no coincide, retornar vacío
-    } catch (error) {
-        console.error('Error al obtener motivoExamen:', error);
-        return ''; // En caso de error, retornar vacío
-    }
-};
-
-// Función para generar texto automático del paso 1
-const generarTextoPaso1 = () => {
-    const aptitudPuesto = formDataAptitud.aptitudPuesto;
-    const tipoEvaluacion = determinarTipoEvaluacion();
-    const sexo = trabajadores.currentTrabajador.sexo;
-    const esFemenino = sexo === 'Femenino';
-
-    if (!aptitudPuesto) {
-        return '';
-    }
-
-    let texto = '';
-
-    switch (aptitudPuesto) {
-        case 'Apto Sin Restricciones':
-            if (esFemenino) {
-                texto = tipoEvaluacion === 'MÉDICAMENTE' 
-                    ? 'se encuentra médicamente SANA Y APTA PARA LABORAR SIN RESTRICCIONES '
-                    : 'se encuentra clínicamente SANA Y APTA PARA LABORAR SIN RESTRICCIONES ';
-            } else {
-                texto = tipoEvaluacion === 'MÉDICAMENTE'
-                    ? 'se encuentra médicamente SANO Y APTO PARA LABORAR SIN RESTRICCIONES '
-                    : 'se encuentra clínicamente SANO Y APTO PARA LABORAR SIN RESTRICCIONES ';
-            }
-            break;
-
-        case 'Apto Con Precaución':
-            if (esFemenino) {
-                texto = tipoEvaluacion === 'MÉDICAMENTE'
-                    ? 'se encuentra médicamente APTA PARA LABORAR CON PRECAUCIÓN '
-                    : 'se encuentra clínicamente APTA PARA LABORAR CON PRECAUCIÓN ';
-            } else {
-                texto = tipoEvaluacion === 'MÉDICAMENTE'
-                    ? 'se encuentra médicamente APTO PARA LABORAR CON PRECAUCIÓN '
-                    : 'se encuentra clínicamente APTO PARA LABORAR CON PRECAUCIÓN ';
-            }
-            break;
-
-        case 'Apto Con Restricciones':
-            if (esFemenino) {
-                texto = tipoEvaluacion === 'MÉDICAMENTE'
-                    ? 'se encuentra médicamente APTA PARA LABORAR CON RESTRICCIONES '
-                    : 'se encuentra clínicamente APTA PARA LABORAR CON RESTRICCIONES ';
-            } else {
-                texto = tipoEvaluacion === 'MÉDICAMENTE'
-                    ? 'se encuentra médicamente APTO PARA LABORAR CON RESTRICCIONES '
-                    : 'se encuentra clínicamente APTO PARA LABORAR CON RESTRICCIONES ';
-            }
-            break;
-
-        case 'No Apto':
-            if (esFemenino) {
-                texto = 'se encuentra NO APTA PARA LABORAR ';
-            } else {
-                texto = 'se encuentra NO APTO PARA LABORAR ';
-            }
-            break;
-
-        case 'Evaluación No Completada':
-            texto = 'NO ES POSIBLE CONCLUIR LA APTITUD AL PUESTO ';
-            break;
-
-        default:
-            texto = '';
-    }
-
-    return texto;
-};
-
-// Función para generar texto automático del paso 3
-const generarTextoPaso3 = () => {
-    const aptitudPuesto = formDataAptitud.aptitudPuesto;
-    const sexo = trabajadores.currentTrabajador.sexo;
-    const esFemenino = sexo === 'Femenino';
-
-    if (!aptitudPuesto) {
-        return '';
-    }
-
-    let texto = '';
-
-    switch (aptitudPuesto) {
-
-        case 'Apto Con Precaución':
-            if (esFemenino) {
-                texto = 'Aunque apta para el trabajo, es esencial destacar que la presencia de ciertas condiciones médicas subyacentes demanda la adopción de precauciones adicionales para salvaguardar su salud y seguridad en el lugar de trabajo. ';
-            } else {
-                texto = 'Aunque apto para el trabajo, es esencial destacar que la presencia de ciertas condiciones médicas subyacentes demanda la adopción de precauciones adicionales para salvaguardar su salud y seguridad en el lugar de trabajo. ';
-            }
-            break;
-
-        case 'Apto Con Restricciones':
-            if (esFemenino) {
-                texto = 'Aunque apta para el trabajo, requiere medidas adicionales para garantizar su seguridad y bienestar en el entorno laboral. ';
-            } else {
-                texto = 'Aunque apto para el trabajo, requiere medidas adicionales para garantizar su seguridad y bienestar en el entorno laboral. ';
-            }
-            break;
-
-        case 'Apto Sin Restricciones':
-        case 'No Apto':
-        case 'Evaluación No Completada':
-        default:
-            texto = '';
-            break;
-    }
-
-    return texto;
-};
-
-const generarTextoPaso4 = async () => {
-    try {
-        const docs = await obtenerCuatroTamizajesPsicologicosCercanos(
-            trabajadores.currentTrabajadorId,
-            formDataAptitud.fechaAptitudPuesto,
-        );
-        if (!docs) {
-            return '';
-        }
-        return construirTextoPaso4TamizajePsi(docs);
-    } catch (error) {
-        console.error('Error al armar texto de tamizaje psicológico (paso 4):', error);
-        return '';
-    }
-};
-
-// Función para generar texto completo precargado
-const generarTextoPrecargado = async () => {
-    const textoPaso1 = generarTextoPaso1();
-    const textoPaso2 = await obtenerTextoPaso2();
-    const textoPaso3 = generarTextoPaso3();
-    const textoPaso4 = await generarTextoPaso4();
-
-    return inicioSugerido + textoPaso1 + textoPaso2 + textoPaso3 + textoPaso4;
-};
 
 </script>
 
@@ -409,12 +97,13 @@ const generarTextoPrecargado = async () => {
     <h1 v-if="variant !== 'compact'" class="font-bold mb-4 text-gray-800 leading-5">Aptitud al Puesto</h1>
     <div data-campo="resultados" data-desplazar="no" :class="variant === 'compact' ? 'mb-2' : 'mb-4'">
         <h2 v-if="variant !== 'compact'" class="text-lg font-semibold mb-4 text-gray-800">Resultados</h2>
-        <p class="text-sm font-medium mb-1 text-gray-800 leading-4">Descripción de resultados:</p>
-        <div class="font-light mb-4">
-            <textarea
-                class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 h-64"
-                v-model="formDataAptitud.resultados" :placeholder="isMounted ? inicioSugerido : 'Generando texto...'" required>
-            </textarea>
+        <div class="mb-4">
+            <TextoGeneradoAptitud
+                campo="resultados"
+                etiqueta="Descripción de resultados:"
+                sin-texto="Se genera al elegir la aptitud."
+                :variant="variant"
+            />
         </div>
 
         <div v-if="trabajadores.currentTrabajador.sexo === 'Femenino'" class="mb-4">

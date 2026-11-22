@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted, toRefs } from 'vue';
+import { computed, onMounted, toRefs } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
 import { buildClinicalDirectoryPath } from '@/helpers/clinicalPath';
@@ -7,7 +7,6 @@ import { useEmpresasStore } from '@/stores/empresas';
 import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
-import { useDocumentosStore } from '@/stores/documentos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 
 const props = defineProps({
@@ -22,49 +21,32 @@ const { variant } = toRefs(props);
 const empresas = useEmpresasStore();
 const centrosTrabajo = useCentrosTrabajoStore();
 const trabajadores = useTrabajadoresStore();
-const { formDataAptitud } = useFormDataStore();
-const documentos = useDocumentosStore();
+const formDataStore = useFormDataStore();
 const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
+// Por el store (al editar, el documento puede llegar después del primer dibujo)
+const df = () => formDataStore.formDataAptitud;
 
-// Obtener la fecha actual en formato YYYY-MM-DD
 const today = format(new Date(), 'yyyy-MM-dd');
 
-// Inicializar la referencia local sincronizada con formData (al volver al paso se conserva
-// la fecha ya elegida; antes siempre mostraba la de hoy)
-const fechaAptitudPuesto = ref(formDataAptitud.fechaAptitudPuesto || today);
+// Punto 45: el paso no escribe al abrirse ni al cerrarse. Muestra la fecha del formulario o la
+// de hoy, que escribe aptitudGuardado al revisar la sección; aquí solo lo que el usuario cambia.
+const fechaAptitudPuesto = computed({
+  get: () => (df().fechaAptitudPuesto ? formatDateYYYYMMDD(df().fechaAptitudPuesto) : today),
+  set: (valor) => {
+    // El campo devuelve la fecha que se ve al montarse: eso no es un cambio del usuario
+    if (!df().fechaAptitudPuesto && valor === today) return;
+    if (valor && valor !== formatDateYYYYMMDD(df().fechaAptitudPuesto || '')) df().fechaAptitudPuesto = valor;
+  },
+});
 
 onMounted(() => {
-  if (documentos.currentDocument) {
-    fechaAptitudPuesto.value = formatDateYYYYMMDD(documentos.currentDocument.fechaAptitudPuesto || today);
-  }
-
-  // Establece idTrabajador en formData
-  formDataAptitud.idTrabajador = trabajadores.currentTrabajadorId;
-
-  // Establece usuario creador y/o actualizador en formData
-
-  // Establece rutaPDF en formData cuando aun no se ha seleccionado la fecha
+  // Datos del expediente (no son respuestas): el trabajador y la carpeta del PDF
+  df().idTrabajador = trabajadores.currentTrabajadorId;
   const empresa = empresas.currentEmpresa.nombreComercial;
   const centroTrabajo = centrosTrabajo.currentCentroTrabajo.nombreCentro;
   const trabajadorNombre = trabajadores.currentTrabajador.nombre;
   const trabajadorId = trabajadores.currentTrabajadorId;
-  formDataAptitud.rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
-
-  // La fecha que se ve llega al formulario desde el inicio (si no, al guardar con este paso
-  // abierto se pedía una fecha que sí está en pantalla)
-  formDataAptitud.fechaAptitudPuesto = fechaAptitudPuesto.value;
-});
-
-onUnmounted(() => {
-  // Asegurar que formData tenga un valor inicial para fechaAptitudPuesto
-  if (!formDataAptitud.fechaAptitudPuesto) {
-    formDataAptitud.fechaAptitudPuesto = today;
-  }
-})
-
-// Mantener sincronizados los valores
-watch(fechaAptitudPuesto, (newValue) => {
-  formDataAptitud.fechaAptitudPuesto = newValue;
+  df().rutaPDF = buildClinicalDirectoryPath(empresa, centroTrabajo, trabajadorNombre, trabajadorId);
 });
 </script>
 

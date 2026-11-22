@@ -9,7 +9,9 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import Step1 from './Step1.vue';
 import Step8 from './Step8.vue';
 
-describe('Aptitud: lo que se ve llega al formulario al abrir el paso', () => {
+// Punto 45: los pasos ya no escriben al abrirse ni al cerrarse (la fecha la escribe
+// aptitudGuardado al revisar la sección) y la aptitud es obligatoria en los dos modos.
+describe('Aptitud: los pasos no escriben al abrirse ni al cerrarse', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     useTrabajadoresStore().currentTrabajador = { nombre: 'X' } as never;
@@ -17,10 +19,12 @@ describe('Aptitud: lo que se ve llega al formulario al abrir el paso', () => {
     useCentrosTrabajoStore().currentCentroTrabajo = { nombreCentro: 'C' } as never;
   });
 
-  it('paso 1: la fecha de hoy (documento nuevo)', () => {
+  it('paso 1: muestra la fecha de hoy sin escribirla (documento nuevo)', () => {
     const datos = useFormDataStore().formDataAptitud as Record<string, unknown>;
-    mount(Step1, { global: { stubs: { FormKit: true } } });
-    expect(datos.fechaAptitudPuesto).toBe(format(new Date(), 'yyyy-MM-dd'));
+    const wrapper = mount(Step1, { global: { stubs: { FormKit: true } } });
+    expect(wrapper.findComponent({ name: 'FormKit' }).attributes('modelvalue')).toBe(format(new Date(), 'yyyy-MM-dd'));
+    wrapper.unmount();
+    expect(datos.fechaAptitudPuesto).toBeUndefined();
   });
 
   it('paso 1: al volver conserva la fecha ya elegida', () => {
@@ -37,12 +41,11 @@ describe('Aptitud: lo que se ve llega al formulario al abrir el paso', () => {
     expect(wrapper.findAll('input[type="radio"]:checked')).toHaveLength(0);
   });
 
-  it('paso 8: si se sale sin elegir, queda «Apto sin restricciones»', () => {
+  it('paso 8: si se sale sin elegir, sigue sin aptitud (el aviso al guardar la pide)', () => {
     const datos = useFormDataStore().formDataAptitud as Record<string, unknown>;
     const wrapper = mount(Step8);
-    expect(datos.aptitudPuesto).toBeUndefined();
     wrapper.unmount();
-    expect(datos.aptitudPuesto).toBe('Apto Sin Restricciones');
+    expect(datos.aptitudPuesto).toBeUndefined();
   });
 
   it('paso 8: si se eligió otra, al salir se conserva', async () => {

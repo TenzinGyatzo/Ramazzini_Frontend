@@ -477,6 +477,11 @@ import { buildHistoriaClinicaSectionSteps } from '@/helpers/buildHistoriaClinica
 import { isEfSectionsV2Enabled } from '@/composables/useEfSectionsV2';
 import { isEvSectionsV2Enabled } from '@/composables/useEvSectionsV2';
 import { isAuSectionsV2Enabled } from '@/composables/useAuSectionsV2';
+import { cargarContextoAptitud, contextoAptitud } from '@/helpers/aptitudContexto';
+import {
+  completarRespuestasPorDefecto as completarAptitudPorDefecto,
+  prepararAptitudParaGuardar,
+} from '@/helpers/aptitudGuardado';
 import { buildAudiometriaSectionSteps } from '@/helpers/buildAudiometriaSectionSteps';
 import { pasoAudiometriaEnAsistente } from '@/helpers/audiometriaSections';
 import {
@@ -1663,7 +1668,7 @@ export default {
         if (capturaRapida.value) return;
         // Historia clínica y exploración física también en el asistente clásico (pasos sueltos)
         if (
-          ['historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria'].includes(documentos.currentTypeOfDocument) ||
+          ['historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud'].includes(documentos.currentTypeOfDocument) ||
           capturaRapidaDisponible.value
         ) {
           seccionesTocadas.value.add(stepsStore.currentStep);
@@ -1779,6 +1784,40 @@ export default {
     watch(
       () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
       completarAudiometria,
+    );
+
+    // Punto 45: la aptitud. Lo que los textos toman del expediente se pide una vez por documento;
+    // la fecha se escribe al revisar su sección; alteraciones, resultados y medidas se generan en
+    // los dos modos en cuanto hay datos (sin pisar lo editado). La aptitud no se pone sola.
+    watch(
+      () =>
+        documentos.currentTypeOfDocument === 'aptitud' ? trabajadores.currentTrabajadorId : null,
+      (id) => {
+        if (id) cargarContextoAptitud(id);
+      },
+      { immediate: true },
+    );
+    const completarAptitud = () => {
+      if (documentos.currentTypeOfDocument !== 'aptitud') return;
+      const df = formData.formDataAptitud;
+      if (!df) return;
+      const conSecciones = isAptitudSectionsV2Enabled(route.query);
+      completarAptitudPorDefecto(df, {
+        contexto: contextoAptitud.datos,
+        sexo: trabajadores.currentTrabajador?.sexo,
+        visitado: documentos.currentDocument
+          ? undefined
+          : (paso) => seccionesTocadas.value.has(conSecciones ? aptLegacyStepToSectionIndex(paso) : paso),
+      });
+    };
+    watch(
+      () => (documentos.currentTypeOfDocument === 'aptitud' ? formData.formDataAptitud : null),
+      completarAptitud,
+      { deep: true, immediate: true },
+    );
+    watch(
+      () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size, contextoAptitud.datos],
+      completarAptitud,
     );
 
     const recolectarProblemasNotaMedica = (esMujer) => {
@@ -1988,7 +2027,14 @@ export default {
         ]);
       }
       if (documentos.currentTypeOfDocument === 'aptitud') {
-        return recolectarProblemasObligatoriosYFecha('aptitud', formData.formDataAptitud);
+        // Lo que se guardaría (copia: los textos generados de secciones sin abrir cuentan)
+        return recolectarProblemasObligatoriosYFecha(
+          'aptitud',
+          prepararAptitudParaGuardar(
+            { ...formData.formDataAptitud },
+            { contexto: contextoAptitud.datos, sexo: trabajadores.currentTrabajador?.sexo },
+          ),
+        );
       }
       if (documentos.currentTypeOfDocument === 'notaEnfermeria') {
         return recolectarProblemasNotaEnfermeria();
@@ -2169,7 +2215,7 @@ export default {
         // al editar, las respuestas son las guardadas
         {
           marcarSinRevisar:
-            ['historiaClinica', 'notaMedica', 'exploracionFisica', 'examenVista', 'audiometria'].includes(documentos.currentTypeOfDocument) &&
+            ['historiaClinica', 'notaMedica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud'].includes(documentos.currentTypeOfDocument) &&
             !documentos.currentDocument,
         },
       ),
@@ -2509,6 +2555,15 @@ export default {
           esMujer: esMujerTrabajadorActual(),
         });
         datosLimpios = limpiarValoresUndefined(formData.formDataHistoriaClinica);
+      }
+
+      // APTITUD (punto 45): la fecha y los textos generados que falten, igual en los dos modos
+      if (documentos.currentTypeOfDocument === 'aptitud') {
+        prepararAptitudParaGuardar(formData.formDataAptitud, {
+          contexto: contextoAptitud.datos,
+          sexo: trabajadores.currentTrabajador?.sexo,
+        });
+        datosLimpios = limpiarValoresUndefined(formData.formDataAptitud);
       }
 
       // AUDIOMETRÍA (punto 44): lo mismo

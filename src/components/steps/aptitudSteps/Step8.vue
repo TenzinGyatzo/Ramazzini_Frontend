@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, toRefs, onUnmounted } from 'vue';
+import { computed, toRefs } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 
 const props = defineProps({
@@ -11,24 +11,19 @@ const props = defineProps({
 });
 const { variant } = toRefs(props);
 
-const { formDataAptitud } = useFormDataStore();
+const formDataStore = useFormDataStore();
 
-// Sin opción preseleccionada al abrir el paso: se ve que falta elegir. Al editar se muestra
-// la guardada.
-const aptitudPuesto = ref(formDataAptitud.aptitudPuesto || '');
-
-// Sincronizar el valor seleccionado con formDataAptitud.aptitudPuesto
-watch(aptitudPuesto, (newValue) => {
-    formDataAptitud.aptitudPuesto = newValue;
+// Sin opción preseleccionada al abrir el paso: se ve que falta elegir. Al editar se muestra la
+// guardada. Por el store (al editar, el documento puede llegar después del primer dibujo).
+const aptitudPuesto = computed({
+    get: () => formDataStore.formDataAptitud.aptitudPuesto || '',
+    set: (valor) => {
+        formDataStore.formDataAptitud.aptitudPuesto = valor;
+    },
 });
 
-// Si se sale del paso sin elegir, queda «Apto sin restricciones» (decisión del usuario,
-// 2026-11-14). Si se guarda sin haber pasado por aquí, el aviso al guardar la pide.
-onUnmounted(() => {
-    if (!formDataAptitud.aptitudPuesto) {
-        formDataAptitud.aptitudPuesto = 'Apto Sin Restricciones';
-    }
-});
+// Punto 45: la aptitud es obligatoria en los dos modos; sin elegir, el aviso al guardar la pide
+// (antes, salir del paso sin elegir dejaba «Apto sin restricciones»).
 </script>
 
 <template>
