@@ -1,4 +1,5 @@
 <script setup>
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import {
@@ -9,15 +10,18 @@ import Requerido from './Requerido.vue';
 import { claseEtiqueta, claseOpcionLista } from './estilos';
 
 const { formDataNotaEnfermeria } = useFormDataStore();
+
+// Punto 46: en captura rápida las opciones y los campos aprovechan el ancho
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
   <SeccionNotaEnfermeria titulo="Clasificación" icono="fa-tags">
 
-    <div class="mt-5" data-pregunta="tipoProblema" data-campo="tipoProblema">
+    <div :class="capturaRapida ? '' : 'mt-5'" data-pregunta="tipoProblema" data-campo="tipoProblema">
       <p :class="claseEtiqueta">Tipo de problema <Requerido /></p>
       <!-- Una columna, de lo más a lo menos frecuente -->
-      <div class="flex max-w-xl flex-col gap-1.5">
+      <div :class="capturaRapida ? 'grid gap-1.5 sm:grid-cols-2' : 'flex max-w-xl flex-col gap-1.5'">
         <button
           v-for="opcion in TIPOS_PROBLEMA_NOTA_ENFERMERIA"
           :key="opcion.clave"
@@ -35,12 +39,12 @@ const { formDataNotaEnfermeria } = useFormDataStore();
     <div class="mt-5" data-pregunta="sistema" data-campo="sistema">
       <p :class="claseEtiqueta">Aparato o sistema <Requerido /></p>
       <!-- Dos columnas fijas: las trece opciones a la vista, sin buscar ni desplazarse -->
-      <div class="grid grid-cols-2 gap-1.5">
+      <div :class="['grid gap-1.5 grid-cols-2', capturaRapida ? 'xl:grid-cols-3' : '']">
         <button
           v-for="opcion in SISTEMAS_NOTA_ENFERMERIA"
           :key="opcion.clave"
           type="button"
-          :class="[claseOpcionLista(formDataNotaEnfermeria.sistema === opcion.clave), opcion.clave === 'general' ? 'col-span-2' : '']"
+          :class="[claseOpcionLista(formDataNotaEnfermeria.sistema === opcion.clave), opcion.clave === 'general' ? 'col-span-full' : '']"
           :aria-pressed="formDataNotaEnfermeria.sistema === opcion.clave"
           :data-opcion="opcion.clave"
           @click="formDataNotaEnfermeria.sistema = opcion.clave"

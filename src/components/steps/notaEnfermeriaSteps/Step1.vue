@@ -1,4 +1,5 @@
 <script setup>
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { computed } from 'vue';
 import { format } from 'date-fns';
@@ -39,12 +40,17 @@ const horaAtencion = computed({
     if (valor !== df().horaAtencion) df().horaAtencion = valor;
   },
 });
+
+// Punto 46: en captura rápida las opciones y los campos aprovechan el ancho
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
   <SeccionNotaEnfermeria titulo="Datos de la atención" icono="fa-calendar-day">
 
-    <div class="mt-5 grid grid-cols-2 gap-3">
+    <!-- Captura rápida: fecha · hora · primera vez o subsecuente en un renglón -->
+    <div :class="capturaRapida ? 'grid gap-3 items-end sm:grid-cols-2 lg:grid-cols-[10.5rem_9rem_minmax(0,1fr)]' : ''">
+    <div :class="capturaRapida ? 'contents' : 'mt-5 grid grid-cols-2 gap-3'">
       <div data-campo="fechaNotaEnfermeria">
         <p :class="claseEtiqueta">Fecha de la atención <Requerido /></p>
         <FormKit
@@ -67,7 +73,7 @@ const horaAtencion = computed({
       </div>
     </div>
 
-    <div class="mt-5" data-pregunta="relacionTemporal" data-campo="relacionTemporal">
+    <div :class="capturaRapida ? 'sm:col-span-2 lg:col-span-1' : 'mt-5'" data-pregunta="relacionTemporal" data-campo="relacionTemporal">
       <p :class="claseEtiqueta">¿Es la primera vez que se le atiende por este motivo? <Requerido /></p>
       <div class="grid grid-cols-2 gap-2">
         <button
@@ -81,6 +87,7 @@ const horaAtencion = computed({
           {{ opcion.etiqueta }}
         </button>
       </div>
+    </div>
     </div>
 
     <div class="mt-5" data-campo="motivoAtencion">

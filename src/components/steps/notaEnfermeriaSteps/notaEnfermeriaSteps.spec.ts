@@ -33,9 +33,9 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
     const wrapper = await montar('./Step2.vue');
     const opciones = wrapper.findAll('[data-opcion]');
     expect(opciones).toHaveLength(13);
-    // «General» es la etiqueta más larga: va al final y ocupa las dos columnas
+    // «General» es la etiqueta más larga: va al final y ocupa todo el renglón (2, 3 o 4 columnas)
     expect(opciones.at(-1)!.attributes('data-opcion')).toBe('general');
-    expect(opciones.at(-1)!.classes()).toContain('col-span-2');
+    expect(opciones.at(-1)!.classes()).toContain('col-span-full');
     await wrapper.find('[data-opcion="oido"]').trigger('click');
     expect(fd.sistema).toBe('oido');
     expect(wrapper.find('[data-opcion="oido"]').attributes('aria-pressed')).toBe('true');

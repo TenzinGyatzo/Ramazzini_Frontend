@@ -1,4 +1,5 @@
 <script setup>
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 /**
  * Medicamentos administrados o entregados. En los centros que llevan inventario se eligen
  * del catálogo (descuentan existencias, como los insumos de la nota médica); si no hay
@@ -137,6 +138,9 @@ const agregar = async () => {
 const quitar = (indice) => {
   formDataNotaEnfermeria.medicamentos.splice(indice, 1);
 };
+
+// Punto 46: en captura rápida los campos aprovechan el ancho
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
@@ -169,8 +173,9 @@ const quitar = (indice) => {
           </button>
         </div>
 
-        <div class="space-y-3">
-          <label v-if="conCatalogo" class="block">
+        <!-- Captura rápida: medicamento y uso en un renglón; cantidad, hora, vía y dosis en otro -->
+        <div :class="capturaRapida ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4' : 'space-y-3'">
+          <label v-if="conCatalogo" :class="['block', capturaRapida ? 'sm:col-span-2' : '']">
             <span :class="claseEtiquetaCampo">Medicamento <Requerido /></span>
             <select
               :value="seleccion(fila)"
@@ -187,7 +192,7 @@ const quitar = (indice) => {
               <option :value="OTRO">Otro (escribir el nombre)</option>
             </select>
           </label>
-          <label v-if="escribeNombre(fila)" class="block">
+          <label v-if="escribeNombre(fila)" :class="['block', capturaRapida ? 'sm:col-span-2' : '']">
             <span :class="claseEtiquetaCampo">Nombre del medicamento <Requerido /></span>
             <input
               v-model="fila.nombre"
@@ -200,7 +205,7 @@ const quitar = (indice) => {
             />
           </label>
 
-          <div>
+          <div :class="capturaRapida ? 'sm:col-span-2' : ''">
             <span :class="claseEtiquetaCampo">Uso</span>
             <div class="grid grid-cols-2 gap-2" role="group" :aria-label="`Uso del medicamento ${indice + 1}`">
               <button
@@ -218,7 +223,7 @@ const quitar = (indice) => {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div :class="capturaRapida ? 'contents' : 'grid grid-cols-2 gap-3'">
             <label class="block" :data-campo="`medicamentos.${indice}.cantidad`">
               <span :class="claseEtiquetaCampo">Cantidad <Requerido /></span>
               <input
@@ -238,12 +243,12 @@ const quitar = (indice) => {
             </label>
           </div>
 
-          <p v-if="faltaExistencia(fila)" class="text-xs font-medium text-amber-600" role="status">
+          <p v-if="faltaExistencia(fila)" :class="['text-xs font-medium text-amber-600', capturaRapida ? 'col-span-full lg:order-last' : '']" role="status">
             Solo hay {{ cantidadConUnidad(disponible(fila.idInsumo), porId.get(fila.idInsumo)?.insumo.unidad ?? '') }}
             en este centro. Puedes guardar; el inventario quedará en negativo hasta que se ajuste.
           </p>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div :class="capturaRapida ? 'contents' : 'grid grid-cols-2 gap-3'">
             <label class="block">
               <span :class="claseEtiquetaCampo">Vía</span>
               <select v-model="fila.via" :class="claseCampo()">

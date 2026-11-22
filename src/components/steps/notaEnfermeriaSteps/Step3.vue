@@ -1,4 +1,5 @@
 <script setup>
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { ORIGENES_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
@@ -11,14 +12,17 @@ import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
 useAutofocoPrimerVacio(['habitusExterior']);
 
 const { formDataNotaEnfermeria } = useFormDataStore();
+
+// Punto 46: en captura rápida las opciones y los campos aprovechan el ancho
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
   <SeccionNotaEnfermeria titulo="Origen y aspecto general" icono="fa-person">
 
-    <div class="mt-5" data-pregunta="origen" data-campo="origen">
+    <div :class="capturaRapida ? '' : 'mt-5'" data-pregunta="origen" data-campo="origen">
       <p :class="claseEtiqueta">Origen de la atención <Requerido /></p>
-      <div class="flex max-w-xl flex-col gap-1.5">
+      <div :class="capturaRapida ? 'grid gap-1.5 sm:grid-cols-2' : 'flex max-w-xl flex-col gap-1.5'">
         <button
           v-for="opcion in ORIGENES_NOTA_ENFERMERIA"
           :key="opcion.clave"

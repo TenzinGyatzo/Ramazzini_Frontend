@@ -1,4 +1,5 @@
 <script setup>
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { PROCEDIMIENTOS_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
@@ -16,15 +17,18 @@ const alternar = (clave) => {
     : [...actuales, clave];
   if (clave === 'otro' && !elegido('otro')) delete formDataNotaEnfermeria.procedimientoOtro;
 };
+
+// Punto 46: en captura rápida las opciones y los campos aprovechan el ancho
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
   <SeccionNotaEnfermeria titulo="Procedimientos" icono="fa-hand-holding-medical">
 
-    <div class="mt-5" data-pregunta="procedimientos">
+    <div :class="capturaRapida ? '' : 'mt-5'" data-pregunta="procedimientos">
       <p :class="claseEtiqueta">Procedimientos realizados <span class="font-normal text-gray-500">(los que apliquen)</span></p>
       <!-- Dos columnas fijas, en el orden de la lista -->
-      <div class="grid grid-cols-2 gap-1.5">
+      <div :class="['grid gap-1.5 grid-cols-2', capturaRapida ? 'xl:grid-cols-3' : '']">
         <button
           v-for="opcion in PROCEDIMIENTOS_NOTA_ENFERMERIA"
           :key="opcion.clave"

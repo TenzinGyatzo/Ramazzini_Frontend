@@ -1,4 +1,5 @@
 <script setup>
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { format } from 'date-fns';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -24,12 +25,15 @@ const agregarToma = () => {
 const quitarToma = (indice) => {
   formDataNotaEnfermeria.tomasControl.splice(indice, 1);
 };
+
+// Punto 46: en captura rápida los campos aprovechan el ancho
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
   <SeccionNotaEnfermeria titulo="Signos vitales" icono="fa-heart-pulse">
 
-    <div class="mt-3">
+    <div :class="capturaRapida ? '' : 'mt-3'">
       <p :class="claseAyuda">Todos son opcionales: captura solo los que tomaste.</p>
       <CamposSignosVitales
         v-if="formDataNotaEnfermeria.signosVitales"

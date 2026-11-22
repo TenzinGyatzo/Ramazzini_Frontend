@@ -1,4 +1,5 @@
 <script setup>
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import { computed, reactive } from 'vue';
 import { RANGOS_SIGNOS_NOTA_ENFERMERIA, erroresSignosNotaEnfermeria } from '@/helpers/notaEnfermeria';
 import { claseError, claseEtiquetaCampo, claseNumero } from './estilos';
@@ -65,10 +66,13 @@ const guardar = (clave, texto) => {
   }
   props.toma[clave] = Number(texto);
 };
+
+// Punto 46: en captura rápida las opciones y los campos aprovechan el ancho
+const capturaRapida = enCapturaRapida();
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-x-3 gap-y-3">
+  <div :class="['grid grid-cols-2 gap-x-3 gap-y-3', capturaRapida ? 'sm:grid-cols-3 md:grid-cols-4' : '']">
     <div
       v-for="campo in CAMPOS"
       :key="campo.clave"
