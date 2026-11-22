@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sugerirMotivoExamenHC } from './motivoExamenSugerido';
+import { motivoSugeridoConRazon, sugerirMotivoExamenHC } from './motivoExamenSugerido';
 
 const sugerir = (fechaHistoriaClinica: string, fechasAptitudes: Array<string | null>, fechaIngreso?: string | null) =>
   sugerirMotivoExamenHC({ fechaHistoriaClinica, fechasAptitudes, fechaIngreso });
@@ -33,5 +33,17 @@ describe('motivo del examen sugerido para una historia clínica nueva (punto 53)
     expect(sugerir('2026-11-22', [], null)).toBeNull();
     expect(sugerir('2026-11-22', [], 'No recuerda')).toBeNull();
     expect(sugerir('', [], '2020-01-01')).toBeNull();
+  });
+
+  it('explica por qué: la aptitud anterior más reciente o la fecha de ingreso', () => {
+    expect(
+      motivoSugeridoConRazon({ fechaHistoriaClinica: '2026-11-22', fechasAptitudes: ['2024-05-02', '2025-11-10T00:00:00.000Z'], fechaIngreso: '2020-01-01' }),
+    ).toEqual({ motivo: 'Periódico', razon: 'Ya tiene una aptitud anterior (10 de noviembre de 2025).' });
+    expect(motivoSugeridoConRazon({ fechaHistoriaClinica: '2026-11-22', fechasAptitudes: [], fechaIngreso: '2026-11-10' })?.razon).toBe(
+      'Sin aptitud anterior; ingresó hace menos de un mes (10 de noviembre de 2026).',
+    );
+    expect(motivoSugeridoConRazon({ fechaHistoriaClinica: '2026-11-22', fechasAptitudes: [], fechaIngreso: '2022-03-01' })?.razon).toBe(
+      'Sin aptitud anterior; ingresó hace un mes o más (1 de marzo de 2022).',
+    );
   });
 });

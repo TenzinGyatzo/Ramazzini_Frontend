@@ -5,6 +5,7 @@
  * Sin fecha de ingreso (o «No recuerda») no se sugiere nada: queda lo de siempre («Ingreso»).
  */
 import { formatDateYYYYMMDD } from '@/helpers/dates';
+import { fechaLegible } from '@/helpers/medicionesClinicas';
 
 export type MotivoExamenHC = 'Ingreso' | 'Inicial' | 'Periódico';
 
@@ -18,25 +19,39 @@ function unMesDespues(fecha: string): string {
   return `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
-export function sugerirMotivoExamenHC({
-  fechaHistoriaClinica,
-  fechasAptitudes,
-  fechaIngreso,
-}: {
+interface DatosSugerencia {
   fechaHistoriaClinica: string | null | undefined;
   fechasAptitudes: Array<string | Date | null | undefined>;
   fechaIngreso: string | Date | null | undefined;
-}): MotivoExamenHC | null {
+}
+
+export function sugerirMotivoExamenHC(datos: DatosSugerencia): MotivoExamenHC | null {
+  return motivoSugeridoConRazon(datos)?.motivo ?? null;
+}
+
+/**
+ * El motivo y una aclaración corta de por qué (se muestra bajo las opciones mientras el usuario
+ * no elija): con aptitud anterior, la fecha de la más reciente; sin ella, la fecha de ingreso.
+ */
+export function motivoSugeridoConRazon({
+  fechaHistoriaClinica,
+  fechasAptitudes,
+  fechaIngreso,
+}: DatosSugerencia): { motivo: MotivoExamenHC; razon: string } | null {
   const fechaHC = formatDateYYYYMMDD(fechaHistoriaClinica);
   if (!fechaHC) return null;
 
-  const hayAptitudPrevia = fechasAptitudes.some((f) => {
-    const fecha = formatDateYYYYMMDD(f);
-    return !!fecha && fecha < fechaHC;
-  });
-  if (hayAptitudPrevia) return 'Periódico';
+  const previas = fechasAptitudes
+    .map((f) => formatDateYYYYMMDD(f))
+    .filter((f) => !!f && f < fechaHC)
+    .sort();
+  if (previas.length > 0) {
+    return { motivo: 'Periódico', razon: `Ya tiene una aptitud anterior (${fechaLegible(previas[previas.length - 1])}).` };
+  }
 
   const ingreso = fechaIngreso === 'No recuerda' ? '' : formatDateYYYYMMDD(fechaIngreso);
   if (!ingreso) return null;
-  return fechaHC < unMesDespues(ingreso) ? 'Ingreso' : 'Inicial';
+  return fechaHC < unMesDespues(ingreso)
+    ? { motivo: 'Ingreso', razon: `Sin aptitud anterior; ingresó hace menos de un mes (${fechaLegible(ingreso)}).` }
+    : { motivo: 'Inicial', razon: `Sin aptitud anterior; ingresó hace un mes o más (${fechaLegible(ingreso)}).` };
 }

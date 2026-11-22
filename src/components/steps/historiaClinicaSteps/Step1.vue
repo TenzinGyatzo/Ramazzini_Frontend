@@ -13,7 +13,7 @@ import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
 import { CLASE_ETIQUETA } from '@/components/steps/captura/estiloCaptura';
 import DocumentosAPI from '@/api/DocumentosAPI';
-import { sugerirMotivoExamenHC } from '@/helpers/motivoExamenSugerido';
+import { motivoSugeridoConRazon } from '@/helpers/motivoExamenSugerido';
 
 const props = defineProps({
   variant: {
@@ -96,17 +96,21 @@ async function pedirAptitudes(trabajadorId) {
 function aplicarMotivoSugerido() {
   if (documentos.currentDocument || formDataHistoriaClinica.motivoExamenElegido) return;
   if (fechasAptitudes.value === null) return;
-  const sugerido = sugerirMotivoExamenHC({
+  const sugerido = motivoSugeridoConRazon({
     fechaHistoriaClinica: fechaHistoriaClinica.value,
     fechasAptitudes: fechasAptitudes.value,
     fechaIngreso: trabajadores.currentTrabajador?.fechaIngreso,
   });
-  if (sugerido) motivoExamen.value = sugerido;
+  razonMotivo.value = sugerido?.razon ?? '';
+  if (sugerido) motivoExamen.value = sugerido.motivo;
 }
+// Por qué se eligió (que no parezca arbitrario); se quita en cuanto el usuario elige
+const razonMotivo = ref('');
 watch([fechasAptitudes, fechaHistoriaClinica], aplicarMotivoSugerido);
 
 function alElegirMotivo() {
   formDataHistoriaClinica.motivoExamenElegido = true;
+  razonMotivo.value = '';
 }
 
 // Si el formulario se vacía después de abrir el paso (la vista lo reinicia al montarse), lo que
@@ -148,6 +152,7 @@ watch(fechaHistoriaClinica, (newValue) => {
           etiqueta="Motivo del examen"
           :opciones="OPCIONES_MOTIVO"
         />
+        <p v-if="razonMotivo" class="mt-1 text-xs text-gray-500" data-razon-motivo>{{ razonMotivo }}</p>
       </div>
       <div data-campo="fechaHistoriaClinica" class="captura-fecha">
         <p :class="[CLASE_ETIQUETA, 'mb-1']">Fecha de la historia clínica <span class="text-red-500">*</span></p>

@@ -56,21 +56,26 @@ describe('historia clínica nueva: motivo del examen sugerido', () => {
 
   it('con una aptitud anterior sugiere «Periódico»', async () => {
     const df = preparar(dia(subDays(hoy, 10)), [dia(subMonths(hoy, 11))]);
-    mount(Step1, { props: { variant: 'compact' } });
+    const w = mount(Step1, { props: { variant: 'compact' } });
     await flushPromises();
     expect(df.motivoExamen).toBe('Periódico');
+    expect(w.find('[data-razon-motivo]').text()).toMatch(/^Ya tiene una aptitud anterior \(/);
   });
 
   it('lo que elige el usuario se conserva al volver al paso', async () => {
     const df = preparar(dia(subMonths(hoy, 3)), []);
     const w = mount(Step1, { props: { variant: 'compact' } });
     await flushPromises();
+    expect(w.find('[data-razon-motivo]').text()).toMatch(/^Sin aptitud anterior; ingresó hace un mes o más/);
     await w.find('input[name="motivoExamen"][value="Periódico"]').setValue(true);
+    // Elegido a mano: ya no se explica
+    expect(w.find('[data-razon-motivo]').exists()).toBe(false);
     w.unmount();
     const w2 = mount(Step1, { props: { variant: 'compact' } });
     await flushPromises();
     expect(df.motivoExamen).toBe('Periódico');
     expect(elegido(w2)).toBe('Periódico');
+    expect(w2.find('[data-razon-motivo]').exists()).toBe(false);
   });
 
   it('al editar una historia clínica guardada no consulta ni cambia el motivo', async () => {
