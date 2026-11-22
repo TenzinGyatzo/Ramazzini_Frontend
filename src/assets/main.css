@@ -490,6 +490,12 @@ html.dark-mode .inicio-nav--enlace:focus-visible {
   animation: campo-atencion-mensaje 260ms ease-out 120ms both;
 }
 
+/* Un grupo en cuadrícula (p. ej. los umbrales de un oído): el aviso ocupa todo el ancho, no una casilla */
+.campo-atencion.grid[data-atencion]::after {
+  grid-column: 1 / -1;
+  margin-top: 0.125rem;
+}
+
 /* Aparece el contorno y un halo que se abre y se desvanece una vez */
 @keyframes campo-atencion-contorno {
   0% {

@@ -34,6 +34,12 @@ export const RECOMENDACIONES_POR_DEFECTO = [
 const vacio = (v: unknown) => v === undefined || v === null || String(v).trim() === '';
 
 export const campoUmbral = (lado: Lado, frecuencia: number) => `oido${lado}${frecuencia}`;
+/** La fila de los 9 umbrales de un oído (el aviso al guardar la marca completa). */
+export const campoFilaUmbrales = (lado: Lado) => `umbralesOido${lado}`;
+/** Una frecuencia como en el encabezado de la fila: 125, 250, 500, 1k … 8k. */
+export const etiquetaFrecuencia = (f: number) => (f >= 1000 ? `${f / 1000}k` : String(f));
+const enLista = (partes: string[]) =>
+  partes.length <= 1 ? partes.join('') : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`;
 
 /**
  * Método de una audiometría nueva: LFT (Ley Federal del Trabajo) para proveedores de México o
@@ -182,13 +188,14 @@ export function problemasUmbralesAudiometria(df: Datos): ProblemaUmbrales[] {
     return [
       {
         paso: lado === 'Derecho' ? PASO_AU.oidoDerecho : PASO_AU.oidoIzquierdo,
-        campo: campoUmbral(lado, faltan[0]),
+        // Toda la fila del oído (el cursor va a la primera casilla vacía), no solo una casilla
+        campo: campoFilaUmbrales(lado),
         nombre: `Umbrales del ${oido}`,
         falta: true as const,
         mensaje:
           faltan.length === FRECUENCIAS_AUDIOMETRIA.length
             ? `Faltan los umbrales del ${oido}.`
-            : `Faltan umbrales del ${oido}: ${faltan.join(', ')} Hz.`,
+            : `Faltan los umbrales del ${oido} en ${enLista(faltan.map(etiquetaFrecuencia))}.`,
       },
     ];
   });

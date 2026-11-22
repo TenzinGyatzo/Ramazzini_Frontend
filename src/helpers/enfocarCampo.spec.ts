@@ -109,6 +109,18 @@ describe('enfocarCampo', () => {
   });
 });
 
+describe('enfocarCampo con data-foco-vacio (grupo de casillas)', () => {
+  it('marca el grupo completo y pone el cursor en la primera casilla vacía', async () => {
+    document.body.innerHTML = `<div data-campo="umbralesOidoDerecho" data-foco-vacio>
+      <input id="a" value="5" /><input id="b" value="10" /><input id="c" /><input id="d" /></div>`;
+    const cont = document.querySelector<HTMLElement>('[data-campo="umbralesOidoDerecho"]')!;
+    visible(cont);
+    expect(await enfocarCampo('umbralesOidoDerecho', 'Faltan los umbrales del oído derecho en 3k y 4k.')).toBe(true);
+    expect(cont.classList.contains(CLASE_ATENCION)).toBe(true);
+    expect(document.activeElement?.id).toBe('c');
+  });
+});
+
 describe('comoDesplazar: campos altos se muestran desde su principio', () => {
   const pantalla = 800;
 

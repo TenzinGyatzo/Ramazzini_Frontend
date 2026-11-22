@@ -151,7 +151,13 @@ export async function enfocarCampo(
   const el = await buscarCampo(campo, raiz);
   if (!el) return false;
 
-  const foco = el.matches(ENFOCABLE) ? el : el.querySelector<HTMLElement>(ENFOCABLE);
+  // data-foco-vacio: un grupo de casillas (p. ej. los umbrales de un oído) recibe el cursor
+  // en la primera vacía, no en la primera
+  const primeraVacia =
+    el.dataset.focoVacio !== undefined
+      ? [...el.querySelectorAll<HTMLInputElement>('input:not([type="hidden"]):not([disabled])')].find((i) => i.value === '')
+      : undefined;
+  const foco = primeraVacia ?? (el.matches(ENFOCABLE) ? el : el.querySelector<HTMLElement>(ENFOCABLE));
   // Captura rápida: el formulario se desplaza dentro de su área, no la página
   // (solo si de verdad se desplaza: en celular se desplaza la página completa)
   const contenedor = el.closest<HTMLElement>('[data-captura-scroll]');

@@ -15,6 +15,7 @@ import IndicacionTab from '../IndicacionTab.vue';
 import {
   FRECUENCIAS_AUDIOMETRIA,
   campoUmbral,
+  campoFilaUmbrales,
   metodoDe,
   oidoConUmbrales,
   porcentajePerdidaOido,
@@ -113,7 +114,11 @@ const binaural = computed(() => {
     </p>
     <!-- En captura rápida, tantas frecuencias por renglón como quepan (las 9 en pantalla ancha);
          en el asistente angosto, 5 + 4 -->
+    <!-- data-campo de la fila: el aviso al guardar marca el oído completo y dice qué falta
+         debajo, a lo ancho; el cursor va a la primera casilla vacía -->
     <div
+      :data-campo="campoFilaUmbrales(lado)"
+      data-foco-vacio
       :class="[
         'grid gap-1.5',
         capturaRapida ? 'grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))]' : 'grid-cols-5',
