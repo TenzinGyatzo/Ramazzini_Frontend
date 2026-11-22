@@ -9,7 +9,8 @@ import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { RELACIONES_TEMPORALES_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
 import { horaDeApertura } from '@/helpers/notaEnfermeriaGuardado';
 import Requerido from './Requerido.vue';
-import { claseEtiqueta, claseInput, claseOpcionLista } from './estilos';
+import OpcionesSegmentadas from '../captura/OpcionesSegmentadas.vue';
+import { claseEtiqueta, claseInput } from './estilos';
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
 
 // Al abrir el paso, si el motivo está vacío, el cursor va a él (la hora ya viene llena y
@@ -43,6 +44,14 @@ const horaAtencion = computed({
 
 // Punto 46: en captura rápida las opciones y los campos aprovechan el ancho
 const capturaRapida = enCapturaRapida();
+
+const OPCIONES_RELACION = RELACIONES_TEMPORALES_NOTA_ENFERMERIA.map((o) => ({ valor: o.clave, etiqueta: o.etiqueta }));
+const relacionTemporal = computed({
+  get: () => df().relacionTemporal ?? null,
+  set: (valor) => {
+    df().relacionTemporal = valor;
+  },
+});
 </script>
 
 <template>
@@ -75,18 +84,13 @@ const capturaRapida = enCapturaRapida();
 
     <div :class="capturaRapida ? 'sm:col-span-2 lg:col-span-1' : 'mt-5'" data-pregunta="relacionTemporal" data-campo="relacionTemporal">
       <p :class="claseEtiqueta">¿Es la primera vez que se le atiende por este motivo? <Requerido /></p>
-      <div class="grid grid-cols-2 gap-2">
-        <button
-          v-for="opcion in RELACIONES_TEMPORALES_NOTA_ENFERMERIA"
-          :key="opcion.clave"
-          type="button"
-          :class="claseOpcionLista(df().relacionTemporal === opcion.clave)"
-          :aria-pressed="df().relacionTemporal === opcion.clave"
-          @click="df().relacionTemporal = opcion.clave"
-        >
-          {{ opcion.etiqueta }}
-        </button>
-      </div>
+      <!-- Punto 46: selector pegado «Primera vez | Subsecuente», como los de los otros documentos -->
+      <OpcionesSegmentadas
+        v-model="relacionTemporal"
+        name="relacionTemporal"
+        etiqueta="¿Es la primera vez que se le atiende por este motivo?"
+        :opciones="OPCIONES_RELACION"
+      />
     </div>
     </div>
 

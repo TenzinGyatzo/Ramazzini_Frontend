@@ -156,6 +156,15 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
     expect(wrapper.find('[name="horaAtencion"]').attributes('modelvalue')).toMatch(/^\d{2}:\d{2}$/);
   });
 
+  it('primera vez o subsecuente es un selector pegado de dos opciones (punto 46)', async () => {
+    delete fd.relacionTemporal;
+    const wrapper = await montar('./Step1.vue');
+    const radios = wrapper.findAll('input[type="radio"][name="relacionTemporal"]');
+    expect(radios).toHaveLength(2);
+    await radios[1].setValue(true);
+    expect(fd.relacionTemporal).toBe('subsecuente');
+  });
+
   it('cada dato obligatorio tiene su marca para llevar a él al guardar', async () => {
     const paso1 = await montar('./Step1.vue');
     for (const campo of ['fechaNotaEnfermeria', 'horaAtencion', 'relacionTemporal', 'motivoAtencion']) {
