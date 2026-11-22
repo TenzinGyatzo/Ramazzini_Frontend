@@ -3,7 +3,8 @@
  * 13 plantillas, unas cuantas respuestas que redactan el texto. Solo se guarda el texto; las
  * respuestas son ayuda de pantalla. Las frases son las de las plantillas que reemplazan.
  * Síntomas y otoscopia empiezan con No | Sí (ajuste del usuario): «No» en síntomas es
- * «Audiológicamente asintomático.»; «No» en otoscopia no agrega nada.
+ * «Audiológicamente asintomático.»; «No» en otoscopia no agrega nada. Antecedentes otológicos
+ * también con No | Sí («No» = «Niega antecedentes otológicos.»).
  */
 
 export type Exposicion = 'No' | 'Si' | null;
@@ -23,6 +24,8 @@ export interface RespuestasObservaciones {
   /** ¿Se realizó otoscopia? */
   otoscopiaRealizada: NoSi;
   otoscopia: Otoscopia[];
+  /** ¿Tiene antecedentes otológicos? */
+  conAntecedentes: NoSi;
   antecedentes: Antecedente[];
 }
 
@@ -34,6 +37,7 @@ export const respuestasVacias = (): RespuestasObservaciones => ({
   sintomas: [],
   otoscopiaRealizada: null,
   otoscopia: [],
+  conAntecedentes: null,
   antecedentes: [],
 });
 
@@ -54,10 +58,11 @@ export const OPCIONES_OTOSCOPIA: Array<{ valor: Otoscopia; etiqueta: string }> =
   { valor: 'cicatrices', etiqueta: 'Cicatrices / perforación' },
   { valor: 'otitisExterna', etiqueta: 'Otitis externa' },
 ];
-export const OPCIONES_ANTECEDENTES: Array<{ valor: Antecedente; etiqueta: string }> = [
-  { valor: 'otitisMedia', etiqueta: 'Otitis media previa' },
-  { valor: 'traumaOD', etiqueta: 'Trauma acústico OD' },
-  { valor: 'traumaOI', etiqueta: 'Trauma acústico OI' },
+/** Etiquetas cortas para que quepan en un renglón; el texto usa la frase completa. */
+export const OPCIONES_ANTECEDENTES: Array<{ valor: Antecedente; etiqueta: string; titulo: string }> = [
+  { valor: 'traumaOD', etiqueta: 'Trauma OD', titulo: 'Trauma acústico en oído derecho' },
+  { valor: 'traumaOI', etiqueta: 'Trauma OI', titulo: 'Trauma acústico en oído izquierdo' },
+  { valor: 'otitisMedia', etiqueta: 'Otitis media', titulo: 'Otitis media previa' },
 ];
 
 /** Opción que excluye a las demás del mismo grupo («Normal» en la otoscopia). */
@@ -75,7 +80,7 @@ export function hayRespuestas(r: RespuestasObservaciones): boolean {
     r.exposicion !== null ||
     r.conSintomas !== null ||
     r.otoscopiaRealizada !== null ||
-    r.antecedentes.length > 0
+    r.conAntecedentes !== null
   );
 }
 
@@ -96,12 +101,14 @@ export function redactarObservacionesAudiometria(r: RespuestasObservaciones): st
     oraciones.push(`${frase}.`);
   }
 
+  const marcados = r.conAntecedentes === 'Si' ? r.antecedentes : [];
   const antecedentes = [
-    r.antecedentes.includes('otitisMedia') ? 'otitis media previa' : null,
-    r.antecedentes.includes('traumaOD') ? 'trauma acústico en oído derecho' : null,
-    r.antecedentes.includes('traumaOI') ? 'trauma acústico en oído izquierdo' : null,
+    marcados.includes('traumaOD') ? 'trauma acústico en oído derecho' : null,
+    marcados.includes('traumaOI') ? 'trauma acústico en oído izquierdo' : null,
+    marcados.includes('otitisMedia') ? 'otitis media previa' : null,
   ].filter((x): x is string => !!x);
-  if (antecedentes.length) oraciones.push(`Refiere antecedente de ${unir(antecedentes)}.`);
+  if (r.conAntecedentes === 'No') oraciones.push('Niega antecedentes otológicos.');
+  else if (antecedentes.length) oraciones.push(`Refiere antecedente de ${unir(antecedentes)}.`);
 
   const s = r.conSintomas === 'Si' ? r.sintomas : [];
   if (r.conSintomas === 'No') oraciones.push('Audiológicamente asintomático.');

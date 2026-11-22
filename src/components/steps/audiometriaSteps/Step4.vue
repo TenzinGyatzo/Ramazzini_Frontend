@@ -94,11 +94,11 @@ const alEscribirAnios = (texto) => {
       <!-- Exposición a ruido, años y protección -->
       <div class="space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <p :class="CLASE_ETIQUETA">Exposición a ruido industrial</p>
+          <p :class="CLASE_ETIQUETA">Exposición a ruido</p>
           <OpcionesSegmentadas
             v-model="exposicion"
             name="exposicionRuido"
-            etiqueta="Exposición a ruido industrial"
+            etiqueta="Exposición a ruido"
             compacto
             :opciones="OPCIONES_NO_SI"
           />
@@ -175,17 +175,27 @@ const alEscribirAnios = (texto) => {
         </div>
       </div>
 
-      <div>
-        <p :class="[CLASE_ETIQUETA, 'mb-1']">
-          Antecedentes otológicos <span class="font-normal text-gray-400">(opcional)</span>
-        </p>
-        <OpcionesMultiples
-          name="antecedentesOtologicos"
-          etiqueta="Antecedentes otológicos"
-          :opciones="OPCIONES_ANTECEDENTES"
-          :seleccion="respuestas.antecedentes"
-          @alternar="(v) => (respuestas.antecedentes = alternar(respuestas.antecedentes, v, null))"
-        />
+      <!-- Antecedentes otológicos: «No» los niega; con «Sí», cuáles (etiquetas cortas, un renglón) -->
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <p :class="CLASE_ETIQUETA">Antecedentes otológicos</p>
+          <OpcionesSegmentadas
+            v-model="respuestas.conAntecedentes"
+            name="conAntecedentesOtologicos"
+            etiqueta="Antecedentes otológicos"
+            compacto
+            :opciones="OPCIONES_NO_SI"
+          />
+        </div>
+        <div v-if="respuestas.conAntecedentes === 'Si'" class="pl-3 border-l-2 border-gray-200">
+          <OpcionesMultiples
+            name="antecedentesOtologicos"
+            etiqueta="Antecedentes otológicos"
+            :opciones="OPCIONES_ANTECEDENTES"
+            :seleccion="respuestas.antecedentes"
+            @alternar="(v) => (respuestas.antecedentes = alternar(respuestas.antecedentes, v))"
+          />
+        </div>
       </div>
     </div>
 

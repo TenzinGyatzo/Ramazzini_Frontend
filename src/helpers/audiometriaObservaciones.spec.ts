@@ -30,10 +30,10 @@ describe('observaciones de la audiometría (punto 44)', () => {
   it('antecedentes y varios síntomas', () => {
     expect(
       redactarObservacionesAudiometria(
-        r({ antecedentes: ['otitisMedia', 'traumaOD', 'traumaOI'], conSintomas: 'Si', sintomas: ['hipoacusia', 'acufenos'], otoscopiaRealizada: 'Si', otoscopia: ['cicatrices'] }),
+        r({ conAntecedentes: 'Si', antecedentes: ['otitisMedia', 'traumaOD', 'traumaOI'], conSintomas: 'Si', sintomas: ['hipoacusia', 'acufenos'], otoscopiaRealizada: 'Si', otoscopia: ['cicatrices'] }),
       ),
     ).toBe(
-      'Refiere antecedente de otitis media previa, trauma acústico en oído derecho y trauma acústico en oído izquierdo. Refiere hipoacusia. Refiere acúfenos/tinnitus. Conductos auditivos permeables, membranas timpánicas con cambios cicatriciales.',
+      'Refiere antecedente de trauma acústico en oído derecho, trauma acústico en oído izquierdo y otitis media previa. Refiere hipoacusia. Refiere acúfenos/tinnitus. Conductos auditivos permeables, membranas timpánicas con cambios cicatriciales.',
     );
   });
 
@@ -42,6 +42,12 @@ describe('observaciones de la audiometría (punto 44)', () => {
       redactarObservacionesAudiometria(r({ conSintomas: 'No', sintomas: ['otalgia'], otoscopiaRealizada: 'No', otoscopia: ['cerumen'] })),
     ).toBe('Audiológicamente asintomático.');
     expect(redactarObservacionesAudiometria(r({ conSintomas: 'Si', otoscopiaRealizada: 'Si' }))).toBe('');
+  });
+
+  it('antecedentes con «No»: los niega', () => {
+    expect(redactarObservacionesAudiometria(r({ conAntecedentes: 'No', antecedentes: ['traumaOD'] }))).toBe(
+      'Niega antecedentes otológicos.',
+    );
   });
 
   it('«Normal» excluye a las demás en la otoscopia', () => {

@@ -6,7 +6,8 @@
  */
 defineProps<{
   name: string;
-  opciones: Array<{ valor: T; etiqueta: string }>;
+  /** `titulo`: el nombre completo, si la etiqueta es corta. */
+  opciones: Array<{ valor: T; etiqueta: string; titulo?: string }>;
   /** Etiqueta para lectores de pantalla. */
   etiqueta?: string;
   seleccion: T[];
@@ -19,6 +20,7 @@ const emit = defineEmits<{ alternar: [valor: T] }>();
     <label
       v-for="op in opciones"
       :key="op.valor"
+      :title="op.titulo"
       :class="[
         'relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-sm cursor-pointer select-none whitespace-nowrap transition-colors duration-150 focus-within:ring-2 focus-within:ring-emerald-500',
         seleccion.includes(op.valor)
