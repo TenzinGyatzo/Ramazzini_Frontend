@@ -756,12 +756,6 @@ const inicioLayout = computed(() =>
 );
 const showWelcomeHome = computed(() => inicioLayout.value.showWelcomeHome);
 const showCompactLogo = computed(() => inicioLayout.value.showCompactLogo);
-// Al capturar un documento (punto 45) no va el logo de Ramazzini (la marca está en el menú
-// lateral) y el margen superior es menor: la altura es para el asistente y el documento
-const enCapturaDocumento = computed(() => route.name === 'crear-documento');
-const logoEmpresaCaptura = computed(
-  () => enCapturaDocumento.value && !!empresas.currentEmpresa?.logotipoEmpresa?.data,
-);
 
 </script>
 
@@ -769,25 +763,23 @@ const logoEmpresaCaptura = computed(
   <PlatformTenantBanner />
   <main
     :class="[
-      'relative flex w-full max-w-full min-w-0 flex-col items-center overflow-x-auto',
-      enCapturaDocumento ? 'p-4 md:px-10 md:pb-4' : 'p-4 md:p-10',
+      'relative flex w-full max-w-full min-w-0 flex-col items-center overflow-x-auto p-4 md:p-10',
       showWelcomeHome ? 'home-layout min-h-dvh max-h-dvh overflow-y-auto' : 'min-h-screen',
     ]"
   >
     
-    <!-- Logo de la empresa al capturar un documento: arriba a la derecha, en su propio renglón
-         (sin el logo de Ramazzini ya no había espacio arriba y tapaba el documento) -->
-    <div v-if="logoEmpresaCaptura" class="flex w-full flex-shrink-0 justify-end mb-2">
-      <div class="h-12 w-12 rounded-lg flex items-center justify-center overflow-hidden bg-white shadow border border-gray-200">
-        <img :src="'/uploads/logos/' + empresas.currentEmpresa?.logotipoEmpresa?.data"
-        :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial"
-        class="max-h-full max-w-full object-contain p-1">
-      </div>
+    <!-- Logo de la empresa: arriba a la derecha, se va con la página (fijo tapaba campos al desplazarse) -->
+    <div v-if="empresas.currentEmpresa?.logotipoEmpresa?.data && 
+      ['crear-documento'].includes(route.name as string)"
+      class="absolute top-4 right-4 h-16 w-16 md:h-24 md:w-24 rounded-lg z-[55] flex flex-col items-center justify-center overflow-hidden bg-white shadow-lg border border-gray-200">
+      <img :src="'/uploads/logos/' + empresas.currentEmpresa?.logotipoEmpresa?.data"
+      :alt="'Logo de ' + empresas.currentEmpresa?.nombreComercial" 
+      class="max-h-full max-w-full object-contain p-2">
     </div>
 
     <!-- Logo Ramazzini: tamaño/posición original por ruta; v-show evita remontaje; aspect-ratio evita CLS al cargar img -->
     <div
-      v-show="(showWelcomeHome || showCompactLogo) && !enCapturaDocumento"
+      v-show="showWelcomeHome || showCompactLogo"
       class="layout-logo-region flex w-full flex-shrink-0 justify-center"
     >
       <RouterLink
