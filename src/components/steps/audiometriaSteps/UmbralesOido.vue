@@ -126,7 +126,7 @@ const binaural = computed(() => {
     >
       <div v-for="f in FRECUENCIAS_AUDIOMETRIA" :key="f" :data-campo="campoUmbral(lado, f)" class="min-w-0">
         <label :for="campoUmbral(lado, f)" class="block text-center text-[11px] text-gray-500 mb-0.5">
-          {{ f >= 1000 ? `${f / 1000}k` : f }}<span class="sr-only"> Hz</span>
+          {{ f }}<span class="sr-only"> Hz</span>
         </label>
         <input
           :id="campoUmbral(lado, f)"
