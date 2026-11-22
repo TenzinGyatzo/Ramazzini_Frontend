@@ -6,6 +6,7 @@ import { useRouter } from "vue-router";
 import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
 import CountrySelect from "@/components/CountrySelect.vue";
 import CLUESAutocomplete from "@/components/selectors/CLUESAutocomplete.vue";
+import OpcionesSegmentadas from "@/components/steps/captura/OpcionesSegmentadas.vue";
 import { useHtmlDarkMode } from "@/composables/useHtmlDarkMode";
 import { PERFILES_PROVEEDOR_SALUD } from "@/constants/perfilProveedorSalud";
 
@@ -23,7 +24,16 @@ const isLoading = ref(false);
 const phoneInput = ref(null);
 const step1Error = ref("");
 const registrationError = ref("");
-const establecimientoPrivado = ref(false);
+// Punto (60): «¿Tu establecimiento tiene CLUES?». La mayoría son privados sin CLUES: «No»
+// elegido de entrada registra la 9998; con «Sí» aparece el buscador. Lo buscado se recuerda
+// si se cambia de respuesta.
+const tieneClues = ref("No");
+const OPCIONES_TIENE_CLUES = [
+  { valor: "No", etiqueta: "No, es privado" },
+  { valor: "Si", etiqueta: "Sí" },
+];
+let cluesBuscada = "";
+const contenedorClues = ref(null);
 const CLUES_SERVICIOS_MEDICOS_PRIVADOS = "9998";
 const formDataUser = reactive({
   username: "",
@@ -80,7 +90,7 @@ const handleSubmitStep2 = async (data) => {
   if (isMX.value && !campoLleno(formDataProveedorSalud.clues)) {
     toast.open({
       type: "error",
-      message: "Indica la CLUES o marca que es un establecimiento privado",
+      message: "Busca y elige la CLUES de tu establecimiento",
       position: "bottom-left",
     });
     return;
@@ -313,20 +323,27 @@ watch(() => formDataUser.country, (newCountry) => {
   }
 }, { immediate: true });
 
-watch(establecimientoPrivado, (checked) => {
-  if (checked) {
-    formDataProveedorSalud.clues = CLUES_SERVICIOS_MEDICOS_PRIVADOS;
-  } else if (formDataProveedorSalud.clues === CLUES_SERVICIOS_MEDICOS_PRIVADOS) {
+function aplicarTieneClues() {
+  if (!isMX.value) {
+    // Fuera de México no hay CLUES
     formDataProveedorSalud.clues = "";
+    return;
   }
-});
-
-// Fuera de México no hay CLUES
-watch(isMX, (mx) => {
-  if (mx) return;
-  establecimientoPrivado.value = false;
-  formDataProveedorSalud.clues = "";
-});
+  formDataProveedorSalud.clues = tieneClues.value === "Si" ? cluesBuscada : CLUES_SERVICIOS_MEDICOS_PRIVADOS;
+}
+watch([tieneClues, isMX], aplicarTieneClues, { immediate: true });
+// Lo que se busque se recuerda para cuando se regrese a «Sí»
+watch(
+  () => formDataProveedorSalud.clues,
+  (clues) => {
+    if (tieneClues.value === "Si" && isMX.value) cluesBuscada = clues || "";
+  },
+);
+async function alElegirTieneClues(valor) {
+  if (valor !== "Si") return;
+  await nextTick();
+  contenedorClues.value?.querySelector("input")?.focus();
+}
 
 function campoLleno(value) {
   return typeof value === "string" && value.trim() !== "";
@@ -363,7 +380,7 @@ const step2Blocker = computed(() => {
   }
 
   if (isMX.value && !campoLleno(formDataProveedorSalud.clues)) {
-    return "Indica la CLUES o marca que es un establecimiento privado";
+    return "Busca y elige la CLUES de tu establecimiento";
   }
 
   if (!formDataProveedorSalud.termsAccepted) {
@@ -689,25 +706,29 @@ onMounted(() => {
 
         <!-- Punto (60): en México la cuenta opera con cumplimiento normativo; solo se pide la CLUES -->
         <div v-if="isMX" class="space-y-3" data-campo="clues">
-          <CLUESAutocomplete
-            v-if="!establecimientoPrivado"
-            v-model="formDataProveedorSalud.clues"
-            :required="true"
-            :show-private-clues-note="false"
-          />
-          <label class="flex items-start gap-3 cursor-pointer rounded-lg border border-gray-200 bg-white p-3">
-            <input
-              type="checkbox"
-              class="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-              v-model="establecimientoPrivado"
+          <div>
+            <p class="block font-medium text-lg text-gray-700 mb-1">
+              ¿Tu establecimiento tiene CLUES? <span class="text-red-500">*</span>
+            </p>
+            <OpcionesSegmentadas
+              v-model="tieneClues"
+              @update:model-value="alElegirTieneClues"
+              name="tieneClues"
+              etiqueta="¿Tu establecimiento tiene CLUES?"
+              :opciones="OPCIONES_TIENE_CLUES"
             />
-            <span class="text-sm text-gray-700">
-              Es un establecimiento privado.
-              <span class="block text-xs text-gray-500 mt-1">
-                Se registrará el CLUES 9998 - SERVICIOS MEDICOS PRIVADOS.
-              </span>
-            </span>
-          </label>
+            <p v-if="tieneClues === 'No'" class="mt-1.5 text-xs text-gray-500">
+              Se registrará la CLUES 9998 – Servicios médicos privados.
+            </p>
+          </div>
+          <div v-if="tieneClues === 'Si'" ref="contenedorClues">
+            <CLUESAutocomplete
+              v-model="formDataProveedorSalud.clues"
+              label="CLUES del establecimiento"
+              :required="true"
+              :show-private-clues-note="false"
+            />
+          </div>
         </div>
         </div>
         
