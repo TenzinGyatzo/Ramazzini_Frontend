@@ -95,7 +95,7 @@ function deltaDe(fila, freq) {
 <template>
   <div
     ref="scrollRoot"
-    class="visualizador-informe-longitudinal-audiometrico space-y-4 border-shadow w-full text-left rounded-lg p-4 sm:p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[var(--alto-documento,66vh)] sm:max-h-[var(--alto-documento,68vh)] md:max-h-[var(--alto-documento,67vh)] lg:max-h-[var(--alto-documento,67vh)] xl:max-h-[var(--alto-documento,81vh)] overflow-y-auto"
+    class="visualizador-informe-longitudinal-audiometrico space-y-4 border-shadow w-full text-left rounded-lg p-4 sm:p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-4xl mx-auto max-h-[var(--alto-documento,66vh)] sm:max-h-[var(--alto-documento,68vh)] md:max-h-[var(--alto-documento,67vh)] lg:max-h-[var(--alto-documento,67vh)] xl:max-h-[var(--alto-documento,81vh)] overflow-y-auto"
   >
     <div data-paso="1" class="space-y-4">
     <div class="flex flex-wrap md:flex-nowrap w-full gap-4 items-center">

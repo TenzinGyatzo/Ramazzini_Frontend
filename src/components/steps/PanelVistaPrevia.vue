@@ -50,13 +50,14 @@ onUnmounted(() => document.removeEventListener('keydown', alTecla, true));
     <Transition name="panel-vista-previa">
       <div v-if="abierta" data-pantalla-completa class="fixed inset-0 z-50 flex justify-end" data-panel-vista-previa>
         <div class="absolute inset-0 bg-gray-900/30 dark:bg-black/50" aria-hidden="true" @click="emit('cerrar')"></div>
+        <!-- Amplio: un poco más que una hoja tamaño carta (antes 76rem, demasiado ancho) -->
         <aside
           role="dialog"
           aria-modal="true"
           :aria-label="titulo || 'Vista previa'"
           :class="[
             'panel relative h-full w-full bg-gray-100 dark:bg-slate-900 shadow-2xl flex flex-col',
-            amplio ? 'sm:w-[min(76rem,96vw)]' : 'sm:w-[min(52rem,92vw)]',
+            amplio ? 'sm:w-[min(58rem,96vw)]' : 'sm:w-[min(52rem,92vw)]',
           ]"
         >
           <header

@@ -72,7 +72,7 @@ const stepDiagnostico = computed(() => enAsistente('evDiagnostico'));
 <template>
   <div
     ref="scrollRoot"
-    class="visualizador-examen-vista flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[var(--alto-documento,66vh)] sm:max-h-[var(--alto-documento,68vh)] md:max-h-[var(--alto-documento,67vh)] lg:max-h-[var(--alto-documento,67vh)] xl:max-h-[var(--alto-documento,81vh)] overflow-y-auto">
+    class="visualizador-examen-vista flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-3xl mx-auto max-h-[var(--alto-documento,66vh)] sm:max-h-[var(--alto-documento,68vh)] md:max-h-[var(--alto-documento,67vh)] lg:max-h-[var(--alto-documento,67vh)] xl:max-h-[var(--alto-documento,81vh)] overflow-y-auto">
 
     <!-- Empresa y Fecha -->
     <div class="flex flex-wrap md:flex-nowrap w-full gap-4 items-center">
@@ -406,7 +406,8 @@ const stepDiagnostico = computed(() => enAsistente('evDiagnostico'));
       </div>
     </template>
   </div>
-  <div class="w-full flex justify-end gap-4 mt-4">
+  <!-- Mismo ancho que el documento: los botones quedan alineados a su orilla derecha -->
+  <div class="w-full max-w-3xl mx-auto flex justify-end gap-4 mt-4">
     <a 
       href="/img/assets/Carta-Jaeger.pdf" 
       download 

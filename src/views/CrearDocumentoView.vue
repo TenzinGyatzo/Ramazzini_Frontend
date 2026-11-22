@@ -660,7 +660,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           </div>
           <div
             v-if="!capturaRapida"
-            :class="aptitudLadoALado ? 'flex-1 min-w-0' : 'w-full'"
+            :class="aptitudLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorAptitud />
@@ -687,7 +687,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           </div>
           <div
             v-if="!capturaRapida"
-            :class="audiometriaLadoALado ? 'flex-1 min-w-0' : 'w-full'"
+            :class="audiometriaLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorAudiometria />
@@ -711,7 +711,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/3 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorCertificado />
           </div>
         </div>
@@ -723,7 +723,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/3 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorCertificadoExpedito />
           </div>
         </div>
@@ -736,7 +736,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div :class="capturaRapida ? 'w-full' : exploracionLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] xl:max-w-md shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div v-if="!capturaRapida" :class="exploracionLadoALado ? 'flex-1 min-w-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
+          <div v-if="!capturaRapida" :class="exploracionLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
             <VisualizadorExploracionFisica />
           </div>
           <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
@@ -761,7 +761,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           </div>
           <div
             v-if="!capturaRapida"
-            :class="examenVistaLadoALado ? 'flex-1 min-w-0' : 'w-full'"
+            :class="examenVistaLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorExamenVista />
@@ -786,7 +786,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div :class="capturaRapida ? 'w-full' : historiaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] xl:max-w-md shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div v-if="!capturaRapida" :class="historiaLadoALado ? 'flex-1 min-w-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
+          <div v-if="!capturaRapida" :class="historiaLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
             <VisualizadorHistoriaClinica />
           </div>
           <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
@@ -963,7 +963,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorHistoriaOtologica />
           </div>
         </div>
@@ -975,7 +975,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorPrevioEspirometria />
           </div>
         </div>
@@ -1041,7 +1041,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorEntrevistaPsicologica />
           </div>
         </div>
@@ -1071,7 +1071,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorTrastornosEstadoAnimo />
           </div>
         </div>
@@ -1101,7 +1101,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorCuestionarioProdromalBreve />
           </div>
         </div>
@@ -1131,7 +1131,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorTrastornoLimitePersonalidad />
           </div>
         </div>
@@ -1161,7 +1161,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorCuestionarioNordico />
           </div>
         </div>
@@ -1175,7 +1175,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           </div>
           <div
             v-if="!capturaRapida"
-            :class="notaEnfermeriaLadoALado ? 'flex-1 min-w-0' : 'w-full'"
+            :class="notaEnfermeriaLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorNotaEnfermeria />
@@ -1216,7 +1216,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorEvaluacionSuenoVigilia />
           </div>
         </div>
@@ -1227,7 +1227,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorEventoSeguimientoCardiometabolico />
           </div>
         </div>
@@ -1239,7 +1239,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorInformeLongitudinalCardiometabolico />
           </div>
         </div>
@@ -1251,7 +1251,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0">
+          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
             <VisualizadorInformeLongitudinalAudiometrico />
           </div>
         </div>
