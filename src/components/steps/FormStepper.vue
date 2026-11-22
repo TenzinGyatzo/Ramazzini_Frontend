@@ -557,7 +557,7 @@ import EncabezadoTrabajadorCaptura from '@/components/steps/EncabezadoTrabajador
 import { useAlturaHastaElFondo } from '@/composables/useAlturaHastaElFondo';
 import { useAlturaAsistente } from '@/composables/useAlturaAsistente';
 import { estadoIndiceCaptura, seccionIncompletaVecina, atajoDeSeccion } from '@/helpers/indiceCaptura';
-import { acomodarCampo, buscarCampo, buscarPregunta, campoALaVista, recordarDesde } from '@/helpers/campoEntreModos';
+import { acomodarCampo, buscarCampo, buscarPregunta, campoALaVista, recordarCampo, recordarDesde } from '@/helpers/campoEntreModos';
 import { esComputadora, primerCampoParaEnfocar } from '@/composables/useAutofocoPrimerVacio';
 import { quitarMedicionesVacias } from '@/helpers/medicionesClinicas';
 import { getNotaMedicaStepMap } from '@/helpers/notaMedicaStepMap';
@@ -2538,17 +2538,46 @@ export default {
       }
     };
 
-    /** Captura rápida: la sección que se está viendo (la que cruza el primer tercio del área). */
-    const seccionALaVistaCaptura = () => {
+    /** Lo visible del área de captura (o de la ventana, si el área no se desplaza). */
+    const cajaVisibleCaptura = () => {
       const area = document.querySelector('[data-captura-scroll]');
-      const caja = area && area.scrollHeight > area.clientHeight ? area.getBoundingClientRect() : { top: 0, height: window.innerHeight };
-      const linea = caja.top + Math.min(caja.height / 3, 200);
-      let ultima = null;
-      for (const s of document.querySelectorAll('[data-seccion-captura]')) {
-        if (s.getBoundingClientRect().top > linea) break;
-        ultima = Number(s.getAttribute('data-seccion-captura'));
+      return area && area.scrollHeight > area.clientHeight
+        ? area.getBoundingClientRect()
+        : { top: 0, bottom: window.innerHeight, height: window.innerHeight };
+    };
+    /**
+     * Captura rápida: la sección en que se está. La del último campo usado si ese campo sigue a
+     * la vista (al pulsar el interruptor el cursor sale del campo); si no, la primera que se ve
+     * desde arriba (al final del área, la primera que se ve completa).
+     */
+    const seccionALaVistaCaptura = () => {
+      const caja = cajaVisibleCaptura();
+      if (ultimoCampo) {
+        const r = (buscarCampo(ultimoCampo) ?? buscarPregunta(ultimoCampo))?.getBoundingClientRect();
+        if (r && r.bottom > caja.top && r.top < caja.bottom) return ultimoCampo.seccion;
       }
-      return ultima ?? seccionActualCaptura.value ?? 1;
+      // La última sección a la que se llevó o donde se enfocó, si su inicio sigue a la vista
+      // (campos que no se pueden volver a encontrar, p. ej. un cuadro de texto sin nombre)
+      if (seccionActualCaptura.value) {
+        const r = document
+          .querySelector(`[data-seccion-captura="${seccionActualCaptura.value}"]`)
+          ?.getBoundingClientRect();
+        if (r && r.top >= caja.top - 4 && r.top < caja.bottom - 80) return seccionActualCaptura.value;
+      }
+      const secciones = [...document.querySelectorAll('[data-seccion-captura]')];
+      const numero = (s) => Number(s.getAttribute('data-seccion-captura'));
+      const area = document.querySelector('[data-captura-scroll]');
+      const desplaza = area && area.scrollHeight > area.clientHeight ? area : document.scrollingElement;
+      const alFinal =
+        desplaza && desplaza.scrollTop > 0 && desplaza.scrollTop + desplaza.clientHeight >= desplaza.scrollHeight - 4;
+      // Al final del área las últimas secciones no pueden subir: la primera que se ve completa
+      if (alFinal) {
+        const completa = secciones.find((s) => s.getBoundingClientRect().top >= caja.top - 4);
+        if (completa) return numero(completa);
+      }
+      // Si no, la primera que se ve desde arriba (más que un borde)
+      const vista = secciones.find((s) => s.getBoundingClientRect().bottom > caja.top + 80);
+      return vista ? numero(vista) : seccionActualCaptura.value ?? 1;
     };
 
     /**
@@ -2573,6 +2602,16 @@ export default {
         'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])',
       );
       if (campo && esComputadora()) campo.focus({ preventScroll: true });
+      // Cuenta como el campo en que se está (si la ventana no tiene el foco, el navegador no avisa)
+      if (campo) ultimoCampo = recordarCampo(campo, numero);
+      // La captura rápida todavía se acomoda (lado a lado, altura del área): si eso movió la
+      // sección, se vuelve a llevar arriba
+      for (const pausa of [300, 500, 700]) {
+        await esperar(pausa);
+        if (!seccion.isConnected || campoPorRestaurar || ultimoGesto > inicio) return;
+        const caja = cajaVisibleCaptura();
+        if (Math.abs(seccion.getBoundingClientRect().top - caja.top) > 24) seccion.scrollIntoView({ block: 'start' });
+      }
     };
 
     const cambiarModoConservandoCampo = (nuevo) => {
