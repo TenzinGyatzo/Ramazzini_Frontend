@@ -16,7 +16,8 @@ defineProps<{
 }>();
 
 const CELDA = 'text-xs sm:text-sm text-center px-2 py-0 border border-gray-300';
-const CELDA_ESTUDIO_COMPACTA = 'text-xs leading-tight tracking-tight text-center px-1.5 py-0.5 border border-gray-300';
+// 12 px hasta 1280; desde ahí la tabla llega a su ancho máximo y cabe en 14 (como el resto)
+const CELDA_ESTUDIO_COMPACTA = 'text-xs xl:text-sm leading-tight tracking-tight text-center px-1.5 py-0.5 border border-gray-300';
 </script>
 
 <template>

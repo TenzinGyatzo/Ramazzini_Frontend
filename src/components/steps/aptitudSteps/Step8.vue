@@ -75,7 +75,13 @@ const COLORES = {
           <span class="min-w-0">
             <span class="flex items-center gap-1.5 text-sm font-semibold">
               {{ op.etiqueta }}
-              <i v-if="aptitudPuesto === op.valor" class="fas fa-check text-xs" aria-hidden="true"></i>
+              <!-- En captura rápida la palomita ocupa su lugar aunque no se vea: si solo la elegida la
+                   tuviera, cambiaría su ancho y las opciones brincarían de renglón al elegir -->
+              <i
+                v-if="capturaRapida || aptitudPuesto === op.valor"
+                :class="['fas fa-check text-xs', aptitudPuesto === op.valor ? '' : 'invisible']"
+                aria-hidden="true"
+              ></i>
             </span>
             <span v-if="!capturaRapida" class="block text-xs text-gray-500 leading-snug mt-0.5">{{ op.descripcion }}</span>
           </span>
