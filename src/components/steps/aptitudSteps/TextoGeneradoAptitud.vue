@@ -51,12 +51,27 @@ const steps = useStepsStore();
 const { aptitudSectionsV2Enabled } = useAptitudSectionsV2();
 const PASO_APTITUD = 8;
 
+const DESTACADA = 'seccion-destacada';
+let temporizadorDestacada: ReturnType<typeof setTimeout> | undefined;
+/** Ilumina la sección un momento para que se vea a dónde se llegó (se puede repetir). */
+function destacar(el: HTMLElement) {
+  el.classList.remove(DESTACADA);
+  void el.offsetWidth; // reinicia la animación si ya estaba
+  el.classList.add(DESTACADA);
+  // Por tiempo y no por animationend: sin animación (movimiento reducido) también se quita
+  clearTimeout(temporizadorDestacada);
+  temporizadorDestacada = setTimeout(() => el.classList.remove(DESTACADA), 2300);
+}
+
 function enfocarAptitud(desplazar: boolean): boolean {
   const opciones = [...document.querySelectorAll<HTMLInputElement>('input[name="aptitudPuesto"]')];
   if (!opciones.length) return false;
   if (desplazar) {
     const seccion = opciones[0].closest<HTMLElement>('[data-seccion-captura]') ?? opciones[0].closest<HTMLElement>('[role="radiogroup"]');
-    seccion?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (seccion) {
+      seccion.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      destacar(seccion);
+    }
   }
   (opciones.find((o) => o.checked) ?? opciones[0]).focus({ preventScroll: true });
   return true;
@@ -105,15 +120,14 @@ async function irAAptitud() {
         No se pudieron consultar los documentos del trabajador; escríbelo a mano.
       </template>
       <template v-else-if="faltaAptitud">
-        <span class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 px-2.5 py-1.5" data-falta-aptitud>
-          <span>
-            <i class="fas fa-circle-info text-emerald-600 mr-1" aria-hidden="true"></i>
-            <strong class="font-semibold text-gray-700 dark:text-slate-200">Primero elige la aptitud al puesto.</strong>
-            Con ella se redacta este texto.
+        <!-- Una frase corta y el botón en el mismo renglón, también en el asistente angosto -->
+        <span class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 px-2.5 py-1.5" data-falta-aptitud>
+          <span class="font-semibold text-gray-700 dark:text-slate-200">
+            <i class="fas fa-circle-info text-emerald-600 mr-1" aria-hidden="true"></i>Se redacta al elegir la aptitud.
           </span>
           <button
             type="button"
-            class="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 rounded"
+            class="whitespace-nowrap font-semibold text-emerald-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 rounded"
             @click="irAAptitud"
           >
             Elegir la aptitud <i class="fas fa-arrow-right text-[10px]" aria-hidden="true"></i>
