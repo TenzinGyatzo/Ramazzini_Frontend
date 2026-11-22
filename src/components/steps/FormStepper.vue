@@ -2028,14 +2028,18 @@ export default {
         ]);
       }
       if (documentos.currentTypeOfDocument === 'aptitud') {
-        // Lo que se guardaría (copia: los textos generados de secciones sin abrir cuentan)
-        return recolectarProblemasObligatoriosYFecha(
+        // Lo que se guardaría (copia: los textos generados de secciones sin abrir cuentan). Los
+        // avisos en el orden de las secciones (alteraciones va antes que aptitud, punto 45)
+        const problemas = recolectarProblemasObligatoriosYFecha(
           'aptitud',
           prepararAptitudParaGuardar(
             { ...formData.formDataAptitud },
             { contexto: contextoAptitud.datos, sexo: trabajadores.currentTrabajador?.sexo },
           ),
         );
+        if (!isAptitudSectionsV2Enabled(route.query)) return problemas;
+        const seccion = (p) => (p.paso != null ? aptLegacyStepToSectionIndex(p.paso) : 0);
+        return [...problemas].sort((a, b) => seccion(a) - seccion(b));
       }
       if (documentos.currentTypeOfDocument === 'notaEnfermeria') {
         return recolectarProblemasNotaEnfermeria();

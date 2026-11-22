@@ -18,7 +18,12 @@ export interface AptitudSectionDef {
   legacyTo: number;
 }
 
-/** Definición canónica de secciones (orden de navegación V2). */
+/**
+ * Definición canónica de secciones (orden de navegación V2). Punto 45: Alteraciones va antes que
+ * Aptitud (decisión del usuario 2026-11-21): el médico revisa lo encontrado y luego decide. Los
+ * pasos conservan su número de siempre (8 aptitud, 9 alteraciones); el documento y el PDF no
+ * cambian de orden.
+ */
 export const APTITUD_SECTION_DEFS: AptitudSectionDef[] = [
   { id: 'fecha', name: 'Fecha', legacyFrom: 1, legacyTo: 1 },
   {
@@ -27,8 +32,8 @@ export const APTITUD_SECTION_DEFS: AptitudSectionDef[] = [
     legacyFrom: 2,
     legacyTo: 7,
   },
-  { id: 'aptitud', name: 'Aptitud', legacyFrom: 8, legacyTo: 8 },
   { id: 'alteraciones', name: 'Alteraciones', legacyFrom: 9, legacyTo: 9 },
+  { id: 'aptitud', name: 'Aptitud', legacyFrom: 8, legacyTo: 8 },
   { id: 'resultados', name: 'Resultados', legacyFrom: 10, legacyTo: 10 },
   { id: 'medidas', name: 'Medidas', legacyFrom: 11, legacyTo: 11 },
 ];

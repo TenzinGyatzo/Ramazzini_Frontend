@@ -251,9 +251,10 @@ describe('aptitud', () => {
       ['resultados', 'Escribe los resultados.'],
       ['medidasPreventivas', 'Escribe las medidas preventivas.'],
     ]);
-    // Con secciones: fecha, (evaluaciones), aptitud, alteraciones, resultados, medidas
+    // Con secciones: fecha, (evaluaciones), alteraciones, aptitud, resultados, medidas (punto 45:
+    // FormStepper ordena los avisos de la aptitud por sección)
     const secciones = lista.map((x) => legacyStepToSectionIndex(x.paso!));
     expect(new Set(secciones).size).toBe(5);
-    expect([...secciones].sort((a, b) => a - b)).toEqual(secciones);
+    expect(secciones).toEqual([1, 4, 3, 5, 6]);
   });
 });
