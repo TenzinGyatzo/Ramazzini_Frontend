@@ -650,7 +650,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'aptitud'"
           ref="contenedorAptitud"
           :class="['flex gap-3 md:gap-6', aptitudLadoALado ? 'flex-row items-start' : 'flex-col']">
-          <div :class="capturaRapida ? 'w-full' : aptitudLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
+          <div :class="capturaRapida ? 'w-full' : aptitudLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div
@@ -677,7 +677,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'audiometria'"
           ref="contenedorAudiometria"
           :class="['flex gap-3 md:gap-6', audiometriaLadoALado ? 'flex-row items-start' : 'flex-col']">
-          <div :class="capturaRapida ? 'w-full' : audiometriaLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
+          <div :class="capturaRapida ? 'w-full' : audiometriaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div
@@ -728,7 +728,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'exploracionFisica'"
           ref="contenedorExploracionFisica"
           :class="['flex gap-3 md:gap-6', exploracionLadoALado ? 'flex-row items-start' : 'flex-col']">
-          <div :class="capturaRapida ? 'w-full' : exploracionLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
+          <div :class="capturaRapida ? 'w-full' : exploracionLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div v-if="!capturaRapida" :class="exploracionLadoALado ? 'flex-1 min-w-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
@@ -751,7 +751,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'examenVista'"
           ref="contenedorExamenVista"
           :class="['flex gap-3 md:gap-6', examenVistaLadoALado ? 'flex-row items-start' : 'flex-col']">
-          <div :class="capturaRapida ? 'w-full' : examenVistaLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
+          <div :class="capturaRapida ? 'w-full' : examenVistaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div
@@ -778,7 +778,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'historiaClinica'"
           ref="contenedorHistoriaClinica"
           :class="['flex gap-3 md:gap-6', historiaLadoALado ? 'flex-row items-start' : 'flex-col']">
-          <div :class="capturaRapida ? 'w-full' : historiaLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
+          <div :class="capturaRapida ? 'w-full' : historiaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div v-if="!capturaRapida" :class="historiaLadoALado ? 'flex-1 min-w-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
