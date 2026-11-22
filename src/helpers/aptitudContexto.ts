@@ -9,6 +9,7 @@
  */
 import { reactive } from 'vue';
 import DocumentosAPI from '@/api/DocumentosAPI';
+import ResultadosClinicosAPI from '@/api/ResultadosClinicosAPI';
 import { findNearestDocument } from '@/helpers/findNearestDocuments';
 import type { CuatroTamizajesDocs } from '@/helpers/tamizajePsicologicoPaso4Resultados';
 
@@ -18,6 +19,8 @@ export interface ContextoAptitud {
   /** Documentos de `aptitud-vecinos`, por tipo. */
   vecinos: Record<string, Doc[]>;
   motivoExamen: string | null;
+  /** Resultados clínicos externos (EKG, espirometría…): la tabla de estudios de la captura rápida. */
+  resultados?: Doc[];
   /** No llegaron los documentos vecinos (alteraciones y medidas se escriben a mano). */
   sinVecinos?: boolean;
   /** Listas completas de los cuatro tamizajes (los usa el texto de resultados). */
@@ -84,7 +87,7 @@ async function datos<T>(promesa: Promise<{ data: T }>, porDefecto: T, alFallar?:
 /** Pide al servidor lo que usan los textos (en paralelo; lo que falle queda vacío). */
 export async function pedirContextoAptitud(trabajadorId: string): Promise<ContextoAptitud> {
   let sinVecinos = false;
-  const [vecinos, motivo, ep, tea, pqb, tlp] = await Promise.all([
+  const [vecinos, motivo, ep, tea, pqb, tlp, resultados] = await Promise.all([
     datos(DocumentosAPI.getAptitudInformeVecinos(trabajadorId) as Promise<{ data: Record<string, Doc[]> }>, {}, () => {
       sinVecinos = true;
     }),
@@ -93,11 +96,13 @@ export async function pedirContextoAptitud(trabajadorId: string): Promise<Contex
     datos(DocumentosAPI.getTrastornosEstadoAnimo(trabajadorId) as Promise<{ data: Doc[] }>, []),
     datos(DocumentosAPI.getCuestionarioProdromalBreve(trabajadorId) as Promise<{ data: Doc[] }>, []),
     datos(DocumentosAPI.getTrastornoLimitePersonalidad(trabajadorId) as Promise<{ data: Doc[] }>, []),
+    datos(ResultadosClinicosAPI.getByTrabajador(trabajadorId) as Promise<{ data: Doc[] }>, []),
   ]);
   return {
     vecinos: vecinos ?? {},
     sinVecinos,
     motivoExamen: motivo?.data?.motivoExamen ?? null,
+    resultados: resultados ?? [],
     tamizajes: {
       entrevistaPsicologica: ep ?? [],
       trastornosEstadoAnimo: tea ?? [],
