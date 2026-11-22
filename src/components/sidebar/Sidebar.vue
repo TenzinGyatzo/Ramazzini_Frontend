@@ -270,6 +270,7 @@ const footerEditionText = computed(() => {
               en-ruta
               :nivel="1"
               :tooltip="`Estadísticas de ${nombreEmpresa}`"
+              :activo-tambien-en="['informes-salud-ocupacional']"
               @click.stop>
               Estadísticas
             </SidebarLink>
@@ -280,6 +281,7 @@ const footerEditionText = computed(() => {
               en-ruta
               :nivel="1"
               :tooltip="`Incapacidades de ${nombreEmpresa}`"
+              :activo-tambien-en="['incapacidades-informe', 'incapacidades-prima']"
               data-testid="sidebar-incapacidades"
               @click.stop>
               Incapacidades

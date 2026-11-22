@@ -5,6 +5,7 @@
  * - `nivel`: 1 = cuelga del elemento de arriba (p. ej. Estadísticas bajo la empresa).
  * - `enRuta`: parte de «Donde estás»; el ícono va sobre la línea que une la ruta.
  * - Ranura `insignia`: una etiqueta corta al final del renglón (estado del documento).
+ * - `activoTambienEn`: nombres de ruta de subpantallas que también lo marcan como activo.
  */
 import { useRouter, RouterLink, useRoute } from 'vue-router';
 import { computed, ref } from 'vue';
@@ -22,6 +23,12 @@ const props = defineProps({
     titulo: { type: String, default: '' },
     nivel: { type: Number, default: 0 },
     enRuta: { type: Boolean, default: false },
+    /**
+     * Subpantallas que también lo marcan como activo (por nombre de ruta): p. ej. el informe y la
+     * prima de Incapacidades. No se compara por prefijo de la ruta: las direcciones anidan la
+     * jerarquía (centros → trabajadores) y se marcarían varios a la vez.
+     */
+    activoTambienEn: { type: Array as () => string[], default: () => [] },
 });
 
 const route = useRoute();
@@ -29,6 +36,7 @@ const isHovered = ref(false);
 const linkContainerRef = ref<HTMLElement>();
 
 const isActive = computed(() => {
+    if (route.name && props.activoTambienEn.includes(String(route.name))) return true;
     const resolved = router.resolve(props.to);
     return resolved.path === route.path;
 });

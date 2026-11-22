@@ -438,6 +438,12 @@ describe('Sidebar — Inicio', () => {
     await router.push('/e/e1/incapacidades');
     await wrapper.vm.$nextTick();
     expect(wrapper.find('[data-testid="sidebar-incapacidades"]').exists()).toBe(true);
+    // En una subpantalla (el informe) también se marca como activo, y la empresa no
+    router.addRoute({ path: '/e/:idEmpresa/incapacidades/informe', name: 'incapacidades-informe', component: { template: '<div />' } });
+    await router.push('/e/e1/incapacidades/informe');
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get('[data-testid="sidebar-incapacidades"] a').classes()).toContain('active');
+    expect(wrapper.get('[data-testid="sidebar-ruta"] a').classes()).not.toContain('active');
     // Otra empresa: vuelve a esconderse hasta visitarla
     empresas.currentEmpresaId = 'e2';
     await wrapper.vm.$nextTick();
