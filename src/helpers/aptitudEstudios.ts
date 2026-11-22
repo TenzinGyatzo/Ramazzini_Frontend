@@ -6,6 +6,7 @@
  * aptitud y el visualizador las agrega al final.
  */
 import { textoCinturaResumen } from '@/helpers/medicionesClinicas';
+import { convertirFechaISOaDDMMYYYY, formatDateDDMMYYYY } from '@/helpers/dates';
 import { esAudiometriaExternaUtilizable, usarAudiometriaExterna } from '@/helpers/audiometriaFuente';
 import { findNearestDocument } from '@/helpers/findNearestDocuments';
 import { textoResumenCuestionarioNordico } from '@/helpers/cuestionarioNordico';
@@ -25,6 +26,35 @@ export interface FilaEstudioAptitud {
   /** Fecha del documento tal como llega (ISO); null si no hay documento. */
   fecha: string | null;
   resumen: string;
+  /** Fecha ya escrita (las evaluaciones adicionales se muestran como en el documento). */
+  fechaTexto?: string;
+}
+
+/** La fecha de una fila como se ve en la tabla («-» si no hay). */
+export function textoFechaFila(fila: FilaEstudioAptitud): string {
+  if (fila.fechaTexto !== undefined) return fila.fechaTexto || '-';
+  return fila.fecha ? convertirFechaISOaDDMMYYYY(fila.fecha) : '-';
+}
+
+/**
+ * Las evaluaciones adicionales capturadas en la aptitud, como las agrega el documento al final de
+ * la tabla (nombre en mayúsculas, fecha y resultados).
+ */
+export function filasEvaluacionesAdicionales(df: Record<string, any> | null | undefined): FilaEstudioAptitud[] {
+  const filas: FilaEstudioAptitud[] = [];
+  for (let n = 1; n <= 6; n++) {
+    const nombre = df?.[`evaluacionAdicional${n}`];
+    if (!nombre) continue;
+    const fecha = df?.[`fechaEvaluacionAdicional${n}`] ?? null;
+    filas.push({
+      clave: `evaluacionAdicional${n}`,
+      estudio: String(nombre).toUpperCase(),
+      fecha,
+      fechaTexto: formatDateDDMMYYYY(fecha),
+      resumen: df?.[`resultadosEvaluacionAdicional${n}`] ?? '',
+    });
+  }
+  return filas;
 }
 
 const NEAREST = { sameYearAsReference: true };

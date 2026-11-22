@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filasEstudiosAptitud } from './aptitudEstudios';
+import { filasEstudiosAptitud, filasEvaluacionesAdicionales, textoFechaFila } from './aptitudEstudios';
 
 const FECHA = '2026-06-15';
 
@@ -53,5 +53,21 @@ describe('filasEstudiosAptitud (tabla de estudios de la aptitud, punto 45)', () 
     const vecinos = { examenVista: [{ fechaExamenVista: '2025-01-10', porcentajeIshihara: 100, interpretacionIshihara: 'Normal' }] };
     expect(filasEstudiosAptitud(vecinos, [], FECHA).find((f) => f.clave === 'examenVista')?.resumen).toBe('-');
     expect(filasEstudiosAptitud(vecinos, [], '2025-02-01').find((f) => f.clave === 'examenVista')?.resumen).toContain('Ishihara: 100% - Normal');
+  });
+
+  it('evaluaciones adicionales: las que tienen nombre, como las agrega el documento', () => {
+    const filas = filasEvaluacionesAdicionales({
+      evaluacionAdicional1: 'Prueba de esfuerzo',
+      fechaEvaluacionAdicional1: '2026-11-20',
+      resultadosEvaluacionAdicional1: 'Sin alteraciones',
+      evaluacionAdicional2: '',
+      fechaEvaluacionAdicional2: '2026-11-20',
+      evaluacionAdicional3: 'Glucosa capilar',
+      fechaEvaluacionAdicional3: null,
+    });
+    expect(filas.map((f) => [f.estudio, textoFechaFila(f), f.resumen])).toEqual([
+      ['PRUEBA DE ESFUERZO', '20-11-2026', 'Sin alteraciones'],
+      ['GLUCOSA CAPILAR', '-', ''],
+    ]);
   });
 });

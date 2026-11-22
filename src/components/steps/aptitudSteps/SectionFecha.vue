@@ -6,10 +6,9 @@ import Step1 from './Step1.vue';
 import TablaEstudiosAptitud from './TablaEstudiosAptitud.vue';
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import { contextoAptitud } from '@/helpers/aptitudContexto';
-import { filasEstudiosAptitud } from '@/helpers/aptitudEstudios';
+import { filasEstudiosAptitud, filasEvaluacionesAdicionales, textoFechaFila } from '@/helpers/aptitudEstudios';
 import { fechaDeReferencia } from '@/helpers/aptitudGuardado';
 import { useFormDataStore } from '@/stores/formDataStore';
-import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
 
 const capturaRapida = enCapturaRapida();
 const formDataStore = useFormDataStore();
@@ -20,8 +19,10 @@ const formDataStore = useFormDataStore();
 // los textos generados).
 const filas = computed(() => {
   const ctx = contextoAptitud.datos;
-  if (!ctx) return [];
-  return filasEstudiosAptitud(ctx.vecinos, ctx.resultados, fechaDeReferencia(formDataStore.formDataAptitud));
+  const df = formDataStore.formDataAptitud;
+  // Las evaluaciones adicionales van al final, como en el documento, en cuanto se capturan
+  const estudios = ctx ? filasEstudiosAptitud(ctx.vecinos, ctx.resultados, fechaDeReferencia(df)) : [];
+  return [...estudios, ...filasEvaluacionesAdicionales(df)];
 });
 const aviso = computed(() =>
   contextoAptitud.fallo || contextoAptitud.datos?.sinVecinos
@@ -57,7 +58,7 @@ const aviso = computed(() =>
         <div v-for="fila in filas" :key="fila.clave" class="px-3 py-2">
           <p class="flex justify-between gap-2 text-xs font-semibold text-gray-800">
             <span>{{ fila.estudio }}</span>
-            <span class="font-normal text-gray-500 whitespace-nowrap">{{ fila.fecha ? convertirFechaISOaDDMMYYYY(fila.fecha) : '-' }}</span>
+            <span class="font-normal text-gray-500 whitespace-nowrap">{{ textoFechaFila(fila) }}</span>
           </p>
           <p class="text-gray-700">{{ fila.resumen }}</p>
         </div>

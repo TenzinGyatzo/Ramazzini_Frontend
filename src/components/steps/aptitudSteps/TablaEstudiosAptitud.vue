@@ -4,8 +4,7 @@
  * aptitud (punto 45). La usan el documento (con las evaluaciones adicionales al final, por el
  * espacio `filas-extra`) y la captura rápida, solo de lectura, antes de elegir la aptitud.
  */
-import { convertirFechaISOaDDMMYYYY } from '@/helpers/dates';
-import type { FilaEstudioAptitud } from '@/helpers/aptitudEstudios';
+import { textoFechaFila, type FilaEstudioAptitud } from '@/helpers/aptitudEstudios';
 
 defineProps<{
   filas: FilaEstudioAptitud[];
@@ -17,7 +16,7 @@ defineProps<{
 }>();
 
 const CELDA = 'text-xs sm:text-sm text-center px-2 py-0 border border-gray-300';
-const CELDA_ESTUDIO_COMPACTA = 'text-[0.6875rem] leading-tight text-center px-1.5 py-0.5 border border-gray-300';
+const CELDA_ESTUDIO_COMPACTA = 'text-xs leading-tight tracking-tight text-center px-1.5 py-0.5 border border-gray-300';
 </script>
 
 <template>
@@ -48,7 +47,7 @@ const CELDA_ESTUDIO_COMPACTA = 'text-[0.6875rem] leading-tight text-center px-1.
         :data-audiometria-externa="fila.clave === 'audiometriaExterna' || undefined"
       >
         <td :class="[estudioCompacto ? CELDA_ESTUDIO_COMPACTA : CELDA, 'font-medium']">{{ fila.estudio }}</td>
-        <td :class="CELDA">{{ fila.fecha ? convertirFechaISOaDDMMYYYY(fila.fecha) : '-' }}</td>
+        <td :class="CELDA">{{ textoFechaFila(fila) }}</td>
         <td :class="CELDA">{{ fila.resumen }}</td>
       </tr>
       <slot name="filas-extra" />
