@@ -2538,24 +2538,62 @@ export default {
       }
     };
 
-    const cambiarModoConservandoCampo = (nuevo) => {
-      const recordado = ultimoCampo;
-      if (recordado && !capturaRapida.value) {
-        // Desde «Con vista previa» la sección es la del paso abierto
-        recordado.seccion = stepsStore.currentStep;
+    /** Captura rápida: la sección que se está viendo (la que cruza el primer tercio del área). */
+    const seccionALaVistaCaptura = () => {
+      const area = document.querySelector('[data-captura-scroll]');
+      const caja = area && area.scrollHeight > area.clientHeight ? area.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+      const linea = caja.top + Math.min(caja.height / 3, 200);
+      let ultima = null;
+      for (const s of document.querySelectorAll('[data-seccion-captura]')) {
+        if (s.getBoundingClientRect().top > linea) break;
+        ultima = Number(s.getAttribute('data-seccion-captura'));
       }
+      return ultima ?? seccionActualCaptura.value ?? 1;
+    };
+
+    /**
+     * Sin un campo de esa sección (se abrió el paso o se desplazó hasta ella sin entrar a un
+     * campo), el modo nuevo abre la misma sección: en captura rápida se lleva a la vista y el
+     * cursor a su primer campo.
+     */
+    const restaurarSeccion = async (numero) => {
+      const marca = { seccion: numero };
+      campoPorRestaurar = marca;
+      const inicio = performance.now();
+      let seccion = null;
+      for (let i = 0; i < 40 && !(seccion = document.querySelector(`[data-seccion-captura="${numero}"]`)); i++) await esperar(50);
+      // Que el área de captura fije su alto antes de desplazarla
+      for (let i = 0; i < 20 && window.innerWidth >= 1024 && !alturaAreaCaptura.value; i++) await esperar(50);
+      await esperar(150);
+      if (campoPorRestaurar === marca) campoPorRestaurar = null;
+      if (!seccion?.isConnected || ultimoGesto > inicio) return;
+      seccionActualCaptura.value = numero;
+      seccion.scrollIntoView({ block: 'start' });
+      const campo = seccion.querySelector(
+        'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])',
+      );
+      if (campo && esComputadora()) campo.focus({ preventScroll: true });
+    };
+
+    const cambiarModoConservandoCampo = (nuevo) => {
+      // La sección en que se está: el paso abierto o la que se ve en la captura rápida
+      const seccionActual = capturaRapida.value ? seccionALaVistaCaptura() : stepsStore.currentStep;
+      // El último campo usado solo cuenta si es de esa sección (si se avanzó de paso o se
+      // desplazó sin entrar a otro campo, se va a la sección, no al campo de antes)
+      const recordado = ultimoCampo && ultimoCampo.seccion === seccionActual ? ultimoCampo : null;
       if (recordado) campoPorRestaurar = recordado;
       // Con animación: el asistente se transforma en el área de captura y el documento se
       // guarda en «Vista previa» (y al revés); el cursor se acomoda con la pantalla nueva lista
       conTransicionDeModo(() => {
         cambiarModoCaptura(nuevo);
-        if (recordado && nuevo === 'vistaPrevia') {
+        if (nuevo === 'vistaPrevia') {
           // La sección se abre apuntando a la pregunta del campo (si no, el asistente lleva el
           // cursor y la vista a la primera pregunta de la sección)
-          stepsStore.goToSection(recordado.seccion, recordado.legacyStep);
+          stepsStore.goToSection(recordado?.seccion ?? seccionActual, recordado?.legacyStep ?? null);
         }
       }, document, nuevo).then(() => {
         if (recordado) restaurarCampo(recordado);
+        else if (nuevo !== 'vistaPrevia') restaurarSeccion(seccionActual);
       });
     };
 
