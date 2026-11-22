@@ -1,59 +1,48 @@
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
+import { computed } from 'vue';
 import { format } from 'date-fns';
 import { formatDateYYYYMMDD } from '@/helpers/dates';
-import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
-import { useDocumentosStore } from '@/stores/documentos';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
 import { RELACIONES_TEMPORALES_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
+import { horaDeApertura } from '@/helpers/notaEnfermeriaGuardado';
 import Requerido from './Requerido.vue';
 import { claseEtiqueta, claseInput, claseOpcionLista } from './estilos';
-
 import { useAutofocoPrimerVacio } from '@/composables/useAutofocoPrimerVacio';
 
 // Al abrir el paso, si el motivo está vacío, el cursor va a él (la hora ya viene llena y
 // «primera vez o subsecuente» son botones)
 useAutofocoPrimerVacio(['motivoAtencion']);
 
-const trabajadores = useTrabajadoresStore();
-const { formDataNotaEnfermeria } = useFormDataStore();
-const documentos = useDocumentosStore();
+const formDataStore = useFormDataStore();
+// Por el store: al editar, el documento puede llegar después del primer dibujo
+const df = () => formDataStore.formDataNotaEnfermeria;
 const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
-
 const today = format(new Date(), 'yyyy-MM-dd');
-const fechaNotaEnfermeria = ref(today);
 
-onMounted(() => {
-  if (documentos.currentDocument) {
-    fechaNotaEnfermeria.value = formatDateYYYYMMDD(documentos.currentDocument.fechaNotaEnfermeria || today);
-  } else if (formDataNotaEnfermeria.fechaNotaEnfermeria) {
-    // Documento nuevo y se regresó al paso 1: conservar la fecha ya elegida
-    fechaNotaEnfermeria.value = formatDateYYYYMMDD(formDataNotaEnfermeria.fechaNotaEnfermeria);
-  }
-  // La fecha que se ve ya cuenta como capturada (si no, al guardar se pediría aunque se vea)
-  formDataNotaEnfermeria.fechaNotaEnfermeria = fechaNotaEnfermeria.value;
-  formDataNotaEnfermeria.idTrabajador = trabajadores.currentTrabajadorId;
-  // La norma pide la hora de la atención: por defecto, la de ahora
-  if (!formDataNotaEnfermeria.horaAtencion) {
-    formDataNotaEnfermeria.horaAtencion = format(new Date(), 'HH:mm');
-  }
+// Punto 46: el paso no escribe al abrirse ni al cerrarse. Muestra la fecha y la hora del
+// formulario o, en una nota nueva, la de hoy y la de cuando se abrió (las escribe
+// notaEnfermeriaGuardado al revisar la sección o al guardar); aquí solo lo que el usuario cambia.
+const fechaNotaEnfermeria = computed({
+  get: () => (df().fechaNotaEnfermeria ? formatDateYYYYMMDD(df().fechaNotaEnfermeria) : today),
+  set: (valor) => {
+    // El campo devuelve la fecha que se ve al montarse: eso no es un cambio del usuario
+    if (!df().fechaNotaEnfermeria && valor === today) return;
+    if (valor && valor !== formatDateYYYYMMDD(df().fechaNotaEnfermeria || '')) df().fechaNotaEnfermeria = valor;
+  },
 });
-
-onUnmounted(() => {
-  if (!formDataNotaEnfermeria.fechaNotaEnfermeria) {
-    formDataNotaEnfermeria.fechaNotaEnfermeria = today;
-  }
-});
-
-watch(fechaNotaEnfermeria, (valor) => {
-  formDataNotaEnfermeria.fechaNotaEnfermeria = valor;
+const horaAtencion = computed({
+  get: () => df().horaAtencion || horaDeApertura(),
+  set: (valor) => {
+    if (!df().horaAtencion && valor === horaDeApertura()) return;
+    if (valor !== df().horaAtencion) df().horaAtencion = valor;
+  },
 });
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Nota de enfermería</h1>
+  <SeccionNotaEnfermeria titulo="Datos de la atención" icono="fa-calendar-day">
 
     <div class="mt-5 grid grid-cols-2 gap-3">
       <div data-campo="fechaNotaEnfermeria">
@@ -73,7 +62,7 @@ watch(fechaNotaEnfermeria, (valor) => {
         <FormKit
           type="time"
           name="horaAtencion"
-          v-model="formDataNotaEnfermeria.horaAtencion"
+          v-model="horaAtencion"
         />
       </div>
     </div>
@@ -85,9 +74,9 @@ watch(fechaNotaEnfermeria, (valor) => {
           v-for="opcion in RELACIONES_TEMPORALES_NOTA_ENFERMERIA"
           :key="opcion.clave"
           type="button"
-          :class="claseOpcionLista(formDataNotaEnfermeria.relacionTemporal === opcion.clave)"
-          :aria-pressed="formDataNotaEnfermeria.relacionTemporal === opcion.clave"
-          @click="formDataNotaEnfermeria.relacionTemporal = opcion.clave"
+          :class="claseOpcionLista(df().relacionTemporal === opcion.clave)"
+          :aria-pressed="df().relacionTemporal === opcion.clave"
+          @click="df().relacionTemporal = opcion.clave"
         >
           {{ opcion.etiqueta }}
         </button>
@@ -97,12 +86,12 @@ watch(fechaNotaEnfermeria, (valor) => {
     <div class="mt-5" data-campo="motivoAtencion">
       <p :class="claseEtiqueta">Motivo de atención <Requerido /></p>
       <textarea
-        v-model="formDataNotaEnfermeria.motivoAtencion"
+        v-model="df().motivoAtencion"
         rows="3"
         maxlength="2000"
         placeholder="Por qué acude el trabajador"
         :class="claseInput"
       ></textarea>
     </div>
-  </div>
+  </SeccionNotaEnfermeria>
 </template>

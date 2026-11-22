@@ -20,7 +20,7 @@ import { isAptitudSectionsV2Enabled } from '@/composables/useAptitudSectionsV2';
 export type ModoCaptura = 'vistaPrevia' | 'capturaRapida';
 
 /** Documentos que ya tienen captura rápida (piloto: la nota médica). */
-export const DOCUMENTOS_CAPTURA_RAPIDA = ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud'] as const;
+export const DOCUMENTOS_CAPTURA_RAPIDA = ['notaMedica', 'historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud', 'notaEnfermeria'] as const;
 
 const PREFIJO_CLAVE = 'ramazzini:modoCaptura:';
 

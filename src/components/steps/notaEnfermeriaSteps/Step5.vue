@@ -1,4 +1,5 @@
 <script setup>
+import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { PROCEDIMIENTOS_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
 import Requerido from './Requerido.vue';
@@ -18,8 +19,7 @@ const alternar = (clave) => {
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Procedimientos</h1>
+  <SeccionNotaEnfermeria titulo="Procedimientos" icono="fa-hand-holding-medical">
 
     <div class="mt-5" data-pregunta="procedimientos">
       <p :class="claseEtiqueta">Procedimientos realizados <span class="font-normal text-gray-500">(los que apliquen)</span></p>
@@ -57,5 +57,5 @@ const alternar = (clave) => {
       </label>
     </div>
 
-  </div>
+  </SeccionNotaEnfermeria>
 </template>

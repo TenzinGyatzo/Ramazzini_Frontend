@@ -1,4 +1,5 @@
 <script setup>
+import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import {
   SISTEMAS_NOTA_ENFERMERIA,
@@ -11,8 +12,7 @@ const { formDataNotaEnfermeria } = useFormDataStore();
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Clasificación</h1>
+  <SeccionNotaEnfermeria titulo="Clasificación" icono="fa-tags">
 
     <div class="mt-5" data-pregunta="tipoProblema" data-campo="tipoProblema">
       <p :class="claseEtiqueta">Tipo de problema <Requerido /></p>
@@ -49,5 +49,5 @@ const { formDataNotaEnfermeria } = useFormDataStore();
         </button>
       </div>
     </div>
-  </div>
+  </SeccionNotaEnfermeria>
 </template>

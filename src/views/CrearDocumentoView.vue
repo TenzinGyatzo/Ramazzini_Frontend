@@ -97,6 +97,11 @@ const audiometriaLadoALado = computed(() => !capturaRapida.value && anchoAudiome
 const contenedorAptitud = ref(null);
 const anchoAptitud = useAnchoElemento(contenedorAptitud);
 const aptitudLadoALado = computed(() => !capturaRapida.value && anchoAptitud.value >= 960);
+// Nota de enfermería (punto 46): igual (antes, columnas de 2/5 y 3/5 con la tarjeta centrada,
+// que dejaban un hueco entre el asistente y el documento en pantallas anchas)
+const contenedorNotaEnfermeria = ref(null);
+const anchoNotaEnfermeria = useAnchoElemento(contenedorNotaEnfermeria);
+const notaEnfermeriaLadoALado = computed(() => !capturaRapida.value && anchoNotaEnfermeria.value >= 960);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
@@ -1163,13 +1168,28 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       </Transition>
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'notaEnfermeria'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
-          <div class="w-full xl:w-2/5">
+          ref="contenedorNotaEnfermeria"
+          :class="['flex gap-3 md:gap-6', notaEnfermeriaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          <div :class="capturaRapida ? 'w-full' : notaEnfermeriaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div class="w-full xl:w-3/5">
+          <div
+            v-if="!capturaRapida"
+            :class="notaEnfermeriaLadoALado ? 'flex-1 min-w-0' : 'w-full'"
+            :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
+          >
             <VisualizadorNotaEnfermeria />
           </div>
+          <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
+          <PanelVistaPrevia
+            v-else
+            amplio
+            :abierta="vistaPreviaAbierta"
+            titulo="Vista previa de la nota de enfermería"
+            @cerrar="vistaPreviaAbierta = false"
+          >
+            <VisualizadorNotaEnfermeria />
+          </PanelVistaPrevia>
         </div>
       </Transition>
       <Transition appear mode="out-in" name="slide-up">

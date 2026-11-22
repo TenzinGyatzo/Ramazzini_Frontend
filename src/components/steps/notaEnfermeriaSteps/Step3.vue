@@ -1,4 +1,5 @@
 <script setup>
+import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { ORIGENES_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
 import Requerido from './Requerido.vue';
@@ -13,8 +14,7 @@ const { formDataNotaEnfermeria } = useFormDataStore();
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Origen y aspecto general</h1>
+  <SeccionNotaEnfermeria titulo="Origen y aspecto general" icono="fa-person">
 
     <div class="mt-5" data-pregunta="origen" data-campo="origen">
       <p :class="claseEtiqueta">Origen de la atención <Requerido /></p>
@@ -42,5 +42,5 @@ const { formDataNotaEnfermeria } = useFormDataStore();
         :class="claseInput"
       ></textarea>
     </div>
-  </div>
+  </SeccionNotaEnfermeria>
 </template>

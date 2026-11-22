@@ -1,12 +1,12 @@
 <script setup>
+import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import MedicamentosNotaEnfermeria from './MedicamentosNotaEnfermeria.vue';
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Medicamentos</h1>
+  <SeccionNotaEnfermeria titulo="Medicamentos" icono="fa-pills">
     <div class="mt-3">
       <MedicamentosNotaEnfermeria />
     </div>
-  </div>
+  </SeccionNotaEnfermeria>
 </template>

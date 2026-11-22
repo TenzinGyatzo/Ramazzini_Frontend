@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue';
+import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { format } from 'date-fns';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { MAX_TOMAS_CONTROL_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
@@ -14,9 +14,7 @@ import {
 
 const { formDataNotaEnfermeria } = useFormDataStore();
 
-onMounted(() => {
-  if (!formDataNotaEnfermeria.signosVitales) formDataNotaEnfermeria.signosVitales = {};
-});
+// Punto 46: los signos vitales (objeto vacío) los crea notaEnfermeriaGuardado, no el paso al abrirse
 
 const agregarToma = () => {
   if (!formDataNotaEnfermeria.tomasControl) formDataNotaEnfermeria.tomasControl = [];
@@ -29,8 +27,7 @@ const quitarToma = (indice) => {
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Signos vitales</h1>
+  <SeccionNotaEnfermeria titulo="Signos vitales" icono="fa-heart-pulse">
 
     <div class="mt-3">
       <p :class="claseAyuda">Todos son opcionales: captura solo los que tomaste.</p>
@@ -88,5 +85,5 @@ const quitarToma = (indice) => {
         Hasta {{ MAX_TOMAS_CONTROL_NOTA_ENFERMERIA }}. Por ejemplo, para registrar la respuesta tras administrar un medicamento.
       </p>
     </div>
-  </div>
+  </SeccionNotaEnfermeria>
 </template>

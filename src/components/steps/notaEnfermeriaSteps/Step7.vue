@@ -1,4 +1,5 @@
 <script setup>
+import SeccionNotaEnfermeria from './SeccionNotaEnfermeria.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { DESTINOS_NOTA_ENFERMERIA } from '@/helpers/notaEnfermeria';
 import Requerido from './Requerido.vue';
@@ -8,8 +9,7 @@ const { formDataNotaEnfermeria } = useFormDataStore();
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-2 text-gray-900">Cierre</h1>
+  <SeccionNotaEnfermeria titulo="Cierre" icono="fa-door-open">
 
     <div class="mt-5" data-pregunta="destino" data-campo="destino">
       <p :class="claseEtiqueta">Destino del trabajador <Requerido /></p>
@@ -48,5 +48,5 @@ const { formDataNotaEnfermeria } = useFormDataStore();
         :class="claseInput"
       ></textarea>
     </div>
-  </div>
+  </SeccionNotaEnfermeria>
 </template>

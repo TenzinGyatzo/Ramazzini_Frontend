@@ -67,6 +67,8 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
   });
 
   it('un signo fuera de rango muestra su aviso debajo del campo', async () => {
+    // Punto 46: los signos vitales (objeto vacío) los crea notaEnfermeriaGuardado, no el paso
+    fd.signosVitales = {};
     const wrapper = await montar('./Step4.vue');
     await wrapper.find('[data-signo="frecuenciaCardiaca"]').setValue('300');
     expect(wrapper.find('[data-error-signo="frecuenciaCardiaca"]').text()).toBe('Debe estar entre 40 y 220');
@@ -144,10 +146,14 @@ describe('pasos de la nota de enfermería', { timeout: 20000 }, () => {
     expect(wrapper.find('input[aria-label="Nombre del medicamento 1"]').exists()).toBe(true);
   });
 
-  it('la fecha que se ve cuenta como capturada desde que se abre el paso 1', async () => {
+  it('el paso 1 no escribe al abrirse: muestra la fecha de hoy y la hora de apertura (punto 46)', async () => {
     delete fd.fechaNotaEnfermeria;
-    await montar('./Step1.vue');
-    expect(fd.fechaNotaEnfermeria).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    delete fd.horaAtencion;
+    const wrapper = await montar('./Step1.vue');
+    expect(fd.fechaNotaEnfermeria).toBeUndefined();
+    expect(fd.horaAtencion).toBeUndefined();
+    expect(wrapper.find('[name="fechaNotaEnfermeria"]').attributes('modelvalue')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(wrapper.find('[name="horaAtencion"]').attributes('modelvalue')).toMatch(/^\d{2}:\d{2}$/);
   });
 
   it('cada dato obligatorio tiene su marca para llevar a él al guardar', async () => {

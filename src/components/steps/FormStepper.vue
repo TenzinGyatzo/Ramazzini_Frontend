@@ -14,6 +14,11 @@ import { generarInformePdf } from '@/composables/useGenerarInformePdf';
 import { PASOS_NORDICO } from '@/helpers/cuestionarioNordico';
 import { PASOS_SUENO_VIGILIA, normalizarEvaluacionSuenoVigilia } from '@/helpers/evaluacionSuenoVigilia';
 import { PASOS_NOTA_ENFERMERIA, normalizarNotaEnfermeria } from '@/helpers/notaEnfermeria';
+import {
+  completarRespuestasPorDefecto as completarNotaEnfermeriaPorDefecto,
+  fijarHoraApertura as fijarHoraAperturaNotaEnfermeria,
+  prepararNotaEnfermeriaParaGuardar,
+} from '@/helpers/notaEnfermeriaGuardado';
 import { usePdfGenerationStore } from '@/stores/pdfGeneration';
 import { permitirSalidaTrasGuardar } from '@/composables/useCapturaSinGuardar';
 
@@ -1670,7 +1675,7 @@ export default {
         if (capturaRapida.value) return;
         // Historia clínica y exploración física también en el asistente clásico (pasos sueltos)
         if (
-          ['historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud'].includes(documentos.currentTypeOfDocument) ||
+          ['historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud', 'notaEnfermeria'].includes(documentos.currentTypeOfDocument) ||
           capturaRapidaDisponible.value
         ) {
           seccionesTocadas.value.add(stepsStore.currentStep);
@@ -1834,6 +1839,38 @@ export default {
       },
     );
 
+    // Punto 46: la nota de enfermería. Los pasos ya no escriben al abrirse ni al cerrarse: el
+    // trabajador y los signos vitales siempre; la fecha y la hora que se ven, al revisar la
+    // sección de datos (o al guardar). La hora que se ve es la de cuando se abrió la nota.
+    watch(
+      () =>
+        documentos.currentTypeOfDocument === 'notaEnfermeria' && !documentos.currentDocument
+          ? trabajadores.currentTrabajadorId
+          : null,
+      (id) => {
+        if (id) fijarHoraAperturaNotaEnfermeria();
+      },
+      { immediate: true },
+    );
+    const completarNotaEnfermeria = () => {
+      if (documentos.currentTypeOfDocument !== 'notaEnfermeria') return;
+      const df = formData.formDataNotaEnfermeria;
+      if (!df) return;
+      completarNotaEnfermeriaPorDefecto(df, {
+        trabajadorId: trabajadores.currentTrabajadorId,
+        visitado: documentos.currentDocument ? undefined : (paso) => seccionesTocadas.value.has(paso),
+      });
+    };
+    watch(
+      () => (documentos.currentTypeOfDocument === 'notaEnfermeria' ? formData.formDataNotaEnfermeria : null),
+      completarNotaEnfermeria,
+      { deep: true, immediate: true },
+    );
+    watch(
+      () => [stepsStore.currentStep, documentos.currentDocument, seccionesTocadas.value.size],
+      completarNotaEnfermeria,
+    );
+
     const recolectarProblemasNotaMedica = (esMujer) => {
       const df = formData.formDataNotaMedica;
       const stepMap = getNotaMedicaStepMap(showSiresUI.value, esMujer);
@@ -1973,7 +2010,11 @@ export default {
     // Nota de enfermería: la lista de obligatorios se revisa como se enviará (sin tomas ni
     // renglones vacíos); signos, horas de las tomas y cantidades se piden uno por uno.
     const recolectarProblemasNotaEnfermeria = () => {
-      const df = formData.formDataNotaEnfermeria;
+      // Lo que se guardaría (copia: la fecha y la hora que se ven cuentan)
+      const df = prepararNotaEnfermeriaParaGuardar(
+        { ...formData.formDataNotaEnfermeria },
+        { trabajadorId: trabajadores.currentTrabajadorId },
+      );
       const requeridos = validarCamposRequeridos(
         'notaEnfermeria',
         normalizarNotaEnfermeria(limpiarValoresUndefined(df)),
@@ -2229,7 +2270,7 @@ export default {
         // al editar, las respuestas son las guardadas
         {
           marcarSinRevisar:
-            ['historiaClinica', 'notaMedica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud'].includes(documentos.currentTypeOfDocument) &&
+            ['historiaClinica', 'notaMedica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud', 'notaEnfermeria'].includes(documentos.currentTypeOfDocument) &&
             !documentos.currentDocument,
         },
       ),
@@ -2528,6 +2569,9 @@ export default {
         delete datosLimpios.resultado;
       } else if (documentos.currentTypeOfDocument === 'notaEnfermeria') {
         // Sin tomas ni renglones vacíos: el servidor no acepta tomas sin hora ni medicamentos sin nombre
+        prepararNotaEnfermeriaParaGuardar(formData.formDataNotaEnfermeria, {
+          trabajadorId: trabajadores.currentTrabajadorId,
+        });
         datosLimpios = normalizarNotaEnfermeria(limpiarValoresUndefined(formData.formDataNotaEnfermeria));
       } else if (documentos.currentTypeOfDocument === 'evaluacionSuenoVigilia') {
         // Quita el seguimiento que ya no aplica y el resultado (lo calcula el servidor)
