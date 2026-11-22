@@ -35,9 +35,15 @@ const emit = defineEmits<{
 
 const inputEspecificar = ref<HTMLInputElement | null>(null);
 
+// El cursor va a «Especifique» solo cuando el usuario elige «Sí»; no cuando el paso lo fija al
+// abrirse (punto 54: con antecedentes traídos, la página saltaba al último «Sí»)
+let eligioUsuario = false;
 const value = computed({
   get: () => props.modelValue,
-  set: (v: string) => emit('update:modelValue', v),
+  set: (v: string) => {
+    eligioUsuario = true;
+    emit('update:modelValue', v);
+  },
 });
 
 const especificarLocal = computed({
@@ -62,8 +68,10 @@ watch(
           emit('update:especificar', '');
         }
       }
+      const enfocar = eligioUsuario;
+      eligioUsuario = false;
       await nextTick();
-      inputEspecificar.value?.focus();
+      if (enfocar) inputEspecificar.value?.focus();
     }
   },
 );

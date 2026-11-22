@@ -50,23 +50,20 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
       expect(await riesgo('Intersexual', '98')).toBe('Riesgo Aumentado');
     });
 
-    it('copia de la última exploración física solo al pulsar el botón', async () => {
+    it('punto 54: no se ofrece copiar peso ni cintura aunque haya exploración anterior', async () => {
       useDocumentosStore().documentsByYear = { 2026: { exploracionesFisicas: [ultimaExploracion] } } as never;
       const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
-      const boton = wrapper.find('[data-ultima-exploracion] button');
-      expect(boton.text()).toContain('13 de octubre de 2026');
+      expect(wrapper.find('[data-ultima-exploracion]').exists()).toBe(false);
+      expect(wrapper.find('button').exists()).toBe(false);
       expect(fd.formDataExploracionFisica.peso).toBeUndefined();
-      await boton.trigger('click');
-      await flushPromises();
-      expect(fd.formDataExploracionFisica).toMatchObject({
-        peso: 74.5,
-        altura: 1.68,
-        circunferenciaCintura: 88,
-        indiceMasaCorporal: 26.4,
-        categoriaIMC: 'Sobrepeso',
-        categoriaCircunferenciaCintura: 'Bajo Riesgo',
-      });
-      expect(wrapper.find('[data-ultima-exploracion]').text()).toContain('del 13 de octubre de 2026');
+    });
+
+    it('punto 54: la altura traída de la exploración anterior se muestra sin peso', async () => {
+      fd.formDataExploracionFisica.altura = 1.68;
+      const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
+      expect((wrapper.find('#altura').element as HTMLInputElement).value).toBe('1.68');
+      expect((wrapper.find('#peso').element as HTMLInputElement).value).toBe('');
+      expect(fd.formDataExploracionFisica.indiceMasaCorporal ?? null).toBeNull();
     });
 
     it('cintura «Se desconoce»: borra la medición, desactiva el campo y queda registrado', async () => {
@@ -82,18 +79,6 @@ describe('mediciones sin valores por defecto', { timeout: 20000 }, () => {
         categoriaCircunferenciaCintura: '',
       });
       expect((cintura.element as HTMLInputElement).disabled).toBe(true);
-    });
-
-    it('copiar de la última exploración con cintura quita «Se desconoce»', async () => {
-      useDocumentosStore().documentsByYear = { 2026: { exploracionesFisicas: [ultimaExploracion] } } as never;
-      const wrapper = await montar('./exploracionFisicaSteps/Step2.vue');
-      await wrapper.find('[data-campo="circunferenciaCintura"] input[type="checkbox"]').setValue(true);
-      await wrapper.find('[data-ultima-exploracion] button').trigger('click');
-      await flushPromises();
-      expect(fd.formDataExploracionFisica).toMatchObject({
-        circunferenciaCintura: 88,
-        circunferenciaCinturaSeDesconoce: false,
-      });
     });
 
     it('al editar no se ofrece copiar', async () => {

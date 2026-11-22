@@ -20,7 +20,9 @@ const isCompact = computed(() => variant.value === 'compact');
 const { formDataHistoriaClinica } = useFormDataStore();
 
 // Valor local para la pregunta principal
-const accidenteLaboral = ref('No');
+// Desde el principio con lo del formulario: si se fijaba al montarse, el cambio No → Sí borraba
+// «Sin secuelas» / «Ninguno» de un riesgo de trabajo ya capturado (punto 54)
+const accidenteLaboral = ref(formDataHistoriaClinica.accidenteLaboral || 'No');
 
 // Referencia al primer input
 const inputEspecificar = ref(null);

@@ -9,7 +9,6 @@ import {
   mensajeErrorSomatometriaSignosField,
 } from '@/helpers/somatometriaSignosRanges';
 import { esMedicion, imcDesdePesoAltura } from '@/helpers/medicionesClinicas';
-import UsarUltimaExploracionFisica from '../UsarUltimaExploracionFisica.vue';
 import NumeroCaptura from '@/components/steps/captura/NumeroCaptura.vue';
 import { colorCategoria } from '@/components/steps/captura/colorCategoria';
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
@@ -36,8 +35,8 @@ const trabajadores = useTrabajadoresStore();
 const { formDataExploracionFisica } = useFormDataStore();
 const documentos = useDocumentosStore();
 
-// Sin valores por defecto: se escribe lo que se midió (o se copia de la última exploración
-// física con el botón). Sin medición no hay IMC ni categoría.
+// Sin valores por defecto: se escribe lo que se midió. Peso y cintura se miden en cada examen;
+// solo la altura llega de la exploración anterior (punto 54). Sin medición no hay IMC ni categoría.
 const peso = ref(null);
 const altura = ref(null);
 const indiceMasaCorporal = ref(null);
@@ -48,8 +47,9 @@ const categoriaCircunferenciaCintura = ref('');
 const cinturaSeDesconoce = ref(false);
 
 onMounted(() => {
-  // Prioridad: formData > documentos.currentDocument > vacío
-  if (formDataExploracionFisica.peso !== undefined) {
+  // Prioridad: formData > documentos.currentDocument > vacío. La altura sola llega del documento
+  // anterior (punto 54)
+  if (formDataExploracionFisica.peso !== undefined || formDataExploracionFisica.altura !== undefined) {
     peso.value = formDataExploracionFisica.peso;
     altura.value = formDataExploracionFisica.altura;
     indiceMasaCorporal.value = formDataExploracionFisica.indiceMasaCorporal;
@@ -82,16 +82,6 @@ watch([peso, altura, circunferenciaCintura], () => {
   formDataExploracionFisica.circunferenciaCintura = circunferenciaCintura.value;
   setCategoriaCircunferenciaCintura();
 });
-
-/** Copia de la última exploración física lo que traiga (solo a pedido del usuario). */
-function usarUltimaExploracion(som) {
-  if (som.peso != null) peso.value = som.peso;
-  if (som.altura != null) altura.value = som.altura;
-  if (som.circunferenciaCintura != null) {
-    cinturaSeDesconoce.value = false;
-    circunferenciaCintura.value = som.circunferenciaCintura;
-  }
-}
 
 function calcularIMC(peso, altura) {
   const imc = imcDesdePesoAltura(peso, altura);
@@ -169,8 +159,6 @@ const mensajeErrorCircunferenciaCintura = computed(() =>
 <template>
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Somatometría</h1>
-
-    <UsarUltimaExploracionFisica :compacto="variant === 'compact'" @usar="usarUltimaExploracion" />
 
     <div
       :class="[

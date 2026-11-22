@@ -49,7 +49,9 @@ const { variant } = toRefs(props);
             // Detectar automáticamente si debe estar en "Si" o "No"
             // Si hay hallazgos automáticos o el resumen no es el texto por defecto, debe estar en "Si"
             if (resumenAutomatico.value || (resumenDoc && resumenDoc !== textoDefecto)) {
-                resumenHistoriaClinicaPregunta.value = 'Si';
+                // Al abrir no se mueve el cursor (punto 54: con antecedentes traídos, la página
+                // saltaba hasta aquí)
+                cambiarPregunta('Si');
             } else {
                 resumenHistoriaClinicaPregunta.value = documentos.currentDocument.resumenHistoriaClinicaPregunta || 'No';
             }
@@ -57,7 +59,7 @@ const { variant } = toRefs(props);
             // Si es un documento nuevo, detectar automáticamente si hay hallazgos
             if (resumenAutomatico.value) {
                 // Hay hallazgos significativos - cargar el resumen automático
-                resumenHistoriaClinicaPregunta.value = 'Si';
+                cambiarPregunta('Si');
                 resumenHistoriaClinica.value = resumenAutomatico.value;
                 formDataHistoriaClinica.resumenHistoriaClinicaPregunta = 'Si';
                 formDataHistoriaClinica.resumenHistoriaClinica = resumenAutomatico.value;
