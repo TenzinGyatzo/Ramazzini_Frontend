@@ -339,9 +339,14 @@ watch(
     if (tieneClues.value === "Si" && isMX.value) cluesBuscada = clues || "";
   },
 );
-async function alElegirTieneClues(valor) {
-  if (valor !== "Si") return;
-  await nextTick();
+// El cursor va al buscador cuando el usuario elige «Sí», al terminar de aparecer
+let enfocarBuscador = false;
+function alElegirTieneClues(valor) {
+  enfocarBuscador = valor === "Si";
+}
+function alAparecerClues() {
+  if (!enfocarBuscador || tieneClues.value !== "Si") return;
+  enfocarBuscador = false;
   contenedorClues.value?.querySelector("input")?.focus();
 }
 
@@ -704,32 +709,43 @@ onMounted(() => {
           v-model="formDataProveedorSalud.perfilProveedorSalud"
         />
 
-        <!-- Punto (60): en México la cuenta opera con cumplimiento normativo; solo se pide la CLUES -->
-        <div v-if="isMX" class="space-y-3" data-campo="clues">
-          <div>
-            <p class="block font-medium text-lg text-gray-700 mb-1">
-              ¿Tu establecimiento tiene CLUES? <span class="text-red-500">*</span>
-            </p>
-            <OpcionesSegmentadas
-              v-model="tieneClues"
-              @update:model-value="alElegirTieneClues"
-              name="tieneClues"
-              etiqueta="¿Tu establecimiento tiene CLUES?"
-              :opciones="OPCIONES_TIENE_CLUES"
-            />
-            <p v-if="tieneClues === 'No'" class="mt-1.5 text-xs text-gray-500">
-              Se registrará la CLUES 9998 – Servicios médicos privados.
-            </p>
+        <!-- Punto (60): en México la cuenta opera con cumplimiento normativo; solo se pide la CLUES.
+             Aparece y desaparece desplegándose (al cambiar de país o de respuesta). -->
+        <Transition name="desplegar">
+          <div v-if="isMX" class="desplegar" data-campo="clues">
+            <div class="desplegar-interior">
+              <p class="block font-medium text-lg text-gray-700 mb-1">
+                ¿Tu establecimiento tiene CLUES? <span class="text-red-500">*</span>
+              </p>
+              <OpcionesSegmentadas
+                v-model="tieneClues"
+                @update:model-value="alElegirTieneClues"
+                name="tieneClues"
+                etiqueta="¿Tu establecimiento tiene CLUES?"
+                :opciones="OPCIONES_TIENE_CLUES"
+              />
+              <Transition name="desplegar" mode="out-in" @after-enter="alAparecerClues">
+                <div v-if="tieneClues === 'No'" key="privado" class="desplegar">
+                  <div class="desplegar-interior">
+                    <p class="pt-1.5 text-xs text-gray-500">
+                      Se registrará la CLUES 9998 – Servicios médicos privados.
+                    </p>
+                  </div>
+                </div>
+                <div v-else key="buscador" class="desplegar">
+                  <div ref="contenedorClues" class="desplegar-interior pt-3">
+                    <CLUESAutocomplete
+                      v-model="formDataProveedorSalud.clues"
+                      label="CLUES del establecimiento"
+                      :required="true"
+                      :show-private-clues-note="false"
+                    />
+                  </div>
+                </div>
+              </Transition>
+            </div>
           </div>
-          <div v-if="tieneClues === 'Si'" ref="contenedorClues">
-            <CLUESAutocomplete
-              v-model="formDataProveedorSalud.clues"
-              label="CLUES del establecimiento"
-              :required="true"
-              :show-private-clues-note="false"
-            />
-          </div>
-        </div>
+        </Transition>
         </div>
         
         <FormKit
@@ -858,5 +874,35 @@ onMounted(() => {
 :deep(.country-phone-input-label),
 :deep(.country-select-label) {
   margin-bottom: 0.25rem;
+}
+
+/* Punto (60): la CLUES se despliega y se recoge (alto, opacidad y un leve desplazamiento) */
+.desplegar {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.desplegar-interior {
+  min-height: 0;
+}
+.desplegar-enter-active,
+.desplegar-leave-active {
+  transition: grid-template-rows 240ms ease, opacity 200ms ease, transform 240ms ease;
+}
+/* Solo mientras se anima: el buscador abre su lista de resultados hacia abajo */
+.desplegar-enter-active > .desplegar-interior,
+.desplegar-leave-active > .desplegar-interior {
+  overflow: hidden;
+}
+.desplegar-enter-from,
+.desplegar-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .desplegar-enter-active,
+  .desplegar-leave-active {
+    transition: none;
+  }
 }
 </style>
