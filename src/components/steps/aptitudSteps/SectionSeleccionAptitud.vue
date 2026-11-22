@@ -5,7 +5,7 @@ import Step8 from './Step8.vue';
 </script>
 
 <template>
-  <AptitudSectionStep title="APTITUD AL PUESTO">
+  <AptitudSectionStep icono="fa-user-check" title="Aptitud al puesto">
     <MicrostepAnchor :legacy-step="8">
       <Step8 variant="compact" />
     </MicrostepAnchor>

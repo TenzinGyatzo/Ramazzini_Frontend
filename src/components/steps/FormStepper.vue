@@ -2292,8 +2292,15 @@ export default {
         if (!capturaRapida.value || !esComputadora() || hayAtencionEnCurso() || campoPorRestaurar) return;
         const libre = !document.activeElement || document.activeElement === document.body;
         if (!libre) return;
+        // Los textos que se generan solos (aptitud, punto 45) no son «lo que falta escribir»:
+        // mientras llega el expediente están vacíos y el cursor saltaba a ellos
+        const generados = documentos.currentTypeOfDocument === 'aptitud'
+          ? ['alteracionesSalud', 'resultados', 'medidasPreventivas']
+          : [];
         const el = primerCampoParaEnfocar(
-          problemasIndice.value.filter((p) => p.falta && p.campo).map((p) => p.campo),
+          problemasIndice.value
+            .filter((p) => p.falta && p.campo && !generados.includes(p.campo))
+            .map((p) => p.campo),
         );
         if (!el) return;
         el.focus({ preventScroll: true });

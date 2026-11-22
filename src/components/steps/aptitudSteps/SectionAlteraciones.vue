@@ -5,7 +5,7 @@ import Step9 from './Step9.vue';
 </script>
 
 <template>
-  <AptitudSectionStep title="Alteraciones de salud">
+  <AptitudSectionStep icono="fa-notes-medical" title="Alteraciones de salud">
     <MicrostepAnchor :legacy-step="9">
       <Step9 variant="compact" />
     </MicrostepAnchor>

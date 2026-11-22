@@ -5,7 +5,7 @@ import Step11 from './Step11.vue';
 </script>
 
 <template>
-  <AptitudSectionStep title="Medidas preventivas">
+  <AptitudSectionStep icono="fa-shield-halved" title="Medidas preventivas">
     <MicrostepAnchor :legacy-step="11">
       <Step11 variant="compact" />
     </MicrostepAnchor>

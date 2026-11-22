@@ -93,6 +93,10 @@ const examenVistaLadoALado = computed(() => !capturaRapida.value && anchoExamenV
 const contenedorAudiometria = ref(null);
 const anchoAudiometria = useAnchoElemento(contenedorAudiometria);
 const audiometriaLadoALado = computed(() => !capturaRapida.value && anchoAudiometria.value >= 960);
+// Aptitud (punto 45): igual
+const contenedorAptitud = ref(null);
+const anchoAptitud = useAnchoElemento(contenedorAptitud);
+const aptitudLadoALado = computed(() => !capturaRapida.value && anchoAptitud.value >= 960);
 const steps = useStepsStore();
 const proveedorSaludStore = useProveedorSaludStore();
 const { ensureUserLoaded, getCurrentUserId } = useCurrentUser();
@@ -644,13 +648,28 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'aptitud'"
-          class=" flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
-          <div class="w-full xl:w-1/4">
+          ref="contenedorAptitud"
+          :class="['flex gap-3 md:gap-6', aptitudLadoALado ? 'flex-row items-start' : 'flex-col']">
+          <div :class="capturaRapida ? 'w-full' : aptitudLadoALado ? 'w-[22rem] shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div class="w-full xl:w-3/4">
+          <div
+            v-if="!capturaRapida"
+            :class="aptitudLadoALado ? 'flex-1 min-w-0' : 'w-full'"
+            :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
+          >
             <VisualizadorAptitud />
           </div>
+          <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
+          <PanelVistaPrevia
+            v-else
+            amplio
+            :abierta="vistaPreviaAbierta"
+            titulo="Vista previa de la aptitud"
+            @cerrar="vistaPreviaAbierta = false"
+          >
+            <VisualizadorAptitud />
+          </PanelVistaPrevia>
         </div>
       </Transition>
 

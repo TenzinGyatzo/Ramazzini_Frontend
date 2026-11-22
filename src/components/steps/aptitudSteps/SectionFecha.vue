@@ -5,7 +5,7 @@ import Step1 from './Step1.vue';
 </script>
 
 <template>
-  <AptitudSectionStep title="Fecha de Evaluación">
+  <AptitudSectionStep icono="fa-calendar-day" title="Fecha de evaluación">
     <MicrostepAnchor :legacy-step="1">
       <Step1 variant="compact" />
     </MicrostepAnchor>

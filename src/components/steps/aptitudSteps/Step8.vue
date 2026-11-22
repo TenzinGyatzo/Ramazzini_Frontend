@@ -47,7 +47,8 @@ const aptitudPuesto = computed({
                     <input 
                         type="radio" 
                         value="Apto Sin Restricciones" 
-                        v-model="aptitudPuesto" 
+                        v-model="aptitudPuesto"
+                        name="aptitudPuesto" 
                         class="sr-only" 
                     />
                     <div class="flex items-start justify-between w-full">
@@ -93,7 +94,8 @@ const aptitudPuesto = computed({
                     <input 
                         type="radio" 
                         value="Apto Con Precaución" 
-                        v-model="aptitudPuesto" 
+                        v-model="aptitudPuesto"
+                        name="aptitudPuesto" 
                         class="sr-only" 
                     />
                     <div class="flex items-start justify-between w-full">
@@ -139,7 +141,8 @@ const aptitudPuesto = computed({
                     <input 
                         type="radio" 
                         value="Apto Con Restricciones" 
-                        v-model="aptitudPuesto" 
+                        v-model="aptitudPuesto"
+                        name="aptitudPuesto" 
                         class="sr-only" 
                     />
                     <div class="flex items-start justify-between w-full">
@@ -185,7 +188,8 @@ const aptitudPuesto = computed({
                     <input 
                         type="radio" 
                         value="No Apto" 
-                        v-model="aptitudPuesto" 
+                        v-model="aptitudPuesto"
+                        name="aptitudPuesto" 
                         class="sr-only" 
                     />
                     <div class="flex items-start justify-between w-full">
@@ -231,7 +235,8 @@ const aptitudPuesto = computed({
                     <input 
                         type="radio" 
                         value="Evaluación No Completada" 
-                        v-model="aptitudPuesto" 
+                        v-model="aptitudPuesto"
+                        name="aptitudPuesto" 
                         class="sr-only" 
                     />
                     <div class="flex items-start justify-between w-full">

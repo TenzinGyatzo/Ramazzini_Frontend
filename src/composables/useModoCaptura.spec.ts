@@ -56,6 +56,7 @@ describe('preferencia de modo de captura (punto 38)', () => {
     expect(documentoAdmiteCapturaRapida('examenVista', { evLegacy: '1' })).toBe(false);
     expect(documentoAdmiteCapturaRapida('audiometria')).toBe(true);
     expect(documentoAdmiteCapturaRapida('audiometria', { auLegacy: '1' })).toBe(false);
+    expect(documentoAdmiteCapturaRapida('aptitud')).toBe(true);
     expect(documentoAdmiteCapturaRapida(null)).toBe(false);
   });
 });

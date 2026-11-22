@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, inject, watch } from 'vue';
+import { ESTADO_SECCIONES_KEY } from '@/composables/capturaRapidaKey';
 import { format } from 'date-fns';
 import MicrostepAnchor from '../MicrostepAnchor.vue';
 import AptitudSectionStep from './AptitudSectionStep.vue';
@@ -29,7 +30,15 @@ function contarEvaluacionesIniciales() {
   return 0;
 }
 
-const evaluacionesVisibles = ref(contarEvaluacionesIniciales());
+// Cuántas evaluaciones están abiertas (aunque sigan vacías) sobrevive al cambio de modo, que
+// vuelve a montar la sección (punto 45, como los trabajos anteriores de la historia clínica)
+const estadoSecciones = inject(ESTADO_SECCIONES_KEY, null);
+const evaluacionesVisibles = ref(
+  Math.max(contarEvaluacionesIniciales(), Number(estadoSecciones?.aptitudEvaluacionesVisibles) || 0),
+);
+if (estadoSecciones) {
+  watch(evaluacionesVisibles, (n) => (estadoSecciones.aptitudEvaluacionesVisibles = n), { immediate: true });
+}
 
 const puedeAgregar = computed(() => evaluacionesVisibles.value < 6);
 const puedeQuitar = computed(() => evaluacionesVisibles.value > 0);
@@ -74,7 +83,7 @@ const transitionAttrs = {
 </script>
 
 <template>
-  <AptitudSectionStep title="Evaluaciones adicionales">
+  <AptitudSectionStep icono="fa-clipboard-list" title="Evaluaciones adicionales">
     <div class="space-y-3">
       <p
         v-if="evaluacionesVisibles === 0"
