@@ -76,7 +76,7 @@ describe('exploración física: lo que se guarda', () => {
     expect(problemasResumenExploracionFisica({}, false)[0]).toMatchObject({
       paso: 31,
       campo: 'resumenExploracionFisica',
-      mensaje: 'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
+      mensaje: 'Indica si hay hallazgos por resumir',
     });
     expect(problemasResumenExploracionFisica({ resumenExploracionFisicaPregunta: 'No' }, false)).toEqual([]);
     // Documento guardado (sin la pregunta): el texto basta

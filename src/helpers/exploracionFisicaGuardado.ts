@@ -154,7 +154,7 @@ export function problemasResumenExploracionFisica(df: Datos, esMujer: boolean): 
       campo: 'resumenExploracionFisica',
       nombre: 'Resumen de la exploración física',
       falta: true,
-      mensaje: 'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
+      mensaje: 'Indica si hay hallazgos por resumir',
     },
   ];
 }

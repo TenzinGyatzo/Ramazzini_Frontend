@@ -162,7 +162,7 @@ describe('historia clínica', () => {
     expect(lista.map((x) => x.mensaje)).toEqual([
       'Elige el motivo del examen.',
       'Elige la fecha de la historia clínica.',
-      'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
+      'Indica si hay hallazgos por resumir',
     ]);
   });
 });

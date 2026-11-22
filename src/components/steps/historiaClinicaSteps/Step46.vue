@@ -2,7 +2,9 @@
 /**
  * Resumen de la historia clínica. Punto 55: la pregunta «¿Hay hallazgos significativos por
  * resumir?» se contesta explícitamente.
- * - En un documento nuevo empieza sin respuesta y el sistema no la cambia solo.
+ * - En un documento nuevo empieza sin respuesta y el sistema no la cambia solo; con vista
+ *   previa, al llegar al paso sin respuesta se elige «Sí» con los hallazgos como borrador o
+ *   «No» si no hay (al guardar sin haber llegado, el aviso lleva aquí).
  * - Mientras no se conteste, una nota dice qué hallazgos hay capturados.
  * - Al elegir «Sí», el texto se llena con esos hallazgos como borrador editable.
  * - Al guardar no se genera nada: sin contestar (o «Sí» sin texto) lo pide el aviso.
@@ -15,6 +17,7 @@ import {
     textoResumenPorDefecto,
 } from '@/helpers/historiaClinicaGuardado';
 import OpcionesSegmentadas from '@/components/steps/captura/OpcionesSegmentadas.vue';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import { CLASE_AYUDA, CLASE_ETIQUETA, CLASE_TEXTAREA } from '@/components/steps/captura/estiloCaptura';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
@@ -37,6 +40,7 @@ const esMujer = () => trabajadores.currentTrabajador?.sexo === 'Femenino';
 // Con «No» se guarda este texto (prepararHistoriaClinicaParaGuardar)
 const textoPorDefecto = computed(() => textoResumenPorDefecto(esMujer()));
 
+const capturaRapida = enCapturaRapida();
 const pregunta = ref('');
 const resumen = ref('');
 const textarea = ref(null);
@@ -52,6 +56,17 @@ onMounted(() => {
     const origen = enSesion || !documentos.currentDocument ? formDataHistoriaClinica : documentos.currentDocument;
     pregunta.value = preguntaResumenHistoriaClinica(origen, esMujer());
     resumen.value = origen.resumenHistoriaClinica || '';
+    // Con vista previa, al llegar a este paso sin respuesta se elige según los hallazgos (decisión
+    // del usuario); en la captura rápida se contesta a mano
+    if (!pregunta.value && !capturaRapida) {
+        if (resumenAutomatico.value) {
+            pregunta.value = 'Si';
+            resumen.value = resumenAutomatico.value;
+        } else {
+            pregunta.value = 'No';
+            resumen.value = textoPorDefecto.value;
+        }
+    }
 });
 
 watch(pregunta, (valor) => {

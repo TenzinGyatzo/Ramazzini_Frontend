@@ -133,9 +133,17 @@ describe('exploración física: los dos modos mandan lo mismo', () => {
   it('sin tocar nada', async () => {
     const sinTocar: Captura = captura.map(([p, n]) => [p, n, nada]);
     const vista = await conVistaPrevia(sinTocar, false);
-    expect(await conCapturaRapida(sinTocar, false)).toEqual(vista);
-    // Punto 55: sin contestar no se escribe resumen (el aviso lo pide al guardar)
-    expect(vista.resumenExploracionFisica ?? '').toBe('');
+    const rapida = await conCapturaRapida(sinTocar, false);
+    // Punto 55: con vista previa, al llegar al resumen sin hallazgos se elige «No»; en la
+    // captura rápida queda sin contestar (el aviso lo pide al guardar). Lo demás, igual.
+    expect(vista.resumenExploracionFisicaPregunta).toBe('No');
+    expect(vista.resumenExploracionFisica).toBe('Se encuentra clínicamente sano');
+    expect(rapida.resumenExploracionFisica ?? '').toBe('');
+    const sinResumen = (d: Record<string, any>) => {
+      const { resumenExploracionFisica: _r, resumenExploracionFisicaPregunta: _p, ...resto } = d;
+      return resto;
+    };
+    expect(sinResumen(rapida)).toEqual(sinResumen(vista));
     expect(vista.ojos).toBe('Sin hallazgos');
   });
 

@@ -153,10 +153,24 @@ describe('historia clínica: los dos modos mandan lo mismo', () => {
   it('hombre, sin tocar nada', async () => {
     const sinTocar: Captura = captura.filter(([p]) => p !== Step28 && p !== Step37).map(([p]) => [p, nada]);
     const vista = await conVistaPrevia(sinTocar, false);
-    expect(await conCapturaRapida(sinTocar, false)).toEqual(vista);
+    const rapida = await conCapturaRapida(sinTocar, false);
     expect(vista.menarca).toBeUndefined();
-    // Punto 55: sin contestar no se escribe resumen (el aviso lo pide al guardar)
-    expect(vista.resumenHistoriaClinica ?? '').toBe('');
+    // Punto 55: con vista previa, al llegar al resumen sin hallazgos se elige «No»; en la
+    // captura rápida queda sin contestar (el aviso lo pide al guardar). Lo demás, igual.
+    expect(vista.resumenHistoriaClinicaPregunta).toBe('No');
+    expect(vista.resumenHistoriaClinica).toBe('Se refiere actualmente asintomático');
+    expect(rapida.resumenHistoriaClinica ?? '').toBe('');
+    const sinResumen = (d: Record<string, any>) => {
+      const { resumenHistoriaClinica: _r, resumenHistoriaClinicaPregunta: _p, ...resto } = d;
+      return resto;
+    };
+    expect(sinResumen(rapida)).toEqual(sinResumen(vista));
+  });
+
+  it('punto 55: con vista previa, al llegar al resumen con hallazgos se elige «Sí» con el borrador', async () => {
+    const vista = await conVistaPrevia([[Step15, siCon('Penicilina')], [Step46, nada]], false);
+    expect(vista.resumenHistoriaClinicaPregunta).toBe('Si');
+    expect(vista.resumenHistoriaClinica).toBe('Penicilina.');
   });
 
   it('punto 55: con «No» en el resumen, su texto', async () => {

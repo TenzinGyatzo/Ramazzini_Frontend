@@ -43,7 +43,7 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   // Historia clínica
   motivoExamen: 'Elige el motivo del examen.',
   fechaHistoriaClinica: 'Elige la fecha de la historia clínica.',
-  resumenHistoriaClinica: 'Indica si hay hallazgos por resumir y, si los hay, escríbelos.',
+  resumenHistoriaClinica: 'Indica si hay hallazgos por resumir',
   // Examen de la vista
   fechaExamenVista: 'Elige la fecha del examen.',
   sinCorreccionLejanaInterpretacion: 'Captura la agudeza visual lejana sin lentes.',
