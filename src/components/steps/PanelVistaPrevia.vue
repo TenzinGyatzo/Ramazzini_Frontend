@@ -80,7 +80,9 @@ onUnmounted(() => document.removeEventListener('keydown', alTecla, true));
               <kbd class="hidden sm:inline text-[0.65rem] px-1 rounded border border-gray-300 dark:border-slate-600">Esc</kbd>
             </button>
           </header>
-          <div class="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5">
+          <!-- El documento toma todo el alto del panel (su --alto-documento; antes, el máximo
+               pensado para «Con vista previa» dejaba espacio sin usar abajo) -->
+          <div class="panel-cuerpo flex-1 min-h-0 overflow-y-auto p-3 sm:p-5">
             <slot />
           </div>
         </aside>
@@ -90,6 +92,15 @@ onUnmounted(() => document.removeEventListener('keydown', alTecla, true));
 </template>
 
 <style scoped>
+/* Alto de la ventana menos el encabezado del panel (3.5rem) y el relleno del cuerpo */
+.panel-cuerpo {
+  --alto-documento: calc(100dvh - 5rem);
+}
+@media (min-width: 640px) {
+  .panel-cuerpo {
+    --alto-documento: calc(100dvh - 6rem);
+  }
+}
 .panel-vista-previa-enter-active,
 .panel-vista-previa-leave-active {
   transition: opacity 0.2s ease;
