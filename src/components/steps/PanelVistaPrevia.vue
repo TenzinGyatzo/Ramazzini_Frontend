@@ -11,6 +11,11 @@ const props = defineProps<{
   titulo?: string;
   /** Para documentos anchos (la tabla de la historia clínica). */
   amplio?: boolean;
+  /**
+   * Ancho a la medida de un documento (clase de Tailwind escrita completa donde se usa, p. ej.
+   * «sm:w-[min(69rem,96vw)]»); tiene prioridad sobre «amplio».
+   */
+  claseAncho?: string;
 }>();
 const emit = defineEmits<{ (e: 'cerrar'): void }>();
 
@@ -57,7 +62,7 @@ onUnmounted(() => document.removeEventListener('keydown', alTecla, true));
           :aria-label="titulo || 'Vista previa'"
           :class="[
             'panel relative h-full w-full bg-gray-100 dark:bg-slate-900 shadow-2xl flex flex-col',
-            amplio ? 'sm:w-[min(58rem,96vw)]' : 'sm:w-[min(52rem,92vw)]',
+            claseAncho || (amplio ? 'sm:w-[min(58rem,96vw)]' : 'sm:w-[min(52rem,92vw)]'),
           ]"
         >
           <header

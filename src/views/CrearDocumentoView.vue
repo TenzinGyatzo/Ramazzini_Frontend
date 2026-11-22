@@ -660,7 +660,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           </div>
           <div
             v-if="!capturaRapida"
-            :class="aptitudLadoALado ? 'min-w-0 flex-[0_1_72rem]' : 'w-full'"
+            :class="aptitudLadoALado ? 'min-w-0 flex-[0_1_55.5rem]' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorAptitud />
@@ -743,6 +743,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <PanelVistaPrevia
             v-else
             amplio
+            clase-ancho="sm:w-[min(69rem,96vw)]"
             :abierta="vistaPreviaAbierta"
             titulo="Vista previa de la exploración física"
             @cerrar="vistaPreviaAbierta = false"
