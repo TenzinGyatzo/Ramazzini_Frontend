@@ -1,12 +1,10 @@
 <script setup>
 /**
- * Resumen de la historia clínica. Punto 55: la pregunta «¿Hay hallazgos significativos por
- * resumir?» se contesta explícitamente.
- * - En un documento nuevo empieza sin respuesta y el sistema no la cambia solo; con vista
- *   previa, al llegar al paso sin respuesta se elige «Sí» con los hallazgos como borrador o
- *   «No» si no hay (al guardar sin haber llegado, el aviso lleva aquí).
- * - Mientras no se conteste, una nota dice qué hallazgos hay capturados.
- * - Al elegir «Sí», el texto se llena con esos hallazgos como borrador editable.
+ * Resumen de la historia clínica (puntos 55 y siguientes, decisiones del usuario):
+ * - Sin respuesta se elige según los hallazgos: «Sí» con el borrador si hay, «No» si no.
+ *   Con vista previa, al llegar a este paso (guardar sin haber llegado lleva aquí); en la
+ *   captura rápida desde el principio, y luego sigue a los hallazgos mientras el usuario no
+ *   elija «No» a mano ni escriba su propio texto.
  * - Al guardar no se genera nada: sin contestar (o «Sí» sin texto) lo pide el aviso.
  * Al editar, la respuesta se deduce del texto guardado (el servidor no la guarda).
  */
@@ -56,18 +54,45 @@ onMounted(() => {
     const origen = enSesion || !documentos.currentDocument ? formDataHistoriaClinica : documentos.currentDocument;
     pregunta.value = preguntaResumenHistoriaClinica(origen, esMujer());
     resumen.value = origen.resumenHistoriaClinica || '';
-    // Con vista previa, al llegar a este paso sin respuesta se elige según los hallazgos (decisión
-    // del usuario); en la captura rápida se contesta a mano
-    if (!pregunta.value && !capturaRapida) {
-        if (resumenAutomatico.value) {
-            pregunta.value = 'Si';
-            resumen.value = resumenAutomatico.value;
-        } else {
-            pregunta.value = 'No';
-            resumen.value = textoPorDefecto.value;
-        }
-    }
+    // Sin respuesta se elige según los hallazgos (decisión del usuario): con vista previa al
+    // llegar a este paso; en la captura rápida desde el principio («No») y luego los sigue
+    if (!pregunta.value) seguirHallazgos(resumenAutomatico.value);
+    ultimoAutomatico = resumenAutomatico.value;
 });
+
+// Captura rápida: la sección está abierta mientras se capturan los hallazgos. La respuesta los
+// sigue («Sí» con el borrador si aparecen, «No» si se quitan) mientras el usuario no elija «No»
+// a mano ni escriba su propio texto.
+let ultimoAutomatico = '';
+let usuarioEligioNo = false;
+function seguirHallazgos(automatico) {
+    if (automatico) {
+        pregunta.value = 'Si';
+        resumen.value = automatico;
+    } else {
+        pregunta.value = 'No';
+        resumen.value = textoPorDefecto.value;
+    }
+}
+watch(resumenAutomatico, (nuevo) => {
+    if (!capturaRapida) return;
+    const textoAutomatico = !resumen.value || resumen.value === ultimoAutomatico || resumen.value === textoPorDefecto.value;
+    if (pregunta.value === 'No' ? !usuarioEligioNo : textoAutomatico) seguirHallazgos(nuevo);
+    ultimoAutomatico = nuevo;
+});
+
+// La vista vacía el formulario al montarse (captura rápida: este paso ya está montado): se repone.
+// Solo en ese momento: después, vaciarlo es intencional («Empezar en blanco», punto 54)
+let recienMontado = true;
+onMounted(() => setTimeout(() => (recienMontado = false), 0));
+watch(
+    () => [formDataHistoriaClinica.resumenHistoriaClinicaPregunta, formDataHistoriaClinica.resumenHistoriaClinica],
+    ([p, r]) => {
+        if (!recienMontado) return;
+        if (!p && pregunta.value) formDataHistoriaClinica.resumenHistoriaClinicaPregunta = pregunta.value;
+        if (!r && resumen.value) formDataHistoriaClinica.resumenHistoriaClinica = resumen.value;
+    },
+);
 
 watch(pregunta, (valor) => {
     formDataHistoriaClinica.resumenHistoriaClinicaPregunta = valor;
@@ -78,6 +103,7 @@ watch(resumen, (valor) => {
 
 /** Solo la elección del usuario cambia el texto. */
 async function alElegir(valor) {
+    usuarioEligioNo = valor === 'No';
     if (valor === 'No') {
         resumen.value = textoPorDefecto.value;
         return;
