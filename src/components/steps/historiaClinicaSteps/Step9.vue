@@ -34,6 +34,12 @@ onMounted(() => {
     }
 });
 
+// Sincronizar autoinmunes con formData (faltaba: el «Sí» no llegaba al documento ni a la vista
+// previa, y lo preseleccionado volvía a poner «Negado» en «Especifique»)
+watch(autoinmunes, (newValue) => {
+    formDataHistoriaClinica.autoinmunes = newValue;
+});
+
 // Watch para establecer 'Negado' cuando autoinmunes sea 'No' y enfocar input cuando sea 'Si'
 watch(autoinmunes, async (newValue) => {
     if (newValue === 'No') {
