@@ -1721,22 +1721,24 @@ export default {
     };
 
     // Secciones que el usuario ya revisó, una sola lista para los dos modos: con vista previa,
-    // las que abrió en el asistente; en captura rápida, aquellas donde entró a algún campo.
-    // Alimenta el «Sin revisar» del índice y el llenado de lo preseleccionado.
+    // las que ya dejó en el asistente (al salir del paso, no al llegar: decisión del usuario,
+    // lo preseleccionado se escribe al desmontarse el paso); en captura rápida, aquellas donde
+    // entró a algún campo. Alimenta el «Sin revisar» del índice y el llenado de lo preseleccionado.
     const seccionesTocadas = ref(new Set());
     watch(
       () => [stepsStore.currentStep, capturaRapida.value],
-      () => {
-        if (capturaRapida.value) return;
-        // Historia clínica y exploración física también en el asistente clásico (pasos sueltos)
+      ([paso], anterior) => {
+        if (!anterior) return;
+        const [pasoAnterior, veníaDeCapturaRapida] = anterior;
+        // Se dejó un paso del asistente: al avanzar, retroceder o pasar a la captura rápida
+        if (veníaDeCapturaRapida || (pasoAnterior === paso && !capturaRapida.value)) return;
         if (
           ['historiaClinica', 'exploracionFisica', 'examenVista', 'audiometria', 'aptitud', 'notaEnfermeria'].includes(documentos.currentTypeOfDocument) ||
           capturaRapidaDisponible.value
         ) {
-          seccionesTocadas.value.add(stepsStore.currentStep);
+          seccionesTocadas.value.add(pasoAnterior);
         }
       },
-      { immediate: true },
     );
 
     // Punto 39: en la historia clínica lo preseleccionado («No», «Negado», «12-14 años»…) se
