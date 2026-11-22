@@ -8,6 +8,8 @@ import { useCentrosTrabajoStore } from '@/stores/centrosTrabajo';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import { CLASE_ETIQUETA } from '../captura/estiloCaptura';
 
 const props = defineProps({
   variant: {
@@ -27,6 +29,7 @@ const { fechaDocumentoMax, fechaDocumentoMin } = useSiresDocumentDateMax();
 const df = () => formDataStore.formDataAptitud;
 
 const today = format(new Date(), 'yyyy-MM-dd');
+const capturaRapida = enCapturaRapida();
 
 // Punto 45: el paso no escribe al abrirse ni al cerrarse. Muestra la fecha del formulario o la
 // de hoy, que escribe aptitudGuardado al revisar la sección; aquí solo lo que el usuario cambia.
@@ -53,17 +56,18 @@ onMounted(() => {
 <template>
   <div>
     <h1 v-if="variant !== 'compact'" class="text-2xl font-bold mb-4 text-gray-900">Aptitud al Puesto</h1>
-    <div data-campo="fechaAptitudPuesto" :class="variant === 'compact' ? 'mt-1' : 'mt-6'">
-      <h2 :class="variant === 'compact' ? 'text-sm font-medium mb-2 text-gray-800' : 'text-lg font-medium mb-3 text-gray-800'">
-        Fecha de Valoración
-      </h2>
-      <FormKit 
-        type="date" 
-        name="fechaAptitudPuesto" 
+    <div
+      data-campo="fechaAptitudPuesto"
+      :class="['captura-fecha', variant === 'compact' ? 'mt-1' : 'mt-6', capturaRapida ? 'w-full sm:w-56' : '']"
+    >
+      <p :class="[CLASE_ETIQUETA, 'mb-1']">Fecha de valoración <span class="text-red-500">*</span></p>
+      <FormKit
+        type="date"
+        name="fechaAptitudPuesto"
         placeholder="Seleccione una fecha"
         :min="fechaDocumentoMin"
         :max="fechaDocumentoMax"
-        v-model="fechaAptitudPuesto" 
+        v-model="fechaAptitudPuesto"
       />
     </div>
   </div>

@@ -8,6 +8,8 @@ import { computed } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { contextoAptitud } from '@/helpers/aptitudContexto';
+import { enCapturaRapida } from '@/composables/capturaRapidaKey';
+import { CLASE_AYUDA, CLASE_ETIQUETA, CLASE_TEXTAREA } from '../captura/estiloCaptura';
 import { textoGenerado, textoSinEditar, volverAGenerar } from '@/helpers/aptitudGuardado';
 
 const props = defineProps<{
@@ -21,6 +23,7 @@ const props = defineProps<{
 }>();
 
 const formDataStore = useFormDataStore();
+const capturaRapida = enCapturaRapida();
 const trabajadores = useTrabajadoresStore();
 // Por el store (al editar, el documento puede llegar después del primer dibujo)
 const df = () => formDataStore.formDataAptitud as Record<string, any>;
@@ -42,7 +45,7 @@ const regenerar = () => volverAGenerar(df(), props.campo, contextoAptitud.datos,
 <template>
   <div>
     <div class="flex flex-wrap items-baseline justify-between gap-x-3 mb-1">
-      <label :for="campo" class="text-sm font-medium text-gray-800 leading-4">{{ etiqueta }}</label>
+      <label :for="campo" :class="CLASE_ETIQUETA">{{ etiqueta }} <span class="text-red-500">*</span></label>
       <button
         v-if="editado"
         type="button"
@@ -57,15 +60,12 @@ const regenerar = () => volverAGenerar(df(), props.campo, contextoAptitud.datos,
     <textarea
       :id="campo"
       v-model="valor"
-      :class="
-        variant === 'compact'
-          ? 'w-full p-2 text-sm border border-gray-300 rounded-md text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 min-h-[12rem]'
-          : ['w-full p-3 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500', alto ?? 'h-64']
-      "
+      :rows="capturaRapida ? 5 : variant === 'compact' ? 10 : undefined"
+      :class="[CLASE_TEXTAREA, variant === 'compact' ? '' : (alto ?? 'h-64')]"
       :placeholder="contextoAptitud.cargando ? 'Generando texto…' : ''"
       data-skip-validation
     ></textarea>
-    <p class="mt-1 text-xs text-gray-500">
+    <p :class="[CLASE_AYUDA, 'mt-1']">
       <template v-if="contextoAptitud.cargando">
         <i class="fas fa-spinner fa-spin mr-1" aria-hidden="true"></i>Revisando los documentos del trabajador…
       </template>

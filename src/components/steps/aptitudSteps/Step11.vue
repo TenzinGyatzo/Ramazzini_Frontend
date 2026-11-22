@@ -48,7 +48,7 @@ const alternarMedida = (medida) => {
         <h2 v-if="variant !== 'compact'" class="text-lg font-semibold mb-4 text-gray-800">Medidas Preventivas Específicas</h2>
         <TextoGeneradoAptitud
             campo="medidasPreventivas"
-            etiqueta="Descripción de medidas específicas recomendadas:"
+            etiqueta="Medidas específicas recomendadas"
             sin-texto="Hace falta registrar la historia clínica y/o la exploración física para sugerir las medidas; escríbelas a mano."
             :variant="variant"
         />

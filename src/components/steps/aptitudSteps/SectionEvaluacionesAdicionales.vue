@@ -44,8 +44,8 @@ const puedeAgregar = computed(() => evaluacionesVisibles.value < 6);
 const puedeQuitar = computed(() => evaluacionesVisibles.value > 0);
 const textoAgregar = computed(() =>
   evaluacionesVisibles.value === 0
-    ? 'Registrar evaluación adicional'
-    : 'Registrar otra evaluación adicional',
+    ? 'Agregar evaluación adicional'
+    : 'Agregar otra evaluación',
 );
 
 function limpiarSlot(n) {
@@ -148,22 +148,24 @@ const transitionAttrs = {
         </MicrostepAnchor>
       </Transition>
 
-      <div class="flex flex-wrap gap-2 pt-1 pb-2">
+      <!-- Con el estilo de las listas de la captura (punto 45) -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 pb-2">
         <button
           v-if="puedeAgregar"
           type="button"
-          class="flex-1 min-w-[12rem] px-3 py-2 text-sm font-semibold rounded-md border border-emerald-600 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 transition-colors duration-150"
           @click="agregarEvaluacion"
         >
+          <i class="fas fa-plus text-xs" aria-hidden="true"></i>
           {{ textoAgregar }}
         </button>
         <button
           v-if="puedeQuitar"
           type="button"
-          class="px-3 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+          class="text-xs text-gray-500 hover:text-red-600 hover:underline"
           @click="quitarUltimaEvaluacion"
         >
-          Quitar última
+          Quitar la última
         </button>
       </div>
     </div>
