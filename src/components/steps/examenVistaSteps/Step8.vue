@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, reactive } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { fuenteAlMontar } from '@/helpers/fuenteAlMontar';
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 
 import { CLASE_INPUT } from '../captura/estiloCaptura';
@@ -40,14 +41,9 @@ const valores = reactive({
 });
 
 onMounted(() => {
-  if (documentos.currentDocument) {
-    esferaOjoIzquierdo.value = documentos.currentDocument.esferaOjoIzquierdo || '';
-    cilindroOjoIzquierdo.value = documentos.currentDocument.cilindroOjoIzquierdo || '';
-    adicionOjoIzquierdo.value = documentos.currentDocument.adicionOjoIzquierdo || '';
-    esferaOjoDerecho.value = documentos.currentDocument.esferaOjoDerecho || '';
-    cilindroOjoDerecho.value = documentos.currentDocument.cilindroOjoDerecho || '';
-    adicionOjoDerecho.value = documentos.currentDocument.adicionOjoDerecho || '';
-  }
+  // Lo de la sesión (también al cambiar de modo) o, si aún no llega al formulario, lo guardado
+  const fuente = fuenteAlMontar(formDataExamenVista, documentos.currentDocument);
+  for (const campo of Object.keys(valores)) valores[campo] = fuente[campo] || '';
 });
 
 // Observa los cambios y actualiza el store

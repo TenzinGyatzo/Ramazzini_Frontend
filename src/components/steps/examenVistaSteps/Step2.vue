@@ -3,6 +3,7 @@ import { ref, watch, onMounted, computed } from 'vue';
 import AgudezaOjos from './AgudezaOjos.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { fuenteAlMontar } from '@/helpers/fuenteAlMontar';
 
 // En la sección (variant compact) el título lo pone la sección; solo en el asistente anterior
 const { variant } = defineProps({ variant: { type: String, default: '' } });
@@ -51,32 +52,20 @@ function aplicarNoEvaluableLentesContacto() {
 }
 
 onMounted(() => {
-  if (documentos.currentDocument) {
-    const doc = documentos.currentDocument;
-    ojoIzquierdoCegueraTotal.value = getCiegaOI(doc);
-    ojoDerechoCegueraTotal.value = getCiegaOD(doc);
-    sinCorreccionNoEvaluablePorLentesContacto.value = doc.sinCorreccionNoEvaluablePorLentesContacto ?? false;
-    ojoIzquierdoLejanaSinCorreccion.value = (ojoIzquierdoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
-      ? null
-      : (doc.ojoIzquierdoLejanaSinCorreccion ?? 20);
-    ojoDerechoLejanaSinCorreccion.value = (ojoDerechoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
-      ? null
-      : (doc.ojoDerechoLejanaSinCorreccion ?? 20);
-    sinCorreccionLejanaInterpretacion.value = doc.sinCorreccionLejanaInterpretacion ?? 'Visión normal';
-    requiereLentesUsoGeneral.value = doc.requiereLentesUsoGeneral ?? 'No';
-  } else {
-    ojoIzquierdoCegueraTotal.value = formDataExamenVista.ojoIzquierdoCegueraTotal ?? false;
-    ojoDerechoCegueraTotal.value = formDataExamenVista.ojoDerechoCegueraTotal ?? false;
-    sinCorreccionNoEvaluablePorLentesContacto.value = formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto ?? false;
-    ojoIzquierdoLejanaSinCorreccion.value = (ojoIzquierdoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
-      ? null
-      : (formDataExamenVista.ojoIzquierdoLejanaSinCorreccion ?? 20);
-    ojoDerechoLejanaSinCorreccion.value = (ojoDerechoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
-      ? null
-      : (formDataExamenVista.ojoDerechoLejanaSinCorreccion ?? 20);
-    sinCorreccionLejanaInterpretacion.value = formDataExamenVista.sinCorreccionLejanaInterpretacion ?? 'Visión normal';
-    requiereLentesUsoGeneral.value = formDataExamenVista.requiereLentesUsoGeneral ?? 'No';
-  }
+  // Lo de la sesión (también al cambiar de modo; al editar, con lo ya cambiado) o, si aún no
+  // llega al formulario, lo guardado
+  const doc = fuenteAlMontar(formDataExamenVista, documentos.currentDocument);
+  ojoIzquierdoCegueraTotal.value = getCiegaOI(doc);
+  ojoDerechoCegueraTotal.value = getCiegaOD(doc);
+  sinCorreccionNoEvaluablePorLentesContacto.value = doc.sinCorreccionNoEvaluablePorLentesContacto ?? false;
+  ojoIzquierdoLejanaSinCorreccion.value = (ojoIzquierdoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
+    ? null
+    : (doc.ojoIzquierdoLejanaSinCorreccion ?? 20);
+  ojoDerechoLejanaSinCorreccion.value = (ojoDerechoCegueraTotal.value || sinCorreccionNoEvaluablePorLentesContacto.value)
+    ? null
+    : (doc.ojoDerechoLejanaSinCorreccion ?? 20);
+  sinCorreccionLejanaInterpretacion.value = doc.sinCorreccionLejanaInterpretacion ?? 'Visión normal';
+  requiereLentesUsoGeneral.value = doc.requiereLentesUsoGeneral ?? 'No';
   // Solo lo que se muestra (sin escribir en el formulario)
   interpretarAgudezaVisualLejana(false);
 });

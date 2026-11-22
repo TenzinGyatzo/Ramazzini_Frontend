@@ -2,6 +2,7 @@
 import { ref, watch, onMounted } from 'vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { fuenteAlMontar } from '@/helpers/fuenteAlMontar';
 
 import TextoCaptura from '../captura/TextoCaptura.vue';
 
@@ -14,9 +15,9 @@ const documentos = useDocumentosStore();
 const diagnosticoRecomendaciones = ref('');
 
 onMounted(() => {
-  if (documentos.currentDocument) {
-    diagnosticoRecomendaciones.value = documentos.currentDocument.diagnosticoRecomendaciones || '';
-  }
+  // Lo de la sesión (también al cambiar de modo) o, si aún no llega al formulario, lo guardado
+  const fuente = fuenteAlMontar(formDataExamenVista, documentos.currentDocument);
+  diagnosticoRecomendaciones.value = fuente.diagnosticoRecomendaciones || '';
 });
 
 // Observa los cambios y actualiza el store

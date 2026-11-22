@@ -3,6 +3,7 @@ import { ref, watch, onMounted, computed } from 'vue';
 import AgudezaOjos from './AgudezaOjos.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { fuenteAlMontar } from '@/helpers/fuenteAlMontar';
 
 // En la sección (variant compact) el título lo pone la sección; solo en el asistente anterior
 const { variant } = defineProps({ variant: { type: String, default: '' } });
@@ -31,25 +32,21 @@ function getCiegaOD(doc) {
 }
 
 onMounted(() => {
-  if (documentos.currentDocument) {
-    const doc = documentos.currentDocument;
-    ojoIzquierdoCegueraTotal.value = getCiegaOI(doc);
-    ojoDerechoCegueraTotal.value = getCiegaOD(doc);
-    sinCorreccionNoEvaluablePorLentesContacto.value = doc.sinCorreccionNoEvaluablePorLentesContacto ?? false;
-  } else {
-    ojoIzquierdoCegueraTotal.value = formDataExamenVista.ojoIzquierdoCegueraTotal ?? false;
-    ojoDerechoCegueraTotal.value = formDataExamenVista.ojoDerechoCegueraTotal ?? false;
-    sinCorreccionNoEvaluablePorLentesContacto.value = formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto ?? false;
-  }
+  // Lo de la sesión (también al cambiar de modo; al editar, con lo ya cambiado) o, si aún no
+  // llega al formulario, lo guardado
+  const doc = fuenteAlMontar(formDataExamenVista, documentos.currentDocument);
+  ojoIzquierdoCegueraTotal.value = getCiegaOI(doc);
+  ojoDerechoCegueraTotal.value = getCiegaOD(doc);
+  sinCorreccionNoEvaluablePorLentesContacto.value = doc.sinCorreccionNoEvaluablePorLentesContacto ?? false;
   const noEvaluable = sinCorreccionNoEvaluablePorLentesContacto.value;
   ojoIzquierdoCercanaSinCorreccion.value = (ojoIzquierdoCegueraTotal.value || noEvaluable)
     ? null
-    : (documentos.currentDocument?.ojoIzquierdoCercanaSinCorreccion ?? formDataExamenVista.ojoIzquierdoCercanaSinCorreccion ?? 20);
+    : (doc.ojoIzquierdoCercanaSinCorreccion ?? 20);
   ojoDerechoCercanaSinCorreccion.value = (ojoDerechoCegueraTotal.value || noEvaluable)
     ? null
-    : (documentos.currentDocument?.ojoDerechoCercanaSinCorreccion ?? formDataExamenVista.ojoDerechoCercanaSinCorreccion ?? 20);
-  sinCorreccionCercanaInterpretacion.value = documentos.currentDocument?.sinCorreccionCercanaInterpretacion ?? formDataExamenVista.sinCorreccionCercanaInterpretacion ?? 'Visión normal';
-  requiereLentesParaLectura.value = documentos.currentDocument?.requiereLentesParaLectura ?? formDataExamenVista.requiereLentesParaLectura ?? 'No';
+    : (doc.ojoDerechoCercanaSinCorreccion ?? 20);
+  sinCorreccionCercanaInterpretacion.value = doc.sinCorreccionCercanaInterpretacion ?? 'Visión normal';
+  requiereLentesParaLectura.value = doc.requiereLentesParaLectura ?? 'No';
   // Solo lo que se muestra (sin escribir en el formulario)
   interpretarAgudezaVisualCercana(false);
 });

@@ -6,6 +6,7 @@ import { CLASE_ETIQUETA } from '../captura/estiloCaptura';
 import { colorAgudeza } from './colorAgudeza';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { fuenteAlMontar } from '@/helpers/fuenteAlMontar';
 
 const capturaRapida = enCapturaRapida();
 
@@ -33,10 +34,13 @@ const mensajeErrorPlacas = computed(() => {
 
 
 onMounted(() => {
-  if(documentos.currentDocument) {
-    placasCorrectas.value = documentos.currentDocument.placasCorrectas;
-    porcentajeIshihara.value = documentos.currentDocument.porcentajeIshihara;
-    interpretacionIshihara.value = documentos.currentDocument.interpretacionIshihara;
+  // Al editar, lo de la sesión (antes regresaba a lo guardado al cambiar de modo); lo guardado
+  // solo si aún no llega al formulario
+  const fuente = fuenteAlMontar(formDataExamenVista, documentos.currentDocument);
+  if (fuente !== formDataExamenVista) {
+    placasCorrectas.value = fuente.placasCorrectas;
+    porcentajeIshihara.value = fuente.porcentajeIshihara;
+    interpretacionIshihara.value = fuente.interpretacionIshihara;
   }
 });
 

@@ -4,6 +4,7 @@ import { enCapturaRapida } from '@/composables/capturaRapidaKey';
 import { CLASE_ETIQUETA, CLASE_INPUT } from '../captura/estiloCaptura';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { fuenteAlMontar } from '@/helpers/fuenteAlMontar';
 
 const capturaRapida = enCapturaRapida();
 const PRUEBAS = [
@@ -25,11 +26,11 @@ const coverTest = ref('');
 const valores = reactive({ testEstereopsis, testCampoVisual, coverTest });
 
 onMounted(() => {
-  if (documentos.currentDocument) {
-    testEstereopsis.value = documentos.currentDocument.testEstereopsis || '';
-    testCampoVisual.value = documentos.currentDocument.testCampoVisual || '';
-    coverTest.value = documentos.currentDocument.coverTest || '';
-  }
+  // Lo de la sesión (también al cambiar de modo) o, si aún no llega al formulario, lo guardado
+  const fuente = fuenteAlMontar(formDataExamenVista, documentos.currentDocument);
+  testEstereopsis.value = fuente.testEstereopsis || '';
+  testCampoVisual.value = fuente.testCampoVisual || '';
+  coverTest.value = fuente.coverTest || '';
 });
 
 // Observa los cambios y actualiza el store

@@ -4,6 +4,7 @@ import AgudezaOjos from './AgudezaOjos.vue';
 import OpcionesSegmentadas from '../captura/OpcionesSegmentadas.vue';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
+import { fuenteAlMontar } from '@/helpers/fuenteAlMontar';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
 
 // En la sección (variant compact) el título lo pone la sección; solo en el asistente anterior
@@ -36,20 +37,15 @@ const conCorreccionLejanaInterpretacion = ref(formDataExamenVista.conCorreccionL
 let montado = false;
 
 onMounted(() => {
-  if (documentos.currentDocument?.conCorreccionLejanaInterpretacion) {
-    const doc = documentos.currentDocument;
-    usaLentes.value = 'Si';
-    const ciegaOIDoc = doc.ojoIzquierdoCegueraTotal ?? doc.ojoIzquierdoLejanaCegueraTotal ?? doc.ojoIzquierdoCercanaCegueraTotal ?? false;
-    const ciegaODDoc = doc.ojoDerechoCegueraTotal ?? doc.ojoDerechoLejanaCegueraTotal ?? doc.ojoDerechoCercanaCegueraTotal ?? false;
-    ojoIzquierdoLejanaConCorreccion.value = ciegaOIDoc ? undefined : (doc.ojoIzquierdoLejanaConCorreccion ?? 20);
-    ojoDerechoLejanaConCorreccion.value = ciegaODDoc ? undefined : (doc.ojoDerechoLejanaConCorreccion ?? 20);
-    conCorreccionLejanaInterpretacion.value = doc.conCorreccionLejanaInterpretacion ?? 'Visión normal';
-  } else {
-    usaLentes.value = formDataExamenVista.conCorreccionLejanaInterpretacion ? 'Si' : 'No';
-    ojoIzquierdoLejanaConCorreccion.value = ciegaOI.value ? undefined : (formDataExamenVista.ojoIzquierdoLejanaConCorreccion ?? 20);
-    ojoDerechoLejanaConCorreccion.value = ciegaOD.value ? undefined : (formDataExamenVista.ojoDerechoLejanaConCorreccion ?? 20);
-    conCorreccionLejanaInterpretacion.value = formDataExamenVista.conCorreccionLejanaInterpretacion ?? 'Visión normal';
-  }
+  // Lo de la sesión (también al cambiar de modo; al editar, con lo ya cambiado) o, si aún no
+  // llega al formulario, lo guardado
+  const doc = fuenteAlMontar(formDataExamenVista, documentos.currentDocument);
+  usaLentes.value = doc.conCorreccionLejanaInterpretacion ? 'Si' : 'No';
+  const ciegaOIDoc = doc.ojoIzquierdoCegueraTotal ?? doc.ojoIzquierdoLejanaCegueraTotal ?? doc.ojoIzquierdoCercanaCegueraTotal ?? false;
+  const ciegaODDoc = doc.ojoDerechoCegueraTotal ?? doc.ojoDerechoLejanaCegueraTotal ?? doc.ojoDerechoCercanaCegueraTotal ?? false;
+  ojoIzquierdoLejanaConCorreccion.value = ciegaOIDoc ? undefined : (doc.ojoIzquierdoLejanaConCorreccion ?? 20);
+  ojoDerechoLejanaConCorreccion.value = ciegaODDoc ? undefined : (doc.ojoDerechoLejanaConCorreccion ?? 20);
+  conCorreccionLejanaInterpretacion.value = doc.conCorreccionLejanaInterpretacion ?? 'Visión normal';
   // Guatemala: si utilizaAnteojos es Si, pre-cargar usaLentes automáticamente
   const paisProveedor = proveedorSaludStore.proveedorSalud?.pais;
   if (paisProveedor === 'GT' && formDataExamenVista.utilizaAnteojos === 'Si') {
@@ -61,8 +57,7 @@ onMounted(() => {
   }
   // Lentes de contacto: AV sin corrección no evaluable → debe capturar con corrección
   if (
-    formDataExamenVista.sinCorreccionNoEvaluablePorLentesContacto ||
-    documentos.currentDocument?.sinCorreccionNoEvaluablePorLentesContacto
+    doc.sinCorreccionNoEvaluablePorLentesContacto
   ) {
     usaLentes.value = 'Si';
     ojoIzquierdoLejanaConCorreccion.value = ciegaOI.value ? undefined : (formDataExamenVista.ojoIzquierdoLejanaConCorreccion ?? 20);
