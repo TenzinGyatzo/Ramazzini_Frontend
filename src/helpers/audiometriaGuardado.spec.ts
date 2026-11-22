@@ -24,15 +24,16 @@ const NORMAL = [10, 10, 10, 10, 10, 15, 15, 15, 15];
 const CAIDA_4K = [10, 10, 15, 15, 20, 40, 55, 45, 30];
 
 describe('audiometría: secciones (punto 44)', () => {
-  it('5 secciones; los pasos de siempre a su sección', () => {
+  it('6 secciones; los pasos de siempre a su sección', () => {
     expect(AU_SECCIONES.map((s) => s.nombre)).toEqual([
       'Método y fecha',
       'Umbrales',
       'Observaciones',
-      'Interpretación y diagnóstico',
+      'Interpretación',
+      'Diagnóstico',
       'Recomendaciones',
     ]);
-    expect([1, 2, 3, 4, 5, 6, 7].map((p) => pasoAudiometriaEnAsistente(p, true))).toEqual([1, 2, 2, 3, 4, 4, 5]);
+    expect([1, 2, 3, 4, 5, 6, 7].map((p) => pasoAudiometriaEnAsistente(p, true))).toEqual([1, 2, 2, 3, 4, 5, 6]);
     expect(pasoAudiometriaEnAsistente(6, false)).toBe(6);
   });
 });

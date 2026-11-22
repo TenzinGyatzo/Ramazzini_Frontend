@@ -1,8 +1,9 @@
 /**
- * Secciones de la audiometría (punto 44). Antes eran 7 pasos sueltos; ahora 5 secciones, como
+ * Secciones de la audiometría (punto 44). Antes eran 7 pasos sueltos; ahora 6 secciones, como
  * en los otros documentos con captura rápida (decisión del usuario 2026-11-21):
- * Método y fecha · Umbrales (los dos oídos) · Observaciones · Interpretación y diagnóstico ·
- * Recomendaciones.
+ * Método y fecha · Umbrales (los dos oídos) · Observaciones · Interpretación · Diagnóstico ·
+ * Recomendaciones. Interpretación y diagnóstico iban juntas; se separaron para que cada una
+ * tenga su propio paso con vista previa (las mismas en los dos modos).
  *
  * Cada paso conserva su número de siempre (1–7), que se usa como ancla de pregunta
  * (MicrostepAnchor), en la lista de obligatorios y para el llenado de lo preseleccionado.
@@ -18,7 +19,7 @@ export const PASO_AU = {
   recomendaciones: 7,
 } as const;
 
-export type AuSeccionId = 'metodoFecha' | 'umbrales' | 'observaciones' | 'interpretacionDiagnostico' | 'recomendaciones';
+export type AuSeccionId = 'metodoFecha' | 'umbrales' | 'observaciones' | 'interpretacion' | 'diagnostico' | 'recomendaciones';
 
 export interface AuSeccionDef {
   id: AuSeccionId;
@@ -34,7 +35,8 @@ export const AU_SECCIONES: AuSeccionDef[] = [
   { id: 'metodoFecha', nombre: 'Método y fecha', icono: 'fa-calendar-day', pasos: [1] },
   { id: 'umbrales', nombre: 'Umbrales', icono: 'fa-ear-listen', pasos: [2, 3] },
   { id: 'observaciones', nombre: 'Observaciones', icono: 'fa-comment-medical', pasos: [4] },
-  { id: 'interpretacionDiagnostico', nombre: 'Interpretación y diagnóstico', icono: 'fa-stethoscope', pasos: [5, 6] },
+  { id: 'interpretacion', nombre: 'Interpretación', icono: 'fa-wave-square', pasos: [5] },
+  { id: 'diagnostico', nombre: 'Diagnóstico', icono: 'fa-stethoscope', pasos: [6] },
   { id: 'recomendaciones', nombre: 'Recomendaciones', icono: 'fa-list-check', pasos: [7] },
 ];
 

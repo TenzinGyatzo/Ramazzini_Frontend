@@ -70,14 +70,24 @@ const ayudaResultado = computed(() =>
     ? 'Pérdida monoaural (%) = max(0, PTA − 25) × 1.5, con 500–3000 Hz.'
     : 'Índice de Fletcher (%) = PTA × 0.8, con el rango A (250–2000 Hz) o B (2000–6000 Hz) de mayor pérdida.',
 );
-// Con el oído izquierdo (el segundo) va también el resultado de los dos oídos
+// Con el oído izquierdo (el segundo) va el resultado de los dos oídos: la HBC (LFT) o la PAB
+// (AMA), el dato principal de la audiometría, en una tarjeta destacada
 const binaural = computed(() => {
-  if (props.lado !== 'Izquierdo' || !oidoConUmbrales(df(), 'Derecho') || !oidoConUmbrales(df(), 'Izquierdo')) {
-    return null;
-  }
+  if (props.lado !== 'Izquierdo') return null;
+  const completo = oidoConUmbrales(df(), 'Derecho') && oidoConUmbrales(df(), 'Izquierdo');
   return metodo.value === 'AMA'
-    ? { nombre: 'Pérdida auditiva bilateral', valor: df().perdidaAuditivaBilateralAMA }
-    : { nombre: 'Hipoacusia bilateral combinada', valor: df().hipoacusiaBilateralCombinada };
+    ? {
+        sigla: 'PAB',
+        nombre: 'Pérdida auditiva bilateral',
+        formula: 'AMA · (5 × mejor oído + peor oído) / 6',
+        valor: completo ? df().perdidaAuditivaBilateralAMA : null,
+      }
+    : {
+        sigla: 'HBC',
+        nombre: 'Hipoacusia bilateral combinada',
+        formula: 'LFT · (7 × mejor oído + peor oído) / 8',
+        valor: completo ? df().hipoacusiaBilateralCombinada : null,
+      };
 });
 </script>
 
@@ -149,14 +159,24 @@ const binaural = computed(() => {
         </div>
         <p class="text-base font-bold text-gray-900 whitespace-nowrap">{{ resultado ? `${resultado.porcentaje} %` : '—' }}</p>
       </div>
-      <div
-        v-if="binaural"
-        data-calculado
-        class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
-      >
-        <p class="text-xs text-gray-500 min-w-0">{{ binaural.nombre }} ({{ metodo }})</p>
-        <p class="text-base font-bold text-gray-900 whitespace-nowrap">{{ binaural.valor ?? '—' }} %</p>
+    </div>
+
+    <div
+      v-if="binaural"
+      data-calculado
+      class="mt-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 border-l-4 border-l-emerald-600 bg-emerald-50 px-4 py-3"
+    >
+      <div class="min-w-0">
+        <p class="text-sm font-semibold text-emerald-900 leading-tight">
+          {{ binaural.nombre }} <span class="font-bold">({{ binaural.sigla }})</span>
+        </p>
+        <p class="text-xs text-emerald-700 mt-0.5">
+          {{ binaural.valor == null ? 'Se calcula con los umbrales de los dos oídos' : binaural.formula }}
+        </p>
       </div>
+      <p class="shrink-0 text-2xl font-bold text-emerald-800 whitespace-nowrap">
+        {{ binaural.valor == null ? '—' : `${binaural.valor} %` }}
+      </p>
     </div>
   </div>
 </template>
