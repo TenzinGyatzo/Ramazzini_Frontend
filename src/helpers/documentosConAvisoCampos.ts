@@ -23,6 +23,7 @@ export const DOCUMENTOS_CON_AVISO_CAMPOS = [
   'notaAclaratoria',
   'previoEspirometria',
   'controlPrenatal',
+  'historiaOtologica',
 ] as const;
 
 export function tieneAvisoCampos(tipo: string | null | undefined): boolean {

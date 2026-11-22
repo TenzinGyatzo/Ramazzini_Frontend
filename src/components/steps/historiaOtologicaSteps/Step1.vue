@@ -85,7 +85,7 @@ watch(fechaHistoriaOtologica, (newValue) => {
     >
       Historia Otologica
     </h1>
-    <div :class="variant === 'compact' ? 'mt-0' : 'mt-6'">
+    <div data-campo="fechaHistoriaOtologica" :class="variant === 'compact' ? 'mt-0' : 'mt-6'">
       <h2
         :class="
           variant === 'compact'

@@ -307,7 +307,7 @@ watch(resultadoCuestionarioPersonalizado, (newValue) => {
             <p class="text-sm text-gray-600 mb-4 italic">El médico puede modificar el resultado si lo considera necesario</p>
             
             <!-- Diseño de Radio Buttons más Visual tipo Card sin iconos -->
-            <div class="grid grid-cols-1 gap-3">
+            <div data-campo="resultadoCuestionario" class="grid grid-cols-1 gap-3">
                 <!-- Opción Procedente -->
                 <label 
                     :class="[
@@ -455,7 +455,7 @@ watch(resultadoCuestionarioPersonalizado, (newValue) => {
                 leave-from-class="opacity-100 transform translate-y-0"
                 leave-to-class="opacity-0 transform -translate-y-2"
             >
-                <div v-if="resultadoCuestionario === 'OTRO'" class="mt-4">
+                <div data-campo="resultadoCuestionarioPersonalizado" v-if="resultadoCuestionario === 'OTRO'" class="mt-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Redactar resultado personalizado:
                     </label>

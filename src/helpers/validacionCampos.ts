@@ -411,10 +411,14 @@ const camposRequeridosPorTipo: Record<string, Array<{
 
   historiaOtologica: [
     { campo: 'fechaHistoriaOtologica', nombre: 'Fecha de historia otológica', tipo: 'fecha', paso: 1, validacion: validarFecha },
+    // Punto 52: lo elige el médico (sin valor preseleccionado); antes solo lo rechazaba el servidor
+    { campo: 'resultadoCuestionario', nombre: 'Resultado del cuestionario', tipo: 'seleccion', paso: 25, validacion: validarSeleccion },
   ],
 
   previoEspirometria: [
     { campo: 'fechaPrevioEspirometria', nombre: 'Fecha del cuestionario', tipo: 'fecha', paso: 1, validacion: validarFecha },
+    // Punto 52: lo elige el médico (sin valor preseleccionado); antes solo lo rechazaba el servidor
+    { campo: 'resultadoCuestionario', nombre: 'Resultado del cuestionario', tipo: 'seleccion', paso: 28, validacion: validarSeleccion },
   ],
 
   receta: [

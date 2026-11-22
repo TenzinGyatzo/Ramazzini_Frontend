@@ -76,6 +76,8 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   motivoAclaracion: 'Escribe el motivo de la aclaración.',
   descripcionAclaracion: 'Escribe la descripción de la aclaración.',
   fechaPrevioEspirometria: 'Elige la fecha del cuestionario.',
+  fechaHistoriaOtologica: 'Elige la fecha del cuestionario.',
+  resultadoCuestionario: 'Elige el resultado del cuestionario.',
   fechaInicioControlPrenatal: 'Elige la fecha de inicio del control prenatal.',
 };
 
@@ -85,9 +87,28 @@ const INSTRUCCION_FALTA: Record<string, string> = {
  */
 const vacio52 = (v: unknown) => v === undefined || v === null || String(v).trim() === '';
 
+/** Resultado «Otro» sin escribirlo (previo a espirometría e historia otológica). */
+function problemaResultadoPersonalizado(df: Record<string, any>, paso: number): ProblemaCampo[] {
+  if (df.resultadoCuestionario !== 'OTRO' || !vacio52(df.resultadoCuestionarioPersonalizado)) return [];
+  return [
+    {
+      paso,
+      campo: 'resultadoCuestionarioPersonalizado',
+      nombre: 'Resultado personalizado',
+      falta: true,
+      mensaje: 'Escribe el resultado o elige otra opción.',
+    },
+  ];
+}
+
+/** Historia otológica: el resultado «Otro» se escribe. */
+export function problemasHistoriaOtologica(df: Record<string, any>): ProblemaCampo[] {
+  return problemaResultadoPersonalizado(df, 25);
+}
+
 /** Previo a espirometría: «Especifique» de otros síntomas y de medicamentos actuales tras «Sí». */
 export function problemasPrevioEspirometria(df: Record<string, any>): ProblemaCampo[] {
-  const problemas: ProblemaCampo[] = [];
+  const problemas: ProblemaCampo[] = [...problemaResultadoPersonalizado(df, 28)];
   if (df.otrosSintomasPregunta === 'SI' && vacio52(df.otrosSintomas)) {
     problemas.push({
       paso: 12,

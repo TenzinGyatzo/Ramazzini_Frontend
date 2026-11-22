@@ -138,7 +138,7 @@ describe('«Siguiente» y el modal de campos pendientes (punto 51)', () => {
   }
 
   it('en los documentos que al guardar llevan campo por campo, avanza sin el modal', () => {
-    for (const tipo of ['historiaClinica', 'exploracionFisica', 'notaMedica', 'examenVista', 'audiometria', 'aptitud', 'notaEnfermeria', 'receta', 'certificado', 'certificadoExpedito', 'notaAclaratoria', 'previoEspirometria', 'controlPrenatal']) {
+    for (const tipo of ['historiaClinica', 'exploracionFisica', 'notaMedica', 'examenVista', 'audiometria', 'aptitud', 'notaEnfermeria', 'receta', 'certificado', 'certificadoExpedito', 'notaAclaratoria', 'previoEspirometria', 'controlPrenatal', 'historiaOtologica']) {
       const store = preparar(tipo);
       store.nextStep();
       vi.runAllTimers();
@@ -148,7 +148,7 @@ describe('«Siguiente» y el modal de campos pendientes (punto 51)', () => {
   });
 
   it('un documento fuera de la lista conserva el modal (punto 52: los seis migrados ya están en ella)', () => {
-    for (const tipo of ['historiaOtologica', 'antidoping']) {
+    for (const tipo of ['antidoping', 'entrevistaPsicologica']) {
       const store = preparar(tipo);
       store.showMissingFieldsModal = false;
       store.nextStep();

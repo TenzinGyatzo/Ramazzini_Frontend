@@ -509,6 +509,11 @@ import { isAptitudSectionsV2Enabled } from '@/composables/useAptitudSectionsV2';
 import { legacyStepToSectionIndex as aptLegacyStepToSectionIndex } from '@/helpers/aptitudSections';
 import { legacyStepToSectionIndex as certLegacyStepToSectionIndex } from '@/helpers/certificadoSections';
 import { legacyStepToSectionIndex as peLegacyStepToSectionIndex } from '@/helpers/peSections';
+import { legacyStepToSectionIndex as hoLegacyStepToSectionIndex } from '@/helpers/hoSections';
+import {
+  prepararHistoriaOtologicaParaGuardar,
+  prepararPrevioEspirometriaParaGuardar,
+} from '@/helpers/cuestionariosRespiratorioOtologico';
 import { buildAptitudSectionSteps } from '@/helpers/buildAptitudSectionSteps';
 import { isAntidopingSectionsV2Enabled } from '@/composables/useAntidopingSectionsV2';
 import { buildAntidopingSectionSteps } from '@/helpers/buildAntidopingSectionSteps';
@@ -555,6 +560,7 @@ import {
   problemasNotaEnfermeria,
   problemasPrevioEspirometria,
   problemasControlPrenatal,
+  problemasHistoriaOtologica,
   ID_PASO_EXAMEN_VISTA,
   nombreDeCampo,
   ordenarProblemas,
@@ -2052,6 +2058,7 @@ export default {
       if (documentos.currentTypeOfDocument === 'notaAclaratoria') return formData.formDataNotaAclaratoria;
       if (documentos.currentTypeOfDocument === 'previoEspirometria') return formData.formDataPrevioEspirometria;
       if (documentos.currentTypeOfDocument === 'controlPrenatal') return formData.formDataControlPrenatal;
+      if (documentos.currentTypeOfDocument === 'historiaOtologica') return formData.formDataHistoriaOtologica;
       return null;
     };
 
@@ -2101,10 +2108,18 @@ export default {
         return recolectarProblemasObligatoriosYFecha(documentos.currentTypeOfDocument, { ...datosDelDocumentoActual() });
       }
       if (documentos.currentTypeOfDocument === 'previoEspirometria') {
-        const df = { ...formData.formDataPrevioEspirometria };
+        // Lo que se guardaría (copia: lo preseleccionado de las secciones sin abrir cuenta)
+        const df = prepararPrevioEspirometriaParaGuardar({ ...formData.formDataPrevioEspirometria });
         return ordenarProblemas([
           ...recolectarProblemasObligatoriosYFecha('previoEspirometria', df),
           ...problemasPrevioEspirometria(df),
+        ]);
+      }
+      if (documentos.currentTypeOfDocument === 'historiaOtologica') {
+        const df = prepararHistoriaOtologicaParaGuardar({ ...formData.formDataHistoriaOtologica });
+        return ordenarProblemas([
+          ...recolectarProblemasObligatoriosYFecha('historiaOtologica', df),
+          ...problemasHistoriaOtologica(df),
         ]);
       }
       if (documentos.currentTypeOfDocument === 'controlPrenatal') {
@@ -2154,6 +2169,9 @@ export default {
       }
       if (documentos.currentTypeOfDocument === 'previoEspirometria') {
         return isPeSectionsV2Enabled(route.query) ? peLegacyStepToSectionIndex(paso) : paso;
+      }
+      if (documentos.currentTypeOfDocument === 'historiaOtologica') {
+        return isHoSectionsV2Enabled(route.query) ? hoLegacyStepToSectionIndex(paso) : paso;
       }
       return paso;
     };
@@ -2573,8 +2591,12 @@ export default {
       } else if (documentos.currentTypeOfDocument === 'controlPrenatal') {
         datosLimpios = limpiarValoresUndefined(formData.formDataControlPrenatal);
       } else if (documentos.currentTypeOfDocument === 'historiaOtologica') {
+        // Punto 52: lo preseleccionado de las secciones sin abrir (antes el servidor rechazaba todo)
+        prepararHistoriaOtologicaParaGuardar(formData.formDataHistoriaOtologica);
         datosLimpios = limpiarValoresUndefined(formData.formDataHistoriaOtologica);
       } else if (documentos.currentTypeOfDocument === 'previoEspirometria') {
+        // Punto 52: lo preseleccionado de las secciones sin abrir (antes el servidor rechazaba todo)
+        prepararPrevioEspirometriaParaGuardar(formData.formDataPrevioEspirometria);
         datosLimpios = limpiarValoresUndefined(formData.formDataPrevioEspirometria);
       } else if (documentos.currentTypeOfDocument === 'receta') {
         datosLimpios = limpiarValoresUndefined(formData.formDataReceta);
