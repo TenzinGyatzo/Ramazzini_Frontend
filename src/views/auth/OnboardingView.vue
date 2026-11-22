@@ -5,7 +5,6 @@ import { useUserStore } from "@/stores/user";
 import { useRouter } from "vue-router";
 import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
 import CountrySelect from "@/components/CountrySelect.vue";
-import RegimenRegulatorioSelector from "@/components/onboarding/RegimenRegulatorioSelector.vue";
 import CLUESAutocomplete from "@/components/selectors/CLUESAutocomplete.vue";
 import { useHtmlDarkMode } from "@/composables/useHtmlDarkMode";
 import { PERFILES_PROVEEDOR_SALUD } from "@/constants/perfilProveedorSalud";
@@ -73,48 +72,20 @@ const handleSubmitStep1 = async (data) => {
 const handleSubmitStep2 = async (data) => {
   Object.assign(formDataProveedorSalud, data); // Guardar datos del Proveedor de Salud
   
-  // Lógica de régimen regulatorio para México
-  if (isMX.value) {
-    // Normalizar valores antiguos
-    if (formDataProveedorSalud.regimenRegulatorio === 'NO_SUJETO_SIRES') {
-      formDataProveedorSalud.regimenRegulatorio = 'SIN_REGIMEN';
-    }
-    
-    const regimen = formDataProveedorSalud.regimenRegulatorio;
-    if (regimen !== 'SIRES_NOM024' && regimen !== 'SIN_REGIMEN') {
-      toast.open({
-        type: "error",
-        message: "Elige cómo operará tu cuenta",
-        position: "bottom-left",
-      });
-      return;
-    }
-
-    if (regimen === 'SIN_REGIMEN') {
-      if (!formDataProveedorSalud.declaracionAceptada) {
-        toast.open({
-          type: "error",
-          message: "Acepta la declaración para continuar",
-          position: "bottom-left",
-        });
-        return;
-      }
-      formDataProveedorSalud.declaracionAceptadaAt = new Date().toISOString();
-      formDataProveedorSalud.declaracionVersion = "1.0";
-    }
-
-    if (regimen === 'SIRES_NOM024') {
-      if (!formDataProveedorSalud.clues || formDataProveedorSalud.clues.trim() === '') {
-        toast.open({
-          type: "error",
-          message: "Indica el CLUES para continuar",
-          position: "bottom-left",
-        });
-        return;
-      }
-    }
+  // Punto (60): no se elige régimen. En México la cuenta opera con cumplimiento normativo y
+  // pide la CLUES (o establecimiento privado, 9998); fuera de México, sin régimen.
+  formDataProveedorSalud.regimenRegulatorio = isMX.value ? "SIRES_NOM024" : "SIN_REGIMEN";
+  formDataProveedorSalud.declaracionAceptada = false;
+  formDataProveedorSalud.declaracionAceptadaAt = null;
+  if (isMX.value && !campoLleno(formDataProveedorSalud.clues)) {
+    toast.open({
+      type: "error",
+      message: "Indica la CLUES o marca que es un establecimiento privado",
+      position: "bottom-left",
+    });
+    return;
   }
-  
+
   // Continuar con el submit
   submitProveedorSalud();
 };
@@ -343,7 +314,6 @@ watch(() => formDataUser.country, (newCountry) => {
 }, { immediate: true });
 
 watch(establecimientoPrivado, (checked) => {
-  if (formDataProveedorSalud.regimenRegulatorio !== "SIRES_NOM024") return;
   if (checked) {
     formDataProveedorSalud.clues = CLUES_SERVICIOS_MEDICOS_PRIVADOS;
   } else if (formDataProveedorSalud.clues === CLUES_SERVICIOS_MEDICOS_PRIVADOS) {
@@ -351,23 +321,15 @@ watch(establecimientoPrivado, (checked) => {
   }
 });
 
-watch(() => formDataProveedorSalud.regimenRegulatorio, (regimen) => {
-  if (regimen === "SIRES_NOM024") return;
+// Fuera de México no hay CLUES
+watch(isMX, (mx) => {
+  if (mx) return;
   establecimientoPrivado.value = false;
-  if (formDataProveedorSalud.clues === CLUES_SERVICIOS_MEDICOS_PRIVADOS) {
-    formDataProveedorSalud.clues = "";
-  }
+  formDataProveedorSalud.clues = "";
 });
 
 function campoLleno(value) {
   return typeof value === "string" && value.trim() !== "";
-}
-
-function regimenPaso2() {
-  if (formDataProveedorSalud.regimenRegulatorio === "NO_SUJETO_SIRES") {
-    return "SIN_REGIMEN";
-  }
-  return formDataProveedorSalud.regimenRegulatorio;
 }
 
 const step2Checks = computed(() => {
@@ -378,15 +340,7 @@ const step2Checks = computed(() => {
   ];
 
   if (isMX.value) {
-    const regimen = regimenPaso2();
-    const elegido = regimen === "SIRES_NOM024" || regimen === "SIN_REGIMEN";
-    checks.push(elegido);
-    if (regimen === "SIRES_NOM024") {
-      checks.push(campoLleno(formDataProveedorSalud.clues));
-    }
-    if (regimen === "SIN_REGIMEN") {
-      checks.push(Boolean(formDataProveedorSalud.declaracionAceptada));
-    }
+    checks.push(campoLleno(formDataProveedorSalud.clues));
   }
 
   checks.push(Boolean(formDataProveedorSalud.termsAccepted));
@@ -408,17 +362,8 @@ const step2Blocker = computed(() => {
     return "";
   }
 
-  if (isMX.value) {
-    const regimen = regimenPaso2();
-    if (regimen !== "SIRES_NOM024" && regimen !== "SIN_REGIMEN") {
-      return "Elige cómo operará tu cuenta";
-    }
-    if (regimen === "SIRES_NOM024" && !campoLleno(formDataProveedorSalud.clues)) {
-      return "Indica el CLUES";
-    }
-    if (regimen === "SIN_REGIMEN" && !formDataProveedorSalud.declaracionAceptada) {
-      return "Acepta la declaración";
-    }
+  if (isMX.value && !campoLleno(formDataProveedorSalud.clues)) {
+    return "Indica la CLUES o marca que es un establecimiento privado";
   }
 
   if (!formDataProveedorSalud.termsAccepted) {
@@ -742,33 +687,28 @@ onMounted(() => {
           v-model="formDataProveedorSalud.perfilProveedorSalud"
         />
 
-        <RegimenRegulatorioSelector
-          v-if="isMX"
-          v-model="formDataProveedorSalud.regimenRegulatorio"
-          @update:declaracion="formDataProveedorSalud.declaracionAceptada = $event"
-        >
-          <template #sires-extra>
-            <label class="flex items-start gap-3 cursor-pointer rounded-lg border border-gray-200 bg-white p-3">
-              <input
-                type="checkbox"
-                class="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                v-model="establecimientoPrivado"
-              />
-              <span class="text-sm text-gray-700">
-                Es un establecimiento privado.
-                <span class="block text-xs text-gray-500 mt-1">
-                  Se registrará el CLUES 9998 - SERVICIOS MEDICOS PRIVADOS.
-                </span>
-              </span>
-            </label>
-            <CLUESAutocomplete
-              v-if="!establecimientoPrivado"
-              v-model="formDataProveedorSalud.clues"
-              :required="true"
-              :show-private-clues-note="false"
+        <!-- Punto (60): en México la cuenta opera con cumplimiento normativo; solo se pide la CLUES -->
+        <div v-if="isMX" class="space-y-3" data-campo="clues">
+          <CLUESAutocomplete
+            v-if="!establecimientoPrivado"
+            v-model="formDataProveedorSalud.clues"
+            :required="true"
+            :show-private-clues-note="false"
+          />
+          <label class="flex items-start gap-3 cursor-pointer rounded-lg border border-gray-200 bg-white p-3">
+            <input
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              v-model="establecimientoPrivado"
             />
-          </template>
-        </RegimenRegulatorioSelector>
+            <span class="text-sm text-gray-700">
+              Es un establecimiento privado.
+              <span class="block text-xs text-gray-500 mt-1">
+                Se registrará el CLUES 9998 - SERVICIOS MEDICOS PRIVADOS.
+              </span>
+            </span>
+          </label>
+        </div>
         </div>
         
         <FormKit
