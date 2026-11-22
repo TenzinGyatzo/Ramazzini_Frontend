@@ -532,6 +532,7 @@ import { enfocarCampo, limpiarAtencionCampo, hayAtencionEnCurso, selectorCampo }
 import IndiceCaptura from '@/components/steps/IndiceCaptura.vue';
 import EncabezadoTrabajadorCaptura from '@/components/steps/EncabezadoTrabajadorCaptura.vue';
 import { useAlturaHastaElFondo } from '@/composables/useAlturaHastaElFondo';
+import { useAlturaAsistente } from '@/composables/useAlturaAsistente';
 import { estadoIndiceCaptura, seccionIncompletaVecina, atajoDeSeccion } from '@/helpers/indiceCaptura';
 import { acomodarCampo, buscarCampo, buscarPregunta, campoALaVista, recordarDesde } from '@/helpers/campoEntreModos';
 import { esComputadora, primerCampoParaEnfocar } from '@/composables/useAutofocoPrimerVacio';
@@ -2414,6 +2415,15 @@ export default {
     // El área de captura ocupa lo que queda de la ventana y se desplaza sola
     const areaCaptura = ref(null);
     const { altura: alturaAreaCaptura } = useAlturaHastaElFondo(areaCaptura, capturaRapida);
+
+    // Con vista previa (punto 45): asistente y documento caben en la ventana; se desplaza la caja
+    // del paso y los botones Anterior / Siguiente quedan a la vista
+    const tarjetaAsistente = ref(null);
+    useAlturaAsistente(
+      tarjetaAsistente,
+      computed(() => !capturaRapida.value),
+      [() => stepsStore.currentStep, () => stepsStore.steps.length],
+    );
     const fechaDocumentoCaptura = computed(() => {
       const campo = DOCUMENT_TYPE_DATE_FIELDS[documentos.currentTypeOfDocument];
       return campo ? datosDelDocumentoActual()?.[campo] ?? null : null;
@@ -3069,6 +3079,7 @@ export default {
     };
 
     return {
+      tarjetaAsistente,
       stepsStore,
       modoCaptura,
       capturaRapidaDisponible,
@@ -3177,6 +3188,7 @@ export default {
   />
 
   <div
+    ref="tarjetaAsistente"
     data-form-stepper
     :style="capturaRapidaDisponible ? { viewTransitionName: NOMBRES_TRANSICION.asistente } : undefined"
     :class="[

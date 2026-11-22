@@ -201,7 +201,7 @@ const footerInfo = computed(() => {
 
 <template>
   <div
-    class="clinical-step-scroll flex flex-col w-full text-center border-shadow rounded-lg transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
+    class="clinical-step-scroll flex flex-col w-full text-center border-shadow rounded-lg transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[var(--alto-documento,66vh)] sm:max-h-[var(--alto-documento,68vh)] md:max-h-[var(--alto-documento,67vh)] lg:max-h-[var(--alto-documento,67vh)] xl:max-h-[var(--alto-documento,81vh)] overflow-y-auto"
     style="padding: 70px 40px 80px 40px;">
     
     <div class="absolute top-4 right-4">

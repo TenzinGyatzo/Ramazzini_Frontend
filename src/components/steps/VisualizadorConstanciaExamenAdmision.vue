@@ -95,7 +95,7 @@ const pieDePagina = computed(() => {
 
 <template>
   <div
-    class="clinical-step-scroll relative flex flex-col w-full border-shadow rounded-lg shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
+    class="clinical-step-scroll relative flex flex-col w-full border-shadow rounded-lg shadow-md bg-white max-w-6xl mx-auto max-h-[var(--alto-documento,66vh)] sm:max-h-[var(--alto-documento,68vh)] md:max-h-[var(--alto-documento,67vh)] lg:max-h-[var(--alto-documento,67vh)] xl:max-h-[var(--alto-documento,81vh)] overflow-y-auto"
     style="padding: 20px 40px 30px 40px;"
     data-visualizador="constanciaExamenAdmision"
   >

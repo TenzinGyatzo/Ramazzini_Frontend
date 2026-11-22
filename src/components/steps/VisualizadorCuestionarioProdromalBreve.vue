@@ -78,7 +78,7 @@ function textoMalestarFila(keyGrado) {
 <template>
   <div
     ref="scrollRoot"
-    class="visualizador-cuestionario-prodromal-breve flex flex-col gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
+    class="visualizador-cuestionario-prodromal-breve flex flex-col gap-4 border-shadow w-full text-left rounded-lg p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[var(--alto-documento,66vh)] sm:max-h-[var(--alto-documento,68vh)] md:max-h-[var(--alto-documento,67vh)] lg:max-h-[var(--alto-documento,67vh)] xl:max-h-[var(--alto-documento,81vh)] overflow-y-auto"
   >
     <!-- Empresa y Fecha (paso 1) -->
     <div class="flex flex-wrap w-full gap-1 md:gap-4">

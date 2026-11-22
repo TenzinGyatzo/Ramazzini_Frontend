@@ -1229,7 +1229,7 @@ defineExpose({
 <template>
   <div
     ref="scrollRoot"
-    class="visualizador-historia-otologica flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-4 sm:p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[66vh] sm:max-h-[68vh] md:max-h-[67vh] lg:max-h-[67vh] xl:max-h-[81vh] overflow-y-auto"
+    class="visualizador-historia-otologica flex flex-wrap justify-start gap-4 border-shadow w-full text-left rounded-lg p-4 sm:p-5 transition-all duration-300 ease-in-out transform shadow-md bg-white max-w-6xl mx-auto max-h-[var(--alto-documento,66vh)] sm:max-h-[var(--alto-documento,68vh)] md:max-h-[var(--alto-documento,67vh)] lg:max-h-[var(--alto-documento,67vh)] xl:max-h-[var(--alto-documento,81vh)] overflow-y-auto"
   >
     <!-- Encabezado -->
     <div data-paso="1" class="w-full space-y-1.5 border-b border-slate-200 pb-3">
