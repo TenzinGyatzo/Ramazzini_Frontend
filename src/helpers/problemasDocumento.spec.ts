@@ -276,9 +276,9 @@ describe('punto 52: lo que antes solo detenía «Siguiente»', () => {
     expect(p.map((x) => [x.paso, x.campo])).toEqual([[8, 'fum'], [9, 'ivsa'], [84, 'observacionesPeso']]);
   });
 
-  it('receta: las indicaciones ya se piden al guardar', async () => {
+  it('receta: las indicaciones son opcionales (decisión del usuario)', async () => {
     const { validarCamposRequeridos } = await import('./validacionCampos');
     const r = validarCamposRequeridos('receta', { fechaReceta: '2026-11-22', tratamiento: ['Paracetamol'], indicaciones: '' });
-    expect(r.camposFaltantes.map((c) => c.campo)).toEqual(['indicaciones']);
+    expect(r.camposFaltantes).toEqual([]);
   });
 });

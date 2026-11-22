@@ -64,7 +64,6 @@ const INSTRUCCION_FALTA: Record<string, string> = {
   // Punto 52: receta, certificados, nota aclaratoria, previo a espirometría, control prenatal
   fechaReceta: 'Elige la fecha de la receta.',
   tratamiento: 'Escribe al menos un medicamento del tratamiento.',
-  indicaciones: 'Escribe las indicaciones.',
   fechaCertificado: 'Elige la fecha del certificado.',
   fechaCertificadoExpedito: 'Elige la fecha del certificado.',
   cuerpoCertificado: 'Escribe el cuerpo del certificado.',

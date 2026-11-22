@@ -420,8 +420,6 @@ const camposRequeridosPorTipo: Record<string, Array<{
   receta: [
     { campo: 'fechaReceta', nombre: 'Fecha de la receta', tipo: 'fecha', paso: 1, validacion: validarFecha },
     { campo: 'tratamiento', nombre: 'Tratamiento', tipo: 'lista', paso: 2, validacion: validarListaTexto },
-    // Punto 52: el paso ya la pedía (required); ahora también al guardar
-    { campo: 'indicaciones', nombre: 'Indicaciones', tipo: 'texto', paso: 4, validacion: validarTexto },
   ],
 
   entrevistaPsicologica: [
