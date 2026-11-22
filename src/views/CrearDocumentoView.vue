@@ -654,13 +654,13 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'aptitud'"
           ref="contenedorAptitud"
-          :class="['flex gap-3 md:gap-6', aptitudLadoALado ? 'flex-row items-start' : 'flex-col']">
+          :class="['flex gap-3 md:gap-6', aptitudLadoALado ? 'flex-row items-start justify-center' : 'flex-col']">
           <div :class="capturaRapida ? 'w-full' : aptitudLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] xl:max-w-md shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div
             v-if="!capturaRapida"
-            :class="aptitudLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'"
+            :class="aptitudLadoALado ? 'min-w-0 flex-[0_1_72rem]' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorAptitud />
@@ -681,13 +681,13 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'audiometria'"
           ref="contenedorAudiometria"
-          :class="['flex gap-3 md:gap-6', audiometriaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          :class="['flex gap-3 md:gap-6', audiometriaLadoALado ? 'flex-row items-start justify-center' : 'flex-col']">
           <div :class="capturaRapida ? 'w-full' : audiometriaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] xl:max-w-md shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div
             v-if="!capturaRapida"
-            :class="audiometriaLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'"
+            :class="audiometriaLadoALado ? 'min-w-0 flex-[0_1_56rem]' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorAudiometria />
@@ -711,7 +711,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/3 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:flex-1 xl:min-w-0">
             <VisualizadorCertificado />
           </div>
         </div>
@@ -723,7 +723,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
           <div class="w-full xl:w-1/3 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:flex-1 xl:min-w-0">
             <VisualizadorCertificadoExpedito />
           </div>
         </div>
@@ -732,11 +732,11 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       <Transition appear mode="out-in" name="slide-up">  
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'exploracionFisica'"
           ref="contenedorExploracionFisica"
-          :class="['flex gap-3 md:gap-6', exploracionLadoALado ? 'flex-row items-start' : 'flex-col']">
+          :class="['flex gap-3 md:gap-6', exploracionLadoALado ? 'flex-row items-start justify-center' : 'flex-col']">
           <div :class="capturaRapida ? 'w-full' : exploracionLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] xl:max-w-md shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div v-if="!capturaRapida" :class="exploracionLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
+          <div v-if="!capturaRapida" :class="exploracionLadoALado ? 'min-w-0 flex-[0_1_72rem]' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
             <VisualizadorExploracionFisica />
           </div>
           <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
@@ -755,13 +755,13 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       <Transition appear mode="out-in" name="slide-up">  
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'examenVista'"
           ref="contenedorExamenVista"
-          :class="['flex gap-3 md:gap-6', examenVistaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          :class="['flex gap-3 md:gap-6', examenVistaLadoALado ? 'flex-row items-start justify-center' : 'flex-col']">
           <div :class="capturaRapida ? 'w-full' : examenVistaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] xl:max-w-md shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div
             v-if="!capturaRapida"
-            :class="examenVistaLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'"
+            :class="examenVistaLadoALado ? 'min-w-0 flex-[0_1_48rem]' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorExamenVista />
@@ -782,11 +782,11 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'historiaClinica'"
           ref="contenedorHistoriaClinica"
-          :class="['flex gap-3 md:gap-6', historiaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          :class="['flex gap-3 md:gap-6', historiaLadoALado ? 'flex-row items-start justify-center' : 'flex-col']">
           <div :class="capturaRapida ? 'w-full' : historiaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] xl:max-w-md shrink-0' : 'w-full'">
             <FormStepper />
           </div>
-          <div v-if="!capturaRapida" :class="historiaLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
+          <div v-if="!capturaRapida" :class="historiaLadoALado ? 'min-w-0 flex-[0_1_72rem]' : 'w-full'" :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }">
             <VisualizadorHistoriaClinica />
           </div>
           <!-- Captura rápida: la vista previa se abre a petición, en un panel lateral amplio -->
@@ -959,11 +959,11 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'historiaOtologica'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_56rem]">
             <VisualizadorHistoriaOtologica />
           </div>
         </div>
@@ -971,11 +971,11 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'previoEspirometria'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_56rem]">
             <VisualizadorPrevioEspirometria />
           </div>
         </div>
@@ -1019,7 +1019,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'entrevistaPsicologica'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
             <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
@@ -1041,7 +1041,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_72rem]">
             <VisualizadorEntrevistaPsicologica />
           </div>
         </div>
@@ -1049,7 +1049,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'trastornosEstadoAnimo'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
             <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
@@ -1071,7 +1071,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_72rem]">
             <VisualizadorTrastornosEstadoAnimo />
           </div>
         </div>
@@ -1079,7 +1079,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'cuestionarioProdromalBreve'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
             <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
@@ -1101,7 +1101,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_72rem]">
             <VisualizadorCuestionarioProdromalBreve />
           </div>
         </div>
@@ -1109,7 +1109,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'trastornoLimitePersonalidad'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
             <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
@@ -1131,7 +1131,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_72rem]">
             <VisualizadorTrastornoLimitePersonalidad />
           </div>
         </div>
@@ -1139,7 +1139,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'cuestionarioNordico'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-2/5 xl:max-w-md xl:shrink-0">
             <FormStepper />
             <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
@@ -1161,7 +1161,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_72rem]">
             <VisualizadorCuestionarioNordico />
           </div>
         </div>
@@ -1169,13 +1169,13 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'notaEnfermeria'"
           ref="contenedorNotaEnfermeria"
-          :class="['flex gap-3 md:gap-6', notaEnfermeriaLadoALado ? 'flex-row items-start' : 'flex-col']">
+          :class="['flex gap-3 md:gap-6', notaEnfermeriaLadoALado ? 'flex-row items-start justify-center' : 'flex-col']">
           <div :class="capturaRapida ? 'w-full' : notaEnfermeriaLadoALado ? 'w-[22rem] xl:w-1/3 xl:min-w-[22rem] xl:max-w-md shrink-0' : 'w-full'">
             <FormStepper />
           </div>
           <div
             v-if="!capturaRapida"
-            :class="notaEnfermeriaLadoALado ? 'flex-1 min-w-0 [&>*]:ml-0' : 'w-full'"
+            :class="notaEnfermeriaLadoALado ? 'min-w-0 flex-[0_1_48rem]' : 'w-full'"
             :style="{ viewTransitionName: NOMBRES_TRANSICION.documento }"
           >
             <VisualizadorNotaEnfermeria />
@@ -1194,7 +1194,7 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
       </Transition>
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'evaluacionSuenoVigilia'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-2/5 xl:max-w-md xl:shrink-0">
             <FormStepper />
             <div data-captura-documento class="text-center mt-4 p-4 md:p-6 bg-white rounded-lg shadow-md border border-gray-100 transition-all duration-300 ease-in-out hover:shadow-lg max-w-md mx-auto">
@@ -1216,18 +1216,18 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
               </button>
             </div>
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_72rem]">
             <VisualizadorEvaluacionSuenoVigilia />
           </div>
         </div>
       </Transition>
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'eventoSeguimientoCardiometabolico'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_56rem]">
             <VisualizadorEventoSeguimientoCardiometabolico />
           </div>
         </div>
@@ -1235,11 +1235,11 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'informeLongitudinalCardiometabolico'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_56rem]">
             <VisualizadorInformeLongitudinalCardiometabolico />
           </div>
         </div>
@@ -1247,11 +1247,11 @@ const todoNegadoCuestionarioNordicoYCompletado = async () => {
 
       <Transition appear mode="out-in" name="slide-up">
         <div v-if="datosListos && documentos.currentTypeOfDocument === 'informeLongitudinalAudiometrico'"
-          class="flex flex-col xl:flex-row md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
+          class="flex flex-col xl:flex-row xl:justify-center md:flex-wrap lg:flex-nowrap gap-3 md:gap-6">
           <div class="w-full xl:w-1/4 xl:max-w-md xl:shrink-0">
             <FormStepper />
           </div>
-          <div class="w-full xl:flex-1 xl:min-w-0 xl:[&>*]:ml-0">
+          <div class="w-full xl:min-w-0 xl:flex-[0_1_56rem]">
             <VisualizadorInformeLongitudinalAudiometrico />
           </div>
         </div>
