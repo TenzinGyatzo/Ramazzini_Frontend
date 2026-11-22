@@ -45,7 +45,10 @@ describe('motivo del examen sugerido para una historia clínica nueva (punto 53)
     expect(motivoSugeridoConRazon({ fechaHistoriaClinica: '2026-11-22', fechasAptitudes: [], fechaIngreso: '2022-03-01' })?.razon).toBe(
       'Sin aptitud anterior; ingresó el 1 de marzo de 2022.',
     );
-    // Ingreso posterior a la historia clínica: en futuro
+    // El mismo día o posterior a la historia clínica: «ingresa»
+    expect(motivoSugeridoConRazon({ fechaHistoriaClinica: '2026-11-22', fechasAptitudes: [], fechaIngreso: '2026-11-22' })?.razon).toBe(
+      'Sin aptitud anterior; ingresa el 22 de noviembre de 2026.',
+    );
     expect(motivoSugeridoConRazon({ fechaHistoriaClinica: '2026-11-22', fechasAptitudes: [], fechaIngreso: '2026-11-23' })).toEqual({
       motivo: 'Ingreso',
       razon: 'Sin aptitud anterior; ingresa el 23 de noviembre de 2026.',
