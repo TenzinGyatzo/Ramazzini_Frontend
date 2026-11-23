@@ -1,8 +1,8 @@
 <template>
   <div class="country-select">
-    <label class="country-select-label block font-medium text-lg text-gray-700">
-      {{ label }}
-      <span v-if="validation === 'required'" class="text-red-500">*</span>
+    <label class="country-select-label flex items-center justify-between gap-2 font-medium text-lg text-gray-700">
+      <span>{{ label }}<span v-if="validation === 'required'" class="text-red-500">*</span></span>
+      <PalomitaCompleto :visible="completo" />
     </label>
     
     <select
@@ -29,6 +29,7 @@
 </template>
 
 <script setup>
+import PalomitaCompleto from '@/components/PalomitaCompleto.vue';
 import { ref, computed } from 'vue';
 
 const props = defineProps({
@@ -47,6 +48,11 @@ const props = defineProps({
   validation: {
     type: String,
     default: ''
+  },
+  /** Punto (60): palomita junto a la etiqueta cuando el dato ya es válido. */
+  completo: {
+    type: Boolean,
+    default: false
   }
 });
 

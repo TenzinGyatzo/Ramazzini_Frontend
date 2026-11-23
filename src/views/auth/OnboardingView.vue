@@ -7,6 +7,9 @@ import CountryPhoneInput from "@/components/CountryPhoneInput.vue";
 import CountrySelect from "@/components/CountrySelect.vue";
 import CLUESAutocomplete from "@/components/selectors/CLUESAutocomplete.vue";
 import OpcionesSegmentadas from "@/components/steps/captura/OpcionesSegmentadas.vue";
+import EtiquetaOnboarding from "@/components/onboarding/EtiquetaOnboarding.vue";
+import PalomitaCompleto from "@/components/PalomitaCompleto.vue";
+import { normalizarCorreo } from "@/helpers/normalizarCampo";
 import { useHtmlDarkMode } from "@/composables/useHtmlDarkMode";
 import { PERFILES_PROVEEDOR_SALUD } from "@/constants/perfilProveedorSalud";
 
@@ -374,44 +377,71 @@ const canSubmitStep2 = computed(() => {
   return step2Checks.value.every(Boolean);
 });
 
-const step2Blocker = computed(() => {
-  if (isLoading.value || canSubmitStep2.value) return "";
-  if (
-    !campoLleno(formDataProveedorSalud.nombre) ||
-    !campoLleno(formDataProveedorSalud.pais) ||
-    !campoLleno(formDataProveedorSalud.perfilProveedorSalud)
-  ) {
-    return "";
-  }
 
-  if (isMX.value && !campoLleno(formDataProveedorSalud.clues)) {
-    return "Busca y elige la CLUES de tu establecimiento";
-  }
+// Punto (60): qué dato está completo (válido, no solo lleno), con las mismas reglas que los
+// campos: palomita junto a la etiqueta, «Falta: …» bajo el botón y el conteo de la barra.
+const RE_CORREO = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+const RE_CONTRASENA = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
+const RE_TELEFONO = /^\+?[1-9]\d{3,14}$/;
+const completo = computed(() => ({
+  username: (formDataUser.username || "").trim().length >= 5,
+  perfilProfesional: campoLleno(formDataUser.perfilProfesional),
+  email: RE_CORREO.test(normalizarCorreo(formDataUser.email || "")),
+  phone: RE_TELEFONO.test(formDataUser.phone || ""),
+  password: RE_CONTRASENA.test(formDataUser.password || ""),
+  nombre: campoLleno(formDataProveedorSalud.nombre),
+  pais: campoLleno(formDataProveedorSalud.pais),
+  perfilProveedorSalud: campoLleno(formDataProveedorSalud.perfilProveedorSalud),
+  clues: campoLleno(formDataProveedorSalud.clues),
+  termsAccepted: Boolean(formDataProveedorSalud.termsAccepted),
+}));
 
-  if (!formDataProveedorSalud.termsAccepted) {
-    return "Acepta los términos";
-  }
+/** Los datos de cada paso, en el orden de la pantalla (cómo se nombran en «Falta: …»). */
+const datosDelPaso = computed(() =>
+  currentStep.value === 1
+    ? [
+        { clave: "username", nombre: "nombre" },
+        { clave: "perfilProfesional", nombre: "perfil" },
+        { clave: "email", nombre: "correo" },
+        { clave: "phone", nombre: "teléfono" },
+        { clave: "password", nombre: "contraseña" },
+      ]
+    : [
+        { clave: "nombre", nombre: "razón social" },
+        { clave: "pais", nombre: "país" },
+        { clave: "perfilProveedorSalud", nombre: "tipo de proveedor" },
+        ...(isMX.value ? [{ clave: "clues", nombre: "CLUES" }] : []),
+        { clave: "termsAccepted", nombre: "aceptar los términos" },
+      ],
+);
+const faltantes = computed(() => datosDelPaso.value.filter((d) => !completo.value[d.clave]));
+const completosDelPaso = computed(() => datosDelPaso.value.length - faltantes.value.length);
 
-  return "";
-});
-
-// Computed para porcentaje de progreso
+// La barra: mitad por paso, según los datos completos
 const progresoOnboarding = computed(() => {
-  if (currentStep.value === 1) {
-    const camposCompletos = [
-      formDataUser.username,
-      formDataUser.email,
-      formDataUser.phone,
-      formDataUser.password
-    ].filter(v => v && v.trim() !== '').length;
-    return Math.round((camposCompletos / 4) * 50);
-  } else if (currentStep.value === 2) {
-    const checks = step2Checks.value;
-    const completos = checks.filter(Boolean).length;
-    return 50 + Math.round((completos / checks.length) * 50);
-  }
-  return 100;
+  const avance = completosDelPaso.value / datosDelPaso.value.length;
+  return Math.round((currentStep.value === 1 ? 0 : 50) + avance * 50);
 });
+
+/** «Falta: …»: lleva al campo y pone el cursor en él. */
+const SELECTOR_CAMPO = {
+  username: 'input[name="username"]',
+  perfilProfesional: 'select[name="perfilProfesional"]',
+  email: 'input[name="email"]',
+  phone: ".country-phone-input input",
+  password: 'input[name="password"]',
+  nombre: 'input[name="nombre"]',
+  pais: ".country-select select",
+  perfilProveedorSalud: 'select[name="perfilProveedorSalud"]',
+  clues: '[data-campo="clues"] input:not([type="radio"])',
+  termsAccepted: '[data-campo="termsAccepted"]',
+};
+function irACampo(clave) {
+  const el = document.querySelector(SELECTOR_CAMPO[clave]);
+  if (!el) return;
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  el.focus({ preventScroll: true });
+}
 
 // Reposicionar el toggle cuando el componente se monte
 onMounted(() => {
@@ -545,8 +575,8 @@ onMounted(() => {
     <!-- Barra de progreso -->
     <div class="mb-6 px-4">
       <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-        <span>Progreso</span>
-        <span>{{ progresoOnboarding }}%</span>
+        <span>Paso {{ currentStep }} de 2</span>
+        <span>{{ completosDelPaso }} de {{ datosDelPaso.length }} datos</span>
       </div>
       <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
         <div 
@@ -587,7 +617,9 @@ onMounted(() => {
           v-model="formDataUser.username"
           aria-label="Nombre completo"
           autocomplete="name"
-        />
+        >
+          <template #label="ctx"><EtiquetaOnboarding :para="ctx.id" texto="¿Cuál es tu nombre?" :completo="completo.username" /></template>
+        </FormKit>
 
         <FormKit
           type="select"
@@ -598,7 +630,9 @@ onMounted(() => {
           :validation-messages="{ required: 'Este campo es obligatorio' }"
           v-model="formDataUser.perfilProfesional"
           aria-label="Perfil profesional"
-        />
+        >
+          <template #label="ctx"><EtiquetaOnboarding :para="ctx.id" texto="¿Cuál es tu perfil?" :completo="completo.perfilProfesional" /></template>
+        </FormKit>
 
         <FormKit
           type="email"
@@ -613,7 +647,9 @@ onMounted(() => {
           v-model="formDataUser.email"
           aria-label="Correo electrónico"
           autocomplete="email"
-        />
+        >
+          <template #label="ctx"><EtiquetaOnboarding :para="ctx.id" texto="¿Qué correo deseas registrar?" :completo="completo.email" /></template>
+        </FormKit>
 
         <CountryPhoneInput
           ref="phoneInput"
@@ -622,6 +658,7 @@ onMounted(() => {
           v-model="formDataUser.phone"
           @update:country="formDataUser.country = $event"
           validation="required"
+          :completo="completo.phone"
         />
 
         <div class="relative" ref="passwordContainer">
@@ -636,7 +673,9 @@ onMounted(() => {
               passwordValidation: 'Mín. 8 caracteres, 1 mayúscula y 1 número, sin espacios.',
             }"
             v-model="formDataUser.password"
-          />
+          >
+          <template #label="ctx"><EtiquetaOnboarding :para="ctx.id" texto="¿Qué contraseña deseas usar?" :completo="completo.password" /></template>
+        </FormKit>
           <button
             type="button"
             @click="togglePasswordVisibility"
@@ -654,6 +693,17 @@ onMounted(() => {
             <span class="mr-2">Siguiente</span>
             <i class="fa-solid fa-arrow-right-long"></i>
           </FormKit>
+          <p v-if="faltantes.length && !isLoading" class="mt-2 text-center text-xs text-gray-500" data-faltan>
+            Falta:
+            <template v-for="(dato, i) in faltantes" :key="dato.clave">
+              <span v-if="i > 0" aria-hidden="true"> · </span>
+              <button
+                type="button"
+                class="underline decoration-dotted underline-offset-2 hover:text-gray-700"
+                @click="irACampo(dato.clave)"
+              >{{ dato.nombre }}</button>
+            </template>
+          </p>
         </div>
       </FormKit>
     </Transition>
@@ -690,12 +740,15 @@ onMounted(() => {
           v-model="formDataProveedorSalud.nombre"
           aria-label="Razón social de la empresa"
           autocomplete="organization"
-        />
+        >
+          <template #label="ctx"><EtiquetaOnboarding :para="ctx.id" texto="Razón social" :completo="completo.nombre" /></template>
+        </FormKit>
         <CountrySelect
           label="País"
           placeholder="Selecciona tu país"
           v-model="formDataProveedorSalud.pais"
           validation="required"
+          :completo="completo.pais"
         />
 
         <FormKit
@@ -707,15 +760,18 @@ onMounted(() => {
           validation="required"
           :validation-messages="{ required: 'Este campo es obligatorio' }"
           v-model="formDataProveedorSalud.perfilProveedorSalud"
-        />
+        >
+          <template #label="ctx"><EtiquetaOnboarding :para="ctx.id" texto="Tipo de proveedor" :completo="completo.perfilProveedorSalud" /></template>
+        </FormKit>
 
         <!-- Punto (60): en México la cuenta opera con cumplimiento normativo; solo se pide la CLUES.
              Aparece y desaparece desplegándose (al cambiar de país o de respuesta). -->
         <Transition name="desplegar">
           <div v-if="isMX" class="desplegar" data-campo="clues">
             <div class="desplegar-interior">
-              <p class="block font-medium text-lg text-gray-700 mb-1">
-                ¿Tu establecimiento tiene CLUES? <span class="text-red-500">*</span>
+              <p class="flex items-center justify-between gap-2 font-medium text-lg text-gray-700 mb-1">
+                <span>¿Tu establecimiento tiene CLUES?<span class="text-red-500">*</span></span>
+                <PalomitaCompleto :visible="completo.clues" />
               </p>
               <OpcionesSegmentadas
                 v-model="tieneClues"
@@ -764,6 +820,7 @@ onMounted(() => {
         <div class="flex items-center justify-center gap-4 mt-4">
           <button
             type="button"
+            data-campo="termsAccepted"
             @click="formDataProveedorSalud.termsAccepted = !formDataProveedorSalud.termsAccepted"
             :class="formDataProveedorSalud.termsAccepted ? 'bg-emerald-500' : 'bg-gray-300'"
             class="relative w-12 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shrink-0"
@@ -797,8 +854,16 @@ onMounted(() => {
             <i v-if="!isLoading" class="fa-solid fa-check"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
           </FormKit>
-          <p v-if="step2Blocker" class="mt-2 text-center text-xs text-gray-500">
-            {{ step2Blocker }}
+          <p v-if="faltantes.length && !isLoading" class="mt-2 text-center text-xs text-gray-500" data-faltan>
+            Falta:
+            <template v-for="(dato, i) in faltantes" :key="dato.clave">
+              <span v-if="i > 0" aria-hidden="true"> · </span>
+              <button
+                type="button"
+                class="underline decoration-dotted underline-offset-2 hover:text-gray-700"
+                @click="irACampo(dato.clave)"
+              >{{ dato.nombre }}</button>
+            </template>
           </p>
           <button
             type="button"
