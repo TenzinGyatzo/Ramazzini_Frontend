@@ -109,10 +109,10 @@ describe('Sidebar — folio de edición', () => {
     expect(el.text()).toBe(__APP_VERSION_SIRES__);
     expect(el.attributes('title')).toBe(`Versión ${__APP_VERSION_SIRES__.replace(/^v/i, '')}`);
     expect(el.text()).not.toContain('SIRES');
-    expect(el.text()).not.toContain('v2.0.4');
+    expect(el.text()).not.toContain('v2.0.5');
   });
 
-  it('SIN_REGIMEN muestra solo v2.0.4, sin la palabra Ramazzini', async () => {
+  it('SIN_REGIMEN muestra solo v2.0.5, sin la palabra Ramazzini', async () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const store = useProveedorSaludStore();
@@ -124,8 +124,8 @@ describe('Sidebar — folio de edición', () => {
     const wrapper = await mountSidebar(pinia);
     await expandSidebar(wrapper);
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('v2.0.4');
-    expect(el.attributes('title')).toBe('Versión 2.0.4');
+    expect(el.text()).toBe('v2.0.5');
+    expect(el.attributes('title')).toBe('Versión 2.0.5');
     expect(el.text()).not.toContain('Ramazzini');
     expect(el.text()).not.toContain('v1.0.3');
     expect(el.text()).not.toContain('SIRES');
@@ -143,7 +143,7 @@ describe('Sidebar — folio de edición', () => {
 
     const wrapper = await mountSidebar(pinia);
     await expandSidebar(wrapper);
-    expect(wrapper.get('[data-testid="edition-label"]').text()).toBe('v2.0.4');
+    expect(wrapper.get('[data-testid="edition-label"]').text()).toBe('v2.0.5');
 
     store.proveedorSalud = {
       ...store.proveedorSalud,
@@ -155,7 +155,7 @@ describe('Sidebar — folio de edición', () => {
     const el = wrapper.get('[data-testid="edition-label"]');
     expect(el.text()).toBe(__APP_VERSION_SIRES__);
     expect(el.attributes('title')).toBe(`Versión ${__APP_VERSION_SIRES__.replace(/^v/i, '')}`);
-    expect(el.text()).not.toContain('v2.0.4');
+    expect(el.text()).not.toContain('v2.0.5');
   });
 
   it('colapsado desde md muestra la versión con v', async () => {
@@ -177,8 +177,8 @@ describe('Sidebar — folio de edición', () => {
     await wrapper.vm.$nextTick();
 
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('v2.0.4');
-    expect(el.attributes('title')).toBe('Versión 2.0.4');
+    expect(el.text()).toBe('v2.0.5');
+    expect(el.attributes('title')).toBe('Versión 2.0.5');
   });
 
   it('colapsado desde md en SIRES muestra la versión con v', async () => {
@@ -224,8 +224,8 @@ describe('Sidebar — folio de edición', () => {
     await wrapper.vm.$nextTick();
 
     const el = wrapper.get('[data-testid="edition-label"]');
-    expect(el.text()).toBe('2.0.4');
-    expect(el.attributes('title')).toBe('Versión 2.0.4');
+    expect(el.text()).toBe('2.0.5');
+    expect(el.attributes('title')).toBe('Versión 2.0.5');
   });
 
   it('colapsado en smartphone SIRES muestra solo el número de versión', async () => {
