@@ -1355,7 +1355,8 @@ export const DOCUMENT_TYPE_DATE_FIELDS: Record<string, string> = {
 };
 
 /** Antigüedad máxima (días naturales, inclusive) de la fecha de atención en SIRES_NOM024. */
-export const DOCUMENT_DATE_MAX_LOOKBACK_DAYS = 30;
+// TEMPORAL (2026-11-24, ~15 días): ampliado de 30 a 120 (≈4 meses). Revertir a 30.
+export const DOCUMENT_DATE_MAX_LOOKBACK_DAYS = 120;
 
 function toLocalDateOnly(fecha: string | Date): Date | null {
   if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}/.test(fecha.trim())) {
@@ -1368,7 +1369,7 @@ function toLocalDateOnly(fecha: string | Date): Date | null {
   return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 }
 
-/** Valida que la fecha no sea futura ni anterior a 30 días (solo aplica en régimen SIRES). */
+/** Valida que la fecha no sea futura ni con más días de antigüedad que DOCUMENT_DATE_MAX_LOOKBACK_DAYS (solo aplica en régimen SIRES). */
 export function validarFechaDocumentoNoFutura(
   fecha: string | Date | null | undefined,
   isSIRES: boolean,
@@ -1393,7 +1394,7 @@ export function validarFechaDocumentoNoFutura(
   if (fechaDoc < min) {
     return {
       valido: false,
-      mensaje: 'La fecha del documento no puede tener más de 30 días de antigüedad',
+      mensaje: `La fecha del documento no puede tener más de ${DOCUMENT_DATE_MAX_LOOKBACK_DAYS} días de antigüedad`,
     };
   }
 
@@ -1471,7 +1472,7 @@ export function validarNotaMedicaPreSubmit(
     }
   }
 
-  // 3. fechaNotaMedica no puede ser futura ni anterior a 30 días (solo SIRES)
+  // 3. fechaNotaMedica no puede ser futura ni con más días de antigüedad que DOCUMENT_DATE_MAX_LOOKBACK_DAYS (solo SIRES)
   if (isSIRES && fechaNotaMedica) {
     const ventana = validarFechaDocumentoNoFutura(df.fechaNotaMedica, true);
     if (!ventana.valido) {
@@ -1480,7 +1481,7 @@ export function validarNotaMedicaPreSubmit(
         mensaje:
           ventana.mensaje === 'La fecha no puede ser posterior al día de hoy'
             ? 'La fecha de consulta no puede ser posterior al día de hoy'
-            : 'La fecha de consulta no puede tener más de 30 días de antigüedad',
+            : `La fecha de consulta no puede tener más de ${DOCUMENT_DATE_MAX_LOOKBACK_DAYS} días de antigüedad`,
         paso: 1,
         campo: 'fechaNotaMedica',
       };

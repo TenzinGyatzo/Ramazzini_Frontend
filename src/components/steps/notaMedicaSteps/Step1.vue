@@ -9,7 +9,10 @@ import { useTrabajadoresStore } from '@/stores/trabajadores';
 import { useFormDataStore } from '@/stores/formDataStore';
 import { useDocumentosStore } from '@/stores/documentos';
 import { useProveedorSaludStore } from '@/stores/proveedorSalud';
-import { useSiresDocumentDateMax } from '@/composables/useSiresDocumentDateMax';
+import {
+  useSiresDocumentDateMax,
+  DOCUMENT_DATE_MAX_LOOKBACK_DAYS,
+} from '@/composables/useSiresDocumentDateMax';
 import NotasMedicasAPI from '@/api/NotasMedicasAPI';
 import { DocumentoEstado } from '@/interfaces/nom024.interface';
 import { enCapturaRapida } from '@/composables/capturaRapidaKey';
@@ -95,7 +98,7 @@ const mensajeErrorFechaConsulta = computed(() => {
   if (fechaDocumentoMin.value && fechaNotaMedica.value < fechaDocumentoMin.value) {
     return (
       mensajeEdadEnFecha(fechaNotaMedica.value) ||
-      'La fecha de consulta no puede tener más de 30 días de antigüedad'
+      `La fecha de consulta no puede tener más de ${DOCUMENT_DATE_MAX_LOOKBACK_DAYS} días de antigüedad`
     );
   }
   return '';

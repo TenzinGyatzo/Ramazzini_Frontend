@@ -13,12 +13,13 @@ import {
 } from '@/helpers/edadEnFechaDocumento';
 
 /** Antigüedad máxima (días naturales, inclusive) de la fecha de atención en SIRES_NOM024. */
-export const DOCUMENT_DATE_MAX_LOOKBACK_DAYS = 30;
+// TEMPORAL (2026-11-24, ~15 días): ampliado de 30 a 120 (≈4 meses). Revertir a 30.
+export const DOCUMENT_DATE_MAX_LOOKBACK_DAYS = 120;
 
 /**
  * Límites del selector de fecha de documentos clínicos en SIRES_NOM024:
  * - max: hoy
- * - min: el más tardío entre hoy − 30 días naturales, el día en que el trabajador cumple 17
+ * - min: el más tardío entre hoy − DOCUMENT_DATE_MAX_LOOKBACK_DAYS días naturales, el día en que el trabajador cumple 17
  *   y el día en que el firmante cumple 18 (regla E2; `conEdades: false` para documentos
  *   externos y resultados clínicos, que no la llevan).
  * En SIN_REGIMEN retorna undefined (sin restricción en el selector).

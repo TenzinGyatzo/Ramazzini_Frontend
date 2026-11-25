@@ -21,7 +21,7 @@ function daysAgo(days: number): Date {
 }
 
 describe('validarFechaDocumentoNoFutura ventana SIRES', () => {
-  it('permite hoy y hoy − 30 días en SIRES', () => {
+  it('permite hoy y hoy − el máximo de días en SIRES', () => {
     expect(validarFechaDocumentoNoFutura(ymd(new Date()), true).valido).toBe(true);
     expect(
       validarFechaDocumentoNoFutura(ymd(daysAgo(DOCUMENT_DATE_MAX_LOOKBACK_DAYS)), true)
@@ -29,11 +29,11 @@ describe('validarFechaDocumentoNoFutura ventana SIRES', () => {
     ).toBe(true);
   });
 
-  it('rechaza hoy − 31 días en SIRES', () => {
-    const r = validarFechaDocumentoNoFutura(ymd(daysAgo(31)), true);
+  it('rechaza un día más del máximo en SIRES', () => {
+    const r = validarFechaDocumentoNoFutura(ymd(daysAgo(DOCUMENT_DATE_MAX_LOOKBACK_DAYS + 1)), true);
     expect(r.valido).toBe(false);
     expect(r.mensaje).toBe(
-      'La fecha del documento no puede tener más de 30 días de antigüedad',
+      `La fecha del documento no puede tener más de ${DOCUMENT_DATE_MAX_LOOKBACK_DAYS} días de antigüedad`,
     );
   });
 
@@ -51,7 +51,7 @@ describe('validarFechaDocumentoNoFutura ventana SIRES', () => {
   it('validarFechaDocumentoPreSubmit usa el campo de fecha del tipo', () => {
     const r = validarFechaDocumentoPreSubmit(
       'antidoping',
-      { fechaAntidoping: ymd(daysAgo(31)) },
+      { fechaAntidoping: ymd(daysAgo(DOCUMENT_DATE_MAX_LOOKBACK_DAYS + 1)) },
       true,
     );
     expect(r.valido).toBe(false);
@@ -60,23 +60,23 @@ describe('validarFechaDocumentoNoFutura ventana SIRES', () => {
 });
 
 describe('validarNotaMedicaPreSubmit ventana SIRES', () => {
-  it('rechaza consulta con más de 30 días de antigüedad', () => {
+  it('rechaza consulta con más días de antigüedad que el máximo', () => {
     const r = validarNotaMedicaPreSubmit(
-      { fechaNotaMedica: ymd(daysAgo(31)) },
+      { fechaNotaMedica: ymd(daysAgo(DOCUMENT_DATE_MAX_LOOKBACK_DAYS + 1)) },
       { fechaNacimiento: '1990-01-01' },
       true,
       false,
     );
     expect(r.valido).toBe(false);
     expect(r.mensaje).toBe(
-      'La fecha de consulta no puede tener más de 30 días de antigüedad',
+      `La fecha de consulta no puede tener más de ${DOCUMENT_DATE_MAX_LOOKBACK_DAYS} días de antigüedad`,
     );
     expect(r.paso).toBe(1);
   });
 
-  it('acepta consulta de hoy − 30 días', () => {
+  it('acepta consulta de hoy − el máximo de días', () => {
     const r = validarNotaMedicaPreSubmit(
-      { fechaNotaMedica: ymd(daysAgo(30)) },
+      { fechaNotaMedica: ymd(daysAgo(DOCUMENT_DATE_MAX_LOOKBACK_DAYS)) },
       { fechaNacimiento: '1990-01-01' },
       true,
       false,
