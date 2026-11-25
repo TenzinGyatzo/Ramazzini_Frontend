@@ -4,7 +4,8 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import catalogsAdminAPI, {
   type CatalogTypeInfo,
-  type CatalogEntryRow,
+  type CatalogRow,
+  type CatalogAdminColumn,
 } from "@/api/catalogsAdminAPI";
 
 const toast = inject<{ open: (o: { message: string; type: string }) => void }>("toast");
@@ -15,7 +16,8 @@ const LARGE_CATALOG_THRESHOLD = 50000;
 
 const types = ref<CatalogTypeInfo[]>([]);
 const selectedType = ref("");
-const items = ref<CatalogEntryRow[]>([]);
+const items = ref<CatalogRow[]>([]);
+const columnas = ref<CatalogAdminColumn[]>([]);
 const total = ref(0);
 const page = ref(1);
 const limit = ref(50);
@@ -54,32 +56,37 @@ onUnmounted(() => {
   window.removeEventListener("keydown", onFormEscapeKey);
 });
 const editingCode = ref("");
-const emptyForm = () => ({
-  code: "",
-  description: "",
-  lsex: "",
-  linfRaw: "",
-  lsupRaw: "",
-  letra: "",
-  estatus: "",
-  estadoCode: "",
-  municipioCode: "",
-  localidadCode: "",
-  abreviatura: "",
-});
+/** Valores del formulario por columna del CSV (parche 1.0.10: todas las columnas). */
+const form = ref<Record<string, string>>({});
+/** Valores con los que se abrió la edición, para saber si cambió alguna clave. */
+const formOriginal = ref<Record<string, string>>({});
+const showConfirmClave = ref(false);
 
-const form = ref(emptyForm());
+const columnasClave = computed(() => columnas.value.filter((c) => c.clave));
+/** Columna que identifica al registro por su nombre (para el aviso de eliminar). */
+const columnaDescripcion = computed(
+  () =>
+    (columnas.value.find((c) => c.descripcion) ?? columnas.value.find((c) => !c.clave))
+      ?.columna ?? "",
+);
+const clavesCambiadas = computed(() =>
+  columnasClave.value.filter(
+    (c) =>
+      (form.value[c.columna] ?? "").trim() !==
+      (formOriginal.value[c.columna] ?? "").trim(),
+  ),
+);
 
 const importFile = ref<File | null>(null);
 const importLoading = ref(false);
 
 const showDeleteModal = ref(false);
-const deleteTarget = ref<CatalogEntryRow | null>(null);
+const deleteTarget = ref<CatalogRow | null>(null);
 
 const deleteIdentificacion = computed(() => {
   const row = deleteTarget.value;
   if (!row) return "";
-  const desc = row.description?.trim();
+  const desc = (row.valores[columnaDescripcion.value] ?? "").trim();
   return desc ? `${row.code} — ${desc}` : row.code;
 });
 
@@ -126,12 +133,13 @@ async function loadEntries() {
   if (!selectedType.value) return;
   loading.value = true;
   try {
-    const { data } = await catalogsAdminAPI.listEntries(selectedType.value, {
+    const { data } = await catalogsAdminAPI.listRows(selectedType.value, {
       page: page.value,
       limit: limit.value,
       q: searchQ.value.trim() || undefined,
     });
     items.value = data.items;
+    columnas.value = data.columnas;
     total.value = data.total;
   } catch {
     notify("Error al cargar entradas", "error");
@@ -140,104 +148,90 @@ async function loadEntries() {
   }
 }
 
+function valoresVacios(): Record<string, string> {
+  return Object.fromEntries(columnas.value.map((c) => [c.columna, ""]));
+}
+
 function openCreate() {
   formMode.value = "create";
   editingCode.value = "";
-  form.value = emptyForm();
+  form.value = valoresVacios();
+  formOriginal.value = {};
   showForm.value = true;
 }
 
-function openEdit(row: CatalogEntryRow) {
+function openEdit(row: CatalogRow) {
   formMode.value = "edit";
   editingCode.value = row.code;
-  form.value = {
-    code: row.code,
-    description: row.description || "",
-    lsex: String(row.lsex ?? ""),
-    linfRaw: String(row.linfRaw ?? ""),
-    lsupRaw: String(row.lsupRaw ?? ""),
-    letra: String(row.letra ?? ""),
-    estatus: String(row.estatus ?? ""),
-    estadoCode: String(row.estadoCode ?? ""),
-    municipioCode: String(row.municipioCode ?? ""),
-    localidadCode: String(row.localidadCode ?? ""),
-    abreviatura: String(row.abreviatura ?? ""),
-  };
+  form.value = { ...valoresVacios(), ...row.valores };
+  formOriginal.value = { ...form.value };
   showForm.value = true;
 }
 
-function buildPayload(): Record<string, unknown> {
-  const label = form.value.description.trim();
-  const p: Record<string, unknown> = {
-    code: form.value.code.trim(),
-    description: label,
-    nombre: label,
-  };
-  if (selectedType.value === "diagnosticos") {
-    if (form.value.lsex) p.lsex = form.value.lsex;
-    if (form.value.linfRaw) p.linfRaw = form.value.linfRaw;
-    if (form.value.lsupRaw) p.lsupRaw = form.value.lsupRaw;
-    if (form.value.letra) p.letra = form.value.letra;
+/** En la edición solo se envían las columnas que cambiaron. */
+function valoresAEnviar(): Record<string, string> {
+  const valores: Record<string, string> = {};
+  for (const c of columnas.value) {
+    const v = (form.value[c.columna] ?? "").trim();
+    if (
+      formMode.value === "create" ||
+      v !== (formOriginal.value[c.columna] ?? "").trim()
+    ) {
+      valores[c.columna] = v;
+    }
   }
-  if (selectedType.value === "establecimientos_salud" && form.value.estatus) {
-    p.estatus = form.value.estatus;
-  }
-  if (selectedType.value === "enitades_federativas" && form.value.abreviatura) {
-    p.abreviatura = form.value.abreviatura;
-  }
-  if (
-    selectedType.value === "municipios" ||
-    selectedType.value === "localidades"
-  ) {
-    if (form.value.estadoCode) p.estadoCode = form.value.estadoCode;
-    if (form.value.municipioCode) p.municipioCode = form.value.municipioCode;
-    if (form.value.localidadCode) p.localidadCode = form.value.localidadCode;
-  }
-  if (
-    selectedType.value === "municipios" &&
-    form.value.estadoCode &&
-    form.value.municipioCode
-  ) {
-    p.code = `${form.value.estadoCode}-${form.value.municipioCode}`;
-  }
-  if (
-    selectedType.value === "localidades" &&
-    form.value.estadoCode &&
-    form.value.municipioCode &&
-    form.value.localidadCode
-  ) {
-    p.code = `${form.value.estadoCode}-${form.value.municipioCode}-${form.value.localidadCode}`;
-  }
-  return p;
+  return valores;
 }
 
-async function saveForm() {
+function mensajeDeError(e: unknown, porDefecto: string): string {
+  const msg = (e as { response?: { data?: { message?: unknown } } })?.response
+    ?.data?.message;
+  if (Array.isArray(msg)) return msg.join(". ");
+  return typeof msg === "string" && msg.trim() ? msg : porDefecto;
+}
+
+function saveForm() {
   if (!selectedType.value || formSaving.value) return;
+  // Cambiar una clave pide confirmación antes de guardar
+  if (formMode.value === "edit" && clavesCambiadas.value.length > 0) {
+    showConfirmClave.value = true;
+    return;
+  }
+  void guardar();
+}
+
+async function guardar() {
+  showConfirmClave.value = false;
+  if (!selectedType.value || formSaving.value) return;
+  const valores = valoresAEnviar();
+  if (formMode.value === "edit" && Object.keys(valores).length === 0) {
+    notify("No hay cambios que guardar", "info");
+    return;
+  }
   formSaving.value = true;
   try {
-    const payload = buildPayload();
     if (formMode.value === "create") {
-      await catalogsAdminAPI.createEntry(selectedType.value, payload);
+      await catalogsAdminAPI.createRow(selectedType.value, valores);
       notify("Registro creado");
     } else {
-      await catalogsAdminAPI.updateEntry(
+      await catalogsAdminAPI.updateRow(
         selectedType.value,
         editingCode.value,
-        payload,
+        valores,
       );
       notify("Registro actualizado");
     }
     closeForm();
     await loadTypes();
     await loadEntries();
-  } catch {
-    notify("No se pudo guardar el registro", "error");
+  } catch (e) {
+    notify(mensajeDeError(e, "No se pudo guardar el registro"), "error");
   } finally {
     formSaving.value = false;
   }
 }
 
-function openDeleteModal(row: CatalogEntryRow) {
+function openDeleteModal(row: CatalogRow) {
   deleteTarget.value = row;
   showDeleteModal.value = true;
 }
@@ -398,7 +392,7 @@ onMounted(async () => {
           <input
             v-model="searchQ"
             type="text"
-            placeholder="Código o descripción"
+            placeholder="Buscar en cualquier columna"
             class="flex-1 border border-gray-300 rounded-lg px-3 py-2"
             @keyup.enter="page = 1; loadEntries()"
           />
@@ -471,20 +465,43 @@ onMounted(async () => {
       <table class="min-w-full text-sm">
         <thead class="catalogos-admin-table-head bg-gray-50">
           <tr>
-            <th class="text-left px-4 py-3 font-medium text-gray-700">Código</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-700">Descripción</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-700">Acciones</th>
+            <th
+              v-for="(c, i) in columnas"
+              :key="c.columna"
+              class="text-left px-3 py-3 font-medium text-gray-700 whitespace-nowrap"
+              :class="i === 0 ? 'catalogos-admin-sticky sticky left-0 z-[1] bg-gray-50' : ''"
+              :title="c.adicional ? 'Columna adicional a los campos mínimos' : undefined"
+            >
+              {{ c.etiqueta }}
+              <span v-if="c.clave" class="ml-1 text-[10px] font-normal uppercase text-gray-400">clave</span>
+            </th>
+            <th
+              class="catalogos-admin-sticky sticky right-0 z-[1] bg-gray-50 text-right px-3 py-3 font-medium text-gray-700 whitespace-nowrap"
+            >
+              Acciones
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr
             v-for="row in items"
             :key="row.code"
-            class="catalogos-admin-table-row border-t border-gray-100 hover:bg-gray-50"
+            class="catalogos-admin-table-row group border-t border-gray-100 hover:bg-gray-50"
           >
-            <td class="px-4 py-2 font-mono text-xs catalogos-admin-code">{{ row.code }}</td>
-            <td class="px-4 py-2">{{ row.description }}</td>
-            <td class="px-4 py-2 text-right space-x-2">
+            <td
+              v-for="(c, i) in columnas"
+              :key="c.columna"
+              class="px-3 py-2 whitespace-nowrap"
+              :class="[
+                c.clave ? 'font-mono text-xs catalogos-admin-code' : '',
+                i === 0 ? 'catalogos-admin-sticky sticky left-0 z-[1] bg-white group-hover:bg-gray-50' : '',
+              ]"
+            >
+              {{ row.valores[c.columna] }}
+            </td>
+            <td
+              class="catalogos-admin-sticky sticky right-0 z-[1] bg-white group-hover:bg-gray-50 px-3 py-2 text-right space-x-2 whitespace-nowrap"
+            >
               <button
                 type="button"
                 class="catalogos-admin-action-edit text-indigo-600 hover:underline"
@@ -502,7 +519,7 @@ onMounted(async () => {
             </td>
           </tr>
           <tr v-if="!items.length">
-            <td colspan="3" class="px-4 py-8 text-center text-gray-500">
+            <td :colspan="columnas.length + 1" class="px-4 py-8 text-center text-gray-500">
               Sin resultados
             </td>
           </tr>
@@ -569,88 +586,25 @@ onMounted(async () => {
       @mousedown.self="closeForm"
     >
       <div
-        class="catalogos-admin-modal catalogos-admin-form dark-mode-input-surface bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto"
+        class="catalogos-admin-modal catalogos-admin-form dark-mode-input-surface bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
         @mousedown.stop
       >
         <h3 class="text-lg font-semibold text-gray-800 mb-4">
           {{ formMode === "create" ? "Nueva entrada" : "Editar entrada" }}
         </h3>
-        <div class="space-y-3">
-          <div>
-            <label class="text-sm text-gray-700">Código</label>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div v-for="c in columnas" :key="c.columna">
+            <label class="text-sm text-gray-700" :for="`catalogo-col-${c.columna}`">
+              {{ c.etiqueta }}
+              <span v-if="c.clave" class="ml-1 text-[10px] uppercase text-gray-400">clave</span>
+            </label>
             <input
-              v-model="form.code"
+              :id="`catalogo-col-${c.columna}`"
+              v-model="form[c.columna]"
               class="w-full border rounded-lg px-3 py-2 mt-1"
-              :disabled="formMode === 'edit'"
+              :class="c.clave ? 'font-mono text-sm' : ''"
             />
           </div>
-          <div>
-            <label class="text-sm text-gray-700">
-              {{ selectedType === 'diagnosticos' ? 'Nombre (columna NOMBRE)' : 'Descripción' }}
-            </label>
-            <input v-model="form.description" class="w-full border rounded-lg px-3 py-2 mt-1" />
-          </div>
-          <template v-if="selectedType === 'diagnosticos'">
-            <div>
-              <label class="text-sm text-gray-700">LSEX</label>
-              <input v-model="form.lsex" class="w-full border rounded-lg px-3 py-2 mt-1" />
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="text-sm text-gray-700">LINF</label>
-                <input v-model="form.linfRaw" class="w-full border rounded-lg px-3 py-2 mt-1" />
-              </div>
-              <div>
-                <label class="text-sm text-gray-700">LSUP</label>
-                <input v-model="form.lsupRaw" class="w-full border rounded-lg px-3 py-2 mt-1" />
-              </div>
-            </div>
-            <div>
-              <label class="text-sm text-gray-700">LETRA</label>
-              <input v-model="form.letra" class="w-full border rounded-lg px-3 py-2 mt-1" />
-            </div>
-          </template>
-          <template v-if="selectedType === 'establecimientos_salud'">
-            <div>
-              <label class="text-sm text-gray-700">Estatus</label>
-              <select v-model="form.estatus" class="w-full border rounded-lg px-3 py-2 mt-1">
-                <option value="">—</option>
-                <option value="EN OPERACION">EN OPERACION</option>
-                <option value="NO EN OPERACION">NO EN OPERACION</option>
-              </select>
-            </div>
-          </template>
-          <template v-if="selectedType === 'enitades_federativas'">
-            <div>
-              <label class="text-sm text-gray-700">Abreviatura</label>
-              <input v-model="form.abreviatura" class="w-full border rounded-lg px-3 py-2 mt-1" />
-            </div>
-          </template>
-          <template
-            v-if="
-              selectedType === 'municipios' ||
-              selectedType === 'localidades'
-            "
-          >
-            <div>
-              <label class="text-sm text-gray-700">Código estado</label>
-              <input v-model="form.estadoCode" class="w-full border rounded-lg px-3 py-2 mt-1" />
-            </div>
-            <div>
-              <label class="text-sm text-gray-700">Código municipio</label>
-              <input
-                v-model="form.municipioCode"
-                class="w-full border rounded-lg px-3 py-2 mt-1"
-              />
-            </div>
-            <div v-if="selectedType === 'localidades'">
-              <label class="text-sm text-gray-700">Código localidad</label>
-              <input
-                v-model="form.localidadCode"
-                class="w-full border rounded-lg px-3 py-2 mt-1"
-              />
-            </div>
-          </template>
         </div>
         <div class="flex justify-end gap-2 mt-6">
           <button
@@ -668,6 +622,46 @@ onMounted(async () => {
           >
             <span v-if="formSaving">Guardando...</span>
             <span v-else>Guardar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showConfirmClave"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+      @mousedown.self="showConfirmClave = false"
+    >
+      <div class="catalogos-admin-modal bg-white rounded-xl shadow-xl max-w-lg w-full p-6" @mousedown.stop>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Cambiar la clave del registro</h3>
+        <p class="text-sm text-gray-600 mb-3">Vas a cambiar:</p>
+        <ul class="text-sm text-gray-700 mb-3 space-y-1">
+          <li v-for="c in clavesCambiadas" :key="c.columna">
+            <strong>{{ c.etiqueta }}</strong>:
+            <span class="font-mono">{{ formOriginal[c.columna] || "(vacío)" }}</span>
+            →
+            <span class="font-mono">{{ form[c.columna] || "(vacío)" }}</span>
+          </li>
+        </ul>
+        <p class="text-sm text-gray-600 mb-6">
+          Los registros que ya usan la clave anterior (por ejemplo, documentos o proveedores)
+          la conservan; no se actualizan solos. Si la clave nueva ya existe en el catálogo, no
+          se guardará.
+        </p>
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            class="catalogos-admin-btn-secondary px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
+            @click="showConfirmClave = false"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+            @click="guardar"
+          >
+            Cambiar clave y guardar
           </button>
         </div>
       </div>

@@ -25,7 +25,63 @@ export interface CatalogListResponse {
   limit: number;
 }
 
+/** Columna del catálogo que el módulo muestra y edita (parche 1.0.10). */
+export interface CatalogAdminColumn {
+  columna: string;
+  etiqueta: string;
+  clave: boolean;
+  adicional: boolean;
+  descripcion: boolean;
+}
+
+/** Registro del catálogo con el valor de cada columna tal como está en el CSV. */
+export interface CatalogRow {
+  code: string;
+  valores: Record<string, string>;
+}
+
+export interface CatalogRowsResponse {
+  items: CatalogRow[];
+  columnas: CatalogAdminColumn[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface CatalogRowMutationResult {
+  code: string;
+  codigoAnterior?: string;
+  antes: Record<string, string> | null;
+  despues: Record<string, string>;
+}
+
 export default {
+  listRows(
+    catalogType: string,
+    params?: { page?: number; limit?: number; q?: string },
+  ) {
+    return api.get<CatalogRowsResponse>(`${BASE}/${catalogType}/filas`, {
+      params,
+    });
+  },
+
+  createRow(catalogType: string, values: Record<string, string>) {
+    return api.post<CatalogRowMutationResult>(`${BASE}/${catalogType}/filas`, {
+      values,
+    });
+  },
+
+  updateRow(
+    catalogType: string,
+    code: string,
+    values: Record<string, string>,
+  ) {
+    return api.patch<CatalogRowMutationResult>(
+      `${BASE}/${catalogType}/filas/${encodeURIComponent(code)}`,
+      { values },
+    );
+  },
+
   listTypes() {
     return api.get<CatalogTypeInfo[]>(`${BASE}/types`);
   },

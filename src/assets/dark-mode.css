@@ -2910,6 +2910,19 @@ html.dark-mode .catalogos-admin-view .catalogos-admin-table-row:hover {
   background-color: #334155 !important;
 }
 
+/* Primera columna y columna de acciones fijas al desplazar la tabla a lo ancho (parche 1.0.10) */
+html.dark-mode .catalogos-admin-view .catalogos-admin-table-head .catalogos-admin-sticky {
+  background-color: #0f172a !important;
+}
+
+html.dark-mode .catalogos-admin-view .catalogos-admin-table-row .catalogos-admin-sticky {
+  background-color: #1e293b !important;
+}
+
+html.dark-mode .catalogos-admin-view .catalogos-admin-table-row:hover .catalogos-admin-sticky {
+  background-color: #334155 !important;
+}
+
 html.dark-mode .catalogos-admin-view .catalogos-admin-code {
   color: #a5b4fc !important;
 }
