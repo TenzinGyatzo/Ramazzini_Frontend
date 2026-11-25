@@ -102,16 +102,20 @@ export function getSurnameTokenSegment(token: string): string {
 }
 
 /**
+ * Partícula de enlace (regla 1.7) solo si es idéntica a la de la lista: «VÄN», «DÉ»,
+ * «V/AN» o «MA-C» se tratan como palabra normal (respuesta DGIS, parche 1.0.10).
+ */
+export function isCurpParticle(token: string): boolean {
+  return CURP_SURNAME_PARTICLES.has(token.trim().toUpperCase());
+}
+
+/**
  * Omite partículas al inicio de la lista de tokens.
  */
 export function skipLeadingParticles(tokens: string[]): string[] {
   let index = 0;
 
-  while (index < tokens.length) {
-    const key = normalizeTokenKey(tokens[index]);
-    if (!CURP_SURNAME_PARTICLES.has(key)) {
-      break;
-    }
+  while (index < tokens.length && isCurpParticle(tokens[index])) {
     index++;
   }
 
@@ -119,15 +123,22 @@ export function skipLeadingParticles(tokens: string[]): string[] {
 }
 
 /**
- * Primera palabra significativa de un apellido (reglas 1.5, 1.7).
+ * Palabra que cuenta para la CURP: la primera que no es partícula; si todas lo son
+ * («VAN MAC», «DA Y»), la última de la cadena (respuesta DGIS, parche 1.0.10).
  */
-export function resolveEffectiveSurname(raw?: string): string {
-  const tokens = skipLeadingParticles(tokenizeNamePart(raw ?? ''));
+function firstMeaningfulOrLast(tokens: string[]): string {
   if (tokens.length === 0) {
     return '';
   }
+  return skipLeadingParticles(tokens)[0] ?? tokens[tokens.length - 1];
+}
 
-  return getSurnameTokenSegment(tokens[0]);
+/**
+ * Primera palabra significativa de un apellido (reglas 1.5, 1.7).
+ */
+export function resolveEffectiveSurname(raw?: string): string {
+  const word = firstMeaningfulOrLast(tokenizeNamePart(raw ?? ''));
+  return word ? getSurnameTokenSegment(word) : '';
 }
 
 function isCommonGivenPrefix(token: string): boolean {
@@ -140,12 +151,15 @@ function isCommonGivenPrefix(token: string): boolean {
  * significativa; si son el único nombre («JOSE», «MARIA», «JOSE DE»), se usan.
  */
 export function resolveEffectiveGivenName(raw?: string): string {
-  const tokens = skipLeadingParticles(tokenizeNamePart(raw ?? ''));
+  const all = tokenizeNamePart(raw ?? '');
+  const tokens = skipLeadingParticles(all);
   if (tokens.length === 0) {
-    return '';
+    // Nombre hecho solo de partículas: la última palabra
+    return all[all.length - 1] ?? '';
   }
 
   if (isCommonGivenPrefix(tokens[0])) {
+    // «JOSE DE LA»: tras MARIA/JOSE solo hay partículas, se queda MARIA/JOSE
     const remaining = skipLeadingParticles(tokens.slice(1));
     return remaining[0] ?? tokens[0];
   }

@@ -4,6 +4,15 @@
  *
  * Iniciales (pos. 1–4): Ä/Ë/Ï/Ö → X; Ü → U.
  * Consonantes internas (pos. 14–16): diéresis se tratan como vocal (no consonante).
+ *
+ * Diéresis — fundamento y estado (parche 1.0.10):
+ * - Pos. 14–16, diéresis como vocal: CONFIRMADO por la DGIS (consulta 1: «DËR» → R).
+ * - Ü → U en pos. 1–4: regla RENAPO 1.6 (ejemplo ARGÜELLO → AUPD).
+ * - Ä/Ë/Ï/Ö → X en pos. 1–4, y en la pos. 2 la vocal con diéresis se toma (no se salta):
+ *   HIPÓTESIS por la regla RENAPO 1.4 y la analogía con ARGÜELLO, EN CONSULTA A LA DGIS
+ *   (docs/Consulta para aclaraciones 4.docx). Si la respuesta difiere, cambiar
+ *   DIERESIS_INICIALES_TO_X aquí y en la copia del otro repo; las pruebas «consulta 4»
+ *   (curp-name-char.dieresis-consulta4.spec.ts y curp-parity.fixtures.json) marcan qué ajustar.
  */
 
 const VOWELS = new Set(['A', 'E', 'I', 'O', 'U']);

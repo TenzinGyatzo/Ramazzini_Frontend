@@ -53,7 +53,9 @@
       "segundoApellido": "LOPEZ"
     },
     "expectCrossValid": false,
-    "expectCodes": ["CURP_CROSS_FECHA"]
+    "expectCodes": [
+      "CURP_CROSS_FECHA"
+    ]
   },
   {
     "id": "fail-sexo",
@@ -67,7 +69,9 @@
       "segundoApellido": "LOPEZ"
     },
     "expectCrossValid": false,
-    "expectCodes": ["CURP_CROSS_SEXO"]
+    "expectCodes": [
+      "CURP_CROSS_SEXO"
+    ]
   },
   {
     "id": "generic-ok",
@@ -109,7 +113,9 @@
       "segundoApellido": "BRAVO"
     },
     "expectCrossValid": false,
-    "expectCodes": ["CURP_CROSS_CONSONANTES"]
+    "expectCodes": [
+      "CURP_CROSS_CONSONANTES"
+    ]
   },
   {
     "id": "ok-jose-nombre-unico",
@@ -137,7 +143,10 @@
       "segundoApellido": "HERRERA"
     },
     "expectCrossValid": false,
-    "expectCodes": ["CURP_CROSS_INICIALES", "CURP_CROSS_CONSONANTES"]
+    "expectCodes": [
+      "CURP_CROSS_INICIALES",
+      "CURP_CROSS_CONSONANTES"
+    ]
   },
   {
     "id": "ok-maria-nombre-unico",
@@ -149,6 +158,357 @@
       "nombre": "MARIA",
       "primerApellido": "LOPEZ",
       "segundoApellido": "GOMEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-nombre-solo-particulas-van-mac",
+    "curp": "PELM941130HJCRPC00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "VAN MAC",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-nombre-solo-particulas-van-mac-x-rechazada",
+    "curp": "PELX941130HJCRPX00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "VAN MAC",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": false,
+    "expectCodes": [
+      "CURP_CROSS_INICIALES",
+      "CURP_CROSS_CONSONANTES"
+    ]
+  },
+  {
+    "id": "dgis-nombre-solo-particulas-van-der-les",
+    "curp": "PELL941130HJCRPS00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "VAN DER LES",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-nombre-solo-particulas-el-mac-von-mc-dd",
+    "curp": "PELD941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EL MAC VON MC DD",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-nombre-particulas-mezcladas",
+    "curp": "PELE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "DIE MC LES DE EDGAR",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-apellido-solo-particulas-da-y",
+    "curp": "YXLE941130HJCXPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "DA Y",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-apellido-solo-particulas-das-el-mc",
+    "curp": "MXLE941130HJCCPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "DAS EL MC",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-apellido-solo-particulas-los-mc-dd-von",
+    "curp": "VOLE941130HJCNPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "LOS MC DD VON",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-apellido-particulas-mezcladas",
+    "curp": "PELE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "MC DIE LAS DE PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-variante-der-dieresis-es-nombre",
+    "curp": "PELD941130HJCRPR00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "DËR EDGAR",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-variante-der-dieresis-no-es-particula",
+    "curp": "PELE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "DËR EDGAR",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": false,
+    "expectCodes": [
+      "CURP_CROSS_INICIALES"
+    ]
+  },
+  {
+    "id": "dgis-variante-v-diagonal-an",
+    "curp": "PELV941130HJCRPX00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "V/AN EDGAR",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-variante-ma-guion-c-dieresis",
+    "curp": "PELM941130HJCRPX00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "MÄ-C EDGAR",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-variante-les-apostrofo-dieresis",
+    "curp": "PELL941130HJCRPS00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "LËS' EDGAR",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "dgis-van-dieresis-apellido",
+    "curp": "VXLE941130HJCNPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "VÄN SCHODER",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "consulta4-hipotesis-martinez-x",
+    "curp": "MXLE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "MÄRTINEZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "consulta4-hipotesis-martinez-a-rechazada",
+    "curp": "MALE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "MÄRTINEZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": false,
+    "expectCodes": [
+      "CURP_CROSS_INICIALES"
+    ]
+  },
+  {
+    "id": "consulta4-hipotesis-martinez-i-rechazada",
+    "curp": "MILE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "MÄRTINEZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": false,
+    "expectCodes": [
+      "CURP_CROSS_INICIALES"
+    ]
+  },
+  {
+    "id": "consulta4-hipotesis-van-schoder-a-rechazada",
+    "curp": "VALE941130HJCNPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "VÄN SCHODER",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": false,
+    "expectCodes": [
+      "CURP_CROSS_INICIALES"
+    ]
+  },
+  {
+    "id": "consulta4-hipotesis-ortega-x",
+    "curp": "XELE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "ÖRTEGA",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "consulta4-hipotesis-ortega-o-rechazada",
+    "curp": "OELE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "ÖRTEGA",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": false,
+    "expectCodes": [
+      "CURP_CROSS_INICIALES"
+    ]
+  },
+  {
+    "id": "consulta4-hipotesis-angel-x",
+    "curp": "PELX941130HJCRPN00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "ÄNGEL",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": true,
+    "expectCodes": []
+  },
+  {
+    "id": "consulta4-hipotesis-angel-a-rechazada",
+    "curp": "PELA941130HJCRPN00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "ÄNGEL",
+      "primerApellido": "PEREZ",
+      "segundoApellido": "LOPEZ"
+    },
+    "expectCrossValid": false,
+    "expectCodes": [
+      "CURP_CROSS_INICIALES"
+    ]
+  },
+  {
+    "id": "regla16-arguello-u",
+    "curp": "AULE941130HJCRPD00",
+    "demographics": {
+      "fechaNacimiento": "1994-11-30",
+      "sexo": "Masculino",
+      "entidadNacimiento": "JALISCO",
+      "nombre": "EDGAR",
+      "primerApellido": "ARGÜELLO",
+      "segundoApellido": "LOPEZ"
     },
     "expectCrossValid": true,
     "expectCodes": []
