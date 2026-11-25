@@ -18,6 +18,8 @@ import {
 import { refreshConfidentialityAgreementStatus } from "@/composables/useConfidentialityAgreement";
 import { shouldRedirectToPlatformConsole } from "@/composables/usePlatformContext";
 import { tituloDeRuta } from "@/helpers/tituloPagina";
+import { bloqueoDocumentoPropio } from "@/helpers/pacientePropio";
+import { getToast } from "@/utils/toast";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -388,6 +390,23 @@ router.beforeEach((to, from) => {
             idCentroTrabajo: to.params.idCentroTrabajo,
             idTrabajador: to.params.idTrabajador
           }});
+        }
+
+        // Parche 1.0.10: un documento nuevo no se abre para uno mismo
+        if (!to.params.idDocumento) {
+          const bloqueo = await bloqueoDocumentoPropio(
+            String(to.params.idTrabajador ?? ''),
+            documentType,
+          );
+          if (bloqueo) {
+            getToast().error(bloqueo);
+            if (from.matched.length > 0) return next(false);
+            return next({ name: "expediente-medico", params: {
+              idEmpresa: to.params.idEmpresa,
+              idCentroTrabajo: to.params.idCentroTrabajo,
+              idTrabajador: to.params.idTrabajador
+            }});
+          }
         }
       }
 

@@ -22,6 +22,13 @@ export default {
         return api.put(`/expedientes/${trabajadorId}/organizacion/${anio}/orden`, organizacion);
     },
 
+    /** ¿El trabajador es el propio usuario? (no se elaboran documentos para uno mismo) */
+    getPacientePropio(trabajadorId: string) {
+        return api.get<{ esPacientePropio: boolean }>(
+            `/expedientes/${trabajadorId}/documentos/paciente-propio`,
+        );
+    },
+
     getDocumentosConteos(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/conteos`);
     },
