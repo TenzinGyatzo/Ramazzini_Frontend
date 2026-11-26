@@ -30,7 +30,17 @@ export default {
     return api.get(`${BASE}/batches`).then((r) => r.data);
   },
 
-  createBatch(yearMonth: string, onlyFinalized?: boolean): Promise<{ batchId: string; status: string; yearMonth: string; establecimientoClues: string }> {
+  /** Genera un archivo por cada CLUES con notas finalizadas en el mes (parche 1.0.10). */
+  createBatch(
+    yearMonth: string,
+    onlyFinalized?: boolean,
+  ): Promise<{
+    batchId: string;
+    status: string;
+    yearMonth: string;
+    establecimientoClues: string;
+    batches?: { batchId: string; status: string; yearMonth: string; establecimientoClues: string }[];
+  }> {
     return api.post(`${BASE}/batches`, { yearMonth, onlyFinalized }).then((r) => r.data);
   },
 

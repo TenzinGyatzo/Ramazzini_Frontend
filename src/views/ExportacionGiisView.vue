@@ -186,6 +186,7 @@ watch(
             <thead class="bg-gray-50">
               <tr>
                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mes reportado</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">CLUES</th>
                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha de generación</th>
                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descargas / Detalle</th>
@@ -194,6 +195,7 @@ watch(
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="b in listBatches" :key="b.batchId" class="hover:bg-gray-50">
                 <td class="px-4 py-3 text-sm text-gray-700">{{ b.yearMonth }}</td>
+                <td class="px-4 py-3 text-sm font-mono text-gray-700">{{ b.establecimientoClues || "—" }}</td>
                 <td class="px-4 py-3 text-sm text-gray-600">{{ formatDate(b.completedAt) }}</td>
                 <td class="px-4 py-3 text-sm">
                   <span
