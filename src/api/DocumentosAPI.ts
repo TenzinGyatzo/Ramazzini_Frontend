@@ -29,6 +29,13 @@ export default {
         );
     },
 
+    /** Punto (8): ¿se puede iniciar una nota médica? (CLUES en operación) */
+    getCluesNotaMedica(trabajadorId: string) {
+        return api.get<{ permitido: boolean; mensaje?: string }>(
+            `/expedientes/${trabajadorId}/documentos/clues-nota-medica`,
+        );
+    },
+
     getDocumentosConteos(trabajadorId: string) {
         return api.get(`/expedientes/${trabajadorId}/documentos/conteos`);
     },

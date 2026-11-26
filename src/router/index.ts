@@ -19,6 +19,7 @@ import { refreshConfidentialityAgreementStatus } from "@/composables/useConfiden
 import { shouldRedirectToPlatformConsole } from "@/composables/usePlatformContext";
 import { tituloDeRuta } from "@/helpers/tituloPagina";
 import { bloqueoDocumentoPropio } from "@/helpers/pacientePropio";
+import { bloqueoCluesNotaMedica } from "@/helpers/cluesNotaMedica";
 import { getToast } from "@/utils/toast";
 
 const router = createRouter({
@@ -394,10 +395,16 @@ router.beforeEach((to, from) => {
 
         // Parche 1.0.10: un documento nuevo no se abre para uno mismo
         if (!to.params.idDocumento) {
-          const bloqueo = await bloqueoDocumentoPropio(
-            String(to.params.idTrabajador ?? ''),
-            documentType,
-          );
+          // Punto (8): la nota médica no se inicia si la CLUES no está en operación
+          const bloqueo =
+            (await bloqueoDocumentoPropio(
+              String(to.params.idTrabajador ?? ''),
+              documentType,
+            )) ??
+            (await bloqueoCluesNotaMedica(
+              String(to.params.idTrabajador ?? ''),
+              documentType,
+            ));
           if (bloqueo) {
             getToast().error(bloqueo);
             if (from.matched.length > 0) return next(false);
