@@ -32,6 +32,8 @@ export interface CatalogAdminColumn {
   clave: boolean;
   adicional: boolean;
   descripcion: boolean;
+  /** Valores permitidos (p. ej. estatus de operación del establecimiento). */
+  valores?: { valor: string; etiqueta: string }[];
 }
 
 /** Registro del catálogo con el valor de cada columna tal como está en el CSV. */
