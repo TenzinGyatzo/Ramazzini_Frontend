@@ -92,9 +92,6 @@ const deleteIdentificacion = computed(() => {
 
 const deleteTipoRegistro = computed(() => {
   const name = selectedType.value || "catálogo";
-  if (selectedType.value === "establecimientos_salud") {
-    return `establecimiento del catálogo «${name}» (se marcará como fuera de operación)`;
-  }
   return `entrada del catálogo «${name}»`;
 });
 
@@ -598,26 +595,7 @@ onMounted(async () => {
               {{ c.etiqueta }}
               <span v-if="c.clave" class="ml-1 text-[10px] uppercase text-gray-400">clave</span>
             </label>
-            <select
-              v-if="c.valores"
-              :id="`catalogo-col-${c.columna}`"
-              v-model="form[c.columna]"
-              class="w-full border rounded-lg px-3 py-2 mt-1"
-            >
-              <option value="">—</option>
-              <option
-                v-if="form[c.columna] && !c.valores.some((v) => v.valor === form[c.columna])"
-                :value="form[c.columna]"
-                disabled
-              >
-                {{ form[c.columna] }} — valor no válido
-              </option>
-              <option v-for="v in c.valores" :key="v.valor" :value="v.valor">
-                {{ v.valor }} — {{ v.etiqueta }}
-              </option>
-            </select>
             <input
-              v-else
               :id="`catalogo-col-${c.columna}`"
               v-model="form[c.columna]"
               class="w-full border rounded-lg px-3 py-2 mt-1"
