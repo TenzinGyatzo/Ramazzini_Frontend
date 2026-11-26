@@ -185,6 +185,7 @@ describe('ModalFusionTrabajadores', () => {
 
     await boton(w, 'Siguiente').trigger('click');
     // Sin motivo no se fusiona
+    const invalidar = vi.spyOn(useTrabajadoresStore(), 'invalidateListadoHistoriaCache');
     await boton(w, 'Fusionar').trigger('click');
     expect(w.text()).toContain('Elige al menos un motivo.');
     expect(api.fusionarTrabajadores).not.toHaveBeenCalled();
@@ -208,6 +209,9 @@ describe('ModalFusionTrabajadores', () => {
       camposElegidos: { nombre: 'destino', numeroEmpleado: 'destino', idCentroTrabajo: 'destino' },
     });
     expect(fused).toHaveBeenCalledWith({ conservadoId: 'f1', eliminadoId: 'd1', idCentroTrabajo: 'c2' });
+    // La lista se vuelve a pedir sin la copia guardada: el registro retirado deja de verse
+    expect(invalidar).toHaveBeenCalledWith();
+    expect(useTrabajadoresStore().fetchTrabajadoresConHistoria).toHaveBeenCalledWith('e1', 'c1', { enSegundoPlano: true });
   });
 
   it('un error del servidor se muestra en el paso 4 con el enlace para revisar los datos', async () => {

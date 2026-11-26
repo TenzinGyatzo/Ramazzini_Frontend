@@ -520,7 +520,12 @@ async function confirmarFusion() {
     toast?.open({ message: 'Trabajadores fusionados correctamente', type: 'success' });
     invalidateFusionPreviewCache(conservadoId, eliminadoId);
     invalidateFusionPreviewCache(eliminadoId, conservadoId);
-    await trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId);
+    // Los dos registros pueden estar en centros distintos y el conservado puede cambiar de
+    // centro: se descartan todas las listas guardadas para que el retirado deje de aparecer.
+    trabajadores.invalidateListadoHistoriaCache();
+    await trabajadores.fetchTrabajadoresConHistoria(empresaId, centroId, {
+      enSegundoPlano: true,
+    });
     emit('fused', { conservadoId, eliminadoId, idCentroTrabajo });
     forceClose();
   } catch (error) {
